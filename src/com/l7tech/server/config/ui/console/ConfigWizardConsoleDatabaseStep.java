@@ -203,15 +203,17 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private void doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
         String defaultValue = isCurrentDbExists?"2":"1";
 
-
         String[] prompts = new String[] {
                 HEADER_DB_CONN_TYPE,
                 PROMPT_MAKE_NEW_DB,
                 PROMPT_USE_EXISTING_DB,
                 "please make a selection: [" + defaultValue + "]",
         };
-        String input = getData(prompts, "2");
-        createNewDb = input != null && input.trim().equals("1");
+
+        String input = null;
+        input = getData(prompts, "2", new String[] {"1","2"});
+
+        createNewDb = StringUtils.equals(input, "1");
     }
 
     public boolean validateStep() {

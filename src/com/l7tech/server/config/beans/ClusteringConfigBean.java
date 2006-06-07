@@ -1,17 +1,11 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.commands.ClusteringConfigCommand;
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.commands.ClusteringConfigCommand;
-
-import java.util.ArrayList;
-import java.util.TreeMap;
-import java.util.Map;
-import java.util.List;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import org.apache.commons.lang.StringUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,10 +34,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     private String localHostName;
     private int clusterType;
 
-    private String cloneHostname;
-    private String cloneUsername;
-    private char[] clonePassword;
-
 
     private final static String NAME = "Clustering Configuration";
     private final static String DESCRIPTION = "Configures the cluster properties for an SSG";
@@ -56,13 +46,29 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     public static final int CLUSTER_NEW = 1;
     public static final int CLUSTER_JOIN = 2;
 
-    public static Map<String, Integer> clusterTypes;
-    static {
-        clusterTypes = new TreeMap<String, Integer>();
-        clusterTypes.put("I don't want to set up a cluster (or this SSG already belongs to one", new Integer(CLUSTER_NONE));
-        clusterTypes.put("I want to create a new cluster", new Integer(CLUSTER_NEW));
-        clusterTypes.put("I would like this SSG to join an existing cluster", new Integer(CLUSTER_JOIN));
+    public static class ClusterTypePair {
+        private String clusterTypeDescription;
+        private Integer clusterType;
+
+        public ClusterTypePair(String clusterTypeDescription, Integer clusterType) {
+            this.clusterTypeDescription = clusterTypeDescription;
+            this.clusterType = clusterType;
+        }
+
+        public String getClusterTypeDescription() {
+            return clusterTypeDescription;
+        }
+
+        public Integer getClusterType() {
+            return clusterType;
+        }
     }
+
+    public static ClusterTypePair[] clusterTypes = new ClusterTypePair[] {
+        new ClusterTypePair("I don't want to set up a cluster (or this SSG already belongs to one", new Integer(CLUSTER_NONE)),
+        new ClusterTypePair("I want to create a new cluster", new Integer(CLUSTER_NEW)),
+        new ClusterTypePair("I would like this SSG to join an existing cluster", new Integer(CLUSTER_JOIN)),
+    };
 
     public ClusteringConfigBean() {
         super(NAME, DESCRIPTION);
@@ -97,9 +103,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
         hostname = "";
         localHostName  = "";
         clusterType = CLUSTER_NONE;
-        cloneHostname = "";
-        cloneUsername = "";
-        clonePassword = new char[0];
     }
 
     public void setClusterHostname(String hostName) {
@@ -128,30 +131,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     public void setDoClusterType(int clusterType) {
         this.clusterType= clusterType;
-    }
-
-    public void setClonePassword(char[] password) {
-        this.clonePassword = password;
-    }
-
-    public void setCloneUsername(String username) {
-        this.cloneUsername = username;
-    }
-
-    public void setCloneHostname(String hostname) {
-        this.cloneHostname = hostname;
-    }
-
-    public char[] getClonePassword() {
-        return clonePassword;
-    }
-
-    public String getCloneUsername() {
-        return cloneUsername;
-    }
-
-    public String getCloneHostname() {
-        return cloneHostname;
     }
 
     public int getClusterType() {

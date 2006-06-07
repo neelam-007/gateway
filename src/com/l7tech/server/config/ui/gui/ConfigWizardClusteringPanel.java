@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
  */
 public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
-    private JPanel clusterClonePanel;
 
     private JLabel ssgHostnameLabel;
     private JTextField newHostname;
@@ -29,26 +28,13 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     private JRadioButton noClusterOption;
     private JRadioButton useSsgHostnameOption;
     private JRadioButton useNewHostnameOption;
-    private JTextField cloneHostname;
-    private JTextField cloneUsername;
-    private JPasswordField clonePassword;
-    private JLabel cloneHostnameLabel;
-    private JLabel cloneUsernameLabel;
-    private JLabel clonePasswordLabel;
-
     ButtonGroup hostnameGroup;
     ButtonGroup clusterGroup;
 
     ClusteringConfigBean clusteringConfigBean;
 
-    private ClusterChangeListener clusterChangeListener = new ClusterChangeListener();
-    private JLabel emptyHostnameLabel;
 
-    private final class ClusterChangeListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            enableControls();
-        }
-    }
+    private JLabel emptyHostnameLabel;
 
     public ConfigWizardClusteringPanel(WizardStepPanel next) {
         super(next);
@@ -67,22 +53,15 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         hostnameGroup.add(useSsgHostnameOption);
         hostnameGroup.add(useNewHostnameOption);
 
-
         clusterGroup = new ButtonGroup();
         clusterGroup.add(noClusterOption);
         clusterGroup.add(newClusterOption);
         clusterGroup.add(joinClusterOption);
 
-        noClusterOption.addActionListener(clusterChangeListener);
-        newClusterOption.addActionListener(clusterChangeListener);
-        joinClusterOption.addActionListener(clusterChangeListener);
-
         useSsgHostnameOption.setSelected(true);
         noClusterOption.setSelected(true);
         emptyHostnameLabel.setForeground(Color.RED);
 
-        clusterClonePanel.setVisible(false); //change this if we decide to collect master info and copy keys
-        enableControls();
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }
@@ -140,9 +119,6 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         }
         else if (joinClusterOption.isSelected()) {
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_JOIN);
-            clusteringConfigBean.setCloneHostname(cloneHostname.getText());
-            clusteringConfigBean.setCloneUsername(cloneUsername.getText());
-            clusteringConfigBean.setClonePassword(clonePassword.getPassword());
         }
         else { //somehow none of these is selected so it's best not to do anything with the cluster
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
@@ -151,18 +127,6 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         //set the hostname in the wizard so it can be used by later panels
         getParentWizard().setHostname(hostnameForWizard);
         getParentWizard().setClusteringType(clusteringConfigBean.getClusterType());
-    }
-
-    private void enableControls() {
-        boolean enableCloneControls = joinClusterOption.isSelected();
-
-        cloneHostnameLabel.setEnabled(enableCloneControls);
-        cloneUsernameLabel.setEnabled(enableCloneControls);
-        clonePasswordLabel.setEnabled(enableCloneControls);
-
-        cloneHostname.setEnabled(enableCloneControls);
-        cloneUsername.setEnabled(enableCloneControls);
-        clonePassword.setEnabled(enableCloneControls);
     }
 
     public boolean isValidated() {

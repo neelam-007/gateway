@@ -108,6 +108,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
             new String[]{firstPrompt, secondPrompt},
             null,
             -1,
+            isShowNavigation(),
             new WizardInputValidator() {
                 public String[] validate(Map inputs) {
                     int passwordLength = minPasswordLength;
@@ -141,8 +142,18 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         consoleWizardUtils.handleInput(input, isShowNavigation());
     }
 
+    protected String getData(List<String> promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
+        if (promptLines == null) return "";
+
+        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), allowedEntries);
+    }
+
+    protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries);
+    }
+
     protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation());
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), null);
     }
 
     protected void printText(List<String> textToPrint) {

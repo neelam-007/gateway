@@ -25,7 +25,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
 
     private KeystoreConfigBean keystoreBean;
 
-    private Map ksTypeMap;
+    private Map<String, String> ksTypeMap;
 
     public ConfigWizardConsoleKeystoreStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -40,7 +40,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         configBean = new KeystoreConfigBean();
         keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
-        ksTypeMap = new TreeMap();
+        ksTypeMap = new TreeMap<String,String>();
         ksTypeMap.put("1", KeyStoreConstants.DEFAULT_KEYSTORE_NAME);
         ksTypeMap.put("2", KeyStoreConstants.LUNA_KEYSTORE_NAME);
     }
@@ -62,19 +62,19 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     private void doKeystoreTypePrompts() throws IOException, WizardNavigationException {
-        Set entries = ksTypeMap.entrySet();
-        String[] prompts = new String[2 + entries.size()];
+        Set<Map.Entry<String,String>> entries = ksTypeMap.entrySet();
+        List<String> prompts = new ArrayList<String>();
 
-        prompts[0] = KEYSTORE_TYPE_HEADER;
-        int index = 1;
-        for (Iterator iterator = entries.iterator(); iterator.hasNext();) {
-            Map.Entry entry = (Map.Entry) iterator.next();
-            prompts[index++] = entry.getKey() + ") " + entry.getValue() + "\n";
+        prompts.add(KEYSTORE_TYPE_HEADER);
+
+        for (Map.Entry<String, String> entry : entries) {
+            prompts.add(entry.getKey() + ") " + entry.getValue() + getEolChar());
         }
-        prompts[prompts.length -1] = "Please select the keystore type you wish to use: [1]";
+        prompts.add("Please select the keystore type you wish to use: [1]");
 
-        String input = getData(prompts, "1");
-        String ksType = (String) ksTypeMap.get(input);
+        String input = getData(prompts, "1", ksTypeMap.keySet().toArray(new String[]{}));
+        String ksType = ksTypeMap.get(input);
+
         if (ksType == null) {
             ksType = KeyStoreConstants.NO_KEYSTORE;
         }
@@ -86,9 +86,6 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
             askDefaultKeystoreQuestions();
         } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
             askLunaKeystoreQuestions();
-        } else {
-            printText("**** Invalid selection, please try again ****\n");
-            doKeystoreTypePrompts();
         }
     }
 
@@ -101,6 +98,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
                new String[]{installPathPrompt, jspPathPrompt},
                new String[]{defaultInstallPath, defaultJspPath},
                -1,
+               isShowNavigation(),
                 new WizardInputValidator() {
                     public String[] validate(Map inputs) {
                         List errorMessages = new ArrayList();
@@ -175,7 +173,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
             "please make a selection: [" + defaultValue + "]",
         };
 
-        String input = getData(prompts, defaultValue);
+        String input = getData(prompts, defaultValue, new String[]{"1","2"});
 
         shouldConfigure = input != null && input.trim().equals("2");
         keystoreBean.doKeystoreConfig(shouldConfigure);

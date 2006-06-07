@@ -81,38 +81,35 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             printText("Please select one of the options shown" + getEolChar());
         }
 
-        //get clustering type preference
-        Set entries = ClusteringConfigBean.clusterTypes.entrySet();
-        Map.Entry[] clusterPromptMapper = new Map.Entry[entries.size()];
-
-        Iterator iter = entries.iterator();
         List<String> clusterTypePrompts = new ArrayList<String>();
 
         clusterTypePrompts.add("-- Creating or joining a cluster --" + getEolChar());
-        int i = 0;
-        while (iter.hasNext() && i < clusterPromptMapper.length) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            clusterPromptMapper[i] = entry;
-            clusterTypePrompts.add(new String(i+1 + ") " + (String) entry.getKey() + getEolChar()));
-            i++;
+
+        Map<String, ClusteringConfigBean.ClusterTypePair> clusterPromptMapper = new TreeMap<String, ClusteringConfigBean.ClusterTypePair>();
+
+        //get clustering type preference
+        int i = 1;
+        for (ClusteringConfigBean.ClusterTypePair clusterTypePair : ClusteringConfigBean.clusterTypes) {
+            if (clusterTypePair != null) {
+                clusterPromptMapper.put(String.valueOf(i++), clusterTypePair);
+            }
         }
+
+        Set<String> keys = clusterPromptMapper.keySet();
+        for (String key : keys) {
+            ClusteringConfigBean.ClusterTypePair ctp = clusterPromptMapper.get(key);
+            clusterTypePrompts.add(key + ") " + ctp.getClusterTypeDescription() + getEolChar());
+        }
+
         clusterTypePrompts.add("Please make a selection: [1]");
 
-
         String input = getData(
-                clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]),
-                "1");
-        int clusterType = ClusteringConfigBean.CLUSTER_NONE;
-        try {
-            int selectedIndex = Integer.parseInt(input) - 1;
-            if (selectedIndex >= 0 && selectedIndex < clusterPromptMapper.length) {
-                clusterType = ((Integer)clusterPromptMapper[selectedIndex].getValue()).intValue();
-            } else {
-                doClusterTypePrompt(true);
-            }
-        } catch (NumberFormatException e) {
-            doClusterTypePrompt(true);
-        }
+                clusterTypePrompts,
+                "1",
+                clusterPromptMapper.keySet().toArray(new String[]{}));
+
+        int clusterType = clusterPromptMapper.get(input).getClusterType();
+
         clusterBean.setDoClusterType(clusterType);
         getParentWizard().setClusteringType(clusterBean.getClusterType());
     }

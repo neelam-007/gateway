@@ -36,16 +36,32 @@ public class ConsoleWizardUtils {
         this.out = out;
     }
 
-    public String getData(String[] promptLines, String defaultValue, boolean isNavAware) throws IOException, WizardNavigationException {
-        printText(promptLines);
-        String input = readLine();
-        handleInput(input, isNavAware);
+    public String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries) throws IOException, WizardNavigationException {
+        boolean isValidInput = true;
 
-        if (defaultValue != null) {
+        String input = null;
+        do {
+            isValidInput = true;
+            printText(promptLines);
+            input = readLine();
+            handleInput(input, isNavAware);
+
             if (StringUtils.isEmpty(input)) {
-                input = defaultValue;
+               if (defaultValue != null) input = defaultValue;
             }
-        }
+
+            //if the wizard didn't recognize the input (i.e. non navigation input) then check it's validity here
+            if (allowedEntries != null && allowedEntries.length != 0) {
+                boolean foundAMatch = false;
+                for (String allowedEntry : allowedEntries) {
+                    foundAMatch = StringUtils.equals(input, allowedEntry);
+                    if (foundAMatch) break;
+                }
+                isValidInput = foundAMatch;
+            }
+            if (!isValidInput) printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+        } while (!isValidInput);
+
         return input;
     }
 
@@ -67,9 +83,9 @@ public class ConsoleWizardUtils {
      * @param numAttempts the number of times to retry if the data could not be confirmed
      * @return the confirmed data, or null if the data could not be confirmed in "numAttempts" attempts
      */
-    public Map getValidatedDataWithConfirm(String[] prompts, String[] defaultValues, int numAttempts, WizardInputValidator validator) throws IOException, WizardNavigationException {
+    public Map getValidatedDataWithConfirm(String[] prompts, String[] defaultValues, int numAttempts, boolean isNavAware, WizardInputValidator validator) throws IOException, WizardNavigationException {
 
-        Map inputs = internalGetInputs(prompts, defaultValues);
+        Map inputs = internalGetInputs(prompts, defaultValues, isNavAware);
         String[] validationErrors = validator.validate(inputs);
 
         if (validationErrors != null) {
@@ -78,8 +94,7 @@ public class ConsoleWizardUtils {
                 --numAttempts;
             }
             printText(validationErrors);
-            return getValidatedDataWithConfirm(prompts, defaultValues, numAttempts,  validator);
-
+            return getValidatedDataWithConfirm(prompts, defaultValues, numAttempts, isNavAware, validator);
         }
 
         return inputs;
@@ -122,7 +137,7 @@ public class ConsoleWizardUtils {
         };
     }
 
-    private Map internalGetInputs(String[] prompts, String[] defaultValues) throws IOException, WizardNavigationException {
+    private Map internalGetInputs(String[] prompts, String[] defaultValues, boolean isNavAware) throws IOException, WizardNavigationException {
         boolean isNoDefaults = false;
         if (prompts == null) {
             throw new IllegalArgumentException("Prompts cannot be null");
@@ -137,10 +152,10 @@ public class ConsoleWizardUtils {
         for (int i = 0; i < prompts.length; i++) {
             String prompt = prompts[i];
             if (isNoDefaults) {
-                gotData.put(prompt, getData(new String[]{prompt}, null, false));
+                gotData.put(prompt, getData(new String[]{prompt}, null, isNavAware, null));
             } else {
                 String defaultValue = defaultValues[i];
-                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, false));
+                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, isNavAware, null));
             }
         }
 
