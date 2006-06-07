@@ -272,7 +272,7 @@ class CompiledSchema implements Closeable {
 
     public void close() {
         if (setClosed()) return;
-        manager.finalizeSchema(this);
+        manager.closeSchema(this);
     }
 
     protected void finalize() throws Throwable {

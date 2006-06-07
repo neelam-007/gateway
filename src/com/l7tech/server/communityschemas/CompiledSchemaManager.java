@@ -165,10 +165,10 @@ public class CompiledSchemaManager {
      * removed was previously duplicated, and a single survivor is left, it will be promoted
      * to hardware-accelerated.
      */
-    void finalizeSchema(CompiledSchema schema) {
+    void closeSchema(CompiledSchema schema) {
         reportCacheContents();
 
-        logger.info("Finalizing " + schema);
+        logger.info("Closing " + schema);
         String tns = schema.getTargetNamespace();
 
         try {
