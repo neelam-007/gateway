@@ -55,13 +55,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
             }
         }
 
-        printText("Press <Enter> to finish the wizard" + getEolChar());
-
-        try {
-            handleInput(readLine());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        printText(getEolChar() + "Configuration complete. The wizard will now exit." + getEolChar());
     }
 
     private boolean needsManualSteps() {

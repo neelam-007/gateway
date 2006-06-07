@@ -126,12 +126,9 @@ public class ConsoleWizardUtils {
                         "Exiting\n");
                 out.flush();
                 System.exit(1);
-            }
-            else {
+            } else if (PREV_COMMAND.equalsIgnoreCase(input)) {
                 if (canNavigate) {
-                    if (PREV_COMMAND.equalsIgnoreCase(input)) {
-                        throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
-                    }
+                    throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
                 }
             }
         };
