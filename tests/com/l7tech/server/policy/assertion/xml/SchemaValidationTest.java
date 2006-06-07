@@ -135,7 +135,9 @@ public class SchemaValidationTest extends TestCase {
         assertion.setApplyToArguments(true);
         assertion.setResourceInfo(new StaticResourceInfo(schema));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus res = serverAssertion.validateMessage(new Message(XmlUtil.stringToDocument(request)));
+        Message requestMsg = new Message(XmlUtil.stringToDocument(request));
+        PolicyEnforcementContext context = new PolicyEnforcementContext(requestMsg, new Message());
+        AssertionStatus res = serverAssertion.validateMessage(requestMsg, context);
         assertTrue(res == AssertionStatus.NONE);
     }
 

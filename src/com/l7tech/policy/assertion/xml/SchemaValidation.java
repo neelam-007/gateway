@@ -2,8 +2,12 @@ package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.AssertionResourceType;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -16,7 +20,7 @@ import com.l7tech.policy.assertion.UsesResourceInfo;
  * $Id$<br/>
  *
  */
-public class SchemaValidation extends Assertion implements UsesResourceInfo {
+public class SchemaValidation extends Assertion implements UsesResourceInfo, UsesVariables {
 
     /**
      * Return whether the schema validation has been configured for message/operation
@@ -59,4 +63,12 @@ public class SchemaValidation extends Assertion implements UsesResourceInfo {
 
     private boolean applyToArguments;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
+
+    public String[] getVariablesUsed() {
+        if (resourceInfo.getType() == AssertionResourceType.SINGLE_URL) {
+            SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
+            return ExpandVariables.getReferencedNames(suri.getUrl());
+        }
+        return new String[0];
+    }
 }

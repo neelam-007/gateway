@@ -34,6 +34,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -54,11 +55,13 @@ public class ServerSchemaValidation
     private final Auditor auditor;
     private final ResourceGetter resourceGetter;
     private final CompiledSchemaManager compiledSchemaManager;
+    private final String[] varsUsed;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
         this.auditor = new Auditor(this, springContext, logger);
         this.compiledSchemaManager = (CompiledSchemaManager)springContext.getBean("compiledSchemaManager");
+        this.varsUsed = data.getVariablesUsed();
 
         if (assertion.getResourceInfo()instanceof MessageUrlResourceInfo)
             throw new ServerPolicyException(assertion, "MessageUrlResourceInfo is not yet supported.");
@@ -93,7 +96,7 @@ public class ServerSchemaValidation
             return AssertionStatus.NOT_APPLICABLE;
         }
 
-        AssertionStatus status = validateMessage(msg);
+        AssertionStatus status = validateMessage(msg, context);
         // not pretty, but functional ...
         if (!isRequest(routing) && status == AssertionStatus.BAD_REQUEST) {
             status = AssertionStatus.BAD_RESPONSE;
@@ -108,14 +111,16 @@ public class ServerSchemaValidation
      * Validates the given document (or parts of it) against schema as directed.
      *
      * @param message the message to validate.  Must not be null.
+     * @param context
      * @return the AssertionStatus
      * @throws IOException  if there is a problem reading the document to validate
      */
-    AssertionStatus validateMessage(Message message) throws IOException {
+    AssertionStatus validateMessage(Message message, PolicyEnforcementContext context) throws IOException {
         final SchemaHandle ps;
         try {
             XmlKnob xmlKnob = message.getXmlKnob();
-            Object got = resourceGetter.getResource(xmlKnob.getElementCursor(), null);
+            Map vars = context.getVariableMap(varsUsed, auditor);
+            Object got = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
             if (!(got instanceof SchemaHandle)) {
                 // XXX This is a design flaw when cache shared with XSLT assertion.  Not yet fixed.  See Bug #2535
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
