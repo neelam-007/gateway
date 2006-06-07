@@ -194,19 +194,15 @@
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
       -->
     <target name="deploy" depends="init-dev, properties.check, deploy.properties, package" if="tomcat.home">
-        <!--
-        <delete dir="${tomcat.home}/webapps/${app.name}"/>
-        <delete dir="${tomcat.home}/webapps/${app.name}"/>
-        -->
         <copy todir="${tomcat.home}/webapps">
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
-        <mkdir dir="${tomcat.home}/common/classpath"/>
-        <delete includeEmptyDirs="true">
-            <fileset dir="${tomcat.home}/common/classpath">
-                <include name="*"/>
+
+        <copy todir="${tomcat.home}/common/endorsed">
+            <fileset dir="${build.dir}">
+                <include name="l7provider.jar"/>
             </fileset>
-        </delete>
+        </copy>
 
         <copy todir="${tomcat.home}/server/lib">
             <fileset dir="${build.dir}">
@@ -224,12 +220,8 @@
           this server.xml is ready to be modified by sslGen.sh who will later
           make the ssl cert and record it's keystore password in it
         -->
-        <copy todir="${tomcat.home}/conf">
-            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
-        </copy>
-        <copy todir="${tomcat.home}/bin">
-            <fileset dir="${src.root}/etc/tomcat" includes="setclasspath.*"/>
-        </copy>
+        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${tomcat.home}/conf/server.xml"/>
+        <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${tomcat.home}/conf/truststore.ks"/>
 
     </target>
 
@@ -588,8 +580,8 @@
 
                 <!-- AdminWS Stuff -->
                 <!--
-                  This is the same as the jsr173_api.jar 
-                  <include name="stax-api-1.0.jar"/> 
+                  This is the same as the jsr173_api.jar
+                  <include name="stax-api-1.0.jar"/>
                 -->
                 <include name="jdom.jar"/>
                 <include name="wstx-asl-2.9.jar"/>
@@ -706,6 +698,13 @@
         <jar jarfile="${build.dir}/l7valve.jar">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/server/tomcat/*.class"/>
+                <exclude name="com/l7tech/server/tomcat/ClientTrusting*.class"/>
+            </fileset>
+        </jar>
+
+        <jar jarfile="${build.dir}/l7provider.jar">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/server/tomcat/ClientTrusting*.class"/>
             </fileset>
         </jar>
 
@@ -1436,7 +1435,7 @@
             <include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>
             <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
             <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
-            <include name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>            
+            <include name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>
             <include name="com/l7tech/policy/assertion/ext/EditListener.java"/>
             <include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>
             <include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>
@@ -1604,7 +1603,6 @@
     <target name="start-tomcat" if="tomcat.home" depends="properties.check">
         <!-- depends="deploy" -->
         <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
-            <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
             <arg line="-Dcatalina.home=${tomcat.home}"/>
             <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
             <arg line="start"/>
@@ -1613,7 +1611,6 @@
 
     <target name="stop-tomcat" if="tomcat.home" depends="properties.check">
         <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
-            <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
             <arg line="-Dcatalina.home=${tomcat.home}"/>
             <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
             <arg line="stop"/>
@@ -1683,13 +1680,11 @@
     </target>
 
     <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
-        <!-- Delete stock server.xml, catalina.policy & hibernate.properties so as not to replace in-place ones -->
+        <!-- Delete stock server.xml, hibernate.properties so as not to replace in-place ones -->
         <delete file="${install.src.tomcat}/conf/server.xml"/>
-        <delete file="${install.src.tomcat}/conf/catalina.policy"/>
         <delete file="${install.src.conf}/hibernate.properties"/>
 
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml-dist"/>
-        <copy file="${src.root}/etc/tomcat/catalina.policy" tofile="${install.src.tomcat}/conf/catalina.policy-dist"/>
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}-dist"/>
         <replaceregexp file="${install.src.keystore.properties}-dist">
@@ -1715,13 +1710,9 @@
     </target>
 
     <target name="INTERNAL-ssg-install-keystores" if="install.full">
-        <!-- Copy server.xml & catalina.policy -->
-        <copy todir="${install.src.tomcat}/conf">
-            <fileset dir="${src.root}/etc/tomcat">
-                <include name="server.xml"/>
-                <include name="catalina.policy"/>
-            </fileset>
-        </copy>
+        <!-- Copy server configuration -->
+        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml"/>
+        <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${install.src.tomcat}/conf/truststore.ks"/>
     </target>
 
     <target name="INTERNAL-ssg-install" depends="init-dev">
@@ -1824,6 +1815,11 @@
         it depends of the order in which the targets get called
         clara, you may want to verify this
         -->
+        <copy todir="${install.src.base}/tomcat/common/endorsed">
+            <fileset dir="${build.dir}">
+                <include name="l7provider.jar"/>
+            </fileset>
+        </copy>
         <copy todir="${install.src.base}/tomcat/server/lib">
             <fileset dir="${build.dir}">
                 <include name="l7valve.jar"/>

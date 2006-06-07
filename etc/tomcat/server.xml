@@ -18,6 +18,8 @@
                acceptCount="100" scheme="https" secure="true"
                clientAuth="want" sslProtocol="TLS" keystoreFile="/ssg/etc/keys/ssl.ks" 
                keystorePass="blahblah" keystoreType="PKCS12"
+               truststorePass=" " truststoreType="PKCS12"
+               truststoreFile="conf/truststore.ks" truststoreAlgorithm="AXPK"
                SSLImplementation="com.l7tech.server.tomcat.SsgSSLImplementation"/>
 
     <!-- Define the top level container in our container hierarchy -->
