@@ -7,11 +7,11 @@ package com.l7tech.server;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.message.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.SecurityActor;
@@ -31,6 +31,7 @@ import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.policy.ServerPolicy;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
@@ -49,7 +50,6 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -217,7 +217,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     String[] args = new String[]{requestMethod, service.getName()};
                     auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, args);
                     throw new MethodNotAllowedException(
-                            MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED.getMessage(), (Object[])args));
+                            MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED.getMessage(), args));
                 }
 
                 // initialize cache
@@ -267,7 +267,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             // Get the server policy
-            ServerAssertion serverPolicy;
+            ServerPolicy serverPolicy;
             try {
                 serverPolicy = serviceManager.getServerPolicy(service.getOid());
             } catch (FindException e) {
@@ -320,16 +320,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                           reqSec.getProcessorResult().getProcessedActor() != null &&
                           reqSec.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
                         // go find the l7 decoreq and adjust the actor
-                        for (int i = 0; i < allrequirements.length; i++) {
-                            if (SecurityActor.L7ACTOR.getValue().equals(allrequirements[i].getSecurityHeaderActor())) {
-                                allrequirements[i].setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
+                        for (DecorationRequirements requirement : allrequirements) {
+                            if (SecurityActor.L7ACTOR.getValue().equals(requirement.getSecurityHeaderActor())) {
+                                requirement.setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
                             }
                         }
                     }
 
                     // do the actual decoration
-                    for (int i = 0; i < allrequirements.length; i++) {
-                        final DecorationRequirements responseDecoReq = allrequirements[i];
+                    for (final DecorationRequirements responseDecoReq : allrequirements) {
                         if (responseDecoReq != null && wssOutput != null) {
                             if (wssOutput.getSecurityNS() != null)
                                 responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput.getSecurityNS());
@@ -399,7 +398,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 } else {
                     // Bump up the audit level to that of the highest AssertionStatus level
                     if(isAuditAssertionStatusEnabled()) {
-                        Set statusSet = context.getSeenAssertionStatus();
+                        Set<AssertionStatus> statusSet = context.getSeenAssertionStatus();
                         Level highestLevel = getHighestAssertionStatusLevel(statusSet);
                         if(highestLevel.intValue() > context.getAuditLevel().intValue())
                             context.setAuditLevel(highestLevel);
@@ -482,9 +481,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
       throws PolicyAssertionException, IOException
     {
         AssertionStatus status = AssertionStatus.NONE;
-        for (Iterator di = context.getDeferredAssertions().iterator(); di.hasNext();) {
-            ServerAssertion assertion = (ServerAssertion)di.next();
-            status = assertion.checkRequest(context);
+        for (ServerAssertion serverAssertion : context.getDeferredAssertions()) {
+            status = serverAssertion.checkRequest(context);
             if (status != AssertionStatus.NONE)
                 return status;
         }
@@ -502,11 +500,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.auditor = new Auditor(this, getApplicationContext(), logger);
     }
 
-    private Level getHighestAssertionStatusLevel(Set assertionStatusSet) {
+    private Level getHighestAssertionStatusLevel(Set<AssertionStatus> assertionStatusSet) {
         Level level = Level.ALL;
-        for (Iterator iterator = assertionStatusSet.iterator(); iterator.hasNext();) {
-            AssertionStatus assertionStatus = (AssertionStatus) iterator.next();
-            if(assertionStatus.getLevel().intValue() > level.intValue()) {
+        for (AssertionStatus assertionStatus : assertionStatusSet) {
+            if (assertionStatus.getLevel().intValue() > level.intValue()) {
                 level = assertionStatus.getLevel();
             }
         }

@@ -1,16 +1,18 @@
 package com.l7tech.server.identity;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.*;
-
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-
-import org.springframework.context.support.ApplicationObjectSupport;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author emil
@@ -87,7 +89,7 @@ public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
         return versionMap;
     }
 
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public IdentityProviderConfig getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
         throw new UnsupportedOperationException("not implemented");
     }
 

@@ -199,6 +199,12 @@ public class DomElementCursor extends ElementCursor {
         XmlUtil.nodeToOutputStream(cur, outputStream, "UTF-8");
     }
 
+    public String asString() throws IOException {
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+        XmlUtil.canonicalize(cur, baos);
+        return baos.toString("UTF-8");
+    }
+
     public Element asDomElement(Document factory) {
         return (Element)factory.importNode(cur, true);
     }

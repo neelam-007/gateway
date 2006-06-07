@@ -13,14 +13,14 @@ import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
@@ -42,6 +42,7 @@ import java.text.ParseException;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.Map;
 
 /**
  * An object that is created with a ResourceInfo and can thereafter fetch a resource given a message.
@@ -49,6 +50,8 @@ import java.util.regex.PatternSyntaxException;
  */
 abstract class ResourceGetter {
     private static final Logger logger = Logger.getLogger(ResourceGetter.class.getName());
+
+    public abstract void close();
 
     // Some handy exceptions to ensure that information of interest is preserved until it gets back up
     // to the assertion to be audited
@@ -128,6 +131,7 @@ abstract class ResourceGetter {
      *
      * @param message the message to inspect.  Must not be null if the original AssertionResourceInfo was
      *        {@link com.l7tech.policy.MessageUrlResourceInfo}.  The cursor might be moved by this method.
+     * @param vars a Map&lt;String,Object&gt; of variable names and values for interpolation into URLs etc.  May be null.
      * @return the resource object to use for this Message, or null if no resource object is required for this message.
      *         Specifically, this can return null if and only if the resource info is Message Url and no resource url
      *         was found in this message.
@@ -140,7 +144,7 @@ abstract class ResourceGetter {
      * @throws ResourceParseException if an external resource is fetched but is found to be invalid
      * @throws GeneralSecurityException  if an SSL context is needed but cannot be created
      */
-    public abstract Object getResource(ElementCursor message)
+    public abstract Object getResource(ElementCursor message, Map vars)
             throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException,
                    UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException;
 
@@ -157,12 +161,12 @@ abstract class ResourceGetter {
          * multiple threads simulataneously.  The Object will be returned back through getResource(), and
          * the consumer can downcast it to the appropriate type.
          *
-         * @param resourceBytes the bytes to convert.  Never null or empty.
-         * @return  the object to cache and reuse.  Returning null will be considered the same as throwing IOException
-         *          with no message.
+         * @param url
+         * @param  resourceContent the content of the resource document @return the object to cache and reuse.  Returning null will be considered the same as throwing IOException
+         *         with no message.
          * @throws ParseException if the specified resource bytes could not be converted into a resource object.
          */
-        Object createResourceObject(byte[] resourceBytes) throws ParseException;
+        Object createResourceObject(String url, String resourceContent) throws ParseException;
     }
 
 
@@ -299,7 +303,7 @@ abstract class ResourceGetter {
          * @throws ResourceIOException  if there is an IOException while fetching the external resource
          * @throws NullPointerException if href or spring is null
          */
-        protected Object fetchObject(String href)
+        protected Object fetchObject(final String href)
                 throws ParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
             if (href == null) throw new NullPointerException("no href provided");
             GenericHttpRequestParams params = (GenericHttpRequestParams)httpRequest.get();
@@ -319,10 +323,12 @@ abstract class ResourceGetter {
                 public Object createUserObject(GenericHttpResponse response) throws IOException {
                     if (response.getStatus() != HttpConstants.STATUS_OK)
                         throw new IOException("HTTP status was " + response.getStatus());
-                    byte[] bytes = HexUtils.slurpStreamLocalBuffer(response.getInputStream());
+                    ContentTypeHeader ctype = response.getContentType();
+                    String encoding = ctype == null ? "ISO8859-1" : ctype.getEncoding();
+                    String thing = new String(HexUtils.slurpStreamLocalBuffer(response.getInputStream()), encoding);
                     logger.fine("Downloaded resource from " + url.toExternalForm());
                     try {
-                        Object obj = resourceObjectFactory.createResourceObject(bytes);
+                        Object obj = resourceObjectFactory.createResourceObject(href, thing);
                         if (obj == null)
                             throw new IOException("Unable to create resource from HTTP response: ResourceObjectFactory returned null");
                         return obj;
@@ -433,7 +439,11 @@ abstract class ResourceGetter {
             if (rof == null || urlFinder == null || fetchUrlPatterns == null) throw new NullPointerException(); // can't happen
         }
 
-        public Object getResource(ElementCursor message)
+        public void close() {
+            // Nothing we can do except wait for the finalizer -- userObject(s) may be in use
+        }
+
+        public Object getResource(ElementCursor message, Map vars)
                 throws IOException, MalformedResourceUrlException, UrlNotPermittedException,
                 ResourceIOException, InvalidMessageException, ResourceParseException, GeneralSecurityException, UrlNotFoundException
         {
@@ -500,11 +510,16 @@ abstract class ResourceGetter {
             }
         }
 
-        public Object getResource(ElementCursor message) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
+        public void close() {
+            // Nothing we can do except wait for the finalizer -- userObject(s) may be in use
+        }
+
+        public Object getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
+            String actualUrl = vars == null ? url : ExpandVariables.process(url, vars);
             try {
-                return fetchObject(url);
+                return fetchObject(actualUrl);
             } catch (ParseException e) {
-                throw new ResourceParseException(e, url);
+                throw new ResourceParseException(e, actualUrl);
             }
         }
     }
@@ -522,9 +537,8 @@ abstract class ResourceGetter {
         {
             String doc = ri.getDocument();
             if (doc == null) throw new ServerPolicyException(assertion, "Empty static document");
-            byte[] bytes = doc.getBytes();
             try {
-                Object userObject = rof.createResourceObject(bytes);
+                Object userObject = rof.createResourceObject("", doc);
                 if (userObject == null)
                     throw new ServerPolicyException(assertion, "Unable to create static user object: ResourceObjectFactory returned null");
                 this.userObject = userObject;
@@ -533,7 +547,11 @@ abstract class ResourceGetter {
             }
         }
 
-        public Object getResource(ElementCursor message) throws IOException {
+        public void close() {
+            ResourceUtils.closeQuietly(userObject);
+        }
+
+        public Object getResource(ElementCursor message, Map vars) throws IOException {
             return userObject;
         }
     }

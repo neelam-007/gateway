@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public interface IdentityProviderConfigManager extends EntityManager {
+public interface IdentityProviderConfigManager extends EntityManager<IdentityProviderConfig> {
     // since this provider config is not persisted, we need a special id to identify it for certain operations
     long INTERNALPROVIDER_SPECIAL_OID = -2;
 

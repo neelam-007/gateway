@@ -38,14 +38,12 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Templates;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.Map;
@@ -55,7 +53,10 @@ import java.util.logging.Logger;
 /**
  * Server-side implementation of {@link XslTransformation}.
  */
-public class ServerXslTransformation extends AbstractServerAssertion implements ServerAssertion {
+public class ServerXslTransformation
+        extends AbstractServerAssertion<XslTransformation>
+        implements ServerAssertion
+{
     private static final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
     private static final SAXParserFactory piParser = SAXParserFactory.newInstance();
     static {
@@ -73,7 +74,6 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
     }
 
     private final Auditor auditor;
-    private final XslTransformation assertion;
     private final ResourceGetter resourceGetter;
     private final String[] varsUsed;
 
@@ -82,16 +82,15 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
         super(assertion);
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
 
-        this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
         this.varsUsed = assertion.getVariablesUsed();
 
         // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
         ResourceGetter.ResourceObjectFactory resourceObjectfactory = new ResourceGetter.ResourceObjectFactory() {
-            public Object createResourceObject(byte[] resourceBytes) throws ParseException {
+            public Object createResourceObject(String url, String resource) throws ParseException {
                 final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
-                TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(resourceBytes);
-                return new CachedStylesheet(compileSoftware(resourceBytes), tarariStylesheet);
+                TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(resource);
+                return new CachedStylesheet(compileSoftware(resource), tarariStylesheet);
             }
         };
 
@@ -118,11 +117,11 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
      * @return successfully compiled stylesheet.  Never null
      * @throws ParseException if the stylesheet can't be parsed
      */
-    private static Templates compileSoftware(byte[] bytes) throws ParseException {
+    private static Templates compileSoftware(String thing) throws ParseException {
         // Prepare a software template
         try {
             TransformerFactory transfoctory = TransformerFactory.newInstance();
-            StreamSource xsltsource = new StreamSource(new ByteArrayInputStream(bytes));
+            StreamSource xsltsource = new StreamSource(new StringReader(thing));
             return transfoctory.newTemplates(xsltsource);
         } catch (TransformerConfigurationException e) {
             throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
@@ -219,7 +218,7 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
     {
         try {
             final ElementCursor ec = input.getElementCursor();
-            Object resource = resourceGetter.getResource(ec);
+            Object resource = resourceGetter.getResource(ec, input.vars);
             if (resource instanceof CachedStylesheet) {
                 return ((CachedStylesheet)resource).transform(input, output);
             } else {

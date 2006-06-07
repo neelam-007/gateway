@@ -9,7 +9,7 @@ import java.util.Set;
  * An interface for the user management component of {@link IdentityProvider}s.
  * @author alex
  */
-public interface UserManager extends EntityManager {
+public interface UserManager {
     /**
      * Retrieves the {@link User} with the specified unique ID.
      */
@@ -54,7 +54,7 @@ public interface UserManager extends EntityManager {
     /**
      * Saves a new user and replaces its group memberships based on a {@link Set} of {@link EntityHeader}s pointing to {@link Group}s.
      */
-    String save( User user, Set groupHeaders ) throws SaveException;
+    String save( User user, Set<EntityHeader> groupHeaders ) throws SaveException;
 
     /**
      * Updates an existing user and replaces its group memberships based on a {@link Set} of {@link EntityHeader}s pointing to {@link Group}s.
@@ -63,12 +63,12 @@ public interface UserManager extends EntityManager {
      * @throws UpdateException
      * @throws ObjectNotFoundException
      */
-    void update( User user, Set groupHeaders ) throws UpdateException, ObjectNotFoundException;
+    void update( User user, Set<EntityHeader> groupHeaders ) throws UpdateException, ObjectNotFoundException;
 
     /**
      * Finds users whose name or login matches the specified pattern.
      */
-    Collection search(String searchString) throws FindException;
+    Collection<EntityHeader> search(String searchString) throws FindException;
 
     /**
      * Creates an {@link EntityHeader} pointing to the specified {@link User}.
@@ -84,4 +84,8 @@ public interface UserManager extends EntityManager {
      * @return the {@link Class} that entities managed by this manager belong to.
      */
     Class getImpClass();
+
+    Collection<EntityHeader> findAllHeaders() throws FindException;
+
+    Collection<User> findAll() throws FindException;
 }

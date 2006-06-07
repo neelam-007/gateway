@@ -33,7 +33,7 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
             JmsProvider openjms = new JmsProvider("OpenJMS", "org.exolab.jms.jndi.InitialContextFactory", "QueueConnectionFactory");
             JmsProvider jbossmq = new JmsProvider("JBossMQ", "org.jnp.interfaces.NamingContextFactory", "QueueConnectionFactory");
             JmsProvider mqLdap = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory");
-            List list = new ArrayList();
+            List<JmsProvider> list = new ArrayList<JmsProvider>();
             list.add(openjms);
             list.add(jbossmq);
             list.add(mqLdap);
@@ -95,8 +95,8 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
         try {
             EntityHeader[] endpoints = jmsEndpointManager.findEndpointHeadersForConnection(connection.getOid());
 
-            for (int i = 0; i < endpoints.length; i++)
-                jmsEndpointManager.delete(endpoints[i].getOid());
+            for (EntityHeader endpoint : endpoints)
+                jmsEndpointManager.delete(endpoint.getOid());
 
             getHibernateTemplate().delete(connection);
         } catch (DataAccessException e) {

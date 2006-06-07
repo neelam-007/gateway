@@ -5,6 +5,8 @@
 
 package com.l7tech.common.xml.xpath;
 
+import com.l7tech.common.xml.ElementCursor;
+
 import java.util.NoSuchElementException;
 
 /**
@@ -153,6 +155,10 @@ public interface XpathResultNodeSet {
             }
 
             public void next(XpathResultNode template) throws NoSuchElementException {
+                throw new NoSuchElementException();
+            }
+
+            public ElementCursor nextElementAsCursor() throws NoSuchElementException {
                 throw new NoSuchElementException();
             }
         };

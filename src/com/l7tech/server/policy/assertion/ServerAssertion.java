@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.common.util.Closeable;
 
 import java.io.IOException;
 
@@ -17,7 +18,7 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public interface ServerAssertion {
+public interface ServerAssertion extends Closeable {
     /**
      * SSG Server-side processing of the given request.
      * @param context

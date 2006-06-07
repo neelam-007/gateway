@@ -30,17 +30,16 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             _serviceOidToValuesArrayMap.clear();
             PublishedService service;
             Object[] values;
-            Map serviceMap;
+            Map<Long, PublishedService> serviceMap;
             Long oid;
             while ( i.hasNext() ) {
                 service = (PublishedService)i.next();
-                oid = new Long( service.getOid() );
+                oid = service.getOid();
                 values = getTargetValues( service );
                 _serviceOidToValuesArrayMap.put( oid, values );
-                for (int j = 0; j < values.length; j++) {
-                    Object value = values[j];
+                for (Object value : values) {
                     serviceMap = getServiceMap(value);
-                    serviceMap.put( oid, service );
+                    serviceMap.put(oid, service);
                 }
             }
         } catch ( InterruptedException ie ) {
@@ -52,20 +51,20 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     }
 
     public void serviceCreated( PublishedService service ) {
-        Object[] values = getTargetValues( service );
+        Object[] targetValues = getTargetValues( service );
         Object value;
-        Map serviceMap;
-        Long oid = new Long( service.getOid() );
+        Map<Long, PublishedService> serviceMap;
+        Long oid = service.getOid();
 
         Sync write = _rwlock.writeLock();
         try {
             write.acquire();
-            _serviceOidToValuesArrayMap.put( oid, values );
+            _serviceOidToValuesArrayMap.put( oid, targetValues );
 
-            for (int i = 0; i < values.length; i++) {
-                value = values[i];
-                serviceMap = getServiceMap( value );
-                serviceMap.put( oid, service );
+            for (Object targetValue : targetValues) {
+                value = targetValue;
+                serviceMap = getServiceMap(value);
+                serviceMap.put(oid, service);
             }
         } catch ( InterruptedException ie ) {
             logger.fine( "Interrupted acquiring write lock!" );
@@ -76,20 +75,20 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     }
 
     public void serviceDeleted( PublishedService service ) {
-        Object[] values = getTargetValues( service );
+        Object[] targetValues = getTargetValues( service );
         Object value;
         Map serviceMap;
-        Long oid = new Long( service.getOid() );
+        Long oid = service.getOid();
 
         Sync write = _rwlock.writeLock();
         try {
             write.acquire();
             _serviceOidToValuesArrayMap.remove( oid );
 
-            for (int i = 0; i < values.length; i++) {
-                value = values[i];
-                serviceMap = getServiceMap( value );
-                serviceMap.remove( oid );
+            for (Object targetValue : targetValues) {
+                value = targetValue;
+                serviceMap = getServiceMap(value);
+                serviceMap.remove(oid);
             }
         } catch ( InterruptedException ie ) {
             logger.fine( "Interrupted acquiring write lock!" );
@@ -120,12 +119,12 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             // Don't ever cache values for a service with a to-be-determined OID
             return doGetTargetValues( service );
         } else {
-            Long oid = new Long( service.getOid() );
+            Long oid = service.getOid();
             Sync read = _rwlock.readLock();
             Sync write = _rwlock.writeLock();
             try {
                 read.acquire();
-                Object[] values = (Object[])_serviceOidToValuesArrayMap.get( oid );
+                Object[] values = _serviceOidToValuesArrayMap.get( oid );
                 if ( values == null ) {
                     values = doGetTargetValues( service );
                     read.release();
@@ -150,25 +149,24 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     protected boolean matches( PublishedService candidateService, PublishedService matchService ) {
         // Get the match values for this service
-        Set candidateValues = new HashSet( Arrays.asList( getTargetValues( candidateService ) ) );
-        Set matchValues = new HashSet( Arrays.asList( getTargetValues( matchService ) ) );
+        Set<Object> candidateValues = new HashSet<Object>( Arrays.asList( getTargetValues( candidateService ) ) );
+        Set<Object> matchValues = new HashSet<Object>( Arrays.asList( getTargetValues( matchService ) ) );
 
-        for (Iterator i = candidateValues.iterator(); i.hasNext();) {
-            Object value = i.next();
-            if ( matchValues.contains( value ) ) return true;
+        for (Object value : candidateValues) {
+            if (matchValues.contains(value)) return true;
         }
 
         return false;
     }
 
-    private Map getServiceMap( Object value ) {
+    private Map<Long, PublishedService> getServiceMap( Object value ) {
         Sync read = _rwlock.readLock();
         Sync write = _rwlock.writeLock();
         try {
             read.acquire();
-            Map serviceMap = (Map)_valueToServiceMapMap.get(value);
+            Map<Long, PublishedService> serviceMap = _valueToServiceMapMap.get(value);
             if ( serviceMap == null ) {
-                serviceMap = new HashMap();
+                serviceMap = new HashMap<Long, PublishedService>();
                 read.release();
                 write.acquire();
                 _valueToServiceMapMap.put( value, serviceMap );
@@ -184,12 +182,12 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         }
     }
 
-    public Set resolve( Message request, Set serviceSubset ) throws ServiceResolutionException {
+    public Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }
 
-    Set resolve(Object value, Set serviceSubset) throws ServiceResolutionException {
+    Set<PublishedService> resolve(Object value, Set serviceSubset) throws ServiceResolutionException {
         /*if (value instanceof String) {
             String s = (String)value;
             if (s.length() > getMaxLength()) {
@@ -197,36 +195,33 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
                 value = s;
             }
         }*/
-        Map serviceMap = getServiceMap( value );
+        Map<Long, PublishedService> serviceMap = getServiceMap( value );
 
-        if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.EMPTY_SET;
+        if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.emptySet();
 
-        Set resultSet = null;
+        Set<PublishedService> resultSet = null;
         Object[] targetValues;
 
-        for (Iterator i = serviceMap.keySet().iterator(); i.hasNext();) {
-            Long oid = (Long)i.next();
-            PublishedService service = (PublishedService)serviceMap.get(oid);
-            if ( serviceSubset.contains( service ) ) {
+        for (Long oid : serviceMap.keySet()) {
+            PublishedService service = serviceMap.get(oid);
+            if (serviceSubset.contains(service)) {
                 targetValues = getTargetValues(service);
-                Object targetValue;
-                for ( int j = 0; j < targetValues.length; j++ ) {
-                    targetValue = targetValues[j];
-                    if ( targetValue != null && targetValue.equals(value) ) {
-                        if ( resultSet == null ) resultSet = new HashSet();
+                for (Object targetValue : targetValues) {
+                    if (targetValue != null && targetValue.equals(value)) {
+                        if (resultSet == null) resultSet = new HashSet<PublishedService>();
                         resultSet.add(service);
                     }
                 }
             }
         }
 
-        if ( resultSet == null ) resultSet = Collections.EMPTY_SET;
+        if ( resultSet == null ) resultSet = Collections.emptySet();
 
         return resultSet;
     }
 
-    private final Map _valueToServiceMapMap = new HashMap();
-    private final Map _serviceOidToValuesArrayMap = new HashMap();
+    private final Map<Object, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<Object, Map<Long, PublishedService>>();
+    private final Map<Long, Object[]> _serviceOidToValuesArrayMap = new HashMap<Long, Object[]>();
     private final ReadWriteLock _rwlock = new ReentrantWriterPreferenceReadWriteLock();
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

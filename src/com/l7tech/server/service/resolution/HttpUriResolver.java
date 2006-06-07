@@ -35,7 +35,10 @@ public class HttpUriResolver extends NameValueServiceResolver {
         return new String[] {uri};
     }
 
-    public Set resolve(Message request, Set serviceSubset) throws ServiceResolutionException {
+    public Set<PublishedService> resolve(Message request,
+                                         Set<PublishedService> serviceSubset)
+            throws ServiceResolutionException
+    {
         // since this only applies to http messages, we dont want to narrow down subset if msg is not http
         boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
         if (notHttp) {
@@ -48,7 +51,7 @@ public class HttpUriResolver extends NameValueServiceResolver {
     protected Object getRequestValue(Message request) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) return null;
-        String originalUrl = null;
+        String originalUrl;
         try {
             originalUrl = httpReqKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
         } catch (IOException e) {

@@ -3,27 +3,27 @@
  */
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.message.SoapKnob;
-import com.l7tech.common.message.TcpKnob;
+import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.common.RequestId;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
-import com.l7tech.common.RequestId;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.common.message.SoapKnob;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
-import java.net.MalformedURLException;
 
 /**
  * @author alex
@@ -38,23 +38,21 @@ public class ServerVariables {
     private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
 
-    private static Variable getVar(String name) {
-        // Try simple name first
+    static Variable getVariable(String name) {
         final String lname = name.toLowerCase();
         Variable var = varsByName.get(lname);
-        if (var == null) {
-            // Try prefixed name
-            int pos = -1;
-            do {
-                pos = lname.indexOf(".", pos+1);
-                String tryname = pos < 0 ? lname : lname.substring(0,pos);
-                var = varsByPrefix.get(tryname);
-                if (var != null) break;
-            } while (pos > 0);
-        }
-        return var;
-    }
+        if (var != null) return var;
 
+        int pos = lname.length();
+        do {
+            String tryname = lname.substring(0, pos);
+            var = varsByPrefix.get(tryname);
+            if (var != null) return var;
+            pos = lname.lastIndexOf(".", pos-1);
+        } while (pos > 0);
+
+        return null;
+    }
 
     private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) {
         // TODO what about response headers?
@@ -70,7 +68,7 @@ public class ServerVariables {
 
 
     public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
-        Variable var = getVar(name);
+        Variable var = getVariable(name);
         if (var instanceof SettableVariable) {
             SettableVariable sv = (SettableVariable)var;
             sv.set(name, value, context);
@@ -82,7 +80,7 @@ public class ServerVariables {
     }
 
     public static Object get(String name, PolicyEnforcementContext context) throws NoSuchVariableException {
-        Variable var = getVar(name);
+        Variable var = getVariable(name);
 
         if (var == null) throw new NoSuchVariableException(name);
 

@@ -19,7 +19,19 @@ public final class Background {
     private Background() {
     }
 
+    /**
+     * Schedule the task for repeated execution after the specified delay, every period.
+     * @see Timer#schedule(java.util.TimerTask, long, long) 
+     */
     public static void schedule(TimerTask timerTask, long delay, long period) {
         timer.schedule(timerTask, delay, period);
+    }
+
+    /**
+     * Schedule the task for one-time execution after the specified delay.
+     * @see Timer#schedule(java.util.TimerTask, long)
+     */
+    public static void schedule(TimerTask task, long delay) {
+        timer.schedule(task, delay);
     }
 }

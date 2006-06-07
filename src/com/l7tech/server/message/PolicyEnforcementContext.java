@@ -286,7 +286,13 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return incrementedCounters;
     }
 
+    /**
+     * @param name the name of the variable to set.  if null, do nothing.
+     * @param value may be null.
+     * @throws VariableNotSettableException if the variable is known, but not settable.
+     */
     public void setVariable(String name, Object value) throws VariableNotSettableException {
+        if (name == null) return;
         if (BuiltinVariables.isSupported(name)) {
             try {
                 ServerVariables.set(name, value, this);

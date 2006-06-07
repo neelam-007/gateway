@@ -13,14 +13,14 @@ import java.util.Map;
  * @author emil
  * @version Feb 17, 2005
  */
-public class EntityManagerStub implements EntityManager {
+public class EntityManagerStub<ET extends Entity> implements EntityManager<ET> {
     /**
          * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
          *
          * @return A <code>Collection</code> of EntityHeader objects.
          */
-    public Collection findAllHeaders() throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Collection<EntityHeader> findAllHeaders() throws FindException {
+        return null;
     }
 
     /**
@@ -28,8 +28,8 @@ public class EntityManagerStub implements EntityManager {
          *
          * @return A <code>Collection</code> of EntityHeader objects.
          */
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
+        return null;
     }
 
     /**
@@ -37,8 +37,8 @@ public class EntityManagerStub implements EntityManager {
          *
          * @return A <code>Collection</code> of Entity objects.
          */
-    public Collection findAll() throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Collection<ET> findAll() throws FindException {
+        return null;
     }
 
     /**
@@ -46,17 +46,16 @@ public class EntityManagerStub implements EntityManager {
          *
          * @return A <code>Collection</code> of EntityHeader objects.
          */
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Collection<ET> findAll(int offset, int windowSize) throws FindException {
+        return null;
     }
 
     public Integer getVersion(long oid) throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
-    public Map findVersionMap() throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
+    public Map<Long, Integer> findVersionMap() throws FindException {
+        return null;    }
 
     /**
          * Returns the {@link Entity} with the specified OID. If the entity's version was last checked more than
@@ -71,7 +70,7 @@ public class EntityManagerStub implements EntityManager {
          * @throws com.l7tech.objectmodel.EntityManager.CacheVeto
          *          thrown by an implementor
          */
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public ET getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+        return null;
     }
 }

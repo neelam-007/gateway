@@ -5,9 +5,9 @@
 
 package com.l7tech.server.policy;
 
-import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.policy.PolicyFactory;
+import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
@@ -23,22 +23,10 @@ import java.lang.reflect.Constructor;
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
  * @author alex
  */
-public class ServerPolicyFactory extends PolicyFactory implements ApplicationContextAware {
+public class ServerPolicyFactory implements ApplicationContextAware {
     private ApplicationContext applicationContext;
 
-    public ServerAssertion makeServerPolicy(Assertion rootAssertion) throws ServerPolicyException {
-        return (ServerAssertion)makeSpecificPolicy(rootAssertion);
-    }
-
-    protected String getProductRootPackageName() {
-        return "com.l7tech.server.policy.assertion";
-    }
-
-    protected String getProductClassnamePrefix() {
-        return "Server";
-    }
-
-    protected Object makeSpecificPolicy(Assertion genericAssertion) throws ServerPolicyException {
+    public ServerAssertion makeServerAssertion(Assertion genericAssertion) throws ServerPolicyException {
         try {
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
@@ -50,12 +38,18 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
             if (genericAssertion instanceof CommentAssertion) return null;
 
             Class genericAssertionClass = genericAssertion.getClass();
-            Class specificAssertionClass = resolveProductClass(genericAssertionClass);
-            Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[]{genericAssertionClass, ApplicationContext.class});
-            if (ctor != null) {
-                return ctor.newInstance(new Object[]{genericAssertion, applicationContext});
-            }
-            return getConstructor(genericAssertionClass).newInstance(new Object[]{genericAssertion});
+            String productClassname = PolicyFactoryUtil.getProductClassname(genericAssertionClass, "com.l7tech.server.policy.assertion", "Server");
+            Class specificAssertionClass = Class.forName(productClassname);
+
+            if (!ServerAssertion.class.isAssignableFrom(specificAssertionClass))
+                throw new ServerPolicyException(genericAssertion, productClassname + " is not a ServerAssertion");
+
+            Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] {genericAssertionClass, ApplicationContext.class});
+            if (ctor != null)
+                return (ServerAssertion)ctor.newInstance(genericAssertion, applicationContext);
+
+            ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] { genericAssertionClass });
+            return (ServerAssertion)ctor.newInstance(genericAssertion);
         } catch (Exception ie) {
             throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ie);
         }
@@ -65,4 +59,5 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
       throws BeansException {
         this.applicationContext = applicationContext;
     }
+
 }

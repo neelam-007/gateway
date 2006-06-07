@@ -91,7 +91,7 @@ public class TestTrustedCertManager implements TrustedCertManager {
         throw new RuntimeException("Not implemented");
     }
 
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public TrustedCert getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
         throw new RuntimeException("Not implemented");
     }
 }

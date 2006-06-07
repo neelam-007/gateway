@@ -5,8 +5,8 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicy;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -28,7 +28,7 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class ServiceManagerStub extends ApplicationObjectSupport implements ServiceManager, InitializingBean {
-    private Map services;
+    private Map<Long, PublishedService> services;
     private static Logger logger = Logger.getLogger(ServiceManagerStub.class.getName());
     private ServiceCache serviceCache;
 
@@ -44,7 +44,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @throws FindException
      */
     public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return (PublishedService)services.get(new Long(oid));
+        return services.get(oid);
     }
 
     public Map serviceMap() {
@@ -82,30 +82,16 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     public long save(PublishedService service) throws SaveException, ServerPolicyException {
         long oid = StubDataStore.defaultStore().nextObjectId();
         service.setOid(oid);
-        Long key = new Long(oid);
-        if (services.get(key) != null) {
+        if (services.get(oid) != null) {
             throw new SaveException("Record exists, service oid= " + service.getOid());
         }
-        services.put(key, service);
+        services.put(oid, service);
         try {
             serviceCache.cache(service);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         return oid;
-    }
-
-    public int getCurrentPolicyVersion(long policyId) throws FindException {
-        throw new FindException("not implemented");
-    }
-
-    public Map getServiceVersions() throws FindException {
-        HashMap versions = new HashMap();
-        for (Iterator iterator = services.values().iterator(); iterator.hasNext();) {
-            PublishedService publishedService = (PublishedService)iterator.next();
-            versions.put(new Long(publishedService.getOid()), new Integer(1));
-        }
-        return versions;
     }
 
     public void setVisitorClassnames(String visitorClasses) {
@@ -121,11 +107,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @throws UpdateException
      */
     public void update(PublishedService service) throws UpdateException, ServerPolicyException {
-        Long key = new Long(service.getOid());
+        Long key = service.getOid();
         if (services.get(key) == null) {
             throw new UpdateException("Record missing, service oid= " + service.getOid());
         }
-        PublishedService oldService = (PublishedService)services.remove(key);
+        PublishedService oldService = services.remove(key);
         services.put(key, service);
         try {
             serviceCache.removeFromCache(oldService);
@@ -143,7 +129,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @throws DeleteException
      */
     public void delete(PublishedService service) throws DeleteException {
-        if (services.remove(new Long(service.getOid())) == null) {
+        if (services.remove(service.getOid()) == null) {
             throw new DeleteException("Could not find service oid= " + service.getOid());
         }
         try {
@@ -153,7 +139,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         }
     }
 
-    public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
+    public ServerPolicy getServerPolicy(long serviceOid) throws FindException {
         try {
             return serviceCache.getServerPolicy(serviceOid);
         } catch (InterruptedException e) {
@@ -173,7 +159,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         }
     }
 
-    public Collection getAllServiceStatistics() throws FindException {
+    public Collection<ServiceStatistics> getAllServiceStatistics() throws FindException {
          try {
             return serviceCache.getAllServiceStatistics();
         } catch (InterruptedException e) {
@@ -199,12 +185,10 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection findAllHeaders() throws FindException {
-        Collection list = new ArrayList();
-        for (Iterator i =
-          services.keySet().iterator(); i.hasNext();) {
-            Long key = (Long)i.next();
-            list.add(fromService((PublishedService)services.get(key)));
+    public Collection<EntityHeader> findAllHeaders() throws FindException {
+        Collection<EntityHeader> list = new ArrayList<EntityHeader>();
+        for (Long key : services.keySet()) {
+            list.add(fromService(services.get(key)));
         }
         return list;
     }
@@ -217,7 +201,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        Collection list = new ArrayList();
+        Collection<EntityHeader> list = new ArrayList<EntityHeader>();
         int index = 0;
         int count = 0;
         for (Iterator i =
@@ -225,7 +209,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
             Long key = (Long)i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(fromService((PublishedService)services.get(key)));
+                list.add(fromService(services.get(key)));
                 count++;
             }
         }
@@ -239,11 +223,9 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * 
      * @return A <code>Collection</code> of Entity objects.
      */
-    public Collection findAll() throws FindException {
-        Collection list = new ArrayList();
-        for (Iterator i =
-          services.keySet().iterator(); i.hasNext();) {
-            Long key = (Long)i.next();
+    public Collection<PublishedService> findAll() throws FindException {
+        Collection<PublishedService> list = new ArrayList<PublishedService>();
+        for (Long key : services.keySet()) {
             list.add(services.get(key));
         }
         return list;
@@ -258,7 +240,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll(int offset, int windowSize) throws FindException {
-        Collection list = new ArrayList();
+        Collection<PublishedService> list = new ArrayList<PublishedService>();
         int index = 0;
         int count = 0;
         for (Iterator i =
@@ -274,20 +256,20 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     }
 
     public Integer getVersion( long oid ) throws FindException {
-        return new Integer(((PublishedService)services.get(new Long(oid))).getVersion());
+        return services.get(oid).getVersion();
     }
 
-    public Map findVersionMap() throws FindException {
-        Map versions = new HashMap();
-        for ( Iterator i = services.keySet().iterator(); i.hasNext(); ) {
-            Long oid = (Long) i.next();
+    public Map<Long, Integer> findVersionMap() throws FindException {
+        Map<Long, Integer> versions = new HashMap<Long, Integer>();
+        for (Object o : services.keySet()) {
+            Long oid = (Long) o;
             Integer version = getVersion(oid.longValue());
-            versions.put(oid,version);
+            versions.put(oid, version);
         }
         return versions;
     }
 
-    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+    public PublishedService getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
         return findByPrimaryKey(o);
     }
 
@@ -310,10 +292,8 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
                 logger.finest("cache already built (?)");
             } else {
                 logger.finest("building service cache");
-                Collection services = findAll();
-                PublishedService service;
-                for (Iterator i = services.iterator(); i.hasNext();) {
-                    service = (PublishedService)i.next();
+                Collection<PublishedService> services = findAll();
+                for (PublishedService service : services) {
                     try {
                         serviceCache.cache(service);
                     } catch (ServerPolicyException e) {

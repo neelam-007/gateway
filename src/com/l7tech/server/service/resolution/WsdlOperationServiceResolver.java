@@ -23,7 +23,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
         if (!service.isSoap()) {
             return new Object[0];
         }
-        List values = new ArrayList(2);
+        List<String> values = new ArrayList<String>(2);
         //int max = getMaxLength();
         try {
             Wsdl wsdl = service.parsedWsdl();
@@ -53,7 +53,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
      * @return a Set containing distinct strings
      */
     public Set getDistinctParameters(PublishedService candidateService) {
-        Set out = new HashSet();
+        Set<String> out = new HashSet<String>();
         // non soap services do not have those parameters
         if (!candidateService.isSoap()) {
             out.add(null);

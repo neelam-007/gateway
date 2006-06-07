@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * Abstract manager functionality for {@link PersistentGroup} instances
  * @author alex
  */
-public abstract class PersistentGroupManager extends HibernateEntityManager implements GroupManager {
+public abstract class PersistentGroupManager extends HibernateEntityManager<PersistentGroup> implements GroupManager {
     private final String HQL_DELETE_BY_PROVIDEROID =
             "FROM grp IN CLASS " + getImpClass().getName() +
                     " WHERE grp.providerId = ?";
@@ -136,13 +136,13 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             searchCriteria.add(Restrictions.ilike("name", searchString));
             addFindAllCriteria(searchCriteria);
             List results = searchCriteria.list();
-            List headers = new ArrayList();
-            for (Iterator i = results.iterator(); i.hasNext();) {
-                PersistentGroup group = (PersistentGroup)i.next();
+            List<EntityHeader> headers = new ArrayList<EntityHeader>();
+            for (Object result : results) {
+                PersistentGroup group = (PersistentGroup) result;
                 headers.add(new EntityHeader(group.getUniqueIdentifier(),
-                  EntityType.GROUP,
-                  group.getName(),
-                  group.getDescription()));
+                        EntityType.GROUP,
+                        group.getName(),
+                        group.getDescription()));
             }
             return Collections.unmodifiableList(headers);
         } catch (HibernateException e) {
@@ -164,10 +164,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             // it is not allowed to delete the admin group
             PersistentGroup pgroup = cast(group);
             preDelete(pgroup);
-            Set userHeaders = getUserHeaders(pgroup);
+            Set<EntityHeader> userHeaders = getUserHeaders(pgroup);
             Session s = getSession();
-            for (Iterator i = userHeaders.iterator(); i.hasNext();) {
-                User u = getUserManager().headerToUser((EntityHeader)i.next());
+            for (Object userHeader : userHeaders) {
+                User u = getUserManager().headerToUser((EntityHeader) userHeader);
                 deleteMembership(s, pgroup, u);
             }
             s.delete(group);
@@ -268,7 +268,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         return save(group, null);
     }
 
-    public String save(Group group, Set userHeaders) throws SaveException {
+    public String save(Group group, Set<EntityHeader> userHeaders) throws SaveException {
         try {
             // check that no existing group have same name
             Group existingGrp;
@@ -308,7 +308,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         update(group, null);
     }
 
-    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
+    public void update(Group group, Set<EntityHeader> userHeaders) throws UpdateException, ObjectNotFoundException {
         PersistentGroup imp = cast(group);
 
         try {
@@ -368,12 +368,12 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         return true;
     }
 
-    public void addUsers(Group group, Set users) throws FindException, UpdateException {
+    public void addUsers(Group group, Set<User> users) throws FindException, UpdateException {
         PersistentGroup pgroup = cast(group);
         try {
             Session s = getSession();
-            for (Iterator i = users.iterator(); i.hasNext();) {
-                PersistentUser user = (PersistentUser)i.next();
+            for (User user1 : users) {
+                PersistentUser user = (PersistentUser) user1;
                 s.save(newMembership(pgroup, user));
             }
         } catch (HibernateException e) {
@@ -381,12 +381,12 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         }
     }
 
-    public void removeUsers(Group group, Set users) throws FindException, UpdateException {
+    public void removeUsers(Group group, Set<User> users) throws FindException, UpdateException {
         PersistentGroup pgroup = cast(group);
         try {
             Session s = getSession();
-            for (Iterator i = users.iterator(); i.hasNext();) {
-                PersistentUser user = (PersistentUser)i.next();
+            for (User user1 : users) {
+                PersistentUser user = (PersistentUser) user1;
                 deleteMembership(s, pgroup, user);
             }
         } catch (HibernateException e) {
@@ -418,12 +418,12 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
      */
     protected abstract void addMembershipCriteria(Criteria crit, Group group, Identity identity);
 
-    public void addUser(User user, Set groups) throws FindException, UpdateException {
+    public void addUser(User user, Set<Group> groups) throws FindException, UpdateException {
         PersistentUser puser = getUserManager().cast(user);
         try {
             Session s = getSession();
-            for (Iterator i = groups.iterator(); i.hasNext();) {
-                PersistentGroup group = (PersistentGroup)i.next();
+            for (Group group1 : groups) {
+                PersistentGroup group = (PersistentGroup) group1;
                 s.save(newMembership(group, puser));
             }
         } catch (HibernateException e) {
@@ -435,12 +435,12 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         return (PersistentUserManager)identityProvider.getUserManager();
     }
 
-    public void removeUser(User user, Set groups) throws FindException, UpdateException {
+    public void removeUser(User user, Set<Group> groups) throws FindException, UpdateException {
         PersistentUser puser = getUserManager().cast(user);
         try {
             Session s = getSession();
-            for (Iterator i = groups.iterator(); i.hasNext();) {
-                PersistentGroup group = (PersistentGroup)i.next();
+            for (Group group1 : groups) {
+                PersistentGroup group = (PersistentGroup) group1;
                 deleteMembership(s, group, puser);
             }
         } catch (HibernateException e) {
@@ -471,11 +471,11 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         }
     }
 
-    public Set getGroupHeaders(User user) throws FindException {
+    public Set<EntityHeader> getGroupHeaders(User user) throws FindException {
         return getGroupHeaders(user.getUniqueIdentifier());
     }
 
-    public Set getGroupHeaders(String userId) throws FindException {
+    public Set<EntityHeader> getGroupHeaders(String userId) throws FindException {
         try {
             return doGetGroupHeaders(userId);
         } catch (HibernateException he) {
@@ -484,24 +484,23 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     }
 
-    public void setGroupHeaders(User user, Set groupHeaders) throws FindException, UpdateException {
+    public void setGroupHeaders(User user, Set<EntityHeader> groupHeaders) throws FindException, UpdateException {
         setGroupHeaders(user.getUniqueIdentifier(), groupHeaders);
     }
 
-    public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
+    public void setGroupHeaders(String userId, Set<EntityHeader> groupHeaders) throws FindException, UpdateException {
         if (groupHeaders == null) return;
         try {
             Session s = getSession();
 
-            Set newGids = headersToIds(groupHeaders);
-            Set existingGids = headersToIds(doGetGroupHeaders(userId));
+            Set<String> newGids = headersToIds(groupHeaders);
+            Set<String> existingGids = headersToIds(doGetGroupHeaders(userId));
 
             GroupMembership gm;
             User thisUser = getUserManager().findByPrimaryKey(userId);
 
             // Check for new memberships
-            for (Iterator j = newGids.iterator(); j.hasNext();) {
-                String newGid = (String)j.next();
+            for (String newGid : newGids) {
                 if (!existingGids.contains(newGid)) {
                     PersistentGroup newGroup = cast(findByPrimaryKey(newGid));
                     gm = newMembership(newGroup, thisUser);
@@ -510,8 +509,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
 
             // Check for removed memberships
-            for (Iterator i = existingGids.iterator(); i.hasNext();) {
-                String existingGid = (String)i.next();
+            for (String existingGid : existingGids) {
                 if (!newGids.contains(existingGid)) {
                     Group oldGroup = findByPrimaryKey(existingGid);
                     if (Group.ADMIN_GROUP_NAME.equals(oldGroup.getName())) {
@@ -531,11 +529,11 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     }
 
-    public Set getUserHeaders(Group group) throws FindException {
+    public Set<EntityHeader> getUserHeaders(Group group) throws FindException {
         return getUserHeaders(group.getUniqueIdentifier());
     }
 
-    public Set getUserHeaders(String groupId) throws FindException {
+    public Set<EntityHeader> getUserHeaders(String groupId) throws FindException {
         try {
             return doGetUserHeaders(groupId);
         } catch (HibernateException he) {
@@ -543,8 +541,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         }
     }
 
-    private Set doGetUserHeaders(String groupId) throws HibernateException {
-        Set headers = new HashSet();
+    private Set<EntityHeader> doGetUserHeaders(String groupId) throws HibernateException {
+        Set<EntityHeader> headers = new HashSet<EntityHeader>();
         Session s = getSession();
         Query query = s.createQuery(HQL_GETMEMBERS);
         query.setString(0, groupId);
@@ -555,8 +553,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         return headers;
     }
 
-    private Set doGetGroupHeaders(String userId) throws HibernateException {
-        Set headers = new HashSet();
+    private Set<EntityHeader> doGetGroupHeaders(String userId) throws HibernateException {
+        Set<EntityHeader> headers = new HashSet<EntityHeader>();
         Session s = getSession();
         Query query = s.createQuery(HQL_GETGROUPS);
         query.setString(0, userId);
@@ -567,26 +565,25 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         return headers;
     }
 
-    public void setUserHeaders(Group group, Set groupHeaders) throws FindException, UpdateException {
+    public void setUserHeaders(Group group, Set<EntityHeader> groupHeaders) throws FindException, UpdateException {
         setUserHeaders(group.getUniqueIdentifier(), groupHeaders);
     }
 
-    private Set headersToIds(Set headers) {
-        Set uids = new HashSet();
-        for (Iterator i = headers.iterator(); i.hasNext();) {
-            EntityHeader header = (EntityHeader)i.next();
+    private Set<String> headersToIds(Set<EntityHeader> headers) {
+        Set<String> uids = new HashSet<String>();
+        for (EntityHeader header : headers) {
             uids.add(header.getStrId());
         }
         return uids;
     }
 
-    public void setUserHeaders(String groupId, Set userHeaders) throws FindException, UpdateException {
+    public void setUserHeaders(String groupId, Set<EntityHeader> userHeaders) throws FindException, UpdateException {
         if (userHeaders == null) return;
         try {
             Session s = getSession();
 
-            Set newUids = headersToIds(userHeaders);
-            Set existingUids = headersToIds(doGetUserHeaders(groupId));
+            Set<String> newUids = headersToIds(userHeaders);
+            Set<String> existingUids = headersToIds(doGetUserHeaders(groupId));
 
             Group thisGroup = findByPrimaryKey(groupId);
             if (Group.ADMIN_GROUP_NAME.equals(thisGroup.getName()) &&
@@ -597,8 +594,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
 
             // Check for new memberships
-            for (Iterator j = newUids.iterator(); j.hasNext();) {
-                String newUid = (String)j.next();
+            for (String newUid : newUids) {
                 if (!existingUids.contains(newUid)) {
                     User newUser = getUserManager().findByPrimaryKey(newUid);
                     s.save(newMembership(thisGroup, newUser));
@@ -606,8 +602,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
 
             // Check for removed memberships
-            for (Iterator i = existingUids.iterator(); i.hasNext();) {
-                String existingUid = (String)i.next();
+            for (String existingUid : existingUids) {
                 if (!newUids.contains(existingUid)) {
                     User oldUser = getUserManager().findByPrimaryKey(existingUid);
                     deleteMembership(s, thisGroup, oldUser);

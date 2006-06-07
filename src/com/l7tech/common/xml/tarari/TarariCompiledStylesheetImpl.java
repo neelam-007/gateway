@@ -14,10 +14,12 @@ import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.xslt11.Stylesheet;
 import com.tarari.xml.xslt11.parser.XsltParseException;
 import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.Iterator;
@@ -39,12 +41,12 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
     /**
      * Wrap the specified Tarari Stylesheet instance.
      *
-     * @param xslBytes   the stylesheet to compile.  Must not be null.
-     * @throws ParseException  if the specified stylesheet bytes could not be compiled.
+     * @param stylesheet      the stylesheet to compile.  Must not be null.
+     * @throws ParseException if the specified stylesheet bytes could not be compiled.
      */
-    TarariCompiledStylesheetImpl(byte[] xslBytes) throws ParseException {
+    TarariCompiledStylesheetImpl(String stylesheet) throws ParseException {
         try {
-            master = Stylesheet.create(new XmlSource(xslBytes));
+            master = Stylesheet.create(new XmlSource(new InputSource(new StringReader(stylesheet))));
         } catch (XsltParseException e) {
             throw (ParseException)new ParseException("Unable to parse XSLT: " + ExceptionUtils.getMessage(e), 0).initCause(e);
         } catch (IOException e) {

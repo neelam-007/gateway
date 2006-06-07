@@ -9,7 +9,6 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.Messages;
-import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -17,42 +16,38 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Set;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
  * Server side implementation of the SqlAttackAssertion all-in-one convenience assertion.
  * Internally this is implemented, essentially, as just zero or more regexp assertions.
  */
-public class ServerSqlAttackAssertion extends AbstractServerAssertion implements ServerAssertion {
+public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackAssertion> implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerSqlAttackAssertion.class.getName());
     private final Auditor auditor;
-    private final ArrayList children = new ArrayList();
+    private final ArrayList<ServerAssertion> children = new ArrayList<ServerAssertion>();
 
-    public ServerSqlAttackAssertion(SqlAttackAssertion data, ApplicationContext springContext) {
-        super(data);
+    public ServerSqlAttackAssertion(SqlAttackAssertion assertion, ApplicationContext springContext) {
+        super(assertion);
         auditor = new Auditor(this, springContext, logger);
         boolean abort = false;
 
-        PolicyFactory pf = (ServerPolicyFactory)springContext.getBean("policyFactory");
-        if (pf == null) {
+        ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)springContext.getBean("policyFactory");
+        if (serverPolicyFactory == null) {
             auditor.logAndAudit(Messages.EXCEPTION_SEVERE, new String[] {"No policyFactory bean was found"});
             abort = true;
-        } else if (!(pf instanceof ServerPolicyFactory)) {
-            auditor.logAndAudit(Messages.EXCEPTION_SEVERE, new String[] {"policyFactory bean was not a ServerPolicyFactory"});
-            abort = true;
         } else {
-            ServerPolicyFactory policyFactory = (ServerPolicyFactory)pf;
-
             // Set up children to do all the actual work
-            Set prots = data.getProtections();
+            Set prots = assertion.getProtections();
+            //noinspection ForLoopReplaceableByForEach
             for (Iterator i = prots.iterator(); i.hasNext();) {
                 String prot = (String)i.next();
                 String regex = SqlAttackAssertion.getProtectionRegex(prot);
                 if (regex == null) {
                     auditor.logAndAudit(AssertionMessages.SQLATTACK_UNRECOGNIZED_PROTECTION,
-                                        new String[] { prot });
+                            new String[]{prot});
                     abort = true;
                     break;
                 }
@@ -81,8 +76,7 @@ public class ServerSqlAttackAssertion extends AbstractServerAssertion implements
             return AssertionStatus.FAILED;
         }
 
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            ServerAssertion serverAssertion = (ServerAssertion)i.next();
+        for (ServerAssertion serverAssertion : children) {
             AssertionStatus result = serverAssertion.checkRequest(context);
             if (AssertionStatus.NONE != result) {
                 auditor.logAndAudit(AssertionMessages.SQLATTACK_REQUEST_REJECTED);

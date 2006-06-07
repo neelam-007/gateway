@@ -43,30 +43,12 @@ public class BuiltinVariables {
 
     public static boolean isSettable(String name) {
         VariableMetadata metadata = getMetadata(name);
-        if (metadata == null) return false;
-        return metadata.isSettable();
+        return metadata != null && metadata.isSettable();
     }
 
     public static boolean isMultivalued(String name) {
         VariableMetadata meta = getMetadata(name);
-        if (meta == null) return false;
-        return meta.isMultivalued();
-    }
-
-    public static VariableMetadata getMetadata(String name) {
-        // Try simple name first
-        final String lname = name.toLowerCase();
-        VariableMetadata meta = (VariableMetadata)metadataByName.get(lname);
-        if (meta == null) {
-            // Try prefixed name
-            int pos = lname.indexOf(".");
-            while (pos > 0) {
-                meta = (VariableMetadata)metadataByName.get(lname.substring(0,pos));
-                if (meta != null) break;
-                pos = lname.indexOf(".", pos+1);
-            }
-        }
-        return meta;
+        return meta != null && meta.isMultivalued();
     }
 
     public static Map getAllMetadata() {
@@ -100,13 +82,29 @@ public class BuiltinVariables {
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
 
         new VariableMetadata("response.http.status", false, false, null, false),
-        new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, true)
+        new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false)
     };
 
     static {
         for (int i = 0; i < VARS.length; i++) {
             metadataByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
         }
+    }
+
+    public static VariableMetadata getMetadata(String name) {
+        final String lname = name.toLowerCase();
+        VariableMetadata var = (VariableMetadata)metadataByName.get(lname);
+        if (var != null) return var;
+
+        int pos = lname.length();
+        do {
+            String tryname = lname.substring(0, pos);
+            var = (VariableMetadata)metadataByName.get(tryname);
+            if (var != null) return var;
+            pos = lname.lastIndexOf(".", pos-1);
+        } while (pos > 0);
+
+        return null;
     }
 
     private static final String[] SINGLEOBJECT = {
@@ -121,4 +119,5 @@ public class BuiltinVariables {
         "request.http.clientCert.chain",
         "ssg.cert.chain",
     };
+
 }

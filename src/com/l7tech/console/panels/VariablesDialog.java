@@ -7,9 +7,9 @@ import com.l7tech.console.util.treetable.AbstractTreeTableModel;
 import com.l7tech.console.util.treetable.JTreeTable;
 import com.l7tech.console.util.treetable.TreeTableModel;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -80,19 +80,7 @@ public class VariablesDialog extends JDialog {
             policyVars = null;
         } else {
             // Find variables set by this assertion's predecessors
-            Assertion ancestor = assertion.getPath()[0];
-            Map vars = new TreeMap();
-            for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
-                Assertion ass = (Assertion) i.next();
-                if (ass == assertion) break; // Can't use our own variables or those of any subsequent assertion
-                if (ass instanceof SetsVariables) {
-                    SetsVariables sv = (SetsVariables)ass;
-                    for (int j = 0; j < sv.getVariablesSet().length; j++) {
-                        final VariableMetadata meta = sv.getVariablesSet()[j];
-                        vars.put(meta.getName(), meta);
-                    }
-                }
-            }
+            Map vars = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
 
             java.util.List pv = new ArrayList();
             for (Iterator i = vars.keySet().iterator(); i.hasNext();) {

@@ -2,10 +2,13 @@ package com.l7tech.proxy.policy;
 
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
+import java.util.Arrays;
 
 /**
  * @author alex
@@ -44,6 +47,12 @@ public class ClientPolicyFactoryTest extends TestCase {
         for (int i = 0; i < everything.length; i++) {
             foo = pfac.makeClientPolicy(everything[i]);
         }
+    }
+
+    public void testComposite() throws Exception {
+        AllAssertion all = new AllAssertion(Arrays.asList(AllAssertions.BRIDGE_EVERYTHING));
+        ClientPolicyFactory pfac = ClientPolicyFactory.getInstance();
+        pfac.makeClientPolicy(all);
     }
 
     /**

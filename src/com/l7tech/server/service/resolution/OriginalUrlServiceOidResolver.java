@@ -37,11 +37,10 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
     };
 
     public OriginalUrlServiceOidResolver() {
-        List compiled = new ArrayList();
+        List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {
-            for (int i = 0; i < REGEXES.length; i++) {
-                String s = REGEXES[i];
+            for (String s : REGEXES) {
                 compiled.add(Pattern.compile(s));
             }
         } catch (Exception e) {
@@ -50,7 +49,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
             compiled.clear();
         }
 
-        regexPatterns = (Pattern[])(compiled.isEmpty() ? null : compiled.toArray(new Pattern[0]));
+        regexPatterns = compiled.isEmpty() ? null : compiled.toArray(new Pattern[0]);
     }
 
     protected Object[] doGetTargetValues(PublishedService service) {
@@ -69,7 +68,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         }
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) return null;
-        String originalUrl = null;
+        String originalUrl;
         try {
             originalUrl = httpReqKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
         } catch (IOException e) {
@@ -99,12 +98,10 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
     }
 
     private Object findMatch(String originalUrl) {
-        for (int i = 0; i < regexPatterns.length; i++) {
-            Pattern regexPattern = regexPatterns[i];
+        for (Pattern regexPattern : regexPatterns) {
             Matcher matcher = regexPattern.matcher(originalUrl);
             if (matcher.find() && matcher.groupCount() == 1) {
-                String matched = matcher.group(1);
-                return matched;
+                return matcher.group(1);
             }
         }
         return null;
@@ -118,7 +115,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         throw new UnsupportedOperationException();
     }
 
-    public Set resolve(Message request, Set serviceSubset) throws ServiceResolutionException {
+    public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         Object value = getRequestValue(request);
         // special case: if the request does not follow pattern, then all services passed
         // match, the next resolver will narrow it down

@@ -2,12 +2,11 @@ package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.SampleMessage;
-import org.springframework.dao.DataAccessException;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -38,12 +37,12 @@ public class SampleMessageManagerImp extends HibernateEntityManager implements S
             }
 
             List results = crit.list();
-            ArrayList out = new ArrayList();
-            for (Iterator i = results.iterator(); i.hasNext();) {
-                SampleMessage sm = (SampleMessage)i.next();
+            ArrayList<EntityHeader> out = new ArrayList<EntityHeader>();
+            for (Object result : results) {
+                SampleMessage sm = (SampleMessage) result;
                 out.add(new EntityHeader(Long.toString(sm.getOid()), EntityType.SAMPLE_MESSAGE, sm.getName(), null));
             }
-            return (EntityHeader[])out.toArray(new EntityHeader[0]);
+            return out.toArray(new EntityHeader[0]);
         } catch (DataAccessException e) {
             throw new FindException("Couldn't find SampleMessage headers", e);
         }

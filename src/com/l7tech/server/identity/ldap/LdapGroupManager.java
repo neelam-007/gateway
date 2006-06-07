@@ -663,7 +663,7 @@ public class LdapGroupManager implements GroupManager {
         return Collections.EMPTY_MAP;
     }
 
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public Entity getCachedEntity(long o, int maxAge) throws FindException, EntityManager.CacheVeto {
         throw new UnsupportedOperationException();
     }
 

@@ -4,6 +4,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
+import com.l7tech.common.util.Closeable;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
  * Note that this knob will not be present in any message before {@link Message#isSoap} has been called on it, and even
  * then only on systems with Tarari hardware installed.
  */
-public class TarariKnob implements CloseableMessageKnob {
+public class TarariKnob implements MessageKnob, Closeable {
     private static final Logger logger = Logger.getLogger(TarariKnob.class.getName());
 
     private final Message message;

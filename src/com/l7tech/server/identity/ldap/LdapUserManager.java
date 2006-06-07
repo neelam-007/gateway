@@ -280,7 +280,7 @@ public class LdapUserManager implements UserManager {
         return Collections.EMPTY_MAP;
     }
 
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public Entity getCachedEntity(long o, int maxAge) throws FindException, EntityManager.CacheVeto {
         throw new UnsupportedOperationException();
     }
 

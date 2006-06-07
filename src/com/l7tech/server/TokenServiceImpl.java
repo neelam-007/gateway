@@ -97,7 +97,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         this.serverCert = serverCert;
         this.securityTokenResolver = securityTokenResolver;
         try {
-            this.tokenServicePolicy = policyFactory.makeServerPolicy(getGenericEnforcementPolicy());
+            this.tokenServicePolicy = policyFactory.makeServerAssertion(getGenericEnforcementPolicy());
         } catch (ServerPolicyException e) {
             throw new RuntimeException(e); // can't happen
         }

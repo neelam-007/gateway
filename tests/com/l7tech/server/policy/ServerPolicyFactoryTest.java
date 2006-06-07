@@ -59,7 +59,7 @@ public class ServerPolicyFactoryTest extends TestCase {
         ServerAssertion foo;
         Assertion[] everything = AllAssertions.GATEWAY_EVERYTHING;
         for (int i = 0; i < everything.length; i++) {
-            foo = pfac.makeServerPolicy(everything[i]);
+            foo = pfac.makeServerAssertion(everything[i]);
         }
     }
 
@@ -103,22 +103,22 @@ public class ServerPolicyFactoryTest extends TestCase {
         PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
         pp.setAuditContext(new AuditContextStub());
 
-        ServerAssertion serverAllTrue = pfac.makeServerPolicy(allTrue);
+        ServerAssertion serverAllTrue = pfac.makeServerAssertion(allTrue);
         assertTrue(serverAllTrue.checkRequest(pp) == AssertionStatus.NONE);
 
-        ServerAssertion serverAllFalse = pfac.makeServerPolicy(allFalse);
+        ServerAssertion serverAllFalse = pfac.makeServerAssertion(allFalse);
         assertTrue(serverAllFalse.checkRequest(pp) != AssertionStatus.NONE);
 
-        ServerAssertion serverSomeFalse = pfac.makeServerPolicy(someFalse);
+        ServerAssertion serverSomeFalse = pfac.makeServerAssertion(someFalse);
         assertTrue(serverSomeFalse.checkRequest(pp) != AssertionStatus.NONE);
 
-        ServerAssertion serverFalseTree = pfac.makeServerPolicy(falseTree);
+        ServerAssertion serverFalseTree = pfac.makeServerAssertion(falseTree);
         assertTrue(serverFalseTree.checkRequest(pp) != AssertionStatus.NONE);
 
-        ServerAssertion serverTrueTree = pfac.makeServerPolicy(trueTree);
+        ServerAssertion serverTrueTree = pfac.makeServerAssertion(trueTree);
         assertTrue(serverTrueTree.checkRequest(pp) == AssertionStatus.NONE);
 
-        ServerAssertion serverReal = pfac.makeServerPolicy(real);
+        ServerAssertion serverReal = pfac.makeServerAssertion(real);
     }
 
     /**
@@ -134,7 +134,7 @@ public class ServerPolicyFactoryTest extends TestCase {
         PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
         pp.setAuditContext(new AuditContextStub());
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
-        ServerAssertion serverAll = pfac.makeServerPolicy(echo);
+        ServerAssertion serverAll = pfac.makeServerAssertion(echo);
         assertTrue(((ServerCompositeAssertion)serverAll).getChildren()[0] instanceof ServerEchoRoutingAssertion);
     }
 

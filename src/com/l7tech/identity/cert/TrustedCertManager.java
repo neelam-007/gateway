@@ -20,7 +20,7 @@ import java.util.List;
  * @author alex
  * @version $Revision$
  */
-public interface TrustedCertManager extends EntityManager {
+public interface TrustedCertManager extends EntityManager<TrustedCert> {
     /**
      * Retrieves the {@link TrustedCert} with the specified oid, or null if it does not exist.
      * @param oid the oid of the {@link TrustedCert} to retrieve

@@ -17,10 +17,12 @@ public abstract class SimpleXpathAssertion
     public static final String VAR_SUFFIX_FOUND = "found";
     public static final String VAR_SUFFIX_RESULT = "result";
     public static final String VAR_SUFFIX_COUNT = "count";
+    public static final String VAR_SUFFIX_ELEMENT = "element";
 
     private transient String foundVariable;
     private transient String resultVariable;
     private transient String countVariable;
+    private transient String elementVariable;
 
     /**
      * @return the prefix to be used in front of context variable names set by the assertion
@@ -45,6 +47,7 @@ public abstract class SimpleXpathAssertion
         foundVariable = prefix + "." + VAR_SUFFIX_FOUND;
         resultVariable = prefix + "." + VAR_SUFFIX_RESULT;
         countVariable = prefix + "." + VAR_SUFFIX_COUNT;
+        elementVariable = prefix + "." + VAR_SUFFIX_ELEMENT;
     }
 
     public String foundVariable() {
@@ -62,12 +65,18 @@ public abstract class SimpleXpathAssertion
         return countVariable;
     }
 
+    public String elementVariable() {
+        if (elementVariable == null) doVarNames();
+        return elementVariable;
+    }
+
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
             // Note default prefixes are used here for property lookup purposes
             new VariableMetadata(foundVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_FOUND, false),
             new VariableMetadata(countVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_COUNT, false),
             new VariableMetadata(resultVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_RESULT, false),
+            new VariableMetadata(elementVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_ELEMENT, false),
         };
     }
 

@@ -20,7 +20,10 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public abstract class HibernateEntityManager extends HibernateDaoSupport implements EntityManager {
+public abstract class HibernateEntityManager<ET extends Entity>
+        extends HibernateDaoSupport
+        implements EntityManager<ET>
+{
     public static final String EMPTY_STRING = "";
     public static final String F_OID = "oid";
     public static final String F_VERSION = "version";
@@ -77,7 +80,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         }
     }
 
-    public Entity findEntity(long oid) throws FindException {
+    public ET findEntity(long oid) throws FindException {
         Session s = null;
         FlushMode old = null;
         try {
@@ -91,7 +94,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             if (results.size() > 1) throw new FindException("Multiple results found!");
             Object result = results.get(0);
             if (!(result instanceof Entity)) throw new FindException("Found " + result.getClass().getName() + " when looking for Entity!");
-            return (Entity)results.get(0);
+            return (ET)results.get(0);
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
         } finally {
@@ -99,8 +102,8 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         }
     }
 
-    public Map findVersionMap() throws FindException {
-        Map result = new HashMap();
+    public Map<Long,Integer> findVersionMap() throws FindException {
+        Map<Long, Integer> result = new HashMap<Long, Integer>();
         if (!Entity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
@@ -112,10 +115,10 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             Query q = s.createQuery(HQL_FIND_ALL_OIDS_AND_VERSIONS);
             List results = q.list();
             if (results.size() > 0) {
-                for (Iterator i = results.iterator(); i.hasNext();) {
-                    Object[] row = (Object[])i.next();
-                    if (row[0] instanceof Long && row[1] instanceof Integer) {
-                        result.put(row[0], row[1]);
+                for (Object result1 : results) {
+                    Object[] row = (Object[]) result1;
+                    if (row[0]instanceof Long && row[1]instanceof Integer) {
+                        result.put((Long)row[0], (Integer)row[1]);
                     } else {
                         throw new FindException("Got unexpected fields " + row[0] + " and " + row[1] + " from query!");
                     }
@@ -140,13 +143,13 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
     public abstract String getTableName();
 
-    public Collection findAllHeaders() throws FindException {
-        Collection entities = findAll();
-        List headers = new ArrayList();
-        for (Iterator i = entities.iterator(); i.hasNext();) {
-            Entity entity = (Entity)i.next();
+    public Collection<EntityHeader> findAllHeaders() throws FindException {
+        Collection<ET> entities = findAll();
+        List<EntityHeader> headers = new ArrayList<EntityHeader>();
+        for (Object entity1 : entities) {
+            Entity entity = (Entity) entity1;
             String name = null;
-            if (entity instanceof NamedEntity) name = ((NamedEntity)entity).getName();
+            if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
             if (name == null) name = "";
             final long id = entity.getOid();
             headers.add(new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING));
@@ -162,11 +165,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     protected void addFindAllCriteria(Criteria allHeadersCriteria) {
     }
 
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
-    public Collection findAll() throws FindException {
+    public Collection<ET> findAll() throws FindException {
         try {
             Session s = getSession();
             Criteria allHeadersCriteria = s.createCriteria(getImpClass());
@@ -177,7 +180,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         }
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
+    public Collection<ET> findAll(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
@@ -192,12 +195,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     }
 
     public boolean isCacheCurrent(long objectid, int maxAge) throws FindException {
-        Long oid = new Long(objectid);
         Sync read = cacheLock.readLock();
         CacheInfo cacheInfo;
         try {
             read.acquire();
-            cacheInfo = (CacheInfo)cacheInfoByOid.get(oid);
+            cacheInfo = cacheInfoByOid.get(objectid);
             read.release(); read = null;
 
             if (cacheInfo == null) return false;
@@ -221,7 +223,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         FlushMode old = null;
         try {
             read.acquire();
-            CacheInfo cinfo = (CacheInfo)cacheInfoByName.get(name);
+            CacheInfo cinfo = cacheInfoByName.get(name);
             read.release(); read = null;
 
             NamedEntity ne;
@@ -240,7 +242,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
                 }
                 ne = (NamedEntity)entities.get(0);
 
-                return (NamedEntity)checkAndCache(ne);
+                return (NamedEntity)checkAndCache((ET) ne);
             } else {
                 return (NamedEntity)freshen(cinfo, maxAge);
             }
@@ -271,15 +273,14 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      * @throws FindException
      * @throws CacheVeto
      */
-    public Entity getCachedEntity(long objectid, int maxAge) throws FindException, CacheVeto {
-        Long oid = new Long(objectid);
-        Entity entity;
+    public ET getCachedEntity(long objectid, int maxAge) throws FindException, CacheVeto {
+        ET entity;
 
         Sync read = cacheLock.readLock();
         CacheInfo cacheInfo;
         try {
             read.acquire();
-            cacheInfo = (CacheInfo)cacheInfoByOid.get(oid);
+            cacheInfo = cacheInfoByOid.get(objectid);
             read.release(); read = null;
 
             if (cacheInfo == null) {
@@ -302,7 +303,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
     }
 
-    private Entity freshen(CacheInfo cacheInfo, int maxAge) throws FindException, CacheVeto {
+    private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException, CacheVeto {
         if (cacheInfo.timestamp + maxAge < System.currentTimeMillis()) {
             // Time for a version check (getVersion() always goes to the database)
             Integer currentVersion = getVersion(cacheInfo.entity.getOid());
@@ -320,12 +321,10 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     }
 
     protected void cacheRemove(Entity thing) {
-        final Long oid = new Long(thing.getOid());
-
         Sync write = cacheLock.writeLock();
         try {
             write.acquire();
-            cacheInfoByOid.remove(oid);
+            cacheInfoByOid.remove(thing.getOid());
             if (thing instanceof NamedEntity) {
                 cacheInfoByName.remove(((NamedEntity)thing).getName());
             }
@@ -358,15 +357,15 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      */
     protected void addedToCache(Entity ent) { }
 
-    protected Entity checkAndCache(Entity thing) throws CacheVeto {
-        final Long oid = new Long(thing.getOid());
+    protected ET checkAndCache(ET thing) throws CacheVeto {
+        final Long oid = thing.getOid();
         checkCachable(thing);
 
         Sync read = cacheLock.readLock();
         Sync write = cacheLock.writeLock();
         try {
             read.acquire();
-            CacheInfo info = (CacheInfo)cacheInfoByOid.get(oid);
+            CacheInfo info = cacheInfoByOid.get(oid);
             read.release(); read = null;
 
             if (info == null) {
@@ -414,7 +413,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             s = getSession();
             beforeMode = s.getFlushMode();
             s.setFlushMode(FlushMode.NEVER);
-            return s.load(impClass, new Long(oid));
+            return s.load(impClass, Long.valueOf(oid));
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class) ||
                 ExceptionUtils.causedBy(e, ObjectDeletedException.class)) {
@@ -455,6 +454,6 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private ReadWriteLock cacheLock = new ReentrantWriterPreferenceReadWriteLock();
-    private Map cacheInfoByOid = new HashMap();
-    private Map cacheInfoByName = new HashMap();
+    private Map<Long, CacheInfo> cacheInfoByOid = new HashMap<Long, CacheInfo>();
+    private Map<String, CacheInfo> cacheInfoByName = new HashMap<String, CacheInfo>();
 }

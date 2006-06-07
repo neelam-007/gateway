@@ -3,6 +3,8 @@ package com.l7tech.policy.assertion.xml;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.UsesVariables;
@@ -96,9 +98,13 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
     public String[] getVariablesUsed() {
         if (varsUsed != null) return varsUsed;
 
-        // Try again later, in case the stylesheet hasn't been set yet
-        if (!(resourceInfo instanceof StaticResourceInfo))
+        if (resourceInfo instanceof SingleUrlResourceInfo) {
+            SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
+            return ExpandVariables.getReferencedNames(suri.getUrl());
+        } else if (!(resourceInfo instanceof StaticResourceInfo)) {
+            // Try again later, in case the stylesheet hasn't been set yet
             return new String[0];
+        }
 
         StaticResourceInfo sri = (StaticResourceInfo)resourceInfo;
         String xslSrc = sri.getDocument();

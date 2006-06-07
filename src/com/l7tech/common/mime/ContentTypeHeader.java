@@ -46,6 +46,7 @@ public class ContentTypeHeader extends MimeHeader {
 
     private String javaEncoding = null; // figured out lazy-like
     private String mimeCharset = null;
+    private static final String HTTP_DEFAULT_ENCODING = "ISO8859-1"; // See RFC2616 s3.7.1
 
     /**
      * Create a new ContentTypeHeader with the specified type, subtype, and parameters.  Currently
@@ -187,16 +188,16 @@ public class ContentTypeHeader extends MimeHeader {
      * Convert MIME charset into Java encoding.
      *
      * @return the name of the Java encoding corresponding to the charset of this content-type header,
-     *         or UTF-8 if there isn't any.  Always returns some string, never null.  The returned encoding
-     *         is not guaranteed to be meaningful on this system, however.
+     *         or {@link #HTTP_DEFAULT_ENCODING} if there isn't any.  Always returns some string, never null.
+     *         The returned encoding is not guaranteed to be meaningful on this system, however.
      */
     public String getEncoding() {
         if (javaEncoding == null) {
             this.mimeCharset = getParam("charset");
 
             if (mimeCharset == null) {
-                logger.finest("No charset value found in Content-Type header; assuming " + ENCODING);
-                javaEncoding = ENCODING;
+                logger.finest("No charset value found in Content-Type header; using " + HTTP_DEFAULT_ENCODING);
+                javaEncoding = HTTP_DEFAULT_ENCODING;
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
                 if ("UTF8".equalsIgnoreCase(tmp))

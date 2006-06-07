@@ -8,29 +8,15 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.FastXpath;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.communityschemas.CommunitySchemaManager;
-import com.l7tech.server.service.ServiceCache;
-import com.tarari.xml.XmlConfigException;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
-import com.tarari.xml.rax.schema.SchemaLoader;
-import com.tarari.xml.rax.schema.SchemaResolver;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
-import org.springframework.beans.factory.BeanFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringReader;
 import java.text.ParseException;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -52,8 +38,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
     boolean xpathChangedSinceLastCompilation = true;
-    private String[] tnss;
-    private boolean communitySchemaResolverSet = false;
     ReadWriteLock fastxpathLock = new WriterPreferenceReadWriteLock();
 
     /**
@@ -119,10 +103,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                 XPathCompiler.compile(test);
             } catch (Exception e) {
                 test[i] = "/UNUSED";
+                //noinspection unchecked
                 bad.add(expr);
                 logger.fine("Compile failed for fastxpath: " + expr);
             }
         }
+        //noinspection ForLoopReplaceableByForEach
         for (Iterator i = bad.iterator(); i.hasNext();) {
             String expr = (String)i.next();
             logger.fine("Disabling fastxpath for non-TNF expression: " + expr);
@@ -147,8 +133,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return new TarariCompiledXpath(compilableXpath, this);
     }
 
-    public TarariCompiledStylesheet compileStylesheet(byte[] xslBytes) throws ParseException {
-        return new TarariCompiledStylesheetImpl(xslBytes);
+    public TarariCompiledStylesheet compileStylesheet(String stylesheet) throws ParseException {
+        return new TarariCompiledStylesheetImpl(stylesheet);
     }
 
     public FastXpath toTarariNormalForm(String xpathToSimplify, Map namespaceMap) {
@@ -197,143 +183,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         }
     }
 
-    /**
-     * this makes a list of all community schema in the table as well as all the schemas defined in
-     * policies and makes sure the schemas loaded on the tarari card are the same. this should typically
-     * be called whenever a published service is updated or saved
-     */
-    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {
-        try {
-            fastxpathLock.writeLock().acquire();
-
-            // List schemas on card
-            ArrayList schemasOnCard = new ArrayList();
-            String[] schemas = SchemaLoader.listSchemas();
-            if (schemas != null) {
-                for (int i = 0; i < schemas.length; i++) {
-                    schemasOnCard.add(schemas[i]);
-
-                }
-            }
-
-            // List schemas that need to be there
-            ArrayList schemasInPolicyAndTable = new ArrayList();
-            CommunitySchemaManager manager = (CommunitySchemaManager)managerResolver.getBean("communitySchemaManager");
-            Collection allCommunitySchemas = manager.findAll();
-            for (Iterator iterator = allCommunitySchemas.iterator(); iterator.hasNext();) {
-                SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
-                schemasInPolicyAndTable.add(schemaEntry.getSchema());
-            }
-            ServiceCache servicesCache = (ServiceCache)managerResolver.getBean("serviceCache");
-            schemasInPolicyAndTable.addAll(servicesCache.getAllPolicySchemas());
-
-            // Record discrepencies
-            ArrayList schemasOnCardThatShouldNotBeThere = new ArrayList();
-            for (Iterator iterator = schemasOnCard.iterator(); iterator.hasNext();) {
-                String soncard = (String) iterator.next();
-                if (!schemasInPolicyAndTable.contains(soncard)) {
-                    schemasOnCardThatShouldNotBeThere.add(soncard);
-                }
-            }
-            ArrayList schemasMissingFromCard = new ArrayList();
-            for (Iterator iterator = schemasInPolicyAndTable.iterator(); iterator.hasNext();) {
-                String necessarys = (String) iterator.next();
-                if (!schemasOnCard.contains(necessarys)) {
-                    schemasMissingFromCard.add(necessarys);
-                }
-            }
-
-            // Apply necessary modifications
-            // currently, tarari's api does not allow to unload a particular schema so for now we need
-            // to unload everything and readd everything again
-            // todo, modify code when tarari's api is fixed
-            // SchemaLoader.unloadSchema();
-
-            // are there any discrepencies?
-            if (!schemasOnCardThatShouldNotBeThere.isEmpty() || !schemasMissingFromCard.isEmpty()) {
-                // everytime we load schemas, we check that the resolver is set.
-                if (!communitySchemaResolverSet) {
-                    logger.finest("setting the community schema resolver");
-                    final TarariSchemaResolver trs = manager.communitySchemaResolver();
-                    SchemaLoader.setSchemaResolver(new SchemaResolver() {
-                        public byte[] resolveSchema(String tns, String location, String baseURI) {
-                            return trs.resolveSchema(tns, location, baseURI);
-                        }
-                    });
-                    communitySchemaResolverSet = true;
-                }
-
-                // asper note above, we need to remove everything for now
-                if (!schemasOnCard.isEmpty()) {
-                    logger.fine("removing schemas from card");
-                    SchemaLoader.unloadAllSchemas();
-                }
-
-                for (Iterator iterator = schemasInPolicyAndTable.iterator(); iterator.hasNext();) {
-                    String s = (String) iterator.next();
-                    logger.finest("loading schema to card " + s);
-                    try {
-                        SchemaLoader.loadSchema(new ByteArrayInputStream(s.getBytes("UTF-8")), "");
-                    } catch (XmlConfigException e) {
-                        logger.log(Level.WARNING, "exception loading schema to tarari card. perhaps " +
-                                                  "the schema is incorrect or it refers to a targetnamespace " +
-                                                  "that is already declared in another schema", e);
-                        logger.finest("could not load schema on tarari card: " + s);
-                    }
-                }
-            } else {
-                logger.fine("schemas loaded on card are already correct");
-            }
-
-
-            // Keep track of all targetnamespace so that serverschemavalidation can check whether or not more than one
-            // schema uses the same tns
-            ArrayList allTNSs = new ArrayList();
-            for (Iterator iterator = schemasInPolicyAndTable.iterator(); iterator.hasNext();) {
-                String s = (String) iterator.next();
-                SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(s));
-                String tns = sdoc.getSchema().getTargetNamespace();
-                if (tns == null || tns.length() < 1) {
-                    logger.warning("An schema validation assertion or a global schema was " +
-                                   "published without a declared targetnamespace\n" + s);
-                } else {
-                    allTNSs.add(tns);
-                }
-            }
-            tnss = (String[])allTNSs.toArray(new String[0]);
-        } catch (InterruptedException e) {
-            logger.warning("Interrupted while waiting for Tarari schema write lock"); // probably being shut down
-            Thread.currentThread().interrupt();
-        } finally {
-            fastxpathLock.writeLock().release();
-        }
-    }
-
     public Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri) {
-        try {
-            fastxpathLock.readLock().acquire();
-            if (tnss == null) {
-                // shouldn't be possible -- supposed to call updateSchemasToCard after saving new policy but before making it active
-                logger.severe("tnss not loaded");
-                return null; // fall back to software
-            }
-            int output = 0;
-            for (int i = 0; i < tnss.length; i++) {
-                String tns = tnss[i];
-                if (tns.equals(desiredTargetNamespaceUri)) {
-                    ++output;
-                }
-            }
-            if (output != 1)
-                return null; // Fall back to software
-            //noinspection UnnecessaryBoxing
-            return Boolean.valueOf(((TarariMessageContextImpl)doc).getRaxDocument().validate());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari schema read lock", e);
-        } finally {
-            fastxpathLock.readLock().release();
-        }
+        return Boolean.valueOf(((TarariMessageContextImpl)doc).getRaxDocument().validate());
     }
 
     /**
@@ -356,12 +207,14 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private Xpaths buildDefaultXpaths() {
         // Built-in stuff for isSoap etc.
         ArrayList xpaths0 = new ArrayList(TarariUtil.ISSOAP_XPATHS.length + 10);
+        //noinspection unchecked
         xpaths0.addAll(Arrays.asList(TarariUtil.ISSOAP_XPATHS));
         int ursStart = xpaths0.size() + 1; // 1-based arrays
         int[] uriIndices = new int[SoapUtil.ENVELOPE_URIS.size()+1];
         for (int i = 0; i < SoapUtil.ENVELOPE_URIS.size(); i++) {
             String uri = (String)SoapUtil.ENVELOPE_URIS.get(i);
             String nsXpath = TarariUtil.NS_XPATH_PREFIX + uri + TarariUtil.NS_XPATH_SUFFIX;
+            //noinspection unchecked
             xpaths0.add(nsXpath);
             uriIndices[i] = i + ursStart;
         }

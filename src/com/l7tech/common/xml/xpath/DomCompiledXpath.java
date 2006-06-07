@@ -7,6 +7,7 @@ package com.l7tech.common.xml.xpath;
 
 import com.l7tech.common.xml.DomElementCursor;
 import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.common.xml.ElementCursor;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Node;
@@ -192,23 +193,39 @@ public class DomCompiledXpath extends CompiledXpath {
                                     return node.getTextContent();
                                 }
                             };
+                            private Node nextNode = null; // If not null, this was unread from the iterator and is waiting to be returned
 
                             public boolean hasNext() {
                                 return i.hasNext();
                             }
 
                             public void next(XpathResultNode template) throws NoSuchElementException {
-                                Object o = i.next();
-                                if (!(o instanceof Node)) {
-                                    // Not supposed to be possible
-                                    throw new IllegalStateException("Jaxen xpath result nodeset included non-Node object of type " + o.getClass().getName());
-                                }
-                                node = (Node)o;
+                                node = doNext();
                                 template.type = node.getNodeType();
                                 template.localNameHaver = node.getLocalName();
                                 template.prefixHaver = node.getPrefix();
                                 template.nodeNameHaver = node.getNodeName();
                                 template.nodeValueHaver = nodeValueMaker;
+                            }
+
+                            private Node doNext() {
+                                Object o = nextNode == null ? i.next() : nextNode;
+                                nextNode = null;
+                                if (!(o instanceof Node)) {
+                                    // Not supposed to be possible
+                                    throw new IllegalStateException("Jaxen xpath result nodeset included non-Node object of type " + o.getClass().getName());
+                                }
+                                return (Node)o;
+                            }
+
+                            public ElementCursor nextElementAsCursor() throws NoSuchElementException {
+                                Node n = doNext();
+                                if (n.getNodeType() != Node.ELEMENT_NODE && n.getNodeType() != Node.DOCUMENT_NODE) {
+                                    nextNode = n;
+                                    return null;
+                                }
+                                node = n;
+                                return new DomElementCursor(n, false);
                             }
                         };
                     }

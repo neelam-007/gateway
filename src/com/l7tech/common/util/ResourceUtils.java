@@ -1,11 +1,11 @@
 package com.l7tech.common.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.channels.Channel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Utility class for working with resources.
@@ -88,10 +88,28 @@ public final class ResourceUtils {
         }
     }
 
-    //- PRIVATE
+    /**
+     * Close a {@link com.l7tech.common.util.Closeable} without throwing any exceptions.
+     *
+     * Takes no action if the object is not {@link com.l7tech.common.util.Closeable}.
+     * @param o the object to close.
+     */
+    public static void closeQuietly(Object o) {
+        if (o instanceof com.l7tech.common.util.Closeable) {
+            com.l7tech.common.util.Closeable closeable = (com.l7tech.common.util.Closeable) o;
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unexpected error when closing object", e);
+            }
+        }
+    }
+
+//- PRIVATE
 
     /**
      * The logger for the class
      */
     private static final Logger logger = Logger.getLogger(ResourceUtils.class.getName());
+
 }

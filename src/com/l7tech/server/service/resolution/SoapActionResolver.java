@@ -9,6 +9,7 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.service.PublishedService;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
@@ -32,7 +33,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null)
             return null;
-        String soapAction = null;
+        String soapAction;
         try {
             soapAction = httpReqKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
         } catch (IOException e) {
@@ -44,7 +45,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
 
     }
 
-    public Set resolve(Message request, Set serviceSubset) throws ServiceResolutionException {
+    public Set<PublishedService> resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
         // since this only applies to http messages, we dont want to narrow down subset if msg is not http
         boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
         if (notHttp) {

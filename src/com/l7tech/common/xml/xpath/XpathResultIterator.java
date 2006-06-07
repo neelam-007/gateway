@@ -5,6 +5,8 @@
 
 package com.l7tech.common.xml.xpath;
 
+import com.l7tech.common.xml.ElementCursor;
+
 import java.util.NoSuchElementException;
 
 /**
@@ -25,4 +27,18 @@ public interface XpathResultIterator {
      * @throws NoSuchElementException if there are no more nodes remaining to iterate.
      */
     void next(XpathResultNode template) throws NoSuchElementException;
+
+    /**
+     * Attempts to creates and returns a new ElementCursor pointed at the next matching result node if it's an Element.
+     *
+     * Returns <code>null</code> if the next node is not an Element, or ElementCursor support is not available for this
+     * XpathResult. (see {@link ElementCursor#getXpathResult(CompiledXpath, boolean)}, second argument)
+     *
+     * Note that this method can be quite expensive, as it creates new ElementCursors, while {@link #next} does not.
+     *
+     * @return null if the next matching node is not an Element or Document, or if the cursor support was not enabled
+     *              for this {@link XpathResult}.
+     * @throws NoSuchElementException if there are no more nodes remaining to iterate.
+     */
+     ElementCursor nextElementAsCursor() throws NoSuchElementException;
 }

@@ -21,6 +21,7 @@ import org.w3c.dom.Element;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -214,13 +215,28 @@ class TarariElementCursor extends ElementCursor {
         }
     }
 
+    private static final ThreadLocal localOutputFormat = new ThreadLocal() {
+        protected Object initialValue() {
+            OutputFormat of = new OutputFormat();
+            of.setOmitXmlDeclaration(true);
+            of.setMethod(OutputFormat.METHOD_C14N_EXCLUSIVE);
+            of.setC14nWithComments(false);
+            of.setIndent(false);
+            of.setEncoding(Encoding.UTF8);
+            return of;
+        }
+    };
+
     public void write(OutputStream outputStream) throws IOException {
-        OutputFormat of = new OutputFormat();
-        of.setOmitXmlDeclaration(true);
-        of.setIndent(false);
-        of.setEncoding(Encoding.UTF8);
         XmlResult result = new XmlResult(outputStream);
-        c.writeTo(of, result);
+        c.writeTo((OutputFormat)localOutputFormat.get(), result);
+    }
+
+    public String asString() throws IOException {
+        StringWriter sw = new StringWriter();
+        XmlResult result = new XmlResult(sw);
+        c.writeTo((OutputFormat)localOutputFormat.get(), result);
+        return sw.toString();
     }
 
     public Element asDomElement(Document factory) {

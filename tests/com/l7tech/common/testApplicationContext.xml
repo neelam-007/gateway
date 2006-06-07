@@ -215,4 +215,11 @@
 
     <bean id="clusterPropertyManager" class="com.l7tech.cluster.MockClusterPropertyManager"/>
 
+    <bean id="communitySchemaManager" class="com.l7tech.server.communityschemas.CommunitySchemaManagerStub"/>
+
+    <bean id="compiledSchemaManager" class="com.l7tech.server.communityschemas.CompiledSchemaManager">
+        <property name="communitySchemaManager">
+            <ref local="communitySchemaManager"/>
+        </property>
+    </bean>
 </beans>

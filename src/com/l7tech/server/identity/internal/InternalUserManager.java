@@ -5,7 +5,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManager;
 
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -95,9 +94,7 @@ public class InternalUserManager extends PersistentUserManager {
         try {
             InternalUser imp = (InternalUser)user;
             GroupManager groupManager = identityProvider.getGroupManager();
-            Iterator i = groupManager.getGroupHeaders(imp).iterator();
-            while (i.hasNext()) {
-                EntityHeader grp = (EntityHeader)i.next();
+            for (EntityHeader grp : groupManager.getGroupHeaders(imp)) {
                 // is he an administrator?
                 if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
                     // is he the last one ?

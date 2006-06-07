@@ -9,11 +9,7 @@ import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.FastXpath;
-import com.l7tech.objectmodel.FindException;
-import org.apache.xmlbeans.XmlException;
-import org.springframework.beans.factory.BeanFactory;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.Map;
 
@@ -22,13 +18,6 @@ import java.util.Map;
  */
 public interface GlobalTarariContext {
     int NO_SUCH_EXPRESSION = -1;
-
-    /**
-     * this makes a list of all community schema in the table as well as all the schemas defined in
-     * policies and makes sure the schemas loaded on the tarari card are the same. this should typically
-     * be called whenever a published service is updated or saved
-     */
-    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException;
 
     /**
      * Prepare a {@link com.l7tech.common.xml.xpath.CompiledXpath} instance that will use Tarari hardware acceleration features.
@@ -45,7 +34,7 @@ public interface GlobalTarariContext {
      * @return a TarariCompiledStylesheet instance.  Never null.
      * @throws ParseException if the stylesheet could not be compiled.
      */
-    TarariCompiledStylesheet compileStylesheet(byte[] xslBytes) throws ParseException;
+    TarariCompiledStylesheet compileStylesheet(String stylesheet) throws ParseException;
 
     /**
      * Attempts to convert the specified XPath expression into Tarari Normal Form.  Expressions in normal form

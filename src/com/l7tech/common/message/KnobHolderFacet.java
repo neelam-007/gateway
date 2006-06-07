@@ -6,6 +6,8 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.util.Closeable;
+
 /**
  * A MessageFacet that holds a provided pre-existing knob.
  */
@@ -31,9 +33,9 @@ public class KnobHolderFacet extends MessageFacet {
 
     public void close() {
         try {
-            if (knob instanceof CloseableMessageKnob) {
-                CloseableMessageKnob closeableMessageKnob = (CloseableMessageKnob) knob;
-                closeableMessageKnob.close();
+            if (knob instanceof Closeable) {
+                Closeable closeable = (Closeable)knob;
+                closeable.close();
             }
         } finally {
             super.close();

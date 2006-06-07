@@ -572,12 +572,12 @@
 
     <bean id="counterCache" class="com.l7tech.server.sla.CounterCache" />
 
-    <bean id="communitySchemaManager" class="com.l7tech.server.communityschemas.CommunitySchemaManager">
+    <bean id="communitySchemaManager" class="com.l7tech.server.communityschemas.CommunitySchemaManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
-        <property name="serverConfig">
-            <ref local="serverConfig"/>
+        <property name="compiledSchemaManager">
+            <ref local="compiledSchemaManager"/>
         </property>
     </bean>
 
@@ -693,6 +693,12 @@
     <bean id="uddiAgentFactory" class="com.l7tech.server.service.uddi.UddiAgentFactory">
         <property name="serverConfig">
             <ref bean="serverConfig"/>
+        </property>
+    </bean>
+
+    <bean id="compiledSchemaManager" class="com.l7tech.server.communityschemas.CompiledSchemaManager">
+        <property name="communitySchemaManager">
+            <ref bean="communitySchemaManager"/>
         </property>
     </bean>
 

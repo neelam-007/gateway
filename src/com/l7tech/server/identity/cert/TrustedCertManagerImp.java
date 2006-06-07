@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -33,7 +32,10 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class TrustedCertManagerImp extends HibernateEntityManager implements TrustedCertManager {
+public class TrustedCertManagerImp
+        extends HibernateEntityManager<TrustedCert>
+        implements TrustedCertManager
+{
     public TrustedCert findByPrimaryKey(long oid) throws FindException {
         return (TrustedCert)findByPrimaryKey(getImpClass(), oid);
     }
@@ -183,7 +185,6 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
             X509Certificate caTrustCert = caTrust.getCertificate();
 
             CertUtils.cachedVerify(serverCertChain[0], caTrustCert.getPublicKey());
-            return;
         } catch (IOException e) {
             final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
             logger.log(Level.SEVERE, msg, e);
@@ -216,7 +217,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         Sync write = cacheLock.writeLock();
         try {
             read.acquire();
-            final Long oid = (Long)dnToOid.get(dn);
+            final Long oid = dnToOid.get(dn);
             read.release();
             read = null;
             if (oid == null) {
@@ -245,7 +246,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     public TrustedCert getCachedCertByOid(long o, int maxAge) throws FindException, IOException, CertificateException {
         try {
-            return (TrustedCert)getCachedEntity(o, maxAge);
+            return getCachedEntity(o, maxAge);
         } catch (CacheVeto e) {
             logger.log(Level.SEVERE, e.getMessage(), e.getCause());
             return null;
@@ -254,7 +255,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     protected void addedToCache(Entity ent) {
         TrustedCert cert = (TrustedCert)ent;
-        dnToOid.put(cert.getSubjectDn(), new Long(ent.getOid()));
+        dnToOid.put(cert.getSubjectDn(), ent.getOid());
     }
 
     protected void removedFromCache(Entity ent) {
@@ -264,7 +265,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     public void checkCachable(Entity ent) throws CacheVeto {
         TrustedCert cert = (TrustedCert)ent;
-        CertificateExpiry exp = null;
+        CertificateExpiry exp;
         try {
             exp = CertUtils.checkValidity(cert.getCertificate());
         } catch (CertificateException e) {
@@ -299,8 +300,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     private void peruseTrustedCertificates() {
         try {
-            for (Iterator i = findAll().iterator(); i.hasNext();) {
-                TrustedCert cert = (TrustedCert)i.next();
+            for (TrustedCert cert : findAll()) {
                 checkCachable(cert);
                 logger.info("Caching cert #" + cert.getOid() + " (" + cert.getSubjectDn() + ")");
             }
@@ -311,7 +311,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         }
     }
 
-    private Map dnToOid = new HashMap();
+    private Map<String, Long> dnToOid = new HashMap<String, Long>();
     private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
     private PlatformTransactionManager transactionManager; // required for TransactionTemplate
 }

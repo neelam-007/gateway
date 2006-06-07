@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.policy;
 
-import com.l7tech.policy.PolicyFactory;
+import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -24,35 +24,44 @@ import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssKerberos;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * @author alex
  * @version $Revision$
  */
-public class ClientPolicyFactory extends PolicyFactory {
-    public ClientAssertion makeClientPolicy( Assertion rootAssertion ) throws PolicyAssertionException {
-        return (ClientAssertion)makeSpecificPolicy( rootAssertion );
-    }
-
+public class ClientPolicyFactory {
     public static ClientPolicyFactory getInstance() {
         if ( _instance == null ) _instance = new ClientPolicyFactory();
         return _instance;
     }
 
-    protected String getProductRootPackageName() {
-        return "com.l7tech.proxy.policy.assertion";
-    }
-
-    protected String getProductClassnamePrefix() {
-        return "Client";
-    }
-
-    protected Object makeSpecificPolicy(Assertion genericAssertion) throws PolicyAssertionException {
+    public ClientAssertion makeClientPolicy(Assertion genericAssertion) throws PolicyAssertionException {
         if (genericAssertion instanceof CommentAssertion) return null;
 
-        return super.makeSpecificPolicy(genericAssertion);
+        try {
+            Class genericClass = genericAssertion.getClass();
+            String clientClassname = PolicyFactoryUtil.getProductClassname(genericClass, "com.l7tech.proxy.policy.assertion", "Client");
+            Class clientClass = Class.forName(clientClassname);
+            Constructor ctor = clientClass.getConstructor(new Class[]{genericClass});
+            return (ClientAssertion) ctor.newInstance(new Object[]{genericAssertion});
+        } catch (InstantiationException ie) {
+            throw new RuntimeException(ie);
+        } catch (IllegalAccessException iae) {
+            throw new RuntimeException(iae);
+        } catch (InvocationTargetException ite) {
+            throw new RuntimeException(ite);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            ClientUnknownAssertion uass = makeUnknownAssertion(genericAssertion);
+            if (uass == null) throw new RuntimeException(e);
+            return uass;
+        }
     }
 
-    protected Object makeUnknownAssertion(Assertion genericAssertion) {
+    protected ClientUnknownAssertion makeUnknownAssertion(Assertion genericAssertion) {
         return new ClientUnknownAssertion(genericAssertion);
     }
 

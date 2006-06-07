@@ -87,7 +87,7 @@ public class StubDataStore {
         return providerConfigs;
     }
 
-    public Map getPublishedServices() {
+    public Map<Long, PublishedService> getPublishedServices() {
         return pubServices;
     }
 
@@ -298,7 +298,7 @@ public class StubDataStore {
         } else if (o instanceof IdentityProviderConfig) {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
         } else if (o instanceof PublishedService) {
-            pubServices.put(new Long(((PublishedService)o).getOid()), o);
+            pubServices.put(((PublishedService)o).getOid(), (PublishedService) o);
         } else if (o instanceof JmsConnection) {
             jmsProviders.put(new Long(((JmsConnection)o).getOid()), o);
         } else if (o instanceof JmsEndpoint) {
@@ -334,7 +334,7 @@ public class StubDataStore {
     private Map groups = new HashMap();
     private Set memberships = new HashSet();
 
-    private Map pubServices = new HashMap();
+    private Map<Long, PublishedService> pubServices = new HashMap<Long, PublishedService>();
     private Map jmsProviders = new HashMap();
     private Map jmsEndpoints = new HashMap();
 

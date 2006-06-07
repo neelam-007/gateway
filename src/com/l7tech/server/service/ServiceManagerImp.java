@@ -7,58 +7,39 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.ServerPolicy;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.beans.BeansException;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Manages PublishedService instances.
  */
-public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager, ApplicationContextAware, ApplicationListener {
+public class ServiceManagerImp
+        extends HibernateEntityManager<PublishedService>
+        implements ServiceManager, ApplicationContextAware
+{
     private ServiceCache serviceCache;
-    private ApplicationContext applicationContext;
-
-    private final String HQL_FIND_VERSION_BY_OID =
-            "SELECT " + getTableName() + "." + F_VERSION +
-                    " FROM " + getTableName() +
-                    " IN CLASS " + getImpClass().getName() +
-                    " WHERE " + getTableName() + "." + F_OID + " = ?";
-
-    private final String HQL_FIND_ALL_VERSIONS = 
-            "SELECT " +
-                    getTableName() + "." + F_OID + ", " +
-                    getTableName() + "." + F_VERSION +
-            " FROM " + getTableName() +
-                " IN CLASS " + getImpClass().getName();
 
     public void setVisitorClassnames(String visitorClassnames) {
         String[] names = visitorClassnames.split(",\\s*");
-        for (int i = 0; i < names.length; i++) {
-            String name = names[i];
+        for (String name : names) {
             try {
                 Class.forName(name);
             } catch (ClassNotFoundException e) {
@@ -68,7 +49,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     public String resolveWsdlTarget(String url) throws RemoteException {
@@ -114,7 +94,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         try {
                             serviceCache.cache(svcnow);
                             TarariLoader.compile();
-                            TarariLoader.updateSchemasToCard(applicationContext);
                         } catch (Exception e) {
                             logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
                         }
@@ -124,22 +103,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         });
 
         return service.getOid();
-    }
-
-    public int getCurrentPolicyVersion(long policyId) throws FindException {
-        try {
-            Session s = getSession();
-            Query q = s.createQuery(HQL_FIND_VERSION_BY_OID);
-            q.setLong(0, policyId);
-            List results = q.list();
-            if (results == null || results.isEmpty() || results.size() > 1) {
-                throw new FindException("cannot get version for service " + Long.toString(policyId));
-            }
-            Integer i = (Integer)results.get(0);
-            return i.intValue();
-        } catch (HibernateException e) {
-            throw new FindException("cannot get version", e);
-        }
     }
 
     public void update(PublishedService service) throws UpdateException, VersionException {
@@ -198,7 +161,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         try {
                             serviceCache.cache(svcnow);
                             TarariLoader.compile();
-                            TarariLoader.updateSchemasToCard(applicationContext);
                         } catch (Exception e) {
                             logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
                         }
@@ -227,7 +189,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         });
     }
 
-    public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
+    public ServerPolicy getServerPolicy(long serviceOid) throws FindException {
         try {
             return serviceCache.getServerPolicy(serviceOid);
         } catch (InterruptedException e) {
@@ -247,40 +209,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public Collection getAllServiceStatistics() throws FindException {
+    public Collection<ServiceStatistics> getAllServiceStatistics() throws FindException {
         try {
             return serviceCache.getAllServiceStatistics();
         } catch (InterruptedException e) {
             throw new FindException("error accessing statistics from cache", e);
-        }
-    }
-
-    /**
-     * get the service versions as currently recorded in database
-     *
-     * @return a map whose keys is a Long with service id and values is an Integer with the service version
-     * @throws FindException if the query fails for some reason
-     */
-    public Map getServiceVersions() throws FindException {
-        Map output = new HashMap();
-
-        try {
-            Session s = getSession();
-            Query q = s.createQuery(HQL_FIND_ALL_VERSIONS);
-            List results = q.list();
-            if (results == null || results.isEmpty()) {
-                // logger.fine("no version info to return");
-            } else {
-                for (Iterator i = results.iterator(); i.hasNext();) {
-                    Object[] toto = (Object[])i.next();
-                    output.put(toto[0], toto[1]);
-                }
-            }
-            return output;
-        } catch (HibernateException e) {
-            String msg = "error getting versions";
-            logger.log(Level.SEVERE, msg, e);
-            throw new FindException(msg, e);
         }
     }
 
@@ -343,21 +276,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         });
     }
 
-    public void onApplicationEvent(ApplicationEvent event) {
-        if(event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
-            if(SchemaEntry.class.isAssignableFrom(eie.getEntityClass())) {
-                logger.info("Updating Tarari schemas.");
-                try {
-                    TarariLoader.updateSchemasToCard(applicationContext);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Error updating schemas to tarari card " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-        }
-
-    }
-
     private void initializeServiceCache() throws ObjectModelException {
         // build the cache if necessary
         try {
@@ -365,18 +283,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 logger.finest("cache already built (?)");
             } else {
                 logger.info("building service cache");
-                Collection services = findAll();
-                PublishedService service;
-                for (Iterator i = services.iterator(); i.hasNext();) {
-                    service = (PublishedService)i.next();
+                Collection<PublishedService> services = findAll();
+                for (PublishedService service : services) {
                     serviceCache.cache(service);
                 }
                 TarariLoader.compile();
-                try {
-                    TarariLoader.updateSchemasToCard(applicationContext);
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, "error uploading schemas to tarari card", e);
-                }
             }
             // make sure the integrity check is running
             logger.info("initiate service cache version check process");
@@ -389,5 +300,4 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     private ResolutionManager resolutionManager;
     private PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
-    private static final String F_VERSION = "version";
 }

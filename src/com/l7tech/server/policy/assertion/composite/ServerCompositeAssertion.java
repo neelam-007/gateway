@@ -6,33 +6,47 @@
 
 package com.l7tech.server.policy.assertion.composite;
 
-import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import org.springframework.context.ApplicationContext;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class ServerCompositeAssertion extends AbstractServerAssertion implements ServerAssertion {
+public abstract class ServerCompositeAssertion extends AbstractServerAssertion<CompositeAssertion> implements ServerAssertion {
+    private static final Logger logger = Logger.getLogger(ServerCompositeAssertion.class.getName());
     private final CompositeAssertion bean;
     protected ServerAssertion[] children;
-    private ApplicationContext applicationContext;
 
-    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext context ) throws PolicyAssertionException {
+    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext spring) throws PolicyAssertionException {
         super(composite);
-        this.applicationContext = context;
         this.bean = composite;
-        if (applicationContext == null) {
+        if (spring == null)
             throw new IllegalArgumentException("The Application Context is required");
+
+        ServerPolicyFactory pf = (ServerPolicyFactory)spring.getBean("policyFactory");
+        Assertion child;
+        List<ServerAssertion> result = new ArrayList<ServerAssertion>();
+        for (Iterator i = composite.children(); i.hasNext();) {
+            child = (Assertion)i.next();
+            ServerAssertion sass = pf.makeServerAssertion(child);
+            if (sass != null)
+                result.add(sass);
         }
-        PolicyFactory pf = (PolicyFactory)applicationContext.getBean("policyFactory");
-        this.children = (ServerAssertion[])pf.makeCompositePolicy( composite ).toArray( new ServerAssertion[0] );
+        this.children = result.toArray( new ServerAssertion[0] );
     }
 
     public ServerAssertion[] getChildren() {
@@ -66,12 +80,21 @@ public abstract class ServerCompositeAssertion extends AbstractServerAssertion i
     protected void rollbackDeferredAssertions(PolicyEnforcementContext context) {
         if (context != null)
             context.removeDeferredAssertion(this);
-        for (int i = 0; i < children.length; i++) {
-            ServerAssertion child = children[i];
+        for (ServerAssertion child : children) {
             if (child instanceof ServerCompositeAssertion)
                 ((ServerCompositeAssertion)child).rollbackDeferredAssertions(context);
             if (context != null)
                 context.removeDeferredAssertion(child);
+        }
+    }
+
+    public void close() {
+        for (ServerAssertion child : children) {
+            try {
+                child.close();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Child assertion did not close cleanly", e);
+            }
         }
     }
 }

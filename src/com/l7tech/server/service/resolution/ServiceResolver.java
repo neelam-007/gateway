@@ -24,9 +24,9 @@ public abstract class ServiceResolver implements Comparable {
      * Sets the <code>Set</code> of services in the system.  Concrete implementations should implement doSetServices and invalidate any caches based on this Set whenever it is called.
      * @param services A Set of all the services in the system.
      */
-    public abstract void setServices( Set services );
+    public abstract void setServices( Set<PublishedService> services );
 
-    public abstract Set resolve( Message request, Set serviceSubset ) throws ServiceResolutionException, IOException;
+    public abstract Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException, IOException;
 
     /**
      * Returns a Map<Long,PublishedService> of any services this ServiceResolver knows about that match the specified PublishedService.
@@ -34,28 +34,29 @@ public abstract class ServiceResolver implements Comparable {
      * @param subset the Map<Long,PublishedService> to search for matches.
      * @return a Map<Long,PublishedService> of matching services, which could be empty but not null.
      */
-    public Map matchingServices( PublishedService candidateService, Map subset ) {
-        if ( subset == null || subset.isEmpty() ) return Collections.EMPTY_MAP;
+    public Map<Long, PublishedService> matchingServices(
+            PublishedService candidateService,
+            Map<Long, PublishedService> subset )
+    {
+        if ( subset == null || subset.isEmpty() ) return Collections.emptyMap();
 
-        Map result = null;
+        Map<Long, PublishedService> result = null;
 
         PublishedService matchService;
-        Long oid;
-        for (Iterator i = subset.keySet().iterator(); i.hasNext();) {
-            oid = (Long)i.next();
-            matchService = (PublishedService)subset.get(oid);
-            if ( matchService != null ) {
-                if ( candidateService.getOid() != matchService.getOid() ) {
-                    if ( matches( candidateService, matchService ) ) {
+        for (Long oid : subset.keySet()) {
+            matchService = subset.get(oid);
+            if (matchService != null) {
+                if (candidateService.getOid() != matchService.getOid()) {
+                    if (matches(candidateService, matchService)) {
                         // This candidateService matches one of "mine"
-                        if ( result == null ) result = new HashMap();
-                        result.put( oid, matchService );
+                        if (result == null) result = new HashMap<Long, PublishedService>();
+                        result.put(oid, matchService);
                     }
                 }
             }
         }
 
-        if ( result == null ) result = Collections.EMPTY_MAP;
+        if ( result == null ) result = Collections.emptyMap();
 
         return result;
     }

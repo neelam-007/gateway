@@ -98,12 +98,12 @@ public class SchemaValidationTest extends TestCase {
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
 
         // try to validate a number of different soap messages
-        String[] resources = {LISTREQ_PATH, BAD_LISTREQ_PATH, LISTRES_PATH};
-        boolean[] expectedResults = {true, false, true};
+        String[] resources = {BAD_LISTREQ_PATH, LISTREQ_PATH, LISTRES_PATH};
+        boolean[] expectedResults = {false, true, true};
         for (int i = 0; i < resources.length; i++) {
             AssertionStatus res = serverAssertion.checkRequest(getResAsContext(resources[i]));
-            //System.out.println("DOCUMENT " + resources[i] +
-            //                    (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
+            System.out.println("DOCUMENT " + resources[i] +
+                                (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
             if (expectedResults[i]) {
                 assertTrue(res == AssertionStatus.NONE);
             } else {
@@ -135,7 +135,7 @@ public class SchemaValidationTest extends TestCase {
         assertion.setApplyToArguments(true);
         assertion.setResourceInfo(new StaticResourceInfo(schema));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus res = serverAssertion.validateMessageInSoftware(new Message(XmlUtil.stringToDocument(request)));
+        AssertionStatus res = serverAssertion.validateMessage(new Message(XmlUtil.stringToDocument(request)));
         assertTrue(res == AssertionStatus.NONE);
     }
 

@@ -1461,8 +1461,11 @@
             <include name="com/l7tech/proxy/**/*.java"/>
             <include name="com/l7tech/objectmodel/EntityHeader.java"/>
             <include name="com/l7tech/objectmodel/EntityType.java"/>
+            <include name="com/l7tech/policy/variable/BuiltinVariables.java"/> <!-- Used by assertion beans -->
+            <include name="com/l7tech/policy/variable/ExpandVariables.java"/> <!-- Used by assertion beans -->
 
             <!-- The following, as well as anything not included above, can go to 1.5 -->
+            <exclude name="com/l7tech/policy/variable/**/*.java"/>
             <exclude name="com/l7tech/common/Authorizer.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
@@ -1483,7 +1486,9 @@
 
     <target name="compile.forms" depends="compile.main">
         <javac2 srcdir="src" destdir="${build.classes}" debug="on" target="1.4" optimize="on" source="1.4"
-                classpathref="project.classpath"/>
+                classpathref="project.classpath">
+            <include name="**/*.form"/>
+        </javac2>
     </target>
 
     <target name="db.properties"

@@ -6,9 +6,11 @@ import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Background;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicy;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
@@ -92,11 +94,10 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      *
      * @return Map with Long service oid as a key and Long service version as values
      */
-    private Map versionSnapshot() {
-        Map output = new HashMap();
-        for (Iterator i = services.values().iterator(); i.hasNext();) {
-            PublishedService svc = (PublishedService)i.next();
-            output.put(new Long(svc.getOid()), new Integer(svc.getVersion()));
+    private Map<Long, Integer> versionSnapshot() {
+        Map<Long, Integer> output = new HashMap<Long, Integer>();
+        for (PublishedService svc : services.values()) {
+            output.put(svc.getOid(), svc.getVersion());
         }
         return output;
     }
@@ -106,11 +107,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      *
      * @param serviceOid id of the service of which we want the parsed server side root assertion
      */
-    public ServerAssertion getServerPolicy(long serviceOid) throws InterruptedException {
+    public ServerPolicy getServerPolicy(long serviceOid) throws InterruptedException {
         Sync read = rwlock.readLock();
         try {
             read.acquire();
-            return (ServerAssertion)serverPolicies.get(new Long(serviceOid));
+            return serverPolicies.get(serviceOid);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -127,19 +128,19 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * @throws ServiceResolutionException
      */
     public PublishedService resolve(Message req) throws ServiceResolutionException {
-        Set serviceSet = null;
+        Set<PublishedService> serviceSet;
         Sync read = rwlock.readLock();
         try {
             read.acquire();
-            serviceSet = new HashSet();
+            serviceSet = new HashSet<PublishedService>();
             serviceSet.addAll(services.values());
 
-            if (serviceSet == null || serviceSet.isEmpty()) {
+            if (serviceSet.isEmpty()) {
                 logger.finest("resolution failed because no services in the cache");
                 return null;
             }
-            for (int i = 0; i < resolvers.length; i++) {
-                Set resolvedServices = resolvers[i].resolve(req, serviceSet);
+            for (NameValueServiceResolver resolver : resolvers) {
+                Set<PublishedService> resolvedServices = resolver.resolve(req, serviceSet);
 
                 int newResolvedServicesSize = 0;
                 if (resolvedServices != null) {
@@ -148,10 +149,10 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
                 // if remaining services are 0 or 1, we are done
                 if (newResolvedServicesSize == 1) {
-                    logger.finest("service resolved by " + resolvers[i].getClass().getName());
-                    return (PublishedService)resolvedServices.iterator().next();
+                    logger.finest("service resolved by " + resolver.getClass().getName());
+                    return resolvedServices.iterator().next();
                 } else if (newResolvedServicesSize == 0) {
-                    logger.info("resolver " + resolvers[i].getClass().getName() + " eliminated all possible services");
+                    logger.info("resolver " + resolver.getClass().getName() + " eliminated all possible services");
                     return null;
                 }
 
@@ -159,7 +160,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 serviceSet = resolvedServices;
             }
 
-            if (serviceSet == null || serviceSet.isEmpty()) {
+            if (serviceSet.isEmpty()) {
                 logger.fine("resolvers find no match for request");
             } else {
                 logger.warning("cache integrity error or resolver bug. this request resolves to" +
@@ -202,29 +203,40 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      */
     private void cacheNoLock(PublishedService service) throws ServerPolicyException {
         boolean update = false;
-        Long key = new Long(service.getOid());
+        Long key = service.getOid();
         if (services.get(key) != null) update = true;
         if (update) {
-            for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].serviceUpdated(service);
+            for (NameValueServiceResolver resolver : resolvers) {
+                resolver.serviceUpdated(service);
             }
             logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
-            for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].serviceCreated(service);
+            for (NameValueServiceResolver resolver : resolvers) {
+                resolver.serviceCreated(service);
             }
             logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
         }
-        ServerAssertion serverPolicy = null;
+        ServerAssertion serverRootAssertion;
         try {
             // cache the service
-            services.put(key, service);
+            PublishedService oldService = services.put(key, service);
+            if (oldService != service) {
+                final ServerPolicy policy = serverPolicies.get(key);
+                if (policy != null) {
+                    TimerTask runnable = new TimerTask() {
+                        public void run() {
+                            policy.close();
+                        }
+                    };
+                    Background.schedule(runnable, 200);
+                }
+            }
             // cache the server policy for this service
-            serverPolicy = policyFactory.makeServerPolicy(service.rootAssertion());
-            if (serverPolicy != null) {
-                serverPolicies.put(key, serverPolicy);
+            serverRootAssertion = policyFactory.makeServerAssertion(service.rootAssertion());
+            if (serverRootAssertion != null) {
+                serverPolicies.put(key, new ServerPolicy(serverRootAssertion));
             } else {
                 logger.log(Level.SEVERE, "Service '" + service.getName() + "' (#" + service.getOid() + ") will be disabled; it has an unsupported policy format.");
                 service.setDisabled(true);
@@ -261,12 +273,12 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * Caller must hold locks protecting {@link #services}, {@link #serverPolicies} and {@link #serviceStatistics}.
      */
     private void removeNoLock(PublishedService service) {
-        Long key = new Long(service.getOid());
+        Long key = service.getOid();
         services.remove(key);
         serverPolicies.remove(key);
         serviceStatistics.remove(key);
-        for (int i = 0; i < resolvers.length; i++) {
-            resolvers[i].serviceDeleted(service);
+        for (NameValueServiceResolver resolver : resolvers) {
+            resolver.serviceDeleted(service);
         }
         logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
     }
@@ -279,7 +291,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         PublishedService out = null;
         try {
             read.acquire();
-            out = (PublishedService)services.get(new Long(oid));
+            out = services.get(oid);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -293,18 +305,17 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     /**
      * get all current service stats
      */
-    public Collection getAllServiceStatistics() throws InterruptedException {
+    public Collection<ServiceStatistics> getAllServiceStatistics() throws InterruptedException {
         Sync read = null;
         try {
             read = rwlock.readLock();
             read.acquire();
-            Collection output = new ArrayList();
+            Collection<ServiceStatistics> output = new ArrayList<ServiceStatistics>();
             output.addAll(serviceStatistics.values());
             return output;
         } finally {
             if (read != null) {
                 read.release();
-                read = null;
             }
         }
     }
@@ -314,14 +325,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * those stats are lazyly created
      */
     public ServiceStatistics getServiceStatistics(long serviceOid) throws InterruptedException {
-        Long oid = new Long(serviceOid);
         ServiceStatistics stats;
         Sync read = null;
         Sync write = null;
         try {
             read = rwlock.readLock();
             read.acquire();
-            stats = (ServiceStatistics)serviceStatistics.get(oid);
+            stats = serviceStatistics.get(serviceOid);
             if (stats == null) {
                 // Upgrade read lock to write lock
                 read.release();
@@ -329,7 +339,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 stats = new ServiceStatistics(serviceOid);
                 write = rwlock.writeLock();
                 write.acquire();
-                serviceStatistics.put(oid, stats);
+                serviceStatistics.put(serviceOid, stats);
                 write.release();
                 write = null;
             } else {
@@ -342,14 +352,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             Thread.currentThread().interrupt();
             throw e;
         } finally {
-            if (read != null) {
-                read.release();
-                read = null;
-            }
-            if (write != null) {
-                write.release();
-                write = null;
-            }
+            if (read != null) read.release();
+            if (write != null) write.release();
         }
     }
 
@@ -371,13 +375,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             return;
         }
         try {
-            Map cacheversions = versionSnapshot();
-            Map dbversions = null;
+            Map<Long, Integer> cacheversions = versionSnapshot();
+            Map<Long, Integer> dbversions;
 
             // get db versions
             try {
                 ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
-                dbversions = serviceManager.getServiceVersions();
+                dbversions = serviceManager.findVersionMap();
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "error getting versions. " +
                   "this integrity check is stopping prematurely", e);
@@ -385,19 +389,18 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             }
 
             // actual check logic
-            ArrayList updatesAndAdditions = new ArrayList();
-            ArrayList deletions = new ArrayList();
+            ArrayList<Long> updatesAndAdditions = new ArrayList<Long>();
+            ArrayList<Long> deletions = new ArrayList<Long>();
             // 1. check that all that is in db is present in cache and that version is same
-            for (Iterator i = dbversions.keySet().iterator(); i.hasNext();) {
-                Long dbid = (Long)i.next();
+            for (Long dbid : dbversions.keySet()) {
                 // is it already in cache?
-                Integer cacheversion = (Integer)cacheversions.get(dbid);
+                Integer cacheversion = cacheversions.get(dbid);
                 if (cacheversion == null) {
                     logger.info("service " + dbid + " to be added to cache.");
                     updatesAndAdditions.add(dbid);
                 } else {
                     // check actual version
-                    Integer dbversion = (Integer)dbversions.get(dbid);
+                    Integer dbversion = dbversions.get(dbid);
                     if (!dbversion.equals(cacheversion)) {
                         updatesAndAdditions.add(dbid);
                         logger.info("service " + dbid + " to be updated in cache because outdated.");
@@ -406,8 +409,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 }
             }
             // 2. check for things in cache not in db (deletions)
-            for (Iterator i = cacheversions.keySet().iterator(); i.hasNext();) {
-                Long cacheid = (Long)i.next();
+            for (Long cacheid : cacheversions.keySet()) {
                 if (dbversions.get(cacheid) == null) {
                     deletions.add(cacheid);
                     logger.info("service " + cacheid + " to be deleted from cache because no longer in database.");
@@ -431,22 +433,22 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                     return;
                 }
                 try {
-                    for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
-                        Long svcid = (Long)i.next();
-                        PublishedService toUpdateOrAdd = null;
+                    for (Long svcid : updatesAndAdditions) {
+                        PublishedService toUpdateOrAdd;
                         try {
-                            ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
+                            ServiceManager serviceManager = (ServiceManager) getApplicationContext().getBean("serviceManager");
                             toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
                         } catch (FindException e) {
                             toUpdateOrAdd = null;
                             logger.log(Level.WARNING, "service scheduled for update or addition" +
-                              "cannot be retrieved", e);
+                                    "cannot be retrieved", e);
                         }
                         if (toUpdateOrAdd != null) {
-                            final Long oid = new Long(toUpdateOrAdd.getOid());
+                            final Long oid = toUpdateOrAdd.getOid();
                             try {
-                                final Integer throwingVersion = (Integer)servicesThatAreThrowing.get(oid);
-                                if (throwingVersion == null || throwingVersion.intValue() != toUpdateOrAdd.getVersion()) {
+                                final Integer throwingVersion = servicesThatAreThrowing.get(oid);
+                                if (throwingVersion == null || throwingVersion.intValue() != toUpdateOrAdd.getVersion())
+                                {
                                     // Try to cache it again
                                     cacheNoLock(toUpdateOrAdd);
                                     if (throwingVersion != null) {
@@ -456,16 +458,15 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                                 }
                             } catch (ServerPolicyException e) {
                                 logger.log(Level.WARNING, "Policy for service #" + oid + " is invalid: " + ExceptionUtils.getMessage(e), e);
-                                servicesThatAreThrowing.put(oid, new Integer(toUpdateOrAdd.getVersion()));
+                                servicesThatAreThrowing.put(oid, toUpdateOrAdd.getVersion());
                             }
                         } // otherwise, next integrity check shall delete this service from cache
                     }
                     // Trigger xpath compilation if the set of registered xpaths has changed
                     TarariLoader.compile();
                     // todo, need to check for right schemas there as well
-                    for (Iterator i = deletions.iterator(); i.hasNext();) {
-                        Long key = (Long)i.next();
-                        PublishedService serviceToDelete = (PublishedService)services.get(key);
+                    for (Long key : deletions) {
+                        PublishedService serviceToDelete = services.get(key);
                         removeNoLock(serviceToDelete);
                     }
                 } finally {
@@ -485,10 +486,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     /**
      * assumes you already have a lock through new policy contruction
      */
-    public Collection getAllPolicySchemas() {
-        ArrayList output = new ArrayList();
-        for (Iterator iterator = services.values().iterator(); iterator.hasNext();) {
-            PublishedService publishedService = (PublishedService) iterator.next();
+    public Collection<String> getAllPolicySchemas() {
+        ArrayList<String> output = new ArrayList<String>();
+        for (PublishedService publishedService : services.values()) {
             try {
                 Assertion root = publishedService.rootAssertion();
                 slurpSchemas(root, output);
@@ -500,7 +500,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         return output;
     }
 
-    private void slurpSchemas(Assertion toInspect, ArrayList container) {
+    private void slurpSchemas(Assertion toInspect, ArrayList<String> container) {
         if (toInspect instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)toInspect;
             for (Iterator i = ca.children(); i.hasNext();) {
@@ -521,10 +521,10 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
 
     // the cache data itself
-    private final Map services = new HashMap();
-    private final Map serverPolicies = new HashMap();
-    private final Map serviceStatistics = new HashMap();
-    private final Map servicesThatAreThrowing = new HashMap();
+    private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
+    private final Map<Long, ServerPolicy> serverPolicies = new HashMap<Long, ServerPolicy>();
+    private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
+    private final Map<Long, Integer> servicesThatAreThrowing = new HashMap<Long, Integer>();
 
     // the resolvers
     private final NameValueServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};

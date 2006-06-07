@@ -23,7 +23,8 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
+public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager 
+{
     private final String HQL_DELETE_BY_PROVIDEROID =
             "FROM user IN CLASS " + getImpClass().getName() +
                     " WHERE user.providerId = ?";
@@ -91,7 +92,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
      *          thrown if an SQL error is encountered
      * @see com.l7tech.server.identity.PersistentGroupManager
      */
-    public Collection search(String searchString) throws FindException {
+    public Collection<EntityHeader> search(String searchString) throws FindException {
         // replace wildcards to match stuff understood by mysql
         // replace * with % and ? with _
         // note. is this portable?
@@ -102,9 +103,9 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             search.add(Restrictions.ilike(getNameFieldname(), searchString));
             addFindAllCriteria(search);
             List entities = search.list();
-            List headers = new ArrayList();
-            for (Iterator i = entities.iterator(); i.hasNext();) {
-                PersistentUser user = (PersistentUser)i.next();
+            List<EntityHeader> headers = new ArrayList<EntityHeader>();
+            for (Object entity : entities) {
+                PersistentUser user = (PersistentUser) entity;
                 headers.add(userToHeader(user));
             }
             return Collections.unmodifiableList(headers);
@@ -135,9 +136,8 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
 
             Session s = getSession();
             PersistentGroupManager groupManager = (PersistentGroupManager)identityProvider.getGroupManager();
-            Set groupHeaders = groupManager.getGroupHeaders(userImp);
-            for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
-                EntityHeader groupHeader = (EntityHeader)i.next();
+            Set<EntityHeader> groupHeaders = groupManager.getGroupHeaders(userImp);
+            for (EntityHeader groupHeader : groupHeaders) {
                 Group group = groupManager.findByPrimaryKey(groupHeader.getStrId());
                 groupManager.deleteMembership(s, group, user);
             }
@@ -191,7 +191,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         return save(user, null);
     }
 
-    public String save(User user, Set groupHeaders) throws SaveException {
+    public String save(User user, Set<EntityHeader> groupHeaders) throws SaveException {
         PersistentUser imp = cast(user);
 
         try {
@@ -228,7 +228,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
      *
      * @param user existing user
      */
-    public void update(User user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
+    public void update(User user, Set<EntityHeader> groupHeaders) throws UpdateException, ObjectNotFoundException {
         PersistentUser imp = cast(user);
 
         try {

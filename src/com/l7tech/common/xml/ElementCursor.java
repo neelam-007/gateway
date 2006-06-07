@@ -278,12 +278,19 @@ public abstract class ElementCursor {
     // -- Export --
 
     /**
-     * Serialize the current element out to the specified output stream.
+     * Serialize the current element out to the specified output stream in UTF-8 encoding.
      *
      * @param outputStream the output stream.  Must not be null.
      * @throws IOException if there is a problem writing to the output stream
      */
     public abstract void write(OutputStream outputStream) throws IOException;
+
+    /**
+     * Serialize the current element as a String.
+     *
+     * @throws IOException if there is a problem serializing
+     */
+    public abstract String asString() throws IOException;
 
     /**
      * Build a DOM tree representation of the current element.

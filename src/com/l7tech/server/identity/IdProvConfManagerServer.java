@@ -22,7 +22,9 @@ import java.util.logging.Level;
  * Date: Jun 20, 2003
  */
 public class IdProvConfManagerServer
-  extends HibernateEntityManager implements IdentityProviderConfigManager {
+    extends HibernateEntityManager<IdentityProviderConfig>
+    implements IdentityProviderConfigManager
+{
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
         if (oid == INTERNALPROVIDER_SPECIAL_OID)
@@ -124,14 +126,14 @@ public class IdProvConfManagerServer
         return identityProviderFactory.findAllIdentityProviders(this);
     }
 
-    public Collection findAll() throws FindException {
-        Collection out = new ArrayList(super.findAll());
+    public Collection<IdentityProviderConfig> findAll() throws FindException {
+        Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll());
         out.add(internalProvider.getConfig());
         return out;
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        Collection out = new ArrayList(super.findAll(offset, windowSize));
+    public Collection<IdentityProviderConfig> findAll(int offset, int windowSize) throws FindException {
+        Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll(offset, windowSize));
         out.add(internalProvider.getConfig());
         return out;
     }

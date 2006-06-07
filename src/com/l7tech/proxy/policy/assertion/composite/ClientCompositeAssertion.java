@@ -7,10 +7,15 @@
 package com.l7tech.proxy.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * @author alex
@@ -25,7 +30,15 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
     }
 
     public ClientCompositeAssertion( CompositeAssertion composite ) throws PolicyAssertionException {
-        this.children = (ClientAssertion[])ClientPolicyFactory.getInstance().makeCompositePolicy(composite).toArray( new ClientAssertion[0] );
+        Assertion child;
+        List result = new ArrayList();
+        for (Iterator i = composite.children(); i.hasNext();) {
+            child = (Assertion)i.next();
+            ClientAssertion cass = ClientPolicyFactory.getInstance().makeClientPolicy(child);
+            if (cass != null)
+                result.add(cass);
+        }
+        this.children = (ClientAssertion[]) result.toArray( new ClientAssertion[0] );
         this.bean = composite;
     }
 

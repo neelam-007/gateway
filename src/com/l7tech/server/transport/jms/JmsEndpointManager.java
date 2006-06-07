@@ -12,7 +12,6 @@ import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -42,13 +41,13 @@ public class JmsEndpointManager extends HibernateEntityManager {
         sql.append("from endpoint in class ");
         sql.append(JmsEndpoint.class.getName());
         sql.append(" where endpoint.connectionOid = ?");
-        ArrayList result = new ArrayList();
+        ArrayList<JmsEndpoint> result = new ArrayList<JmsEndpoint>();
         try {
             List results = getHibernateTemplate().find(sql.toString(), new Long(connectionOid));
-            for (Iterator i = results.iterator(); i.hasNext();) {
-                Object[] row = (Object[])i.next();
-                if (row[0] instanceof Long) {
-                    long oid = ((Long)row[0]).longValue();
+            for (Object result1 : results) {
+                Object[] row = (Object[]) result1;
+                if (row[0]instanceof Long) {
+                    long oid = ((Long) row[0]).longValue();
                     result.add(findByPrimaryKey(oid));
                 }
             }
@@ -56,7 +55,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
         } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
-        return (JmsEndpoint[])result.toArray(new JmsEndpoint[0]);
+        return result.toArray(new JmsEndpoint[0]);
     }
 
     public EntityHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
@@ -64,17 +63,17 @@ public class JmsEndpointManager extends HibernateEntityManager {
         sql.append("from endpoint in class ");
         sql.append(JmsEndpoint.class.getName());
         sql.append(" where endpoint.connectionOid = ?");
-        ArrayList result = new ArrayList();
+        ArrayList<EntityHeader> result = new ArrayList<EntityHeader>();
         try {
             List results = getHibernateTemplate().find(sql.toString(), new Long(connectionOid));
-            for (Iterator i = results.iterator(); i.hasNext();) {
-                Object[] row = (Object[])i.next();
-                if (row[0] instanceof Long) {
-                    EntityHeader header = new EntityHeader(row[0].toString(), EntityType.JMS_ENDPOINT, (String)row[1], (String)row[2]);
+            for (Object result1 : results) {
+                Object[] row = (Object[]) result1;
+                if (row[0]instanceof Long) {
+                    EntityHeader header = new EntityHeader(row[0].toString(), EntityType.JMS_ENDPOINT, (String) row[1], (String) row[2]);
                     result.add(header);
                 }
             }
-            return (EntityHeader[])result.toArray(new EntityHeader[0]);
+            return result.toArray(new EntityHeader[0]);
         } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }

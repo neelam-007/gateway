@@ -10,16 +10,16 @@ import java.util.*;
  * <p>
  * Not thread-safe. 
  */
-public class VariableMap implements Map {
-    private final Map map = new HashMap();
-    private final List badNames = new ArrayList();
+public class VariableMap implements Map<String, Object> {
+    private final Map<String, Object> map = new HashMap<String, Object>();
+    private final List<String> badNames = new ArrayList<String>();
 
     public void addBadName(String name) {
         badNames.add(name);
     }
 
     public String[] getBadNames() {
-        return (String[])badNames.toArray(new String[0]);
+        return badNames.toArray(new String[0]);
     }
 
     // 100% simple delegation beyond this point
@@ -44,7 +44,7 @@ public class VariableMap implements Map {
         return map.get(key);
     }
 
-    public Object put(Object key, Object value) {
+    public Object put(String key, Object value) {
         return map.put(key, value);
     }
 
@@ -52,7 +52,7 @@ public class VariableMap implements Map {
         return map.remove(key);
     }
 
-    public void putAll(Map t) {
+    public void putAll(Map<? extends String, ? extends Object> t) {
         map.putAll(t);
     }
 
@@ -60,15 +60,15 @@ public class VariableMap implements Map {
         map.clear();
     }
 
-    public Set keySet() {
+    public Set<String> keySet() {
         return map.keySet();
     }
 
-    public Collection values() {
+    public Collection<Object> values() {
         return map.values();
     }
 
-    public Set entrySet() {
+    public Set<Map.Entry<String, Object>> entrySet() {
         return map.entrySet();
     }
 

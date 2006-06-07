@@ -73,6 +73,11 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(out, prefix);
     }
 
+    public void testUnterminatedRef() throws Exception {
+        String[] vars = ExpandVariables.getReferencedNames("${foo");
+        assertEquals(vars.length, 0);
+    }
+
     /**
      * Test <code>ExpandVariablesTest</code> main.
      */

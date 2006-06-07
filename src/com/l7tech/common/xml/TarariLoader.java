@@ -9,12 +9,8 @@ package com.l7tech.common.xml;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.objectmodel.FindException;
-import org.apache.xmlbeans.XmlException;
-import org.springframework.beans.factory.BeanFactory;
+import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,10 +27,12 @@ public class TarariLoader {
     private static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.rax.fastxpath.XPathCompiler";
     private static final String FACTORIES_CLASSNAME = "com.l7tech.common.xml.tarari.TarariFactories";
     private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.common.xml.tarari.GlobalTarariContextImpl";
+    private static final String SCHEMAHANDLER_CLASSNAME = "com.l7tech.common.xml.tarari.TarariSchemaHandlerImpl";
 
     private static Boolean tarariPresent = null;
     private static GlobalTarariContext tarariContext = null;
     private static TarariMessageContextFactory messageContextFactory = null;
+    private static TarariSchemaHandler schemaHandler = null;
 
     private static final Logger logger = Logger.getLogger(TarariLoader.class.getName());
 
@@ -54,6 +52,14 @@ public class TarariLoader {
         return messageContextFactory;
     }
 
+    /**
+     * @return the Tarari schema loader if present, or null if not
+     */
+    public static TarariSchemaHandler getSchemaHandler() {
+        if (tarariPresent == null) initialize();
+        return schemaHandler;
+    }
+
     private static void initialize() {
         if (tarariPresent == null) {
             synchronized (TarariLoader.class) {
@@ -67,12 +73,13 @@ public class TarariLoader {
                             resetMethod.invoke(null, new Object[0]);
 
                             Class tarariFactoryClass = Class.forName(FACTORIES_CLASSNAME);
-                            Constructor c = tarariFactoryClass.getConstructor(new Class[0]);
-                            messageContextFactory = (TarariMessageContextFactory)c.newInstance(new Object[0]);
+                            messageContextFactory = (TarariMessageContextFactory) tarariFactoryClass.newInstance();
 
                             Class tarariContextClass = Class.forName(SERVERTARARICONTEXT_CLASSNAME);
-                            c = tarariContextClass.getConstructor(new Class[0]);
-                            tarariContext = (GlobalTarariContext)c.newInstance(new Object[0]);
+                            tarariContext = (GlobalTarariContext) tarariContextClass.newInstance();
+
+                            Class tarariSchemaClass = Class.forName(SCHEMAHANDLER_CLASSNAME);
+                            schemaHandler = (TarariSchemaHandler)tarariSchemaClass.newInstance();
 
                             logger.info("Tarari hardware XML acceleration probe succeeded: XPath compiler is ready");
                             tarariPresent = Boolean.TRUE;
@@ -108,9 +115,4 @@ public class TarariLoader {
         }
     }
 
-    public static void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {
-        GlobalTarariContext context = getGlobalContext();
-        if (context != null)
-            context.updateSchemasToCard(managerResolver);
-    }
 }

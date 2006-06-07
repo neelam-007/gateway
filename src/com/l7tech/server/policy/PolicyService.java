@@ -19,7 +19,6 @@ import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
@@ -461,7 +460,7 @@ public class PolicyService extends ApplicationObjectSupport {
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
-        return policyFactory.makeServerPolicy(base);
+        return policyFactory.makeServerAssertion(base);
     }
 
     private void addIdAssertionToList(Assertion assertion, List receptacle) {

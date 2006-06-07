@@ -31,13 +31,11 @@ public class UrnResolver extends WsdlOperationServiceResolver {
 
                 // TODO there might be a way to properly handle a request with multiple payload URIs
                 String sawUri = null;
-                for (int i = 0; i < uris.length; i++) {
-                    String uri = uris[i];
+                for (String uri : uris) {
                     if (sawUri == null)
                         sawUri = uri;
-                    else
-                        if (!sawUri.equals(uri))
-                            throw new ServiceResolutionException("Request uses more than one payload namespace URI");
+                    else if (!sawUri.equals(uri))
+                        throw new ServiceResolutionException("Request uses more than one payload namespace URI");
                 }
                 return sawUri;
             } else {

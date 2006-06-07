@@ -3,13 +3,12 @@ package com.l7tech.server.service;
 import com.l7tech.common.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.ServerPolicy;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Service API. Get instance of this through the Locator class.
@@ -19,7 +18,7 @@ import java.util.Map;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public interface ServiceManager extends EntityManager {
+public interface ServiceManager extends EntityManager<PublishedService> {
     /**
      * Retreive the actual PublishedService object from it's oid.
      *
@@ -72,7 +71,7 @@ public interface ServiceManager extends EntityManager {
     /**
      * returns the parsed server-side policy for a specific PublishedService
      */
-    ServerAssertion getServerPolicy(long serviceOid) throws FindException;
+    ServerPolicy getServerPolicy(long serviceOid) throws FindException;
 
     /**
      * resolves to which published service the passed request applies to
@@ -87,17 +86,7 @@ public interface ServiceManager extends EntityManager {
     /**
      * returns all current ServiceStatistics
      */
-    Collection getAllServiceStatistics() throws FindException;
-
-    int getCurrentPolicyVersion(long policyId) throws FindException;
-
-    /**
-     * get the service versions as currently recorded in database
-     *
-     * @return a map whose keys is a Long with service id and values is an Integer with the service version
-     * @throws FindException if the query fails for some reason
-     */
-    Map getServiceVersions() throws FindException;
+    Collection<ServiceStatistics> getAllServiceStatistics() throws FindException;
 
     void setVisitorClassnames(String visitorClasses);
 }
