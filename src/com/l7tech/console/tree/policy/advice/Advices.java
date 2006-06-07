@@ -44,20 +44,18 @@ public class Advices {
         }
 
         try {
-            Iterator it = advicesMap.keySet().iterator();
             List advices = new ArrayList();
-            for (; it.hasNext();) {
-                Class assertionClass = (Class)it.next();
+            for (Class<? extends Assertion> assertionClass : advicesMap.keySet()) {
                 if (assertionClass.isAssignableFrom(assertion.getClass())) {
-                    Class[] adviceClasses = (Class[])advicesMap.get(assertionClass);
-                    for (int i = 0; i < adviceClasses.length; i++) {
-                        Class adviceClass = adviceClasses[i];
+                    Class[] adviceClasses = advicesMap.get(assertionClass);
+                    for (Class adviceClass : adviceClasses) {
                         advices.add(adviceClass.newInstance());
                     }
                 }
             }
+
             if (advices.isEmpty()) {
-                advices.add(new UnknonwnAssertion());
+                advices.add(new UnknonwnAssertion()); // TODO what the hell?
             }
             return (Advice[])advices.toArray(new Advice[]{});
         } catch (Exception e) {
@@ -82,7 +80,7 @@ public class Advices {
         }
     }
 
-    private static Map advicesMap = new HashMap();
+    private static Map<Class<? extends Assertion>, Class[]> advicesMap = new HashMap<Class<? extends Assertion>, Class[]>();
 
 
     // maping assertions to advices, the Class#isAssignable() is used to determine
@@ -116,5 +114,6 @@ public class Advices {
         advicesMap.put(MappingAssertion.class, new Class[] {MappingAssertionAdvice.class});
         advicesMap.put(AuditDetailAssertion.class, new Class[] {AddAuditAdviceAssertion.class});
         advicesMap.put(Operation.class, new Class[]{AddWSDLOperationAssertionAdvice.class});
+        advicesMap.put(SetVariableAssertion.class, new Class[]{SetVariableAssertionAdvice.class});
     }
 }

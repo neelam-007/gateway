@@ -281,6 +281,7 @@ public class WspConstants {
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),
         new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
+        new AssertionMapping(new SetVariableAssertion(), "SetVariable"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

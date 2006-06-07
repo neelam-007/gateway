@@ -30,5 +30,6 @@ public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
         insert(new AllNode(), index++);
         insert(new TrueAssertionPaletteNode(), index++);
         insert(new FalseAssertionPaletteNode(), index++);
+        insert(new SetVariableAssertionPaletteNode(), index++);
     }
 }

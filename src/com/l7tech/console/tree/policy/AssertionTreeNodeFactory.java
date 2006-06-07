@@ -6,17 +6,17 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -36,7 +36,7 @@ import java.util.Map;
  * @version 1.1
  */
 public class AssertionTreeNodeFactory {
-    private static Map assertionMap = new HashMap();
+    private static Map<Class<? extends Assertion>, Class<? extends AssertionTreeNode>> assertionMap = new HashMap<Class<? extends Assertion>, Class<? extends AssertionTreeNode>>();
 
     // maping assertions to assertion tree nodes
     static {
@@ -105,6 +105,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(WsspAssertion.class, WsspAssertionPolicyNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
         assertionMap.put(Operation.class, OperationTreeNode.class);
+        assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
     }
 
     /**
@@ -126,7 +127,7 @@ public class AssertionTreeNodeFactory {
             throw new IllegalArgumentException();
         }
         // assertion lookup, find the  assertion tree node
-        Class classNode = (Class)assertionMap.get(assertion.getClass());
+        Class classNode = assertionMap.get(assertion.getClass());
         if (null == classNode) {
             return new UnknownAssertionTreeNode(assertion);
         }
