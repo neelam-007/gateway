@@ -222,6 +222,7 @@
         -->
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${tomcat.home}/conf/server.xml"/>
         <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${tomcat.home}/conf/truststore.ks"/>
+        <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties" tofile="${tomcat.home}/conf/SsgSSLImplementation.properties"/>
 
     </target>
 
@@ -1713,6 +1714,8 @@
         <!-- Copy server configuration -->
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml"/>
         <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${install.src.tomcat}/conf/truststore.ks"/>
+        <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties" 
+              tofile="${install.src.tomcat}/conf/SsgSSLImplementation.properties"/>
     </target>
 
     <target name="INTERNAL-ssg-install" depends="init-dev">
