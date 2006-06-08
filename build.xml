@@ -440,6 +440,7 @@
         </delete>
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
+        <property name="buildinfo.update" value="true"/>
     </target>
 
     <target name="clean.ca" depends="ca.availablecheck" if="customassertion.available">
@@ -693,6 +694,12 @@
                 <include name="xfire-servlet.xml"/>
             </zipfileset>
 
+            <!-- Web SecureSpan Manager stuff  ... coming soon
+            <zipfileset dir="${src.root}/etc/admin/" prefix="WEB-INF">
+                <include name="admin-servlet.xml"/>
+            </zipfileset>
+            -->
+
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
         </war>
 
@@ -869,6 +876,7 @@
                 <include name="com/l7tech/service/MetricsBin.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
                 <include name="com/l7tech/spring/remoting/rmi/**/*"/>
+                <include name="com/l7tech/spring/remoting/http/**/*"/>
             </fileset>
         </jar>
     </target>
@@ -1940,6 +1948,8 @@
         <cvs command="update -A -C build.number"/>
 
         <buildnumber/>
+
+        <property name="buildinfo.update" value="true"/>
     </target>
 
     <target name="OFFICIAL-build" depends="OFFICIAL-build.init, clean, testpackage">
@@ -2008,7 +2018,7 @@
         </antcall>
     </target>
 
-    <target name="INTERNAL-buildinfo-uptodate">
+    <target name="INTERNAL-buildinfo-uptodate" unless="buildinfo.update">
         <uptodate property="buildinfo.uptodate" targetfile="${src.root}/src/com/l7tech/common/BuildInfo.java" >
             <srcfiles dir="${src.root}" includes="src/**/*, build.version, build.number" excludes="src/com/l7tech/common/BuildInfo.java"/>
         </uptodate>
