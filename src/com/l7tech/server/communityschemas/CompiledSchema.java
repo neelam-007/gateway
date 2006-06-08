@@ -9,6 +9,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.Closeable;
+import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -20,6 +21,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.ls.LSInput;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -28,12 +30,10 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class CompiledSchema implements Closeable {
+class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHaver {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
     public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
             "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
@@ -53,6 +53,7 @@ class CompiledSchema implements Closeable {
     private final Schema softwareSchema;
     private final String schemaDocument;
     private final CompiledSchemaManager manager;
+    private final Set<SchemaHandle> deps;
     private final AtomicInteger refcount = new AtomicInteger(0);
     private boolean closed = false;
 
@@ -74,8 +75,8 @@ class CompiledSchema implements Closeable {
         return closed;
     }
 
-    CompiledSchema(String targetNamespace, String systemId, String schemaDocument, Schema softwareSchema, CompiledSchemaManager manager) {
-        if (targetNamespace == null || softwareSchema == null || schemaDocument == null)
+    CompiledSchema(String targetNamespace, String systemId, String schemaDocument, Schema softwareSchema, CompiledSchemaManager manager, Set<SchemaHandle> deps) {
+        if (targetNamespace == null || softwareSchema == null || schemaDocument == null || deps == null)
             throw new NullPointerException();
 
         this.targetNamespace = targetNamespace;
@@ -83,6 +84,12 @@ class CompiledSchema implements Closeable {
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
         this.manager = manager;
+        this.deps = deps;
+    }
+
+    /** @return an unmodifiable view of the dependencies present when this schema was initially compiled */
+    public Set<SchemaHandle> getDeps() {
+        return Collections.unmodifiableSet(deps);
     }
 
     String getTargetNamespace() {
@@ -290,5 +297,11 @@ class CompiledSchema implements Closeable {
         sb.append("hardware=\"").append(hardwareStatus).append("\" ");
         sb.append("doc=\"").append(schemaDocument.hashCode()).append("\" ");
         return sb.toString();
+    }
+
+    public LSInput getLSInput() {
+        LSInputImpl lsi =  new LSInputImpl();
+        lsi.setStringData(schemaDocument);
+        return lsi;
     }
 }

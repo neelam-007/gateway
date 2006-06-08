@@ -205,17 +205,19 @@ public class CommunitySchemaManagerImpl
         final CommunitySchemaManagerImpl manager = this;
         return new LSResourceResolver () {
             public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, final String baseURI) {
-                LSInput lsInput = new LSInputImpl();
-                if(XmlUtil.W3C_XML_SCHEMA.equals(type)) { // check we are resolving schema
+                if(XmlUtil.W3C_XML_SCHEMA.equals(type)) {
+                    // check we are resolving schema
                     SchemaEntry resolved = manager.getSchemaEntryFromSystemId(systemId);
                     if(resolved!=null) {
+                        LSInput lsInput = new LSInputImpl();
                         lsInput.setCharacterStream(new StringReader(resolved.getSchema()));
+                        return lsInput;
                     }
                 } else {
+                    // Not a schema type
                     logger.info("Not resolving resource of non-schema type '"+type+"', systemId is '"+systemId+"'.");
-                    return new LSInputImpl();
                 }
-                return lsInput; // if we return null the schema would be resolved over the network.
+                return CachingLSResourceResolver.LSINPUT_UNRESOLVED; // if we return null the schema would be resolved over the network.
             }
         };
     }
@@ -245,7 +247,7 @@ public class CommunitySchemaManagerImpl
     }
 
     private void compileAndCache(long oid, SchemaEntry entry) throws InvalidDocumentFormatException {
-        SchemaHandle handle = compiledSchemaManager.compile(entry.getSchema(), entry.getName());
+        SchemaHandle handle = compiledSchemaManager.compile(entry.getSchema(), entry.getName(), null, null, null);
         synchronized(this) {
             compiledSchemasByOid.put(oid, handle);
         }
@@ -270,6 +272,7 @@ public class CommunitySchemaManagerImpl
     /**
      * Equivalent to communityEntityResolver but for tarari based hardware schema validation.
      * This is expected to be used by the GlobalTarariContextImpl
+     * TODO fix this
      */
     public TarariSchemaResolver communitySchemaResolver() {
         final CommunitySchemaManagerImpl manager = this;
@@ -302,7 +305,7 @@ public class CommunitySchemaManagerImpl
                 }
                 if (matchingSchemas == null || matchingSchemas.isEmpty()) {
                     logger.warning("could not resolve external schema either by name or tns");
-                    return new byte[0];
+                    return TARARISCHEMA_UNRESOLVED;
                 } else {
                     SchemaEntry resolved = (SchemaEntry)matchingSchemas.iterator().next();
                     return resolved.getSchema().getBytes();

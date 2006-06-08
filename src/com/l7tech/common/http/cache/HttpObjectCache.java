@@ -74,13 +74,14 @@ public class HttpObjectCache {
          * Create a user object from the specified HTTP response.  The response may have any status code, and may or
          * may not have a non-empty InputStream.
          *
+         * @param url       the URL that was fetched to obtain this response.  Never null.
          * @param response  a non-null GenericHttpResponse, which might have any result code (not just 200).
          *                  Factory can consume its InputStream.
          * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
          * @throws IOException if this response was not accepted for caching, in which case this request will
          *                     be treated as a failure.
          */
-        Object createUserObject(GenericHttpResponse response) throws IOException;
+        Object createUserObject(String url, GenericHttpResponse response) throws IOException;
     }
 
 
@@ -326,7 +327,7 @@ public class HttpObjectCache {
             // Save server-provided last-modified date
             HttpHeaders headers = resp.getHeaders();
             String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
-            Object userObject = userObjectFactory.createUserObject(resp);
+            Object userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), resp);
             if (userObject != null) {
                 if (logger.isLoggable(Level.FINER)) logger.finer("Downloaded new object from URL '" + urlStr + "'");
                 return doSuccessfulDownload(entry, requestStart, modified, userObject);

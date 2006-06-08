@@ -70,7 +70,12 @@ public class ServerSchemaValidation
             public Object createResourceObject(String url, String resource) throws ParseException {
                 try {
                     logger.info("Loading schema for message validation.");
-                    return compiledSchemaManager.compile(resource, url);
+                    if (resourceGetter instanceof ResourceGetter.UrlResourceGetter) {
+                        ResourceGetter.UrlResourceGetter urg = (ResourceGetter.UrlResourceGetter)resourceGetter;
+                        return compiledSchemaManager.compile(resource, url, urg.getHttpClient(), urg.getHttpObjectCache(), urg.getUrlWhitelist());
+                    } else
+                        return compiledSchemaManager.compile(resource, url, null, null, null);
+
                 } catch (InvalidDocumentFormatException e) {
                     String msg = "parsing exception";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, e);

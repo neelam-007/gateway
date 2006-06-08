@@ -6,9 +6,6 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.AssertionResourceType;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 /**
  * A {@link AssertionResourceInfo} implementation indicating that resources can be fetched from
@@ -17,7 +14,6 @@ import java.util.regex.Pattern;
  */
 public class MessageUrlResourceInfo extends AssertionResourceInfo {
     private boolean allowMessagesWithoutUrl = false;
-    private String[] urlRegexes = new String[0];
 
     public MessageUrlResourceInfo() {
     }
@@ -28,36 +24,6 @@ public class MessageUrlResourceInfo extends AssertionResourceInfo {
 
     public AssertionResourceType getType() {
         return AssertionResourceType.MESSAGE_URL;
-    }
-
-    /**
-     * @return an array of regular expressions, any of which must match a URL for it to be considered acceptable.
-     */
-    public String[] getUrlRegexes() {
-        return urlRegexes;
-    }
-
-    /**
-     * @return the regular expressions compiled into patterns.  May be empty but never null.
-     * @see #getUrlRegexes()
-     */
-    public Pattern[] makeUrlPatterns() {
-        List patterns = new ArrayList();
-        for (int i = 0; i < urlRegexes.length; i++) {
-            String regex = urlRegexes[i];
-            Pattern p;
-            p = Pattern.compile(regex);
-            patterns.add(p);
-        }
-        return (Pattern[])patterns.toArray(new Pattern[0]);
-    }
-
-    /**
-     * @param urlRegexes an array of regular expressions, any of which must match a URL for it to be considered acceptable.
-     */
-    public void setUrlRegexes(String[] urlRegexes) {
-        if (urlRegexes == null) throw new NullPointerException();
-        this.urlRegexes = urlRegexes;
     }
 
     /**

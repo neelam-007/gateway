@@ -6,6 +6,7 @@
 package com.l7tech.common.util;
 
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 /**
  * Utilities for text mode programs.
@@ -67,5 +68,20 @@ public class TextUtils {
             }
         }
         return out.toString();
+    }
+
+
+    /**
+     * Check if the specified string is matched by at least one regexp.
+     *
+     * @param string  the string to match.  If null, this method always fails.
+     * @param patterns  the patterns to check against.  If null or empty, this method always fails.
+     * @return true if and only if the provided string was matched by at least one pattern.
+     */
+    public static boolean matchesAny(String string, Pattern[] patterns) {
+        for (int i = 0; i < patterns.length; i++)
+            if (patterns[i].matcher(string).matches())
+                return true;
+        return false;
     }
 }

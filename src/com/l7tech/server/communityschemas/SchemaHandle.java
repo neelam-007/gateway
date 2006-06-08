@@ -7,11 +7,13 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.Closeable;
 import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSInput;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.Set;
 
-public final class SchemaHandle implements Closeable {
+public final class SchemaHandle implements Closeable, CachingLSResourceResolver.LSInputHaver {
     private final CompiledSchema cs;
     private volatile boolean closed = false;
 
@@ -39,5 +41,17 @@ public final class SchemaHandle implements Closeable {
         } finally {
             close();
         }
+    }
+
+    public LSInput getLSInput() {
+        return cs.getLSInput();
+    }
+
+    public Set<SchemaHandle> getDeps() {
+        return cs.getDeps();
+    }
+
+    CompiledSchema getCompiledSchema() {
+        return cs;
     }
 }

@@ -7,14 +7,21 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.SoftwareFallbackException;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
+import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.cache.HttpObjectCache;
 import static com.l7tech.server.communityschemas.CompiledSchema.HardwareStatus.*;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.xml.sax.SAXException;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.ls.LSInput;
 
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -22,12 +29,11 @@ import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.lang.ref.WeakReference;
+import java.util.*;
+import java.util.regex.Pattern;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.lang.ref.WeakReference;
 
 /**
  * Creates and manages all in-memory instances of {@link CompiledSchema}, including uploading them to hardware
@@ -56,10 +62,39 @@ public class CompiledSchemaManager {
      * System ID, so that imports using relative URIs can be resolved.
      * @param   schemadoc the XML Schema Document to get a CompiledSchema for. Must not be null.
      * @param   systemId  the System ID from which the document was loaded. May be null or empty.
-     * @return  a CompiledSchema for the given document.
-     * @throws  InvalidDocumentFormatException
+     * @return  a SchemaHandle for the given document.  Never null.
+     * @throws  com.l7tech.common.xml.InvalidDocumentFormatException if the schema or a dependent could not be compiled
      */
-    public SchemaHandle compile(String schemadoc, String systemId) throws InvalidDocumentFormatException {
+    public SchemaHandle compile(String schemadoc,
+                                String systemId,
+                                GenericHttpClient httpClient,
+                                HttpObjectCache cache,
+                                Pattern[] urlWhitelist)
+            throws InvalidDocumentFormatException
+    {
+        return doCompile(schemadoc, systemId, true, httpClient, cache, urlWhitelist);
+    }
+
+    /**
+     * Get the {@link CompiledSchema} for the specified schema document, reusing an existing instance
+     * if possible.  If the schema was loaded from a URL, that URL should be supplied as a
+     * System ID, so that imports using relative URIs can be resolved.
+     *
+     * @param   schemadoc the XML Schema Document to get a CompiledSchema for. Must not be null.
+     * @param   systemId  the System ID from which the document was loaded. May be null or empty.
+     * @param enableHardware if true, we'll call {@link #maybeEnableHardwareForNewSchema(CompiledSchema)} before
+     *                      relinquishing the write lock
+     * @return  a SchemaHandle for the given document.  Never null.
+     * @throws  com.l7tech.common.xml.InvalidDocumentFormatException if the schema or a dependent could not be compiled
+     */
+    private SchemaHandle doCompile(String schemadoc,
+                                   String systemId,
+                                   boolean enableHardware,
+                                   GenericHttpClient httpClient,
+                                   HttpObjectCache cache,
+                                   Pattern[] urlWhitelist)
+            throws InvalidDocumentFormatException
+    {
         logger.log(Level.FINE, "Compiling schema with systemId \"{0}\"", systemId);
         schemadoc = schemadoc.intern();
         Sync read = null;
@@ -76,7 +111,7 @@ public class CompiledSchemaManager {
             read.release(); read = null;
 
             // Compile outside of lock to avoid holding it during database activity
-            CompiledSchema newSchema = compileNoCache(systemId, schemadoc);
+            CompiledSchema newSchema = compileNoCache(systemId, schemadoc, httpClient, cache, urlWhitelist);
 
             // Check again under the write lock to make sure some other thread hasn't gotten here first
             (write = cacheLock.writeLock()).acquire();
@@ -86,7 +121,18 @@ public class CompiledSchemaManager {
                 return existingSchema.ref();
             }
 
-            return cacheNewSchema(schemadoc, newSchema).ref();
+            logger.log(Level.FINE, "Caching compiled schema with targetNamespace \"{0}\", systemId \"{1}\"", new Object[] { newSchema.getTargetNamespace(), newSchema.getSystemId() });
+            // We got here first, it's our job to create and cache the CompiledSchema
+            compiledSchemaCache.put(schemadoc, new WeakReference<CompiledSchema>(newSchema));
+
+            if (enableHardware) {
+                Set<SchemaHandle> deps = newSchema.getDeps();
+                for (SchemaHandle dep : deps)
+                    maybeEnableHardwareForNewSchema(dep.getCompiledSchema());
+                maybeEnableHardwareForNewSchema(newSchema);
+            }
+
+            return newSchema.ref();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted waiting for cache lock");
@@ -98,42 +144,15 @@ public class CompiledSchemaManager {
         }
     }
 
-    private CompiledSchema getCachedCompiledSchema(String schemadoc) {
-        WeakReference<CompiledSchema> existingSchemaRef;
-        existingSchemaRef = compiledSchemaCache.get(schemadoc);
-        if (existingSchemaRef == null) return null;
-        return existingSchemaRef.get();
-    }
-
-    private CompiledSchema compileNoCache(String systemId, String schemadoc) throws SAXException {
-        // Parse software schema
-        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-        sf.setResourceResolver(communitySchemaManager.communityLSResourceResolver());
-
-        try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes("UTF-8"));
-            Schema softwareSchema = sf.newSchema(new StreamSource(bais));
-            bais.reset();
-            SchemaDocument sdoc = SchemaDocument.Factory.parse(bais);
-            String tns = sdoc.getSchema().getTargetNamespace();
-
-            return new CompiledSchema(tns, systemId, schemadoc, softwareSchema, this);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new SAXException("XMLBeans couldn't parse Schema", e);
-        } catch (XmlException e) {
-            throw new SAXException("XMLBeans couldn't parse Schema", e);
-        }
-    }
-
-    private CompiledSchema cacheNewSchema(String schemadoc, CompiledSchema newSchema) {
-        logger.log(Level.FINE, "Caching compiled schema with targetNamespace \"{0}\", systemId \"{1}\"", new Object[] { newSchema.getTargetNamespace(), newSchema.getSystemId() });
-        // We got here first, it's our job to create and cache the CompiledSchema
-        compiledSchemaCache.put(schemadoc, new WeakReference<CompiledSchema>(newSchema));
-
+    /**
+     * Add this schema to the TNS cache, and enable hardware if this is the only schema using it.
+     * Caller must hold the write lock.
+     *
+     * @param newSchema the schema for which to maybe enable hardware.
+     */
+    private void maybeEnableHardwareForNewSchema(CompiledSchema newSchema) {
         String tns = newSchema.getTargetNamespace();
-        if (tns == null) return newSchema;
+        if (tns == null) return;
 
         // The new CompiledSchema has a TNS, and may be hardware-accelerated if no other schema current has the same TNS.
         Map<CompiledSchema, Object> compiledSchemasWithThisTns = tnsCache.get(tns);
@@ -149,7 +168,7 @@ public class CompiledSchemaManager {
             for (CompiledSchema schema : compiledSchemasWithThisTns.keySet()) {
                 hardwareDisable(schema);
             }
-            return newSchema;
+            return;
         }
 
         if (compiledSchemasWithThisTns.size() == 1) {
@@ -158,7 +177,78 @@ public class CompiledSchemaManager {
             logger.fine("No more schemas with targetNamespace " + tns);
             tnsCache.remove(tns);
         }
-        return newSchema;
+    }
+
+    private CompiledSchema getCachedCompiledSchema(String schemadoc) {
+        WeakReference<CompiledSchema> existingSchemaRef;
+        existingSchemaRef = compiledSchemaCache.get(schemadoc);
+        if (existingSchemaRef == null) return null;
+        return existingSchemaRef.get();
+    }
+
+    private CompiledSchema compileNoCache(String systemId,
+                                          String schemadoc,
+                                          final GenericHttpClient httpClient,
+                                          final HttpObjectCache cache,
+                                          final Pattern[] urlWhitelist) throws SAXException {
+        // Parse software schema
+        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+
+        final LSResourceResolver lsrr;
+        final Set<SchemaHandle> deps = new HashSet<SchemaHandle>();
+
+        // TODO we need to collect ALL deps for this compiled schema, NOT just the cache misses.  We also need to collect
+        // the community schemas as deps.
+
+        // TODO we should track these links in the backwards direction, not forward -- that is, "users" rather than "deps"
+        // might need to be weak references
+
+        if (httpClient != null && cache != null && urlWhitelist != null && urlWhitelist.length > 0) {
+            CachingLSResourceResolver.LSInputHaverMaker lsInputHaverMaker = new CachingLSResourceResolver.LSInputHaverMaker() {
+                public CachingLSResourceResolver.LSInputHaver makeLSInputHaver(String url, GenericHttpResponse response) throws IOException {
+                    String str = response.getAsString();
+
+                    final SchemaHandle got;
+                    try {
+                        got = doCompile(str, url, false, httpClient, cache, urlWhitelist);
+                    } catch (InvalidDocumentFormatException e) {
+                        throw new CausedIOException("Remote schema object was invalid: " + ExceptionUtils.getMessage(e), e);
+                    }
+
+                    deps.addAll(got.getDeps());
+                    return new CachingLSResourceResolver.LSInputHaver() {
+                        public LSInput getLSInput() {
+                            return got.getLSInput();
+                        }
+                    };
+                }
+            };
+            lsrr = new CachingLSResourceResolver(communitySchemaManager.communityLSResourceResolver(),
+                                                 httpClient,
+                                                 cache,
+                                                 lsInputHaverMaker,
+                                                 urlWhitelist);
+        } else {
+            lsrr = communitySchemaManager.communityLSResourceResolver();
+        }
+
+        sf.setResourceResolver(lsrr);
+
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes("UTF-8"));
+            Schema softwareSchema = sf.newSchema(new StreamSource(bais));
+            bais.reset();
+            SchemaDocument sdoc = SchemaDocument.Factory.parse(bais);
+            String tns = sdoc.getSchema().getTargetNamespace();
+
+            return new CompiledSchema(tns, systemId, schemadoc, softwareSchema, this, deps);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new SAXException("XMLBeans couldn't parse Schema", e);
+        } catch (XmlException e) {
+            throw new SAXException("XMLBeans couldn't parse Schema", e);
+        }
     }
 
     /**
@@ -228,6 +318,10 @@ public class CompiledSchemaManager {
         if (tarariSchemaHandler == null) return;
 
         try {
+            // TODO set a schema resolver that will call use back
+            // TODO we will need to maintain a URL->CompiledSchema map for this, unless we want to either
+            // move ownership of the HttpObjectCache to here, OR make CompiledSchema's know what HttpObjectCache
+            // they are living in
             tarariSchemaHandler.loadHardware(schema.getSystemId(), schema.getSchemaDocument());
             logger.info("Enabled hardware acceleration for schema with targetNamespace " + tns);
             schema.setHardwareStatus(ON);

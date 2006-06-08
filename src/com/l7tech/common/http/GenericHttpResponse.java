@@ -6,12 +6,16 @@
 
 package com.l7tech.common.http;
 
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.HexUtils;
+
 import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * Provides a client-independant, generic interface to an HTTP response.
  */
-public interface GenericHttpResponse extends GenericHttpResponseParams {
+public abstract class GenericHttpResponse implements GenericHttpResponseParams {
     /**
      * Get the InputStream from which the response body can be read.  Some implementations may close the
      * entire HTTP response when this InputStream is closed.
@@ -19,7 +23,22 @@ public interface GenericHttpResponse extends GenericHttpResponseParams {
      * @return the InputStream of the response body.  Never null.
      * @throws GenericHttpException if there is a network problem or protocol violation.
      */
-    InputStream getInputStream() throws GenericHttpException;
+    public abstract InputStream getInputStream() throws GenericHttpException;
+
+    /**
+     * Get the entire HTTP response body as a String, if the returned HTTP status was 200.
+     *
+     * @return a String with HTTP-ly-correct encoding (default ISO8859-1 if not declared).  Never null.
+     * @throws IOException  if the status isn't 200
+     * @throws java.io.UnsupportedEncodingException if we can't handle the declared character encoding
+     */
+    public String getAsString() throws IOException {
+        if (getStatus() != HttpConstants.STATUS_OK)
+            throw new IOException("HTTP status was " + getStatus());
+        ContentTypeHeader ctype = getContentType();
+        String encoding = ctype == null ? ContentTypeHeader.DEFAULT_HTTP_ENCODING : ctype.getEncoding();
+        return new String(HexUtils.slurpStreamLocalBuffer(getInputStream()), encoding);
+    }
 
     /**
      * Free all resources used by this response.
@@ -32,5 +51,5 @@ public interface GenericHttpResponse extends GenericHttpResponseParams {
      * <p>
      * Might throw unavoidable Errors (ie, OutOfMemoryError), but will never throw runtime exceptions.
      */
-    void close();
+    public abstract void close();
 }

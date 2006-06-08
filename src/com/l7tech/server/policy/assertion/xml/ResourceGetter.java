@@ -10,20 +10,21 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.xml.ElementCursor;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -39,10 +40,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.Map;
 
 /**
  * An object that is created with a ResourceInfo and can thereafter fetch a resource given a message.
@@ -137,7 +138,7 @@ abstract class ResourceGetter {
      *         was found in this message.
      * @throws IOException if there was a problem reading the message in order to produce a resource
      * @throws InvalidMessageException if the message format is invalid
-     * @throws UrlNotFoundException if no resource URL was found inside the message, and the policy does not permit messages without one 
+     * @throws UrlNotFoundException if no resource URL was found inside the message, and the policy does not permit messages without one
      * @throws MalformedResourceUrlException if a resource URL found inside a message is malformed
      * @throws UrlNotPermittedException if a resource URL found insdie a message is not matched in the whitelist
      * @throws ResourceIOException if an external resource can't be fetched.  Call getIOException to retrieve the underlying cause.
@@ -161,7 +162,7 @@ abstract class ResourceGetter {
          * multiple threads simulataneously.  The Object will be returned back through getResource(), and
          * the consumer can downcast it to the appropriate type.
          *
-         * @param url
+         * @param url  the URL the content was loaded from, or null
          * @param  resourceContent the content of the resource document @return the object to cache and reuse.  Returning null will be considered the same as throwing IOException
          *         with no message.
          * @throws ParseException if the specified resource bytes could not be converted into a resource object.
@@ -217,15 +218,19 @@ abstract class ResourceGetter {
         if (ri == null) throw new ServerPolicyException(assertion, "Assertion contains no ResourceInfo provided");
         if (rof == null) throw new NullPointerException("No ResourceObjectFactory provided");
 
-        if (ri instanceof MessageUrlResourceInfo) {
-            if (urlFinder == null) throw new IllegalArgumentException("MessageUrlResourceInfo requested but no UrlFinder provided");
-            return new MessageUrlResourceGetter(assertion, (MessageUrlResourceInfo)ri, rof, urlFinder, springContext, auditor);
-        } else if (ri instanceof SingleUrlResourceInfo) {
-            return new SingleUrlResourceGetter(assertion, (SingleUrlResourceInfo)ri, rof, springContext, auditor);
-        } else if (ri instanceof StaticResourceInfo) {
-            return new StaticResourceGetter(assertion, (StaticResourceInfo)ri, rof);
-        } else
-            throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
+        try {
+            if (ri instanceof MessageUrlResourceInfo) {
+                if (urlFinder == null) throw new IllegalArgumentException("MessageUrlResourceInfo requested but no UrlFinder provided");
+                return new MessageUrlResourceGetter((MessageUrlResourceInfo)ri, rof, urlFinder, springContext, auditor);
+            } else if (ri instanceof SingleUrlResourceInfo) {
+                return new SingleUrlResourceGetter(assertion, (SingleUrlResourceInfo)ri, rof, springContext, auditor);
+            } else if (ri instanceof StaticResourceInfo) {
+                return new StaticResourceGetter(assertion, (StaticResourceInfo)ri, rof);
+            } else
+                throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
+        } catch (PatternSyntaxException e) {
+            throw new ServerPolicyException(assertion, "Couldn't compile regular expression '" + e.getPattern() + "'", e);
+        }
     }
 
     // ---------- END STATIC FACTORY METHOD ----------
@@ -234,16 +239,15 @@ abstract class ResourceGetter {
     /**
      * Superclass for ResourceGetters that fetch the resource from an external URL.
      */
-    private static abstract class UrlResourceGetter extends ResourceGetter {
+    public static abstract class UrlResourceGetter extends ResourceGetter {
         protected static final ThreadLocal httpRequest = new ThreadLocal() {
             protected Object initialValue() {
                 return new GenericHttpRequestParams();
             }
         };
 
-        protected static final GenericHttpClient httpClient;
         private static volatile SSLContext sslContext; // initialized lazily
-
+        private static final GenericHttpClient httpClient;
         static {
             MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
             connectionManager.setMaxConnectionsPerHost(100);
@@ -267,6 +271,7 @@ abstract class ResourceGetter {
         private final ResourceObjectFactory resourceObjectFactory;
         private final ApplicationContext springContext;  // may be null
         private final Auditor auditor; // may be null
+        private final Pattern[] urlWhitelist; // may be null
 
         /**
          * Initialize common code for URL based resource getters.
@@ -278,10 +283,12 @@ abstract class ResourceGetter {
          *                 purpose.
          */
         protected UrlResourceGetter(ResourceObjectFactory resourceObjectFactory,
+                                    Pattern[] urlWhitelist,
                                     ApplicationContext springContext,
                                     Auditor auditor)
         {
             this.resourceObjectFactory = resourceObjectFactory;
+            this.urlWhitelist = urlWhitelist;
             this.springContext = springContext;
             this.auditor = auditor;
         }
@@ -290,7 +297,17 @@ abstract class ResourceGetter {
         protected abstract int getMaxCacheAge();
 
         /** @return the {@link HttpObjectCache} through which to fetch the external URLs. */
-        protected abstract HttpObjectCache getHttpObjectCache();
+        public abstract HttpObjectCache getHttpObjectCache();
+
+        /** @return the HTTP client we are using with the object cache. */
+        public GenericHttpClient getHttpClient() {
+            return httpClient;
+        }
+
+        /** @return the whitelist of remote URLs to allow, or null. */
+        public Pattern[] getUrlWhitelist() {
+            return urlWhitelist;
+        }
 
         /**
          * Do the actual fetch of a (possibly cached) user object from this URL, through the current object cache.
@@ -320,13 +337,9 @@ abstract class ResourceGetter {
             }
 
             final HttpObjectCache.UserObjectFactory userObjectFactory = new HttpObjectCache.UserObjectFactory() {
-                public Object createUserObject(GenericHttpResponse response) throws IOException {
-                    if (response.getStatus() != HttpConstants.STATUS_OK)
-                        throw new IOException("HTTP status was " + response.getStatus());
-                    ContentTypeHeader ctype = response.getContentType();
-                    String encoding = ctype == null ? "ISO8859-1" : ctype.getEncoding();
-                    String thing = new String(HexUtils.slurpStreamLocalBuffer(response.getInputStream()), encoding);
-                    logger.fine("Downloaded resource from " + url.toExternalForm());
+                public Object createUserObject(String surl, GenericHttpResponse response) throws IOException {
+                    String thing = response.getAsString();
+                    logger.fine("Downloaded resource from " + surl);
                     try {
                         Object obj = resourceObjectFactory.createResourceObject(href, thing);
                         if (obj == null)
@@ -340,7 +353,7 @@ abstract class ResourceGetter {
             };
 
             // Get cached, possibly checking if-modified-since against server, possibly downloading a new stylesheet
-            HttpObjectCache.FetchResult result = getHttpObjectCache().fetchCached(httpClient,
+            HttpObjectCache.FetchResult result = getHttpObjectCache().fetchCached(getHttpClient(),
                                                                                   params,
                                                                                   false,
                                                                                   userObjectFactory);
@@ -364,7 +377,6 @@ abstract class ResourceGetter {
 
             return userObject;
         }
-
 
         /**
          * Get the process-wide shared SSL context, creating it if this thread is the first one
@@ -412,31 +424,22 @@ abstract class ResourceGetter {
         /** Shared cache for all URL-from-message resources, system-wide. */
         private static final HttpObjectCache httpObjectCache =
                 new HttpObjectCache(getIntProperty(ServerConfig.PARAM_MESSAGEURL_MAX_CACHE_ENTRIES, 100), maxCacheAge);
-        protected HttpObjectCache getHttpObjectCache() { return httpObjectCache; }
+        public HttpObjectCache getHttpObjectCache() { return httpObjectCache; }
 
         // --- Instance fields ---
 
-        private final Pattern[] fetchUrlPatterns;
-
-        private MessageUrlResourceGetter(Assertion assertion,
-                                         MessageUrlResourceInfo ri,
+        private MessageUrlResourceGetter(MessageUrlResourceInfo ri,
                                          ResourceObjectFactory rof,
                                          UrlFinder urlFinder,
                                          ApplicationContext springContext,
                                          Auditor auditor)
-                throws ServerPolicyException
+                throws PatternSyntaxException
         {
-            super(rof, springContext, auditor);
-            try {
-                this.fetchUrlPatterns = ri.makeUrlPatterns();
-            } catch (PatternSyntaxException e) {
-                throw new ServerPolicyException(assertion, "Couldn't compile regular expression '" + e.getPattern() + "'", e);
-            }
-
+            super(rof, ri.makeUrlPatterns(), springContext, auditor);
             this.urlFinder = urlFinder;
             this.allowMessagesWithoutUrl = ri.isAllowMessagesWithoutUrl();
 
-            if (rof == null || urlFinder == null || fetchUrlPatterns == null) throw new NullPointerException(); // can't happen
+            if (rof == null || urlFinder == null) throw new NullPointerException(); // can't happen
         }
 
         public void close() {
@@ -457,12 +460,8 @@ abstract class ResourceGetter {
             }
 
             // match against URL patterns
-            boolean anyMatch = false;
-            for (Pattern fetchUrlPattern : fetchUrlPatterns) {
-                if (fetchUrlPattern.matcher(url).matches()) anyMatch = true;
-            }
 
-            if (!anyMatch)
+            if (!TextUtils.matchesAny(url, getUrlWhitelist()))
                 throw new UrlNotPermittedException("External resource URL not permitted by whitelist: " + url, url);
 
             try {
@@ -486,7 +485,7 @@ abstract class ResourceGetter {
         /** Shared cache for all from-static-URL resources, system-wide. */
         private static final HttpObjectCache httpObjectCache =
                 new HttpObjectCache(getIntProperty(ServerConfig.PARAM_SINGLEURL_MAX_CACHE_ENTRIES, 100), maxCacheAge);
-        protected HttpObjectCache getHttpObjectCache() { return httpObjectCache; }
+        public HttpObjectCache getHttpObjectCache() { return httpObjectCache; }
 
         private final String url;
 
@@ -497,7 +496,7 @@ abstract class ResourceGetter {
                                         Auditor auditor)
                 throws ServerPolicyException
         {
-            super(rof, springContext, auditor);
+            super(rof, ri.makeUrlPatterns(), springContext, auditor);
             String url = ri.getUrl();
             if (url == null) throw new ServerPolicyException(assertion, "Missing resource url");
             this.url = url;

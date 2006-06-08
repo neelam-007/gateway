@@ -76,7 +76,7 @@ public class HttpObjectCacheTest extends TestCase {
                                                                                      "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory factory = new HttpObjectCache.UserObjectFactory() {
-            public Object createUserObject(GenericHttpResponse response) {
+            public Object createUserObject(String url, GenericHttpResponse response) {
                 return new UserObj(userObjStr);
             }
         };
@@ -283,7 +283,7 @@ public class HttpObjectCacheTest extends TestCase {
                                                                                      "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory factory = new HttpObjectCache.UserObjectFactory() {
-            public Object createUserObject(GenericHttpResponse response) {
+            public Object createUserObject(String url, GenericHttpResponse response) {
                 return new UserObj(userObjStr);
             }
         };

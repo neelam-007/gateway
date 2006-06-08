@@ -27,6 +27,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
+    public static final String DEFAULT_HTTP_ENCODING = "ISO8859-1"; // See RFC2616 s3.7.1
 
     static {
         try {
@@ -46,7 +47,6 @@ public class ContentTypeHeader extends MimeHeader {
 
     private String javaEncoding = null; // figured out lazy-like
     private String mimeCharset = null;
-    private static final String HTTP_DEFAULT_ENCODING = "ISO8859-1"; // See RFC2616 s3.7.1
 
     /**
      * Create a new ContentTypeHeader with the specified type, subtype, and parameters.  Currently
@@ -188,7 +188,7 @@ public class ContentTypeHeader extends MimeHeader {
      * Convert MIME charset into Java encoding.
      *
      * @return the name of the Java encoding corresponding to the charset of this content-type header,
-     *         or {@link #HTTP_DEFAULT_ENCODING} if there isn't any.  Always returns some string, never null.
+     *         or {@link #DEFAULT_HTTP_ENCODING} if there isn't any.  Always returns some string, never null.
      *         The returned encoding is not guaranteed to be meaningful on this system, however.
      */
     public String getEncoding() {
@@ -196,8 +196,8 @@ public class ContentTypeHeader extends MimeHeader {
             this.mimeCharset = getParam("charset");
 
             if (mimeCharset == null) {
-                logger.finest("No charset value found in Content-Type header; using " + HTTP_DEFAULT_ENCODING);
-                javaEncoding = HTTP_DEFAULT_ENCODING;
+                logger.finest("No charset value found in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
+                javaEncoding = DEFAULT_HTTP_ENCODING;
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
                 if ("UTF8".equalsIgnoreCase(tmp))

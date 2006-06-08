@@ -146,7 +146,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
     }
 
-    private class MockGenericHttpResponse implements GenericHttpResponse
+    private class MockGenericHttpResponse extends GenericHttpResponse
     {
         public InputStream getInputStream() throws GenericHttpException {
             return new ByteArrayInputStream(responseBody);
