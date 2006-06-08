@@ -191,6 +191,8 @@ public abstract class OSSpecificFunctions {
         return installRoot + pathToDBCreateFile;
     }
 
+    public abstract String getNetworkConfigurationDirectory();
+
     public abstract String getUpgradedFileExtension();
 
     public static class MissingPropertyException extends RuntimeException

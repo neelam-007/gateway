@@ -36,6 +36,10 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         };
     }
 
+    public String getNetworkConfigurationDirectory() {
+        throw new IllegalStateException("Cannot Configure the network on Windows.");
+    }
+
     public String getUpgradedFileExtension() {
         return "new";
     }

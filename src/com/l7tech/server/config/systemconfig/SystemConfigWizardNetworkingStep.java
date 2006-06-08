@@ -4,8 +4,9 @@ import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -15,6 +16,8 @@ import org.apache.commons.lang.StringUtils;
  * Time: 11:16:36 AM
  */
 public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
+
+    private static final Logger logger = Logger.getLogger(SystemConfigWizardNetworkingStep.class.getName());
 
     private static final String STEP_INFO = "This step lets you configure the network adapters on this machine" + getEolChar();
     private static final String HEADER_BOOTPROTO = "-- Boot Protocol --" + getEolChar();
@@ -119,33 +122,34 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
     private NetworkingConfigurationBean.NetworkConfig doSelectInterfacePrompts() throws IOException, WizardNavigationException {
-        ArrayList<String> promptList = new ArrayList<String>();
-        printText("Select the Interface you wish to configure" + getEolChar());
+
+        Map<String, NetworkingConfigurationBean.NetworkConfig> choicesMap = new TreeMap<String, NetworkingConfigurationBean.NetworkConfig>();
+        List<String> promptList = new ArrayList<String>();
 
         int x = 1;
         for (NetworkingConfigurationBean.NetworkConfig networkConfig : availableNetworkInterfaces) {
-            String infoLine = networkConfig.getBootProto();
+            String indexStr = String.valueOf(x);
+            String prompt = indexStr + ") " + networkConfig.describe();
 
-            if (StringUtils.equalsIgnoreCase(NetworkingConfigurationBean.STATIC_BOOT_PROTO, networkConfig.getBootProto())) {
-                infoLine += ", IP = " + networkConfig.getIpAddress() + ", NETMASK = " + networkConfig.getNetMask();
-            }
-            promptList.add(String.valueOf(x++) + ") " + networkConfig.getInterfaceName() + " (" + infoLine + ")" + getEolChar());
+            choicesMap.put(indexStr, networkConfig);
+            promptList.add(prompt + getEolChar());
+            x++;
         }
         promptList.add("Please make a selection [1] : ");
-        String[] prompts = promptList.toArray(new String[]{});
-        String whichChoice = getData(prompts, "1");
 
-        int choiceIndex = 0;
-        try {
-            choiceIndex = Integer.parseInt(whichChoice);
-        } catch (NumberFormatException e) {
-            choiceIndex = 1;
-        }
+        printText("Select the Interface you wish to configure. Current configurations are shown in ()" + getEolChar());
 
-        return availableNetworkInterfaces.get(choiceIndex -1);
+        String whichChoice = getData(promptList, "1", choicesMap.keySet().toArray(new String[]{}));
+
+        return choicesMap.get(whichChoice);
     }
 
     private NetworkingConfigurationBean.NetworkConfig doConfigurationPrompts(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
+
+        if (whichConfig.isNew()) {
+            whichConfig = promptForNewInterfaceName(whichConfig);
+        }
+
 
         String bootProto = getBootProtocol(whichConfig);
         whichConfig.setBootProto(bootProto);
@@ -165,7 +169,16 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return whichConfig;
     }
 
+    private NetworkingConfigurationBean.NetworkConfig promptForNewInterfaceName(NetworkingConfigurationBean.NetworkConfig theConfig) throws IOException, WizardNavigationException {
 
+        String[] prompts = new String[] {
+            "Please enter the name of the new interface (ex: eth5): ",
+        };
+
+        String input = getData(prompts, "");
+        theConfig.setInterfaceName(input);
+        return theConfig;
+    }
 
     private String getGateway(String gateway, String interfaceName) throws IOException, WizardNavigationException {
 
@@ -230,13 +243,16 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private String getBootProtocol(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
         String whichInterface = whichConfig.getInterfaceName();
         String bootProto = whichConfig.getBootProto();
-        if (StringUtils.isEmpty(bootProto)) bootProto = NetworkingConfigurationBean.STATIC_BOOT_PROTO;
 
-        String defaultValue = StringUtils.equalsIgnoreCase(NetworkingConfigurationBean.STATIC_BOOT_PROTO, bootProto)?"1":"2";
+        String defaultValue = (StringUtils.isEmpty(bootProto) || StringUtils.equalsIgnoreCase(NetworkingConfigurationBean.STATIC_BOOT_PROTO, bootProto)?"1":"2");
 
+        String protoQuestion = "What is the boot protocol for \"" + whichInterface + "\" ?";
+
+        if (StringUtils.isNotEmpty(bootProto))
+            protoQuestion += " (Currently " + bootProto + ")";
 
         String[] prompts = new String[] {
-            "What is the boot protocol for \"" + whichInterface + "\" ?" + getEolChar(),
+            protoQuestion + getEolChar(),
             "1) " + PROMPT_STATIC_NIC,
             "2) " + PROMPT_DYNAMIC_NIC,
             "Please make a selection [" + defaultValue + "] : "
@@ -250,10 +266,85 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
     private List<NetworkingConfigurationBean.NetworkConfig> getInterfaceInfo() {
-        List<NetworkingConfigurationBean.NetworkConfig> interfaces = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
-        interfaces.add(NetworkingConfigurationBean.makeNetworkConfig("eth0", "static", "192.168.21.1", "255.255.255.0"));
-        interfaces.add(NetworkingConfigurationBean.makeNetworkConfig("eth1", "dhcp", "192.168.1.1", "255.255.255.0"));
+        List<NetworkingConfigurationBean.NetworkConfig> interfaces = getExistingNetworkInterfaces();
+
+        NetworkingConfigurationBean.NetworkConfig newInterface = NetworkingConfigurationBean.makeNetworkConfig(null, null, null, null, null);
+        newInterface.isNew(true);
+        interfaces.add(newInterface);
         return interfaces;
+    }
+
+    private List<NetworkingConfigurationBean.NetworkConfig> getExistingNetworkInterfaces() {
+
+        logger.info("Determine existing interface information");
+        List<NetworkingConfigurationBean.NetworkConfig> configs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
+
+        String pathName = osFunctions.getNetworkConfigurationDirectory();
+        File parentDir = new File(pathName);
+
+        File[] configFiles = parentDir.listFiles(new FilenameFilter() {
+                public boolean accept(File file, String s) {
+                    return s.toLowerCase().startsWith("ifcfg-") && !s.toLowerCase().equals("ifcfg-lo");
+                }
+        });
+
+        if (configFiles != null && configFiles.length != 0) {
+            for (File file : configFiles) {
+                NetworkingConfigurationBean.NetworkConfig theConfig = parseConfigFile(file);
+                if (theConfig != null) {
+                    configs.add(theConfig);
+                    logger.info("found existing configuration for interface: " + theConfig.describe());
+                }
+            }
+        }
+
+        return configs;
+    }
+
+    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(File file) {
+        NetworkingConfigurationBean.NetworkConfig theNetConfig = null;
+
+        String justFileName = file.getName();
+        int dashIndex = justFileName.indexOf("-");
+        if (dashIndex == -1) return null;
+
+        String interfaceNameFromFileName = justFileName.substring(dashIndex + 1);
+        BufferedReader reader = null;
+
+        try {
+            reader  = new BufferedReader(new FileReader(file));
+            String bootProto = null;
+            String interfaceName = null;
+            String ipAddress = null;
+            String netMask = null;
+            String gateway = null;
+
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                int equalsIndex = line.indexOf("=");
+                //if this is a name=value pair
+                if (equalsIndex != -1) {
+                    String key = line.substring(0, equalsIndex);
+                    String value = line.substring(equalsIndex + 1);
+                    if (key.equals("DEVICE")) interfaceName = value;
+                    else if (key.equals("BOOTPROTO")) bootProto = value;
+                    else if (key.equals("IPADDR")) ipAddress = value;
+                    else if (key.equals("NETMASK")) netMask = value;
+                    else if (key.equals("GATEWAY")) gateway = value;
+                }
+            }
+            //finished reading the file, now make the network config
+            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(interfaceName, bootProto, ipAddress, netMask, gateway);
+        } catch (FileNotFoundException e) {
+            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
+        } catch (IOException e) {
+            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
+        } finally {
+            if (reader != null) try {
+                reader.close();
+            } catch (IOException e) {}
+        }
+        return theNetConfig;
     }
 
     public String getTitle() {

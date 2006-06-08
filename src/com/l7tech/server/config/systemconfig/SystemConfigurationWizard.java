@@ -3,7 +3,6 @@ package com.l7tech.server.config.systemconfig;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.PrintStream;
 
 /**
@@ -14,6 +13,8 @@ import java.io.PrintStream;
 public class SystemConfigurationWizard extends ConfigurationWizard {
     public SystemConfigurationWizard(InputStream in, PrintStream out) {
         super(in, out);
-    }
 
+        //this will throw if we are on windows so we'll fail early
+        osFunctions.getNetworkConfigurationDirectory();
+    }
 }

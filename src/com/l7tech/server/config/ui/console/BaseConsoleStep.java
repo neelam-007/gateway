@@ -144,8 +144,12 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     protected String getData(List<String> promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
         if (promptLines == null) return "";
-
         return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), allowedEntries);
+    }
+
+    protected String getData(List<String> promptLines, String defaultValue) throws IOException, WizardNavigationException {
+        if (promptLines == null) return "";
+        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), null);
     }
 
     protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {

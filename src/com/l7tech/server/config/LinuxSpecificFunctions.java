@@ -1,7 +1,6 @@
 package com.l7tech.server.config;
 
 import org.apache.commons.lang.StringUtils;
-import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,6 +34,10 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
             KeyStoreConstants.DEFAULT_KEYSTORE_NAME,
             KeyStoreConstants.LUNA_KEYSTORE_NAME
         };
+    }
+
+    public String getNetworkConfigurationDirectory() {
+        return "/etc/sysconfig/network-scripts";
     }
 
     public String getUpgradedFileExtension() {
