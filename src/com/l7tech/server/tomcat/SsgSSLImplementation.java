@@ -74,8 +74,10 @@ public class SsgSSLImplementation extends SSLImplementation {
     public ServerSocketFactory getServerSocketFactory() {
         ServerSocketFactory ssf = delegate.getServerSocketFactory();
 
-        File propFile = new File("conf/SsgSSLImplementation.properties");
+        File base = new File(System.getProperty("catalina.base", "/ssg/tomcat"));
+        File propFile = new File(base, "conf/SsgSSLImplementation.properties");
         if (propFile.exists()) {
+            logger.config("Loading connector properties from '"+propFile.getAbsolutePath()+"'.");
             Properties props = new Properties();
             InputStream in = null;
             try {
