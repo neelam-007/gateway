@@ -1,8 +1,7 @@
 package com.l7tech.skunkworks;
 
 import org.systinet.uddi.client.v3.struct.*;
-import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
-import org.systinet.uddi.client.v3.UDDIInquiryStub;
+import org.systinet.uddi.client.v3.*;
 import org.systinet.uddi.client.UDDIException;
 import org.systinet.uddi.client.base.StringArrayList;
 import org.systinet.uddi.InvalidParameterException;
@@ -390,6 +389,50 @@ public class SystinetUDDIClientAPIv3Test {
             System.out.println("The WSDL URLs found:");
             printWSDLs(wsdlList);
         }
+    }
+
+    private static void publishPolicyReferenceToSystinet35Directory() throws Exception {
+        //
+        // create a tmodel to save
+        //
+        TModel tmodel = new TModel();
+
+        CategoryBag cbag = new CategoryBag();
+        //cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:remotepolicyreference:2003_03", "policy reference", "???"));
+        cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:policytypes:2003_03", "policy", "policy"));
+        tmodel.setCategoryBag(cbag);
+
+        tmodel.setName(new Name("Policy " + System.currentTimeMillis()));
+
+        DescriptionArrayList dal = new DescriptionArrayList();
+        dal.add(new Description("Description " + System.currentTimeMillis()));
+
+        OverviewDocArrayList odal = new OverviewDocArrayList();
+        OverviewDoc odoc = new OverviewDoc();
+        odoc.setOverviewURL(new OverviewURL("http://blah/policy/blah.xml"));
+        odal.add(odoc);
+        tmodel.setOverviewDocArrayList(odal);
+
+        tmodel.setDescriptionArrayList(dal);
+
+        //
+        // setup stuff needed to save it
+        //
+        UDDI_Security_PortType security = UDDISecurityStub.getInstance("http://systinet:8080/uddi/security");
+        String authInfo = security.get_authToken(new Get_authToken("admin", "7layer")).getAuthInfo();
+
+        Save_tModel stm = new Save_tModel();
+        stm.setAuthInfo(authInfo);
+
+        TModelArrayList tmal = new TModelArrayList();
+        tmal.add(tmodel);
+        stm.setTModelArrayList(tmal);
+
+        UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance("http://systinet:8080/uddi/publishing");
+
+        TModelDetail tModelDetail = publishing.save_tModel(stm);
+        TModel saved = tModelDetail.getTModelArrayList().get(0);
+        System.out.println("saved: " + saved);
     }
 
     public static void main(String args[]) throws Exception {
