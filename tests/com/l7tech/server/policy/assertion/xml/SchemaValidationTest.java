@@ -4,9 +4,9 @@ import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
@@ -15,16 +15,23 @@ import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.communityschemas.SchemaHandle;
+import com.l7tech.server.communityschemas.SchemaManager;
+import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.tarari.xml.rax.schema.SchemaResolver;
+import com.tarari.xml.rax.schema.SchemaLoader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXParseException;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -33,8 +40,9 @@ import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Tests for schema validation code.
@@ -48,6 +56,10 @@ import java.util.logging.Level;
  */
 public class SchemaValidationTest extends TestCase {
     private static final Logger logger = Logger.getLogger(SchemaValidationTest.class.getName());
+    private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
+    private final String REUTERS_REQUEST_URL = "http://locutus/reuters/request1.xml";
+    private ApplicationContext testApplicationContext;
+
     public SchemaValidationTest(String name) {
         super(name);
     }
@@ -62,10 +74,12 @@ public class SchemaValidationTest extends TestCase {
     }
 
     protected void setUp() throws Exception {
-        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
+        System.setProperty("com.l7tech.common.xml.tarari.enable", "true");
+        GlobalTarariContextImpl context = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
         if (context != null) {
             context.compileAllXpaths();
         }
+        testApplicationContext = ApplicationContexts.getTestApplicationContext();
     }
 
     public void testEcho() throws Exception {
@@ -73,7 +87,7 @@ public class SchemaValidationTest extends TestCase {
         InputStream is = TestDocuments.getInputStream(ECHO3_XSD);
         String xsd = new String(HexUtils.slurpStream(is, 10000));
         assertion.setResourceInfo(new StaticResourceInfo(xsd));
-        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
+        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
         AssertionStatus res = serverAssertion.checkRequest(getResAsContext(ECHO_REQ));
         System.out.println("result is " + res);
     }
@@ -85,7 +99,7 @@ public class SchemaValidationTest extends TestCase {
         Element[] schemas = wsn.getFullSchemas();
         assertTrue(schemas.length == 1); // no multiple schema support
         assertion.setResourceInfo(new StaticResourceInfo(XmlUtil.elementToXml(schemas[0])));
-        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
+        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
 
         // try to validate a number of different soap messages
         String[] resources = {DOCLIT_WITH2BODYCHILDREN_REQ};
@@ -108,7 +122,7 @@ public class SchemaValidationTest extends TestCase {
         WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(WAREHOUSE_WSDL_PATH));
         Element[] schemas = wsn.getFullSchemas();
         assertion.setResourceInfo(new StaticResourceInfo(XmlUtil.elementToXml(schemas[0])));
-        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
+        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
 
         // try to validate a number of different soap messages
         String[] resources = {BAD_LISTREQ_PATH, LISTREQ_PATH, LISTRES_PATH};
@@ -125,9 +139,34 @@ public class SchemaValidationTest extends TestCase {
         }
     }
 
-    public void testReutersSchemaForest() throws Exception {
+    public void testFuckingTarari() throws Exception {
+        SchemaResolver resolver = new SchemaResolver() {
+            public byte[] resolveSchema(String string, String string1, String string2) {
+                throw new RuntimeException("Screw you!");
+            }
+        };
+
+        SchemaLoader.setSchemaResolver(resolver);
+        SchemaLoader.unloadAllSchemas();
+
+        InputStream is = new URL(REUTERS_SCHEMA_URL).openStream();
+        String schemaDoc = new String(HexUtils.slurpStream(is));
+        SchemaLoader.loadSchema(schemaDoc);
+    }
+
+    public void testReutersUrlSchemaHttpObjectCache() throws Exception {
+        SchemaManager sm = (SchemaManager)testApplicationContext.getBean("schemaManager");
+        String schemaDoc = new String(HexUtils.slurpStream(new URL(REUTERS_SCHEMA_URL).openStream()), "UTF-8");
+        SchemaHandle handle = sm.compile(schemaDoc, REUTERS_SCHEMA_URL, new Pattern[] { Pattern.compile(".*") });
+
+        Document requestDoc = XmlUtil.parse(new URL(REUTERS_REQUEST_URL).openStream());
+        Message request = new Message(requestDoc);
+
+        handle.validateMessage(request, new SchemaValidationErrorHandler());
+    }
+
+    public void testReutersUrlSchemaJaxp() throws Exception {
         SchemaFactory sfac = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-        String schemaUrl = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
         sfac.setResourceResolver(new LSResourceResolver() {
             public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
                 logger.info(type + ", " + namespaceURI + ", " + publicId + ", " + systemId + ", " + baseURI);
@@ -135,7 +174,7 @@ public class SchemaValidationTest extends TestCase {
             }
         });
 
-        Schema s = sfac.newSchema(new StreamSource(new URL(schemaUrl).openStream(), schemaUrl));
+        Schema s = sfac.newSchema(getSchemaSource());
         Validator val = s.newValidator();
         val.setErrorHandler(new ErrorHandler() {
             public void warning(SAXParseException exception) throws SAXException {
@@ -151,9 +190,16 @@ public class SchemaValidationTest extends TestCase {
             }
         });
 
-        String requestUrl = "http://locutus/reuters/request1.xml";
-        URL request = new URL(requestUrl);
-        val.validate(new StreamSource(request.openStream(), requestUrl));
+        URL request = new URL(REUTERS_REQUEST_URL);
+        val.validate(getMessageSource(request));
+    }
+
+    private StreamSource getMessageSource(URL request) throws IOException {
+        return new StreamSource(request.openStream(), REUTERS_REQUEST_URL);
+    }
+
+    private StreamSource getSchemaSource() throws IOException {
+        return new StreamSource(new URL(REUTERS_SCHEMA_URL).openStream(), REUTERS_SCHEMA_URL);
     }
 
     public void testRpcLiteralValidations() throws Exception {
@@ -178,7 +224,7 @@ public class SchemaValidationTest extends TestCase {
         SchemaValidation assertion = new SchemaValidation();
         assertion.setApplyToArguments(true);
         assertion.setResourceInfo(new StaticResourceInfo(schema));
-        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
+        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
         Message requestMsg = new Message(XmlUtil.stringToDocument(request));
         PolicyEnforcementContext context = new PolicyEnforcementContext(requestMsg, new Message());
         AssertionStatus res = serverAssertion.validateMessage(requestMsg, context);
