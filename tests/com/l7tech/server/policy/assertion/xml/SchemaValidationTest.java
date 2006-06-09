@@ -6,22 +6,35 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
 import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.ls.LSInput;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.SAXException;
 
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Tests for schema validation code.
@@ -34,7 +47,7 @@ import java.io.InputStream;
  *
  */
 public class SchemaValidationTest extends TestCase {
-
+    private static final Logger logger = Logger.getLogger(SchemaValidationTest.class.getName());
     public SchemaValidationTest(String name) {
         super(name);
     }
@@ -110,6 +123,37 @@ public class SchemaValidationTest extends TestCase {
                 assertFalse(res == AssertionStatus.NONE);
             }
         }
+    }
+
+    public void testReutersSchemaForest() throws Exception {
+        SchemaFactory sfac = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+        String schemaUrl = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
+        sfac.setResourceResolver(new LSResourceResolver() {
+            public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+                logger.info(type + ", " + namespaceURI + ", " + publicId + ", " + systemId + ", " + baseURI);
+                return null;
+            }
+        });
+
+        Schema s = sfac.newSchema(new StreamSource(new URL(schemaUrl).openStream(), schemaUrl));
+        Validator val = s.newValidator();
+        val.setErrorHandler(new ErrorHandler() {
+            public void warning(SAXParseException exception) throws SAXException {
+                logger.log(Level.INFO, ExceptionUtils.getMessage(exception), exception);
+            }
+
+            public void error(SAXParseException exception) throws SAXException {
+                logger.log(Level.WARNING, ExceptionUtils.getMessage(exception), exception);
+            }
+
+            public void fatalError(SAXParseException exception) throws SAXException {
+                logger.log(Level.SEVERE, ExceptionUtils.getMessage(exception), exception);
+            }
+        });
+
+        String requestUrl = "http://locutus/reuters/request1.xml";
+        URL request = new URL(requestUrl);
+        val.validate(new StreamSource(request.openStream(), requestUrl));
     }
 
     public void testRpcLiteralValidations() throws Exception {
