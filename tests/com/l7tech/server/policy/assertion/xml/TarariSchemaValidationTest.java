@@ -4,7 +4,6 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.rax.schema.SchemaLoader;
@@ -67,7 +66,6 @@ public class TarariSchemaValidationTest extends TestCase {
         SchemaLoader.unloadAllSchemas();
 
         InputStream is = new URL(REUTERS_SCHEMA_URL).openStream();
-        String schemaDoc = new String(HexUtils.slurpStream(is));
-        SchemaLoader.loadSchema(schemaDoc);
+        SchemaLoader.loadSchema(is, REUTERS_SCHEMA_URL);
     }
 }
