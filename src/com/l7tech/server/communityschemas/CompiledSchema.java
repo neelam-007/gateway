@@ -180,8 +180,20 @@ class CompiledSchema implements Closeable {
         return Collections.unmodifiableSet(imports);
     }
 
-    Set<WeakReference<CompiledSchema>> getExports() {
-        return Collections.unmodifiableSet(exports);
+    void addExport(CompiledSchema schema) {
+        exports.add(new WeakReference<CompiledSchema>(schema));
+    }
+
+    /**
+     * @return a set of this schema's exports.  Caller should avoid retaining references to the CompiledSchemas found within.
+     */
+    Set<CompiledSchema> getExports() {
+        Set<CompiledSchema> set = new HashSet<CompiledSchema>(exports.size());
+        for (WeakReference<CompiledSchema> ref : exports) {
+            CompiledSchema schema = ref == null ? null : ref.get();
+            if (schema != null) set.add(schema);
+        }
+        return Collections.unmodifiableSet(set);
     }
 
     /**

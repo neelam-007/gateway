@@ -25,6 +25,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsConnectionManager extends HibernateEntityManager implements InitializingBean {
+    private static final Logger logger = Logger.getLogger(JmsConnectionManager.class.getName());
+    
     private List _allProviders = null;
 
     public Collection findAllProviders() throws FindException {

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
@@ -25,6 +26,7 @@ public class IdProvConfManagerServer
     extends HibernateEntityManager<IdentityProviderConfig>
     implements IdentityProviderConfigManager
 {
+    private static final Logger logger = Logger.getLogger(IdProvConfManagerServer.class.getName());
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
         if (oid == INTERNALPROVIDER_SPECIAL_OID)

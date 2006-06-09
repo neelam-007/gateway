@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -26,6 +27,8 @@ public class SchemaEntryManagerImpl
         extends HibernateEntityManager<SchemaEntry>
         implements SchemaEntryManager, ApplicationListener
 {
+    private static final Logger logger = Logger.getLogger(SchemaEntryManagerImpl.class.getName());
+
     private final Map<Long, SchemaHandle> compiledSchemasByOid = new HashMap<Long, SchemaHandle>();
     private SchemaManager schemaManager;
 

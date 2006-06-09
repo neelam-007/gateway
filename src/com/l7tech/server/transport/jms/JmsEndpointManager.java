@@ -20,7 +20,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsEndpointManager extends HibernateEntityManager {
-
+    private static final Logger logger = Logger.getLogger(JmsEndpointManager.class.getName());
+    
     public JmsEndpoint findByPrimaryKey(long oid) throws FindException {
         return (JmsEndpoint)findByPrimaryKey(JmsEndpoint.class, oid);
     }

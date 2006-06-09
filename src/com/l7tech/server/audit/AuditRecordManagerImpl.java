@@ -26,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages the finding and saving of {@link AuditRecord}s.
@@ -36,7 +37,7 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
-
+    private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     //- PUBLIC
 
     public void setApplicationContext(ApplicationContext applicationContext) {

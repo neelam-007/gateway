@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -36,6 +37,8 @@ public class TrustedCertManagerImp
         extends HibernateEntityManager<TrustedCert>
         implements TrustedCertManager
 {
+    private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());
+    
     public TrustedCert findByPrimaryKey(long oid) throws FindException {
         return (TrustedCert)findByPrimaryKey(getImpClass(), oid);
     }

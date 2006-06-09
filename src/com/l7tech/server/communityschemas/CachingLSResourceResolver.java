@@ -156,7 +156,9 @@ class CachingLSResourceResolver implements LSResourceResolver {
                 return LSINPUT_UNRESOLVED;
             }
 
-            return ((SchemaHandle)userObj).getLSInput();
+            schemaHandle = ((SchemaHandle)userObj);
+            importListener.foundImport(schemaHandle);
+            return schemaHandle.getLSInput();
 
         } catch (MalformedURLException e) {
             logger.warning("Refusing remote schema reference to invalid systemId " + systemId);

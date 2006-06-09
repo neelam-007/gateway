@@ -167,7 +167,7 @@ public class SchemaManagerImpl implements SchemaManager {
         compiledSchemasWithThisTns.put(newSchema, null);
         if (compiledSchemasWithThisTns.size() == 2) {
             // We're the first duplicate; disable hardware for all known CompiledSchemas with this tns
-            logger.log(Level.INFO, "A second schema was found with targetNamespace {0}; disabling hardware acceleration for both", tns);
+            logger.log(Level.INFO, "A second schema was found with targetNamespace {0}; neither is now eligible for hardware acceleration", tns);
             for (CompiledSchema schema : compiledSchemasWithThisTns.keySet()) {
                 schema.setUniqueTns(false);
                 hardwareDisable(schema);
@@ -179,7 +179,7 @@ public class SchemaManagerImpl implements SchemaManager {
             newSchema.setUniqueTns(true);
             maybeHardwareEnable(newSchema);
         } else if (compiledSchemasWithThisTns.isEmpty()) {
-            logger.fine("No more schemas with targetNamespace " + tns);
+            logger.log(Level.FINE, "No more schemas with targetNamespace {0}", tns);
             tnsCache.remove(tns);
         }
     }
@@ -233,7 +233,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
             CompiledSchema newSchema = new CompiledSchema(tns, systemId, schemadoc, softwareSchema, this, directImports);
             for (SchemaHandle directImport : directImports)
-                directImport.getCompiledSchema().getExports().add(new WeakReference<CompiledSchema>(newSchema));
+                directImport.getCompiledSchema().addExport(newSchema);
             return newSchema;
 
         } catch (UnsupportedEncodingException e) {
@@ -253,7 +253,7 @@ public class SchemaManagerImpl implements SchemaManager {
     void closeSchema(CompiledSchema schema) {
         reportCacheContents();
 
-        logger.info("Closing " + schema);
+        logger.log(Level.FINE, "Closing {0}", schema);
         String tns = schema.getTargetNamespace();
 
         try {
@@ -268,7 +268,8 @@ public class SchemaManagerImpl implements SchemaManager {
             schemas.remove(schema);
             if (schemas.size() == 1) {
                 // Survivor gets hardware privileges
-                logger.fine("Enabling hardware acceleration for sole remaining schema with tns " + schema.getTargetNamespace());
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "Sole remaining schema with tns {0} is now eligible for hardware acceleration", schema.getTargetNamespace());
                 Iterator<CompiledSchema> i = schemas.keySet().iterator();
                 // Unlikely to throw ConcurrentModificationException, since all finalizers use this method and take out the write lock
                 if (i.hasNext()) {
@@ -319,7 +320,7 @@ public class SchemaManagerImpl implements SchemaManager {
         Set<SchemaHandle> imports = schema.getImports();
         for (SchemaHandle directImport : imports) {
             if (!directImport.getCompiledSchema().isLoaded()) {
-                logger.fine("Unable to load hardware for schema " + schema + " because at least one of its imports is not hardware loaded");
+                logger.log(Level.FINE, "Unable to load hardware for schema {0} because at least one of its imports is not hardware loaded", schema);
                 return;
             }
         }
@@ -329,18 +330,13 @@ public class SchemaManagerImpl implements SchemaManager {
         try {
             tarariSchemaHandler.setTarariSchemaResolver(TARARI_SCHEMA_RESOLVER);
             tarariSchemaHandler.loadHardware(schema.getSystemId(), schema.getSchemaDocument());
-            logger.info("Enabled hardware acceleration for schema with targetNamespace " + tns);
+            logger.log(Level.INFO, "Enabled hardware acceleration for schema with targetNamespace {0}", tns);
             schema.setLoaded(true);
             schema.setRejectedByTarari(false);
 
             // Let all our parents know that they might be hardware-enableable
-            Set<WeakReference<CompiledSchema>> exports = schema.getExports();
-            for (WeakReference<CompiledSchema> weakReference : exports) {
-                CompiledSchema export = weakReference.get();
-                if (export == null) continue;
+            for (CompiledSchema export : schema.getExports())
                 maybeHardwareEnable(export);
-            }
-
         } catch (SoftwareFallbackException e) {
             schema.setLoaded(false);
             schema.setRejectedByTarari(true);
@@ -363,18 +359,15 @@ public class SchemaManagerImpl implements SchemaManager {
         if (!schema.isLoaded()) return;
 
         String tns = schema.getTargetNamespace();
-        logger.info("Disabling hardware acceleration for schema with tns " + tns);
+        logger.log(Level.INFO, "Disabling hardware acceleration for schema with tns {0}", tns);
 
         schema.setLoaded(false);
         try {
             tarariSchemaHandler.unloadHardware(tns);
         } finally {
             // Any schemas that import this schema must be hardware-disabled now
-            for (WeakReference<CompiledSchema> ref : schema.getExports()) {
-                CompiledSchema export = ref == null ? null : ref.get();
-                if (export == null) continue;
+            for (CompiledSchema export : schema.getExports())
                 hardwareDisable(export);
-            }
         }
     }
 
@@ -390,7 +383,7 @@ public class SchemaManagerImpl implements SchemaManager {
                 Collection<SchemaEntry> entries = schemaEntryManager.findByTNS(namespaceURI);
                 if (entries == null || entries.size() < 1) return null;
                 if (entries.size() > 1) {
-                    logger.warning("Multiple global schemas found with target namespace: " + namespaceURI);
+                    logger.log(Level.WARNING, "Multiple global schemas found with target namespace: {0}", namespaceURI);
                     return null;
                 }
                 resolved = entries.iterator().next();
@@ -403,7 +396,7 @@ public class SchemaManagerImpl implements SchemaManager {
             SchemaHandle handle = schemaEntryManager.getCachedSchemaHandle(resolved.getOid());
             if (handle == null) {
                 // TODO do the work to fault in the apparently-new schema now
-                logger.warning("Unable to import newly added schema with oid " + resolved.getOid() + ": it is not yet ready to use");
+                logger.log(Level.WARNING, "Unable to import newly added schema with oid {0}: it is not yet ready to use",  resolved.getOid());
                 return null;
             }
 

@@ -18,13 +18,16 @@ import org.hibernate.criterion.Restrictions;
 
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager 
+public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager
 {
+    private static final Logger logger = Logger.getLogger(PersistentUserManager.class.getName());
+
     private final String HQL_DELETE_BY_PROVIDEROID =
             "FROM user IN CLASS " + getImpClass().getName() +
                     " WHERE user.providerId = ?";

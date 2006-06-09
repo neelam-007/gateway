@@ -450,8 +450,7 @@ public abstract class HibernateEntityManager<ET extends Entity>
         }
     }
 
-
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     private ReadWriteLock cacheLock = new ReentrantWriterPreferenceReadWriteLock();
     private Map<Long, CacheInfo> cacheInfoByOid = new HashMap<Long, CacheInfo>();
