@@ -228,8 +228,8 @@
         <property name="identityProviderFactory">
             <ref bean='identityProviderFactory'/>
         </property>
-        <property name="communitySchemaManager">
-            <ref bean='communitySchemaManager'/>
+        <property name="schemaEntryManager">
+            <ref bean='schemaEntryManager'/>
         </property>
     </bean>
 
@@ -572,12 +572,21 @@
 
     <bean id="counterCache" class="com.l7tech.server.sla.CounterCache" />
 
-    <bean id="communitySchemaManager" class="com.l7tech.server.communityschemas.CommunitySchemaManagerImpl">
+    <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl" depends-on="clusterPropertyManager">
+        <constructor-arg>
+            <ref local="httpClientFactory"/>
+        </constructor-arg>
+        <property name="schemaEntryManager">
+            <ref bean="schemaEntryManager"/>
+        </property>
+    </bean>
+
+    <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
-        <property name="compiledSchemaManager">
-            <ref local="compiledSchemaManager"/>
+        <property name="schemaManager">
+            <ref bean="schemaManager"/>
         </property>
     </bean>
 
@@ -679,7 +688,7 @@
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
         <property name="entityManagers">
             <list>
-                <ref local="communitySchemaManager"/>
+                <ref local="schemaEntryManager"/>
             </list>
         </property>
     </bean>
@@ -696,10 +705,5 @@
         </property>
     </bean>
 
-    <bean id="compiledSchemaManager" class="com.l7tech.server.communityschemas.CompiledSchemaManager">
-        <property name="communitySchemaManager">
-            <ref bean="communitySchemaManager"/>
-        </property>
-    </bean>
-
+    <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
 </beans>

@@ -11,9 +11,8 @@ import org.w3c.dom.ls.LSInput;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Set;
 
-public final class SchemaHandle implements Closeable, CachingLSResourceResolver.LSInputHaver {
+public final class SchemaHandle implements Closeable {
     private final CompiledSchema cs;
     private volatile boolean closed = false;
 
@@ -45,10 +44,6 @@ public final class SchemaHandle implements Closeable, CachingLSResourceResolver.
 
     public LSInput getLSInput() {
         return cs.getLSInput();
-    }
-
-    public Set<SchemaHandle> getDeps() {
-        return cs.getDeps();
     }
 
     CompiledSchema getCompiledSchema() {

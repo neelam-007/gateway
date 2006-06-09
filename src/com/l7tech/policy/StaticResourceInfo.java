@@ -23,6 +23,12 @@ public class StaticResourceInfo extends AssertionResourceInfo {
         return AssertionResourceType.STATIC;
     }
 
+    public String[] getUrlRegexes() {
+        // The administrator provided this schema, so we'll trust any URLs he included in it, regardless
+        // of what they appear to be pointed at.
+        return new String[] { ".*" };
+    }
+
     public String getOriginalUrl() {
         return originalUrl;
     }

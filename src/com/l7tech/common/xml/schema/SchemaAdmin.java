@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.rmi.RemoteException;
 
 /**
- * An admin interface that allows indirect interaction with the CommunitySchemaManager through
+ * An admin interface that allows indirect interaction with the SchemaEntryManager through
  * the SSM
  *
  * @author flascelles@layer7-tech.com

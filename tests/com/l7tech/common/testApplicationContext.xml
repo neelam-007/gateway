@@ -215,11 +215,16 @@
 
     <bean id="clusterPropertyManager" class="com.l7tech.cluster.MockClusterPropertyManager"/>
 
-    <bean id="communitySchemaManager" class="com.l7tech.server.communityschemas.CommunitySchemaManagerStub"/>
+    <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerStub"/>
 
-    <bean id="compiledSchemaManager" class="com.l7tech.server.communityschemas.CompiledSchemaManager">
-        <property name="communitySchemaManager">
-            <ref local="communitySchemaManager"/>
+    <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl">
+        <constructor-arg>
+            <ref local="httpClientFactory"/>
+        </constructor-arg>
+        <property name="schemaEntryManager">
+            <ref local="schemaEntryManager"/>
         </property>
     </bean>
+
+    <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
 </beans>

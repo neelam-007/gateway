@@ -401,8 +401,8 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
-        <property name="communitySchemaManager">
-            <ref bean="communitySchemaManager"/>
+        <property name="schemaEntryManager">
+            <ref bean="schemaEntryManager"/>
         </property>
     </bean>
 

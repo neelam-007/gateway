@@ -13,6 +13,7 @@ import java.util.Arrays;
  * performed.
  */
 public class MessageUrlResourceInfo extends AssertionResourceInfo {
+    protected String[] urlRegexes = new String[0];
     private boolean allowMessagesWithoutUrl = false;
 
     public MessageUrlResourceInfo() {
@@ -24,6 +25,18 @@ public class MessageUrlResourceInfo extends AssertionResourceInfo {
 
     public AssertionResourceType getType() {
         return AssertionResourceType.MESSAGE_URL;
+    }
+
+    public String[] getUrlRegexes() {
+        return urlRegexes;
+    }
+
+    /**
+     * @param urlRegexes an array of regular expressions, any of which must match a URL for it to be considered acceptable.
+     */
+    public void setUrlRegexes(String[] urlRegexes) {
+        if (urlRegexes == null) throw new NullPointerException();
+        this.urlRegexes = urlRegexes;
     }
 
     /**

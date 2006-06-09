@@ -23,6 +23,12 @@ public class SingleUrlResourceInfo extends AssertionResourceInfo {
         return AssertionResourceType.SINGLE_URL;
     }
 
+    public String[] getUrlRegexes() {
+        // The administrator provided this URL, so we'll trust any URLs he included in it, regardless
+        // of what they appear to be pointed at.
+        return new String[] { ".*" };
+    }
+
     public String getUrl() {
         return url;
     }

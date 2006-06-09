@@ -8,13 +8,12 @@ import com.l7tech.policy.assertion.AssertionResourceType;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.Serializable;
 
 /**
  * @author alex
  */
-public abstract class AssertionResourceInfo implements Cloneable {
-    protected String[] urlRegexes = new String[0];
-
+public abstract class AssertionResourceInfo implements Cloneable, Serializable {
     public abstract AssertionResourceType getType();
 
     protected Object clone() throws CloneNotSupportedException {
@@ -24,9 +23,7 @@ public abstract class AssertionResourceInfo implements Cloneable {
     /**
      * @return an array of regular expressions, any of which must match a URL for it to be considered acceptable.
      */
-    public String[] getUrlRegexes() {
-        return urlRegexes;
-    }
+    public abstract String[] getUrlRegexes();
 
     /**
      * @return the regular expressions compiled into patterns.  May be empty but never null.
@@ -34,6 +31,7 @@ public abstract class AssertionResourceInfo implements Cloneable {
      */
     public Pattern[] makeUrlPatterns() {
         List patterns = new ArrayList();
+        String[] urlRegexes = getUrlRegexes();
         for (int i = 0; i < urlRegexes.length; i++) {
             String regex = urlRegexes[i];
             Pattern p;
@@ -41,13 +39,5 @@ public abstract class AssertionResourceInfo implements Cloneable {
             patterns.add(p);
         }
         return (Pattern[])patterns.toArray(new Pattern[0]);
-    }
-
-    /**
-     * @param urlRegexes an array of regular expressions, any of which must match a URL for it to be considered acceptable.
-     */
-    public void setUrlRegexes(String[] urlRegexes) {
-        if (urlRegexes == null) throw new NullPointerException();
-        this.urlRegexes = urlRegexes;
     }
 }

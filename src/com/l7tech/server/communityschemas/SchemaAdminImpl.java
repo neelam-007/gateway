@@ -28,7 +28,7 @@ import java.util.Collection;
 public class SchemaAdminImpl implements SchemaAdmin {
     private final AccessManager accessManager;
     private final LicenseManager licenseManager;
-    private CommunitySchemaManager communitySchemaManager;
+    private SchemaEntryManager schemaEntryManager;
     //private final Logger logger = Logger.getLogger(SchemaAdminImpl.class.getName());
 
     public SchemaAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
@@ -44,39 +44,39 @@ public class SchemaAdminImpl implements SchemaAdmin {
         }
     }
 
-    public void setCommunitySchemaManager(CommunitySchemaManager communitySchemaManager) {
-        this.communitySchemaManager = communitySchemaManager;
+    public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
+        this.schemaEntryManager = schemaEntryManager;
     }
 
     public Collection findAllSchemas() throws RemoteException, FindException {
         checkLicense();
-        return communitySchemaManager.findAll();
+        return schemaEntryManager.findAll();
     }
 
     public void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException {
         accessManager.enforceAdminRole();
         checkLicense();
-        communitySchemaManager.delete(existingSchema);
+        schemaEntryManager.delete(existingSchema);
     }
 
     public Collection findByName(String schemaName) throws RemoteException, FindException {
         checkLicense();
-        return communitySchemaManager.findByName(schemaName);
+        return schemaEntryManager.findByName(schemaName);
     }
 
     public Collection findByTNS(String tns) throws RemoteException, FindException {
         checkLicense();
-        return communitySchemaManager.findByTNS(tns);
+        return schemaEntryManager.findByTNS(tns);
     }
 
     public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException {
         accessManager.enforceAdminRole();
         checkLicense();
         if (entry.getOid() != -1) {
-            communitySchemaManager.update(entry);
+            schemaEntryManager.update(entry);
             return entry.getOid();
         } else {
-            return communitySchemaManager.save(entry);
+            return schemaEntryManager.save(entry);
         }
     }
 }

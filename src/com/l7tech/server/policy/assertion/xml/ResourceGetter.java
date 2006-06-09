@@ -5,14 +5,10 @@
 
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.TextUtils;
@@ -22,26 +18,17 @@ import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.springframework.context.ApplicationContext;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -50,9 +37,32 @@ import java.util.regex.PatternSyntaxException;
  * XXX If the same URL is used to point to multiple user object types the cache will thrash as they overwrite one another, Bug #2535
  */
 abstract class ResourceGetter {
-    private static final Logger logger = Logger.getLogger(ResourceGetter.class.getName());
+    private static final Pattern MATCH_ALL = Pattern.compile(".");
+
+    private static final GenericHttpClient httpClient;
+
+    static {
+        MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
+        connectionManager.setMaxConnectionsPerHost(100);
+        connectionManager.setMaxTotalConnections(1000);
+        httpClient = new CommonsHttpClient(connectionManager);
+    }
+
+    protected final HttpObjectCache httpObjectCache;
+
+    protected ResourceGetter(HttpObjectCache httpObjectCache) {
+        this.httpObjectCache = httpObjectCache;
+        if (httpObjectCache == null) throw new NullPointerException();
+    }
 
     public abstract void close();
+
+    /** @return the HTTP client we are using with the object cache. */
+    public GenericHttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public abstract Pattern[] getUrlWhitelist();
 
     // Some handy exceptions to ensure that information of interest is preserved until it gets back up
     // to the assertion to be audited
@@ -201,7 +211,6 @@ abstract class ResourceGetter {
      *             for caching/reuse/metadata etc.  Must not be null.
      * @param urlFinder strategy for finding a URL within a message.  Must not be null if assertion.getResourceInfo()
      *                   might be MessageUrlResourceInfo.
-     * @param springContext  application context in case an SSLContext needs to be created.  Must not be null if SSL will be used.
      * @param auditor        auditor to use to log warnings when a previously-cached resource object is reused after there is a network problem fetching an up-to-date copy.
      *                       May be null to disable such warnings.
      * @return a ResourceGetter that will fetch resources for future messages.  Never null.
@@ -211,21 +220,22 @@ abstract class ResourceGetter {
      * @throws IllegalArgumentException if the resource info type if MessageUrlResourceInfo but urlFinder is null
      */
     public static <AC extends Assertion & UsesResourceInfo>
-    ResourceGetter createResourceGetter(AC assertion, ResourceObjectFactory rof, UrlFinder urlFinder, ApplicationContext springContext, Auditor auditor)
+    ResourceGetter createResourceGetter(AC assertion, ResourceObjectFactory rof, UrlFinder urlFinder, HttpObjectCache httpObjectCache, Auditor auditor)
             throws ServerPolicyException
     {
         AssertionResourceInfo ri = assertion.getResourceInfo();
         if (ri == null) throw new ServerPolicyException(assertion, "Assertion contains no ResourceInfo provided");
         if (rof == null) throw new NullPointerException("No ResourceObjectFactory provided");
+        if (httpObjectCache == null) throw new NullPointerException("No HttpObjectCache provided");
 
         try {
             if (ri instanceof MessageUrlResourceInfo) {
                 if (urlFinder == null) throw new IllegalArgumentException("MessageUrlResourceInfo requested but no UrlFinder provided");
-                return new MessageUrlResourceGetter((MessageUrlResourceInfo)ri, rof, urlFinder, springContext, auditor);
+                return new MessageUrlResourceGetter((MessageUrlResourceInfo)ri, rof, urlFinder, httpObjectCache, auditor);
             } else if (ri instanceof SingleUrlResourceInfo) {
-                return new SingleUrlResourceGetter(assertion, (SingleUrlResourceInfo)ri, rof, springContext, auditor);
+                return new SingleUrlResourceGetter(assertion, (SingleUrlResourceInfo)ri, rof, httpObjectCache, auditor);
             } else if (ri instanceof StaticResourceInfo) {
-                return new StaticResourceGetter(assertion, (StaticResourceInfo)ri, rof);
+                return new StaticResourceGetter(assertion, (StaticResourceInfo)ri, rof, httpObjectCache);
             } else
                 throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
         } catch (PatternSyntaxException e) {
@@ -237,205 +247,23 @@ abstract class ResourceGetter {
 
 
     /**
-     * Superclass for ResourceGetters that fetch the resource from an external URL.
-     */
-    public static abstract class UrlResourceGetter extends ResourceGetter {
-        protected static final ThreadLocal httpRequest = new ThreadLocal() {
-            protected Object initialValue() {
-                return new GenericHttpRequestParams();
-            }
-        };
-
-        private static volatile SSLContext sslContext; // initialized lazily
-        private static final GenericHttpClient httpClient;
-        static {
-            MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
-            connectionManager.setMaxConnectionsPerHost(100);
-            connectionManager.setMaxTotalConnections(1000);
-            httpClient = new CommonsHttpClient(connectionManager);
-        }
-
-        protected static int getIntProperty(String propName, int emergencyDefault) {
-            String strval = ServerConfig.getInstance().getProperty(propName);
-            int val;
-            try {
-                val = Integer.parseInt(strval);
-            } catch (NumberFormatException e) {
-                logger.warning("Parameter " + propName + " value '" + strval + "' not a valid number; using " + emergencyDefault + " instead");
-                val = emergencyDefault;
-            }
-            return val;
-        }
-
-        // --- Member fields
-        private final ResourceObjectFactory resourceObjectFactory;
-        private final ApplicationContext springContext;  // may be null
-        private final Auditor auditor; // may be null
-        private final Pattern[] urlWhitelist; // may be null
-
-        /**
-         * Initialize common code for URL based resource getters.
-         *
-         * @param resourceObjectFactory  strategy for converting resource bytes into cachable user objects
-         * @param springContext the Spring context to use in case an SSLContext must be created.  Must not be null if href is https.
-         * @param auditor  auditor to use for logging a warning if a previously-cached version of the resource is used due to
-         *                 a network problem fetching the latest version.  This auditor won't be used for any other
-         *                 purpose.
-         */
-        protected UrlResourceGetter(ResourceObjectFactory resourceObjectFactory,
-                                    Pattern[] urlWhitelist,
-                                    ApplicationContext springContext,
-                                    Auditor auditor)
-        {
-            this.resourceObjectFactory = resourceObjectFactory;
-            this.urlWhitelist = urlWhitelist;
-            this.springContext = springContext;
-            this.auditor = auditor;
-        }
-
-        /** @return the maximum age for cached objects, in milliseconds. */
-        protected abstract int getMaxCacheAge();
-
-        /** @return the {@link HttpObjectCache} through which to fetch the external URLs. */
-        public abstract HttpObjectCache getHttpObjectCache();
-
-        /** @return the HTTP client we are using with the object cache. */
-        public GenericHttpClient getHttpClient() {
-            return httpClient;
-        }
-
-        /** @return the whitelist of remote URLs to allow, or null. */
-        public Pattern[] getUrlWhitelist() {
-            return urlWhitelist;
-        }
-
-        /**
-         * Do the actual fetch of a (possibly cached) user object from this URL, through the current object cache.
-         *
-         * @param href     the URL to fetch.  Must not be null.
-         * @return the user object.  Never null.
-         * @throws ParseException  if an external resource was fetched but it could not be parsed
-         * @throws GeneralSecurityException  if an SSLContext is needed but cannot be initialized
-         * @throws MalformedResourceUrlException  if the provided href is not a well-formed URL
-         * @throws ResourceIOException  if there is an IOException while fetching the external resource
-         * @throws NullPointerException if href or spring is null
-         */
-        protected Object fetchObject(final String href)
-                throws ParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
-            if (href == null) throw new NullPointerException("no href provided");
-            GenericHttpRequestParams params = (GenericHttpRequestParams)httpRequest.get();
-            final URL url;
-            try {
-                url = new URL(href);
-            } catch (MalformedURLException e) {
-                throw new MalformedResourceUrlException("Invalid resource URL: " + href, href);
-            }
-            params.setTargetUrl(url);
-            if (url.getProtocol().equals("https")) {
-                if (springContext == null) throw new GeneralSecurityException("Unable to create SSL context: no Spring context provided");
-                params.setSslSocketFactory(getSslContext(springContext).getSocketFactory());
-            }
-
-            final HttpObjectCache.UserObjectFactory userObjectFactory = new HttpObjectCache.UserObjectFactory() {
-                public Object createUserObject(String surl, GenericHttpResponse response) throws IOException {
-                    String thing = response.getAsString();
-                    logger.fine("Downloaded resource from " + surl);
-                    try {
-                        Object obj = resourceObjectFactory.createResourceObject(href, thing);
-                        if (obj == null)
-                            throw new IOException("Unable to create resource from HTTP response: ResourceObjectFactory returned null");
-                        return obj;
-                    } catch (ParseException e) {
-                        // Wrap in IOException and we'll unwrap it below
-                        throw new CausedIOException(e);
-                    }
-                }
-            };
-
-            // Get cached, possibly checking if-modified-since against server, possibly downloading a new stylesheet
-            HttpObjectCache.FetchResult result = getHttpObjectCache().fetchCached(getHttpClient(),
-                                                                                  params,
-                                                                                  false,
-                                                                                  userObjectFactory);
-
-            Object userObject = result.getUserObject();
-            IOException err = result.getException();
-
-            if (userObject == null) {
-                // Didn't manage to get a user object.  See if we got an error instead.
-                // If it's actually a ParseException, we can just unwrap and rethrow it
-                Throwable pe = ExceptionUtils.getCauseIfCausedBy(err, ParseException.class);
-                if (pe != null)
-                    throw (ParseException)pe;
-
-                throw new ResourceIOException(err, href);
-            }
-
-            // Got a userObject.  See if we need to log any warnings.
-            if (err != null && auditor != null)
-                auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL2, new String[] { href, ExceptionUtils.getMessage(err) });
-
-            return userObject;
-        }
-
-        /**
-         * Get the process-wide shared SSL context, creating it if this thread is the first one
-         * to need it.
-         *
-         * @param springContext the spring context, in case one needs to be created.  Must not be null.
-         * @return the current SSL context.  Never null.
-         * @throws java.security.GeneralSecurityException  if an SSL context is needed but can't be created because the current server
-         *                                   configuration is incomplete or invalid (keystores, truststores, and whatnot)
-         */
-        private static SSLContext getSslContext(ApplicationContext springContext) throws GeneralSecurityException
-        {
-            // no harm done if multiple threads try to create it the very first time.  s'all good.
-            if (sslContext != null) return sslContext;
-            synchronized(ServerXslTransformation.class) {
-                if (sslContext != null) return sslContext;
-            }
-            SSLContext sc = SSLContext.getInstance("SSL");
-            KeystoreUtils keystore = (KeystoreUtils)springContext.getBean("keystore");
-            SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
-            KeyManager[] keyman = keystore.getSSLKeyManagerFactory().getKeyManagers();
-            sc.init(keyman, new TrustManager[]{trustManager}, null);
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
-            sc.getClientSessionContext().setSessionTimeout(timeout);
-            synchronized(ServerXslTransformation.class) {
-                return sslContext = sc;
-            }
-        }
-    }
-
-
-    /**
      * A ResourceGetter that finds URLs inside the message, then fetches the appropriate resource (with caching),
      * corresponding to {@link MessageUrlResourceInfo}.
      */
     private static class MessageUrlResourceGetter extends UrlResourceGetter {
-        /** Cache age for all URL-from-message resources, system-wide. */
-        private static final int maxCacheAge = getIntProperty(ServerConfig.PARAM_MESSAGEURL_MAX_CACHE_AGE, 300000);
         private final UrlFinder urlFinder;
         private final boolean allowMessagesWithoutUrl;
-
-        protected int getMaxCacheAge() { return maxCacheAge; }
-
-        /** Shared cache for all URL-from-message resources, system-wide. */
-        private static final HttpObjectCache httpObjectCache =
-                new HttpObjectCache(getIntProperty(ServerConfig.PARAM_MESSAGEURL_MAX_CACHE_ENTRIES, 100), maxCacheAge);
-        public HttpObjectCache getHttpObjectCache() { return httpObjectCache; }
 
         // --- Instance fields ---
 
         private MessageUrlResourceGetter(MessageUrlResourceInfo ri,
                                          ResourceObjectFactory rof,
                                          UrlFinder urlFinder,
-                                         ApplicationContext springContext,
+                                         HttpObjectCache httpObjectCache,
                                          Auditor auditor)
                 throws PatternSyntaxException
         {
-            super(rof, ri.makeUrlPatterns(), springContext, auditor);
+            super(rof, httpObjectCache, ri.makeUrlPatterns(), auditor);
             this.urlFinder = urlFinder;
             this.allowMessagesWithoutUrl = ri.isAllowMessagesWithoutUrl();
 
@@ -465,7 +293,7 @@ abstract class ResourceGetter {
                 throw new UrlNotPermittedException("External resource URL not permitted by whitelist: " + url, url);
 
             try {
-                return fetchObject(url);
+                return fetchObject(httpObjectCache, url);
             } catch (ParseException e) {
                 throw new ResourceParseException(e, url);
             }
@@ -478,25 +306,16 @@ abstract class ResourceGetter {
      * the resource, corresponding to {@link SingleUrlResourceInfo}.
      */
     private static class SingleUrlResourceGetter extends UrlResourceGetter {
-        /** Cache age for all from-static-URL resources, system-wide. */
-        private static final int maxCacheAge = getIntProperty(ServerConfig.PARAM_SINGLEURL_MAX_CACHE_AGE, 300000);
-        protected int getMaxCacheAge() { return maxCacheAge; }
-
-        /** Shared cache for all from-static-URL resources, system-wide. */
-        private static final HttpObjectCache httpObjectCache =
-                new HttpObjectCache(getIntProperty(ServerConfig.PARAM_SINGLEURL_MAX_CACHE_ENTRIES, 100), maxCacheAge);
-        public HttpObjectCache getHttpObjectCache() { return httpObjectCache; }
-
         private final String url;
 
         private SingleUrlResourceGetter(Assertion assertion,
                                         SingleUrlResourceInfo ri,
                                         ResourceObjectFactory rof,
-                                        ApplicationContext springContext,
+                                        HttpObjectCache httpObjectCache,
                                         Auditor auditor)
                 throws ServerPolicyException
         {
-            super(rof, ri.makeUrlPatterns(), springContext, auditor);
+            super(rof, httpObjectCache, ri.makeUrlPatterns(), auditor);
             String url = ri.getUrl();
             if (url == null) throw new ServerPolicyException(assertion, "Missing resource url");
             this.url = url;
@@ -516,7 +335,7 @@ abstract class ResourceGetter {
         public Object getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
             String actualUrl = vars == null ? url : ExpandVariables.process(url, vars);
             try {
-                return fetchObject(actualUrl);
+                return fetchObject(httpObjectCache, actualUrl);
             } catch (ParseException e) {
                 throw new ResourceParseException(e, actualUrl);
             }
@@ -531,9 +350,13 @@ abstract class ResourceGetter {
     private static class StaticResourceGetter extends ResourceGetter {
         private final Object userObject;
 
-        private StaticResourceGetter(Assertion assertion, StaticResourceInfo ri, ResourceObjectFactory rof)
+        private StaticResourceGetter(Assertion assertion,
+                                     StaticResourceInfo ri,
+                                     ResourceObjectFactory rof,
+                                     HttpObjectCache httpObjectCache)
                 throws ServerPolicyException
         {
+            super(httpObjectCache);
             String doc = ri.getDocument();
             if (doc == null) throw new ServerPolicyException(assertion, "Empty static document");
             try {
@@ -548,6 +371,10 @@ abstract class ResourceGetter {
 
         public void close() {
             ResourceUtils.closeQuietly(userObject);
+        }
+
+        public Pattern[] getUrlWhitelist() {
+            return new Pattern[] { MATCH_ALL };
         }
 
         public Object getResource(ElementCursor message, Map vars) throws IOException {

@@ -1,58 +1,46 @@
-/**
- * LAYER 7 TECHNOLOGIES, INC<br/>
+/*
+ * Copyright (C) 2005 Layer 7 Technologies Inc.
  *
- * User: flascell<br/>
- * Date: Jul 14, 2005<br/>
  */
+
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.util.LSInputImpl;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.common.xml.tarari.TarariSchemaResolver;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.w3c.dom.ls.LSInput;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This manager gives access to the community schemas included in the
- * schema table. This is meant to be used by the server schema validation
- * implementation using tarari as well as for schema import resolution support
- * in the case of software schema validation.
- *
- * @author flascelles@layer7-tech.com
+ * @author mike
  */
-public class CommunitySchemaManagerImpl
+public class SchemaEntryManagerImpl
         extends HibernateEntityManager<SchemaEntry>
-        implements CommunitySchemaManager, ApplicationListener, InitializingBean
+        implements SchemaEntryManager, ApplicationListener
 {
-    private static final Logger logger = Logger.getLogger(CommunitySchemaManagerImpl.class.getName());
+    private final Map<Long, SchemaHandle> compiledSchemasByOid = new HashMap<Long, SchemaHandle>();
+    private SchemaManager schemaManager;
 
-    //- PUBLIC
+    public void setSchemaManager(SchemaManager schemaManager) {
+        this.schemaManager = schemaManager;
+    }
 
-    public CommunitySchemaManagerImpl() {
+    public SchemaHandle getCachedSchemaHandle(long oid) {
+        synchronized(this) {
+            return compiledSchemasByOid.get(oid);
+        }
     }
 
     protected void initDao() throws Exception {
         super.initDao();
-        if (compiledSchemaManager == null) throw new IllegalStateException("compiledSchemaManager must be present");
         for (SchemaEntry entry : findAll()) {
             long oid = entry.getOid();
             try {
@@ -61,13 +49,6 @@ public class CommunitySchemaManagerImpl
                 logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
             }
         }
-    }
-
-    private final Map<Long, SchemaHandle> compiledSchemasByOid = new HashMap<Long, SchemaHandle>();
-    private CompiledSchemaManager compiledSchemaManager;
-
-    public void setCompiledSchemaManager(CompiledSchemaManager compiledSchemaManager) {
-        this.compiledSchemaManager = compiledSchemaManager;
     }
 
     public Collection<SchemaEntry> findAll() throws FindException {
@@ -81,11 +62,42 @@ public class CommunitySchemaManagerImpl
         return output;
     }
 
+    private boolean containsSoapEnv(Collection<SchemaEntry> schemaEntries) {
+        return containsShemaWithName(schemaEntries, SOAP_SCHEMA_NAME);
+    }
+
+    private boolean containsShemaWithName(Collection<SchemaEntry> schemaEntries, String schemaName) {
+        boolean contains = false;
+
+        for (SchemaEntry schemaEntry : schemaEntries) {
+            if (schemaName.equals(schemaEntry.getName())) {
+                contains = true;
+                break;
+            }
+        }
+
+        return contains;
+    }
+
+
+    private Collection<SchemaEntry> addSoapEnv(Collection<SchemaEntry> collection) {
+        SchemaEntry defaultEntry = newDefaultEntry();
+        try {
+            save(defaultEntry);
+        } catch (SaveException e) {
+            logger.log(Level.WARNING, "cannot save default soap xsd", e);
+        }
+        ArrayList<SchemaEntry> completeList = new ArrayList<SchemaEntry>(collection);
+        completeList.add(defaultEntry);
+        return completeList;
+    }
+
+
     /**
      * Find a schema from it's name (name column in community schema table)
      */
     @SuppressWarnings({"unchecked"})
-    public Collection findByName(String schemaName) throws FindException {
+    public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = ?";
         Collection output = getHibernateTemplate().find(queryname, schemaName);
@@ -101,7 +113,7 @@ public class CommunitySchemaManagerImpl
      * Find a schema from it's target namespace (tns column in community schema table)
      */
     @SuppressWarnings({"unchecked"})
-    public Collection findByTNS(String tns) throws FindException {
+    public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
         String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = ?";
         Collection output = getHibernateTemplate().find(querytns, tns);
@@ -123,11 +135,11 @@ public class CommunitySchemaManagerImpl
             throw new SaveException("unexpected value returned from HibernateTemplate.save (null)");
         }
         try {
-            compileAndCache(res.longValue(), newSchema);
+            compileAndCache(res, newSchema);
         } catch (InvalidDocumentFormatException e) {
             throw new SaveException("Invalid schema document", e);
         }
-        return res.longValue();
+        return res;
     }
 
     public void update(SchemaEntry existingSchema) throws UpdateException {
@@ -166,63 +178,6 @@ public class CommunitySchemaManagerImpl
         }
     }
 
-    /**
-     * To get an EntityResolver based on the community schema table. This is meant to be used in conjunction with
-     * javax.xml.parsers.DocumentBuilder.setEntityResolver.
-     *
-     * @return an EntityResolver that can be used to resolve schema import statements as part of the
-     * software implementation of schema validation. this resolver assumes that the external schemas
-     * are already populated in the community schema table and that they are identified the same way
-     * as the import statements' schemaLocation attribute value.
-     */
-    public EntityResolver communityEntityResolver() {
-        final CommunitySchemaManagerImpl manager = this;
-        return new EntityResolver () {
-            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-                SchemaEntry resolved = manager.getSchemaEntryFromSystemId(systemId);
-
-                if(resolved==null) {
-                    // this is supposed to let sax parser resolve his own way if possible
-                    return null;
-                }
-                else {
-                    return new InputSource(new StringReader(resolved.getSchema()));
-                }
-            }
-        };
-    }
-
-    /**
-     * To get an LSResourceResolver based on the community schema table. This is meant to be used in
-     * conjunction with javax.xml.validation.SchemaFactory.setResourceResolver.
-     *
-     * @return an LSResourceResolver that can be used to resolve schema import statements as part of
-     * the software implementation of schema validation. this resolver assumes that the external
-     * schemas are already populated in the community schema table and that they are identified the
-     * same way as the import statements' schemaLocation attribute value.
-     */
-    public LSResourceResolver communityLSResourceResolver() {
-        final CommunitySchemaManagerImpl manager = this;
-        return new LSResourceResolver () {
-            public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, final String baseURI) {
-                if(XmlUtil.W3C_XML_SCHEMA.equals(type)) {
-                    // check we are resolving schema
-                    SchemaEntry resolved = manager.getSchemaEntryFromSystemId(systemId);
-                    if(resolved!=null) {
-                        LSInput lsInput = new LSInputImpl();
-                        lsInput.setCharacterStream(new StringReader(resolved.getSchema()));
-                        return lsInput;
-                    }
-                } else {
-                    // Not a schema type
-                    logger.info("Not resolving resource of non-schema type '"+type+"', systemId is '"+systemId+"'.");
-                }
-                return CachingLSResourceResolver.LSINPUT_UNRESOLVED; // if we return null the schema would be resolved over the network.
-            }
-        };
-    }
-
-
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eieio = (EntityInvalidationEvent) event;
@@ -246,8 +201,48 @@ public class CommunitySchemaManagerImpl
         }
     }
 
+    private SchemaEntry newDefaultEntry() {
+        SchemaEntry defaultEntry = new SchemaEntry();
+        defaultEntry.setSchema(SOAP_SCHEMA);
+        defaultEntry.setName(SOAP_SCHEMA_NAME);
+        defaultEntry.setTns(SOAP_SCHEMA_TNS);
+        return defaultEntry;
+    }
+
+    public SchemaEntry getSchemaEntryFromSystemId(final String systemId) {
+        SchemaEntry resolved = null;
+        String HOMEDIR = System.getProperty("user.dir");
+
+        // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
+        String schemaId = systemId;
+        if (systemId != null && HOMEDIR != null) {
+            int pos = systemId.indexOf(HOMEDIR);
+            if (pos > -1) {
+                schemaId = systemId.substring(pos+HOMEDIR.length()+1);
+            }
+        }
+
+        logger.fine("Searching for global schema with systemId '"+systemId+"', schemaId is '"+schemaId+"'.");
+        Collection matchingSchemas;
+        try {
+            matchingSchemas = findByName(schemaId);
+
+            if (matchingSchemas.isEmpty()) {
+                logger.fine("No global schema found with systemid '"+systemId+"', schemaId '"+schemaId+"'.");
+            } else {
+                resolved = (SchemaEntry) matchingSchemas.iterator().next();
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to load community schema with systemid '"+systemId+"', schemaId '"+schemaId+"'.", e);
+        }
+
+        return resolved;
+    }
+
+
     private void compileAndCache(long oid, SchemaEntry entry) throws InvalidDocumentFormatException {
-        SchemaHandle handle = compiledSchemaManager.compile(entry.getSchema(), entry.getName(), null, null, null);
+        SchemaHandle handle = schemaManager.compile(entry.getSchema(), entry.getName(),
+                                                    new Pattern[] {Pattern.compile(".*")});
         synchronized(this) {
             compiledSchemasByOid.put(oid, handle);
         }
@@ -269,51 +264,6 @@ public class CommunitySchemaManagerImpl
         return true;
     }
 
-    /**
-     * Equivalent to communityEntityResolver but for tarari based hardware schema validation.
-     * This is expected to be used by the GlobalTarariContextImpl
-     * TODO fix this
-     */
-    public TarariSchemaResolver communitySchemaResolver() {
-        final CommunitySchemaManagerImpl manager = this;
-        return new TarariSchemaResolver() {
-            public byte[] resolveSchema(String tns, String location, String baseURI) {
-                // todo, get schema based on information provided (from table).
-                logger.info("tarari asking for resource. tns: " + tns +
-                            ", location: " + location +
-                            ", baseURI: " + baseURI);
-                Collection matchingSchemas = null;
-                // first, try to resolve by name
-                if (location != null && location.length() > 0) {
-                    logger.info("asking for schema with systemId " + location);
-                    try {
-                        matchingSchemas = manager.findByName(location);
-                    } catch (FindException e) {
-                        logger.log(Level.INFO, "error getting community schema with systemid " + location, e);
-                    }
-                }
-                // then, try to resolve by tns
-                if (matchingSchemas == null || matchingSchemas.isEmpty()) {
-                   if (tns != null && tns.length() > 0) {
-                        logger.info("asking for schema with tns " + tns);
-                        try {
-                            matchingSchemas = manager.findByTNS(tns);
-                        } catch (FindException e) {
-                            logger.log(Level.INFO, "error getting community schema with systemid " + tns, e);
-                        }
-                   }
-                }
-                if (matchingSchemas == null || matchingSchemas.isEmpty()) {
-                    logger.warning("could not resolve external schema either by name or tns");
-                    return TARARISCHEMA_UNRESOLVED;
-                } else {
-                    SchemaEntry resolved = (SchemaEntry)matchingSchemas.iterator().next();
-                    return resolved.getSchema().getBytes();
-                }
-            }
-        };
-
-    }
 
     public Class getImpClass() {
         return SchemaEntry.class;
@@ -325,78 +275,6 @@ public class CommunitySchemaManagerImpl
 
     public String getTableName() {
         return TABLE_NAME;
-    }
-
-    //- PRIVATE
-
-    private SchemaEntry newDefaultEntry() {
-        SchemaEntry defaultEntry = new SchemaEntry();
-        defaultEntry.setSchema(SOAP_SCHEMA);
-        defaultEntry.setName(SOAP_SCHEMA_NAME);
-        defaultEntry.setTns(SOAP_SCHEMA_TNS);
-        return defaultEntry;
-    }
-
-    /**
-     * Get the SchemaEntry or null if not found.
-     */
-    private SchemaEntry getSchemaEntryFromSystemId(final String systemId) {
-        SchemaEntry resolved = null;
-        String HOMEDIR = System.getProperty("user.dir");
-
-        // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
-        String schemaId = systemId;
-        if (systemId != null && HOMEDIR != null) {
-            int pos = systemId.indexOf(HOMEDIR);
-            if (pos > -1) {
-                schemaId = systemId.substring(pos+HOMEDIR.length()+1);
-            }
-        }
-
-        logger.info("asking for schema with systemId '"+systemId+"', schemaId is '"+schemaId+"'.");
-        Collection matchingSchemas;
-        try {
-            matchingSchemas = findByName(schemaId);
-
-            if (matchingSchemas.isEmpty()) {
-                logger.warning("there were no community schema that would resolve with the systemid '"+systemId+"', schemaId '"+schemaId+"'.");
-            } else {
-                resolved = (SchemaEntry) matchingSchemas.iterator().next();
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "error getting community schema with systemid '"+systemId+"', schemaId '"+schemaId+"'.", e);
-        }
-
-        return resolved;
-    }
-
-    private boolean containsSoapEnv(Collection<SchemaEntry> schemaEntries) {
-        return containsShemaWithName(schemaEntries, SOAP_SCHEMA_NAME);
-    }
-
-    private boolean containsShemaWithName(Collection<SchemaEntry> schemaEntries, String schemaName) {
-        boolean contains = false;
-
-        for (SchemaEntry schemaEntry : schemaEntries) {
-            if (schemaName.equals(schemaEntry.getName())) {
-                contains = true;
-                break;
-            }
-        }
-
-        return contains;
-    }
-
-    private Collection<SchemaEntry> addSoapEnv(Collection<SchemaEntry> collection) {
-        SchemaEntry defaultEntry = newDefaultEntry();
-        try {
-            save(defaultEntry);
-        } catch (SaveException e) {
-            logger.log(Level.WARNING, "cannot save default soap xsd", e);
-        }
-        ArrayList<SchemaEntry> completeList = new ArrayList<SchemaEntry>(collection);
-        completeList.add(defaultEntry);
-        return completeList;
     }
 
     private static final String TABLE_NAME = "community_schema";
@@ -478,4 +356,5 @@ public class CommunitySchemaManagerImpl
             "    <xs:anyAttribute namespace=\"##any\" processContents=\"lax\" />\n" +
             "  </xs:complexType>\n" +
             "</xs:schema>";
+
 }

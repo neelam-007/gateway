@@ -180,7 +180,7 @@
                 <idref bean="auditExporter"/>
                 <idref bean="counterIDManager"/>
                 <idref bean="countedHitsManager"/>
-                <idref bean="communitySchemaManager"/>
+                <idref bean="schemaEntryManager"/>
                 <idref bean="clusterPropertyManager"/>
                 <idref bean="sampleMessageManager"/>
 

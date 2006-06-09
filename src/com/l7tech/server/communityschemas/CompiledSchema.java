@@ -15,8 +15,6 @@ import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
-import static com.l7tech.server.communityschemas.CompiledSchema.HardwareStatus.OFF;
-import static com.l7tech.server.communityschemas.CompiledSchema.HardwareStatus.ON;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -32,32 +30,26 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.ref.WeakReference;
 
-class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHaver {
+class CompiledSchema implements Closeable {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
     public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
             "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
     public static final boolean SUPPRESS_FALLBACK_IF_TARARI_FAILS = Boolean.getBoolean(PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS);
 
-    public static enum HardwareStatus {
-        /** The schema is loaded on hardware and validation will be accelerated. */
-        ON,
-        /** The schema is not loaded on the hardware. */
-        OFF,
-        /** The schema cannot be hardware accelerated. */
-        BAD
-    }
-
     private final String targetNamespace;
     private final String systemId;
     private final Schema softwareSchema;
     private final String schemaDocument;
-    private final CompiledSchemaManager manager;
-    private final Set<SchemaHandle> deps;
+    private final SchemaManagerImpl manager;
+    private final Set<SchemaHandle> imports;  // Schemas that we directly use via import
+    private final Set<WeakReference<CompiledSchema>> exports = new HashSet<WeakReference<CompiledSchema>>(); // Schemas that use us directly via import
     private final AtomicInteger refcount = new AtomicInteger(0);
     private boolean closed = false;
-
-    private HardwareStatus hardwareStatus = OFF;
+    private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
+    private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
+    private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
 
     SchemaHandle ref() {
         refcount.incrementAndGet();
@@ -75,8 +67,8 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
         return closed;
     }
 
-    CompiledSchema(String targetNamespace, String systemId, String schemaDocument, Schema softwareSchema, CompiledSchemaManager manager, Set<SchemaHandle> deps) {
-        if (targetNamespace == null || softwareSchema == null || schemaDocument == null || deps == null)
+    CompiledSchema(String targetNamespace, String systemId, String schemaDocument, Schema softwareSchema, SchemaManagerImpl manager, Set<SchemaHandle> imports) {
+        if (targetNamespace == null || softwareSchema == null || schemaDocument == null || imports == null)
             throw new NullPointerException();
 
         this.targetNamespace = targetNamespace;
@@ -84,12 +76,7 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
         this.manager = manager;
-        this.deps = deps;
-    }
-
-    /** @return an unmodifiable view of the dependencies present when this schema was initially compiled */
-    public Set<SchemaHandle> getDeps() {
-        return Collections.unmodifiableSet(deps);
+        this.imports = imports;
     }
 
     String getTargetNamespace() {
@@ -108,12 +95,28 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
         return schemaDocument;
     }
 
-    synchronized HardwareStatus getHardwareStatus() {
-        return hardwareStatus;
+    boolean isRejectedByTarari() {
+        return rejectedByTarari;
     }
 
-    synchronized void setHardwareStatus(HardwareStatus hardwareStatus) {
-        this.hardwareStatus = hardwareStatus;
+    void setRejectedByTarari(boolean rejectedByTarari) {
+        this.rejectedByTarari = rejectedByTarari;
+    }
+
+    boolean isUniqueTns() {
+        return uniqueTns;
+    }
+
+    void setUniqueTns(boolean uniqueTns) {
+        this.uniqueTns = uniqueTns;
+    }
+
+    boolean isLoaded() {
+        return loaded;
+    }
+
+    void setLoaded(boolean loaded) {
+        this.loaded = loaded;
     }
 
     /**
@@ -127,43 +130,69 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
      */
     void validateMessage(Message msg, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
         if (isClosed()) throw new IllegalStateException("CompiledSchema has already been closed");
-        TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
-        boolean isSoap = msg.isSoap();
-
-        TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
-        TarariMessageContext tmc = tk == null ? null : tk.getContext();
-        if (schemaHandler == null || tk == null || tmc == null || hardwareStatus != ON || targetNamespace == null) {
-            // Hardware impossible or inappropriate in this case
-            validateMessageDom(msg, isSoap, errorHandler);
-            return;
-        }
-
-        // Do it in Tarari
         try {
-            boolean result = schemaHandler.validate(tk.getContext());
-            if (!result) throw new SAXException("Validation failed: message was not valid");
+            manager.getReadLock().acquire();
 
-            // Hardware schema val succeeded.
-            if (isSoap) {
-                checkPayloadNamespaceUris(tk);
-            } else {
-                checkRootNamespace(tmc);
-            }
-        } catch (SAXException e) {
-            if (SUPPRESS_FALLBACK_IF_TARARI_FAILS) {
-                // Don't recheck with software -- just record the failure and be done
-                throw e;
+            TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
+            boolean isSoap = msg.isSoap();
+
+            TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
+            TarariMessageContext tmc = tk == null ? null : tk.getContext();
+            if (schemaHandler == null || tk == null || tmc == null || !isLoaded() || targetNamespace == null) {
+                // Hardware impossible or inappropriate in this case
+                validateMessageDom(msg, isSoap, errorHandler);
+                return;
             }
 
-            // Recheck failed validations with software, in case the Tarari failure was spurious
-            errorHandler.recordedErrors().clear();
-            validateMessageDom(msg, isSoap, errorHandler);
-            logger.info("Hardware schema validation failed. The assertion will " +
-                    "fallback on software schema validation");
+            // Do it in Tarari
+            try {
+                boolean result = schemaHandler.validate(tk.getContext());
+                if (!result) throw new SAXException("Validation failed: message was not valid");
+
+                // Hardware schema val succeeded.
+                if (isSoap) {
+                    checkPayloadNamespaceUris(tk);
+                } else {
+                    checkRootNamespace(tmc);
+                }
+            } catch (SAXException e) {
+                if (SUPPRESS_FALLBACK_IF_TARARI_FAILS) {
+                    // Don't recheck with software -- just record the failure and be done
+                    throw e;
+                }
+
+                // Recheck failed validations with software, in case the Tarari failure was spurious
+                errorHandler.recordedErrors().clear();
+                validateMessageDom(msg, isSoap, errorHandler);
+                logger.info("Hardware schema validation failed. The assertion will " +
+                        "fallback on software schema validation");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Thread interrupted while waiting for read lock", e);
+        } finally {
+            manager.getReadLock().release();
         }
 
     }
 
+    Set<SchemaHandle> getImports() {
+        return Collections.unmodifiableSet(imports);
+    }
+
+    Set<WeakReference<CompiledSchema>> getExports() {
+        return Collections.unmodifiableSet(exports);
+    }
+
+    /**
+     * Caller must hold the read lock.
+     *
+     * @param msg
+     * @param soap
+     * @param errorHandler
+     * @throws SAXException
+     * @throws IOException
+     */
     private void validateMessageDom(Message msg, boolean soap, SchemaValidationErrorHandler errorHandler) throws SAXException, IOException {
         final Document doc = msg.getXmlKnob().getDocumentReadOnly();
         Element[] elements;
@@ -190,7 +219,7 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
         } else {
             elements = new Element[]{doc.getDocumentElement()};
         }
-        validateElements( elements, errorHandler);
+        doValidateElements( elements, errorHandler);
     }
 
     /**
@@ -233,6 +262,26 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
      *                       the error handler will have been told about this and any subsequent errors.
      */
     void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
+        try {
+            manager.getReadLock().acquire();
+            doValidateElements(elementsToValidate, errorHandler);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
+        } finally {
+            manager.getReadLock().release();
+        }
+    }
+
+    /**
+     * Caller must hold the read lock.
+     *
+     * @param elementsToValidate
+     * @param errorHandler
+     * @throws IOException
+     * @throws SAXException
+     */
+    private void doValidateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
         if (isClosed()) throw new IllegalStateException();
         Validator v = softwareSchema.newValidator();
         v.setErrorHandler(errorHandler);
@@ -294,7 +343,7 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
         StringBuilder sb = new StringBuilder(super.toString()).append(" ");
         if (systemId != null) sb.append("systemId=\"").append(systemId).append("\" ");
         if (targetNamespace != null) sb.append("tns=\"").append(targetNamespace).append("\" ");
-        sb.append("hardware=\"").append(hardwareStatus).append("\" ");
+        sb.append("hardware=\"").append(isLoaded()).append("\" ");
         sb.append("doc=\"").append(schemaDocument.hashCode()).append("\" ");
         return sb.toString();
     }
@@ -302,6 +351,7 @@ class CompiledSchema implements Closeable, CachingLSResourceResolver.LSInputHave
     public LSInput getLSInput() {
         LSInputImpl lsi =  new LSInputImpl();
         lsi.setStringData(schemaDocument);
+        lsi.setSystemId(systemId);
         return lsi;
     }
 }

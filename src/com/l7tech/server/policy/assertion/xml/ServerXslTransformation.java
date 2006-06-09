@@ -21,6 +21,7 @@ import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
+import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -29,6 +30,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
@@ -73,6 +75,12 @@ public class ServerXslTransformation
         }
     }
 
+    /** A cache for remotely loaded stylesheets. */
+    private static final HttpObjectCache httpObjectCache =
+            new HttpObjectCache(ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
+                                ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000));
+
+
     private final Auditor auditor;
     private final ResourceGetter resourceGetter;
     private final String[] varsUsed;
@@ -106,10 +114,11 @@ public class ServerXslTransformation
             }
         };
 
+
         this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
                                                                   resourceObjectfactory,
                                                                   urlFinder,
-                                                                  springContext,
+                                                                  httpObjectCache,
                                                                   auditor);
     }
 

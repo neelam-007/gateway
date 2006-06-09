@@ -109,7 +109,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
         // Initialize the XML editor to the XSL from the assertion, if any, else to an identity transform
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                String xsl = XSL_IDENTITY_TRANSFORM;
+                String xsl = null;
 
                 AssertionResourceInfo ri = assertion.getResourceInfo();
                 if (ri instanceof StaticResourceInfo) {
@@ -117,17 +117,18 @@ public class XslTransformationSpecifyPanel extends JPanel {
                     xsl = sri.getDocument();
                 }
 
-                assertion.getResourceInfo();
-                if (xsl != null) {
-                    XMLEditor editor = uiAccessibility.getEditor();
-                    try {
-                        editor.setText(XmlUtil.nodeToFormattedString(XmlUtil.parse(new StringReader(xsl), false)));
-                    } catch (Exception e) {
-                        log.log(Level.WARNING, "Couldn't parse initial XSLT", e);
-                        editor.setText(xsl);
-                    }
-                    editor.setLineNumber(1);
+                // Default to identity transform
+                if (xsl == null || xsl.trim().length() < 1)
+                    xsl = XSL_IDENTITY_TRANSFORM;
+
+                XMLEditor editor = uiAccessibility.getEditor();
+                try {
+                    editor.setText(XmlUtil.nodeToFormattedString(XmlUtil.parse(new StringReader(xsl), false)));
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Couldn't parse initial XSLT", e);
+                    editor.setText(xsl);
                 }
+                editor.setLineNumber(1);
             }
         });
 

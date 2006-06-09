@@ -13,9 +13,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.server.communityschemas.CompiledSchemaManager;
-import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.communityschemas.SchemaHandle;
+import com.l7tech.server.communityschemas.SchemaManager;
+import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 /**
@@ -54,28 +55,25 @@ public class ServerSchemaValidation
 
     private final Auditor auditor;
     private final ResourceGetter resourceGetter;
-    private final CompiledSchemaManager compiledSchemaManager;
+    private final SchemaManager schemaManager;
     private final String[] varsUsed;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
         this.auditor = new Auditor(this, springContext, logger);
-        this.compiledSchemaManager = (CompiledSchemaManager)springContext.getBean("compiledSchemaManager");
+        this.schemaManager = (SchemaManager)springContext.getBean("schemaManager");
         this.varsUsed = data.getVariablesUsed();
 
         if (assertion.getResourceInfo()instanceof MessageUrlResourceInfo)
             throw new ServerPolicyException(assertion, "MessageUrlResourceInfo is not yet supported.");
 
-        ResourceGetter.ResourceObjectFactory rof = new ResourceGetter.ResourceObjectFactory() {
+        final Pattern[] whitey = assertion.getResourceInfo().makeUrlPatterns();
+
+        final ResourceGetter.ResourceObjectFactory rof = new ResourceGetter.ResourceObjectFactory() {
             public Object createResourceObject(String url, String resource) throws ParseException {
                 try {
                     logger.info("Loading schema for message validation.");
-                    if (resourceGetter instanceof ResourceGetter.UrlResourceGetter) {
-                        ResourceGetter.UrlResourceGetter urg = (ResourceGetter.UrlResourceGetter)resourceGetter;
-                        return compiledSchemaManager.compile(resource, url, urg.getHttpClient(), urg.getHttpObjectCache(), urg.getUrlWhitelist());
-                    } else
-                        return compiledSchemaManager.compile(resource, url, null, null, null);
-
+                    return schemaManager.compile(resource, url, whitey);
                 } catch (InvalidDocumentFormatException e) {
                     String msg = "parsing exception";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, e);
@@ -84,7 +82,9 @@ public class ServerSchemaValidation
             }
         };
 
-        this.resourceGetter = ResourceGetter.createResourceGetter(assertion, rof, null, springContext, auditor);
+        this.resourceGetter = ResourceGetter.createResourceGetter(assertion, rof, null,
+                                                                  schemaManager.getHttpObjectCache(),
+                                                                  auditor);
     }
 
     /**

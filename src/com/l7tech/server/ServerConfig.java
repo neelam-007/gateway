@@ -62,11 +62,11 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
 
-    public static final String PARAM_MESSAGEURL_MAX_CACHE_ENTRIES = "messageUrlMaxCacheEntries";
-    public static final String PARAM_MESSAGEURL_MAX_CACHE_AGE = "messageUrlMaxCacheAge";
+    public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";
+    public static final String PARAM_XSLT_CACHE_MAX_AGE = "xsltMaxCacheAge";
 
-    public static final String PARAM_SINGLEURL_MAX_CACHE_ENTRIES = "singleUrlMaxCacheEntries";
-    public static final String PARAM_SINGLEURL_MAX_CACHE_AGE = "singleUrlMaxCacheAge";
+    public static final String PARAM_SCHEMA_CACHE_MAX_ENTRIES = "schemaMaxCacheEntries";
+    public static final String PARAM_SCHEMA_CACHE_MAX_AGE = "schemaMaxCacheAge";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
@@ -529,18 +529,30 @@ public class ServerConfig extends ApplicationObjectSupport {
         return attachmentsDir;
     }
 
+    public int getIntProperty(String propName, int emergencyDefault) {
+        String strval = getProperty(propName);
+        int val;
+        try {
+            val = Integer.parseInt(strval);
+        } catch (NumberFormatException e) {
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid number; using " + emergencyDefault + " instead");
+            val = emergencyDefault;
+        }
+        return val;
+    }
+
     public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
     private ClusterPropertyManager clusterPropertyManager;
     private int _serverId;
-    private final long _serverBootTime = System.currentTimeMillis();
     private List _ipProtocolPorts;
     private String _hostname;
     private Properties _properties;
 
     private static ServerConfig _instance;
+    private final long _serverBootTime = System.currentTimeMillis();
     private final Logger logger = Logger.getLogger(getClass().getName());
     private InitialContext _icontext;
 }

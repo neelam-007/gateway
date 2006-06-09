@@ -1,21 +1,20 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+/*
+ * Copyright (C) 2005 Layer 7 Technologies Inc.
+ *
  */
+
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.xml.tarari.TarariSchemaResolver;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.xml.sax.EntityResolver;
 
 import java.util.Collection;
 
-public interface CommunitySchemaManager extends EntityManager<SchemaEntry> {
+/**
+ * @author mike
+ */
+public interface SchemaEntryManager extends EntityManager<SchemaEntry> {
     Collection<SchemaEntry> findByTNS(String tns) throws FindException;
-    EntityResolver communityEntityResolver();
-    LSResourceResolver communityLSResourceResolver();
-    TarariSchemaResolver communitySchemaResolver();
 
     void delete(SchemaEntry existingSchema) throws DeleteException;
 
@@ -24,4 +23,11 @@ public interface CommunitySchemaManager extends EntityManager<SchemaEntry> {
     void update(SchemaEntry entry) throws UpdateException;
 
     long save(SchemaEntry entry) throws SaveException;
+
+    /**
+     * Get the SchemaEntry or null if not found.
+     */
+    SchemaEntry getSchemaEntryFromSystemId(String systemId);
+
+    SchemaHandle getCachedSchemaHandle(long oid);
 }

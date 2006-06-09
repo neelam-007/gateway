@@ -309,7 +309,7 @@ public class HttpObjectCache {
                 // Use the server's own modification date
                 ifModSince = new GenericHttpHeader(HttpConstants.HEADER_IF_MODIFIED_SINCE, entry.lastModified);
             } else {
-                // Fall back to making one up, using our own clock
+                // Fall back to making one up, using our own clock  TODO fix this bug:  lastSuccessfulPollStarted is zero if there hasn't been one!
                 ifModSince = GenericHttpHeader.makeDateHeader(HttpConstants.HEADER_IF_MODIFIED_SINCE,
                                                               new Date(entry.lastSuccessfulPollStarted));
             }

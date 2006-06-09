@@ -1,11 +1,11 @@
 package com.l7tech.server.policy.validator;
 
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.security.kerberos.KerberosClient;
+import com.l7tech.common.security.kerberos.KerberosConfigException;
+import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.security.kerberos.KerberosException;
-import com.l7tech.common.security.kerberos.KerberosConfigException;
-import com.l7tech.common.security.kerberos.KerberosClient;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
@@ -14,22 +14,18 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.*;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.UnknownAssertion;
-import com.l7tech.policy.assertion.HttpFormPost;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
-import com.l7tech.server.communityschemas.CommunitySchemaManager;
+import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.service.PublishedService;
@@ -38,11 +34,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.nio.charset.Charset;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
-import java.nio.charset.Charset;
 
 /**
  * Performs server side policy validation.
@@ -66,7 +62,7 @@ import java.nio.charset.Charset;
 public class ServerPolicyValidator extends PolicyValidator implements InitializingBean {
     private JmsEndpointManager jmsEndpointManager;
     private IdentityProviderFactory identityProviderFactory;
-    private CommunitySchemaManager communitySchemaManager;
+    private SchemaEntryManager schemaEntryManager;
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         Assertion[] ass = ap.getPath();
@@ -281,8 +277,8 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     String importns = importEl.getAttribute("namespace");
                     String importloc = importEl.getAttribute("schemaLocation");
                     try {
-                        if (importloc == null || communitySchemaManager.findByName(importloc).isEmpty()) {
-                            if (importns == null || communitySchemaManager.findByTNS(importns).isEmpty()) {
+                        if (importloc == null || schemaEntryManager.findByName(importloc).isEmpty()) {
+                            if (importns == null || schemaEntryManager.findByTNS(importns).isEmpty()) {
                                 if (importloc != null) {
                                     unresolvedImportsList.add(importloc);
                                 } else {
@@ -420,8 +416,8 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         this.identityProviderFactory = identityProviderFactory;
     }
 
-    public void setCommunitySchemaManager(CommunitySchemaManager communitySchemaManager) {
-        this.communitySchemaManager = communitySchemaManager;
+    public void setSchemaEntryManager(SchemaEntryManager schemaManager) {
+        this.schemaEntryManager = schemaManager;
     }
 
     public void afterPropertiesSet() throws Exception {
