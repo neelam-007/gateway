@@ -425,6 +425,7 @@ public class ServerXslTransformation
         TarariMessageContext asTarari()
                 throws IOException, SAXException
         {
+            message.isSoap();
             TarariKnob tk = (TarariKnob)message.getKnob(TarariKnob.class);
             try {
                 return tk == null ? null : tk.getContext();
