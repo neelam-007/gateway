@@ -166,20 +166,20 @@
         </property>
         <property name="beanNames">
             <list>
-                <idref bean="internalIdentityProvider"/>
-                <idref bean="internalUserManager"/>
-                <idref bean="internalGroupManager"/>
-                <idref bean="federatedIdentityProvider"/>
-                <idref bean="federatedUserManager"/>
-                <idref bean="federatedGroupManager"/>
+                <idref bean="internalIdentityProvider"/>  <!-- TODO non-transactional methods -->
+                <idref bean="internalUserManager"/>       <!-- TODO non-transactional methods -->
+                <idref bean="internalGroupManager"/>      <!-- TODO non-transactional methods -->
+                <idref bean="federatedIdentityProvider"/> <!-- TODO non-transactional methods -->
+                <idref bean="federatedUserManager"/>      <!-- TODO non-transactional methods -->
+                <idref bean="federatedGroupManager"/>     <!-- TODO non-transactional methods -->
                 <idref bean="resolutionManager"/>
-                <idref bean="clusterInfoManager"/>
+                <idref bean="clusterInfoManager"/>        <!-- TODO non-transactional methods -->
                 <idref bean="serviceUsageManager"/>
                 <idref bean="jmsEndpointManager"/>
                 <idref bean="jmsConnectionManager"/>
                 <idref bean="auditExporter"/>
-                <idref bean="counterIDManager"/>
-                <idref bean="countedHitsManager"/>
+                <idref bean="counterIDManager"/>          <!-- TODO non-transactional methods -->
+                <idref bean="countedHitsManager"/>        <!-- TODO is this real? -->
                 <idref bean="sampleMessageManager"/>
 
                 <!-- Identity mapping stuff -->
@@ -219,7 +219,7 @@
     </bean>
 
     <!--
-    Transactional wrapper for SchemaEntry manager, not all methods are transactional
+    Transactional wrapper for ClusterProperty manager, not all methods are transactional
     -->
     <bean id="clusterPropertyManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="transactionManager">
