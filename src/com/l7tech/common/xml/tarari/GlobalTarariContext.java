@@ -48,17 +48,6 @@ public interface GlobalTarariContext {
     FastXpath toTarariNormalForm(String xpathToSimplify, Map namespaceMap);
 
     /**
-     * Validate the given document in hardare using the current schemas, if possible to do so.
-     *
-     * @param doc  the document to validate.  Must not be null.
-     * @param desiredTargetNamespaceUri  the target namespace that must be validated.  Must not be null.  May be empty to refer to "no namespace"
-     * @return Boolean.TRUE if the document was validated;
-     *         Boolean.FALSE if the document was invalid; or
-     *         null if hardware validation could not be attempted because the target namespace was loaded more than once.
-     */
-    Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri);
-
-    /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
      */
     void compileAllXpaths();

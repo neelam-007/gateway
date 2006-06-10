@@ -146,7 +146,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
             return xpathResult;
         GlobalTarariContextImpl globalContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         try {
-            globalContext.fastxpathLock.readLock().acquire();
+            GlobalTarariContextImpl.tarariLock.readLock().acquire();
             // Lock in earliest compiler generation that might have been in effect when we evaluate the XPaths
             compilerGeneration = globalContext.getCompilerGeneration();
             final XPathProcessor xpathProcessor = new XPathProcessor(raxDocument);
@@ -158,7 +158,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Thread interrupted while waiting for Tarari fastxpath read lock");
         } finally {
-            globalContext.fastxpathLock.readLock().release();
+            GlobalTarariContextImpl.tarariLock.readLock().release();
         }
         return xpathResult;
     }

@@ -6,17 +6,27 @@ package com.l7tech.common.xml.tarari;
 
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.FastXpath;
+import com.tarari.xml.XmlConfigException;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
+import com.tarari.xml.rax.schema.SchemaLoader;
+import com.tarari.xml.rax.schema.SchemaResolver;
+import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -33,12 +43,14 @@ import java.util.logging.Logger;
  * </ul>
  *
  */
-public class GlobalTarariContextImpl implements GlobalTarariContext {
+public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchemaHandler {
     private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
+    static final ReadWriteLock tarariLock = new WriterPreferenceReadWriteLock();
+
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
     boolean xpathChangedSinceLastCompilation = true;
-    ReadWriteLock fastxpathLock = new WriterPreferenceReadWriteLock();
+    private SchemaResolver tarariResolver;
 
     /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
@@ -47,7 +59,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         logger.fine("compiling xpath expressions");
         while (true) {
             try {
-                fastxpathLock.writeLock().acquire();
+                tarariLock.writeLock().acquire();
                 if (!xpathChangedSinceLastCompilation) {
                     logger.fine("skipping compilation since no changes to xpath expressions were detected");
                     return;
@@ -74,10 +86,10 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                     }
                 }
             } catch (InterruptedException e) {
-                logger.warning("Interrupted while waiting for Tarari fastxpath write lock"); // probably being shut down
                 Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while waiting for Tarari write lock");
             } finally {
-                fastxpathLock.writeLock().release();
+                tarariLock.writeLock().release();
             }
         }
     }
@@ -156,14 +168,14 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      */
     void addXpath(String expression) {
         try {
-            fastxpathLock.writeLock().acquire();
+            tarariLock.writeLock().acquire();
             currentXpaths.add(expression);
             xpathChangedSinceLastCompilation = true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari fastxpath write lock");
+            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
         } finally {
-            fastxpathLock.writeLock().release();
+            tarariLock.writeLock().release();
         }
     }
 
@@ -172,19 +184,15 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      */
     void removeXpath(String expression) {
         try {
-            fastxpathLock.writeLock().acquire();
+            tarariLock.writeLock().acquire();
             currentXpaths.remove(expression);
             xpathChangedSinceLastCompilation = true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari fastxpath write lock");
+            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
         } finally {
-            fastxpathLock.writeLock().release();
+            tarariLock.writeLock().release();
         }
-    }
-
-    public Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri) {
-        return Boolean.valueOf(((TarariMessageContextImpl)doc).getRaxDocument().validate());
     }
 
     /**
@@ -200,6 +208,75 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         if (expression == null) return -1;
         return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
     }
+
+    public void setTarariSchemaResolver(final TarariSchemaResolver resolver) {
+        if (resolver == null) throw new NullPointerException();
+        this.tarariResolver = new SchemaResolver() {
+            public byte[] resolveSchema(String namespaceUri, String locationHint, String baseUri) {
+                return resolver.resolveSchema(namespaceUri, locationHint, baseUri);
+            }
+        };
+    }
+
+    public void loadHardware(String systemId, String schemadoc)
+            throws SoftwareFallbackException, SAXException {
+        try {
+            tarariLock.writeLock().acquire();
+            byte[] bytes = schemadoc.getBytes("UTF-8");
+            SchemaLoader.setSchemaResolver(tarariResolver);
+            SchemaLoader.loadSchema(new ByteArrayInputStream(bytes), systemId);
+        } catch (XmlConfigException e) {
+            TarariUtil.translateException(e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // Can't happen
+        } catch (IOException e) {
+            throw new RuntimeException(e); // Can't happen (it's a BAIS)
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
+        } finally {
+            tarariLock.writeLock().release();
+        }
+    }
+
+    public void unloadHardware(String tns) {
+        try {
+            this.tarariLock.writeLock().acquire();
+            SchemaLoader.unloadSchema(tns);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
+        } finally {
+            tarariLock.writeLock().release();
+        }
+    }
+
+    public boolean validate(TarariMessageContext tmc) throws SAXException {
+        long before = 0;
+        boolean result = false;
+        try {
+            this.tarariLock.readLock().acquire();
+            if (logger.isLoggable(Level.FINE)) {
+                before = System.currentTimeMillis();
+                logger.fine("Validing message in hardware");
+            }
+
+            result = ((TarariMessageContextImpl)tmc).getRaxDocument().validate();
+            return result;
+        } catch (com.tarari.xml.XmlException e) {
+            throw new SAXException("Unable to validate document: " + ExceptionUtils.getMessage(e), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari read lock");
+        } finally {
+            tarariLock.readLock().release();
+            if (logger.isLoggable(Level.FINE)) {
+                long after = System.currentTimeMillis();
+                logger.log(Level.FINE, "Validation {0} in {1}ms", new Object[] { result ? "succeeded" : "failed", after-before});
+            }
+        }
+    }
+
 
     /**
      * Builds the initial {@link Xpaths}

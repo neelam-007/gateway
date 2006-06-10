@@ -27,7 +27,6 @@ public class TarariLoader {
     private static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.rax.fastxpath.XPathCompiler";
     private static final String FACTORIES_CLASSNAME = "com.l7tech.common.xml.tarari.TarariFactories";
     private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.common.xml.tarari.GlobalTarariContextImpl";
-    private static final String SCHEMAHANDLER_CLASSNAME = "com.l7tech.common.xml.tarari.TarariSchemaHandlerImpl";
 
     private static Boolean tarariPresent = null;
     private static GlobalTarariContext tarariContext = null;
@@ -76,10 +75,8 @@ public class TarariLoader {
                             messageContextFactory = (TarariMessageContextFactory) tarariFactoryClass.newInstance();
 
                             Class tarariContextClass = Class.forName(SERVERTARARICONTEXT_CLASSNAME);
-                            tarariContext = (GlobalTarariContext) tarariContextClass.newInstance();
-
-                            Class tarariSchemaClass = Class.forName(SCHEMAHANDLER_CLASSNAME);
-                            schemaHandler = (TarariSchemaHandler)tarariSchemaClass.newInstance();
+                            tarariContext = (GlobalTarariContext)tarariContextClass.newInstance();
+                            schemaHandler = (TarariSchemaHandler)tarariContext;
 
                             logger.info("Tarari hardware XML acceleration probe succeeded: XPath compiler is ready");
                             tarariPresent = Boolean.TRUE;
