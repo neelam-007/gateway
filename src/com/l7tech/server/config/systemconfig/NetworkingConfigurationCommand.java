@@ -39,6 +39,7 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
 
             if (networkConfig != null) {
                 String interfaceName = networkConfig.getInterfaceName();
+                logger.info("Configuring \"" + interfaceName + "\" interface");
                 configFile = new File(netconfigDir,     interfaceName + "_config");
                 PrintWriter pw = null;
                 try {

@@ -1,19 +1,18 @@
 package com.l7tech.server.config.ui.console;
 
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.WizardInputValidator;
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * User: megery
@@ -149,21 +148,25 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     protected String getData(List<String> promptLines, String defaultValue) throws IOException, WizardNavigationException {
         if (promptLines == null) return "";
-        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), null);
+        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), new String[]{});
     }
 
     protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
         return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries);
     }
 
+    protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries);
+    }
+
     protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), null);
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), new String[]{});
     }
 
     protected void printText(List<String> textToPrint) {
         if (textToPrint != null) consoleWizardUtils.printText(textToPrint.toArray(new String[textToPrint.size()]));
     }
-    
+
     protected void printText(String[] textToPrint) {
         consoleWizardUtils.printText(textToPrint);
     }

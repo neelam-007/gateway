@@ -17,19 +17,17 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     public static final String STATIC_BOOT_PROTO = "static";
 
     public static class NetworkConfig {
-        String interfaceName;
-        String bootProto;
-        String ipAddress;
-        String netMask;
-        String gateway;
+        private String interfaceName;
+        private String bootProto;
+        private String ipAddress;
+        private String netMask;
+        private String gateway;
+        private String hostname;
         private boolean isNewInterface;
         
-        public NetworkConfig(String interfaceName, String bootProto, String ipAddress, String netMask, String gateway) {
+        public NetworkConfig(String interfaceName, String bootProto) {
             this.interfaceName = interfaceName;
             this.bootProto = bootProto;
-            this.ipAddress = ipAddress;
-            this.netMask = netMask;
-            this.gateway = gateway;
             isNewInterface = false;
         }
 
@@ -78,8 +76,10 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
             StringBuilder sb = new StringBuilder();
             sb.append(getInterfaceName()).append(" (").append(getBootProto());
+            if (StringUtils.isNotEmpty(hostname))
+                sb.append(", HOSTNAME = ").append(hostname);
             if (StringUtils.equalsIgnoreCase(STATIC_BOOT_PROTO, getBootProto()))
-                sb.append(", IP = ").append(getIpAddress()).append(", NETMASK = ").append(getNetMask()).append(", GATEWAY =").append(getGateway());
+                sb.append(", IP = ").append(getIpAddress()).append(", NETMASK = ").append(getNetMask()).append(", GATEWAY = ").append(getGateway());
 
             sb.append(")");
             return sb.toString();
@@ -87,17 +87,16 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("DEVICE=").append(interfaceName).append(eol);
-            sb.append("ONBOOT=yes").append(eol);
-            sb.append("BOOTPROTO=").append(bootProto).append(eol);
-            //sb.append("TYPE=Ethernet");
+            sb.append("--device ").append(interfaceName).append(eol);
+            sb.append("--bootproto=").append(bootProto).append(eol);
             if (STATIC_BOOT_PROTO.equals(bootProto)) {
-                sb.append("IPADDR=").append(ipAddress).append(eol);
-                sb.append("NETMASK=").append(netMask).append(eol);
-                sb.append("GATEWAY=").append(gateway).append(eol);
-            } else { //if this is a DHCP interface
-                sb.append("check_link_down() {").append(eol).append("\treturn 1;").append(eol).append("\n}");
+                sb.append("--ip=").append(ipAddress).append(eol);
+                sb.append("--netmask=").append(netMask).append(eol);
+                sb.append("--gateway=").append(gateway).append(eol);
             }
+            if (StringUtils.isNotEmpty(hostname))
+                sb.append("--hostname=").append(hostname).append(eol);
+
             return sb.toString();
         }
 
@@ -108,10 +107,18 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         public boolean isNew() {
             return isNewInterface;
         }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
     }
 
-    public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto, String ipAddress, String netMask, String gateway) {
-        return new NetworkConfig(interfaceName, bootProto, ipAddress, netMask, gateway);
+    public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
+        return new NetworkConfig(interfaceName, bootProto);
     }
 
     private List<NetworkConfig> networkingConfigs;
@@ -136,6 +143,8 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
                 explanations.add("\tNETMASK=" + networkConfig.getNetMask());
                 explanations.add("\tGATEWAY=" + networkConfig.getGateway());
+                if (StringUtils.isNotEmpty(networkConfig.getHostname()))
+                    explanations.add("\tHOSTNAME=" + networkConfig.getHostname());
             }
             explanations.add("");
         }

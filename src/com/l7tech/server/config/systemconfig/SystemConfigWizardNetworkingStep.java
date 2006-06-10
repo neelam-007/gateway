@@ -1,14 +1,16 @@
 package com.l7tech.server.config.systemconfig;
 
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -77,11 +79,15 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             return false;
         }
 
+        int octetNumber = 1;
+        int start = 0;
+        int end = 255;
+
         for (String octetString : octets) {
             try {
                 int octet = Integer.parseInt(octetString);
-
-                if (octet < 0 || octet > 255) return false;
+                start = (octetNumber++ == 1 ? 1 : 0);
+                if (octet < start || octet > end) return false;
 
             } catch (NumberFormatException e) {
                 return false;
@@ -156,15 +162,12 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         if (StringUtils.equalsIgnoreCase(bootProto, NetworkingConfigurationBean.STATIC_BOOT_PROTO)) {
 
-            String ipAddress = getIpAddress(whichConfig.getIpAddress(), whichConfig.getInterfaceName());
-            whichConfig.setIpAddress(ipAddress);
-
-            String netMask = getNetMask(whichConfig.getNetMask(), whichConfig.getInterfaceName());
-            whichConfig.setNetMask(netMask);
-
-            String gateway = getGateway(whichConfig.getGateway(), whichConfig.getInterfaceName());
-            whichConfig.setGateway(gateway);
+            whichConfig.setIpAddress(getIpAddress(whichConfig.getIpAddress(), whichConfig.getInterfaceName()));
+            whichConfig.setNetMask(getNetMask(whichConfig.getNetMask(), whichConfig.getInterfaceName()));
+            whichConfig.setGateway(getGateway(whichConfig.getGateway(), whichConfig.getInterfaceName()));
         }
+
+        whichConfig.setHostname(getHostname(whichConfig.getHostname(), whichConfig.getInterfaceName()));
 
         return whichConfig;
     }
@@ -178,6 +181,31 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         String input = getData(prompts, "");
         theConfig.setInterfaceName(input);
         return theConfig;
+    }
+
+    private String getHostname(String hostname, String interfaceName) throws IOException, WizardNavigationException {
+        String newHostname = null;
+        String defaultHostname = (StringUtils.isEmpty(hostname)?null:hostname);
+        String hostnamePrompt = "Enter the hostname to be associated with the \"" + interfaceName + "\" interface: ";
+
+        if (StringUtils.isNotEmpty(hostname)) hostnamePrompt += "[" + hostname + "] ";
+
+        String[] prompt = new String[]{
+            "Would you like to configure a hostname for this interface? [no]",
+        };
+
+        String shouldConfigHostname = getData(
+                prompt,
+                "no"
+                );
+
+        if (StringUtils.equalsIgnoreCase("yes", shouldConfigHostname) || StringUtils.equalsIgnoreCase("y", shouldConfigHostname)) {
+            newHostname = getData(
+                new String[] {hostnamePrompt},
+                defaultHostname
+            );
+        }
+        return newHostname;
     }
 
     private String getGateway(String gateway, String interfaceName) throws IOException, WizardNavigationException {
@@ -268,7 +296,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private List<NetworkingConfigurationBean.NetworkConfig> getInterfaceInfo() {
         List<NetworkingConfigurationBean.NetworkConfig> interfaces = getExistingNetworkInterfaces();
 
-        NetworkingConfigurationBean.NetworkConfig newInterface = NetworkingConfigurationBean.makeNetworkConfig(null, null, null, null, null);
+        NetworkingConfigurationBean.NetworkConfig newInterface = NetworkingConfigurationBean.makeNetworkConfig(null, null);
         newInterface.isNew(true);
         interfaces.add(newInterface);
         return interfaces;
@@ -276,7 +304,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private List<NetworkingConfigurationBean.NetworkConfig> getExistingNetworkInterfaces() {
 
-        logger.info("Determine existing interface information");
+        logger.info("Determining existing interface information.");
         List<NetworkingConfigurationBean.NetworkConfig> configs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
 
         String pathName = osFunctions.getNetworkConfigurationDirectory();
@@ -318,6 +346,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             String ipAddress = null;
             String netMask = null;
             String gateway = null;
+            String hostname = null;
 
             String line = null;
             while ((line = reader.readLine()) != null) {
@@ -331,10 +360,15 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
                     else if (key.equals("IPADDR")) ipAddress = value;
                     else if (key.equals("NETMASK")) netMask = value;
                     else if (key.equals("GATEWAY")) gateway = value;
+                    else if (key.equals("HOSTNAME")) hostname = value;
                 }
             }
             //finished reading the file, now make the network config
-            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(interfaceName, bootProto, ipAddress, netMask, gateway);
+            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(interfaceName, bootProto);
+            if (StringUtils.isNotEmpty(ipAddress)) theNetConfig.setIpAddress(ipAddress);
+            if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
+            if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
+            if (StringUtils.isNotEmpty(hostname)) theNetConfig.setHostname(hostname);
         } catch (FileNotFoundException e) {
             logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
         } catch (IOException e) {

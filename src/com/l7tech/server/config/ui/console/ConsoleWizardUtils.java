@@ -6,6 +6,8 @@ import com.l7tech.server.config.WizardInputValidator;
 import java.io.*;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -34,6 +36,31 @@ public class ConsoleWizardUtils {
     private ConsoleWizardUtils(InputStream in, PrintStream out) {
         reader = new BufferedReader(new InputStreamReader(in));
         this.out = out;
+    }
+
+    public String getData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntriesPattern) throws IOException, WizardNavigationException {
+        boolean isValidInput = true;
+
+        String input = null;
+        do {
+            isValidInput = true;
+            printText(promptLines);
+            input = readLine();
+            handleInput(input, isNavAware);
+
+            if (StringUtils.isEmpty(input)) {
+               if (defaultValue != null) input = defaultValue;
+            }
+
+            //if the wizard didn't recognize the input (i.e. non navigation input) then check it's validity here
+            if (allowedEntriesPattern != null) {
+                Matcher matcher = allowedEntriesPattern.matcher(input);
+                isValidInput = matcher.matches();
+            }
+            if (!isValidInput) printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+        } while (!isValidInput);
+
+        return input;
     }
 
     public String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries) throws IOException, WizardNavigationException {
@@ -149,10 +176,10 @@ public class ConsoleWizardUtils {
         for (int i = 0; i < prompts.length; i++) {
             String prompt = prompts[i];
             if (isNoDefaults) {
-                gotData.put(prompt, getData(new String[]{prompt}, null, isNavAware, null));
+                gotData.put(prompt, getData(new String[]{prompt}, null, isNavAware, (String[])null));
             } else {
                 String defaultValue = defaultValues[i];
-                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, isNavAware, null));
+                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, isNavAware, (String[])null));
             }
         }
 
