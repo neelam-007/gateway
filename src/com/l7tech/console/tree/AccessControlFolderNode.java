@@ -39,6 +39,7 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new IdentityNode(), index++);
         insert(new HttpBasicAuthNode(), index++);
         insert(new HttpDigestAuthNode(), index++);
+        insert(new HttpNegotiateAuthNode(), index++);
         insert(new SslTransportNode(true), index++);
         insert(new WsTokenBasicAuthNode(), index++);
         insert(new EncryptedUsernameTokenPaletteNode(), index++);

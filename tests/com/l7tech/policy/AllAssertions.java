@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.ext.Category;
@@ -79,6 +80,7 @@ public class AllAssertions {
     public static Assertion[] GATEWAY_EVERYTHING = new Assertion[]{
         new HttpBasic(),
         new HttpDigest(),
+        new HttpNegotiate(),
         new WssBasic(),
         new AllAssertion(),
         new ExactlyOneAssertion(),
@@ -133,6 +135,7 @@ public class AllAssertions {
     public static Assertion[] SERIALIZABLE_EVERYTHING = new Assertion[]{
         new HttpBasic(),
         new HttpDigest(),
+        new HttpNegotiate(),
         new WssBasic(),
         new AllAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})),    // Empty composites are not valid
         new ExactlyOneAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})), // Empty composites are not valid
@@ -185,6 +188,7 @@ public class AllAssertions {
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
         new HttpBasic(),
         new HttpDigest(),
+        new HttpNegotiate(),
         new WssBasic(),
         new EncryptedUsernameTokenAssertion(),            
         new RequestWssX509Cert(),

@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
@@ -197,6 +198,7 @@ public class Descriptions {
         descriptionsMap.put(OneOrMoreAssertion.class, NoParam.class);
         descriptionsMap.put(AllAssertion.class, NoParam.class);
         descriptionsMap.put(HttpBasic.class, NoParam.class);
+        descriptionsMap.put(HttpNegotiate.class, NoParam.class);
         descriptionsMap.put(HttpDigest.class, NoParam.class);
         descriptionsMap.put(HttpRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(BridgeRoutingAssertion.class, RoutingDescription.class);

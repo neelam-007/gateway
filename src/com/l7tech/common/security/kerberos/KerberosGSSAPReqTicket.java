@@ -64,7 +64,10 @@ public final class KerberosGSSAPReqTicket {
      * Get the ticket body (the byte[] less gss header and token identifier)
      */
     InputStream getTicketBody() throws IOException, GSSException, KerberosException {
-        InputStream is = new ByteArrayInputStream(ticketBytes,0,ticketBytes.length);
+
+        // Skip any SPNEGO wrapper
+        byte[] token = GSSSpnego.removeSpnegoWrapper(ticketBytes);
+        InputStream is = new ByteArrayInputStream(token,0,token.length);
 
         // Skip header bytes and check mechanism
         GSSHeader header = new GSSHeader(is);

@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -50,6 +51,7 @@ public class AssertionTreeNodeFactory {
 
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
+        assertionMap.put(HttpNegotiate.class, HttpNegotiateAuthAssertionTreeNode.class);
         assertionMap.put(WssBasic.class, WssBasicAuthAssertionTreeNode.class);
         assertionMap.put(EncryptedUsernameTokenAssertion.class, EncryptedUsernameTokenAssertionTreeNode.class);
         assertionMap.put(RequestWssX509Cert.class, RequestWssX509CertTreeNode.class);
