@@ -599,7 +599,7 @@
         </property>
     </bean>
 
-    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManagerImpl">
+    <bean id="clusterPropertyManagerTarget" class="com.l7tech.cluster.ClusterPropertyManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>

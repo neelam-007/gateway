@@ -180,8 +180,6 @@
                 <idref bean="auditExporter"/>
                 <idref bean="counterIDManager"/>
                 <idref bean="countedHitsManager"/>
-                <idref bean="schemaEntryManager"/>
-                <idref bean="clusterPropertyManager"/>
                 <idref bean="sampleMessageManager"/>
 
                 <!-- Identity mapping stuff -->
@@ -193,7 +191,7 @@
     </bean>
 
     <!--
-    Transactional wrapper for service metrics manager, not all methods are transactional
+    Transactional wrapper for SchemaEntry manager, not all methods are transactional
     -->
     <bean id="schemaEntryManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="transactionManager">
@@ -216,6 +214,31 @@
 
                 <!-- Everything else doesn't require transactions -->
                 <prop key="*">PROPAGATION_SUPPORTS</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!--
+    Transactional wrapper for SchemaEntry manager, not all methods are transactional
+    -->
+    <bean id="clusterPropertyManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="target">
+            <ref bean="clusterPropertyManagerTarget"/>
+        </property>
+        <property name="proxyTargetClass">
+            <value>true</value>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <!-- These methods use caches, and don't require transactions -->
+                <prop key="getCachedEntityByName">PROPAGATION_SUPPORTS</prop>
+                <prop key="getCachedEntity">PROPAGATION_SUPPORTS</prop>
+
+                <!-- Everything else must be transactional -->
+                <prop key="*">PROPAGATION_REQUIRED,-Throwable</prop>
             </props>
         </property>
     </bean>
