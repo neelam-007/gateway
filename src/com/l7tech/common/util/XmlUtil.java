@@ -28,6 +28,8 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1111,15 +1113,7 @@ public class XmlUtil {
         Map nsmap = new HashMap();
 
         while (element != null) {
-            NamedNodeMap attrs = element.getAttributes();
-            int numAttr = attrs.getLength();
-            for (int i = 0; i < numAttr; ++i) {
-                Attr attr = (Attr)attrs.item(i);
-                if ("xmlns".equals(attr.getName()))
-                    nsmap.put("", attr.getValue()); // new default namespace
-                else if ("xmlns".equals(attr.getPrefix())) // new namespace decl for prefix
-                    nsmap.put(attr.getLocalName(), attr.getValue());
-            }
+            addToNamespaceMap(element, nsmap);
 
             if (element == element.getOwnerDocument().getDocumentElement())
                 break;
@@ -1128,6 +1122,22 @@ public class XmlUtil {
         }
 
         return nsmap;
+    }
+
+    /**
+     * Add the specified element's namespace declarations to the specified map(prefix -> namespace).
+     * The default namespace is represented with the prefix "" (empty string).
+     */
+    private static void addToNamespaceMap(Element element, Map nsmap) {
+        NamedNodeMap attrs = element.getAttributes();
+        int numAttr = attrs.getLength();
+        for (int i = 0; i < numAttr; ++i) {
+            Attr attr = (Attr)attrs.item(i);
+            if ("xmlns".equals(attr.getName()))
+                nsmap.put("", attr.getValue()); // new default namespace
+            else if ("xmlns".equals(attr.getPrefix())) // new namespace decl for prefix
+                nsmap.put(attr.getLocalName(), attr.getValue());
+        }
     }
 
     /** Replace all descendants of the specified Element with the specified text content. */
@@ -1147,29 +1157,8 @@ public class XmlUtil {
 
     public static Map findAllNamespaces(Element element) {
         Map entries = new HashMap();
-        collectNamespaces(element, entries);
-        NodeList nodes = element.getElementsByTagName("*");
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Node n = nodes.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE) {
-                collectNamespaces((Element)n, entries);
-            }
-        }
-
-        Map result = new HashMap();
-        int ns = 1;
-        for (Iterator i = entries.keySet().iterator(); i.hasNext();) {
-            String uri = (String)i.next();
-            String prefix = (String)entries.get(uri);
-            if (prefix == null) prefix = "ns" + ns++;
-            result.put(prefix, uri);
-        }
-
-        return result;
-    }
-
-    private static void collectNamespaces(Element n, Map entries) {
-        NamedNodeMap foo = n.getAttributes();
+        boolean result1;
+        NamedNodeMap foo = element.getAttributes();
         // Find xmlns:foo, xmlns=
         for (int j = 0; j < foo.getLength(); j++) {
             Attr attrNode = (Attr)foo.item(j);
@@ -1189,6 +1178,44 @@ public class XmlUtil {
                 }
             }
         }
+        NodeList nodes = element.getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node n = nodes.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                boolean result;
+                NamedNodeMap foo1 = ((Element)n).getAttributes();
+                // Find xmlns:foo, xmlns=
+                for (int j = 0; j < foo1.getLength(); j++) {
+                    Attr attrNode = (Attr) foo1.item(j);
+                    String attPrefix = attrNode.getPrefix();
+                    String attNsUri = attrNode.getNamespaceURI();
+                    String attLocalName = attrNode.getLocalName();
+                    String attValue = attrNode.getValue();
+
+                    if (entries.get(attValue) != null) continue;
+
+                    // Bug 2053: Avoid adding xmlns="" to the map
+                    if (attValue != null && attValue.trim().length() > 0) {
+                        if ("xmlns".equals(attPrefix) && XmlUtil.XMLNS_NS.equals(attNsUri)) {
+                            entries.put(attValue, attLocalName);
+                        } else if ("xmlns".equals(attLocalName)) {
+                            entries.put(attValue, null);
+                        }
+                    }
+                }
+            }
+        }
+
+        Map result = new HashMap();
+        int ns = 1;
+        for (Iterator i = entries.keySet().iterator(); i.hasNext();) {
+            String uri = (String)i.next();
+            String prefix = (String)entries.get(uri);
+            if (prefix == null) prefix = "ns" + ns++;
+            result.put(prefix, uri);
+        }
+
+        return result;
     }
 
     /**
@@ -1324,5 +1351,183 @@ public class XmlUtil {
         } else {
             return null;
         }
+    }
+
+    private static final Pattern MATCH_QNAME = Pattern.compile("^\\s*([^:\\s]+):(\\S+?)\\s*$");
+
+    /**
+     * Accumlate a map of all namespace URIs used by this element and all its children.
+     *
+     * @param element the element to collect
+     * @param uriToPrefix  a Map(namespace uri => last seen prefix).
+     */
+    private static void normalizeNamespacesRecursively(Element element,
+                                                       Map uriToPrefix,
+                                                       Map prefixToUri,
+                                                       Map uniqueUriToPrefix,
+                                                       Map uniquePrefixToUri,
+                                                       Map prefixOldToNew)
+    {
+        uriToPrefix = new HashMap(uriToPrefix);
+        prefixToUri = new HashMap(prefixToUri);
+        prefixOldToNew = new HashMap(prefixOldToNew);
+
+        // Update uriToPrefix and prefixToUri maps for the scope of the current element
+        NamedNodeMap attrs = element.getAttributes();
+        for (int j = 0; j < attrs.getLength(); j++) {
+            Attr attrNode = (Attr) attrs.item(j);
+            String attPrefix = attrNode.getPrefix();
+            String attNsUri = attrNode.getNamespaceURI();
+            String nsPrefix = attrNode.getLocalName();
+            String nsUri = attrNode.getValue();
+
+            if (nsUri != null && nsUri.trim().length() > 0) {
+                nsUri = nsUri.trim();
+                if ("xmlns".equals(attPrefix) && XmlUtil.XMLNS_NS.equals(attNsUri)) {
+                    String uniquePrefix = nsPrefix;
+                    String existingUri = (String) uniquePrefixToUri.get(nsPrefix);
+                    if (existingUri != null && !(existingUri.equals(nsUri))) {
+                        // Redefinition of namespace.  First see, if we already have some other prefix pointing at it
+                        uniquePrefix = (String) uniqueUriToPrefix.get(nsUri);
+                        if (uniquePrefix == null) {
+                            int n = 0;
+                            do {
+                                uniquePrefix = nsPrefix + ++n;
+                            }
+                            while (uniquePrefixToUri.containsKey(uniquePrefix));
+                            if (logger.isLoggable(Level.FINEST))
+                                logger.log(Level.FINEST, "Redefinition of namespace: {0}={1};  changing prefix to unique value: {2}",
+                                        new Object[] { nsPrefix, nsUri, uniquePrefix });
+                        } else {
+                            if (logger.isLoggable(Level.FINEST))
+                                logger.log(Level.FINEST, "Attempted reuse of namespace with colliding prefix: {0}; changing to existing value: {1}", new Object[] { nsPrefix, uniquePrefix });
+                        }
+                        prefixOldToNew.put(nsPrefix, uniquePrefix);
+                    }
+
+                    uniquePrefixToUri.put(uniquePrefix, nsUri);
+                    uniqueUriToPrefix.put(nsUri, uniquePrefix);
+                    uriToPrefix.put(nsUri, nsPrefix);
+                    prefixToUri.put(nsPrefix, nsUri);
+                }
+            }
+        }
+
+        // Translate this element's own prefix, if required
+        String oldPrefix = element.getPrefix();
+        if (oldPrefix != null) {
+            String newPrefix = (String) prefixOldToNew.get(oldPrefix);
+            if (newPrefix != null) {
+                if (logger.isLoggable(Level.FINEST))
+                    logger.finest("Changing element prefix from " + oldPrefix + "to " + newPrefix);
+                element.setPrefix(newPrefix);
+            }
+        }
+
+        // Go through all child nodes, performing the following operations:
+        // - removing soon-to-be-unneeded namespace decls
+        // - modifying text nodes and attribute values that look like qnames that need to have prefixes translated
+        // - translating attribute prefixes that need to be translated
+        // - and recursing to child elements.
+
+        // Collect list first, so we don't have a NodeList open as we modify it
+        Set kids = new LinkedHashSet();
+        NamedNodeMap attrList = element.getAttributes();
+        for (int i = 0; i < attrList.getLength(); ++i)
+            kids.add(attrList.item(i));
+        NodeList kidNodeList = element.getChildNodes();
+        for (int i = 0; i < kidNodeList.getLength(); ++i)
+            kids.add(kidNodeList.item(i));
+
+        KIDLOOP: for (Iterator i = kids.iterator(); i.hasNext();) {
+            Node n = (Node) i.next();
+            switch (n.getNodeType()) {
+                case Node.ELEMENT_NODE:
+                    normalizeNamespacesRecursively((Element)n, uriToPrefix, prefixToUri, uniqueUriToPrefix, uniquePrefixToUri, prefixOldToNew);
+                    continue KIDLOOP;
+                case Node.ATTRIBUTE_NODE:
+                    // Check if it's an obsolete namespace decl
+                    String attPrefix = n.getPrefix();
+                    String attNsUri = n.getNamespaceURI();
+                    String attValue = n.getNodeValue();
+                    if (attValue != null && attValue.trim().length() > 0) {
+                        if ("xmlns".equals(attPrefix) && XmlUtil.XMLNS_NS.equals(attNsUri)) {
+                            // Delete this namespace decl
+                            if (logger.isLoggable(Level.FINEST))
+                                logger.finest("Removing namespace decl (will move to top): " + attValue);
+                            element.removeAttributeNode((Attr) n);
+                            continue KIDLOOP; // no need to check it for qname -- we're deleting it
+                        } else if ("xmlns".equals(n.getNodeName())) {
+                            // Don't remove default namespace decl, and don't try to qname-mangle it, either
+                            continue KIDLOOP;
+                        }
+                    }
+
+                    // Translate prefix if necessary
+                    String newPrefix = (String) prefixOldToNew.get(attPrefix);
+                    if (newPrefix != null) {
+                        if (logger.isLoggable(Level.FINEST))
+                            logger.finest("Changing attr prefix from " + oldPrefix + " to " + newPrefix);
+                        n.setPrefix(newPrefix);
+                    }
+
+                    /* FALLTHROUGH and check the attribute value to see if it looks like a qname */
+                case Node.TEXT_NODE:
+                case Node.CDATA_SECTION_NODE:
+                    // Check if this node's text content looks like a qname currently in scope
+                    String value = n.getNodeValue();
+                    if (value == null || value.trim().length() < 1) break; // ignore empty text nodes
+                    Matcher textMatcher = MATCH_QNAME.matcher(value);
+                    if (textMatcher.matches()) {
+                        String pfx = textMatcher.group(1);
+                        String postfix = textMatcher.group(2);
+                        if (prefixToUri.get(pfx) != null) {
+                            newPrefix = (String) prefixOldToNew.get(pfx);
+                            if (newPrefix != null) {
+                                // Looks like a qname that needs translating.  Translate it.
+                                String newText = MATCH_QNAME.matcher(value).replaceFirst(newPrefix + ":" + postfix);
+                                n.setNodeValue(newText);
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
+    /**
+     * Hoist all namespace declarations to the
+     * @param element
+     * @return
+     */
+    public static Element normalizeNamespaces(Element element) {
+        // First clone the original to work on the clone
+        element = (Element) element.cloneNode(true);
+
+        // (need a set to track unique)
+        // First, build map of all namespace URI -> unique prefix
+
+        Map lastPrefixToUri = new HashMap();
+        Map lastUriToPrefix = new HashMap();
+        Map uniquePrefixToUri = new HashMap();
+        Map uniqueUriToPrefix = new HashMap();
+        Map prefixOldToNew = new HashMap();
+        normalizeNamespacesRecursively(element,
+                lastUriToPrefix,
+                lastPrefixToUri,
+                uniqueUriToPrefix,
+                uniquePrefixToUri,
+                prefixOldToNew);
+
+        // Element tree has been translated -- now just add namespace decls back onto root element.
+        for (Iterator i = uniqueUriToPrefix.entrySet().iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry) i.next();
+            String uri = (String) entry.getKey();
+            String prefix = (String) entry.getValue();
+            if (uri == null || prefix == null) throw new IllegalStateException();
+            element.setAttributeNS(XMLNS_NS, "xmlns:" + prefix, uri);
+        }
+
+        // We are done, we think
+        return element;
     }
 }

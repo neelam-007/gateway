@@ -34,7 +34,7 @@ public interface TarariSchemaHandler {
      * @param tarariMsg the document to validate.  Must not be null.
      * @return <code>true</code> if the document was validated; <code>false</code> if the document was invalid.
      */
-    boolean validate(TarariMessageContext tarariMsg);
+    boolean validate(TarariMessageContext tarariMsg) throws SAXException;
 
     /**
      * Set the resolver that will be used for recursively loading referenced schemas by the next loadHardware() call.

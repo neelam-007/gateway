@@ -42,6 +42,7 @@ class CompiledSchema implements Closeable {
     private final String systemId;
     private final Schema softwareSchema;
     private final String schemaDocument;
+    private final String namespaceNormalizedSchemaDocument;
     private final SchemaManagerImpl manager;
     private final Set<SchemaHandle> imports;  // Schemas that we directly use via import
     private final Set<WeakReference<CompiledSchema>> exports = new HashSet<WeakReference<CompiledSchema>>(); // Schemas that use us directly via import
@@ -67,7 +68,13 @@ class CompiledSchema implements Closeable {
         return closed;
     }
 
-    CompiledSchema(String targetNamespace, String systemId, String schemaDocument, Schema softwareSchema, SchemaManagerImpl manager, Set<SchemaHandle> imports) {
+    CompiledSchema(String targetNamespace,
+                   String systemId,
+                   String schemaDocument,
+                   String namespaceNormalizedSchemaDocument,
+                   Schema softwareSchema,
+                   SchemaManagerImpl manager,
+                   Set<SchemaHandle> imports) {
         if (targetNamespace == null || softwareSchema == null || schemaDocument == null || imports == null)
             throw new NullPointerException();
 
@@ -75,6 +82,7 @@ class CompiledSchema implements Closeable {
         this.systemId = systemId;
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
+        this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument;
         this.manager = manager;
         this.imports = imports;
     }
@@ -93,6 +101,10 @@ class CompiledSchema implements Closeable {
 
     String getSchemaDocument() {
         return schemaDocument;
+    }
+
+    public String getNamespaceNormalizedSchemaDocument() {
+        return namespaceNormalizedSchemaDocument;
     }
 
     boolean isRejectedByTarari() {
@@ -130,15 +142,19 @@ class CompiledSchema implements Closeable {
      */
     void validateMessage(Message msg, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
         if (isClosed()) throw new IllegalStateException("CompiledSchema has already been closed");
+        TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
+        boolean isSoap = msg.isSoap();
+        TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
+        TarariMessageContext tmc = tk == null ? null : tk.getContext();
+        boolean tryHardware = true;
+
+        if (schemaHandler == null || tk == null || tmc == null || targetNamespace == null)
+            tryHardware = false;
+
         try {
             manager.getReadLock().acquire();
 
-            TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
-            boolean isSoap = msg.isSoap();
-
-            TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
-            TarariMessageContext tmc = tk == null ? null : tk.getContext();
-            if (schemaHandler == null || tk == null || tmc == null || !isLoaded() || targetNamespace == null) {
+            if (!tryHardware || !isLoaded()) {
                 // Hardware impossible or inappropriate in this case
                 validateMessageDom(msg, isSoap, errorHandler);
                 return;

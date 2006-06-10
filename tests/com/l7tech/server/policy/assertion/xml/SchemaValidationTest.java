@@ -139,7 +139,7 @@ public class SchemaValidationTest extends TestCase {
         }
     }
 
-    public void testFuckingTarari() throws Exception {
+    public void DISABLED_testTarariSchemaImportsWithInlineNamespaceDecl() throws Exception {
         SchemaResolver resolver = new SchemaResolver() {
             public byte[] resolveSchema(String string, String string1, String string2) {
                 throw new RuntimeException("Screw you!");

@@ -16,11 +16,13 @@ import org.w3c.dom.Element;
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.net.URL;
 
 /**
  * @author alex
@@ -279,6 +281,20 @@ public class XmlUtilTest extends TestCase {
         assertTrue(nodes.size() > 0);
         assertEquals(nodes.getNodeName(0), "xml-stylesheet");
         assertEquals(nodes.getNodeValue(0), "href=\"foo\" type=\"text/xsl\"");
+    }
+
+    private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
+
+    public void testTranslateReutersSchemaNamespaces() throws Exception {
+        InputStream is = new URL(REUTERS_SCHEMA_URL).openStream();
+        String schemaXml = new String(HexUtils.slurpStream(is));
+
+        Document doc = XmlUtil.stringToDocument(schemaXml);
+
+        Element newDocEl = XmlUtil.normalizeNamespaces(doc.getDocumentElement());
+        String normalizedXml = XmlUtil.nodeToString(newDocEl);
+        Document normalizedDoc = XmlUtil.stringToDocument(normalizedXml);
+        System.out.println("Normalized:\n" + XmlUtil.nodeToFormattedString(normalizedDoc));
     }
 
 

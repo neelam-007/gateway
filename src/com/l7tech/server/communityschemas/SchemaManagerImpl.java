@@ -23,6 +23,7 @@ import com.l7tech.server.util.HttpClientFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.stream.StreamSource;
@@ -50,25 +51,27 @@ public class SchemaManagerImpl implements SchemaManager {
 
     private final int maxCacheAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
     private final int maxCacheEntries = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
-    /** Shared cache for all schema resources, system-wide. */
-    private final HttpObjectCache httpObjectCache = new HttpObjectCache(maxCacheEntries, maxCacheAge);
 
     private final ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
     private final Map<String, WeakReference<CompiledSchema>> compiledSchemaCache = new WeakHashMap<String, WeakReference<CompiledSchema>>();
     private final Map<String, Map<CompiledSchema, Object>> tnsCache = new WeakHashMap<String, Map<CompiledSchema, Object>>();
     private final HttpClientFactory httpClientFactory;
 
+    /** Shared cache for all schema resources, system-wide. */
+    private final HttpObjectCache httpObjectCache = new HttpObjectCache(maxCacheEntries, maxCacheAge);
+    private final TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
+
     private SchemaEntryManager schemaEntryManager;
 
     public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
+        if (tarariSchemaHandler != null)
+            tarariSchemaHandler.setTarariSchemaResolver(TARARI_SCHEMA_RESOLVER);
     }
 
     public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
         this.schemaEntryManager = schemaEntryManager;
     }
-
-    private final TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
 
     public SchemaHandle compile(String schemadoc,
                                 String systemId,
@@ -154,6 +157,10 @@ public class SchemaManagerImpl implements SchemaManager {
      * @param newSchema the schema for which to maybe enable hardware.
      */
     private void maybeEnableHardwareForNewSchema(CompiledSchema newSchema) {
+        // Try to enable all children bottom-up
+        for (SchemaHandle child : newSchema.getImports())
+            maybeEnableHardwareForNewSchema(child.getCompiledSchema());
+
         String tns = newSchema.getTargetNamespace();
         if (tns == null) return;
 
@@ -177,7 +184,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         if (compiledSchemasWithThisTns.size() == 1) {
             newSchema.setUniqueTns(true);
-            maybeHardwareEnable(newSchema);
+            maybeHardwareEnable(newSchema, false);
         } else if (compiledSchemasWithThisTns.isEmpty()) {
             logger.log(Level.FINE, "No more schemas with targetNamespace {0}", tns);
             tnsCache.remove(tns);
@@ -230,8 +237,9 @@ public class SchemaManagerImpl implements SchemaManager {
             bais.reset();
             SchemaDocument sdoc = SchemaDocument.Factory.parse(bais);
             String tns = sdoc.getSchema().getTargetNamespace();
-
-            CompiledSchema newSchema = new CompiledSchema(tns, systemId, schemadoc, softwareSchema, this, directImports);
+            Element mangledElement = XmlUtil.normalizeNamespaces(XmlUtil.stringToDocument(schemadoc).getDocumentElement());
+            String mangledDoc = XmlUtil.nodeToString(mangledElement);
+            CompiledSchema newSchema = new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this, directImports);
             for (SchemaHandle directImport : directImports)
                 directImport.getCompiledSchema().addExport(newSchema);
             return newSchema;
@@ -275,7 +283,7 @@ public class SchemaManagerImpl implements SchemaManager {
                 if (i.hasNext()) {
                     CompiledSchema survivingSchema = i.next();
                     survivingSchema.setUniqueTns(true);
-                    maybeHardwareEnable(survivingSchema);
+                    maybeHardwareEnable(survivingSchema, true);
                 }
             }
 
@@ -309,7 +317,7 @@ public class SchemaManagerImpl implements SchemaManager {
      * Check if this schema can be hardware-enabled
      * Caller must hold write lock.
      */
-    private void maybeHardwareEnable(CompiledSchema schema) {
+    private void maybeHardwareEnable(CompiledSchema schema, boolean notifyParents) {
         // Short-circuit if we know we have no work to do
         if (tarariSchemaHandler == null) return;
         if (!schema.isUniqueTns()) return;
@@ -328,15 +336,16 @@ public class SchemaManagerImpl implements SchemaManager {
         // Do the actual hardware load for this schema
         String tns = schema.getTargetNamespace();
         try {
-            tarariSchemaHandler.setTarariSchemaResolver(TARARI_SCHEMA_RESOLVER);
-            tarariSchemaHandler.loadHardware(schema.getSystemId(), schema.getSchemaDocument());
+            tarariSchemaHandler.loadHardware(schema.getSystemId(), schema.getNamespaceNormalizedSchemaDocument());
             logger.log(Level.INFO, "Enabled hardware acceleration for schema with targetNamespace {0}", tns);
             schema.setLoaded(true);
             schema.setRejectedByTarari(false);
 
-            // Let all our parents know that they might be hardware-enableable
-            for (CompiledSchema export : schema.getExports())
-                maybeHardwareEnable(export);
+            if (notifyParents) {
+                // Let all our parents know that they might be hardware-enableable
+                for (CompiledSchema export : schema.getExports())
+                    maybeHardwareEnable(export, notifyParents);
+            }
         } catch (SoftwareFallbackException e) {
             schema.setLoaded(false);
             schema.setRejectedByTarari(true);
