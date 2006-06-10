@@ -4,8 +4,8 @@
 package com.l7tech.server.communityschemas;
 
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
@@ -22,8 +22,8 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
-import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.stream.StreamSource;
@@ -52,7 +52,7 @@ public class SchemaManagerImpl implements SchemaManager {
     private final int maxCacheAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
     private final int maxCacheEntries = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
 
-    private final ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
+    private final ReadWriteLock cacheLock = new WriterPreferenceReadWriteLock();
     private final Map<String, WeakReference<CompiledSchema>> compiledSchemaCache = new WeakHashMap<String, WeakReference<CompiledSchema>>();
     private final Map<String, Map<CompiledSchema, Object>> tnsCache = new WeakHashMap<String, Map<CompiledSchema, Object>>();
     private final HttpClientFactory httpClientFactory;
