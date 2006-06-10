@@ -212,8 +212,10 @@ public class HttpObjectCache {
         synchronized (entry) {
             if (entry.downloading) {
                 // Another thread is currently downloading a fresh copy of the user object.  See if we need to wait.
-                if (waitForNewestResult) {
-                    // Wait for downloading to finish
+                if (waitForNewestResult || (entry.userObject == null && entry.exception == null)) {
+                    // Wait for downloading to finish.
+                    // (We will always wait for the very first download, even if the caller doesn't want to wait
+                    //  for subsequent downloads, because on the very first one we have nothing at all to return.)
                     while (entry.downloading) {
                         try {
                             if (logger.isLoggable(Level.FINER)) logger.finer("Waiting for other thread to contact server for URL '" + urlStr + "'");
