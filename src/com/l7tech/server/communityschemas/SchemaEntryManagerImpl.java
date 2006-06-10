@@ -30,15 +30,22 @@ public class SchemaEntryManagerImpl
     private static final Logger logger = Logger.getLogger(SchemaEntryManagerImpl.class.getName());
 
     private final Map<Long, SchemaHandle> compiledSchemasByOid = new HashMap<Long, SchemaHandle>();
+    private final Map<String, SchemaHandle> compiledSchemasByTns = new HashMap<String, SchemaHandle>();
     private SchemaManager schemaManager;
 
     public void setSchemaManager(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
     }
 
-    public SchemaHandle getCachedSchemaHandle(long oid) {
+    public SchemaHandle getCachedSchemaHandleByOid(long oid) {
         synchronized(this) {
             return compiledSchemasByOid.get(oid);
+        }
+    }
+
+    public SchemaHandle getCachedSchemaHandleByTns(String tns) {
+        synchronized(this) {
+            return compiledSchemasByTns.get(tns);
         }
     }
 
@@ -248,6 +255,7 @@ public class SchemaEntryManagerImpl
                                                     new Pattern[] {Pattern.compile(".*")});
         synchronized(this) {
             compiledSchemasByOid.put(oid, handle);
+            compiledSchemasByTns.put(handle.getCompiledSchema().getTargetNamespace(), handle);
         }
     }
 
@@ -262,6 +270,7 @@ public class SchemaEntryManagerImpl
             handle = compiledSchemasByOid.get(oid);
             if (handle == null) return false;
             compiledSchemasByOid.remove(oid);
+            compiledSchemasByTns.remove(handle.getCompiledSchema().getTargetNamespace());
         }
         handle.close();
         return true;

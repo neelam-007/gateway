@@ -39,7 +39,11 @@ public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry> imple
         return null;
     }
 
-    public SchemaHandle getCachedSchemaHandle(long oid) {
+    public SchemaHandle getCachedSchemaHandleByOid(long oid) {
+        return null;
+    }
+
+    public SchemaHandle getCachedSchemaHandleByTns(String tns) {
         return null;
     }
 }

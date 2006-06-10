@@ -29,5 +29,7 @@ public interface SchemaEntryManager extends EntityManager<SchemaEntry> {
      */
     SchemaEntry getSchemaEntryFromSystemId(String systemId);
 
-    SchemaHandle getCachedSchemaHandle(long oid);
+    SchemaHandle getCachedSchemaHandleByOid(long oid);
+
+    SchemaHandle getCachedSchemaHandleByTns(String tns);
 }

@@ -14,10 +14,8 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 import com.l7tech.common.xml.tarari.TarariSchemaResolver;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import org.apache.xmlbeans.XmlException;
@@ -387,28 +385,9 @@ public class SchemaManagerImpl implements SchemaManager {
 
     private final CachingLSResourceResolver.SchemaFinder SCHEMA_FINDER = new CachingLSResourceResolver.SchemaFinder() {
         public SchemaHandle getSchema(String namespaceURI, String systemId, String baseURI) {
-            SchemaEntry resolved = schemaEntryManager.getSchemaEntryFromSystemId(systemId);
-            if (resolved == null) try {
-                Collection<SchemaEntry> entries = schemaEntryManager.findByTNS(namespaceURI);
-                if (entries == null || entries.size() < 1) return null;
-                if (entries.size() > 1) {
-                    logger.log(Level.WARNING, "Multiple global schemas found with target namespace: {0}", namespaceURI);
-                    return null;
-                }
-                resolved = entries.iterator().next();
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "Unable to resolve global schema: " + ExceptionUtils.getMessage(e), e);
-                return null;
-            }
-            if (resolved == null) return null;  // didn't find it
-
-            SchemaHandle handle = schemaEntryManager.getCachedSchemaHandle(resolved.getOid());
-            if (handle == null) {
-                // TODO do the work to fault in the apparently-new schema now
-                logger.log(Level.WARNING, "Unable to import newly added schema with oid {0}: it is not yet ready to use",  resolved.getOid());
-                return null;
-            }
-
+            SchemaHandle handle;
+            handle = schemaEntryManager.getCachedSchemaHandleByTns(namespaceURI);
+            if (handle == null) return null;
             return handle.getCompiledSchema().ref();
         }
     };
