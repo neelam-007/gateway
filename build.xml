@@ -1026,7 +1026,7 @@
     </target>
 
 
-    <target name="package.api" unless="ssg.only" depends="compile">
+    <target name="package.api" depends="compile">
 <!--
            ** Layer7 API jar, pack and sign
          -->

@@ -192,4 +192,33 @@
         </property>
     </bean>
 
+    <!--
+    Transactional wrapper for service metrics manager, not all methods are transactional
+    -->
+    <bean id="schemaEntryManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="target">
+            <ref bean="schemaEntryManagerTarget"/>
+        </property>
+        <property name="proxyTargetClass">
+            <value>true</value>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <!-- This method must be transactional -->
+                <prop key="delete">PROPAGATION_REQUIRED,-Throwable</prop>
+                <prop key="findByName">PROPAGATION_REQUIRED,-Throwable</prop>
+                <prop key="findByTNS">PROPAGATION_REQUIRED,-Throwable</prop>
+                <prop key="update">PROPAGATION_REQUIRED,-Throwable</prop>
+                <prop key="save">PROPAGATION_REQUIRED,-Throwable</prop>
+
+                <!-- Everything else doesn't require transactions -->
+                <prop key="*">PROPAGATION_SUPPORTS</prop>
+            </props>
+        </property>
+    </bean>
+
+
 </beans>

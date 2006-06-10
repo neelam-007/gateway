@@ -581,7 +581,7 @@
         </property>
     </bean>
 
-    <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
+    <bean id="schemaEntryManagerTarget" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -688,7 +688,7 @@
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
         <property name="entityManagers">
             <list>
-                <ref local="schemaEntryManager"/>
+                <ref bean="schemaEntryManager"/>
             </list>
         </property>
     </bean>
