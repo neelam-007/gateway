@@ -139,7 +139,7 @@ public class Main {
         final ClientProxy clientProxy = createClientProxy(ssgFinderImpl);
 
         // Watch for config file changes
-        Background.schedule(new TimerTask() {
+        Background.scheduleRepeated(new TimerTask() {
             public void run() {
                 ssgFinderImpl.loadIfChanged();
             }

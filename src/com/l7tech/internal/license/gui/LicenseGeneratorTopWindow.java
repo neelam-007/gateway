@@ -133,7 +133,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         });
 
         // Start monitoring GUI changes in the background
-        Background.schedule(new TimerTask() {
+        Background.scheduleRepeated(new TimerTask() {
             public void run() {
                 if (!xmlChanged) return;
                 SwingUtilities.invokeLater(new Runnable() {

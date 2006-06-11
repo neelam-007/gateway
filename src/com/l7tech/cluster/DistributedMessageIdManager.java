@@ -171,7 +171,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
 
         // Perturb delay to avoid synchronization with other cluster nodes
         long when = GC_PERIOD * 2 + new Random().nextInt(1 + GC_PERIOD /4);
-        Background.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
+        Background.scheduleRepeated(new GarbageCollectionTask(), when, GC_PERIOD);
         PreparedStatement ps = null;
         ResultSet rs = null;
         Connection conn;

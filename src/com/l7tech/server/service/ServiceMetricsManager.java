@@ -443,15 +443,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                        DEF_DAILY_AGE);
 
         fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
-        Background.schedule(fineDeleter, MINUTE, 5 * MINUTE);
+        Background.scheduleRepeated(fineDeleter, MINUTE, 5 * MINUTE);
         logger.config("Scheduled first fine deletion task for " + new Date(System.currentTimeMillis() + MINUTE));
 
         hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
-        Background.schedule(hourlyDeleter, 15 * MINUTE, 12 * HOUR);
+        Background.scheduleRepeated(hourlyDeleter, 15 * MINUTE, 12 * HOUR);
         logger.config("Scheduled first hourly deletion task for " + new Date(System.currentTimeMillis() + 15 * MINUTE));
 
         dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
-        Background.schedule(dailyDeleter, HOUR, 24 * HOUR);
+        Background.scheduleRepeated(dailyDeleter, HOUR, 24 * HOUR);
         logger.config("Scheduled first daily deletion task for " + new Date(System.currentTimeMillis() + HOUR));
 
         // Populate initial bins

@@ -3,30 +3,31 @@
  */
 package com.l7tech.common.xml.tarari;
 
-import com.l7tech.common.xml.SoftwareFallbackException;
 import org.xml.sax.SAXException;
 
-import java.util.ConcurrentModificationException;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * Tarari-specific functionality for schema validation
  */
 public interface TarariSchemaHandler {
     /**
-     * Loads the provided schema document to hardware.
-     * @param systemId the systemId from which the was downloaded.
-     * @param schemaDocument the schema document to load.
-     * @throws SoftwareFallbackException if the schema document cannot be loaded to hardware.
-     * @throws SAXException if the schema document is not well-formed.
+     * Replace all schemas currently in hardware with a new set.  The first thing this method will do is unload
+     * all existing schemas from the hardware: caller is responsible for ensuring that
+     * all existing schemas, including those passed in as the hardwareSchemas argument,
+     * have already had their "loaded on hardware" flag cleared before this method is called.
+     * <p/>
+     * Even though it doesn't clear them, this method will take care of setting the "loaded on hardware" flag
+     * for schemas that were loaded successfully.
+     *
+     * @param hardwareSchemas a map (tns -> handle) of the new set of schemas that the hardware should use.  Must not be null.
+     *                        Must already be topologically sorted such that, if schema B depends on schema A, schema A
+     *                        appears first in the (ordered) LinkedHashMap.
+     * @return a map(tns -> error) of the schema TNSs that could not be loaded due to errors, and the errors that caused the problem.
+     *         May be empty, but never null.
      */
-    void loadHardware(String systemId, String schemaDocument)
-            throws SoftwareFallbackException, SAXException;
-
-    /**
-     * Unloads the schema document with the provided targetNamespace from hardware.
-     * @param targetNamespace the targetNamespace of the schema to unload.
-     */
-    void unloadHardware(String targetNamespace);
+    Map<? extends TarariSchemaSource, Exception> setHardwareSchemas(LinkedHashMap<String, ? extends TarariSchemaSource> hardwareSchemas);
 
     /**
      * Validate the given document in hardware using the current schemas, if possible to do so.
@@ -35,19 +36,4 @@ public interface TarariSchemaHandler {
      * @return <code>true</code> if the document was validated; <code>false</code> if the document was invalid.
      */
     boolean validate(TarariMessageContext tarariMsg) throws SAXException;
-
-    /**
-     * Set the resolver that will be used for recursively loading referenced schemas by the next loadHardware() call.
-     * Caller is responsible for ensuring that no (possibly-recursive) loadHardware() call is currently under way
-     * when this method is called.
-     * <p/>
-     * All calls to setTarariSchemaResolver are paired with exactly
-     * one root-level call to loadHardware for a particular schema and its dependencies
-     * (that is, that no recursively-invoked loadHardware calls try to change the
-     * schema resolver in effect)
-     *
-     * @param resolver  the resolver to use for the next call to loadHardware.  Must not be null.
-     * @throws ConcurrentModificationException if a call to loadHardware is presently under way.
-     */
-    void setTarariSchemaResolver(TarariSchemaResolver resolver) throws ConcurrentModificationException;
 }

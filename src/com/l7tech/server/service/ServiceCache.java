@@ -230,7 +230,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                             policy.close();
                         }
                     };
-                    Background.schedule(runnable, 200);
+                    Background.scheduleOneShot(runnable, 200);
                 }
             }
             // cache the server policy for this service

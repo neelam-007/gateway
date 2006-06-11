@@ -23,7 +23,7 @@ public final class Background {
      * Schedule the task for repeated execution after the specified delay, every period.
      * @see Timer#schedule(java.util.TimerTask, long, long) 
      */
-    public static void schedule(TimerTask timerTask, long delay, long period) {
+    public static void scheduleRepeated(TimerTask timerTask, long delay, long period) {
         timer.schedule(timerTask, delay, period);
     }
 
@@ -31,7 +31,7 @@ public final class Background {
      * Schedule the task for one-time execution after the specified delay.
      * @see Timer#schedule(java.util.TimerTask, long)
      */
-    public static void schedule(TimerTask task, long delay) {
+    public static void scheduleOneShot(TimerTask task, long delay) {
         timer.schedule(task, delay);
     }
 }

@@ -68,6 +68,8 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_SCHEMA_CACHE_MAX_ENTRIES = "schemaMaxCacheEntries";
     public static final String PARAM_SCHEMA_CACHE_MAX_AGE = "schemaMaxCacheAge";
 
+    public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY = "schemaRecompileLatency";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;

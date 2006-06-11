@@ -209,16 +209,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
     }
 
-    public void setTarariSchemaResolver(final TarariSchemaResolver resolver) {
-        if (resolver == null) throw new NullPointerException();
-        this.tarariResolver = new SchemaResolver() {
-            public byte[] resolveSchema(String namespaceUri, String locationHint, String baseUri) {
-                return resolver.resolveSchema(namespaceUri, locationHint, baseUri);
-            }
-        };
-    }
-
-    public void loadHardware(String systemId, String schemadoc)
+   public void loadHardware(String systemId, String schemadoc)
             throws SoftwareFallbackException, SAXException {
         try {
             tarariLock.writeLock().acquire();
@@ -239,10 +230,81 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         }
     }
 
-    public void unloadHardware(String tns) {
+    public Map<? extends TarariSchemaSource, Exception>
+            setHardwareSchemas(final LinkedHashMap<String, ? extends TarariSchemaSource> hardwareSchemas)
+    {
         try {
-            this.tarariLock.writeLock().acquire();
-            SchemaLoader.unloadSchema(tns);
+            tarariLock.writeLock().acquire();
+
+            // Unload all currently-loaded schemas
+            SchemaLoader.unloadAllSchemas();
+
+            // Set up map for error return
+            Map<TarariSchemaSource, Exception> errorMap = new HashMap<TarariSchemaSource, Exception>();
+
+            final Set<TarariSchemaSource> triedLoading = new HashSet<TarariSchemaSource>();
+            SchemaLoader.setSchemaResolver(new SchemaResolver() {
+                public byte[] resolveSchema(String namespaceUri, String locationHint, String baseUri) {
+                    TarariSchemaSource schema = hardwareSchemas.get(namespaceUri);
+                    if (schema == null) {
+                        logger.log(Level.WARNING, "Target namespace not in hardware schema closure: {0}", namespaceUri);
+                        return new byte[0];
+                    }
+                    triedLoading.add(schema);
+                    return schema.getNamespaceNormalizedSchemaDocument();
+                }
+            });
+
+            // Now load them all
+            for (Map.Entry<String, ? extends TarariSchemaSource> entry : hardwareSchemas.entrySet()) {
+                TarariSchemaSource schema = entry.getValue();
+
+                if (schema.isLoaded() || schema.isRejectedByTarari()) {
+                    // This schema was already either loaded or rejected while loading another schema.
+                    continue;
+                }
+
+                triedLoading.clear();
+                byte[] bytes = schema.getNamespaceNormalizedSchemaDocument();
+                String systemId = schema.getSystemId();
+
+                Exception failure = null;
+                try {
+                    SchemaLoader.loadSchema(new ByteArrayInputStream(bytes), systemId);
+                } catch (IOException e) {
+                    failure = e;
+                } catch (XmlConfigException e) {
+                    failure = e;
+                }
+
+                if (failure != null) {
+                    // The load failed.
+                    errorMap.put(schema, failure);
+                    schema.setRejectedByTarari(true);
+                } else {
+                    // The load succeeded, presumably including all chained-to schemas.
+                    schema.setLoaded(true);
+                    for (TarariSchemaSource subSchema : triedLoading) {
+                        subSchema.setLoaded(true);
+                    }
+                }
+            }
+
+            // Let's assume we are done
+            return errorMap;
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
+        } finally {
+            tarariLock.writeLock().release();
+        }
+    }
+
+    public void unloadAllHardware() {
+        try {
+            tarariLock.writeLock().acquire();
+            SchemaLoader.unloadAllSchemas();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while waiting for Tarari write lock");
@@ -255,7 +317,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         long before = 0;
         boolean result = false;
         try {
-            this.tarariLock.readLock().acquire();
+            tarariLock.readLock().acquire();
             if (logger.isLoggable(Level.FINE)) {
                 before = System.currentTimeMillis();
                 logger.fine("Validing message in hardware");

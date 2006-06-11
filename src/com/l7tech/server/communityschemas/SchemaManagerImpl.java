@@ -11,11 +11,11 @@ import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
-import com.l7tech.common.xml.tarari.TarariSchemaResolver;
+import com.l7tech.common.xml.tarari.TarariSchemaSource;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import org.apache.xmlbeans.XmlException;
@@ -49,10 +49,12 @@ public class SchemaManagerImpl implements SchemaManager {
 
     private final int maxCacheAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
     private final int maxCacheEntries = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
+    private final int hardwareRecompileLatency = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 20000);
 
     private final ReadWriteLock cacheLock = new WriterPreferenceReadWriteLock();
     private final Map<String, WeakReference<CompiledSchema>> compiledSchemaCache = new WeakHashMap<String, WeakReference<CompiledSchema>>();
     private final Map<String, Map<CompiledSchema, Object>> tnsCache = new WeakHashMap<String, Map<CompiledSchema, Object>>();
+    private final Map<CompiledSchema, Object> schemasWaitingToLoad = new WeakHashMap<CompiledSchema, Object>();
     private final HttpClientFactory httpClientFactory;
 
     /** Shared cache for all schema resources, system-wide. */
@@ -63,8 +65,6 @@ public class SchemaManagerImpl implements SchemaManager {
 
     public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
-        if (tarariSchemaHandler != null)
-            tarariSchemaHandler.setTarariSchemaResolver(TARARI_SCHEMA_RESOLVER);
     }
 
     public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
@@ -320,41 +320,105 @@ public class SchemaManagerImpl implements SchemaManager {
         if (tarariSchemaHandler == null) return;
         if (!schema.isUniqueTns()) return;
         if (schema.isRejectedByTarari()) return;
-        if (schema.isLoaded()) return;
+        if (schema.isHardwareEligible()) return;
 
         // Check that all children are loaded
         Set<SchemaHandle> imports = schema.getImports();
         for (SchemaHandle directImport : imports) {
-            if (!directImport.getCompiledSchema().isLoaded()) {
-                logger.log(Level.FINE, "Unable to load hardware for schema {0} because at least one of its imports is not hardware loaded", schema);
+            if (!directImport.getCompiledSchema().isHardwareEligible()) {
+                logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports is not hardware eligible", schema);
                 return;
             }
         }
 
-        // Do the actual hardware load for this schema
+        // Schedule the actual hardware load for this schema
         String tns = schema.getTargetNamespace();
-        try {
-            tarariSchemaHandler.loadHardware(schema.getSystemId(), schema.getNamespaceNormalizedSchemaDocument());
-            logger.log(Level.INFO, "Enabled hardware acceleration for schema with targetNamespace {0}", tns);
-            schema.setLoaded(true);
-            schema.setRejectedByTarari(false);
+        scheduleLoadHardware(schema);
+        logger.log(Level.INFO, "Schema with targetNamespace {0} is eligible for hardware acceleration", tns);
+        schema.setHardwareEligible(true);
 
-            if (notifyParents) {
-                // Let all our parents know that they might be hardware-enableable
-                for (CompiledSchema export : schema.getExports())
-                    maybeHardwareEnable(export, notifyParents);
-            }
-        } catch (SoftwareFallbackException e) {
-            schema.setLoaded(false);
-            schema.setRejectedByTarari(true);
-            logger.log(Level.WARNING, "Hardware acceleration unavailable for schema with targetNamespace " + tns, e);
-            return;
-        } catch (SAXException e) {
-            schema.setLoaded(false);
-            schema.setRejectedByTarari(true);
-            logger.log(Level.WARNING, "Hardware acceleration unavailable for malformed schema with targetNamespace " + tns, e);
-            return;
+        if (notifyParents) {
+            // Let all our parents know that they might be hardware-enableable
+            for (CompiledSchema export : schema.getExports())
+                maybeHardwareEnable(export, notifyParents);
         }
+    }
+
+    private void scheduleLoadHardware(CompiledSchema schema) {
+        schemasWaitingToLoad.put(schema, null);
+        TimerTask task = new TimerTask() {
+            public void run() {
+                rebuildHardwareCache();
+            }
+        };
+        Background.scheduleOneShot(task, hardwareRecompileLatency);
+    }
+
+    private void rebuildHardwareCache() {
+        // Do an initial fast check to see if there is still anything to do, before getting the write lock
+        try {
+            cacheLock.readLock().acquire();
+            if (schemasWaitingToLoad.size() < 1)
+                return;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warning("Interrupted waiting for schema cache read lock");
+            return;
+        } finally {
+            cacheLock.readLock().release();
+        }
+
+        try {
+            cacheLock.writeLock().acquire();
+            if (schemasWaitingToLoad.size() < 1)
+                return;
+
+            // Produce list of schemas sorted so that includes appear before the schemas that include them
+            LinkedHashMap<String, CompiledSchema> forHardware = new LinkedHashMap<String, CompiledSchema>();
+            Set<CompiledSchema> alreadyAdded = new HashSet<CompiledSchema>();
+
+            for (WeakReference<CompiledSchema> ref : compiledSchemaCache.values()) {
+                CompiledSchema schema = ref.get();
+                if (schema == null) continue;
+                schema.setLoaded(false);
+                putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, forHardware, schema);
+            }
+
+            if (logger.isLoggable(Level.INFO)) logger.info("Rebuilding hardware schema cache: loading " + forHardware.size() + " eligible schemas (" + schemasWaitingToLoad.size() + " new)");
+
+            Map<? extends TarariSchemaSource,Exception> failedSchemas =
+                    tarariSchemaHandler.setHardwareSchemas(forHardware);
+
+            for (Map.Entry<? extends TarariSchemaSource,Exception> entry : failedSchemas.entrySet()) {
+                CompiledSchema schema = (CompiledSchema)entry.getKey();
+                Exception error = entry.getValue();
+                if (logger.isLoggable(Level.WARNING))
+                    logger.log(Level.WARNING, "Schema for target namespace \"" + schema.getTargetNamespace() + "\" cannot be hardware accelerated: " + ExceptionUtils.getMessage(error));
+                hardwareDisable(schema);
+            }
+
+            schemasWaitingToLoad.clear();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warning("Interrupted waiting for schema cache write lock");
+            return;
+        } finally {
+            cacheLock.writeLock().release();
+        }
+    }
+
+    /** Recursively populate linkedhashmap of hardware-eligible schemas ordered so that includes come before their includers. */
+    private void putAllHardwareEligibleSchemasDepthFirst(Set<CompiledSchema> alreadyAdded,
+                                                         LinkedHashMap<String, CompiledSchema> schemas,
+                                                         CompiledSchema schema)
+    {
+        Set<SchemaHandle> imports = schema.getImports();
+        for (SchemaHandle imp : imports)
+            putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, schemas, imp.getCompiledSchema());
+
+        if (schema.isHardwareEligible() && !alreadyAdded.contains(schema))
+            schemas.put(schema.getTargetNamespace(), schema);
     }
 
     /**
@@ -362,26 +426,16 @@ public class SchemaManagerImpl implements SchemaManager {
      */
     private void hardwareDisable(CompiledSchema schema) {
         if (tarariSchemaHandler == null) return;
-        if (schema.isRejectedByTarari()) return;
-        if (!schema.isLoaded()) return;
 
-        String tns = schema.getTargetNamespace();
-        logger.log(Level.INFO, "Disabling hardware acceleration for schema with tns {0}", tns);
+        if (logger.isLoggable(Level.INFO))
+            logger.log(Level.INFO, "Disabling hardware acceleration eligibility for schema with tns {0}",
+                       schema.getTargetNamespace());
 
-        schema.setLoaded(false);
-        try {
-            tarariSchemaHandler.unloadHardware(tns);
-        } finally {
-            // Any schemas that import this schema must be hardware-disabled now
-            for (CompiledSchema export : schema.getExports())
-                hardwareDisable(export);
-        }
+        schema.setHardwareEligible(false);
+        // Any schemas that import this schema must be hardware-disabled now
+        for (CompiledSchema export : schema.getExports())
+            hardwareDisable(export);
     }
-
-
-
-    //- PRIVATE
-
 
     private final CachingLSResourceResolver.SchemaFinder SCHEMA_FINDER = new CachingLSResourceResolver.SchemaFinder() {
         public SchemaHandle getSchema(String namespaceURI, String systemId, String baseURI) {
@@ -391,27 +445,5 @@ public class SchemaManagerImpl implements SchemaManager {
             return handle.getCompiledSchema().ref();
         }
     };
-
-    private final TarariSchemaResolver TARARI_SCHEMA_RESOLVER = new TarariSchemaResolver() {
-        public byte[] resolveSchema(String tns, String location, String baseURI) {
-            final Map<CompiledSchema, Object> got = tnsCache.get(tns);
-            if (got == null)
-                throw new IllegalStateException("Internal error: CompiledSchema marked as present but could not find it by TNS: " + tns);
-            CompiledSchema[] allgot = got.keySet().toArray(new CompiledSchema[0]);
-
-            if (allgot.length != 1)
-                throw new IllegalStateException("Internal error: CompiledSchema marked as unique TNS, but found " +
-                        allgot.length + " schemas present with the target namespace " + tns);
-
-            try {
-                CompiledSchema cs = allgot[0];
-                return cs.getSchemaDocument().getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e); // can't happen
-            }
-        }
-    };
-
-
 }
 

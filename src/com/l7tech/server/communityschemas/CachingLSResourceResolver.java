@@ -106,7 +106,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
 
         if (schemaHandle != null) {
             importListener.foundImport(schemaHandle);
-            return schemaHandle.getLSInput();
+            return schemaHandle.getCompiledSchema().getLSInput();
         }
 
         // No existing well-known schema -- we'll try to fetch a remote one (or look it up in the object cache)
@@ -158,7 +158,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
 
             schemaHandle = ((SchemaHandle)userObj);
             importListener.foundImport(schemaHandle);
-            return schemaHandle.getLSInput();
+            return schemaHandle.getCompiledSchema().getLSInput();
 
         } catch (MalformedURLException e) {
             logger.warning("Refusing remote schema reference to invalid systemId " + systemId);

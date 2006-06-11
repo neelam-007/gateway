@@ -103,7 +103,7 @@ public class LicenseSpecPanel extends JPanel {
         hostField.getDocument().addDocumentListener(getDocumentListener());
         ipField.getDocument().addDocumentListener(getDocumentListener());
 
-        Background.schedule(new TimerTask() {
+        Background.scheduleRepeated(new TimerTask() {
             public void run() {
                 if (!fieldChanged) return;
                 SwingUtilities.invokeLater(new Runnable() {

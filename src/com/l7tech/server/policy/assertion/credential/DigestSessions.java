@@ -106,7 +106,7 @@ public class DigestSessions {
     }
 
     private DigestSessions() {
-        Background.schedule(new ExpireTask(), 5 * 60 * 1000, 5 * 60 * 1000);
+        Background.scheduleRepeated(new ExpireTask(), 5 * 60 * 1000, 5 * 60 * 1000);
     }
 
     private class ExpireTask extends TimerTask {

@@ -64,7 +64,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     };
 
     static {
-        Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
+        Background.scheduleRepeated(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
     }
 
     public AuditAdminImpl(AccessManager accessManager) {

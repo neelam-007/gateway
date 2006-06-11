@@ -3,10 +3,10 @@
  */
 package com.l7tech.common.xml.tarari;
 
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TarariLoader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -33,11 +33,14 @@ public class TarariSchemaHandlerTest extends TestCase {
         TarariLoader.compile();
     }
 
-    public void testStuff() throws Exception {
+    // disabled because there is now no way to populate TarariSchemaHandler without going through the SchemaManager
+    public void DISABLED_testStuff() throws Exception {
         TarariSchemaHandler tsh = TarariLoader.getSchemaHandler();
         assertNotNull(tsh);
-        tsh.loadHardware("/tmp/foo", SOAPENV_SCHEMA);
-        tsh.loadHardware("/tmp/bar", WAREHOUSE_SCHEMA);
+
+//        tsh.loadHardware("/tmp/foo", SOAPENV_SCHEMA);
+//        tsh.loadHardware("/tmp/bar", WAREHOUSE_SCHEMA);
+
         Message msg = new Message(XmlUtil.stringToDocument(MESSAGE));
         assertTrue(msg.isSoap());
         TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);

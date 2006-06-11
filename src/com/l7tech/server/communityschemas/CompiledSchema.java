@@ -6,19 +6,19 @@ package com.l7tech.server.communityschemas;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.Closeable;
 import com.l7tech.common.util.LSInputImpl;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.ElementCursor;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
-import org.w3c.dom.Element;
+import com.l7tech.common.xml.tarari.TarariSchemaSource;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.ls.LSInput;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -27,12 +27,13 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
 import java.io.IOException;
-import java.util.logging.Logger;
+import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.lang.ref.WeakReference;
+import java.util.logging.Logger;
 
-class CompiledSchema implements Closeable {
+public final class CompiledSchema implements TarariSchemaSource {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
     public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
             "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
@@ -42,7 +43,7 @@ class CompiledSchema implements Closeable {
     private final String systemId;
     private final Schema softwareSchema;
     private final String schemaDocument;
-    private final String namespaceNormalizedSchemaDocument;
+    private final byte[] namespaceNormalizedSchemaDocument;
     private final SchemaManagerImpl manager;
     private final Set<SchemaHandle> imports;  // Schemas that we directly use via import
     private final Set<WeakReference<CompiledSchema>> exports = new HashSet<WeakReference<CompiledSchema>>(); // Schemas that use us directly via import
@@ -50,6 +51,7 @@ class CompiledSchema implements Closeable {
     private boolean closed = false;
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
     private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
+    private boolean hardwareEligible = false;  // true while (and only while) all this schemas imports are themselves hardwareEligible AND this schema has a unique tns.
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
 
     SchemaHandle ref() {
@@ -74,15 +76,22 @@ class CompiledSchema implements Closeable {
                    String namespaceNormalizedSchemaDocument,
                    Schema softwareSchema,
                    SchemaManagerImpl manager,
-                   Set<SchemaHandle> imports) {
-        if (targetNamespace == null || softwareSchema == null || schemaDocument == null || imports == null)
+                   Set<SchemaHandle> imports)
+    {
+        if (targetNamespace == null || softwareSchema == null ||
+                schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
+                imports == null || manager == null)
             throw new NullPointerException();
 
         this.targetNamespace = targetNamespace;
         this.systemId = systemId;
         this.softwareSchema = softwareSchema;
         this.schemaDocument = schemaDocument.intern();
-        this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument;
+        try {
+            this.namespaceNormalizedSchemaDocument = namespaceNormalizedSchemaDocument.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // can't happen, it's UTF-8
+        }
         this.manager = manager;
         this.imports = imports;
     }
@@ -91,7 +100,7 @@ class CompiledSchema implements Closeable {
         return targetNamespace;
     }
 
-    String getSystemId() {
+    public String getSystemId() {
         return systemId;
     }
 
@@ -103,15 +112,15 @@ class CompiledSchema implements Closeable {
         return schemaDocument;
     }
 
-    public String getNamespaceNormalizedSchemaDocument() {
+    public byte[] getNamespaceNormalizedSchemaDocument() {
         return namespaceNormalizedSchemaDocument;
     }
 
-    boolean isRejectedByTarari() {
+    public boolean isRejectedByTarari() {
         return rejectedByTarari;
     }
 
-    void setRejectedByTarari(boolean rejectedByTarari) {
+    public void setRejectedByTarari(boolean rejectedByTarari) {
         this.rejectedByTarari = rejectedByTarari;
     }
 
@@ -123,11 +132,19 @@ class CompiledSchema implements Closeable {
         this.uniqueTns = uniqueTns;
     }
 
-    boolean isLoaded() {
+    boolean isHardwareEligible() {
+        return hardwareEligible;
+    }
+
+    void setHardwareEligible(boolean hardwareEligible) {
+        this.hardwareEligible = hardwareEligible;
+    }
+
+    public boolean isLoaded() {
         return loaded;
     }
 
-    void setLoaded(boolean loaded) {
+    public void setLoaded(boolean loaded) {
         this.loaded = loaded;
     }
 
@@ -154,7 +171,7 @@ class CompiledSchema implements Closeable {
         try {
             manager.getReadLock().acquire();
 
-            if (!tryHardware || !isLoaded()) {
+            if (!tryHardware || !isHardwareEligible() || !isLoaded()) {
                 // Hardware impossible or inappropriate in this case
                 validateMessageDom(msg, isSoap, errorHandler);
                 return;
@@ -178,6 +195,10 @@ class CompiledSchema implements Closeable {
                 }
 
                 // Recheck failed validations with software, in case the Tarari failure was spurious
+                // Tarari might find a validation failure if a document contained material under
+                // an xs:any happens to match the TNS of other schemas in the system that are loaded into hardware,
+                // even when those other schemas are totally unrelated to the particular validation task
+                // currently being performed by this CompiledSchema instance.
                 errorHandler.recordedErrors().clear();
                 validateMessageDom(msg, isSoap, errorHandler);
                 logger.info("Hardware schema validation failed. The assertion will " +
@@ -330,23 +351,6 @@ class CompiledSchema implements Closeable {
         if (!errors.isEmpty()) throw errors.iterator().next();
     }
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        CompiledSchema that = (CompiledSchema) o;
-
-        //noinspection RedundantIfStatement
-        if (schemaDocument != null ? !schemaDocument.equals(that.schemaDocument) : that.schemaDocument != null)
-            return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        return (schemaDocument != null ? schemaDocument.hashCode() : 0);
-    }
-
     /** Sets the {@link #closed} flag and returns the old value. */
     private synchronized boolean setClosed() {
         boolean old = closed;
@@ -354,7 +358,7 @@ class CompiledSchema implements Closeable {
         return old;
     }
 
-    public void close() {
+    private void close() {
         if (setClosed()) return;
         manager.closeSchema(this);
     }
@@ -371,12 +375,12 @@ class CompiledSchema implements Closeable {
         StringBuilder sb = new StringBuilder(super.toString()).append(" ");
         if (systemId != null) sb.append("systemId=\"").append(systemId).append("\" ");
         if (targetNamespace != null) sb.append("tns=\"").append(targetNamespace).append("\" ");
-        sb.append("hardware=\"").append(isLoaded()).append("\" ");
+        sb.append("hardware=\"").append(isHardwareEligible()).append("\" ");
         sb.append("doc=\"").append(schemaDocument.hashCode()).append("\" ");
         return sb.toString();
     }
 
-    public LSInput getLSInput() {
+    LSInput getLSInput() {
         LSInputImpl lsi =  new LSInputImpl();
         lsi.setStringData(schemaDocument);
         lsi.setSystemId(systemId);
