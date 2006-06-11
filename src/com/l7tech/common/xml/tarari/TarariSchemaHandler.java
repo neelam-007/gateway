@@ -21,13 +21,13 @@ public interface TarariSchemaHandler {
      * Even though it doesn't clear them, this method will take care of setting the "loaded on hardware" flag
      * for schemas that were loaded successfully.
      *
-     * @param hardwareSchemas a map (tns -> handle) of the new set of schemas that the hardware should use.  Must not be null.
+     * @param hardwareSchemas a map (tns -> TarariSchemaSource) of the new set of schemas that the hardware should use.  Must not be null.
      *                        Must already be topologically sorted such that, if schema B depends on schema A, schema A
      *                        appears first in the (ordered) LinkedHashMap.
-     * @return a map(tns -> error) of the schema TNSs that could not be loaded due to errors, and the errors that caused the problem.
+     * @return a map(TarariSchemSource -> error) of the schema TNSs that could not be loaded due to errors, and the errors that caused the problem.
      *         May be empty, but never null.
      */
-    Map<? extends TarariSchemaSource, Exception> setHardwareSchemas(LinkedHashMap<String, ? extends TarariSchemaSource> hardwareSchemas);
+    Map setHardwareSchemas(LinkedHashMap hardwareSchemas);
 
     /**
      * Validate the given document in hardware using the current schemas, if possible to do so.

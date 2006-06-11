@@ -755,6 +755,8 @@
                 <exclude name="com/l7tech/common/xml/tarari/TarariElementCursor*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariCompiledXpath*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariCompiledStylesheetImpl*.class" />
+                <exclude name="com/l7tech/common/xml/tarari/TarariSchemaSource*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariSchemaHandler*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/util/**/*"/>
 
                 <!-- SchemaEntry relies on NamedEntityImp -->

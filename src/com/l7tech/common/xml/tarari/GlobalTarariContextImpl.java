@@ -9,7 +9,6 @@ import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
@@ -23,7 +22,6 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
@@ -50,7 +48,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
     boolean xpathChangedSinceLastCompilation = true;
-    private SchemaResolver tarariResolver;
 
     /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
@@ -209,29 +206,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
     }
 
-   public void loadHardware(String systemId, String schemadoc)
-            throws SoftwareFallbackException, SAXException {
-        try {
-            tarariLock.writeLock().acquire();
-            byte[] bytes = schemadoc.getBytes("UTF-8");
-            SchemaLoader.setSchemaResolver(tarariResolver);
-            SchemaLoader.loadSchema(new ByteArrayInputStream(bytes), systemId);
-        } catch (XmlConfigException e) {
-            TarariUtil.translateException(e);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // Can't happen
-        } catch (IOException e) {
-            throw new RuntimeException(e); // Can't happen (it's a BAIS)
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
-        } finally {
-            tarariLock.writeLock().release();
-        }
-    }
-
-    public Map<? extends TarariSchemaSource, Exception>
-            setHardwareSchemas(final LinkedHashMap<String, ? extends TarariSchemaSource> hardwareSchemas)
+    public Map setHardwareSchemas(final LinkedHashMap hardwareSchemas)
     {
         try {
             tarariLock.writeLock().acquire();
@@ -245,7 +220,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
             final Set<TarariSchemaSource> triedLoading = new HashSet<TarariSchemaSource>();
             SchemaLoader.setSchemaResolver(new SchemaResolver() {
                 public byte[] resolveSchema(String namespaceUri, String locationHint, String baseUri) {
-                    TarariSchemaSource schema = hardwareSchemas.get(namespaceUri);
+                    TarariSchemaSource schema = (TarariSchemaSource)hardwareSchemas.get(namespaceUri);
                     if (schema == null) {
                         logger.log(Level.WARNING, "Target namespace not in hardware schema closure: {0}", namespaceUri);
                         return new byte[0];
@@ -256,8 +231,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
             });
 
             // Now load them all
-            for (Map.Entry<String, ? extends TarariSchemaSource> entry : hardwareSchemas.entrySet()) {
-                TarariSchemaSource schema = entry.getValue();
+            for (Object entry : hardwareSchemas.entrySet()) {
+                TarariSchemaSource schema = (TarariSchemaSource)((Map.Entry)entry).getValue();
 
                 if (schema.isLoaded() || schema.isRejectedByTarari()) {
                     // This schema was already either loaded or rejected while loading another schema.
@@ -293,18 +268,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
             // Let's assume we are done
             return errorMap;
 
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
-        } finally {
-            tarariLock.writeLock().release();
-        }
-    }
-
-    public void unloadAllHardware() {
-        try {
-            tarariLock.writeLock().acquire();
-            SchemaLoader.unloadAllSchemas();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while waiting for Tarari write lock");
