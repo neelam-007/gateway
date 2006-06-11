@@ -6,7 +6,9 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
@@ -23,6 +25,7 @@ import java.io.StringReader;
 import java.io.ByteArrayInputStream;
 import java.util.logging.Logger;
 import java.util.Collections;
+import java.net.URL;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -174,6 +177,22 @@ public class XslTransformationTest extends TestCase {
             logger.fine("transformation ok");
         }
         assertTrue(expected.equals(res));
+    }
+
+    public void testReutersUseCase2() throws Exception {
+        String responseUrl = "http://locutus/reuters/response2.xml";
+        String xslUrl = "http://locutus/reuters/stylesheet2.xsl";
+
+        XslTransformation xsl = new XslTransformation();
+        xsl.setResourceInfo(new SingleUrlResourceInfo(xslUrl));
+        xsl.setDirection(XslTransformation.APPLY_TO_REQUEST);
+
+        Message request = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(request, new Message());
+
+        ServerXslTransformation sxsl = new ServerXslTransformation(xsl, ApplicationContexts.getTestApplicationContext());
+        AssertionStatus status = sxsl.checkRequest(pec);
+        assertEquals(status, AssertionStatus.NONE);
     }
 
     private String getResAsString(String path) throws IOException {
