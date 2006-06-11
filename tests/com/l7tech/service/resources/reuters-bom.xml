@@ -1,0 +1,38 @@
+﻿<?xml version="1.0"?>
+<docSearch_diDef_0_0 xmlns="http://api.reutersresearch.com/Research/GetDocumentInfo">
+    <diDef arriveDate="2006-03-14T18:16:08" companyName="Citigroup" ctbID="3202" docClass="MR" docID="36750449"
+           fileExt="pdf" fileName="36750449.pdf" fileSize="778810" fileType="pdf" hasSyn="0" indOvw="0"
+           localCode="SZA177383.pdf" pages="19" price="0" releaseDate="2006-03-14T00:00:00"
+           submitDate="2006-03-14T18:16:00" tocEnd="-1" tocStart="-1">
+        <headline>IDS Scheer: Expanding the product offering</headline>
+        <pTkr prtID="100094911">IDRG.DE</pTkr>
+        <tkr prtID="100094911">IDRG.DE</tkr>
+        <author c="3C7L">Claus Roller</author>
+        <author c="3EFZ">Michael Gallagher</author>
+        <author c="2IAU">Benjamin Kluftinger</author>
+        <reg c="EUR">Europe</reg>
+        <reg c="ERL">Euroland</reg>
+        <regG c="EUR">Europe</regG>
+        <regG c="ERL">Euroland</regG>
+        <subj c="MISC">MISCELLANEOUS</subj>
+        <subj c="EPS">ESTIMATE CHANGES</subj>
+        <subj c="01">COMPANY</subj>
+        <subjG c="MISC">MISCELLANEOUS</subjG>
+        <subjG c="EPS">ESTIMATE CHANGES</subjG>
+        <subjG c="01">COMPANY</subjG>
+        <ind c="490">Miscellaneous</ind>
+        <indG c="490">Miscellaneous</indG>
+        <cntry c="DEU">Germany</cntry>
+        <grp uid="70000579">3</grp>
+        <grp uid="70002925">12</grp>
+        <langDesc lang="en" rfc1766="en">English</langDesc>
+        <ctSubjectsResp c="">MXCOFN</ctSubjectsResp>
+        <ctSubjectsResp c="">MXCO</ctSubjectsResp>
+        <disciplinesResp c="">DIS_FUND</disciplinesResp>
+        <reasonsResp c="">REA_NEWS</reasonsResp>
+        <reasonsResp c="">REA_FORE</reasonsResp>
+        <reasonsResp c="">REA_COMM</reasonsResp>
+        <rptStylesResp c="">RPT_CO</rptStylesResp>
+        <Restriction underRestriction="0" underReview="0" underExtendedReview="0"/>
+    </diDef>
+</docSearch_diDef_0_0>
