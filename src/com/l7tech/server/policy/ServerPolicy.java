@@ -20,7 +20,7 @@ import java.io.IOException;
 public class ServerPolicy implements Closeable {
     private final ServerAssertion rootAssertion;
     private final ReadWriteLock lock = new ReentrantReadWriteLock(false);
-    private volatile boolean closed = false;
+    private boolean closed = false;
 
     public ServerPolicy(ServerAssertion rootAssertion) {
         this.rootAssertion = rootAssertion;
