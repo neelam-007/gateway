@@ -40,7 +40,6 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
             // We have a real response -- try to preserve it
             Message oldResponse = new Message();
             oldResponse.takeOwnershipOfKnobsFrom(response);
-            oldResponse.attachHttpResponseKnob(respHttp);
 
             // Copy request to response
             copyRequestToResponse(response, request, respHttp);
