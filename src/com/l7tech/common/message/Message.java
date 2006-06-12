@@ -305,7 +305,7 @@ public final class Message {
             try {
                 info = SoapFacet.getSoapInfo(this);
             } catch (NoSuchPartException e) {
-                throw new CausedIllegalStateException(e);
+                throw new SAXException(e);
             }
         }
 

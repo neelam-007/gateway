@@ -114,7 +114,7 @@ public class KnobblyMessageTest extends TestCase {
         try {
             // Should fail right away when looking for soap envelope
             SoapKnob soapKnob = msg.getSoapKnob();
-            fail("Failed to get expected exception.  soapKnob=" + soapKnob);
+            fail("Failed to get expected exception.  soapKnob=" + soapKnob);            
         } catch (SAXException e) {
             logger.info("Got expected exception: " + e);
         }
