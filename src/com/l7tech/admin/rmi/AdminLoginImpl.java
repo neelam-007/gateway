@@ -6,7 +6,10 @@ package com.l7tech.admin.rmi;
 import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
+import com.l7tech.admin.AdminContextBean;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -14,6 +17,8 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.spring.remoting.RemoteUtils;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -21,7 +26,6 @@ import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
-import java.rmi.server.UnicastRemoteObject;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -67,21 +71,30 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             if (!containsAdminAccessRole(roles)) {
                 throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
             }
-            logger.info("" + getHighestRole(roles) + " "+user.getLogin() + " logged in from IP " + UnicastRemoteObject.getClientHost());
-            AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
+
+            logger.info("User '" + user.getLogin() + "' with role '" + getHighestRole(roles) + "' logged in from IP '" +
+                    RemoteUtils.getClientHost() + "'.");
+
+            AdminContext adminContext = adminContext = new AdminContextBean(
+                        null,null,null,null,null,null,null,null,null,
+                        SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
+                        BuildInfo.getProductVersion());
+
+
             getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, getHighestRoleName(roles)));
 
             String cookie = sessionManager.createSession(user);
 
             return new AdminLoginResult(adminContext, cookie);
+        } catch (ServerNotActiveException snae) {
+            logger.log(Level.FINE, "Authentication failed", snae);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(snae);
         } catch (AuthenticationException e) {
             logger.log(Level.FINE, "Authentication failed", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
-        } catch (ServerNotActiveException e) {
-            throw new RemoteException("Illegal state/server not exported", e);
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);

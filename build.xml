@@ -694,11 +694,10 @@
                 <include name="xfire-servlet.xml"/>
             </zipfileset>
 
-            <!-- Web SecureSpan Manager stuff  ... coming soon
+            <!-- Web SecureSpan Manager stuff -->
             <zipfileset dir="${src.root}/etc/admin/" prefix="WEB-INF">
                 <include name="admin-servlet.xml"/>
             </zipfileset>
-            -->
 
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
         </war>
@@ -878,6 +877,8 @@
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
                 <include name="com/l7tech/spring/remoting/rmi/**/*"/>
                 <include name="com/l7tech/spring/remoting/http/**/*"/>
+                <exclude name="com/l7tech/spring/remoting/http/SecureHttpFilter*.class"/>
+                <exclude name="com/l7tech/spring/remoting/http/SecureRemoteInvocationExecutor*.class"/>
             </fileset>
         </jar>
     </target>

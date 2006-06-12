@@ -72,6 +72,7 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
             final UserBean u = new UserBean();
             u.setLogin(login);
             u.setName(login);
+            u.setProviderId(-2); // ...
             subject.getPrincipals().add(u);
             subject.getPrivateCredentials().clear();
             subject.getPrivateCredentials().add(creds);

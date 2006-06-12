@@ -14,29 +14,74 @@
     <bean id="preferences" class="com.l7tech.console.util.Preferences" factory-method="getPreferences">
     </bean>
 
-    <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
-          depends-on="setLazyTrustFailureHandlerInit"/>
+    <bean id="httpClient" class="com.l7tech.spring.remoting.http.SecureHttpClient"/>
 
-    <!-- Set lazy trust handler init for discovery of SSL certificates -->
-    <bean id="setLazyTrustFailureHandlerInit"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod">
-            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setLazyTrustFailureHandler</value>
-        </property>
-        <property name="arguments">
-            <list>
-                <value>true</value>
-            </list>
+    <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor">
+        <constructor-arg>
+            <ref local="httpClient"/>
+        </constructor-arg>
+    </bean>
+
+    <!-- shared invoker properties, inherited with parent= -->
+    <bean id="invokerCommon" abstract="true">
+        <property name="httpInvokerRequestExecutor">
+            <ref local="httpRequestExecutor"/>
         </property>
     </bean>
 
-    <bean id="adminLogin" class="com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean">
-        <property name="serviceInterface">
-            <value>com.l7tech.admin.AdminLogin</value>
-        </property>
-        <property name="refreshStubOnConnectFailure"><value>true</value></property>
-        <property name="lookupStubOnStartup"><value>false</value></property>
-        <property name="registryClientSocketFactory"><ref bean="rmiClientSocketFactory"/></property>
+    <!--
+      NOTE: The actual host we connect to is not called "securespangateway"
+            The protocol used in the urls below is ignored, we always connect with https.
+    -->
+
+    <bean id="adminLogin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/AdminLogin"/>
+        <property name="serviceInterface" value="com.l7tech.admin.AdminLogin"/>
+    </bean>
+
+    <bean id="identityAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/IdentityAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.identity.IdentityAdmin"/>
+    </bean>
+
+    <bean id="auditAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/AuditAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.audit.AuditAdmin"/>
+    </bean>
+
+    <bean id="serviceAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/ServiceAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.service.ServiceAdmin"/>
+    </bean>
+
+    <bean id="schemaAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/SchemaAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.xml.schema.SchemaAdmin"/>
+    </bean>
+
+    <bean id="jmsAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/JmsAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.transport.jms.JmsAdmin"/>
+    </bean>
+
+    <bean id="trustedCertAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/TrustedCertAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.security.TrustedCertAdmin"/>
+    </bean>
+
+    <bean id="customAssertionsRegistrar" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/CustomAssertionsRegistrar"/>
+        <property name="serviceInterface" value="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar"/>
+    </bean>
+
+    <bean id="kerberosAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/KerberosAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.security.kerberos.KerberosAdmin"/>
+    </bean>
+
+    <bean id="clusterStatusAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/ClusterStatusAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.cluster.ClusterStatusAdmin"/>
     </bean>
 
     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

@@ -2,6 +2,7 @@ package com.l7tech.spring.remoting.rmi;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
+import java.security.AccessControlException;
 import java.util.Set;
 import javax.security.auth.Subject;
 
@@ -56,22 +57,22 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
         //  NOTE: passing the Subject object has a side effect that allows the IdentityAdminImpl#getRoles(Subject) to work
         Subject administrator = adminInvocation.getSubject();
         if(administrator==null) {
-            throw new IllegalStateException("No subject passed, authentication failed.");
+            throw new AccessControlException("No subject passed, authentication failed.");
         }
 
         Set principals = administrator.getPrincipals();
         if(principals==null || principals.isEmpty()) {
-            throw new IllegalStateException("No principal(s) available, authentication failed.");
+            throw new AccessControlException("No principal(s) available, authentication failed.");
         }
         Object principal = principals.iterator().next();
         if(!(principal instanceof User)) {
-            throw new IllegalStateException("Principal type is incorrect, authentication failed.");
+            throw new AccessControlException("Principal type is incorrect, authentication failed.");
         }
         User user = (User) principal;
 
         String cookie = user.getLogin();
         Principal authUser = sessionManager.resumeSession(cookie);
-        if (authUser == null) throw new IllegalStateException("Session cookie did not refer to a previously-established session");
+        if (authUser == null) throw new AccessControlException("Session cookie did not refer to a previously-established session");
 
         administrator.getPrincipals().clear();
         administrator.getPrincipals().add(authUser);

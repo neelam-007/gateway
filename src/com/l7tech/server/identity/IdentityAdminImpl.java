@@ -19,6 +19,7 @@ import java.rmi.RemoteException;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.SecureRandom;
+import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Collection;
@@ -447,9 +448,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
         if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.ADMIN_GROUP_NAME})) {  //admin can ask everything
             return authorizer.getUserRoles(subject);
         } else if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.OPERATOR_GROUP_NAME})) { // operator only self
-            if (subject.equals(currentSubject)) {
+            if (isSameUser(currentSubject, subject)) {
                 return authorizer.getUserRoles(subject);
             } else {
+                logger.log(Level.INFO, "Access denied for " + currentSubject.getPrincipals() + " accessing roles for " + subject.getPrincipals() + ".");
                 throw new AccessControlException("Access denied, accessing subject " + subject);
             }
         }
@@ -544,6 +546,36 @@ public class IdentityAdminImpl implements IdentityAdmin {
         return ret;
     }
 
+    private boolean isSameUser(Subject s1, Subject s2) {
+        boolean same = false;
+
+        if (s1 != null && s2 != null) {
+            User u1 = getUser(s1);
+            User u2 = getUser(s2);
+
+            if (u1 != null && u2 != null) {
+                if (u1.getProviderId() == u2.getProviderId() &&
+                    u1.getLogin().equals(u2.getLogin())) {
+                    same = true;
+                }
+            }
+        }
+
+        return same;
+    }
+
+    private User getUser(Subject subject) {
+        User user = null;
+
+        for (Principal principal : subject.getPrincipals()) {
+            if (principal instanceof User) {
+                user = (User) principal;
+                break;
+            }
+        }
+
+        return user;
+    }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
     private IdentityProviderFactory identityProviderFactory = null;

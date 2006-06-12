@@ -17,6 +17,8 @@ import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
+import com.l7tech.spring.remoting.RemoteUtils;
+
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -214,7 +216,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             String role = le.getRole();
             String ip = null;
             try {
-                ip = UnicastRemoteObject.getClientHost();
+                ip = RemoteUtils.getClientHost();
             } catch (ServerNotActiveException e) {
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }

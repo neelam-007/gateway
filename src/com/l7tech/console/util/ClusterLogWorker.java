@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.remoting.RemoteAccessException;
+
 /*
  * This class performs the log retrieval from the cluster. The work is carried out on a separate thread.
  * Upon completion of the data retrieval, the Log Browser window is updated by the Swing thread.
@@ -41,7 +43,7 @@ public class ClusterLogWorker extends SwingWorker {
     private Map currentNodeList;
     private List requests;
     private Map retrievedLogs;
-    private RemoteException remoteException;
+    private RemoteAccessException remoteException;
     private java.util.Date currentClusterSystemTime = null;
     private final Date startDate;
     private final Date endDate;
@@ -102,11 +104,11 @@ public class ClusterLogWorker extends SwingWorker {
     }
 
     /**
-     * Get the remote exception or null.
+     * Get the remote access exception or null.
      *
      * @return the exception or null
      */
-    public RemoteException getRemoteException() {
+    public RemoteAccessException getRemoteException() {
         return remoteException;
     }
 
@@ -155,8 +157,11 @@ public class ClusterLogWorker extends SwingWorker {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find cluster status from server", e);
         } catch (RemoteException e) {
+            remoteException = new RemoteAccessException("Remote exception when retrieving cluster status from server", e);
+            logger.log(Level.WARNING, "Remote exception when retrieving cluster status from server", e);
+        } catch (RemoteAccessException e) {
             remoteException = e;
-            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+            logger.log(Level.WARNING, "Remote exception when retrieving cluster status from server", e);
         }
 
         if (cluster == null) {
@@ -222,6 +227,10 @@ public class ClusterLogWorker extends SwingWorker {
                     }
                 } catch (RemoteException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
+                    remoteException = new RemoteAccessException("Unable to retrieve logs from server",e);
+                    return null;
+                } catch (RemoteAccessException e) {
+                    logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
                     remoteException = e;
                     return null;
                 } catch (FindException e) {
@@ -252,6 +261,10 @@ public class ClusterLogWorker extends SwingWorker {
         try {
             currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
         } catch (RemoteException e) {
+            remoteException = new RemoteAccessException("Remote exception when retrieving cluster status from server",e);
+            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+            return null;
+        } catch (RemoteAccessException e) {
             remoteException = e;
             logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
             return null;
