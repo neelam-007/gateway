@@ -5,6 +5,7 @@
 
 package com.l7tech.server.communityschemas;
 
+import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_INITIAL;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.ls.LSInput;
 import com.l7tech.common.http.cache.HttpObjectCache;
@@ -139,7 +140,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
 
             GenericHttpRequestParams requestParams = new GenericHttpRequestParams(fullUrl);
 
-            HttpObjectCache.FetchResult got = cache.fetchCached(httpClient, requestParams, false, new HttpObjectCache.UserObjectFactory() {
+            HttpObjectCache.FetchResult got = cache.fetchCached(httpClient, requestParams, WAIT_INITIAL, new HttpObjectCache.UserObjectFactory() {
                 public Object createUserObject(String url, GenericHttpResponse response) throws IOException {
                     return schemaCompiler.getSchema(url, response);
                 }

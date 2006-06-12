@@ -5,6 +5,8 @@
 
 package com.l7tech.common.http.cache;
 
+import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_LATEST;
+import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_NEVER;
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import junit.framework.Test;
@@ -66,7 +68,7 @@ public class HttpObjectCacheTest extends TestCase {
         MockGenericHttpClient hc = new MockGenericHttpClient(200,
                                                              new GenericHttpHeaders(new HttpHeader[0]),
                                                              ContentTypeHeader.OCTET_STREAM_DEFAULT,
-                                                             new Long(userObjStr.getBytes().length),
+                                                             (long)userObjStr.getBytes().length,
                                                              userObjStr.getBytes());
         URL url = new URL("http://blat/");
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
@@ -82,7 +84,7 @@ public class HttpObjectCacheTest extends TestCase {
         };
 
         hc.clearResponseCount();
-        HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(hc, params, true, factory);
+        HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(hc, params, WAIT_NEVER, factory);
         assertTrue(hc.getResponseCount() == 1);
         assertNotNull(result);
         assertNull(result.getException());
@@ -91,7 +93,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertEquals(userObj, firstUo);
 
         // Immediately try a second fetch and ensure the HTTP client is not contacted
-        result = httpObjectCache.fetchCached(hc, params, true, factory);
+        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
         assertTrue(hc.getResponseCount() == 1);
         assertNotNull(result);
         assertNull(result.getException());
@@ -101,7 +103,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Wait long enough to trigger a poll, then try a third request, and ensure that if-modified-since worked.
         Thread.sleep(POLL_DELAY);
         hc.setResponseStatus(HttpConstants.STATUS_NOT_MODIFIED);
-        result = httpObjectCache.fetchCached(hc, params, true, factory);
+        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
         assertTrue(hc.getResponseCount() == 2);
         assertNotNull(result);
         assertNull(result.getException());
@@ -109,7 +111,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertTrue(result.getUserObject() == firstUo); // must not have replaced the object
 
         // Immediately try a fourth request, which should not poll
-        result = httpObjectCache.fetchCached(hc, params, true, factory);
+        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
         assertTrue(hc.getResponseCount() == 2);
         assertNotNull(result);
         assertNull(result.getException());
@@ -119,7 +121,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Wait long enough to trigger another poll, then try a fifth request, which should do a new download
         Thread.sleep(POLL_DELAY);
         hc.setResponseStatus(200);
-        result = httpObjectCache.fetchCached(hc, params, true, factory);
+        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
         assertTrue(hc.getResponseCount() == 3);
         assertNotNull(result);
         assertNull(result.getException());
@@ -136,7 +138,7 @@ public class HttpObjectCacheTest extends TestCase {
         private final HttpObjectCache httpObjectCache;
         private GenericHttpClient client = null;
         private GenericHttpRequestParams params = null;
-        private boolean waitForNewestResult = false;
+        private HttpObjectCache.WaitMode waitForNewestResult = WAIT_NEVER;
         private HttpObjectCache.UserObjectFactory factory = null;
         /** @noinspection FieldCanBeLocal*/
         private volatile boolean started = false;
@@ -147,7 +149,7 @@ public class HttpObjectCacheTest extends TestCase {
         private Throwable lastException = null;
         private Thread thread = null;
 
-        public TestThread(HttpObjectCache cache, GenericHttpClient client, GenericHttpRequestParams params, boolean waitForNewestResult, HttpObjectCache.UserObjectFactory factory) {
+        public TestThread(HttpObjectCache cache, GenericHttpClient client, GenericHttpRequestParams params, HttpObjectCache.WaitMode waitForNewestResult, HttpObjectCache.UserObjectFactory factory) {
             this.httpObjectCache = cache;
             this.client = client;
             this.params = params;
@@ -224,8 +226,8 @@ public class HttpObjectCacheTest extends TestCase {
         public synchronized int getNumRequestsCached() { return numRequestsFinished[HttpObjectCache.RESULT_USED_CACHED]; }
         public synchronized int getNumRequestsFinished() {
             int total = 0;
-            for (int i = 0; i < numRequestsFinished.length; i++) {
-                total += numRequestsFinished[i];
+            for (int aNumRequestsFinished : numRequestsFinished) {
+                total += aNumRequestsFinished;
             }
             return total;
         }
@@ -238,7 +240,7 @@ public class HttpObjectCacheTest extends TestCase {
             this.params = params;
         }
 
-        public synchronized void setWaitForNewestResult(boolean waitForNewestResult) {
+        public synchronized void setWaitForNewestResult(HttpObjectCache.WaitMode waitForNewestResult) {
             this.waitForNewestResult = waitForNewestResult;
         }
 
@@ -273,7 +275,7 @@ public class HttpObjectCacheTest extends TestCase {
         MockGenericHttpClient hc = new MockGenericHttpClient(200,
                                                              new GenericHttpHeaders(new HttpHeader[0]),
                                                              ContentTypeHeader.OCTET_STREAM_DEFAULT,
-                                                             new Long(userObjStr.getBytes().length),
+                                                             (long)userObjStr.getBytes().length,
                                                              userObjStr.getBytes());
         URL url = new URL("http://blatty44/");
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
@@ -289,8 +291,8 @@ public class HttpObjectCacheTest extends TestCase {
         };
 
         // Make two test threads
-        TestThread t1 = new TestThread(httpObjectCache, hc, params, false, factory);
-        TestThread t2 = new TestThread(httpObjectCache, hc, params, false, factory);
+        TestThread t1 = new TestThread(httpObjectCache, hc, params, WAIT_NEVER, factory);
+        TestThread t2 = new TestThread(httpObjectCache, hc, params, WAIT_NEVER, factory);
         try {
             doTestMultiThreaded(t1, t2, hc, userObj);
         } finally {
@@ -315,7 +317,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertTrue(t1.getNumRequestsFinished() == 0);
 
         // Thread 2 should immediately return DOWNLOADING_NOW, but without any cached info
-        t2.setWaitForNewestResult(false);
+        t2.setWaitForNewestResult(WAIT_NEVER);
         t2.startRequest();
         t2.joinThread();
         assertNull(t2.getLastException());
@@ -329,7 +331,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertNull(t2fr.getUserObject());
 
         // Now tell thread 2 to wait for complete info
-        t2.setWaitForNewestResult(true);
+        t2.setWaitForNewestResult(WAIT_LATEST);
         t2.startRequest();
         Thread.sleep(SHORT_DELAY);
         assertNull(t2.getLastException());

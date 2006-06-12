@@ -5,6 +5,7 @@
 
 package com.l7tech.server.policy.assertion.xml;
 
+import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_INITIAL;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.GenericHttpRequestParams;
@@ -99,7 +100,7 @@ public abstract class UrlResourceGetter extends ResourceGetter {
         // Get cached, possibly checking if-modified-since against server, possibly downloading a new stylesheet
         HttpObjectCache.FetchResult result = cache.fetchCached(getHttpClient(),
                                                                params,
-                                                               false,
+                                                               WAIT_INITIAL,
                                                                userObjectFactory);
 
         Object userObject = result.getUserObject();

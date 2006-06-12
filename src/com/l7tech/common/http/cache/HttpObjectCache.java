@@ -21,6 +21,30 @@ import java.util.logging.Level;
 public class HttpObjectCache {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
 
+    /**
+     * Caller does not wish to wait for another thread to download the resource,
+     * even if the URL has never been tried before and there is no previous cached version (or cached error message).
+     */
+    public static WaitMode WAIT_NEVER = new WaitMode();
+
+    /**
+     * If another thread is currently downloading the resource, caller wishes to immediately use the previous cached version
+     * (or cached error message), unless there is no previous cached version (or cached error message), in which case
+     * caller will wait.
+     */
+    public static WaitMode WAIT_INITIAL = new WaitMode();
+
+    /**
+     * If another thread is currently downloading the resource, caller wishes to wait until the download finishes,
+     * and then get the newest version of the resource.
+     */
+    public static WaitMode WAIT_LATEST = new WaitMode();
+
+    public static class WaitMode {
+        private WaitMode() {
+        }
+    }
+
     private final LRUMap cache;
     private final long maxCacheAge;
 
@@ -170,18 +194,34 @@ public class HttpObjectCache {
      * @param httpClient            the HTTP client to fetch with.  Must not be null.
      * @param requestParams         the HTTP request parameters, suitable for a GET request.
      *                              Must be non-null and must include a non-null URL.
-     * @param waitForNewestResult   controls what to do if another thread is currently downloading this URL: if true,
+     * @param waitMode              Controls what to do if another thread is currently downloading this URL.  If
+     *                              a new download is needed and no other thread is already downloading this URL,
+     *                              this method will always do the download in the current thread.  If however another thread
+     *                              is already downloading the URL, the method may wait for it to finish, depending
+     *                              on the value provided for this parameter:<ul>
+     *                              <li>If {@link #WAIT_INITIAL}, this method will immediate return any existing
+     *                              cached object or error message; but if the URL has not yet been tried at all,
+     *                              this thread will wait for the results from the downloading thread.
+     *                              <li>If {@link #WAIT_LATEST},
      *                              this method will wait for the other thread to finish and then return the most
-     *                              up-to-date information.  If false, this method will immediately return the
-     *                              existing cached object, if any.
+     *                              up-to-date information (a cached object and/or a cached error message).
+     *                              <li>If {@link #WAIT_NEVER}, this method will immediately return the
+     *                              existing cached object, if any.  Note that there might not be any cached object
+     *                              or even cached error message if this URL has not been tried before.
+     *                              </ul>
      * @param userObjectFactory     strategy for converting the HTTP body into an application-level object.
      *                              The returned object will be cached and returned to other fetchers of this URL
      *                              but is otherwise opaque to HttpObjectCache.
-     * @return a {@link FetchResult}.  Never null.
+     * @return a {@link FetchResult}.  Never null.  It may contain the most recently cached user object (which
+     *         <b>might not</b> be the type returned by the provided UserObjectFactory, if a different UserObjectFactory
+     *         produced that request), and may contain an IOException documenting the most recent failure to download
+     *         a user object.  If it contains both, the exception is always newer than the user object, meaning that
+     *         the IOException was encountered downloading the latest version, but a previously cached version
+     *         is available for use.
      */
     public FetchResult fetchCached(GenericHttpClient httpClient,
                                    GenericHttpRequestParams requestParams,
-                                   boolean waitForNewestResult,
+                                   WaitMode waitMode,
                                    UserObjectFactory userObjectFactory)
     {
         final String urlStr = requestParams.getTargetUrl().toExternalForm();
@@ -212,10 +252,10 @@ public class HttpObjectCache {
         synchronized (entry) {
             if (entry.downloading) {
                 // Another thread is currently downloading a fresh copy of the user object.  See if we need to wait.
-                if (waitForNewestResult || (entry.userObject == null && entry.exception == null)) {
+                if (waitMode == WAIT_LATEST ||
+                        (waitMode == WAIT_INITIAL && entry.userObject == null && entry.exception == null))
+                {
                     // Wait for downloading to finish.
-                    // (We will always wait for the very first download, even if the caller doesn't want to wait
-                    //  for subsequent downloads, because on the very first one we have nothing at all to return.)
                     while (entry.downloading) {
                         try {
                             if (logger.isLoggable(Level.FINER)) logger.finer("Waiting for other thread to contact server for URL '" + urlStr + "'");
