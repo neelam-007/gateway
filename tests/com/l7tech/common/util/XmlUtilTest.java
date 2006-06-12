@@ -12,6 +12,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
@@ -281,6 +282,19 @@ public class XmlUtilTest extends TestCase {
         assertTrue(nodes.size() > 0);
         assertEquals(nodes.getNodeName(0), "xml-stylesheet");
         assertEquals(nodes.getNodeValue(0), "href=\"foo\" type=\"text/xsl\"");
+    }
+
+    public void testWhitespaceInProlog() throws Exception {
+        XmlUtil.stringToDocument(" \t \r  \n   " + XmlUtil.nodeToString(XmlUtil.stringToDocument("<foo/>")));
+    }
+
+    public void testNonWhitespaceInProlog() throws Exception {
+        try {
+            XmlUtil.stringToDocument("  x  " + XmlUtil.nodeToString(XmlUtil.stringToDocument("<foo/>")));
+            fail("Content in prolog did not cause parse failure");
+        } catch (SAXException e) {
+            // Ok
+        }
     }
 
     private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
