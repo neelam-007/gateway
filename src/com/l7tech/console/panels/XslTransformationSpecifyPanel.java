@@ -13,6 +13,7 @@ import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -186,7 +187,9 @@ public class XslTransformationSpecifyPanel extends JPanel {
                 return;
             }
             // check if it's a xslt
-            if (docIsXsl(doc)) {
+
+            try {
+                docIsXsl(doc);
                 // set the new xslt
                 String printedxml;
                 try {
@@ -199,8 +202,8 @@ public class XslTransformationSpecifyPanel extends JPanel {
                 }
                 uiAccessibility.getEditor().setText(printedxml);
                 //okButton.setEnabled(true);
-            } else {
-                xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + filename, null);
+            } catch (SAXException e) {
+                xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + filename + ": " + ExceptionUtils.getMessage(e), null);
             }
         } catch (FileNotFoundException e) {
             log.log(Level.FINE, "cannot open file" + filename, e);
@@ -231,9 +234,8 @@ public class XslTransformationSpecifyPanel extends JPanel {
             return;
         }
         // check if it's a xslt
-        if (!docIsXsl(doc)) {
-            xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + urlstr, null);
-        } else {
+        try {
+            docIsXsl(doc);
             // set the new xslt
             String printedxml;
             try {
@@ -246,13 +248,17 @@ public class XslTransformationSpecifyPanel extends JPanel {
             }
             uiAccessibility.getEditor().setText(printedxml);
             //okButton.setEnabled(true);
+        } catch (SAXException e) {
+            xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + urlstr + ": " + ExceptionUtils.getMessage(e), null);
         }
     }
 
     String check() {
         String contents = uiAccessibility.getEditor().getText();
-        if (contents == null || contents.length() == 0 || !docIsXsl(contents)) {
-            return resources.getString("error.notxslt");
+        try {
+            docIsXsl(contents);
+        } catch (SAXException e) {
+            return resources.getString("error.notxslt") + ": " + ExceptionUtils.getMessage(e);
         }
 
         return null;
@@ -263,29 +269,21 @@ public class XslTransformationSpecifyPanel extends JPanel {
         assertion.setTransformName(nameField.getText());
     }
 
-    private static boolean docIsXsl(String str) {
+    private static void docIsXsl(String str) throws SAXException {
         if (str == null || str.length() < 1) {
-            log.finest("empty doc");
-            return false;
+            throw new SAXException("empty document");
         }
-        Document doc;
-        try {
-            doc = XmlUtil.stringToDocument(str);
-        } catch (SAXException e) {
-            log.log(Level.WARNING, "Couldn't parse XSLT", e);
-            return false;
-        }
-        return doc != null && docIsXsl(doc);
+        Document doc = XmlUtil.stringToDocument(str);
+        if (doc == null) throw new SAXException("null document");
+        docIsXsl(doc);
     }
 
-    private static boolean docIsXsl(Document doc) {
+    private static void docIsXsl(Document doc) throws SAXException {
         try {
             TransformerFactory.newInstance().newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
         } catch (Exception e) {
-            log.log(Level.INFO, "document is not valid xslt", e);
-            return false;
+            throw new SAXException("Document is not valid XSLT: " + ExceptionUtils.getMessage(e), e);
         }
-        return true;
     }
 
 }
