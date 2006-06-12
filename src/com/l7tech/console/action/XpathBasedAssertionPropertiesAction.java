@@ -1,14 +1,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.panels.XPathExpressionPanel;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -74,42 +71,12 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         try {
-            if (n.getService() != null && n.getService().isSoap()) {
+            if (n.getService() != null) {
                 XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
                 dialog.pack();
                 dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);
-            } else {
-                if (n instanceof RequestXpathPolicyTreeNode || n instanceof ResponseXpathPolicyTreeNode || n.getService() == null) {
-                    XpathBasedAssertion xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
-                    String title = null;
-                    if (this instanceof RequestXpathPropertiesAction) {
-                        title = "Evaluate Request XPath Properties";
-                    } else if (this instanceof ResponseXpathPropertiesAction) {
-                        title = "Evaluate Response XPath Properties";
-                    } else {
-                        title = "piglet"; // can't happen
-                    }
-                    String initialValue = xmlSecAssertion.getXpathExpression().getExpression();
-                    XPathExpressionPanel panel = new XPathExpressionPanel(null, title, initialValue, xmlSecAssertion.getXpathExpression().getNamespaces());
-                    panel.pack();
-                    Utilities.centerOnScreen(panel);
-                    panel.setVisible(true);
-                    /*String question = "Please provide xpath value.";
-
-                    String res = (String)JOptionPane.showInputDialog(null, question, title,
-                                                                     JOptionPane.QUESTION_MESSAGE,
-                                                                     null, null, initialValue);*/
-                    if (!panel.wasCanceled()) {
-                        xmlSecAssertion.setXpathExpression(new XpathExpression(panel.newXpathValue(),
-                                                                               panel.newXpathNamespaceMap()));
-                        okListener.actionPerformed(null);
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(mw, "Cannot edit this assertion because it is not configurable " +
-                                                      "on non-soap services.");
-                }
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get associated service", e);

@@ -195,6 +195,15 @@ public class XslTransformationTest extends TestCase {
         assertEquals(status, AssertionStatus.NONE);
     }
 
+    public void testStuff() throws Exception {
+        byte[] bytes = HexUtils.slurpStreamLocalBuffer(new URL("http://locutus/reuters/response5.xml").openStream());
+        char[] chars = new String(bytes, "UTF-8").toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (c > 127) System.out.print(c);
+        }
+    }
+
     private String getResAsString(String path) throws IOException {
         InputStream is = getClass().getResourceAsStream(path);
         byte[] resbytes = HexUtils.slurpStream(is, 20000);

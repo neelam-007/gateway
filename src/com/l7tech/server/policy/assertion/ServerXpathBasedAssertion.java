@@ -6,6 +6,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
@@ -29,6 +30,7 @@ public abstract class ServerXpathBasedAssertion extends AbstractServerAssertion 
         try {
             compiledXpath = assertion.getXpathExpression().compile();
         } catch (InvalidXpathException e) {
+            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_UNSUPPORTED_PATTERN, null, e);
             // Invalid expression -- disable processing
             compiledXpath = null;
         }

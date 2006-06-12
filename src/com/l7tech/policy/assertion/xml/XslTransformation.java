@@ -93,6 +93,7 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
 
     public void setResourceInfo(AssertionResourceInfo resourceInfo) {
         this.resourceInfo = resourceInfo;
+        this.varsUsed = null;
     }
 
     public String[] getVariablesUsed() {

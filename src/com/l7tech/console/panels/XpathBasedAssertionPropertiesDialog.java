@@ -127,6 +127,21 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private BindingOperation currentOperation;
     private JButton editSampleButton;
 
+    private static final String NON_SOAP_NAME = "<Non-SOAP service>";
+    private static final WsdlTreeNode NON_SOAP_NODE = new WsdlTreeNode(NON_SOAP_NAME, new WsdlTreeNode.Options()) {
+        protected String iconResource(boolean open) {
+            return "com/l7tech/console/resources/methodPublic.gif";
+        }
+
+        public boolean getAllowsChildren() {
+            return false;
+        }
+
+        public String toString() {
+            return NON_SOAP_NAME;
+        }
+    };
+
     /**
      * @param owner this panel owner
      * @param modal is this modal dialog or not
@@ -180,17 +195,19 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         signatureResponseConfigPanel.setVisible(assertion instanceof ResponseWssIntegrity);
         try {
             serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
-            serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-            SoapMessageGenerator sg = new SoapMessageGenerator();
-            if (isEditingRequest()) {
-                soapMessages = sg.generateRequests(serviceWsdl);
-            } else {
-                soapMessages = sg.generateResponses(serviceWsdl);
-            }
-            initializeBlankMessage(soapMessages[0]);
-            for (int i = 0; i < soapMessages.length; i++) {
-                SoapMessageGenerator.Message soapRequest = soapMessages[i];
-                requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+            if (serviceWsdl != null) {
+                serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+                SoapMessageGenerator sg = new SoapMessageGenerator();
+                if (isEditingRequest()) {
+                    soapMessages = sg.generateRequests(serviceWsdl);
+                } else {
+                    soapMessages = sg.generateResponses(serviceWsdl);
+                }
+                initializeBlankMessage(soapMessages[0]);
+                for (int i = 0; i < soapMessages.length; i++) {
+                    SoapMessageGenerator.Message soapRequest = soapMessages[i];
+                    requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
@@ -460,7 +477,13 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
             final MutableTreeNode root = new DefaultMutableTreeNode();
             final DefaultTreeModel operationsTreeModel = new DefaultTreeModel(root);
-            populateOperations(wsdl, operationsTreeModel, root);
+
+            if (wsdl != null) {
+                populateOperations(wsdl, operationsTreeModel, root);
+            } else {
+                root.insert(NON_SOAP_NODE, 0);
+            }
+
             operationsTree.setModel(operationsTreeModel);
             operationsTree.setRootVisible(false);
             operationsTree.setShowsRootHandles(true);
@@ -758,7 +781,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             if (path == null) {
             } else {
                 final Object lpc = path.getLastPathComponent();
-                if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode))) {
+                if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode) || (lpc == NON_SOAP_NODE))) {
                     messageViewerToolBar.setToolbarEnabled(false);
                     return;
                 }
@@ -776,22 +799,26 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 }
                 final JTextField xpf = messageViewerToolBar.getxpathField();
 
-                BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
-                currentOperation = boperation.getOperation();
-                populateSampleMessages(currentOperation.getName(), 0);
-                Message sreq = forOperation(boperation.getOperation());
-                messageViewerToolBar.setToolbarEnabled(true);
-                if (sreq != null) {
-                    try {
-                        SOAPMessage soapMessage = sreq.getSOAPMessage();
-                        displayMessage(soapMessage);
-                        if (e.getSource() == operationsTree.getSelectionModel()) {
-                            xpf.setText("");
+                if (lpc instanceof BindingOperationTreeNode) {
+                    BindingOperationTreeNode boperation = (BindingOperationTreeNode) lpc;
+                    currentOperation = boperation.getOperation();
+                    populateSampleMessages(currentOperation.getName(), 0);
+                    Message sreq = forOperation(boperation.getOperation());
+                    if (sreq != null) {
+                        try {
+                            SOAPMessage soapMessage = sreq.getSOAPMessage();
+                            displayMessage(soapMessage);
+                            if (e.getSource() == operationsTree.getSelectionModel()) {
+                                xpf.setText("");
+                            }
+                        } catch (Exception e1) {
+                            throw new RuntimeException(e1);
                         }
-                    } catch (Exception e1) {
-                        throw new RuntimeException(e1);
                     }
+                } else if (lpc == NON_SOAP_NODE) {
+                    populateSampleMessages(null, 0);
                 }
+                messageViewerToolBar.setToolbarEnabled(true);
                 xpathFieldPauseListener.textEntryResumed(xpf);
             }
         }
