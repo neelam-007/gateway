@@ -21,6 +21,7 @@ public class LogMessage {
 
     public LogMessage(SSGLogRecord log) {
         this.log = log;
+        if (log == null) throw new NullPointerException();
 
         SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
         String details = log.getMessage();
@@ -76,6 +77,11 @@ public class LogMessage {
         return log;
     }
 
+    private boolean safeEquals(Object left, Object right) {
+        if (left == null) return right == null;
+        return left.equals(right);
+    }
+
     public boolean equals(Object other) {
         boolean equal = false;
 
@@ -84,9 +90,11 @@ public class LogMessage {
         }
         else if(other instanceof LogMessage) {
             LogMessage om = (LogMessage) other;
+            if (log == null) return om.log == null;
+            if (om.log == null) return false;
             equal = log.getMillis()==om.log.getMillis() &&
-                    log.getLevel().equals(om.log.getLevel()) &&
-                    log.getMessage().equals(om.log.getMessage());
+                    safeEquals(log.getLevel(), om.log.getLevel()) &&
+                    safeEquals(log.getMessage(), om.log.getMessage());
         }
 
         return equal;
