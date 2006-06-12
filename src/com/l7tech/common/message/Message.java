@@ -139,12 +139,22 @@ public final class Message {
      *
      * @param msg a Message whose facets should be taken by this Message.  Must not be null.
      */
-    public void initialize(Message msg)
+    public void takeOwnershipOfKnobsFrom(Message msg)
     {
+        // Close any existing knobs of ours
         if (rootFacet != null)
             close();
+
         rootFacet = msg.rootFacet;
         invalidateCachedKnobs();
+
+        // Prevent the original message from closing the knobs that now belong to us
+        msg.onKnobsGobbled();
+    }
+
+    /** Another Message has just taken ownership of our knobs, so we shouldn't close them. */
+    private void onKnobsGobbled() {
+        rootFacet = null;
     }
 
     public void setEnableOriginalDocument() {
