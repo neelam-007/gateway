@@ -1,12 +1,12 @@
 package com.l7tech.service;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.ServerPolicy;
+import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -19,8 +19,8 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class ServiceManagerStub.
@@ -139,7 +139,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         }
     }
 
-    public ServerPolicy getServerPolicy(long serviceOid) throws FindException {
+    public ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException {
         try {
             return serviceCache.getServerPolicy(serviceOid);
         } catch (InterruptedException e) {
@@ -172,7 +172,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * on the request headers and/or document.
      * 
      * @param request
-     * @return
+     * @return a PublishedService instance.
      */
     public PublishedService resolveService(Message request) throws ServiceResolutionException {
         return null;

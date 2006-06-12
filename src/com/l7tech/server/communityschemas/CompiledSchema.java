@@ -15,6 +15,7 @@ import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 import com.l7tech.common.xml.tarari.TarariSchemaSource;
+import com.l7tech.server.util.AbstractReferenceCounted;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -30,10 +31,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-public final class CompiledSchema implements TarariSchemaSource {
+public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
     public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
             "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
@@ -47,28 +47,10 @@ public final class CompiledSchema implements TarariSchemaSource {
     private final SchemaManagerImpl manager;
     private final Set<SchemaHandle> imports;  // Schemas that we directly use via import
     private final Set<WeakReference<CompiledSchema>> exports = new HashSet<WeakReference<CompiledSchema>>(); // Schemas that use us directly via import
-    private final AtomicInteger refcount = new AtomicInteger(0);
-    private boolean closed = false;
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
     private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
     private boolean hardwareEligible = false;  // true while (and only while) all this schemas imports are themselves hardwareEligible AND this schema has a unique tns.
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
-
-    SchemaHandle ref() {
-        refcount.incrementAndGet();
-        return new SchemaHandle(this);
-    }
-
-    void unref() {
-        int nval = refcount.decrementAndGet();
-        if (nval <= 0) {
-            close();
-        }
-    }
-
-    private synchronized boolean isClosed() {
-        return closed;
-    }
 
     CompiledSchema(String targetNamespace,
                    String systemId,
@@ -351,26 +333,6 @@ public final class CompiledSchema implements TarariSchemaSource {
         if (!errors.isEmpty()) throw errors.iterator().next();
     }
 
-    /** Sets the {@link #closed} flag and returns the old value. */
-    private synchronized boolean setClosed() {
-        boolean old = closed;
-        closed = true;
-        return old;
-    }
-
-    private void close() {
-        if (setClosed()) return;
-        manager.closeSchema(this);
-    }
-
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder(super.toString()).append(" ");
         if (systemId != null) sb.append("systemId=\"").append(systemId).append("\" ");
@@ -385,5 +347,13 @@ public final class CompiledSchema implements TarariSchemaSource {
         lsi.setStringData(schemaDocument);
         lsi.setSystemId(systemId);
         return lsi;
+    }
+
+    protected void doClose() {
+        manager.closeSchema(this);
+    }
+
+    protected SchemaHandle createHandle() {
+        return new SchemaHandle(this);
     }
 }

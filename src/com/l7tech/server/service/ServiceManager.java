@@ -3,7 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.ServerPolicy;
+import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
@@ -71,7 +71,7 @@ public interface ServiceManager extends EntityManager<PublishedService> {
     /**
      * returns the parsed server-side policy for a specific PublishedService
      */
-    ServerPolicy getServerPolicy(long serviceOid) throws FindException;
+    ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException;
 
     /**
      * resolves to which published service the passed request applies to

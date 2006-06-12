@@ -10,13 +10,13 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.policy.ServerPolicy;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
-import com.l7tech.policy.assertion.Assertion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -26,10 +26,10 @@ import org.springframework.transaction.support.*;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Manages PublishedService instances.
@@ -192,7 +192,7 @@ public class ServiceManagerImp
         });
     }
 
-    public ServerPolicy getServerPolicy(long serviceOid) throws FindException {
+    public ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException {
         try {
             return serviceCache.getServerPolicy(serviceOid);
         } catch (InterruptedException e) {

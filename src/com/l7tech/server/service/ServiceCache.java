@@ -4,21 +4,22 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.policy.ServerPolicy;
+import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.StaticResourceInfo;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -107,11 +108,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      *
      * @param serviceOid id of the service of which we want the parsed server side root assertion
      */
-    public ServerPolicy getServerPolicy(long serviceOid) throws InterruptedException {
+    public ServerPolicyHandle getServerPolicy(long serviceOid) throws InterruptedException {
         Sync read = rwlock.readLock();
         try {
             read.acquire();
-            return serverPolicies.get(serviceOid);
+            return serverPolicies.get(serviceOid).getTarget().ref();
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -223,20 +224,20 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             // cache the service
             PublishedService oldService = services.put(key, service);
             if (oldService != service) {
-                final ServerPolicy policy = serverPolicies.get(key);
-                if (policy != null) {
+                final ServerPolicyHandle handle = serverPolicies.get(key);
+                if (handle != null) {
                     TimerTask runnable = new TimerTask() {
                         public void run() {
-                            policy.close();
+                            handle.close();
                         }
                     };
-                    Background.scheduleOneShot(runnable, 200);
+                    Background.scheduleOneShot(runnable, 0);
                 }
             }
             // cache the server policy for this service
             serverRootAssertion = policyFactory.makeServerAssertion(service.rootAssertion());
             if (serverRootAssertion != null) {
-                serverPolicies.put(key, new ServerPolicy(serverRootAssertion));
+                serverPolicies.put(key, new ServerPolicy(serverRootAssertion).ref());
             } else {
                 logger.log(Level.SEVERE, "Service '" + service.getName() + "' (#" + service.getOid() + ") will be disabled; it has an unsupported policy format.");
                 service.setDisabled(true);
@@ -437,7 +438,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                         PublishedService toUpdateOrAdd;
                         try {
                             ServiceManager serviceManager = (ServiceManager) getApplicationContext().getBean("serviceManager");
-                            toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
+                            toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid);
                         } catch (FindException e) {
                             toUpdateOrAdd = null;
                             logger.log(Level.WARNING, "service scheduled for update or addition" +
@@ -447,7 +448,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                             final Long oid = toUpdateOrAdd.getOid();
                             try {
                                 final Integer throwingVersion = servicesThatAreThrowing.get(oid);
-                                if (throwingVersion == null || throwingVersion.intValue() != toUpdateOrAdd.getVersion())
+                                if (throwingVersion == null || throwingVersion != toUpdateOrAdd.getVersion())
                                 {
                                     // Try to cache it again
                                     cacheNoLock(toUpdateOrAdd);
@@ -522,7 +523,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
     // the cache data itself
     private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
-    private final Map<Long, ServerPolicy> serverPolicies = new HashMap<Long, ServerPolicy>();
+    private final Map<Long, ServerPolicyHandle> serverPolicies = new HashMap<Long, ServerPolicyHandle>();
     private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
     private final Map<Long, Integer> servicesThatAreThrowing = new HashMap<Long, Integer>();
 

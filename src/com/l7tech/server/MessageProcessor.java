@@ -31,7 +31,7 @@ import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.policy.ServerPolicy;
+import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
@@ -132,6 +132,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         boolean attemptedRequest = false;
 
         // WSS-Processing Step
+        ServerPolicyHandle serverPolicy = null;
         try {
             boolean isSoap = false;
             boolean hasSecurity = false;
@@ -267,7 +268,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             // Get the server policy
-            ServerPolicy serverPolicy;
             try {
                 serverPolicy = serviceManager.getServerPolicy(service.getOid());
             } catch (FindException e) {
@@ -366,6 +366,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         } finally {
             context.setEndTime();
             RoutingStatus rstat = context.getRoutingStatus();
+
+            if (serverPolicy != null) serverPolicy.close();
 
             // Check auditing hints, position here since our "success" may be a back end service fault
             if(isAuditHintingEnabled()) {
