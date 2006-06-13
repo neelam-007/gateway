@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Preferences;
+
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
@@ -22,6 +24,8 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     private JTextField uddiAccountNameField;
     private JTextField uddiAccountPasswdField;
     private static final Logger logger = Logger.getLogger(UDDITargetWizardStep.class.getName());
+    public static final String UDDI_ACCOUNT_NAME = "UDDI.ACCOUNT.NAME";
+    public static final String UDDI_URL = "UDDI.URL";
 
     public UDDITargetWizardStep(WizardStepPanel next) {
         super(next);
@@ -39,8 +43,10 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
-        // todo, read the previous uddi URL used
-        // todo, populate the previous admin account used
+        String tmp = Preferences.getPreferences().getString(UDDI_ACCOUNT_NAME, "");
+        uddiAccountNameField.setText(tmp);
+        tmp = Preferences.getPreferences().getString(UDDI_URL, "");
+        uddiURLField.setText(tmp);
     }
 
     public boolean onNextButton() {
@@ -57,11 +63,13 @@ public class UDDITargetWizardStep extends WizardStepPanel {
                 return false;
             }
         }
+        Preferences.getPreferences().putProperty(UDDI_URL, tmp);
         tmp = uddiAccountNameField.getText();
         if (tmp == null || tmp.length() < 1) {
             showError("UDDI account name cannot be empty");
             return false;
         }
+        Preferences.getPreferences().putProperty(UDDI_ACCOUNT_NAME, tmp);
         tmp = uddiAccountPasswdField.getText();
         if (tmp == null || tmp.length() < 1) {
             showError("UDDI account password cannot be empty");
