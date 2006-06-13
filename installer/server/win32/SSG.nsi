@@ -2,9 +2,6 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
-!define J2RE "jre1.5.0_07"  ;Name of directory containing JRE
-;Windows mapped dirve X:
-!define J2RE_PATH "X:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "SecureSpan Gateway" ;Define your own software name here
 

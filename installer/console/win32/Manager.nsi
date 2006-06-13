@@ -1,7 +1,7 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
-!define J2RE "jre1.5.0_07"  ;Name of directory containing JRE
+!define J2RE "jre1.5.0_07"  ;Name of directory containing JRE to copy from
 ;Windows mapped to drive X:
 !define J2RE_PATH "X:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
@@ -123,6 +123,7 @@ Section "Policy Editor" SecCopyUI
   File "${MUI_PRODUCT}.bat"
   File "${BUILD_DIR}\Manager.jar"
   File /r "${J2RE_PATH}"
+  Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
   File "${BUILD_DIR}\..\src\com\l7tech\console\resources\logging.properties"
 
   SetOutPath "$INSTDIR/lib"
@@ -188,7 +189,7 @@ Section "Uninstall"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%INCLUDE_DELETE_LINES%%%
   RMDir "$INSTDIR\lib"
-  RMDir /r "$INSTDIR\${J2RE}"
+  RMDir /r "$INSTDIR\jre"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\logging.properties"
 
