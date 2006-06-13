@@ -40,6 +40,10 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         return "Policy Details";
     }
 
+    public boolean canFinish() {
+        return false;
+    }
+
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);

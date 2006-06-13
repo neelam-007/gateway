@@ -50,7 +50,9 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             public void actionPerformed(ActionEvent e) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
+                        UDDIRegisterPolicyWizardPanel.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                         publishPolicyReferenceToSystinet65Directory();
+                        UDDIRegisterPolicyWizardPanel.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     }
                 });
             }

@@ -40,6 +40,10 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         return "UDDI Target";
     }
 
+    public boolean canFinish() {
+        return false;
+    }
+
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
