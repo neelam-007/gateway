@@ -64,7 +64,8 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         try {
             backupFiles(files, BACKUP_FILE_NAME);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning("unable to create backup zip file: " + osFunctions.getSsgInstallRoot() + BACKUP_FILE_NAME + ".zip");
+            logger.warning(e.getMessage());
         }
 
 

@@ -7,7 +7,8 @@ import com.l7tech.server.config.PropertyHelper;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.*;
 import java.io.*;
 
 import org.apache.commons.lang.StringUtils;
@@ -27,8 +28,13 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_USERNAME_KEY = "hibernate.connection.username";
     private static final String HIBERNATE_PASSWORD_KEY = "hibernate.connection.password";
     private static final String HIBERNATE_PROPERTY_COMMENTS = "This hibernate configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
-    public static final String HIBERNATE_DEFAULT_CONNECTION_URL="jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8";
-    public static final String HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN="autoReconnectForPools=true(&*)";
+
+    private static final String HIBERNATE_MYSQL_URL_START = "jdbc:mysql://";
+    public static final String HIBERNATE_DEFAULT_CONNECTION_URL = HIBERNATE_MYSQL_URL_START + "localhost/ssg";
+
+    private static Map<String, String> paramDefaults;
+
+    private static final String HIBERNATE_URL_AUTORECONNECTPOOLS_PARAM="autoReconnectForPools=true";
 
     //the package names change for these in 3.6/4.0
     public static final String HIBERNATE_DIALECT_PROP_NAME = "hibernate.dialect";
@@ -43,7 +49,17 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
     private static final String DB_URL_PLACEHOLDER = "DB_URL";
 
-    private Pattern urlPattern = Pattern.compile("(^.*//).*(/).*(\\?.*$)");
+    private Pattern urlPattern = Pattern.compile("^" + HIBERNATE_MYSQL_URL_START + "(.*)(/)(.*)\\?.*$");
+
+    static {
+        paramDefaults = new TreeMap<String, String>();
+        paramDefaults.put(new String("failOverReadOnly"), new String("false"));
+        paramDefaults.put(new String("autoReconnect"), new String("false"));
+        paramDefaults.put(new String("socketTimeout"), new String("120000"));
+        paramDefaults.put(new String("useNewIO"), new String("true"));
+        paramDefaults.put(new String("characterEncoding"), new String("UTF8"));
+        paramDefaults.put(new String("characterSetResults"), new String("UTF8"));
+    }
 
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {
         super(bean);
@@ -67,6 +83,8 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             try {
                 backupFiles(files, BACKUP_FILE_NAME);
             } catch (IOException e) {
+                logger.warning("unable to create backup zip file: " + osFunctions.getSsgInstallRoot() + BACKUP_FILE_NAME + ".zip");
+                logger.warning(e.getMessage());
             }
         }
 
@@ -97,12 +115,34 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
                     true);
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
-            if (StringUtils.isEmpty(origUrl) || origUrl.equals(DB_URL_PLACEHOLDER)) {
-                origUrl = HIBERNATE_DEFAULT_CONNECTION_URL;
-            }
-            origUrl = origUrl.replaceAll(HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN, "");
 
-            String newUrlString = origUrl.replaceFirst(urlPattern.pattern(), "$1" + dbUrl + "$2" + dbName + "$3");
+            boolean isDefault = false;
+            Matcher matcher = urlPattern.matcher(origUrl);
+
+            if (StringUtils.isEmpty(origUrl) || origUrl.equals(DB_URL_PLACEHOLDER)) {
+                logger.info("Found an empty Database URL, replacing with the default");
+                isDefault = true;
+            } else if (!origUrl.startsWith(HIBERNATE_MYSQL_URL_START) || !matcher.matches()) {
+                logger.info("Found an invalid database URL, replacing with the default");
+                isDefault = true;
+            }
+
+            if (isDefault)
+                origUrl = HIBERNATE_DEFAULT_CONNECTION_URL;
+
+
+            String[] parts = origUrl.split("\\?");
+
+            String paramPart = null;
+            if (parts != null && parts.length > 1)
+                paramPart = parts[1];
+
+            paramPart = replaceParams(paramPart);
+
+            origUrl = origUrl.replaceAll(HIBERNATE_URL_AUTORECONNECTPOOLS_PARAM, "");
+
+            String newUrlString = HIBERNATE_MYSQL_URL_START + dbUrl + "/" + dbName + "?" + paramPart;
+
             dbProps.setProperty(HIBERNATE_URL_KEY, newUrlString);
             dbProps.setProperty(HIBERNATE_USERNAME_KEY, dbUsername);
             dbProps.setProperty(HIBERNATE_PASSWORD_KEY, new String(dbPassword));
@@ -132,5 +172,43 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
                 }
             }
         }
+    }
+
+    private String replaceParams(String paramPart) {
+
+        //form the baseline parameters that should always be present;
+        Map<String, String> baseline = new LinkedHashMap<String, String>();
+        for (String s : paramDefaults.keySet()) {
+            baseline.put(new String(s), new String(paramDefaults.get(s)));
+        }
+
+        //now check if the existing params have anything that should be updated and update the baseline to reflect
+        // the existing config
+        String[] existingParams = null;
+        if (StringUtils.isNotEmpty(paramPart)) {
+            existingParams = paramPart.split("&");
+            if (existingParams != null && existingParams.length != 0) {
+                for (String ep : existingParams) {
+                    String[] pair = ep.split("=");
+                    if (pair != null && pair.length == 2) {
+                        String key = pair[0];
+                        String value = pair[1];
+                        baseline.put(key, value);
+                    }
+                }
+            }
+        }
+
+        boolean isFirst = true;
+        StringBuilder sb = new StringBuilder();
+        for (String key : baseline.keySet()) {
+            if (isFirst) isFirst = false;
+            else sb.append("&");
+
+            sb.append(key).append("=").append(baseline.get(key));
+        }
+
+        return sb.toString();
+
     }
 }

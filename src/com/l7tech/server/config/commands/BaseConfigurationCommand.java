@@ -46,39 +46,30 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
         if (files != null && files.length > 0) {
             logger.info("creating ZIP file: " + fullBackupPath);
 
-            try {
-                ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fullBackupPath));
 
-                File origFile;
-                FileInputStream fis;
-                for (int i = 0; i < files.length; i++) {
-                    origFile = files[i];
-                    if (origFile != null && origFile.exists()) {
-                        zos.putNextEntry(new ZipEntry(origFile.getAbsolutePath()));
+            ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fullBackupPath));
 
-                        fis = new FileInputStream(origFile);
+            File origFile;
+            FileInputStream fis;
+            for (int i = 0; i < files.length; i++) {
+                origFile = files[i];
+                if (origFile != null && origFile.exists()) {
+                    zos.putNextEntry(new ZipEntry(origFile.getAbsolutePath()));
 
-                        byte[] buf = new byte[10240];
-                        int len = 0;
-                        while ((len = fis.read(buf)) > 0) {
-                            zos.write(buf, 0, len);
-                        }
-                        zos.closeEntry();
-                        fis.close();
+                    fis = new FileInputStream(origFile);
+
+                    byte[] buf = new byte[10240];
+                    int len = 0;
+                    while ((len = fis.read(buf)) > 0) {
+                        zos.write(buf, 0, len);
                     }
+                    zos.closeEntry();
+                    fis.close();
                 }
-                zos.finish();
-                zos.close();
-                zos = null;
-            } catch (FileNotFoundException e) {
-                logger.warning("unable to create backup zip file: " + fullBackupPath);
-                logger.warning(e.getMessage());
-                throw e;
-            } catch (IOException e) {
-                logger.warning("error while writing the backup file: " + fullBackupPath);
-                logger.warning(e.getMessage());
-                throw e;
             }
+            zos.finish();
+            zos.close();
+            zos = null;
         }
     }
 
