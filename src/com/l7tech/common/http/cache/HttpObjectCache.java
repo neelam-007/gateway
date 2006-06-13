@@ -18,7 +18,7 @@ import java.util.logging.Level;
  * threads choose whether they will wait for a download to finish or be given the previous cached object,
  * if any.
  */
-public class HttpObjectCache {
+public class HttpObjectCache<UT extends UserObject> {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
 
     /**
@@ -82,18 +82,18 @@ public class HttpObjectCache {
 
 
     /** Represents an entry in the object cache.  Might be a user object with or without a recent exception. */
-    private static class CacheEntry {
+    private static class CacheEntry<UT extends UserObject> {
         private boolean downloading;
         private long lastSuccessfulPollStarted; // time of last successful poll; use only if lastModified not provided
         private String lastModified; // last Modified: header from server; use in preference to lastPollStarted
-        private Object userObject;
+        private UT userObject;
         private long userObjectCreated; // actually the time just before the HTTP request began
         private IOException exception;
         private long exceptionCreated;
     }
 
 
-    public interface UserObjectFactory {
+    public interface UserObjectFactory<UT extends UserObject> {
         /**
          * Create a user object from the specified HTTP response.  The response may have any status code, and may or
          * may not have a non-empty InputStream.
@@ -105,21 +105,21 @@ public class HttpObjectCache {
          * @throws IOException if this response was not accepted for caching, in which case this request will
          *                     be treated as a failure.
          */
-        Object createUserObject(String url, GenericHttpResponse response) throws IOException;
+        UT createUserObject(String url, GenericHttpResponse response) throws IOException;
     }
 
 
     /**
      * Holds the return value of a call to {@link HttpObjectCache#fetchCached}.
      */
-    public static class FetchResult {
+    public static class FetchResult<UT extends UserObject> {
         private final int result;
-        private final Object userObject;
+        private final UT userObject;
         private final long userObjectCreated;
         private final IOException exception;
         private final long exceptionCreated;
 
-        public FetchResult(int result, CacheEntry entry) {
+        public FetchResult(int result, CacheEntry<UT> entry) {
             this.result = result;
             this.userObject = entry.userObject;
             this.userObjectCreated = entry.userObjectCreated;
@@ -150,7 +150,7 @@ public class HttpObjectCache {
          *
          * @return the possibly-cached user object last returned by UserObjectFactory, or null if none is available.
          */
-        public Object getUserObject() {
+        public UT getUserObject() {
             return userObject;
         }
 
@@ -219,21 +219,21 @@ public class HttpObjectCache {
      *         the IOException was encountered downloading the latest version, but a previously cached version
      *         is available for use.
      */
-    public FetchResult fetchCached(GenericHttpClient httpClient,
+    public FetchResult<UT> fetchCached(GenericHttpClient httpClient,
                                    GenericHttpRequestParams requestParams,
                                    WaitMode waitMode,
-                                   UserObjectFactory userObjectFactory)
+                                   UserObjectFactory<UT> userObjectFactory)
     {
         final String urlStr = requestParams.getTargetUrl().toExternalForm();
 
-        CacheEntry entry;
+        CacheEntry<UT> entry;
         boolean shouldDownload = false;
         synchronized (cache) {
             // See if we are the first to get here
-            entry = (CacheEntry)cache.get(urlStr);
+            entry = (CacheEntry<UT>)cache.get(urlStr);
             if (entry == null) {
                 // We are the first thread currently interested in this URL, so we'll be doing the download
-                entry = new CacheEntry();
+                entry = new CacheEntry<UT>();
                 entry.downloading = true;
                 cache.put(urlStr, entry);
                 shouldDownload = true;
@@ -266,19 +266,19 @@ public class HttpObjectCache {
                         }
                     }
                     // Return the updated info
-                    return new FetchResult(null == entry.exception ? RESULT_DOWNLOAD_SUCCESS : RESULT_DOWNLOAD_FAILED,
+                    return new FetchResult<UT>(null == entry.exception ? RESULT_DOWNLOAD_SUCCESS : RESULT_DOWNLOAD_FAILED,
                                            entry);
                 } else {
                     // Return whatever we've got
                     if (logger.isLoggable(Level.FINER)) logger.finer("Returning cached entry for URL '" + urlStr + "' without waiting for other thread");
-                    return new FetchResult(RESULT_DOWNLOADING_NOW, entry);
+                    return new FetchResult<UT>(RESULT_DOWNLOADING_NOW, entry);
                 }
             } else {
                 // Nobody else is currently downloading a fresh copy.  See if we need to do so ourselves.
                 if (!needToPoll(entry)) {
                     // Cached info is fine for now -- just return it
                     if (logger.isLoggable(Level.FINE)) logger.fine("Returning cached entry for URL '" + urlStr + "'");
-                    return new FetchResult(RESULT_USED_CACHED, entry);
+                    return new FetchResult<UT>(RESULT_USED_CACHED, entry);
                 }
                 entry.downloading = true;
                 shouldDownload = true;
@@ -332,11 +332,11 @@ public class HttpObjectCache {
      * @param userObjectFactory  factory for producing the user object from the HTTP response.
      * @return the fetch result from doing the poll.  Never null.
      */
-    private FetchResult doPoll(CacheEntry entry,
+    private FetchResult<UT> doPoll(CacheEntry<UT> entry,
                                GenericHttpClient httpClient,
                                GenericHttpRequestParams params,
                                String urlStr,
-                               UserObjectFactory userObjectFactory)
+                               UserObjectFactory<UT> userObjectFactory)
     {
         // We are the only thread permitted to write to the cache entry, but we'll still need to synchronize writes
         // so readers will be guaranteed to pick them up.
@@ -369,7 +369,7 @@ public class HttpObjectCache {
             // Save server-provided last-modified date
             HttpHeaders headers = resp.getHeaders();
             String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
-            Object userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), resp);
+            UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), resp);
             if (userObject != null) {
                 if (logger.isLoggable(Level.FINER)) logger.finer("Downloaded new object from URL '" + urlStr + "'");
                 return doSuccessfulDownload(entry, requestStart, modified, userObject);
@@ -392,14 +392,14 @@ public class HttpObjectCache {
             entry.exceptionCreated = System.currentTimeMillis();
             entry.downloading = false;
             entry.notifyAll();
-            return new FetchResult(RESULT_DOWNLOAD_FAILED, entry);
+            return new FetchResult<UT>(RESULT_DOWNLOAD_FAILED, entry);
         }
     }
 
-    private static FetchResult doSuccessfulDownload(CacheEntry entry,
+    private static <UT extends UserObject> FetchResult<UT> doSuccessfulDownload(CacheEntry<UT> entry,
                                                     long requestStart,
                                                     String modified,
-                                                    Object userObject)
+                                                    UT userObject)
     {
         // Record the success, wake up other threads, and return the result.
         synchronized (entry) {
@@ -411,7 +411,7 @@ public class HttpObjectCache {
             entry.userObjectCreated = requestStart;
             entry.downloading = false;
             entry.notifyAll();
-            return new FetchResult(RESULT_DOWNLOAD_SUCCESS, entry);
+            return new FetchResult<UT>(RESULT_DOWNLOAD_SUCCESS, entry);
         }
     }
 }

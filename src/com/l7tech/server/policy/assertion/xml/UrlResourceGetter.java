@@ -11,6 +11,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.cache.HttpObjectCache;
+import com.l7tech.common.http.cache.UserObject;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 
@@ -25,11 +26,11 @@ import java.util.regex.Pattern;
 /**
  * Superclass for ResourceGetters that fetch the resource from an external URL.
  */
-public abstract class UrlResourceGetter extends ResourceGetter {
+public abstract class UrlResourceGetter<UT extends UserObject> extends ResourceGetter<UT> {
     private static final Logger logger = Logger.getLogger(UrlResourceGetter.class.getName());
 
     // --- Member fields
-    private final ResourceObjectFactory resourceObjectFactory;
+    private final ResourceObjectFactory<UT> resourceObjectFactory;
     private final Auditor auditor; // may be null
     private final Pattern[] urlWhitelist; // may be null
 
@@ -42,8 +43,8 @@ public abstract class UrlResourceGetter extends ResourceGetter {
      *                 a network problem fetching the latest version.  This auditor won't be used for any other
      *                 purpose.
      */
-    protected UrlResourceGetter(ResourceObjectFactory resourceObjectFactory,
-                                HttpObjectCache cache,
+    protected UrlResourceGetter(ResourceObjectFactory<UT> resourceObjectFactory,
+                                HttpObjectCache<UT> cache,
                                 Pattern[] urlWhitelist,
                                 Auditor auditor)
     {
@@ -70,7 +71,7 @@ public abstract class UrlResourceGetter extends ResourceGetter {
      * @throws com.l7tech.server.policy.assertion.xml.ResourceGetter.ResourceIOException  if there is an IOException while fetching the external resource
      * @throws NullPointerException if href or spring is null
      */
-    protected Object fetchObject(HttpObjectCache cache, final String href)
+    protected UT fetchObject(HttpObjectCache<UT> cache, final String href)
             throws ParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
         if (href == null) throw new NullPointerException("no href provided");
         final URL url;
@@ -81,12 +82,12 @@ public abstract class UrlResourceGetter extends ResourceGetter {
         }
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
 
-        final HttpObjectCache.UserObjectFactory userObjectFactory = new HttpObjectCache.UserObjectFactory() {
-            public Object createUserObject(String surl, GenericHttpResponse response) throws IOException {
+        final HttpObjectCache.UserObjectFactory<UT> userObjectFactory = new HttpObjectCache.UserObjectFactory<UT>() {
+            public UT createUserObject(String surl, GenericHttpResponse response) throws IOException {
                 String thing = response.getAsString();
                 logger.fine("Downloaded resource from " + surl);
                 try {
-                    Object obj = resourceObjectFactory.createResourceObject(href, thing);
+                    UT obj = resourceObjectFactory.createResourceObject(href, thing);
                     if (obj == null)
                         throw new IOException("Unable to create resource from HTTP response: ResourceObjectFactory returned null");
                     return obj;
@@ -98,12 +99,12 @@ public abstract class UrlResourceGetter extends ResourceGetter {
         };
 
         // Get cached, possibly checking if-modified-since against server, possibly downloading a new stylesheet
-        HttpObjectCache.FetchResult result = cache.fetchCached(getHttpClient(),
+        HttpObjectCache.FetchResult<UT> result = cache.fetchCached(getHttpClient(),
                                                                params,
                                                                WAIT_INITIAL,
                                                                userObjectFactory);
 
-        Object userObject = result.getUserObject();
+        UT userObject = result.getUserObject();
         IOException err = result.getException();
 
         if (userObject == null) {

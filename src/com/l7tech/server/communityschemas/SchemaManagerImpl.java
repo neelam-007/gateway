@@ -11,7 +11,6 @@ import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.Background;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
@@ -49,7 +48,9 @@ public class SchemaManagerImpl implements SchemaManager {
 
     private final int maxCacheAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
     private final int maxCacheEntries = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
-    private final int hardwareRecompileLatency = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 20000);
+    private final int hardwareRecompileLatency = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
+    private final int hardwareRecompileMinAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
+    private final int hardwareRecompileMaxAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
 
     private final ReadWriteLock cacheLock = new WriterPreferenceReadWriteLock();
     private final Map<String, WeakReference<CompiledSchema>> compiledSchemaCache = new WeakHashMap<String, WeakReference<CompiledSchema>>();
@@ -58,13 +59,30 @@ public class SchemaManagerImpl implements SchemaManager {
     private final HttpClientFactory httpClientFactory;
 
     /** Shared cache for all schema resources, system-wide. */
-    private final HttpObjectCache httpObjectCache = new HttpObjectCache(maxCacheEntries, maxCacheAge);
+    private final HttpObjectCache<SchemaHandle> httpObjectCache = new HttpObjectCache<SchemaHandle>(maxCacheEntries, maxCacheAge);
     private final TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
 
     private SchemaEntryManager schemaEntryManager;
+    private long lastHardwareRecompileTime = 0;
+    private long lastSchemaEligibilityTime = 0;
+    private long firstSchemaEligibilityTime = 0;
+
+    private final Timer maybeRebuildHardwareCacheTimer;
 
     public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
         this.httpClientFactory = httpClientFactory;
+
+        if (tarariSchemaHandler != null) {
+            final TimerTask task = new TimerTask() {
+                public void run() {
+                    maybeRebuildHardwareCache();
+                }
+            };
+            maybeRebuildHardwareCacheTimer = new Timer();
+            maybeRebuildHardwareCacheTimer.schedule(task, 1000, hardwareRecompileLatency);
+        } else {
+            maybeRebuildHardwareCacheTimer = null;
+        }
     }
 
     public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
@@ -79,7 +97,7 @@ public class SchemaManagerImpl implements SchemaManager {
         return doCompile(schemadoc, systemId, true, urlWhitelist);
     }
 
-    public HttpObjectCache getHttpObjectCache() {
+    public HttpObjectCache<SchemaHandle> getHttpObjectCache() {
         return httpObjectCache;
     }
 
@@ -315,19 +333,19 @@ public class SchemaManagerImpl implements SchemaManager {
      * Check if this schema can be hardware-enabled
      * Caller must hold write lock.
      */
-    private void maybeHardwareEnable(CompiledSchema schema, boolean notifyParents) {
+    private boolean maybeHardwareEnable(CompiledSchema schema, boolean notifyParents) {
         // Short-circuit if we know we have no work to do
-        if (tarariSchemaHandler == null) return;
-        if (!schema.isUniqueTns()) return;
-        if (schema.isRejectedByTarari()) return;
-        if (schema.isHardwareEligible()) return;
+        if (tarariSchemaHandler == null) return false;
+        if (!schema.isUniqueTns()) return false;
+        if (schema.isRejectedByTarari()) return false;
+        if (schema.isHardwareEligible()) return false;
 
         // Check that all children are loaded
         Set<SchemaHandle> imports = schema.getImports();
         for (SchemaHandle directImport : imports) {
             if (!directImport.getCompiledSchema().isHardwareEligible()) {
                 logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports is not hardware eligible", schema);
-                return;
+                return false;
             }
         }
 
@@ -342,24 +360,93 @@ public class SchemaManagerImpl implements SchemaManager {
             for (CompiledSchema export : schema.getExports())
                 maybeHardwareEnable(export, notifyParents);
         }
+        return true;
     }
 
+    /**
+     * Schedule a reload of the hardware schema cache to include the specified schema, which the caller asserts
+     * has just become hardware-eligible.
+     * <p/>
+     * Caller must hold the write lock.
+     *
+     * @param schema  the schema that is now waiting to load into hardware
+     */
     private void scheduleLoadHardware(CompiledSchema schema) {
         schemasWaitingToLoad.put(schema, null);
-        TimerTask task = new TimerTask() {
-            public void run() {
-                rebuildHardwareCache();
-            }
-        };
-        Background.scheduleOneShot(task, hardwareRecompileLatency);
+
+        final long now = System.currentTimeMillis();
+        if (firstSchemaEligibilityTime == 0)
+            firstSchemaEligibilityTime = now;
+        lastSchemaEligibilityTime = now;
+        scheduleOneShotRebuildCheck(hardwareRecompileMinAge);
     }
 
-    private void rebuildHardwareCache() {
+    /** Schedule a one-shot call to maybeRebuildHardwareCache(), delay ms from now. */
+    private void scheduleOneShotRebuildCheck(long delay) {
+        if (delay < 1) throw new IllegalArgumentException("Rebuild check delay must be positive");
+        if (maybeRebuildHardwareCacheTimer != null) {
+            TimerTask task = new TimerTask() {
+                public void run() {
+                    maybeRebuildHardwareCache();
+                }
+            };
+            maybeRebuildHardwareCacheTimer.schedule(task, delay);
+        }
+    }
+
+    /**
+     * Check if hardware cache should be rebuilt right now.
+     * Caller must hold either the read lock or write lock.
+     * If schemasWaitingToLoad is non-empty, this method may still return false (postponing the rebuild), but
+     *
+     * @return true if the hardware cache should be rebuilt immediately.
+     *         false if the hardware cache does not need to be rebuilt at this time.  If there are schemas
+     *         waiting to be rebuilt, a new schema check is scheduled occur in the near future.
+     */
+    private boolean shouldRebuildNow() {
+        if (schemasWaitingToLoad.size() < 1)
+            return false;
+
+        final long beforeTime = System.currentTimeMillis();
+
+        final long msSinceLastRebuild = beforeTime - lastHardwareRecompileTime;
+        if (msSinceLastRebuild < hardwareRecompileLatency) {
+            final long delay = hardwareRecompileLatency - msSinceLastRebuild;
+            logger.log(Level.FINE,
+                       "Too soon for another hardware schema cache rebuild -- will try again in {0} ms", delay);
+            scheduleOneShotRebuildCheck(delay);
+            return false;
+        }
+
+        boolean forceReload = false;
+        if (firstSchemaEligibilityTime > 0) {
+            final long ageOfOldestSchema = beforeTime - firstSchemaEligibilityTime;
+            if (ageOfOldestSchema > hardwareRecompileMaxAge) {
+                logger.log(Level.FINER,  "Hardware eligible schema has been awaiting reload for {0} ms -- forcing hardware schema cache reload now");
+                forceReload = true;
+            }
+        }
+
+        final long ageOfNewestSchema = beforeTime - lastSchemaEligibilityTime;
+        if (ageOfNewestSchema < hardwareRecompileMinAge && !forceReload) {
+            final long delay = hardwareRecompileMinAge - ageOfNewestSchema;
+            logger.log(Level.FINER, "New schema just became hardware eligible -- postponing hardware schema cache rebuild for {0} ms", delay);
+            scheduleOneShotRebuildCheck(delay);
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Called periodically to see if it is time to rebuild the hardware schema cache.
+     */
+    private void maybeRebuildHardwareCache() {
         // Do an initial fast check to see if there is still anything to do, before getting the write lock
         try {
             cacheLock.readLock().acquire();
-            if (schemasWaitingToLoad.size() < 1)
-                return;
+            if (!shouldRebuildNow()) return;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warning("Interrupted waiting for schema cache read lock");
@@ -368,44 +455,62 @@ public class SchemaManagerImpl implements SchemaManager {
             cacheLock.readLock().release();
         }
 
+        // Grab the write lock and do one final check, then do the rebuild
         try {
             cacheLock.writeLock().acquire();
-            if (schemasWaitingToLoad.size() < 1)
-                return;
+            if (!shouldRebuildNow()) return;
 
-            // Produce list of schemas sorted so that includes appear before the schemas that include them
-            LinkedHashMap<String, CompiledSchema> forHardware = new LinkedHashMap<String, CompiledSchema>();
-            Set<CompiledSchema> alreadyAdded = new HashSet<CompiledSchema>();
-
-            for (WeakReference<CompiledSchema> ref : compiledSchemaCache.values()) {
-                CompiledSchema schema = ref.get();
-                if (schema == null) continue;
-                schema.setLoaded(false);
-                putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, forHardware, schema);
-            }
-
-            if (logger.isLoggable(Level.INFO)) logger.info("Rebuilding hardware schema cache: loading " + forHardware.size() + " eligible schemas (" + schemasWaitingToLoad.size() + " new)");
-
-            Map<? extends TarariSchemaSource,Exception> failedSchemas =
-                    tarariSchemaHandler.setHardwareSchemas(forHardware);
-
-            for (Map.Entry<? extends TarariSchemaSource,Exception> entry : failedSchemas.entrySet()) {
-                CompiledSchema schema = (CompiledSchema)entry.getKey();
-                Exception error = entry.getValue();
-                if (logger.isLoggable(Level.WARNING))
-                    logger.log(Level.WARNING, "Schema for target namespace \"" + schema.getTargetNamespace() + "\" cannot be hardware accelerated: " + ExceptionUtils.getMessage(error));
-                hardwareDisable(schema);
-            }
-
-            schemasWaitingToLoad.clear();
+            // Do the actual
+            doRebuild();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warning("Interrupted waiting for schema cache write lock");
-            return;
+            return;  // don't throw back up to Timer thread
         } finally {
             cacheLock.writeLock().release();
         }
+    }
+
+    /**
+     * Do the actual, immediate rebuild of the hardware schema cache.
+     * Caller must hold the write lock.
+     */
+    private void doRebuild() {
+        final long beforeTime = logger.isLoggable(Level.FINE) ? System.currentTimeMillis() : 0;
+
+        // Produce list of schemas sorted so that includes appear before the schemas that include them
+        LinkedHashMap<String, CompiledSchema> forHardware = new LinkedHashMap<String, CompiledSchema>();
+        Set<CompiledSchema> alreadyAdded = new HashSet<CompiledSchema>();
+
+        for (WeakReference<CompiledSchema> ref : compiledSchemaCache.values()) {
+            CompiledSchema schema = ref.get();
+            if (schema == null) continue;
+            schema.setLoaded(false);
+            putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, forHardware, schema);
+        }
+
+        if (logger.isLoggable(Level.INFO)) logger.info("Rebuilding hardware schema cache: loading " + forHardware.size() + " eligible schemas (" + schemasWaitingToLoad.size() + " new)");
+
+        //noinspection unchecked
+        Map<? extends TarariSchemaSource,Exception> failedSchemas =
+                tarariSchemaHandler.setHardwareSchemas(forHardware);
+
+        lastHardwareRecompileTime = System.currentTimeMillis(); // get time again after
+
+        if (beforeTime > 0)
+            logger.log(Level.FINE, "Rebuild of hardware schema cache took {0} ms", lastHardwareRecompileTime - beforeTime);
+
+        for (Map.Entry<? extends TarariSchemaSource,Exception> entry : failedSchemas.entrySet()) {
+            CompiledSchema schema = (CompiledSchema)entry.getKey();
+            Exception error = entry.getValue();
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "Schema for target namespace \"" + schema.getTargetNamespace() + "\" cannot be hardware accelerated: " + ExceptionUtils.getMessage(error));
+            hardwareDisable(schema);
+        }
+
+        schemasWaitingToLoad.clear();
+        firstSchemaEligibilityTime = 0;
     }
 
     /** Recursively populate linkedhashmap of hardware-eligible schemas ordered so that includes come before their includers. */

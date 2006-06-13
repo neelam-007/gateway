@@ -25,5 +25,5 @@ public interface SchemaManager {
             throws InvalidDocumentFormatException;
 
     /** @return the HttpObjectCache that is being used to fetch schemas */
-    HttpObjectCache getHttpObjectCache();
+    HttpObjectCache<SchemaHandle> getHttpObjectCache();
 }

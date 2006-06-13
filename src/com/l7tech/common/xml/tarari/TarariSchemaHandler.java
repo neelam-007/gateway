@@ -9,7 +9,8 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 
 /**
- * Tarari-specific functionality for schema validation
+ * Tarari-specific functionality for schema validation.
+ * Not generified because the Bridge sees this class via TarariLoader.
  */
 public interface TarariSchemaHandler {
     /**

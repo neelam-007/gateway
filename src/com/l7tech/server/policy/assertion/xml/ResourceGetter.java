@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion.xml;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.cache.HttpObjectCache;
+import com.l7tech.common.http.cache.UserObject;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
@@ -34,9 +35,8 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * An object that is created with a ResourceInfo and can thereafter fetch a resource given a message.
- * XXX If the same URL is used to point to multiple user object types the cache will thrash as they overwrite one another, Bug #2535
  */
-abstract class ResourceGetter {
+abstract class ResourceGetter<UT extends UserObject> {
     private static final Pattern MATCH_ALL = Pattern.compile(".");
 
     private static final GenericHttpClient httpClient;
@@ -48,9 +48,9 @@ abstract class ResourceGetter {
         httpClient = new CommonsHttpClient(connectionManager);
     }
 
-    protected final HttpObjectCache httpObjectCache;
+    protected final HttpObjectCache<UT> httpObjectCache;
 
-    protected ResourceGetter(HttpObjectCache httpObjectCache) {
+    protected ResourceGetter(HttpObjectCache<UT> httpObjectCache) {
         this.httpObjectCache = httpObjectCache;
         if (httpObjectCache == null) throw new NullPointerException();
     }
@@ -155,7 +155,7 @@ abstract class ResourceGetter {
      * @throws ResourceParseException if an external resource is fetched but is found to be invalid
      * @throws GeneralSecurityException  if an SSL context is needed but cannot be created
      */
-    public abstract Object getResource(ElementCursor message, Map vars)
+    public abstract UT getResource(ElementCursor message, Map vars)
             throws IOException, InvalidMessageException, UrlNotFoundException, MalformedResourceUrlException,
                    UrlNotPermittedException, ResourceIOException, ResourceParseException, GeneralSecurityException;
 
@@ -166,7 +166,7 @@ abstract class ResourceGetter {
      * Interface that converts raw resource bytes into an object for caching and reuse.  Implemented by
      * the consumer of the ResourceGetter services, and provided to the createResourceGetter() method.
      */
-    interface ResourceObjectFactory {
+    interface ResourceObjectFactory<UT extends UserObject> {
         /**
          * Convert the specified bytes into a resource object that can be cached and reused, including use by
          * multiple threads simulataneously.  The Object will be returned back through getResource(), and
@@ -177,7 +177,7 @@ abstract class ResourceGetter {
          *         with no message.
          * @throws ParseException if the specified resource bytes could not be converted into a resource object.
          */
-        Object createResourceObject(String url, String resourceContent) throws ParseException;
+        UT createResourceObject(String url, String resourceContent) throws ParseException;
     }
 
 
@@ -219,8 +219,8 @@ abstract class ResourceGetter {
      * @throws ServerPolicyException if a ResourceGetter could not be created from the provided configuration
      * @throws IllegalArgumentException if the resource info type if MessageUrlResourceInfo but urlFinder is null
      */
-    public static <AC extends Assertion & UsesResourceInfo>
-    ResourceGetter createResourceGetter(AC assertion, ResourceObjectFactory rof, UrlFinder urlFinder, HttpObjectCache httpObjectCache, Auditor auditor)
+    public static <AC extends Assertion & UsesResourceInfo, UT extends UserObject>
+    ResourceGetter<UT> createResourceGetter(AC assertion, ResourceObjectFactory<UT> rof, UrlFinder urlFinder, HttpObjectCache<UT> httpObjectCache, Auditor auditor)
             throws ServerPolicyException
     {
         AssertionResourceInfo ri = assertion.getResourceInfo();
@@ -231,11 +231,11 @@ abstract class ResourceGetter {
         try {
             if (ri instanceof MessageUrlResourceInfo) {
                 if (urlFinder == null) throw new IllegalArgumentException("MessageUrlResourceInfo requested but no UrlFinder provided");
-                return new MessageUrlResourceGetter((MessageUrlResourceInfo)ri, rof, urlFinder, httpObjectCache, auditor);
+                return new MessageUrlResourceGetter<UT>((MessageUrlResourceInfo)ri, rof, urlFinder, httpObjectCache, auditor);
             } else if (ri instanceof SingleUrlResourceInfo) {
-                return new SingleUrlResourceGetter(assertion, (SingleUrlResourceInfo)ri, rof, httpObjectCache, auditor);
+                return new SingleUrlResourceGetter<UT>(assertion, (SingleUrlResourceInfo)ri, rof, httpObjectCache, auditor);
             } else if (ri instanceof StaticResourceInfo) {
-                return new StaticResourceGetter(assertion, (StaticResourceInfo)ri, rof, httpObjectCache);
+                return new StaticResourceGetter<UT>(assertion, (StaticResourceInfo)ri, rof, httpObjectCache);
             } else
                 throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
         } catch (PatternSyntaxException e) {
@@ -250,16 +250,16 @@ abstract class ResourceGetter {
      * A ResourceGetter that finds URLs inside the message, then fetches the appropriate resource (with caching),
      * corresponding to {@link MessageUrlResourceInfo}.
      */
-    private static class MessageUrlResourceGetter extends UrlResourceGetter {
+    private static class MessageUrlResourceGetter<UT extends UserObject> extends UrlResourceGetter<UT> {
         private final UrlFinder urlFinder;
         private final boolean allowMessagesWithoutUrl;
 
         // --- Instance fields ---
 
         private MessageUrlResourceGetter(MessageUrlResourceInfo ri,
-                                         ResourceObjectFactory rof,
+                                         ResourceObjectFactory<UT> rof,
                                          UrlFinder urlFinder,
-                                         HttpObjectCache httpObjectCache,
+                                         HttpObjectCache<UT> httpObjectCache,
                                          Auditor auditor)
                 throws PatternSyntaxException
         {
@@ -274,7 +274,7 @@ abstract class ResourceGetter {
             // Nothing we can do except wait for the finalizer -- userObject(s) may be in use
         }
 
-        public Object getResource(ElementCursor message, Map vars)
+        public UT getResource(ElementCursor message, Map vars)
                 throws IOException, MalformedResourceUrlException, UrlNotPermittedException,
                 ResourceIOException, InvalidMessageException, ResourceParseException, GeneralSecurityException, UrlNotFoundException
         {
@@ -305,13 +305,13 @@ abstract class ResourceGetter {
      * A ResourceGetter that has a single statically-configured URL that it watches to download the latest value of
      * the resource, corresponding to {@link SingleUrlResourceInfo}.
      */
-    private static class SingleUrlResourceGetter extends UrlResourceGetter {
+    private static class SingleUrlResourceGetter<UT extends UserObject> extends UrlResourceGetter<UT> {
         private final String url;
 
         private SingleUrlResourceGetter(Assertion assertion,
                                         SingleUrlResourceInfo ri,
-                                        ResourceObjectFactory rof,
-                                        HttpObjectCache httpObjectCache,
+                                        ResourceObjectFactory<UT> rof,
+                                        HttpObjectCache<UT> httpObjectCache,
                                         Auditor auditor)
                 throws ServerPolicyException
         {
@@ -332,7 +332,7 @@ abstract class ResourceGetter {
             // Nothing we can do except wait for the finalizer -- userObject(s) may be in use
         }
 
-        public Object getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
+        public UT getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {
             String actualUrl = vars == null ? url : ExpandVariables.process(url, vars);
             try {
                 return fetchObject(httpObjectCache, actualUrl);
@@ -347,20 +347,20 @@ abstract class ResourceGetter {
      * A ResourceGetter that owns a single statically-configured value for the resource, with no network
      * communication needed, and corresponding to {@link StaticResourceInfo}.
      */
-    private static class StaticResourceGetter extends ResourceGetter {
-        private final Object userObject;
+    private static class StaticResourceGetter<UT extends UserObject> extends ResourceGetter<UT> {
+        private final UT userObject;
 
         private StaticResourceGetter(Assertion assertion,
                                      StaticResourceInfo ri,
-                                     ResourceObjectFactory rof,
-                                     HttpObjectCache httpObjectCache)
+                                     ResourceObjectFactory<UT> rof,
+                                     HttpObjectCache<UT> httpObjectCache)
                 throws ServerPolicyException
         {
             super(httpObjectCache);
             String doc = ri.getDocument();
             if (doc == null) throw new ServerPolicyException(assertion, "Empty static document");
             try {
-                Object userObject = rof.createResourceObject("", doc);
+                UT userObject = rof.createResourceObject("", doc);
                 if (userObject == null)
                     throw new ServerPolicyException(assertion, "Unable to create static user object: ResourceObjectFactory returned null");
                 this.userObject = userObject;
@@ -377,7 +377,7 @@ abstract class ResourceGetter {
             return new Pattern[] { MATCH_ALL };
         }
 
-        public Object getResource(ElementCursor message, Map vars) throws IOException {
+        public UT getResource(ElementCursor message, Map vars) throws IOException {
             return userObject;
         }
     }

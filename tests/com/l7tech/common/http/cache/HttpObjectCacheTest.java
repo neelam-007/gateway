@@ -38,7 +38,7 @@ public class HttpObjectCacheTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static class UserObj {
+    private static class UserObj implements UserObject {
         final String blat;
 
         public UserObj(String blat) {
@@ -61,7 +61,7 @@ public class HttpObjectCacheTest extends TestCase {
 
     public void testSingleThreaded() throws Exception {
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
-        HttpObjectCache httpObjectCache = new HttpObjectCache(500, TEST_POLL_AGE);
+        HttpObjectCache<UserObj> httpObjectCache = new HttpObjectCache<UserObj>(500, TEST_POLL_AGE);
 
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
@@ -77,8 +77,8 @@ public class HttpObjectCacheTest extends TestCase {
         hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
                                                                                      "blarglebliff")}));
 
-        HttpObjectCache.UserObjectFactory factory = new HttpObjectCache.UserObjectFactory() {
-            public Object createUserObject(String url, GenericHttpResponse response) {
+        HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            public UserObj createUserObject(String url, GenericHttpResponse response) {
                 return new UserObj(userObjStr);
             }
         };
@@ -135,11 +135,11 @@ public class HttpObjectCacheTest extends TestCase {
         private static int nextNum = 1;
         private final int num = nextNum++;
         private int nextReq = 1;
-        private final HttpObjectCache httpObjectCache;
+        private final HttpObjectCache<UserObj> httpObjectCache;
         private GenericHttpClient client = null;
         private GenericHttpRequestParams params = null;
         private HttpObjectCache.WaitMode waitForNewestResult = WAIT_NEVER;
-        private HttpObjectCache.UserObjectFactory factory = null;
+        private HttpObjectCache.UserObjectFactory<UserObj> factory = null;
         /** @noinspection FieldCanBeLocal*/
         private volatile boolean started = false;
         private volatile boolean running = false;
@@ -149,7 +149,7 @@ public class HttpObjectCacheTest extends TestCase {
         private Throwable lastException = null;
         private Thread thread = null;
 
-        public TestThread(HttpObjectCache cache, GenericHttpClient client, GenericHttpRequestParams params, HttpObjectCache.WaitMode waitForNewestResult, HttpObjectCache.UserObjectFactory factory) {
+        public TestThread(HttpObjectCache<UserObj> cache, GenericHttpClient client, GenericHttpRequestParams params, HttpObjectCache.WaitMode waitForNewestResult, HttpObjectCache.UserObjectFactory<UserObj> factory) {
             this.httpObjectCache = cache;
             this.client = client;
             this.params = params;
@@ -244,7 +244,7 @@ public class HttpObjectCacheTest extends TestCase {
             this.waitForNewestResult = waitForNewestResult;
         }
 
-        public synchronized void setFactory(HttpObjectCache.UserObjectFactory factory) {
+        public synchronized void setFactory(HttpObjectCache.UserObjectFactory<UserObj> factory) {
             this.factory = factory;
         }
 
@@ -268,7 +268,7 @@ public class HttpObjectCacheTest extends TestCase {
 
     public void testMultiThreaded() throws Exception {
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
-        HttpObjectCache httpObjectCache = new HttpObjectCache(500, TEST_POLL_AGE);
+        HttpObjectCache<UserObj> httpObjectCache = new HttpObjectCache<UserObj>(500, TEST_POLL_AGE);
 
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
@@ -284,8 +284,8 @@ public class HttpObjectCacheTest extends TestCase {
         hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
                                                                                      "blarglebliff")}));
 
-        HttpObjectCache.UserObjectFactory factory = new HttpObjectCache.UserObjectFactory() {
-            public Object createUserObject(String url, GenericHttpResponse response) {
+        HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
+            public UserObj createUserObject(String url, GenericHttpResponse response) {
                 return new UserObj(userObjStr);
             }
         };
@@ -301,7 +301,7 @@ public class HttpObjectCacheTest extends TestCase {
         }
     }
 
-    private void doTestMultiThreaded(TestThread t1, TestThread t2, MockGenericHttpClient hc, Object userObj)
+    private void doTestMultiThreaded(TestThread t1, TestThread t2, MockGenericHttpClient hc, UserObj userObj)
             throws Exception
     {
         // Block HTTP requests until released

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Ant build file for UneasyRooster
-  $Revision$
-  $Date$
 -->
 <project name="UneasyRooster" default="dev" basedir=".">
 <!-- Uncomment for jikes/emacs to be used
@@ -1478,6 +1476,7 @@
             <!-- The following, as well as anything not included above, can go to 1.5 -->
             <exclude name="com/l7tech/policy/variable/**/*.java"/>
             <exclude name="com/l7tech/common/Authorizer.java"/>
+            <exclude name="com/l7tech/common/http/cache/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/phaos/**/*.java"/>

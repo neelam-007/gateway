@@ -5,24 +5,24 @@
 
 package com.l7tech.server.communityschemas;
 
-import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_INITIAL;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.w3c.dom.ls.LSInput;
-import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.util.LSInputImpl;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.http.cache.HttpObjectCache;
+import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_INITIAL;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.LSInputImpl;
+import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.XmlUtil;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 
-import java.util.regex.Pattern;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * LSResourceResolver used by the SchemaManagerImpl.
@@ -35,7 +35,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
 
     private final SchemaFinder schemaFinder;
     private final GenericHttpClient httpClient;
-    private final HttpObjectCache cache;
+    private final HttpObjectCache<SchemaHandle> cache;
     private final SchemaCompiler schemaCompiler;
     private final ImportListener importListener;
     private final Pattern[] urlWhitelist;
@@ -68,7 +68,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
 
     public CachingLSResourceResolver(SchemaFinder schemaFinder,
                                      GenericHttpClient httpClient,
-                                     HttpObjectCache cache,
+                                     HttpObjectCache<SchemaHandle> cache,
                                      Pattern[] urlWhitelist,
                                      SchemaCompiler schemaCompiler,
                                      ImportListener importListener)
@@ -141,7 +141,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
             GenericHttpRequestParams requestParams = new GenericHttpRequestParams(fullUrl);
 
             HttpObjectCache.FetchResult got = cache.fetchCached(httpClient, requestParams, WAIT_INITIAL, new HttpObjectCache.UserObjectFactory() {
-                public Object createUserObject(String url, GenericHttpResponse response) throws IOException {
+                public SchemaHandle createUserObject(String url, GenericHttpResponse response) throws IOException {
                     return schemaCompiler.getSchema(url, response);
                 }
             });

@@ -22,6 +22,7 @@ import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
 import com.l7tech.common.http.cache.HttpObjectCache;
+import com.l7tech.common.http.cache.UserObject;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -76,13 +77,14 @@ public class ServerXslTransformation
     }
 
     /** A cache for remotely loaded stylesheets. */
-    private static final HttpObjectCache httpObjectCache =
-            new HttpObjectCache(ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
-                                ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000));
+    private static final HttpObjectCache<CachedStylesheet> httpObjectCache =
+            new HttpObjectCache<CachedStylesheet>(
+                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
+                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000));
 
 
     private final Auditor auditor;
-    private final ResourceGetter resourceGetter;
+    private final ResourceGetter<CachedStylesheet> resourceGetter;
     private final String[] varsUsed;
 
 
@@ -94,8 +96,10 @@ public class ServerXslTransformation
         this.varsUsed = assertion.getVariablesUsed();
 
         // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
-        ResourceGetter.ResourceObjectFactory resourceObjectfactory = new ResourceGetter.ResourceObjectFactory() {
-            public Object createResourceObject(String url, String resource) throws ParseException {
+        ResourceGetter.ResourceObjectFactory<CachedStylesheet> resourceObjectfactory =
+                new ResourceGetter.ResourceObjectFactory<CachedStylesheet>()
+        {
+            public CachedStylesheet createResourceObject(String url, String resource) throws ParseException {
                 final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
                 TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(resource);
                 return new CachedStylesheet(compileSoftware(resource), tarariStylesheet);
@@ -350,7 +354,7 @@ public class ServerXslTransformation
         }
     }
 
-    private static class CachedStylesheet {
+    private static class CachedStylesheet implements UserObject {
         private TarariCompiledStylesheet tarariStylesheet;
         private Templates softwareStylesheet;
 

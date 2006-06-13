@@ -54,7 +54,7 @@ public class ServerSchemaValidation
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private final ResourceGetter resourceGetter;
+    private final ResourceGetter<SchemaHandle> resourceGetter;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
 
@@ -69,8 +69,8 @@ public class ServerSchemaValidation
 
         final Pattern[] whitey = assertion.getResourceInfo().makeUrlPatterns();
 
-        final ResourceGetter.ResourceObjectFactory rof = new ResourceGetter.ResourceObjectFactory() {
-            public Object createResourceObject(String url, String resource) throws ParseException {
+        final ResourceGetter.ResourceObjectFactory<SchemaHandle> rof = new ResourceGetter.ResourceObjectFactory<SchemaHandle>() {
+            public SchemaHandle createResourceObject(String url, String resource) throws ParseException {
                 try {
                     logger.info("Loading schema for message validation.");
                     return schemaManager.compile(resource, url, whitey);
