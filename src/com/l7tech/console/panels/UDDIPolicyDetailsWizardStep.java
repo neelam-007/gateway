@@ -87,7 +87,6 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     }
 
     private void showError(String err) {
-        // todo
-        logger.warning(err);
+        JOptionPane.showMessageDialog(this, err, "Invalid Input", JOptionPane.ERROR_MESSAGE);
     }
 }
