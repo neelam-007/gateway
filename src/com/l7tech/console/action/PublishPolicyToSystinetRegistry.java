@@ -39,6 +39,18 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
     }
 
     protected void performAction() {
+        JFrame f = TopComponents.getInstance().getMainWindow();
+
+        // check that systinet (only supported uddi implementation so far) is in class path
+        try {
+            Class.forName("org.systinet.uddi.client.v3.struct.Save_tModel");
+        } catch (Throwable e) {
+            logger.log(Level.INFO,  "UDDI client implementation not in class path", e);
+            JOptionPane.showMessageDialog(f, "No UDDI client implementation installed on this installation",
+                                             "Missing Component", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         final ServiceNode serviceNode = ((ServiceNode)node);
         PublishedService svc;
         try {
@@ -63,7 +75,6 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
             throw new RuntimeException(e);
         }
         assert(policyURL != null);
-        JFrame f = TopComponents.getInstance().getMainWindow();
         PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, svc.getName());
         wizard.setSize(850, 500);
         Utilities.centerOnScreen(wizard);
