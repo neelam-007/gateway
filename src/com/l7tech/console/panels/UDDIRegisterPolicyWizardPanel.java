@@ -24,7 +24,7 @@ import java.util.logging.Level;
  */
 public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
     private JPanel mainPanel;
-    private JLabel progressLabel;
+    private JTextPane progressLabel;
     private PublishPolicyToUDDIWizard.Data data;
     private JButton registerButton;
     private static final Logger logger = Logger.getLogger(UDDIRegisterPolicyWizardPanel.class.getName());
@@ -87,7 +87,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             tmodel.setDescriptionArrayList(dal);
         } catch (InvalidParameterException e) {
             logger.log(Level.WARNING, "cannot construct tmodel to save", e);
-            progressLabel.setText("Error constructing tmodel: " + e.getMessage());
+            setProgress("Error constructing tmodel: " + e.getMessage(), true);
             return;
         }
 
@@ -109,19 +109,19 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             authInfo = security.get_authToken(new Get_authToken(data.getAccountName(), data.getAccountPasswd())).getAuthInfo();
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            progressLabel.setText("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage());
+            setProgress("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage(), true);
             return;
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            progressLabel.setText("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage());
+            setProgress("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage(), true);
             return;
         } catch (InvalidParameterException e) {
             logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            progressLabel.setText("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage());
+            setProgress("ERROR cannot get security token from " + registryURL + "security. " + e.getMessage(), true);
             return;
         } catch (Throwable e) {
             logger.log(Level.WARNING, "cannot get security token from " + registryURL + "security", e);
-            progressLabel.setText("ERROR cannot get security token from " + registryURL + "security. " + getRootCauseMsg(e));
+            setProgress("ERROR cannot get security token from " + registryURL + "security. " + getRootCauseMsg(e), true);
             return;
         }
         Save_tModel stm = new Save_tModel();
@@ -134,25 +134,35 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(registryURL + "publishing");
             TModelDetail tModelDetail = publishing.save_tModel(stm);
             TModel saved = tModelDetail.getTModelArrayList().get(0);
-            progressLabel.setText("Publication successful. tModel key: " + saved.getTModelKey());
+            setProgress("Publication successful. tModel key: " + saved.getTModelKey(), false);
             done = true;
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            progressLabel.setText("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage());
+            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage(), true);
             return;
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            progressLabel.setText("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage());
+            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage(), true);
             return;
         } catch (InvalidParameterException e) {
             logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            progressLabel.setText("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage());
+            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage(), true);
             return;
         }  catch (Throwable e) {
             logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            progressLabel.setText("ERROR cannot save token at " + registryURL + "publishing. " + getRootCauseMsg(e));
+            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + getRootCauseMsg(e), true);
             return;
         }
+    }
+
+    private void setProgress(String msg, boolean error) {
+        // todo, this foreground does not do anything with this control. maybe use html tags instead
+        if (error) {
+            progressLabel.setForeground(Color.RED);
+        } else {
+            progressLabel.setForeground(Color.BLACK);
+        }
+        progressLabel.setText(msg);
     }
 
     private String getRootCauseMsg(Throwable e) {
