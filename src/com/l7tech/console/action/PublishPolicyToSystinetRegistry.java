@@ -2,14 +2,18 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.panels.PublishPolicyToUDDIWizard;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.gui.util.Utilities;
 
+import javax.swing.*;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
 
 /**
- * Action corresponding to publishing a service wsdl and associated policy on a systinet registry.
+ * Action corresponding to publishing a policy on a systinet registry.
  * <p/>
  * <p/>
  * <br/><br/>
@@ -17,8 +21,8 @@ import java.rmi.RemoteException;
  * User: flascell<br/>
  * Date: Mar 8, 2006<br/>
  */
-public class PublishServiceToSystinetRegistry extends NodeAction {
-    public PublishServiceToSystinetRegistry(ServiceNode node) {
+public class PublishPolicyToSystinetRegistry extends NodeAction {
+    public PublishPolicyToSystinetRegistry(ServiceNode node) {
         super(node);
     }
 
@@ -27,7 +31,7 @@ public class PublishServiceToSystinetRegistry extends NodeAction {
     }
 
     public String getDescription() {
-        return "Publish the service's WSDL and associated Policy to a Systinet Registry";
+        return "Publish the service's Policy to a UDDI Registry";
     }
 
     protected String iconResource() {
@@ -46,11 +50,9 @@ public class PublishServiceToSystinetRegistry extends NodeAction {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
         }
-        // todo, capture the publication details through some sort of wizard
+        String policyURL = null;
         try {
-            String res = Registry.getDefault().getServiceManager().publishToSystinetRegistry(""+svc.getOid());
-            // todo, not this:
-            logger.warning(res);
+            policyURL = Registry.getDefault().getServiceManager().getPolicyURL(""+svc.getOid());
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "Error publishing service on Systinet registry", e);
             // todo nicer error message here
@@ -60,5 +62,11 @@ public class PublishServiceToSystinetRegistry extends NodeAction {
             // todo nicer error message here
             throw new RuntimeException(e);
         }
+        assert(policyURL != null);
+        JFrame f = TopComponents.getInstance().getMainWindow();
+        PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, svc.getName());
+        wizard.setSize(850, 500);
+        Utilities.centerOnScreen(wizard);
+        wizard.setVisible(true);
     }
 }

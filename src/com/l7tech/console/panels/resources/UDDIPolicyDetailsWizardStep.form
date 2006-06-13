@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.UDDIPolicyDetailsWizardStep">
+  <grid id="eafa9" binding="mainPanel" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="15">
+    <margin top="10" left="10" bottom="10" right="10"/>
+    <constraints>
+      <xy x="44" y="19" width="667" height="377"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="d104f" class="javax.swing.JTextField" binding="policyNameField">
+        <constraints>
+          <xy x="129" y="10" width="523" height="21"/>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="8a5c3" class="javax.swing.JTextField" binding="policyDescField">
+        <constraints>
+          <xy x="129" y="46" width="523" height="21"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="444e4" class="javax.swing.JTextField" binding="policyURLField">
+        <constraints>
+          <xy x="129" y="82" width="523" height="21"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="28b4e" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="13" width="78" height="15"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <inheritsPopupMenu value="true"/>
+          <text value="Policy Name:"/>
+        </properties>
+      </component>
+      <component id="99f53" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="49" width="109" height="15"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Policy Description:"/>
+        </properties>
+      </component>
+      <component id="71f42" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="85" width="66" height="15"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Policy URL:"/>
+        </properties>
+      </component>
+      <vspacer id="503ac">
+        <constraints>
+          <xy x="59" y="103" width="11" height="264"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+        </constraints>
+      </vspacer>
+    </children>
+  </grid>
+</form>

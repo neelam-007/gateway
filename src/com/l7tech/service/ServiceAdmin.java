@@ -108,5 +108,5 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @param serviceoid id of the service to publish on the systinet registry
      * @return registrykey
      */
-    String publishToSystinetRegistry(String serviceoid) throws RemoteException, FindException;
+    String getPolicyURL(String serviceoid) throws RemoteException, FindException;
 }
