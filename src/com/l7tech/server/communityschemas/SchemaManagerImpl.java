@@ -6,7 +6,6 @@ package com.l7tech.server.communityschemas;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
@@ -234,9 +233,9 @@ public class SchemaManagerImpl implements SchemaManager {
         };
 
         CachingLSResourceResolver.SchemaCompiler schemaCompiler = new CachingLSResourceResolver.SchemaCompiler() {
-            public SchemaHandle getSchema(String url, GenericHttpResponse response) throws IOException {
+            public SchemaHandle getSchema(String url, String response) throws IOException {
                 try {
-                    return doCompile(response.getAsString(), url, false, urlWhitelist);
+                    return doCompile(response, url, false, urlWhitelist);
                 } catch (InvalidDocumentFormatException e) {
                     throw new CausedIOException("Remote schema object was invalid: " + ExceptionUtils.getMessage(e), e);
                 }

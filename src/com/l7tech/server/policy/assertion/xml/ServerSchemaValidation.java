@@ -7,7 +7,9 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -20,6 +22,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.res.ResourceGetter;
+import com.l7tech.server.util.res.ResourceObjectFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,7 +58,7 @@ public class ServerSchemaValidation
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private final ResourceGetter<SchemaHandle> resourceGetter;
+    private final ResourceGetter<SchemaHandle, SchemaHandle> resourceGetter;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
 
@@ -69,21 +73,33 @@ public class ServerSchemaValidation
 
         final Pattern[] whitey = assertion.getResourceInfo().makeUrlPatterns();
 
-        final ResourceGetter.ResourceObjectFactory<SchemaHandle> rof = new ResourceGetter.ResourceObjectFactory<SchemaHandle>() {
-            public SchemaHandle createResourceObject(String url, String resource) throws ParseException {
-                try {
-                    logger.info("Loading schema for message validation.");
-                    return schemaManager.compile(resource, url, whitey);
-                } catch (InvalidDocumentFormatException e) {
-                    String msg = "parsing exception";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, e);
-                    throw new ParseException(msg + "-" + e.getMessage(), 0);
-                }
+
+        final HttpObjectCache<SchemaHandle> httpObjectCache = schemaManager.getHttpObjectCache();
+        HttpObjectCache.UserObjectFactory<SchemaHandle> cacheObjectFactory =
+                new HttpObjectCache.UserObjectFactory<SchemaHandle>() {
+                    public SchemaHandle createUserObject(String url, String response) throws IOException {
+                        try {
+                            logger.info("Loading schema for message validation.");
+                            return schemaManager.compile(response, url, whitey);
+                        } catch (InvalidDocumentFormatException e) {
+                            String msg = "parsing exception";
+                            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, e);
+                            throw new CausedIOException(new ParseException(msg + "-" + e.getMessage(), 0));
+                        }
+                    }
+                };
+
+        final ResourceObjectFactory<SchemaHandle, SchemaHandle> rof = new ResourceObjectFactory<SchemaHandle, SchemaHandle>() {
+            public SchemaHandle createResourceObject(String url, SchemaHandle resourceContent) throws ParseException {
+                return resourceContent;
             }
         };
 
-        this.resourceGetter = ResourceGetter.createResourceGetter(assertion, rof, null,
-                                                                  schemaManager.getHttpObjectCache(),
+        this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
+                                                                  rof,
+                                                                  null,
+                                                                  httpObjectCache,
+                                                                  cacheObjectFactory,
                                                                   auditor);
     }
 

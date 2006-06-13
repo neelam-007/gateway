@@ -7,7 +7,6 @@ package com.l7tech.server.communityschemas;
 
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_INITIAL;
 import com.l7tech.common.util.ExceptionUtils;
@@ -52,13 +51,12 @@ class CachingLSResourceResolver implements LSResourceResolver {
          * Fetch a possibly-cached, cacheable object that will produce an LSInput for this an future invocations.
          *
          * @param url  the URL that was fetched.  Never null.
-         * @param response  a non-null GenericHttpResponse, which might have any result code (not just 200).
-         *                  Factory can consume its InputStream.
+         * @param response  The HTTP 200 response, already slurped and converted to a String.  Never null.
          * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
          * @throws IOException if this response was not accepted for caching, in which case this request will
          *                     be treated as a failure.
          */
-        SchemaHandle getSchema(String url, GenericHttpResponse response) throws IOException;
+        SchemaHandle getSchema(String url, String response) throws IOException;
     }
 
     /** Gets called no matter what, on any import we find. */
@@ -141,7 +139,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
             GenericHttpRequestParams requestParams = new GenericHttpRequestParams(fullUrl);
 
             HttpObjectCache.FetchResult got = cache.fetchCached(httpClient, requestParams, WAIT_INITIAL, new HttpObjectCache.UserObjectFactory() {
-                public SchemaHandle createUserObject(String url, GenericHttpResponse response) throws IOException {
+                public SchemaHandle createUserObject(String url, String response) throws IOException {
                     return schemaCompiler.getSchema(url, response);
                 }
             });

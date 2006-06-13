@@ -5,7 +5,6 @@ package com.l7tech.server.communityschemas;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.http.cache.UserObject;
 import com.l7tech.server.util.Handle;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -15,7 +14,7 @@ import java.io.IOException;
 /**
  * Public handle to a schema obtained from SchemaManager.compile().
  */
-public final class SchemaHandle extends Handle<CompiledSchema> implements UserObject {
+public final class SchemaHandle extends Handle<CompiledSchema> {
     SchemaHandle(CompiledSchema cs) {
         super(cs);
     }

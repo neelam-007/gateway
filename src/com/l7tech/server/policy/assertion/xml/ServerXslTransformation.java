@@ -14,6 +14,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariCompiledStylesheet;
@@ -22,7 +23,6 @@ import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
 import com.l7tech.common.http.cache.HttpObjectCache;
-import com.l7tech.common.http.cache.UserObject;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -32,6 +32,9 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.res.ResourceGetter;
+import com.l7tech.server.util.res.ResourceObjectFactory;
+import com.l7tech.server.util.res.UrlFinder;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
@@ -84,7 +87,7 @@ public class ServerXslTransformation
 
 
     private final Auditor auditor;
-    private final ResourceGetter<CachedStylesheet> resourceGetter;
+    private final ResourceGetter<CachedStylesheet, CachedStylesheet> resourceGetter;
     private final String[] varsUsed;
 
 
@@ -96,17 +99,29 @@ public class ServerXslTransformation
         this.varsUsed = assertion.getVariablesUsed();
 
         // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
-        ResourceGetter.ResourceObjectFactory<CachedStylesheet> resourceObjectfactory =
-                new ResourceGetter.ResourceObjectFactory<CachedStylesheet>()
-        {
-            public CachedStylesheet createResourceObject(String url, String resource) throws ParseException {
-                final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
-                TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(resource);
-                return new CachedStylesheet(compileSoftware(resource), tarariStylesheet);
-            }
-        };
+        HttpObjectCache.UserObjectFactory<CachedStylesheet> cacheObjectFactory =
+                new HttpObjectCache.UserObjectFactory<CachedStylesheet>() {
+                    public CachedStylesheet createUserObject(String url, String response) throws IOException {
+                        try {
+                            final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
+                            TarariCompiledStylesheet tarariStylesheet =
+                                    gtc == null ? null : gtc.compileStylesheet(response);
+                            return new CachedStylesheet(compileSoftware(response), tarariStylesheet);
+                        } catch (ParseException e) {
+                            throw new CausedIOException(e);
+                        }
+                    }
+                };
 
-        ResourceGetter.UrlFinder urlFinder = new ResourceGetter.UrlFinder() {
+        ResourceObjectFactory<CachedStylesheet, CachedStylesheet> resourceObjectfactory =
+                new ResourceObjectFactory<CachedStylesheet, CachedStylesheet>()
+                {
+                    public CachedStylesheet createResourceObject(String url, CachedStylesheet resource) {
+                        return resource;
+                    }
+                };
+
+        UrlFinder urlFinder = new UrlFinder() {
             public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
                 try {
                     return findXslHref(message);
@@ -123,6 +138,7 @@ public class ServerXslTransformation
                                                                   resourceObjectfactory,
                                                                   urlFinder,
                                                                   httpObjectCache,
+                                                                  cacheObjectFactory,
                                                                   auditor);
     }
 
@@ -354,7 +370,7 @@ public class ServerXslTransformation
         }
     }
 
-    private static class CachedStylesheet implements UserObject {
+    private static class CachedStylesheet {
         private TarariCompiledStylesheet tarariStylesheet;
         private Templates softwareStylesheet;
 

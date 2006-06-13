@@ -18,7 +18,7 @@ import java.util.logging.Level;
  * threads choose whether they will wait for a download to finish or be given the previous cached object,
  * if any.
  */
-public class HttpObjectCache<UT extends UserObject> {
+public class HttpObjectCache<UT> {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
 
     /**
@@ -82,7 +82,7 @@ public class HttpObjectCache<UT extends UserObject> {
 
 
     /** Represents an entry in the object cache.  Might be a user object with or without a recent exception. */
-    private static class CacheEntry<UT extends UserObject> {
+    private static class CacheEntry<UT> {
         private boolean downloading;
         private long lastSuccessfulPollStarted; // time of last successful poll; use only if lastModified not provided
         private String lastModified; // last Modified: header from server; use in preference to lastPollStarted
@@ -93,26 +93,25 @@ public class HttpObjectCache<UT extends UserObject> {
     }
 
 
-    public interface UserObjectFactory<UT extends UserObject> {
+    public interface UserObjectFactory<UT> {
         /**
          * Create a user object from the specified HTTP response.  The response may have any status code, and may or
          * may not have a non-empty InputStream.
          *
          * @param url       the URL that was fetched to obtain this response.  Never null.
-         * @param response  a non-null GenericHttpResponse, which might have any result code (not just 200).
-         *                  Factory can consume its InputStream.
+         * @param response  The HTTP 200 response, already slurped and converted to a String.  Never null.
          * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
          * @throws IOException if this response was not accepted for caching, in which case this request will
          *                     be treated as a failure.
          */
-        UT createUserObject(String url, GenericHttpResponse response) throws IOException;
+        UT createUserObject(String url, String response) throws IOException;
     }
 
 
     /**
      * Holds the return value of a call to {@link HttpObjectCache#fetchCached}.
      */
-    public static class FetchResult<UT extends UserObject> {
+    public static class FetchResult<UT> {
         private final int result;
         private final UT userObject;
         private final long userObjectCreated;
@@ -369,7 +368,7 @@ public class HttpObjectCache<UT extends UserObject> {
             // Save server-provided last-modified date
             HttpHeaders headers = resp.getHeaders();
             String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
-            UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), resp);
+            UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), resp.getAsString());
             if (userObject != null) {
                 if (logger.isLoggable(Level.FINER)) logger.finer("Downloaded new object from URL '" + urlStr + "'");
                 return doSuccessfulDownload(entry, requestStart, modified, userObject);
@@ -396,7 +395,7 @@ public class HttpObjectCache<UT extends UserObject> {
         }
     }
 
-    private static <UT extends UserObject> FetchResult<UT> doSuccessfulDownload(CacheEntry<UT> entry,
+    private static <UT> FetchResult<UT> doSuccessfulDownload(CacheEntry<UT> entry,
                                                     long requestStart,
                                                     String modified,
                                                     UT userObject)

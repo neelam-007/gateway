@@ -38,7 +38,7 @@ public class HttpObjectCacheTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static class UserObj implements UserObject {
+    private static class UserObj {
         final String blat;
 
         public UserObj(String blat) {
@@ -78,7 +78,7 @@ public class HttpObjectCacheTest extends TestCase {
                                                                                      "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
-            public UserObj createUserObject(String url, GenericHttpResponse response) {
+            public UserObj createUserObject(String url, String response) {
                 return new UserObj(userObjStr);
             }
         };
@@ -285,7 +285,7 @@ public class HttpObjectCacheTest extends TestCase {
                                                                                      "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
-            public UserObj createUserObject(String url, GenericHttpResponse response) {
+            public UserObj createUserObject(String url, String response) {
                 return new UserObj(userObjStr);
             }
         };
