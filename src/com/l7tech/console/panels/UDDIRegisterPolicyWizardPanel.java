@@ -139,20 +139,20 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             setProgress("Publication successful. tModel key: " + saved.getTModelKey(), false);
             done = true;
         } catch (SOAPException e) {
-            logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage(), true);
+            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
+            setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
             return;
         } catch (UDDIException e) {
-            logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage(), true);
+            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
+            setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
             return;
         } catch (InvalidParameterException e) {
-            logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + e.getMessage(), true);
+            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
+            setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
             return;
         }  catch (Throwable e) {
-            logger.log(Level.WARNING, "cannot save token at " + registryURL + "publishing", e);
-            setProgress("ERROR cannot save token at " + registryURL + "publishing. " + getRootCauseMsg(e), true);
+            logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
+            setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + getRootCauseMsg(e), true);
             return;
         }
     }

@@ -1282,7 +1282,13 @@
     </target>
 
 
+    <!--
     <target name="prepare.systinet" if="include.systinet">
+    this is causing problems with including these jars through Manager.mf
+    and is redundant anyway since the package.gateway will test
+    include.systinet before including in war anyway.
+    -->
+    <target name="prepare.systinet">
         <echo>Copying Systinet jars...</echo>
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib/gateway/uddi/systinet">
