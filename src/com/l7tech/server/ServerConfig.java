@@ -23,7 +23,8 @@ import java.util.logging.Logger;
  */
 public class ServerConfig extends ApplicationObjectSupport {
     public static final long DEFAULT_CACHE_AGE = 10000;
-    public static final Boolean CACHE_BY_DEFAULT = Boolean.getBoolean("com.l7tech.server.ServerConfig.cacheByDefault");
+    private static final String CACHE_BY_DEFAULT = "com.l7tech.server.ServerConfig.cacheByDefault";
+    private static final Boolean CACHE_BY_DEFAULT_VALUE = Boolean.getBoolean(CACHE_BY_DEFAULT);
 
     public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
     public static final String PARAM_SERVER_ID = "serverId";
@@ -117,7 +118,7 @@ public class ServerConfig extends ApplicationObjectSupport {
      * if the system property {@link #CACHE_BY_DEFAULT} is true.
      */
     public String getProperty(String propName) {
-        return CACHE_BY_DEFAULT ? getPropertyCached(propName) : getPropertyUncached(propName);
+        return CACHE_BY_DEFAULT_VALUE ? getPropertyCached(propName) : getPropertyUncached(propName);
     }
 
     /**
