@@ -32,16 +32,13 @@ tar -xzf /tmp/tarari.tar.gz
 tar -xzf /tmp/tarari-kernel-drivers.tar.gz
 
 %build
-mkdir %{buildroot}/etc/profile.d/
 mkdir %{buildroot}/etc/init.d/
 
 mv %{buildroot}/etc/tarari-initd %{buildroot}/etc/init.d/tarari
-mv %{buildroot}/etc/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 
 %files 
 %defattr(-,root,root)
 /etc/init.d/tarari
-/etc/profile.d/tarari.sh
 /usr/local/Tarari/*
 
 %pre
