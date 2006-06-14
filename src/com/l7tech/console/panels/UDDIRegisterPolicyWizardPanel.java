@@ -60,7 +60,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
     }
 
     public boolean canAdvance() {
-        return done;
+        return false;
     }
 
     public boolean canFinish() {
@@ -68,7 +68,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
     }
 
     public boolean onNextButton() {
-        return canFinish();
+        return done;
     }
 
     private void publishPolicyReferenceToSystinet65Directory() {
@@ -120,7 +120,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
         if (!registryURL.endsWith("/")) {
             registryURL = registryURL + "/";
         }
-        String authInfo = null;
+        String authInfo;
         try {
             UDDI_Security_PortType security = UDDISecurityStub.getInstance(registryURL + "security");
             authInfo = security.get_authToken(new Get_authToken(data.getAccountName(), data.getAccountPasswd())).getAuthInfo();
@@ -152,25 +152,21 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             TModelDetail tModelDetail = publishing.save_tModel(stm);
             TModel saved = tModelDetail.getTModelArrayList().get(0);
             setProgress("Publication successful. tModel key: " + saved.getTModelKey(), false);
-            // todo, canFinish is only called once and so this mechanism does not work.
-            // trigger Wizard.updateWizardControls somehow instead
             done = true;
+            // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
+            notifyListeners();
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
             setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
-            return;
         } catch (UDDIException e) {
             logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
             setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
-            return;
         } catch (InvalidParameterException e) {
             logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
             setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
-            return;
         }  catch (Throwable e) {
             logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
             setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + getRootCauseMsg(e), true);
-            return;
         }
     }
 
