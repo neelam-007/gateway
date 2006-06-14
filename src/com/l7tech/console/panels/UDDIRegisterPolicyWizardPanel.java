@@ -72,17 +72,6 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
     }
 
     private void publishPolicyReferenceToSystinet65Directory() {
-        /*
-        todo, once the remotepolicyreference tModel is published, find a businessService to associate to,
-        then add :
-        <categoryBag>
-            <keyedReference
-                keyName="policy for service foo"
-                keyValue="the tModel key saved in remotepolicyreference"
-                tModelKey="uddi:schemas.xmlsoap.org:localpolicyreference:2003_03" />
-        </categoryBag>
-        */
-
         // create a tmodel to save
         setProgress("Constructing tModel to save...", false);
         TModel tmodel = new TModel();
@@ -144,6 +133,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
         }
         Save_tModel stm = new Save_tModel();
         stm.setAuthInfo(authInfo);
+        data.setAuthInfo(authInfo);
         setProgress("Saving policy tModel...", false);
         try {
             TModelArrayList tmal = new TModelArrayList();

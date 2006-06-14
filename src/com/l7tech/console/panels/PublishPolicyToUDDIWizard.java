@@ -45,6 +45,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         private String accountName;
         private String accountPasswd;
         private String policytModelKey;
+        private String authInfo;
 
         public String getPolicyName() {
             return policyName;
@@ -100,6 +101,14 @@ public class PublishPolicyToUDDIWizard extends Wizard {
 
         public void setPolicytModelKey(String policytModelKey) {
             this.policytModelKey = policytModelKey;
+        }
+
+        public String getAuthInfo() {
+            return authInfo;
+        }
+
+        public void setAuthInfo(String authInfo) {
+            this.authInfo = authInfo;
         }
     }
 }
