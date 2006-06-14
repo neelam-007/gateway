@@ -513,7 +513,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private boolean isAuditHintingEnabled() {
-        String propHintingStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_HINTING_ENABLED);
+        String propHintingStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_HINTING_ENABLED);
         boolean hintingEnabled = false;
         if(propHintingStr!=null) {
             hintingEnabled = Boolean.valueOf(propHintingStr.trim()).booleanValue();
@@ -522,7 +522,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private boolean isAuditAssertionStatusEnabled() {
-        String propStatusStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
+        String propStatusStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
         boolean statusEnabled = false;
         if(propStatusStr!=null) {
             statusEnabled = Boolean.valueOf(propStatusStr.trim()).booleanValue();

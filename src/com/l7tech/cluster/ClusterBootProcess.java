@@ -47,7 +47,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
         this.serverConfig = config;
         clusterInfoManager = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
         distributedMessageIdManager = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
-        multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
+        multicastAddress = config.getPropertyCached(ServerConfig.PARAM_MULTICAST_ADDRESS);
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }
 

@@ -1,18 +1,12 @@
 package com.l7tech.server.transport.http;
 
-import java.io.IOException;
-import java.util.logging.Logger;
-import javax.servlet.Filter;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletInputStream;
+import com.l7tech.server.ServerConfig;
+
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-
-import com.l7tech.server.ServerConfig;
+import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Filter that wraps the input stream for http requests that (may) have a body.
@@ -176,7 +170,7 @@ public class InputTimeoutFilter implements Filter {
      * Get the timeout from server config, use servlet config as default.
      */
     private long getTimeout() {
-        String rawVal = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
+        String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
         long scTimeout = parseLong(rawVal, 500, 3600000, timeout, ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
         return scTimeout;
     }
@@ -185,7 +179,7 @@ public class InputTimeoutFilter implements Filter {
      * Get the slow read threshold from server config, use servlet config as default.
      */
     private long getReadTime() {
-        String rawVal = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
+        String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
         long scReadTimeout = parseLong(rawVal, 500, 3600000, readTime, ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
         return scReadTimeout;
     }
@@ -194,7 +188,7 @@ public class InputTimeoutFilter implements Filter {
      * Get the slow read rate from server config, use servlet config as default.
      */
     private int getReadRate() {
-        String rawVal = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
+        String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
         int scReadRate = parseInt(rawVal, 0, 1000000, readRate, ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
         return scReadRate;
     }

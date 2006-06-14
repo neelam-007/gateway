@@ -69,14 +69,14 @@ public class RegistryPublicationManager implements ApplicationContextAware {
     }
 
     private String getExternalSSGWSDLURLForPublishedService(String serviceoid) {
-        String port = serverConfig.getProperty("clusterhttpport");
+        String port = serverConfig.getPropertyCached("clusterhttpport");
         String uri = SecureSpanConstants.WSDL_PROXY_FILE;
         String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid;
         return "http://" + getMyHostName() + ":" + port + uri + "?" + query;
     }
 
     public String getExternalSSGPolicyURL(String serviceoid) {
-        String port = serverConfig.getProperty("clusterhttpport");
+        String port = serverConfig.getPropertyCached("clusterhttpport");
         String uri = SecureSpanConstants.POLICY_SERVICE_FILE;
         String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid + "&fulldoc=yes";
         return "http://" + getMyHostName() + ":" + port + uri + "?" + query;

@@ -183,7 +183,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemMessageThreshold() {
         if (currentMessageThreshold == null) {
-            String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -203,7 +203,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getAssociatedLogsThreshold() {
         if (currentAssociatedLogsThreshold == null) {
-            String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -223,7 +223,7 @@ public class AuditContextImpl implements AuditContext {
 
     private boolean getUseAssociatedLogsThreshold() {
         if (currentUseAssociatedLogsThreshold == null) {
-            String configStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
+            String configStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
             Boolean configValue = null;
             if (configStr != null) {
                 configValue = Boolean.valueOf(configStr.trim());
@@ -238,7 +238,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemAdminThreshold() {
         if (currentAdminThreshold == null) {
-            String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {

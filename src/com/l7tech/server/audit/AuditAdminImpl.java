@@ -310,7 +310,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         }
 
         if(propertyName!=null) {
-            String valueInSecsStr = serverConfig.getProperty(propertyName);
+            String valueInSecsStr = serverConfig.getPropertyCached(propertyName);
             if(valueInSecsStr!=null) {
                 try {
                     refreshInterval = Integer.parseInt(valueInSecsStr);
@@ -339,7 +339,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
 
     private Level getAuditLevel(String serverConfigParam, String which, Level defaultLevel) {
         // todo: consider moving this and the same code from AuditContextImpl in ServerConfig
-        String msgLevel = serverConfig.getProperty(serverConfigParam);
+        String msgLevel = serverConfig.getPropertyCached(serverConfigParam);
         Level output = null;
         if (msgLevel != null) {
             try {
@@ -356,7 +356,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     }
 
     public int serverMinimumPurgeAge() throws RemoteException {
-        String sAge = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sAge = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         int age = 168;
         try {
             return Integer.valueOf(sAge).intValue();

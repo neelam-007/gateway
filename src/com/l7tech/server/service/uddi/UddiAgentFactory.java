@@ -1,20 +1,19 @@
 package com.l7tech.server.service.uddi;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.Service;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.FilterClassLoader;
+import com.l7tech.server.util.ModuleClassLoader;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
-import com.l7tech.server.util.ModuleClassLoader;
-import com.l7tech.server.util.FilterClassLoader;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.common.util.Service;
-import com.l7tech.common.util.ResourceUtils;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Factory for UddiAgent implementation and Properties.
@@ -102,7 +101,7 @@ public class UddiAgentFactory {
      * Read config file props into the given properties object.
      */
     private void addUDDIConfig(Properties props) throws UddiAgentException {
-        String ssgConfigPath = serverConfig.getProperty("ssg.conf");
+        String ssgConfigPath = serverConfig.getPropertyCached("ssg.conf");
         String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
 
         FileInputStream propStream = null;
@@ -127,9 +126,9 @@ public class UddiAgentFactory {
      * Set any UDDI cluster properties on the given properties object.
      */
     private void addClusterProperties(Properties props) {
-        String inquiryUrlList = serverConfig.getProperty(UddiAgent.PROP_INQUIRY_URLS);
-        String resultBatchSize = serverConfig.getProperty(UddiAgent.PROP_RESULT_BATCH_SIZE);
-        String resultRowsMax = serverConfig.getProperty(UddiAgent.PROP_RESULT_ROWS_MAX);
+        String inquiryUrlList = serverConfig.getPropertyCached(UddiAgent.PROP_INQUIRY_URLS);
+        String resultBatchSize = serverConfig.getPropertyCached(UddiAgent.PROP_RESULT_BATCH_SIZE);
+        String resultRowsMax = serverConfig.getPropertyCached(UddiAgent.PROP_RESULT_ROWS_MAX);
 
         if (inquiryUrlList != null) {
             // then remove any existing urls
@@ -178,8 +177,8 @@ public class UddiAgentFactory {
 
     private ClassLoader getUddiModuleClassLoader(ServerConfig serverConfig) throws UddiAgentException {
         if (uddiModuleClassLoader == null) {
-            String moduleDirectory = serverConfig.getProperty(KEY_CUSTOM_MODULES);
-            String moduleWorkDirectory = serverConfig.getProperty(KEY_CUSTOM_MODULES_TEMP);
+            String moduleDirectory = serverConfig.getPropertyCached(KEY_CUSTOM_MODULES);
+            String moduleWorkDirectory = serverConfig.getPropertyCached(KEY_CUSTOM_MODULES_TEMP);
 
             if (moduleDirectory == null) {
                 logger.config("'" + KEY_CUSTOM_MODULES + "' not specified");

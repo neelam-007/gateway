@@ -262,7 +262,7 @@ public class KeystoreUtils {
 
     private synchronized Properties getProps() {
         if (props == null) {
-            String propsPath = serverConfig.getProperty(ServerConfig.PARAM_KEYSTORE);
+            String propsPath = serverConfig.getPropertyCached(ServerConfig.PARAM_KEYSTORE);
             InputStream fileInputStream = null;
             InputStream resInputStream = null;
             try {

@@ -45,7 +45,7 @@ public class BootProcess
     private static final Logger logger;
 
     static {
-        String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getProperty("configDirectory") + File.separator + "ssglog.properties";
+        String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
         JdkLoggerConfigurator.configure("com.l7tech.logging",
           new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
             DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
@@ -203,7 +203,7 @@ public class BootProcess
         auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[]{JceProvider.getAsymmetricJceProvider().getName()});
         auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[]{JceProvider.getSymmetricJceProvider().getName()});
 
-        String classnameString = serverConfig.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
+        String classnameString = serverConfig.getPropertyCached(ServerConfig.PARAM_SERVERCOMPONENTS);
         String[] componentClassnames = classnameString.split("\\s.*?");
 
         for (int i = 0; i < componentClassnames.length; i++) {
@@ -266,7 +266,7 @@ public class BootProcess
 
     private void setSystemProperties(ServerConfig config) throws IOException {
         // Set system properties
-        String sysPropsPath = config.getProperty(ServerConfig.PARAM_SYSTEMPROPS);
+        String sysPropsPath = config.getPropertyCached(ServerConfig.PARAM_SYSTEMPROPS);
         File propsFile = new File(sysPropsPath);
         Properties props = new Properties();
 

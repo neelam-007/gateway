@@ -77,7 +77,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
 
     public void initializeFallbackMechanism() {
         // configure timeout period
-        String property = serverConfig.getProperty("ldap.reconnect.timeout");
+        String property = serverConfig.getPropertyCached("ldap.reconnect.timeout");
         if (property == null || property.length() < 1) {
             retryFailedConnectionTimeout = 60000;
             logger.warning("ldap.reconnect.timeout server property not set. using default");
@@ -246,7 +246,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
 
     long getMaxSearchResultSize() {
         if (maxSearchResultSize <= 0) {
-            String tmp = serverConfig.getProperty(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE);
+            String tmp = serverConfig.getPropertyCached(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE);
             if (tmp == null) {
                 logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " is not set. using default value.");
                 maxSearchResultSize = 100;

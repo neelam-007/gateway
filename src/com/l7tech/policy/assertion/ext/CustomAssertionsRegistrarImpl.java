@@ -1,26 +1,24 @@
 package com.l7tech.policy.assertion.ext;
 
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ModuleClassLoader;
-import com.l7tech.common.util.ResourceUtils;
-
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
 
 /**
  * The server side CustomAssertionsRegistrar implementation.
@@ -145,14 +143,14 @@ public class CustomAssertionsRegistrarImpl
     private void init() {
         if (initialized) return;
 
-        String fileName = serverConfig.getProperty(KEY_CONFIG_FILE);
+        String fileName = serverConfig.getPropertyCached(KEY_CONFIG_FILE);
         if (fileName == null) {
             logger.config("'" + KEY_CONFIG_FILE + "' not specified");
             return;
         }
 
-        String moduleDirectory = serverConfig.getProperty(KEY_CUSTOM_MODULES);
-        String moduleWorkDirectory = serverConfig.getProperty(KEY_CUSTOM_MODULES_TEMP);
+        String moduleDirectory = serverConfig.getPropertyCached(KEY_CUSTOM_MODULES);
+        String moduleWorkDirectory = serverConfig.getPropertyCached(KEY_CUSTOM_MODULES_TEMP);
         ClassLoader caClassLoader = getClass().getClassLoader();
         if (moduleDirectory == null) {
             logger.config("'" + KEY_CUSTOM_MODULES + "' not specified");

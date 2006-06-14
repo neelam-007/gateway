@@ -1,30 +1,29 @@
 package com.l7tech.server.util;
 
-import com.l7tech.common.xml.SoapFaultLevel;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.Messages;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.List;
-import java.text.MessageFormat;
-import java.text.FieldPosition;
-
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
+
+import java.text.FieldPosition;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -61,7 +60,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {
         // parse default settings from system settings
         fromSettings = new SoapFaultLevel();
-        String tmp = serverConfig.getProperty("defaultfaultlevel");
+        String tmp = serverConfig.getPropertyCached("defaultfaultlevel");
         // default setting not available through config ?
         if (tmp == null) {
             logger.warning("Cannot retrieve defaultfaultlevel server properties falling back on hardcoded defaults");
@@ -69,8 +68,8 @@ public class SoapFaultManager implements ApplicationContextAware {
         } else {
             try {
                 fromSettings.setLevel(Integer.parseInt(tmp));
-                fromSettings.setIncludePolicyDownloadURL(Boolean.parseBoolean(serverConfig.getProperty("defaultfaultpolicyurl")));
-                fromSettings.setFaultTemplate(serverConfig.getProperty("defaultfaulttemplate"));
+                fromSettings.setIncludePolicyDownloadURL(Boolean.parseBoolean(serverConfig.getPropertyCached("defaultfaultpolicyurl")));
+                fromSettings.setFaultTemplate(serverConfig.getPropertyCached("defaultfaulttemplate"));
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, "user setting " + tmp + " for defaultfaultlevel is invalid", e);
                 populateUltimateDefaults(fromSettings);

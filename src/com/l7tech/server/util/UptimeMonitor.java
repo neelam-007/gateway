@@ -31,7 +31,7 @@ public class UptimeMonitor {
         "/bin/uptime",
         "c:/cygwin/bin/uptime",
         "c:/opt/cygwin/bin/uptime",
-        ServerConfig.getInstance().getProperty("ssgHome") + File.separator + "bin" + File.separator + "uptime"
+        ServerConfig.getInstance().getPropertyCached("ssgHome") + File.separator + "bin" + File.separator + "uptime"
     };
     private static String foundUptime = null;
 

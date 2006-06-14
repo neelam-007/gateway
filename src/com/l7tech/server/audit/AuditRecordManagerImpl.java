@@ -115,7 +115,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public void deleteOldAuditRecords() throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
-        String sMinAgeHours = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sMinAgeHours = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
         int minAgeHours = 168;
         try {

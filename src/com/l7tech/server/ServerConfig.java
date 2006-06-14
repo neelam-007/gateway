@@ -13,6 +13,7 @@ import javax.naming.NamingException;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,6 +22,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class ServerConfig extends ApplicationObjectSupport {
+    public static final long DEFAULT_CACHE_AGE = 10000;
+    public static final Boolean CACHE_BY_DEFAULT = Boolean.getBoolean("com.l7tech.server.ServerConfig.cacheByDefault");
+
     public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
     public static final String PARAM_SERVER_ID = "serverId";
     public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
@@ -92,12 +96,54 @@ public class ServerConfig extends ApplicationObjectSupport {
     private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
     private static final int CLUSTER_DEFAULT_AGE = 30000;
 
+    private static class CachedValue {
+        private final String value;
+        private final long when;
+        public CachedValue(String value, long when) {
+            this.value = value;
+            this.when = when;
+        }
+    }
+
+    private static final Map<String,CachedValue> valueCache = new ConcurrentHashMap<String,CachedValue>();
+
     public static ServerConfig getInstance() {
         if (_instance == null) _instance = new ServerConfig();
         return _instance;
     }
 
+    /**
+     * @return the requested property, possibly with caching at this layer only
+     * if the system property {@link #CACHE_BY_DEFAULT} is true.
+     */
     public String getProperty(String propName) {
+        return getPropertyUncached(propName);
+    }
+
+    /**
+     * @return the requested property, or a cached value if hte cached value is less than {@link #DEFAULT_CACHE_AGE}
+     * millis old.
+     */
+    public String getPropertyCached(final String propName) {
+        return getPropertyCached(propName, DEFAULT_CACHE_AGE);
+    }
+
+    /** @return the requested property, or a cached value if hte cached value is less than maxAge millis old. */
+    public String getPropertyCached(final String propName, final long maxAge) {
+        CachedValue cached = valueCache.get(propName);
+        final long now = System.currentTimeMillis();
+        if (cached != null) {
+            final long age = now - cached.when;
+            if (age <= maxAge)
+                return cached.value;
+        }
+        String value = getPropertyUncached(propName);
+        valueCache.put(propName, new CachedValue(value, now));
+        return value;
+    }
+
+    /** @return the requested property, with no caching at this layer. */
+    public String getPropertyUncached(String propName) {
         String sysPropProp = propName + SUFFIX_SYSPROP;
         String setSysPropProp = propName + SUFFIX_SETSYSPROP;
         String jndiProp = propName + SUFFIX_JNDI;
@@ -308,7 +354,7 @@ public class ServerConfig extends ApplicationObjectSupport {
         // export as system property. This is required so custom assertions
         // do not need to import in the ServerConfig and the clases referred by it
         // (LogManager, TransportProtocol) to read the single property.  - em20040506
-        String cfgDirectory = getProperty(PARAM_CONFIG_DIRECTORY);
+        String cfgDirectory = getPropertyCached(PARAM_CONFIG_DIRECTORY);
         if (cfgDirectory !=null) {
             System.setProperty("ssg.config.dir", cfgDirectory);
         } else {
@@ -330,7 +376,7 @@ public class ServerConfig extends ApplicationObjectSupport {
         if (_serverId == 0) {
             String sid = null;
             try {
-                sid = getProperty(PARAM_SERVER_ID);
+                sid = getPropertyCached(PARAM_SERVER_ID);
                 if (sid != null && sid.length() > 0)
                     _serverId = Byte.parseByte(sid);
             } catch (NumberFormatException nfe) {
@@ -456,7 +502,7 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     public String getHostname() {
         if (_hostname == null) {
-            _hostname = getProperty(PARAM_HOSTNAME);
+            _hostname = getPropertyCached(PARAM_HOSTNAME);
 
             if (_hostname == null) {
                 try {
@@ -477,7 +523,7 @@ public class ServerConfig extends ApplicationObjectSupport {
      * @return The theshold in bytes above which MIME parts will be spooled to disk.  Always nonnegative.
      */
     public int getAttachmentDiskThreshold() {
-        String str = getProperty(PARAM_ATTACHMENT_DISK_THRESHOLD);
+        String str = getPropertyCached(PARAM_ATTACHMENT_DISK_THRESHOLD);
 
         int ret = 0;
         if (str != null && str.length() > 0) {
@@ -500,7 +546,7 @@ public class ServerConfig extends ApplicationObjectSupport {
     }
 
     public File getAttachmentDirectory() {
-        String attachmentsPath = getProperty(PARAM_ATTACHMENT_DIRECTORY);
+        String attachmentsPath = getPropertyCached(PARAM_ATTACHMENT_DIRECTORY);
 
         if (attachmentsPath == null || attachmentsPath.length() <= 0) {
             final String def = "/ssg/var/attachments";

@@ -73,7 +73,7 @@ public class LdapConfigTemplateManager {
     }
 
     private void populateTemplatesFromFile() {
-        String rootPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_LDAP_TEMPLATES);
+        String rootPath = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_LDAP_TEMPLATES);
         File rootFile = new File(rootPath);
         if (!rootFile.exists()) {
             logger.warning("templates not available!");

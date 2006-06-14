@@ -314,7 +314,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private boolean systemAllowsAnonymousDownloads(HttpServletRequest req) {
         // split strings into seperate values
         // check whether any of those can match start of
-        String allPassthroughs = serverConfig.getProperty("passthroughDownloads");
+        String allPassthroughs = serverConfig.getPropertyCached("passthroughDownloads");
         StringTokenizer st = new StringTokenizer(allPassthroughs);
         String remote = req.getRemoteAddr();
         while (st.hasMoreTokens()) {
