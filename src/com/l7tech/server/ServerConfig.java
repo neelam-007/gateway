@@ -117,7 +117,7 @@ public class ServerConfig extends ApplicationObjectSupport {
      * if the system property {@link #CACHE_BY_DEFAULT} is true.
      */
     public String getProperty(String propName) {
-        return getPropertyUncached(propName);
+        return CACHE_BY_DEFAULT ? getPropertyCached(propName) : getPropertyUncached(propName);
     }
 
     /**
