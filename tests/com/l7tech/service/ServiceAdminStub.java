@@ -221,4 +221,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         throw new RuntimeException("Not Implemented");
     }
 
+    public String getConsumptionURL(String serviceoid) throws RemoteException, FindException {
+        throw new RuntimeException("Not Implemented");
+    }
 }

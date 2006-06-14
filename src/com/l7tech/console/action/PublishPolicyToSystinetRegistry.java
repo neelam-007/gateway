@@ -63,8 +63,10 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
             throw new RuntimeException(e);
         }
         String policyURL = null;
+        String serviceConsumptionURL = null;
         try {
             policyURL = Registry.getDefault().getServiceManager().getPolicyURL(""+svc.getOid());
+            serviceConsumptionURL = Registry.getDefault().getServiceManager().getConsumptionURL(""+svc.getOid());
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "Error publishing service on Systinet registry", e);
             // todo nicer error message here
@@ -75,7 +77,7 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
             throw new RuntimeException(e);
         }
         assert(policyURL != null);
-        PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, svc.getName());
+        PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, serviceConsumptionURL, svc.getName());
         wizard.setSize(850, 500);
         Utilities.centerOnScreen(wizard);
         wizard.setVisible(true);

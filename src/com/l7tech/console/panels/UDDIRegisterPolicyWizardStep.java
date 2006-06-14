@@ -109,6 +109,8 @@ public class UDDIRegisterPolicyWizardStep extends WizardStepPanel {
         if (!registryURL.endsWith("/")) {
             registryURL = registryURL + "/";
         }
+        // remember the url once it's been 'normalized'
+        data.setUddiurl(registryURL);
         setProgress("Getting authentication token...", false);
         String authInfo;
         try {

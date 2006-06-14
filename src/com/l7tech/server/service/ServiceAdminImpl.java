@@ -431,4 +431,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
     public String getPolicyURL(String serviceoid) throws RemoteException, FindException {
         return registryPublicationManager.getExternalSSGPolicyURL(serviceoid);
     }
+
+    public String getConsumptionURL(String serviceoid) throws RemoteException, FindException {
+        return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
+    }
 }

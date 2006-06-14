@@ -109,4 +109,6 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @return registrykey
      */
     String getPolicyURL(String serviceoid) throws RemoteException, FindException;
+
+    String getConsumptionURL(String serviceoid ) throws RemoteException, FindException;
 }

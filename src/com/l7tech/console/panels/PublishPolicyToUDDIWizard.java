@@ -17,16 +17,16 @@ import java.awt.event.ActionEvent;
  * Date: Jun 12, 2006<br/>
  */
 public class PublishPolicyToUDDIWizard extends Wizard {
-    public static PublishPolicyToUDDIWizard getInstance(Frame parent, String policyURL, String serviceName) {
+    public static PublishPolicyToUDDIWizard getInstance(Frame parent, String policyURL, String policyConsumptionURL, String serviceName) {
         AssociateUDDIServiceToPolicyWizardStep astep = new AssociateUDDIServiceToPolicyWizardStep(null);
         UDDIRegisterPolicyWizardStep fstep = new UDDIRegisterPolicyWizardStep(astep);
         UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(fstep, policyURL, serviceName);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(dstep);
         // todo, other panel(s)
-        return new PublishPolicyToUDDIWizard(parent, tstep);
+        return new PublishPolicyToUDDIWizard(parent, tstep, policyConsumptionURL);
     }
 
-    protected PublishPolicyToUDDIWizard(Frame parent, WizardStepPanel panel) {
+    protected PublishPolicyToUDDIWizard(Frame parent, WizardStepPanel panel, String policyConsumptionURL) {
         super(parent, panel);
         setTitle("Publish WS-Policy Document Reference to UDDI Registry");
         getButtonHelp().addActionListener(new ActionListener() {
@@ -35,6 +35,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
             }
         });
         wizardInput = new Data();
+        ((Data)wizardInput).setPolicyConsumptionURL(policyConsumptionURL);
     }
 
     public class Data {
@@ -46,6 +47,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         private String accountPasswd;
         private String policytModelKey;
         private String authInfo;
+        private String policyConsumptionURL;
 
         public String getPolicyName() {
             return policyName;
@@ -109,6 +111,14 @@ public class PublishPolicyToUDDIWizard extends Wizard {
 
         public void setAuthInfo(String authInfo) {
             this.authInfo = authInfo;
+        }
+
+        public String getPolicyConsumptionURL() {
+            return policyConsumptionURL;
+        }
+
+        public void setPolicyConsumptionURL(String policyConsumptionURL) {
+            this.policyConsumptionURL = policyConsumptionURL;
         }
     }
 }

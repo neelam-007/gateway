@@ -3,9 +3,14 @@ package com.l7tech.console.panels;
 import org.systinet.uddi.client.v3.struct.*;
 import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
 import org.systinet.uddi.client.v3.UDDIInquiryStub;
+import org.systinet.uddi.client.v3.UDDI_Publication_PortType;
+import org.systinet.uddi.client.v3.UDDIPublishStub;
+import org.systinet.uddi.client.base.StringArrayList;
 import org.systinet.uddi.InvalidParameterException;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -18,6 +23,14 @@ import java.util.ArrayList;
  * Wizard step in the PublishPolicyToUDDIWizard wizard that
  * allows a saved tModel policy to be associated to a UDDI
  * business service in the registry.
+ *
+ * once the remotepolicyreference tModel is published, find a businessService to associate to, and add :
+ *   <categoryBag>
+ *       <keyedReference
+ *           keyName="policy for service foo"
+ *           keyValue="the tModel key saved in remotepolicyreference"
+ *           tModelKey="uddi:schemas.xmlsoap.org:localpolicyreference:2003_03" />
+ *   </categoryBag>
  * <p/>
  * <p/>
  * <br/><br/>
@@ -52,10 +65,25 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
-        updateServiceButton.setEnabled(false);
         listServicesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 listServices();
+            }
+        });
+        serviceList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        serviceList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (serviceList.getSelectedIndex() < 0) {
+                    updateServiceButton.setEnabled(false);
+                } else {
+                    updateServiceButton.setEnabled(true);
+                }
+            }
+        });
+        updateServiceButton.setEnabled(false);
+        updateServiceButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateServiceWithPolicytModel();
             }
         });
     }
@@ -70,19 +98,17 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             logger.log(Level.SEVERE, "Find_service structure did not check out ok", e);
         }
         String filter = serviceNameField.getText();
-        // todo, fix this url below
-        String url = "http://systinet:8080/uddi/inquiry";
         try {
             KeyedReference category = new KeyedReference("uddi:uddi.org:wsdl:types", "service", "");
             findService.setCategoryBag(new CategoryBag(new KeyedReferenceArrayList(category)));
-            UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(url);
+            UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(data.getUddiurl() + "inquiry");
             ServiceList uddiServiceListRes = inquiry.find_service(findService);
 
             // display those services in the list instead
             listData.clear();
             ServiceInfoArrayList serviceInfoArrayList = uddiServiceListRes.getServiceInfoArrayList();
             if (serviceInfoArrayList==null) {
-                showError("No services found");
+                showError("No services found with this filter.");
                 return;
             }
             for (Iterator iterator = serviceInfoArrayList.iterator(); iterator.hasNext();) {
@@ -98,6 +124,96 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             serviceList.setListData(listData.toArray());
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "cannot find service or get inquiry", e);
+            showError("Cannot find services. Consult log for more info.");
+        }
+    }
+
+    private void updateServiceWithPolicytModel() {
+        // first, get service from the service key
+        String serviceKey = ((ListMember)listData.get(serviceList.getSelectedIndex())).serviceKey;
+        ServiceDetail serviceDetail;
+        try {
+            Get_serviceDetail getServiceDetail = new Get_serviceDetail();
+            getServiceDetail.setServiceKeyArrayList(new StringArrayList(serviceKey));
+            UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(data.getUddiurl() + "inquiry");
+            serviceDetail = inquiry.get_serviceDetail(getServiceDetail);
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, "cannot find service or get inquiry", e);
+            showError("Cannot get service details for service\nkey " + serviceKey + ". Consult log for more info.");
+            return;
+        }
+        if (serviceDetail.getBusinessServiceArrayList().size() != 1) {
+            String msg = "UDDI registry returned either empty serviceDetail or\n" +
+                         "more than one business services (" + serviceDetail.getBusinessServiceArrayList().size() + ")";
+            logger.warning(msg);
+            showError(msg);
+            return;
+        }
+        KeyedReference existingLocalpolicyreference = null;
+        BusinessService toUpdate = serviceDetail.getBusinessServiceArrayList().get(0);
+        CategoryBag cbag = toUpdate.getCategoryBag();
+        if (cbag != null && toUpdate.getCategoryBag().getKeyedReferenceArrayList() != null) {
+            KeyedReferenceArrayList kreflist = toUpdate.getCategoryBag().getKeyedReferenceArrayList();
+            for (Iterator i = kreflist.iterator(); i.hasNext(); ) {
+                KeyedReference kref = (KeyedReference)i.next();
+                if (kref.getTModelKey().equals("uddi:schemas.xmlsoap.org:localpolicyreference:2003_03")) {
+                    existingLocalpolicyreference = kref;
+                    break;
+                }
+            }
+            // we can remove this before asking user because
+            // if user refuses, the whole update is not going
+            // to occur
+            if (existingLocalpolicyreference != null) {
+                kreflist.remove(existingLocalpolicyreference);
+            }
+        }
+        if (existingLocalpolicyreference != null) {
+            int res = JOptionPane.showConfirmDialog(this,
+                                  "There is already a policy associated to this Business\n" +
+                                  "Service (key: " + existingLocalpolicyreference.getKeyValue() + "). Would you like to override it?",
+                                  "Policy tModel already associated",
+                                  JOptionPane.YES_NO_OPTION);
+            if (res == JOptionPane.NO_OPTION) {
+                logger.info("action cancelled.");
+                return;
+            }
+        }
+        if (cbag == null) {
+            cbag = new CategoryBag();
+            toUpdate.setCategoryBag(cbag);
+        }
+        String keyvalue = data.getPolicytModelKey();
+        String keyname = "Policy for " + data.getPolicyName();
+        try {
+            // change access point for the service
+            if (toUpdate.getBindingTemplateArrayList() != null) {
+                for (Iterator i = toUpdate.getBindingTemplateArrayList().iterator(); i.hasNext(); ) {
+                    BindingTemplate bt = (BindingTemplate)i.next();
+                    bt.setAccessPoint(new AccessPoint(data.getPolicyConsumptionURL()));
+                }
+            }
+
+            // assign policy tModel in categoryBag
+            cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:localpolicyreference:2003_03", keyvalue, keyname));
+
+            // update service in uddi
+            Save_service save = new Save_service();
+            save.addBusinessService(toUpdate);
+            save.setAuthInfo(data.getAuthInfo());
+            save.check();
+            UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(data.getUddiurl() + "publishing");
+            System.out.print("Save in progress ...");
+            ServiceDetail savedResult = publishing.save_service(save);
+            JOptionPane.showMessageDialog(this, "Service updated with policy tModel",
+                                          "Success", JOptionPane.PLAIN_MESSAGE);
+            done = true;
+            // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
+            notifyListeners();
+        } catch (Throwable e) {
+            String msg = "could not update business service with policy tModel ref";
+            logger.log(Level.WARNING, msg, e);
+            showError(msg);
         }
     }
 
@@ -120,18 +236,6 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     private void showError(String err) {
         JOptionPane.showMessageDialog(this, err, "Invalid Input", JOptionPane.ERROR_MESSAGE);
     }
-    /*
-
-    todo, once the remotepolicyreference tModel is published, find a businessService to associate to,
-    then add :
-    <categoryBag>
-        <keyedReference
-            keyName="policy for service foo"
-            keyValue="the tModel key saved in remotepolicyreference"
-            tModelKey="uddi:schemas.xmlsoap.org:localpolicyreference:2003_03" />
-    </categoryBag>
-
-    */
 
     private class ListMember {
         String serviceName;
@@ -141,7 +245,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             serviceKey = key;
         }
         public String toString() {
-            return serviceName;
+            return serviceName + " [" + serviceKey + "]";
         }
     }
 }
