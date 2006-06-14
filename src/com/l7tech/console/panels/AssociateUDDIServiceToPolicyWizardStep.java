@@ -25,7 +25,7 @@ import java.util.ArrayList;
  * User: flascell<br/>
  * Date: Jun 14, 2006<br/>
  */
-public class AssociateUDDIServiceToPolicyWizardPanel extends WizardStepPanel {
+public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     private JPanel mainPanel;
     private JTextField serviceNameField;
     private JButton listServicesButton;
@@ -33,10 +33,10 @@ public class AssociateUDDIServiceToPolicyWizardPanel extends WizardStepPanel {
     private JButton updateServiceButton;
     private boolean done = false;
     private PublishPolicyToUDDIWizard.Data data;
-    private static final Logger logger = Logger.getLogger(AssociateUDDIServiceToPolicyWizardPanel.class.getName());
+    private static final Logger logger = Logger.getLogger(AssociateUDDIServiceToPolicyWizardStep.class.getName());
     private ArrayList<ListMember> listData = new ArrayList<ListMember>();
 
-    public AssociateUDDIServiceToPolicyWizardPanel(WizardStepPanel next) {
+    public AssociateUDDIServiceToPolicyWizardStep(WizardStepPanel next) {
         super(next);
         initialize();
     }

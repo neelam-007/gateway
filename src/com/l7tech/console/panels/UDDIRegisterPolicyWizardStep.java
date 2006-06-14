@@ -22,15 +22,15 @@ import java.util.logging.Level;
  * User: flascell<br/>
  * Date: Jun 12, 2006<br/>
  */
-public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
+public class UDDIRegisterPolicyWizardStep extends WizardStepPanel {
     private JPanel mainPanel;
     private JTextPane progressLabel;
     private PublishPolicyToUDDIWizard.Data data;
     private JButton registerButton;
-    private static final Logger logger = Logger.getLogger(UDDIRegisterPolicyWizardPanel.class.getName());
+    private static final Logger logger = Logger.getLogger(UDDIRegisterPolicyWizardStep.class.getName());
     private boolean done = false;
 
-    public UDDIRegisterPolicyWizardPanel(WizardStepPanel next) {
+    public UDDIRegisterPolicyWizardStep(WizardStepPanel next) {
         super(next);
         initialize();
     }
@@ -50,9 +50,9 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             public void actionPerformed(ActionEvent e) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        UDDIRegisterPolicyWizardPanel.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                        UDDIRegisterPolicyWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                         publishPolicyReferenceToSystinet65Directory();
-                        UDDIRegisterPolicyWizardPanel.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                        UDDIRegisterPolicyWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     }
                 });
             }
