@@ -152,6 +152,8 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             TModelDetail tModelDetail = publishing.save_tModel(stm);
             TModel saved = tModelDetail.getTModelArrayList().get(0);
             setProgress("Publication successful. tModel key: " + saved.getTModelKey(), false);
+            // todo, canFinish is only called once and so this mechanism does not work.
+            // trigger Wizard.updateWizardControls somehow instead
             done = true;
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
