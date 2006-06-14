@@ -25,8 +25,6 @@ import net.sf.nachocalendar.components.DateField;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.*;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -702,6 +700,13 @@ public class LogPanel extends JPanel {
         connected = false;
 
         clearLogCache();
+        getMsgDetails().setText("");
+        getAssociatedLogsTable().getTableSorter().setData(Collections.EMPTY_LIST);
+        getRequestXmlTextArea().setText("");
+        getResponseXmlTextArea().setText("");
+        unformattedRequestXml.setLength(0);
+        unformattedResponseXml.setLength(0);
+
         getLogsRefreshTimer().stop();
         getFilteredLogTableSorter().onDisconnect();
 

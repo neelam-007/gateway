@@ -1,5 +1,9 @@
 package com.l7tech.common.gui.util;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.swing.SwingUtilities;
 
 /**
@@ -15,6 +19,7 @@ import javax.swing.SwingUtilities;
  * creating it.
  */
 public abstract class SwingWorker {
+  private static final Logger logger = Logger.getLogger(SwingWorker.class.getName());
   private Object value;  // see getValue(), setValue()
 
   /** 
@@ -113,6 +118,14 @@ public abstract class SwingWorker {
       public void run() {
         try {
           setValue(construct());
+        } catch(RuntimeException exception) {
+            String handlerClass = System.getProperty("sun.awt.exception.handler");
+            if (handlerClass != null) {
+                handleException(handlerClass, exception);
+            }
+            else {
+                throw exception;
+            }
         } finally {
           threadVar.clear();
         }
@@ -134,4 +147,31 @@ public abstract class SwingWorker {
       t.start();
     }
   }
+
+    private void handleException(String handerClassName, RuntimeException exception) {
+        Object handler = null;
+        Method method = null;
+        try {
+            handler = Class.forName(handerClassName).newInstance();
+            method = handler.getClass().getMethod("handle", new Class[]{Throwable.class});
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Error getting error handler", e);
+            throw exception;
+        }
+
+        if (method != null) {
+            try {
+                method.invoke(handler, new Object[]{exception});
+            }
+            catch (IllegalAccessException iae) {
+                logger.log(Level.WARNING, "Error calling error handler", iae);
+                throw exception;
+            }
+            catch (InvocationTargetException ite) {
+                logger.log(Level.WARNING, "Error calling error handler", ite);
+                // we invoked the handler so don't throw exception here
+            }
+        }
+    }
 }

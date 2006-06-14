@@ -12,7 +12,6 @@ import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.util.*;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.service.ServiceAdmin;
 
@@ -27,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /*
 * This class is a window extended from JFrame to show the cluster status.
@@ -847,12 +845,6 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                         cal.setTime(getCurrentClusterSystemTime());
                         getLastUpdateLabel().setText("Last Updated: " + sdf.format(cal.getTime()) + "   ");
                         getStatusRefreshTimer().start();
-                    } else {
-                        if (isRemoteExceptionCaught()) {
-                            // the connection to the cluster is down
-                            cleanUp();
-                            ErrorManager.getDefault().notify(Level.WARNING, getRemoteException(), "Error getting data from SecureSpan Gateway.");
-                        }
                     }
                 }
             }

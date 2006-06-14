@@ -7,14 +7,12 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Iterator;
@@ -672,13 +670,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                                 }
                             }
 
-                        } else {
-                            if (isRemoteExceptionCaught()) {
-                                // the connection to the cluster is down
-                                logPanel.onDisconnect();
-                                onDisconnect();
-                                ErrorManager.getDefault().notify(Level.WARNING, getRemoteException(), "Could not get data from gateway.");
-                            }
                         }
                     }
                 }

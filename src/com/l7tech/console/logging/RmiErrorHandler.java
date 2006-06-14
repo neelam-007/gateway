@@ -64,7 +64,7 @@ public class RmiErrorHandler implements ErrorHandler {
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
-                     (raex != null && throwable instanceof java.net.ConnectException)) {
+                     (raex != null && throwable instanceof java.net.SocketException)) {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
                 level = Level.WARNING;
                 t = null;

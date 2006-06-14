@@ -3,14 +3,19 @@ package com.l7tech.spring.remoting.http;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.net.SocketException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.springframework.remoting.httpinvoker.CommonsHttpInvokerRequestExecutor;
 import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.HttpRecoverableException;
+import org.apache.commons.httpclient.HttpException;
 
 /**
  * Client side HTTP request executor.
@@ -50,14 +55,51 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
 
         postMethod.setHostConfiguration(hostConfiguration);
 
-        super.executePostMethod(config, httpClient, postMethod);
+        try {
+            super.executePostMethod(config, httpClient, postMethod);
+        }
+        catch (IOException ioe) {
+            // HACK: since HttpClient is not passing the root cause for this exception we will detect it from
+            // the message text and create a dummy throwable
+            if (ioe instanceof HttpRecoverableException) {
+                if (ioe.getMessage().startsWith("java.net.SocketException:")) {
+                    logger.log(Level.WARNING, "Replacing HttpHttpRecoverableExceptionException with (dummy) SocketException.", ioe);
+                    throw new SocketException("Dummy cause since HttpClient doesn't nest exceptions.");
+                }
+                else throw ioe;
+            }
+            else throw ioe;
+        }
     }
 
     protected PostMethod createPostMethod(HttpInvokerClientConfiguration config) throws IOException {
         return super.createPostMethod(new HttpInvokerClientConfigurationImpl(config));
     }
 
+    protected void validateResponse(HttpInvokerClientConfiguration httpInvokerClientConfiguration, PostMethod postMethod) throws IOException {
+        try {
+            super.validateResponse(httpInvokerClientConfiguration, postMethod);
+        }
+        catch (IOException ioe) {
+            // HACK: detect ssg shutdown 503 error code using
+            // the message text and create a dummy throwable instead
+            if (ioe instanceof HttpException) {
+                if (ioe.getMessage() != null &&
+                    ioe.getMessage().contains("Did not receive successful HTTP response: status code = 503, status message = [This application is not currently available]")) {
+                    logger.log(Level.WARNING, "Replacing HttpException with (dummy) SocketException.", ioe);
+                    throw new SocketException("Dummy cause since HttpClient doesn't nest exceptions.");
+                }
+                else throw ioe;
+            }
+            else throw ioe;
+        }
+    }
+
+
+
     //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(SecureHttpInvokerRequestExecutor.class.getName());
 
     /**
      * Regex for replacing the host name in the url with the host[:port] from the login dialog.
@@ -102,7 +144,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
                     encodedId = URLEncoder.encode(sessionId, "iso-8859-1");
                 }
                 catch (UnsupportedEncodingException uee) {
-                    logger.warn("Unable to URL encode session identifier, encoding not supported '"+
+                    logger.warning("Unable to URL encode session identifier, encoding not supported '"+
                             uee.getMessage()+"'.");
                 }
                 decoratedUrl += "?sessionId="+ encodedId;

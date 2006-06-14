@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.remoting.RemoteAccessException;
-
 /**
  * @author alex
  */
@@ -401,20 +399,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
             }
             connected = true;
         } catch (RemoteException e) {
-            if (connected) {
-                // Log only once per disconnect. Don't flood logger with same warning.
-                logger.log(Level.WARNING, "Disconnected from SSG", e);
-            }
-            connected = false;
-            statusLabel.setText("[Disconnected] " + e.getMessage());
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
-        } catch (RemoteAccessException e) {
-            if (connected) {
-                // Log only once per disconnect. Don't flood logger with same warning.
-                logger.log(Level.WARNING, "Disconnected from SSG", e);
-            }
-            connected = false;
-            statusLabel.setText("[Disconnected] " + e.getMessage());
+        } catch (RuntimeException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
         } catch (FindException e) {
             logger.log(Level.WARNING, "SSG can't get data", e);

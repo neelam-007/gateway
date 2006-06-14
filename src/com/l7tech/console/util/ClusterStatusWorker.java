@@ -14,8 +14,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
 
-import org.springframework.remoting.RemoteAccessException;
-
 /*
  * This class retrieves status of all nodes in a cluster.
  *
@@ -31,7 +29,6 @@ public class ClusterStatusWorker extends SwingWorker {
     private Hashtable newNodeList;
     private Hashtable currentNodeList;
     private long clusterRequestCount;
-    private RemoteAccessException remoteException;
     private ServiceAdmin serviceManager = null;
     private java.util.Date currentClusterSystemTime = null;
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
@@ -79,24 +76,6 @@ public class ClusterStatusWorker extends SwingWorker {
     }
 
     /**
-     * Indicate if the remote access exception was caught during the data retrieval
-     *
-     * @return boolean  true if remote exception was caught, false otherwise.
-     */
-    public boolean isRemoteExceptionCaught(){
-        return remoteException != null;
-    }
-
-    /**
-     * Get the remote access exception that was caught during the data retrieval (if any)
-     *
-     * @return The exception or null.
-     */
-    public RemoteAccessException getRemoteException(){
-        return remoteException;
-    }
-
-    /**
      * Return the list of statistics for the service usages in every nodes of the cluster.
      *
      * @return  Vector  The list of statistics.
@@ -140,11 +119,7 @@ public class ClusterStatusWorker extends SwingWorker {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find cluster status from server", e);
         } catch (RemoteException e) {
-            remoteException = new RemoteAccessException("Remote exception when retrieving cluster status from server",e);
-            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
-        } catch (RemoteAccessException e) {
-            remoteException = e;
-            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+            throw new RuntimeException("Remote exception when retrieving cluster status from server",e);
         }
 
         if(cluster == null){
@@ -192,11 +167,7 @@ public class ClusterStatusWorker extends SwingWorker {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find service statistics from server", e);
         } catch (RemoteException e) {
-            remoteException = new RemoteAccessException("Remote exception when retrieving service statistics from server", e);
-            logger.log(Level.SEVERE, "Remote exception when retrieving service statistics from server", e);
-        } catch (RemoteAccessException e) {
-            remoteException = e;
-            logger.log(Level.SEVERE, "Remote exception when retrieving service statistics from server", e);
+            throw new RuntimeException("Remote exception when retrieving service statistics from server", e);
         }
 
         if (serviceStats == null) {
@@ -226,11 +197,7 @@ public class ClusterStatusWorker extends SwingWorker {
 
             }
         } catch (RemoteException e) {
-            remoteException = new RemoteAccessException("Remote exception when retrieving published services from server",e);
-            logger.log(Level.SEVERE, "Remote exception when retrieving published services from server", e);
-        } catch (RemoteAccessException e) {
-            remoteException = e;
-            logger.log(Level.SEVERE, "Remote exception when retrieving published services from server", e);
+            throw new RuntimeException("Remote exception when retrieving published services from server",e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find all published services from server", e);
         }
@@ -271,17 +238,12 @@ public class ClusterStatusWorker extends SwingWorker {
         try {
             currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
         } catch (RemoteException e) {
-            remoteException = new RemoteAccessException("Remote exception when retrieving cluster status from server",e);
-            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
-        } catch (RemoteAccessException e) {
-            remoteException = e;
-            logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+            throw new RuntimeException("Remote exception when retrieving cluster status from server",e);
         }
 
         if (currentClusterSystemTime == null) {
             return null;
         } else {
-
             // return a dummy object
             return statsList;
         }
