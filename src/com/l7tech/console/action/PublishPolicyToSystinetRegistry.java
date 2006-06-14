@@ -27,7 +27,7 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
     }
 
     public String getName() {
-        return "Publish to Systinet Registry";
+        return "Publish to UDDI Registry";
     }
 
     public String getDescription() {
@@ -62,19 +62,21 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
         }
-        String policyURL = null;
-        String serviceConsumptionURL = null;
+        String policyURL;
+        String serviceConsumptionURL;
         try {
             policyURL = Registry.getDefault().getServiceManager().getPolicyURL(""+svc.getOid());
             serviceConsumptionURL = Registry.getDefault().getServiceManager().getConsumptionURL(""+svc.getOid());
         } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Error publishing service on Systinet registry", e);
-            // todo nicer error message here
-            throw new RuntimeException(e);
+            logger.log(Level.WARNING, "Cannot get service detail from SSG", e);
+            JOptionPane.showMessageDialog(f, "Error getting service details from SecureSpan\nGateway " +
+                                             "consult log for more information", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Error publishing service on Systinet registry", e);
-            // todo nicer error message here
-            throw new RuntimeException(e);
+            logger.log(Level.WARNING, "Cannot get service detail from SSG", e);
+            JOptionPane.showMessageDialog(f, "Error getting service details from SecureSpan\nGateway " +
+                                             "consult log for more information", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
         assert(policyURL != null);
         PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, serviceConsumptionURL, svc.getName());
