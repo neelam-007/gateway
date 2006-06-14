@@ -17,15 +17,13 @@ import java.awt.event.ActionEvent;
  * Date: Jun 12, 2006<br/>
  */
 public class PublishPolicyToUDDIWizard extends Wizard {
-    private String policyURL;
-    private String serviceName;
     public static PublishPolicyToUDDIWizard getInstance(Frame parent, String policyURL, String serviceName) {
-        UDDIRegisterPolicyWizardPanel fstep = new UDDIRegisterPolicyWizardPanel(null);
+        AssociateUDDIServiceToPolicyWizardPanel astep = new AssociateUDDIServiceToPolicyWizardPanel(null);
+        UDDIRegisterPolicyWizardPanel fstep = new UDDIRegisterPolicyWizardPanel(astep);
         UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(fstep, policyURL, serviceName);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(dstep);
         // todo, other panel(s)
-        PublishPolicyToUDDIWizard output = new PublishPolicyToUDDIWizard(parent, tstep);
-        return output;
+        return new PublishPolicyToUDDIWizard(parent, tstep);
     }
 
     protected PublishPolicyToUDDIWizard(Frame parent, WizardStepPanel panel) {
@@ -46,6 +44,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         private String uddiurl;
         private String accountName;
         private String accountPasswd;
+        private String policytModelKey;
 
         public String getPolicyName() {
             return policyName;
@@ -93,6 +92,14 @@ public class PublishPolicyToUDDIWizard extends Wizard {
 
         public void setAccountPasswd(String accountPasswd) {
             this.accountPasswd = accountPasswd;
+        }
+
+        public String getPolicytModelKey() {
+            return policytModelKey;
+        }
+
+        public void setPolicytModelKey(String policytModelKey) {
+            this.policytModelKey = policytModelKey;
         }
     }
 }

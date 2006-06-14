@@ -60,7 +60,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
     }
 
     public boolean canAdvance() {
-        return false;
+        return done;
     }
 
     public boolean canFinish() {
@@ -84,6 +84,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
         */
 
         // create a tmodel to save
+        setProgress("Constructing tModel to save...", false);
         TModel tmodel = new TModel();
         try {
             CategoryBag cbag = new CategoryBag();
@@ -107,7 +108,6 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             setProgress("Error constructing tmodel: " + e.getMessage(), true);
             return;
         }
-
         // setup stuff needed to save it
         String registryURL = data.getUddiurl();
         if (registryURL.indexOf("/uddi") < 1) {
@@ -120,6 +120,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
         if (!registryURL.endsWith("/")) {
             registryURL = registryURL + "/";
         }
+        setProgress("Getting authentication token...", false);
         String authInfo;
         try {
             UDDI_Security_PortType security = UDDISecurityStub.getInstance(registryURL + "security");
@@ -143,7 +144,7 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
         }
         Save_tModel stm = new Save_tModel();
         stm.setAuthInfo(authInfo);
-
+        setProgress("Saving policy tModel...", false);
         try {
             TModelArrayList tmal = new TModelArrayList();
             tmal.add(tmodel);
@@ -151,10 +152,15 @@ public class UDDIRegisterPolicyWizardPanel extends WizardStepPanel {
             UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(registryURL + "publishing");
             TModelDetail tModelDetail = publishing.save_tModel(stm);
             TModel saved = tModelDetail.getTModelArrayList().get(0);
-            setProgress("Publication successful. tModel key: " + saved.getTModelKey(), false);
+            String msg = "Publication successful, policy tModel key: " + saved.getTModelKey() +
+                         "\nclick 'Next' below to associate this policy tModel to\n" +
+                         "a business service or 'Finish' to end.";
+            setProgress(msg, false);
+            data.setPolicytModelKey(saved.getTModelKey());
             done = true;
             // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
             notifyListeners();
+            registerButton.setEnabled(false);
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "cannot save tModel at " + registryURL + "publishing", e);
             setProgress("ERROR cannot save tModel at " + registryURL + "publishing. " + e.getMessage(), true);
