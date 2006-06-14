@@ -398,7 +398,7 @@ public class SystinetUDDIClientAPIv3Test {
         TModel tmodel = new TModel();
 
         CategoryBag cbag = new CategoryBag();
-        //cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:remotepolicyreference:2003_03", "policy reference", "???"));
+        cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:remotepolicyreference:2003_03", "policy reference", "http://blah/policy/blah.xml"));
         cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:policytypes:2003_03", "policy", "policy"));
         tmodel.setCategoryBag(cbag);
 
