@@ -46,7 +46,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "Provide UDDI details for this policy";
+        return "Provide UDDI details for this policy and create a tModel for it";
     }
 
     public String getStepLabel() {
