@@ -19,10 +19,8 @@ import java.awt.event.ActionEvent;
 public class PublishPolicyToUDDIWizard extends Wizard {
     public static PublishPolicyToUDDIWizard getInstance(Frame parent, String policyURL, String policyConsumptionURL, String serviceName) {
         AssociateUDDIServiceToPolicyWizardStep astep = new AssociateUDDIServiceToPolicyWizardStep(null);
-        UDDIRegisterPolicyWizardStep fstep = new UDDIRegisterPolicyWizardStep(astep);
-        UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(fstep, policyURL, serviceName);
+        UDDIPolicyDetailsWizardStep dstep = new UDDIPolicyDetailsWizardStep(astep, policyURL, serviceName);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(dstep);
-        // todo, other panel(s)
         return new PublishPolicyToUDDIWizard(parent, tstep, policyConsumptionURL);
     }
 

@@ -139,11 +139,11 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             serviceDetail = inquiry.get_serviceDetail(getServiceDetail);
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "cannot find service or get inquiry", e);
-            showError("Cannot get service details for service\nkey " + serviceKey + ". Consult log for more info.");
+            showError("Cannot get service details for service key " + serviceKey + ". Consult log for more info.");
             return;
         }
         if (serviceDetail.getBusinessServiceArrayList().size() != 1) {
-            String msg = "UDDI registry returned either empty serviceDetail or\n" +
+            String msg = "UDDI registry returned either empty serviceDetail or " +
                          "more than one business services (" + serviceDetail.getBusinessServiceArrayList().size() + ")";
             logger.warning(msg);
             showError(msg);
@@ -169,9 +169,9 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             }
         }
         if (existingLocalpolicyreference != null) {
-            int res = JOptionPane.showConfirmDialog(this,
-                                  "There is already a policy associated to this Business\n" +
-                                  "Service (key: " + existingLocalpolicyreference.getKeyValue() + "). Would you like to override it?",
+            int res = JOptionPane.showConfirmDialog(this,UDDIPolicyDetailsWizardStep.breakOnMultipleLines(
+                                  "There is already a policy associated to this Business " +
+                                  "Service (key: " + existingLocalpolicyreference.getKeyValue() + "). Would you like to override it?", 30),
                                   "Policy tModel already associated",
                                   JOptionPane.YES_NO_OPTION);
             if (res == JOptionPane.NO_OPTION) {
@@ -234,7 +234,8 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     }
 
     private void showError(String err) {
-        JOptionPane.showMessageDialog(this, err, "Invalid Input", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, UDDIPolicyDetailsWizardStep.breakOnMultipleLines(err, 30),
+                                      "Invalid Input", JOptionPane.ERROR_MESSAGE);
     }
 
     private class ListMember {
