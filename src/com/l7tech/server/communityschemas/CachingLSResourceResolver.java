@@ -5,10 +5,7 @@
 
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.cache.HttpObjectCache;
-import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_INITIAL;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.common.util.TextUtils;
@@ -16,9 +13,9 @@ import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -33,8 +30,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
     public static final LSInput LSINPUT_UNRESOLVED = new LSInputImpl();
 
     private final SchemaFinder schemaFinder;
-    private final GenericHttpClient httpClient;
-    private final HttpObjectCache<SchemaHandle> cache;
+    private final HttpObjectCache<String> cache;
     private final SchemaCompiler schemaCompiler;
     private final ImportListener importListener;
     private final Pattern[] urlWhitelist;
@@ -53,10 +49,10 @@ class CachingLSResourceResolver implements LSResourceResolver {
          * @param url  the URL that was fetched.  Never null.
          * @param response  The HTTP 200 response, already slurped and converted to a String.  Never null.
          * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
-         * @throws IOException if this response was not accepted for caching, in which case this request will
-         *                     be treated as a failure.
+         * @throws ParseException if this response was not accepted for caching, in which case this request will
+         *                        be treated as a failure.
          */
-        SchemaHandle getSchema(String url, String response) throws IOException;
+        SchemaHandle getSchema(String url, String response) throws ParseException;
     }
 
     /** Gets called no matter what, on any import we find. */
@@ -65,8 +61,7 @@ class CachingLSResourceResolver implements LSResourceResolver {
     }
 
     public CachingLSResourceResolver(SchemaFinder schemaFinder,
-                                     GenericHttpClient httpClient,
-                                     HttpObjectCache<SchemaHandle> cache,
+                                     HttpObjectCache<String> cache,
                                      Pattern[] urlWhitelist,
                                      SchemaCompiler schemaCompiler,
                                      ImportListener importListener)
@@ -75,11 +70,10 @@ class CachingLSResourceResolver implements LSResourceResolver {
         this.cache = cache;
         this.schemaCompiler = schemaCompiler;
         this.urlWhitelist = urlWhitelist;
-        this.httpClient = httpClient;
         this.importListener = importListener;
-        if (schemaFinder == null || importListener == null || schemaCompiler == null)
+        if (schemaFinder == null || importListener == null)
             throw new NullPointerException();
-        if (cache == null || urlWhitelist == null || httpClient == null)
+        if (cache == null || urlWhitelist == null)
             throw new IllegalArgumentException("HTTP-fetching parameters must be provided");
     }
 
@@ -136,26 +130,21 @@ class CachingLSResourceResolver implements LSResourceResolver {
                 return LSINPUT_UNRESOLVED;
             }
 
-            GenericHttpRequestParams requestParams = new GenericHttpRequestParams(fullUrl);
+            HttpObjectCache.FetchResult<String> got = cache.fetchCached(fullUrl.toExternalForm(), null);
 
-            HttpObjectCache.FetchResult got = cache.fetchCached(httpClient, requestParams, WAIT_INITIAL, new HttpObjectCache.UserObjectFactory() {
-                public SchemaHandle createUserObject(String url, String response) throws IOException {
-                    return schemaCompiler.getSchema(url, response);
-                }
-            });
-
-            Object userObj = got.getUserObject();
-            if (userObj == null) {
+            String response = got.getUserObject();
+            if (response == null) {
                 logger.log(Level.WARNING, "Unable to fetch remote schema reference: " + ExceptionUtils.getMessage(got.getException()), got.getException());
                 return LSINPUT_UNRESOLVED;
             }
 
-            if (!(userObj instanceof SchemaHandle)) {
-                logger.warning("Refusing remote schema reference becuase the URL was fetched recently and found not to contain a schema: url = " + url);
+            try {
+                schemaHandle = schemaCompiler.getSchema(url, response);
+            } catch (ParseException e) {
+                logger.log(Level.WARNING, "Unable to fetch remote schema reference: " + ExceptionUtils.getMessage(e), e);
                 return LSINPUT_UNRESOLVED;
             }
 
-            schemaHandle = ((SchemaHandle)userObj);
             importListener.foundImport(schemaHandle);
             return schemaHandle.getCompiledSchema().getLSInput();
 

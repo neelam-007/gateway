@@ -5,10 +5,7 @@
 
 package com.l7tech.server.util.res;
 
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.cache.HttpObjectCache;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.cache.UrlResolver;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
@@ -17,7 +14,6 @@ import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.server.policy.ServerPolicyException;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -28,35 +24,13 @@ import java.util.regex.PatternSyntaxException;
 /**
  * An object that is created with a ResourceInfo and can thereafter fetch a resource given a message.
  */
-public abstract class ResourceGetter<R,C> {
+public abstract class ResourceGetter<R> {
     protected static final Pattern MATCH_ALL = Pattern.compile(".");
 
-    private static final GenericHttpClient httpClient;
-
-    static {
-        MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
-        connectionManager.setMaxConnectionsPerHost(100);
-        connectionManager.setMaxTotalConnections(1000);
-        httpClient = new CommonsHttpClient(connectionManager);
-    }
-
-    protected final HttpObjectCache<C> httpObjectCache;
-    protected final HttpObjectCache.UserObjectFactory<C> cacheObjectFactory;
-
-    protected ResourceGetter(HttpObjectCache<C> httpObjectCache, HttpObjectCache.UserObjectFactory<C> cacheObjectFactory) {
-        this.httpObjectCache = httpObjectCache;
-        this.cacheObjectFactory = cacheObjectFactory;
-        if (httpObjectCache == null || cacheObjectFactory == null) throw new NullPointerException();
+    protected ResourceGetter() {
     }
 
     public abstract void close();
-
-    /** @return the HTTP client we are using with the object cache. */
-    public GenericHttpClient getHttpClient() {
-        return httpClient;
-    }
-
-    public abstract Pattern[] getUrlWhitelist();
 
     // Some handy exceptions to ensure that information of interest is preserved until it gets back up
     // to the assertion to be audited
@@ -166,40 +140,37 @@ public abstract class ResourceGetter<R,C> {
      *
      * @param assertion the assertion bean that owns the configuration of the type and paramaters for fetching the resource
      *                  (static, single URL, URL from message, etc).  Must not be null.  assertion.getResourceInfo() must
-     * @param rof  strategy for converting the raw resource bytes into the consumer's preferred resource object format
+     * @param rof  strategy for converting the raw resource strings into the consumer's preferred resource object format
      *             for caching/reuse/metadata etc.  Must not be null.
      * @param urlFinder strategy for finding a URL within a message.  Must not be null if assertion.getResourceInfo()
      *                   might be MessageUrlResourceInfo.
-     * @param auditor        auditor to use to log warnings when a previously-cached resource object is reused after there is a network problem fetching an up-to-date copy.
-     *                       May be null to disable such warnings.
+     * @param urlResolver  strategy for converting a URL into the consumer's preferred resource object format,
+     *                     possibly by downloading and parsing it
      * @return a ResourceGetter that will fetch resources for future messages.  Never null.
      * @throws NullPointerException if assertion or rof is null
      * @throws ServerPolicyException if the assertion contains no ResourceInfo
      * @throws ServerPolicyException if a ResourceGetter could not be created from the provided configuration
      * @throws IllegalArgumentException if the resource info type if MessageUrlResourceInfo but urlFinder is null
      */
-    public static <AC extends Assertion & UsesResourceInfo, R, C>
-    ResourceGetter<R,C> createResourceGetter(AC assertion,
-                                             ResourceObjectFactory<R, C> rof,
-                                             UrlFinder urlFinder,
-                                             HttpObjectCache<C> httpObjectCache,
-                                             HttpObjectCache.UserObjectFactory<C> cacheObjectFactory,
-                                             Auditor auditor)
+    public static <AC extends Assertion & UsesResourceInfo, R>
+    ResourceGetter<R> createResourceGetter(AC assertion,
+                                           ResourceObjectFactory<R> rof,
+                                           UrlFinder urlFinder,
+                                           UrlResolver<R> urlResolver)
             throws ServerPolicyException
     {
         AssertionResourceInfo ri = assertion.getResourceInfo();
         if (ri == null) throw new ServerPolicyException(assertion, "Assertion contains no ResourceInfo provided");
-        if (rof == null) throw new NullPointerException("No ResourceObjectFactory provided");
-        if (httpObjectCache == null) throw new NullPointerException("No HttpObjectCache provided");
 
+        // TODO move this entire factory method to an instance method of ResourceInfo, as soon as generics are
+        // allowed inside the top-level policy package.
         try {
             if (ri instanceof MessageUrlResourceInfo) {
-                if (urlFinder == null) throw new IllegalArgumentException("MessageUrlResourceInfo requested but no UrlFinder provided");
-                return new MessageUrlResourceGetter<R,C>((MessageUrlResourceInfo)ri, rof, urlFinder, httpObjectCache, cacheObjectFactory, auditor);
+                return new MessageUrlResourceGetter<R>((MessageUrlResourceInfo)ri, urlResolver, urlFinder);
             } else if (ri instanceof SingleUrlResourceInfo) {
-                return new SingleUrlResourceGetter<R,C>(assertion, (SingleUrlResourceInfo)ri, rof, httpObjectCache, cacheObjectFactory, auditor);
+                return new SingleUrlResourceGetter<R>(assertion, (SingleUrlResourceInfo)ri, urlResolver);
             } else if (ri instanceof StaticResourceInfo) {
-                return new StaticResourceGetter<R,C>(assertion, (StaticResourceInfo)ri, rof, httpObjectCache, cacheObjectFactory);
+                return new StaticResourceGetter<R>(assertion, (StaticResourceInfo)ri, rof);
             } else
                 throw new ServerPolicyException(assertion, "Unsupported XSLT resource info: " + ri.getClass().getName());
         } catch (PatternSyntaxException e) {

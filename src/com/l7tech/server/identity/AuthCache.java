@@ -33,7 +33,7 @@ public final class AuthCache {
         int size = SUCCESS_CACHE_SIZE + FAILURE_CACHE_SIZE;
         int tunerInterval = 59;
         cache = size < 1 ? null :
-                WhirlycacheFactory.createCache(name, size, WhirlycacheFactory.POLICY_LFU, tunerInterval);
+                WhirlycacheFactory.createCache(name, size, tunerInterval, WhirlycacheFactory.POLICY_LFU);
     }
 
     private static class CacheKey {

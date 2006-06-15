@@ -45,7 +45,7 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
 
     //private static final LRUMap sigCache = new LRUMap(SIG_VERIFY_CACHE_MAX);
     private static final Cache sigCache = WhirlycacheFactory.createCache("sigCache", SIG_VERIFY_CACHE_MAX,
-                                                                         WhirlycacheFactory.POLICY_LRU, 131);
+                                                                         131, WhirlycacheFactory.POLICY_LRU);
 
     private static class CachedSignature {
         final byte[] digestBytes;

@@ -5,6 +5,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
@@ -12,9 +13,9 @@ import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariCompiledStylesheet;
@@ -22,7 +23,6 @@ import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
-import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -31,10 +31,11 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.server.util.res.UrlFinder;
+import com.l7tech.server.util.HttpClientFactory;
+import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
@@ -44,7 +45,10 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.*;
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
@@ -79,27 +83,7 @@ public class ServerXslTransformation
         }
     }
 
-    /** A cache for remotely loaded stylesheets. */
-    private static final HttpObjectCache<CachedStylesheet> httpObjectCache =
-            new HttpObjectCache<CachedStylesheet>(
-                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
-                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000));
-
-
-    private final Auditor auditor;
-    private final ResourceGetter<CachedStylesheet, CachedStylesheet> resourceGetter;
-    private final String[] varsUsed;
-
-
-    public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
-        super(assertion);
-        if (assertion == null) throw new IllegalArgumentException("must provide assertion");
-
-        this.auditor = new Auditor(this, springContext, logger);
-        this.varsUsed = assertion.getVariablesUsed();
-
-        // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
-        HttpObjectCache.UserObjectFactory<CachedStylesheet> cacheObjectFactory =
+    private static final HttpObjectCache.UserObjectFactory<CachedStylesheet> cacheObjectFactory =
                 new HttpObjectCache.UserObjectFactory<CachedStylesheet>() {
                     public CachedStylesheet createUserObject(String url, String response) throws IOException {
                         try {
@@ -113,11 +97,32 @@ public class ServerXslTransformation
                     }
                 };
 
-        ResourceObjectFactory<CachedStylesheet, CachedStylesheet> resourceObjectfactory =
-                new ResourceObjectFactory<CachedStylesheet, CachedStylesheet>()
+    /** A cache for remotely loaded stylesheets. */
+    private static HttpObjectCache<CachedStylesheet> httpObjectCache = null;
+
+    private final Auditor auditor;
+    private final ResourceGetter<CachedStylesheet> resourceGetter;
+    private final String[] varsUsed;
+
+    public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
+        super(assertion);
+        if (assertion == null) throw new IllegalArgumentException("must provide assertion");
+
+        this.auditor = new Auditor(this, springContext, logger);
+        this.varsUsed = assertion.getVariablesUsed();
+
+        // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
+
+        ResourceObjectFactory<CachedStylesheet> resourceObjectfactory =
+                new ResourceObjectFactory<CachedStylesheet>()
                 {
-                    public CachedStylesheet createResourceObject(String url, CachedStylesheet resource) {
-                        return resource;
+                    public CachedStylesheet createResourceObject(String resourceString) throws ParseException {
+                        try {
+                            return cacheObjectFactory.createUserObject("", resourceString);
+                        } catch (IOException e) {
+                            throw (ParseException)new ParseException("Unable to parse stylesheet: " +
+                                    ExceptionUtils.getMessage(e), 0).initCause(e);
+                        }
                     }
                 };
 
@@ -137,9 +142,22 @@ public class ServerXslTransformation
         this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
                                                                   resourceObjectfactory,
                                                                   urlFinder,
-                                                                  httpObjectCache,
-                                                                  cacheObjectFactory,
-                                                                  auditor);
+                                                                  getCache(springContext));
+    }
+
+    private static synchronized HttpObjectCache<CachedStylesheet> getCache(ApplicationContext spring) {
+        if (httpObjectCache != null)
+            return httpObjectCache;
+
+        HttpClientFactory clientFactory = (HttpClientFactory)spring.getBean("httpClientFactory");
+        if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
+
+        httpObjectCache = new HttpObjectCache<CachedStylesheet>(
+                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
+                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
+                    clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL);
+
+        return httpObjectCache;
     }
 
     /**

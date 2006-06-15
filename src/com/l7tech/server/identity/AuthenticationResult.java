@@ -16,8 +16,8 @@ public final class AuthenticationResult {
     private static final Cache groupMembershipCache = AuthCache.GROUP_CACHE_SIZE < 1 ? null :
             WhirlycacheFactory.createCache("groupMemberships",
                                            AuthCache.GROUP_CACHE_SIZE,
-                                           WhirlycacheFactory.POLICY_LFU,
-                                           71);
+                                           71, WhirlycacheFactory.POLICY_LFU
+            );
 
     private AuthenticationResult() {
         user = null;

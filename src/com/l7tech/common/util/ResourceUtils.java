@@ -90,6 +90,7 @@ public final class ResourceUtils {
 
     /**
      * Close a {@link com.l7tech.common.util.Closeable} without throwing any exceptions.
+     * TODO: support Java 1.5 Closeable as well, as soon as we are allowed to use it in common package
      *
      * Takes no action if the object is not {@link com.l7tech.common.util.Closeable}.
      * @param o the object to close.

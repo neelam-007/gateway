@@ -44,8 +44,8 @@ public class CertUtils {
     private static final Cache certVerifyCache =
             WhirlycacheFactory.createCache("certCache",
                                            CERT_VERIFY_CACHE_MAX,
-                                           WhirlycacheFactory.POLICY_LRU,
-                                           127);
+                                           127, WhirlycacheFactory.POLICY_LRU
+            );
 
     private static class VerifiedCert {
         final byte[] certBytes;

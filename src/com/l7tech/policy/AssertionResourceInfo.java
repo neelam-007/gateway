@@ -6,6 +6,7 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.AssertionResourceType;
 
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.Serializable;
@@ -29,7 +30,7 @@ public abstract class AssertionResourceInfo implements Cloneable, Serializable {
      * @return the regular expressions compiled into patterns.  May be empty but never null.
      * @see #getUrlRegexes()
      */
-    public Pattern[] makeUrlPatterns() {
+    public Pattern[] makeUrlPatterns() throws PatternSyntaxException {
         List patterns = new ArrayList();
         String[] urlRegexes = getUrlRegexes();
         for (int i = 0; i < urlRegexes.length; i++) {

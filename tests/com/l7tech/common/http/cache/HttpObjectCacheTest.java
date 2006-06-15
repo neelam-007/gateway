@@ -5,15 +5,14 @@
 
 package com.l7tech.common.http.cache;
 
+import com.l7tech.common.http.*;
 import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_LATEST;
 import static com.l7tech.common.http.cache.HttpObjectCache.WAIT_NEVER;
-import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.net.URL;
 import java.util.logging.Logger;
 
 /**
@@ -60,31 +59,39 @@ public class HttpObjectCacheTest extends TestCase {
     }
 
     public void testSingleThreaded() throws Exception {
-        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
-        HttpObjectCache<UserObj> httpObjectCache = new HttpObjectCache<UserObj>(500, TEST_POLL_AGE);
-
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
-        MockGenericHttpClient hc = new MockGenericHttpClient(200,
-                                                             new GenericHttpHeaders(new HttpHeader[0]),
-                                                             ContentTypeHeader.OCTET_STREAM_DEFAULT,
-                                                             (long)userObjStr.getBytes().length,
-                                                             userObjStr.getBytes());
-        URL url = new URL("http://blat/");
-        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
-
-        // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
-
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
             public UserObj createUserObject(String url, String response) {
                 return new UserObj(userObjStr);
             }
         };
 
+        final MockGenericHttpClient hc = new MockGenericHttpClient(200,
+                                                                   new GenericHttpHeaders(new HttpHeader[0]),
+                                                                   ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                                                                   (long)userObjStr.getBytes().length,
+                                                                   userObjStr.getBytes());
+
+        GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            public GenericHttpClient createHttpClient() {
+                return hc;
+            }
+        };
+
+
+        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
+        HttpObjectCache<UserObj> httpObjectCache =
+                new HttpObjectCache<UserObj>(500, TEST_POLL_AGE, clientFactory, factory, WAIT_NEVER);
+
+        final String url = "http://blat/";
+
+        // Make sure we include a last modified header, although we'll just send garbage
+        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                                                                                     "blarglebliff")}));
+
         hc.clearResponseCount();
-        HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(hc, params, WAIT_NEVER, factory);
+        HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(url, WAIT_NEVER);
         assertTrue(hc.getResponseCount() == 1);
         assertNotNull(result);
         assertNull(result.getException());
@@ -93,7 +100,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertEquals(userObj, firstUo);
 
         // Immediately try a second fetch and ensure the HTTP client is not contacted
-        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
+        result = httpObjectCache.fetchCached(url, WAIT_LATEST);
         assertTrue(hc.getResponseCount() == 1);
         assertNotNull(result);
         assertNull(result.getException());
@@ -103,7 +110,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Wait long enough to trigger a poll, then try a third request, and ensure that if-modified-since worked.
         Thread.sleep(POLL_DELAY);
         hc.setResponseStatus(HttpConstants.STATUS_NOT_MODIFIED);
-        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
+        result = httpObjectCache.fetchCached(url, WAIT_LATEST);
         assertTrue(hc.getResponseCount() == 2);
         assertNotNull(result);
         assertNull(result.getException());
@@ -111,7 +118,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertTrue(result.getUserObject() == firstUo); // must not have replaced the object
 
         // Immediately try a fourth request, which should not poll
-        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
+        result = httpObjectCache.fetchCached(url, WAIT_LATEST);
         assertTrue(hc.getResponseCount() == 2);
         assertNotNull(result);
         assertNull(result.getException());
@@ -121,7 +128,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Wait long enough to trigger another poll, then try a fifth request, which should do a new download
         Thread.sleep(POLL_DELAY);
         hc.setResponseStatus(200);
-        result = httpObjectCache.fetchCached(hc, params, WAIT_LATEST, factory);
+        result = httpObjectCache.fetchCached(url, WAIT_LATEST);
         assertTrue(hc.getResponseCount() == 3);
         assertNotNull(result);
         assertNull(result.getException());
@@ -136,10 +143,8 @@ public class HttpObjectCacheTest extends TestCase {
         private final int num = nextNum++;
         private int nextReq = 1;
         private final HttpObjectCache<UserObj> httpObjectCache;
-        private GenericHttpClient client = null;
-        private GenericHttpRequestParams params = null;
+        private final String url;
         private HttpObjectCache.WaitMode waitForNewestResult = WAIT_NEVER;
-        private HttpObjectCache.UserObjectFactory<UserObj> factory = null;
         /** @noinspection FieldCanBeLocal*/
         private volatile boolean started = false;
         private volatile boolean running = false;
@@ -149,12 +154,10 @@ public class HttpObjectCacheTest extends TestCase {
         private Throwable lastException = null;
         private Thread thread = null;
 
-        public TestThread(HttpObjectCache<UserObj> cache, GenericHttpClient client, GenericHttpRequestParams params, HttpObjectCache.WaitMode waitForNewestResult, HttpObjectCache.UserObjectFactory<UserObj> factory) {
+        public TestThread(HttpObjectCache<UserObj> cache, String url, HttpObjectCache.WaitMode waitForNewestResult) {
             this.httpObjectCache = cache;
-            this.client = client;
-            this.params = params;
+            this.url = url;
             this.waitForNewestResult = waitForNewestResult;
-            this.factory = factory;
         }
 
         /**
@@ -181,7 +184,7 @@ public class HttpObjectCacheTest extends TestCase {
 
                 log.info("Thread " + Thread.currentThread().getName() + " entering fetchCached()");
                 HttpObjectCache.FetchResult result =
-                        httpObjectCache.fetchCached(client, params, waitForNewestResult, factory);
+                        httpObjectCache.fetchCached(url, waitForNewestResult);
                 log.info("Thread " + Thread.currentThread().getName() + " leaving fetchCached()");
 
                 synchronized (this) {
@@ -232,20 +235,8 @@ public class HttpObjectCacheTest extends TestCase {
             return total;
         }
 
-        public synchronized void setClient(GenericHttpClient client) {
-            this.client = client;
-        }
-
-        public synchronized void setParams(GenericHttpRequestParams params) {
-            this.params = params;
-        }
-
         public synchronized void setWaitForNewestResult(HttpObjectCache.WaitMode waitForNewestResult) {
             this.waitForNewestResult = waitForNewestResult;
-        }
-
-        public synchronized void setFactory(HttpObjectCache.UserObjectFactory<UserObj> factory) {
-            this.factory = factory;
         }
 
         public static int getNextNum() {
@@ -267,18 +258,15 @@ public class HttpObjectCacheTest extends TestCase {
     }
 
     public void testMultiThreaded() throws Exception {
-        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
-        HttpObjectCache<UserObj> httpObjectCache = new HttpObjectCache<UserObj>(500, TEST_POLL_AGE);
 
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
-        MockGenericHttpClient hc = new MockGenericHttpClient(200,
-                                                             new GenericHttpHeaders(new HttpHeader[0]),
-                                                             ContentTypeHeader.OCTET_STREAM_DEFAULT,
-                                                             (long)userObjStr.getBytes().length,
-                                                             userObjStr.getBytes());
-        URL url = new URL("http://blatty44/");
-        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
+        final MockGenericHttpClient hc = new MockGenericHttpClient(200,
+                                                                   new GenericHttpHeaders(new HttpHeader[0]),
+                                                                   ContentTypeHeader.OCTET_STREAM_DEFAULT,
+                                                                   (long)userObjStr.getBytes().length,
+                                                                   userObjStr.getBytes());
+        final String url = "http://blatty44/";
 
         // Make sure we include a last modified header, although we'll just send garbage
         hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
@@ -290,9 +278,20 @@ public class HttpObjectCacheTest extends TestCase {
             }
         };
 
+        GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
+            public GenericHttpClient createHttpClient() {
+                return hc;
+            }
+        };
+
+        // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
+        HttpObjectCache<UserObj> httpObjectCache =
+                new HttpObjectCache<UserObj>(500, TEST_POLL_AGE, clientFactory, factory, WAIT_NEVER);
+
+
         // Make two test threads
-        TestThread t1 = new TestThread(httpObjectCache, hc, params, WAIT_NEVER, factory);
-        TestThread t2 = new TestThread(httpObjectCache, hc, params, WAIT_NEVER, factory);
+        TestThread t1 = new TestThread(httpObjectCache, url, WAIT_NEVER);
+        TestThread t2 = new TestThread(httpObjectCache, url, WAIT_NEVER);
         try {
             doTestMultiThreaded(t1, t2, hc, userObj);
         } finally {

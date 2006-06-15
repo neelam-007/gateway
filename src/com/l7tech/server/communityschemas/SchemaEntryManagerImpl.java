@@ -5,20 +5,20 @@
 
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author mike
@@ -55,7 +55,7 @@ public class SchemaEntryManagerImpl
             long oid = entry.getOid();
             try {
                 compileAndCache(oid, entry);
-            } catch (InvalidDocumentFormatException e) {
+            } catch (ParseException e) {
                 logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
             }
         }
@@ -146,7 +146,7 @@ public class SchemaEntryManagerImpl
         }
         try {
             compileAndCache(res, newSchema);
-        } catch (InvalidDocumentFormatException e) {
+        } catch (ParseException e) {
             throw new SaveException("Invalid schema document", e);
         }
         return res;
@@ -172,7 +172,7 @@ public class SchemaEntryManagerImpl
 
             try {
                 compileAndCache(fromDb.getOid(), fromDb);
-            } catch (InvalidDocumentFormatException e) {
+            } catch (ParseException e) {
                 throw new UpdateException("Invalid schema document", e);
             }
         } catch (FindException fe) {
@@ -203,7 +203,7 @@ public class SchemaEntryManagerImpl
                         compileAndCache(oid, entry);
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Couldn't find invalidated SchemaEntry", e);
-                    } catch (InvalidDocumentFormatException e) {
+                    } catch (ParseException e) {
                         logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
                     }
                 }
@@ -250,7 +250,7 @@ public class SchemaEntryManagerImpl
     }
 
 
-    private void compileAndCache(long oid, SchemaEntry entry) throws InvalidDocumentFormatException {
+    private void compileAndCache(long oid, SchemaEntry entry) throws ParseException {
         SchemaHandle handle = schemaManager.compile(entry.getSchema(), entry.getName(),
                                                     new Pattern[] {Pattern.compile(".*")});
         synchronized(this) {

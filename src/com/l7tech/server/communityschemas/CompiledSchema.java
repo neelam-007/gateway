@@ -51,6 +51,7 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
     private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
     private boolean hardwareEligible = false;  // true while (and only while) all this schemas imports are themselves hardwareEligible AND this schema has a unique tns.
     private boolean loaded = false;  // true while (and only while) this schema is loaded on the hardware
+    private long lastUsedTime = System.currentTimeMillis();
 
     CompiledSchema(String targetNamespace,
                    String systemId,
@@ -149,6 +150,8 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
 
         if (schemaHandler == null || tk == null || tmc == null || targetNamespace == null)
             tryHardware = false;
+
+        setLastUsedTime();
 
         try {
             manager.getReadLock().acquire();
@@ -293,6 +296,7 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
      *                       the error handler will have been told about this and any subsequent errors.
      */
     void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
+        setLastUsedTime();
         try {
             manager.getReadLock().acquire();
             doValidateElements(elementsToValidate, errorHandler);
@@ -355,5 +359,15 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
 
     protected SchemaHandle createHandle() {
         return new SchemaHandle(this);
+    }
+
+    private void setLastUsedTime() {
+        synchronized (this) {
+            lastUsedTime = System.currentTimeMillis();
+        }
+    }
+
+    synchronized long getLastUsedTime() {
+        return lastUsedTime;
     }
 }

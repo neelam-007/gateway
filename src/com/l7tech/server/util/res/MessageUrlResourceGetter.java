@@ -5,41 +5,40 @@
 
 package com.l7tech.server.util.res;
 
-import com.l7tech.common.http.cache.HttpObjectCache;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.http.cache.UrlResolver;
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.MessageUrlResourceInfo;
 
-import java.util.regex.PatternSyntaxException;
-import java.util.Map;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * A ResourceGetter that finds URLs inside the message, then fetches the appropriate resource (with caching),
  * corresponding to {@link com.l7tech.policy.MessageUrlResourceInfo}.
  */
-class MessageUrlResourceGetter<R,C> extends UrlResourceGetter<R,C> {
+class MessageUrlResourceGetter<R> extends UrlResourceGetter<R> {
     private final UrlFinder urlFinder;
     private final boolean allowMessagesWithoutUrl;
+    private final Pattern[] urlWhitelist;
 
     // --- Instance fields ---
 
     MessageUrlResourceGetter(MessageUrlResourceInfo ri,
-                                     ResourceObjectFactory<R,C> rof,
-                                     UrlFinder urlFinder,
-                                     HttpObjectCache<C> httpObjectCache,
-                                     HttpObjectCache.UserObjectFactory<C> cacheObjectFactory,
-                                     Auditor auditor)
+                             UrlResolver<R> urlResolver,
+                             UrlFinder urlFinder)
             throws PatternSyntaxException
     {
-        super(rof, httpObjectCache, cacheObjectFactory, ri.makeUrlPatterns(), auditor);
+        super(urlResolver);
+        if (urlFinder == null) throw new NullPointerException();
         this.urlFinder = urlFinder;
         this.allowMessagesWithoutUrl = ri.isAllowMessagesWithoutUrl();
+        this.urlWhitelist = ri.makeUrlPatterns();
 
-        if (rof == null || urlFinder == null) throw new NullPointerException(); // can't happen
     }
 
     public void close() {
@@ -61,11 +60,11 @@ class MessageUrlResourceGetter<R,C> extends UrlResourceGetter<R,C> {
 
         // match against URL patterns
 
-        if (!TextUtils.matchesAny(url, getUrlWhitelist()))
+        if (!TextUtils.matchesAny(url, urlWhitelist))
             throw new UrlNotPermittedException("External resource URL not permitted by whitelist: " + url, url);
 
         try {
-            return fetchObject(httpObjectCache, url);
+            return fetchObject(url);
         } catch (ParseException e) {
             throw new ResourceParseException(e, url);
         }

@@ -5,10 +5,7 @@
 
 package com.l7tech.server.util;
 
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.KeystoreUtils;
@@ -24,9 +21,10 @@ import javax.net.ssl.TrustManager;
 import java.security.GeneralSecurityException;
 
 /**
- * @author mike
+ * A GenericHttpClientFactory that runs in the SSG server context, and creates clients that will automatically
+ * configure requests to use the appropriate SSL context factory for requests to SSL URLs.
  */
-public class HttpClientFactory implements ApplicationContextAware {
+public class HttpClientFactory implements GenericHttpClientFactory, ApplicationContextAware {
     private SSLContext sslContext;
     private ApplicationContext spring;
 

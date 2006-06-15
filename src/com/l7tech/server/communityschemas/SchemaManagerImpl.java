@@ -7,15 +7,20 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.http.cache.HttpObjectCache;
-import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.http.cache.AbstractHttpObjectCache;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 import com.l7tech.common.xml.tarari.TarariSchemaSource;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
+import com.whirlycott.cache.Cache;
+import com.whirlycott.cache.CacheMaintenancePolicy;
+import com.whirlycott.cache.Item;
+import com.whirlycott.cache.policy.LFUMaintenancePolicy;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.Element;
@@ -29,7 +34,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -55,10 +64,13 @@ public class SchemaManagerImpl implements SchemaManager {
     private final Map<String, WeakReference<CompiledSchema>> compiledSchemaCache = new WeakHashMap<String, WeakReference<CompiledSchema>>();
     private final Map<String, Map<CompiledSchema, Object>> tnsCache = new WeakHashMap<String, Map<CompiledSchema, Object>>();
     private final Map<CompiledSchema, Object> schemasWaitingToLoad = new WeakHashMap<CompiledSchema, Object>();
-    private final HttpClientFactory httpClientFactory;
 
-    /** Shared cache for all schema resources, system-wide. */
-    private final HttpObjectCache<SchemaHandle> httpObjectCache = new HttpObjectCache<SchemaHandle>(maxCacheEntries, maxCacheAge);
+    /** Shared cache for all schema resources, system-wide.  This is the low-level cache that stores Strings, to save network calls. */
+    private final HttpObjectCache<String> httpStringCache;
+
+    /** Top-level cache for all schemas loaded from remote URLs. */
+    private final HttpSchemaCache httpSchemaCache;
+
     private final TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
 
     private SchemaEntryManager schemaEntryManager;
@@ -69,7 +81,19 @@ public class SchemaManagerImpl implements SchemaManager {
     private final Timer maybeRebuildHardwareCacheTimer;
 
     public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
-        this.httpClientFactory = httpClientFactory;
+        if (httpClientFactory == null) throw new NullPointerException();
+
+        HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory() {
+            public String createUserObject(String url, String response) {
+                return response;
+            }
+        };
+
+        httpStringCache = new HttpObjectCache<String>(maxCacheEntries,
+                                                      maxCacheAge,
+                                                      httpClientFactory,
+                                                      userObjectFactory,
+                                                      HttpObjectCache.WAIT_INITIAL);
 
         if (tarariSchemaHandler != null) {
             final TimerTask task = new TimerTask() {
@@ -82,6 +106,12 @@ public class SchemaManagerImpl implements SchemaManager {
         } else {
             maybeRebuildHardwareCacheTimer = null;
         }
+
+        httpSchemaCache = new HttpSchemaCache("HttpSchemaCache_" + System.identityHashCode(this),
+                                              maxCacheEntries,
+                                              1,
+                                              maxCacheAge,
+                                              maxCacheAge * 2); // if a URL schema hasn't been used in 2 refresh cycles, throw it out
     }
 
     public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
@@ -91,13 +121,15 @@ public class SchemaManagerImpl implements SchemaManager {
     public SchemaHandle compile(String schemadoc,
                                 String systemId,
                                 Pattern[] urlWhitelist)
-            throws InvalidDocumentFormatException
+            throws ParseException
     {
+        setThreadLocalUrlWhitelist(urlWhitelist);
         return doCompile(schemadoc, systemId, true, urlWhitelist);
     }
 
-    public HttpObjectCache<SchemaHandle> getHttpObjectCache() {
-        return httpObjectCache;
+    public SchemaHandle fetchRemote(String url, Pattern[] urlWhitelist) throws IOException, ParseException {
+        setThreadLocalUrlWhitelist(urlWhitelist);
+        return httpSchemaCache.resolveUrl(url);
     }
 
     /**
@@ -110,13 +142,13 @@ public class SchemaManagerImpl implements SchemaManager {
      * @param enableHardware if true, we'll call {@link #maybeEnableHardwareForNewSchema(CompiledSchema)} before
      *                      relinquishing the write lock
      * @return  a SchemaHandle for the given document.  Never null.
-     * @throws  com.l7tech.common.xml.InvalidDocumentFormatException if the schema or a dependent could not be compiled
+     * @throws  ParseException if the schema or a dependent could not be compiled
      */
     private SchemaHandle doCompile(String schemadoc,
                                    String systemId,
                                    boolean enableHardware,
                                    Pattern[] urlWhitelist)
-            throws InvalidDocumentFormatException
+            throws ParseException
     {
         logger.log(Level.FINE, "Compiling schema with systemId \"{0}\"", systemId);
         schemadoc = schemadoc.intern();
@@ -156,7 +188,7 @@ public class SchemaManagerImpl implements SchemaManager {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted waiting for cache lock");
         } catch (SAXException e) {
-            throw new InvalidDocumentFormatException(e);
+            throw (ParseException)new ParseException("Schema is not well-formed: " + ExceptionUtils.getMessage(e), 0).initCause(e);
         } finally {
             if (write != null) write.release();
             if (read != null) read.release();
@@ -233,17 +265,12 @@ public class SchemaManagerImpl implements SchemaManager {
         };
 
         CachingLSResourceResolver.SchemaCompiler schemaCompiler = new CachingLSResourceResolver.SchemaCompiler() {
-            public SchemaHandle getSchema(String url, String response) throws IOException {
-                try {
-                    return doCompile(response, url, false, urlWhitelist);
-                } catch (InvalidDocumentFormatException e) {
-                    throw new CausedIOException("Remote schema object was invalid: " + ExceptionUtils.getMessage(e), e);
-                }
+            public SchemaHandle getSchema(String url, String response) throws ParseException {
+                return doCompile(response, url, false, urlWhitelist);
             }
         };
 
-        lsrr = new CachingLSResourceResolver(SCHEMA_FINDER, httpClientFactory.createHttpClient(),
-                                             httpObjectCache, urlWhitelist, schemaCompiler, importListener);
+        lsrr = new CachingLSResourceResolver(SCHEMA_FINDER, httpStringCache, urlWhitelist, schemaCompiler, importListener);
         sf.setResourceResolver(lsrr);
 
         try {
@@ -549,5 +576,92 @@ public class SchemaManagerImpl implements SchemaManager {
             return handle.getCompiledSchema().ref();
         }
     };
+
+    private class HttpSchemaCache extends AbstractHttpObjectCache<SchemaHandle> {
+        private final Cache cache;
+
+        private final Lock lock = new ReentrantLock();
+        protected Lock getReadLock() { return lock; }
+        protected Lock getWriteLock() { return lock; }
+
+        public HttpSchemaCache(String cacheName,
+                               int maxSchemas,
+                               int tunerIntervalMin,
+                               long maxMillisWithNoPoll,
+                               final long maxAgeUnused)
+        {
+            super(maxMillisWithNoPoll, WAIT_INITIAL);
+
+            CacheMaintenancePolicy maintenancePolicy = new LFUMaintenancePolicy() {
+                public void performMaintenance() {
+                    final long now = System.currentTimeMillis();
+                    final boolean loggit = logger.isLoggable(Level.INFO);
+
+                    // First eliminate any schemas that have sat around for too long without being used
+                    //noinspection unchecked
+                    List<Map.Entry> entries = new ArrayList(new ConcurrentHashMap(managedCache).entrySet());
+                    for (Map.Entry entry : entries) {
+                        Item item = (Item)entry.getValue();
+                        if (item != null) {
+                            AbstractCacheEntry<SchemaHandle> ce = (AbstractCacheEntry<SchemaHandle>)item.getItem();
+                            if (ce != null) {
+                                final SchemaHandle schemaHandle = ce.getUserObject();
+                                if (schemaHandle != null) {
+                                    final CompiledSchema compiledSchema = schemaHandle.getCompiledSchema();
+                                    if (compiledSchema.getLastUsedTime() - now > maxAgeUnused) {
+                                        if (loggit) logger.info("Expiring not-recently-used remote schema loaded from URL " + compiledSchema.getSystemId());
+                                        managedCache.remove(entry.getKey());
+                                        schemaHandle.close();
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Now do LFU maintenance on whatever's left
+                    super.performMaintenance();
+                }
+            };
+
+            this.cache = WhirlycacheFactory.createCache(cacheName, maxSchemas, tunerIntervalMin, maintenancePolicy);
+        }
+
+        protected AbstractCacheEntry<SchemaHandle> cacheGet(String url) {
+            return (AbstractCacheEntry<SchemaHandle>)cache.retrieve(url);
+        }
+
+        protected void cachePut(String url, AbstractCacheEntry<SchemaHandle> cacheEntry) {
+            cache.store(url, cacheEntry);
+        }
+
+        protected AbstractCacheEntry<SchemaHandle> cacheRemove(String url) {
+            return (AbstractCacheEntry<SchemaHandle>)cache.remove(url);
+        }
+
+        protected DatedUserObject<SchemaHandle> doHttpGet(String urlStr,
+                                                          String lastModifiedStr,
+                                                          long lastSuccessfulPollStarted)
+                throws IOException
+        {
+            try {
+                String schemaString = httpStringCache.resolveUrl(urlStr);
+                SchemaHandle schemaHandle = compile(schemaString, urlStr, getThreadLocalUrlWhitelist());
+                return new DatedUserObject<SchemaHandle>(schemaHandle, null);
+            } catch (ParseException e) {
+                throw new CausedIOException(e);
+            }
+        }
+    }
+
+    private static ThreadLocal<Pattern[]> tlUrlWhitelist = new ThreadLocal<Pattern[]>();
+
+    Pattern[] getThreadLocalUrlWhitelist() {
+        Pattern[] cur = tlUrlWhitelist.get();
+        return cur == null ? new Pattern[0] : cur;
+    }
+
+    void setThreadLocalUrlWhitelist(Pattern[] urlWhitelist) {
+        tlUrlWhitelist.set(urlWhitelist);
+    }
 }
 
