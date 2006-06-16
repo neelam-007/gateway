@@ -83,7 +83,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     }
 
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        PublishPolicyToUDDIWizard.Data data = (PublishPolicyToUDDIWizard.Data)settings;
+        Data data = (Data)settings;
         data.setUddiurl(uddiURLField.getText());
         data.setAccountName(uddiAccountNameField.getText());
         data.setAccountPasswd(uddiAccountPasswdField.getText());
@@ -91,5 +91,11 @@ public class UDDITargetWizardStep extends WizardStepPanel {
 
     private void showError(String err) {
         JOptionPane.showMessageDialog(this, err, "Invalid Input", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public interface Data {
+        void setUddiurl(String in);
+        void setAccountName(String in);
+        void setAccountPasswd(String in);
     }
 }

@@ -36,7 +36,7 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         ((Data)wizardInput).setPolicyConsumptionURL(policyConsumptionURL);
     }
 
-    public class Data {
+    public class Data implements UDDITargetWizardStep.Data {
         private String policyName;
         private String policyDescription;
         private String capturedPolicyURL;
