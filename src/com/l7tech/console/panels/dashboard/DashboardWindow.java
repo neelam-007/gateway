@@ -147,7 +147,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                setVisible(false);
+                dispose();
             }
         });
 
