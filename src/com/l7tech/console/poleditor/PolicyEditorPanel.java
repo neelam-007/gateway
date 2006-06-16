@@ -13,6 +13,7 @@ import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -399,6 +400,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         JButton buttonSave;
         JButton buttonSaveTemplate;
         JButton buttonImport;
+        JButton buttonUDDIImport;
         JButton buttonValidate;
         JToggleButton identityViewButton;
         JToggleButton policyViewButton;
@@ -434,6 +436,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
             buttonImport = new JButton(getImportAction());
             this.add(buttonImport);
+
+            buttonUDDIImport = new JButton(getUDDIImportAction());
+            this.add(buttonUDDIImport);
 
             policyViewButton = new JToggleButton(new PolicyViewAction());
             policyViewButton.addActionListener(new ActionListener() {
@@ -875,6 +880,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             };
         }
         return exportPolicyAction;
+    }
+
+    public Action getUDDIImportAction() {
+        return new SecureAction() {
+
+            public String getName() {
+                return "Import From UDDI";
+            }
+
+            protected String iconResource() {
+                return "com/l7tech/console/resources/server16.gif";
+            }
+
+            protected void performAction() {
+                ImportPolicyFromUDDIWizard wiz = ImportPolicyFromUDDIWizard.getInstance(TopComponents.getInstance().getMainWindow());
+                wiz.setSize(850, 500);
+                Utilities.centerOnScreen(wiz);
+                wiz.setVisible(true);
+            }
+        };
     }
 
     public Action getImportAction() {
