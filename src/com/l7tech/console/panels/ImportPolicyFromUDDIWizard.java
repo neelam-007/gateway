@@ -17,7 +17,7 @@ import java.awt.event.ActionEvent;
  */
 public class ImportPolicyFromUDDIWizard extends Wizard {
     public static ImportPolicyFromUDDIWizard getInstance(Frame parent) {
-        // todo, other panels
+        // todo, confirm panel showing policy imported
         ImportPolicyFromUDDIWizardStep istep = new ImportPolicyFromUDDIWizardStep(null);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(istep);
         return new ImportPolicyFromUDDIWizard(parent, tstep);
@@ -35,14 +35,42 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
     }
 
     public class Data implements UDDITargetWizardStep.Data {
+        private String uddiurl;
+        private String accountName;
+        private String accountPasswd;
 
-        public void setUddiurl(String in) {
+        public String getUddiurl() {
+            return uddiurl;
         }
 
-        public void setAccountName(String in) {
+        public void setUddiurl(String uddiurl) {
+            if (uddiurl.indexOf("/uddi") < 1) {
+                if (uddiurl.endsWith("/")) {
+                    uddiurl = uddiurl + "uddi/";
+                } else {
+                    uddiurl = uddiurl + "/uddi/";
+                }
+            }
+            if (!uddiurl.endsWith("/")) {
+                uddiurl = uddiurl + "/";
+            }
+            this.uddiurl = uddiurl;
         }
 
-        public void setAccountPasswd(String in) {
+        public String getAccountName() {
+            return accountName;
+        }
+
+        public void setAccountName(String accountName) {
+            this.accountName = accountName;
+        }
+
+        public String getAccountPasswd() {
+            return accountPasswd;
+        }
+
+        public void setAccountPasswd(String accountPasswd) {
+            this.accountPasswd = accountPasswd;
         }
     }
 }

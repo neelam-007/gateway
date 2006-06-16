@@ -158,6 +158,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         }
         // setup stuff needed to save it
         String registryURL = data.getUddiurl();
+        /*
         if (registryURL.indexOf("/uddi") < 1) {
             if (registryURL.endsWith("/")) {
                 registryURL = registryURL + "uddi/";
@@ -170,6 +171,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         }
         // remember the url once it's been 'normalized'
         data.setUddiurl(registryURL);
+        */
         String authInfo;
         try {
             UDDI_Security_PortType security = UDDISecurityStub.getInstance(registryURL + "security");
@@ -225,7 +227,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         }
     }
 
-    private String getRootCauseMsg(Throwable e) {
+    public static String getRootCauseMsg(Throwable e) {
         Throwable root = e;
         while (root.getCause() != null) root = root.getCause();
         return root.getMessage();

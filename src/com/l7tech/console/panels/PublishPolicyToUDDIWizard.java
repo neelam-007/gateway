@@ -76,6 +76,16 @@ public class PublishPolicyToUDDIWizard extends Wizard {
         }
 
         public void setUddiurl(String uddiurl) {
+            if (uddiurl.indexOf("/uddi") < 1) {
+                if (uddiurl.endsWith("/")) {
+                    uddiurl = uddiurl + "uddi/";
+                } else {
+                    uddiurl = uddiurl + "/uddi/";
+                }
+            }
+            if (!uddiurl.endsWith("/")) {
+                uddiurl = uddiurl + "/";
+            }
             this.uddiurl = uddiurl;
         }
 
