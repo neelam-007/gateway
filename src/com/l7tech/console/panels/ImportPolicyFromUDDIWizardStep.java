@@ -4,6 +4,8 @@ import org.systinet.uddi.client.v3.struct.*;
 import org.systinet.uddi.client.v3.*;
 import org.systinet.uddi.client.base.StringArrayList;
 import org.systinet.uddi.InvalidParameterException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -16,6 +18,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.net.URL;
+import java.io.IOException;
+
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.policy.wsp.WspConstants;
 
 /**
  * Second step in the ImportPolicyFromUDDIWizard.
@@ -35,6 +43,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     private ImportPolicyFromUDDIWizard.Data data;
     private static final Logger logger = Logger.getLogger(ImportPolicyFromUDDIWizardStep.class.getName());
     private String authInfo;
+    private boolean done = false;
 
     public ImportPolicyFromUDDIWizardStep(WizardStepPanel next) {
         super(next);
@@ -47,6 +56,14 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
 
     public String getStepLabel() {
         return "Select Policy From UDDI";
+    }
+
+    public boolean canAdvance() {
+        return done;
+    }
+
+    public boolean canFinish() {
+        return done;
     }
 
     private void initialize() {
@@ -98,6 +115,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:policytypes:2003_03", "policy", "policy"));
             findtModel.setCategoryBag(cbag);
             findtModel.setAuthInfo(authInfo);
+            // todo, this dont seem to work unless the name has a complete match
             if (filter != null && filter.length() > 0) {
                 findtModel.setName(new Name(filter));
             }
@@ -213,11 +231,42 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         if (policyURLs.size() < 1) {
             showError("ERROR tModel did not have a overviewURL to resolve a policy document from");
         } else {
+            ArrayList<Document> policyDocs = new ArrayList<Document>();
             // for each URL, try to get a policy document
             for (String url : policyURLs) {
-                JOptionPane.showConfirmDialog(this, url, "Success", JOptionPane.DEFAULT_OPTION);
-                // todo
+                try {
+                    Document doc = XmlUtil.parse(new URL(url).openStream());
+
+
+                    if (XmlUtil.findFirstChildElementByName(doc,
+                                                            new String[] {WspConstants.L7_POLICY_NS,
+                                                                          SoapUtil.WSP_NAMESPACE,
+                                                                          SoapUtil.WSP_NAMESPACE2},
+                                                            WspConstants.POLICY_ELNAME) != null) {
+                        policyDocs.add(doc);
+                    } else {
+                        logger.info("xml document resolved from " + url + " was not a policy: " +
+                                    XmlUtil.nodeToFormattedString(doc));
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "cannot get xml document from url " + url);
+                } catch (SAXException e) {
+                    logger.log(Level.WARNING, "cannot get xml document from url " + url);
+                }
             }
+            if (policyDocs.size() < 1) {
+                showError("ERROR none of the overviewURL resolved a policy document");
+                return;
+            }
+            // todo, something else
+            try {
+                JOptionPane.showConfirmDialog(this, XmlUtil.nodeToFormattedString(policyDocs.get(0)), "Success", JOptionPane.DEFAULT_OPTION);
+            } catch (IOException e) {
+
+            }
+            done = true;
+            // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
+            notifyListeners();
         }
     }
 }
