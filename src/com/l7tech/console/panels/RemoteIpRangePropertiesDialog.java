@@ -44,6 +44,9 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private boolean oked;
     private RemoteIpRange subject;
     private final EventListenerList listenerList = new EventListenerList();
+    private JRadioButton tcpRadio;
+    private JRadioButton contextVarRadio;
+    private JTextField contextVarField;
 
     public RemoteIpRangePropertiesDialog(Frame owner, boolean modal, RemoteIpRange subject) {
         super(owner, modal);
@@ -100,6 +103,14 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private void ok() {
+        String contextval = null;
+        if (contextVarRadio.isSelected()) {
+            contextval = contextVarField.getText();
+            if (contextval == null || contextval.length() < 1) {
+                bark("The source for the requestor ip should either be tcp or be a context variable");
+                return;
+            }
+        }
         // get rule
         int index = includeExcludeCombo.getSelectedIndex();
         // get address
@@ -142,6 +153,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             }
             subject.setStartIp(newaddress);
             subject.setNetworkMask(Integer.parseInt(suffixStr));
+            subject.setIpSourceContextVariable(contextval);
             fireEventAssertionChanged(subject);
             oked = true;
         }
@@ -168,6 +180,9 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private void setInitialValues() {
+        contextVarRadio.setSelected(false);
+        tcpRadio.setSelected(true);
+        contextVarField.setEnabled(false);
         if (subject != null) {
             // get values to populate with
             int index = subject.isAllowRange() ? 0 : 1;
@@ -179,6 +194,16 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             add3.setText("" + address[2]);
             add4.setText("" + address[3]);
             suffix.setText("" + subject.getNetworkMask());
+            if (subject.getIpSourceContextVariable() == null) {
+                contextVarRadio.setSelected(false);
+                tcpRadio.setSelected(true);
+                contextVarField.setEnabled(false);
+            } else {
+                contextVarRadio.setSelected(true);
+                tcpRadio.setSelected(false);
+                contextVarField.setEnabled(true);
+                contextVarField.setText(subject.getIpSourceContextVariable());
+            }
         }
     }
 
@@ -203,10 +228,30 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
                 cancel();
             }
         });
-        helpButton.addActionListener( new ActionListener() {
+        helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(RemoteIpRangePropertiesDialog.this);
             }
         });
+        tcpRadio.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                contextVarRadio.setSelected(!tcpRadio.isSelected());
+                contextVarField.setEnabled(!tcpRadio.isSelected());
+                addDefaultCntxVar();
+            }
+        });
+        contextVarRadio.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                tcpRadio.setSelected(!contextVarRadio.isSelected());
+                contextVarField.setEnabled(contextVarRadio.isSelected());
+                addDefaultCntxVar();
+            }
+        });
+    }
+
+    private void addDefaultCntxVar() {
+        if (contextVarField.isEnabled() && (contextVarField.getText() == null || contextVarField.getText().length() < 1)) {
+            contextVarField.setText("request.http.header.remoteip");
+        }
     }
 }

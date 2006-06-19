@@ -10,8 +10,6 @@ import java.util.StringTokenizer;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 23, 2004<br/>
- * $Id$<br/>
- *
  */
 public class RemoteIpRange extends Assertion {
 
@@ -112,9 +110,26 @@ public class RemoteIpRange extends Assertion {
         this.allowRange = allowRange;
     }
 
+    /**
+     * the context variable to use to get the source ip address to use for the evaluation of this
+     * assertion. when null, the source ip address should be taken from the tcp layer
+     */
+    public String getIpSourceContextVariable() {
+        return ipSourceContextVariable;
+    }
+
+    /**
+     * the context variable to use to get the source ip address to use for the evaluation of this
+     * assertion. when null, the source ip address should be taken from the tcp layer
+     */
+    public void setIpSourceContextVariable(String ipSourceContextVariable) {
+        this.ipSourceContextVariable = ipSourceContextVariable;
+    }
+
     private String startIp;
     private int networkMask;
     private boolean allowRange;
+    private String ipSourceContextVariable = null;
 
     private final static int MIN_IP_VALUE = 0;
     private final static int MAX_IP_VALUE = 255;
