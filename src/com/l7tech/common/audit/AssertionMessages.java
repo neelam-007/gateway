@@ -95,10 +95,11 @@ public class AssertionMessages extends Messages {
     public static final M SWA_EXTRA_ATTACHMENT_DROPPED    = m(4423, Level.INFO, "Dropping extra attachment {0}.");
 
     // ServerRemoteIpRange messages
-    public static final M IP_NOT_TCP         = m(4500, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");
-    public static final M IP_ADDRESS_INVALID = m(4501, Level.INFO, "The remote address {0} is null or not in expected format.");
-    public static final M IP_ACCEPTED        = m(4502, Level.FINEST, "Requestor address {0} is accepted.");
-    public static final M IP_REJECTED        = m(4503, Level.INFO,  "Requestor address {0} is not allowed");
+    public static final M IP_NOT_TCP             = m(4500, Level.INFO,    "Request was not received via TCP; cannot validate remote IP address");
+    public static final M IP_ADDRESS_INVALID     = m(4501, Level.INFO,    "The remote address {0} is null or not in expected format.");
+    public static final M IP_ACCEPTED            = m(4502, Level.FINEST,  "Requestor address {0} is accepted.");
+    public static final M IP_REJECTED            = m(4503, Level.INFO,    "Requestor address {0} is not allowed");
+    public static final M IP_ADDRESS_UNAVAILABLE = m(4504, Level.WARNING, "Could not resolve a remote ip address from the context variable {0}.");
 
     // ServerSecureConversation messages
     public static final M SC_REQUEST_NOT_SOAP                     = m(4600, Level.INFO, "Request not SOAP; unable to check for WS-SecureConversation token");

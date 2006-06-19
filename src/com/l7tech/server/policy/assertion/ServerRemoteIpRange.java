@@ -6,12 +6,14 @@ import com.l7tech.common.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server side class that checks the remote ip range rule stored in a RemoteIpRange assertion.
@@ -20,8 +22,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 23, 2004<br/>
- * $Id$<br/>
- *
  */
 public class ServerRemoteIpRange extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
@@ -35,18 +35,29 @@ public class ServerRemoteIpRange extends AbstractServerAssertion implements Serv
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-
+        String remoteAddress;
         // get remote address
-        TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-        if (tcp == null) {
-            auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
-            return AssertionStatus.BAD_REQUEST;
+        if (rule.getIpSourceContextVariable() == null) {
+            TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+            if (tcp == null) {
+                auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
+                return AssertionStatus.BAD_REQUEST;
+            }
+            remoteAddress = tcp.getRemoteAddress();
+        } else {
+            try {
+                Object tmp = context.getVariable(rule.getIpSourceContextVariable());
+                if (tmp == null) throw new NoSuchVariableException("could not resolve " + rule.getIpSourceContextVariable());
+                remoteAddress = tmp.toString();
+            } catch (NoSuchVariableException e) {
+                logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", e);
+                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, new String[] {rule.getIpSourceContextVariable()});
+                return AssertionStatus.SERVER_ERROR;
+            }
         }
 
-        String remoteAddress = tcp.getRemoteAddress();
         if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
-            auditor.logAndAudit(AssertionMessages.IP_NOT_TCP, new String[] {remoteAddress});
-
+            auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] {remoteAddress});
             return AssertionStatus.FALSIFIED;
         }
         // check assertion with this address
