@@ -34,6 +34,16 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
         wizardInput = new Data();
     }
 
+    /**
+     * @return policy xml imported or null if cancelled
+     */
+    public String importedPolicy() {
+        if (((Data)wizardInput).isConfirmed()) {
+            return ((Data)wizardInput).getPolicyXML();
+        }
+        return null;
+    }
+
     public class Data implements UDDITargetWizardStep.Data {
         private String uddiurl;
         private String accountName;

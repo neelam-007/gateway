@@ -898,6 +898,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 wiz.setSize(850, 500);
                 Utilities.centerOnScreen(wiz);
                 wiz.setVisible(true);
+                if (wiz.importedPolicy() != null) {
+                    getPublishedService().setPolicyXml(wiz.importedPolicy());
+                    rootAssertion = null;
+                    renderPolicy(false);
+                    policyEditorToolbar.buttonSave.setEnabled(true);
+                    policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                    validatePolicy();
+                }
             }
         };
     }
@@ -922,7 +930,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     }
                 };
             } else {
-                System.out.println("TODO import");
+                // TODO import in not connected mode
             }
         }
         return importPolicyAction;
