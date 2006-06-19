@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.ImportPolicyFromUDDIFinalStep">
+  <grid id="3d55c" binding="mainPanel" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="15">
+    <margin top="10" left="10" bottom="10" right="10"/>
+    <constraints>
+      <xy x="36" y="31" width="581" height="385"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <scrollpane id="45a45">
+        <constraints>
+          <xy x="10" y="45" width="561" height="310"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="bd0a" class="javax.swing.JTextPane" binding="policyText">
+            <constraints/>
+            <properties>
+              <contentType value="text/plain"/>
+              <editable value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <component id="dfcdb" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="12" width="161" height="15"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Policy Imported from UDDI:"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>

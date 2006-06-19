@@ -17,8 +17,8 @@ import java.awt.event.ActionEvent;
  */
 public class ImportPolicyFromUDDIWizard extends Wizard {
     public static ImportPolicyFromUDDIWizard getInstance(Frame parent) {
-        // todo, confirm panel showing policy imported
-        ImportPolicyFromUDDIWizardStep istep = new ImportPolicyFromUDDIWizardStep(null);
+        ImportPolicyFromUDDIFinalStep fstep = new ImportPolicyFromUDDIFinalStep(null);
+        ImportPolicyFromUDDIWizardStep istep = new ImportPolicyFromUDDIWizardStep(fstep);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(istep);
         return new ImportPolicyFromUDDIWizard(parent, tstep);
     }
@@ -38,6 +38,8 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
         private String uddiurl;
         private String accountName;
         private String accountPasswd;
+        private String policyXML;
+        private boolean confirmed = false;
 
         public String getUddiurl() {
             return uddiurl;
@@ -71,6 +73,22 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
 
         public void setAccountPasswd(String accountPasswd) {
             this.accountPasswd = accountPasswd;
+        }
+
+        public String getPolicyXML() {
+            return policyXML;
+        }
+
+        public void setPolicyXML(String policyXML) {
+            this.policyXML = policyXML;
+        }
+
+        public boolean isConfirmed() {
+            return confirmed;
+        }
+
+        public void setConfirmed(boolean confirmed) {
+            this.confirmed = confirmed;
         }
     }
 }

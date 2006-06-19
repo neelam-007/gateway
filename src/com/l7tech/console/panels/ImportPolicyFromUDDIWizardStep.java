@@ -39,11 +39,10 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     private JTextField nameField;
     private JButton searchButton;
     private JList policyList;
-    private JButton importButton;
     private ImportPolicyFromUDDIWizard.Data data;
     private static final Logger logger = Logger.getLogger(ImportPolicyFromUDDIWizardStep.class.getName());
     private String authInfo;
-    private boolean done = false;
+    private boolean readyToAdvance = false;
 
     public ImportPolicyFromUDDIWizardStep(WizardStepPanel next) {
         super(next);
@@ -59,11 +58,18 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     }
 
     public boolean canAdvance() {
-        return done;
+        return readyToAdvance;
     }
 
     public boolean canFinish() {
-        return done;
+        return readyToAdvance;
+    }
+
+    public boolean onNextButton() {
+        ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        boolean res = importPolicy();
+        ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        return res;
     }
 
     private void initialize() {
@@ -71,22 +77,22 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         add(mainPanel);
         searchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 find();
+                ImportPolicyFromUDDIWizardStep.this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             }
         });
         policyList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 if (policyList.getSelectedIndex() < 0) {
-                    importButton.setEnabled(false);
+                    readyToAdvance = false;
+                    // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
+                    notifyListeners();
                 } else {
-                    importButton.setEnabled(true);
+                    readyToAdvance = true;
+                    // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
+                    notifyListeners();
                 }
-            }
-        });
-        importButton.setEnabled(false);
-        importButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                importPolicy();
             }
         });
     }
@@ -115,10 +121,10 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             cbag.addKeyedReference(new KeyedReference("uddi:schemas.xmlsoap.org:policytypes:2003_03", "policy", "policy"));
             findtModel.setCategoryBag(cbag);
             findtModel.setAuthInfo(authInfo);
-            // todo, this dont seem to work unless the name has a complete match
+            /* this does not seem to work unless the name has a complete match
             if (filter != null && filter.length() > 0) {
                 findtModel.setName(new Name(filter));
-            }
+            }*/
             findtModel.check();
         } catch (Throwable e) {
             logger.log(Level.WARNING, "cannot construct find_tModel", e);
@@ -149,7 +155,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             if (tModel.getName() != null) {
                 String tmodelname = tModel.getName().getValue();
                 if (filter != null && filter.length() > 0) {
-                    if (tmodelname.indexOf(filter) < 0) continue;
+                    if (!tmodelname.startsWith(filter)) continue;
                 }
                 output.add(new ListMember(tmodelname, tModel.getTModelKey()));
             }
@@ -168,7 +174,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             return tModelName + " [" + tModelKey + "]";
         }
     }
-
+    
     public void readSettings(Object settings) throws IllegalArgumentException {
         data = (ImportPolicyFromUDDIWizard.Data)settings;
     }
@@ -178,7 +184,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
                                       "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    private void importPolicy() {
+    private boolean importPolicy() {
         String tModelKey = ((ListMember)policyList.getSelectedValue()).tModelKey;
 
         try {
@@ -186,7 +192,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         } catch (Throwable e) {
             logger.log(Level.WARNING, "cannot get security token from " + data.getUddiurl() + "security", e);
             showError("ERROR cannot get security token from " + data.getUddiurl() + "security. " + UDDIPolicyDetailsWizardStep.getRootCauseMsg(e));
-            return;
+            return false;
         }
         // get the policy url and try to fetch it
         Get_tModelDetail gettmDetail;
@@ -197,7 +203,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
         } catch (Throwable e) {
             logger.log(Level.WARNING, "ERROR cannot construct get_tModelDetail for " + tModelKey, e);
             showError("ERROR cannot construct get_tModelDetail for " + tModelKey + ". " + UDDIPolicyDetailsWizardStep.getRootCauseMsg(e));
-            return;
+            return false;
         }
 
         ArrayList<String> policyURLs = new ArrayList<String>();
@@ -216,57 +222,58 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
                     }
                 } else {
                     showError("Could not get overviewDoc from the tModel");
-                    return;
+                    return false;
                 }
             } else {
                 showError("ERROR get_tModelDetail returned zero or multiple tModels");
-                return;
+                return false;
             }
         } catch (Throwable e) {
             logger.log(Level.WARNING, "ERROR cannot get tModel Detail", e);
             showError("ERROR cannot get tModel Detail. " + UDDIPolicyDetailsWizardStep.getRootCauseMsg(e));
-            return;
+            return false;
         }
 
         if (policyURLs.size() < 1) {
             showError("ERROR tModel did not have a overviewURL to resolve a policy document from");
-        } else {
-            ArrayList<Document> policyDocs = new ArrayList<Document>();
-            // for each URL, try to get a policy document
-            for (String url : policyURLs) {
-                try {
-                    Document doc = XmlUtil.parse(new URL(url).openStream());
-
-
-                    if (XmlUtil.findFirstChildElementByName(doc,
-                                                            new String[] {WspConstants.L7_POLICY_NS,
-                                                                          SoapUtil.WSP_NAMESPACE,
-                                                                          SoapUtil.WSP_NAMESPACE2},
-                                                            WspConstants.POLICY_ELNAME) != null) {
-                        policyDocs.add(doc);
-                    } else {
-                        logger.info("xml document resolved from " + url + " was not a policy: " +
-                                    XmlUtil.nodeToFormattedString(doc));
-                    }
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "cannot get xml document from url " + url);
-                } catch (SAXException e) {
-                    logger.log(Level.WARNING, "cannot get xml document from url " + url);
-                }
-            }
-            if (policyDocs.size() < 1) {
-                showError("ERROR none of the overviewURL resolved a policy document");
-                return;
-            }
-            // todo, something else
-            try {
-                JOptionPane.showConfirmDialog(this, XmlUtil.nodeToFormattedString(policyDocs.get(0)), "Success", JOptionPane.DEFAULT_OPTION);
-            } catch (IOException e) {
-
-            }
-            done = true;
-            // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
-            notifyListeners();
+            return false;
         }
+
+        ArrayList<Document> policyDocs = new ArrayList<Document>();
+        // for each URL, try to get a policy document
+        for (String url : policyURLs) {
+            try {
+                Document doc = XmlUtil.parse(new URL(url).openStream());
+
+
+                if (XmlUtil.findFirstChildElementByName(doc,
+                                                        new String[] {WspConstants.L7_POLICY_NS,
+                                                                      SoapUtil.WSP_NAMESPACE,
+                                                                      SoapUtil.WSP_NAMESPACE2},
+                                                        WspConstants.POLICY_ELNAME) != null) {
+                    policyDocs.add(doc);
+                } else {
+                    logger.info("xml document resolved from " + url + " was not a policy: " +
+                                XmlUtil.nodeToFormattedString(doc));
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "cannot get xml document from url " + url);
+            } catch (SAXException e) {
+                logger.log(Level.WARNING, "cannot get xml document from url " + url);
+            }
+        }
+        if (policyDocs.size() < 1) {
+            showError("ERROR none of the overviewURL resolved a policy document");
+            return false;
+        }
+        String output;
+        try {
+            output = XmlUtil.nodeToFormattedString(policyDocs.get(0));
+        } catch (IOException e) {
+            // cannot happen
+            throw new RuntimeException(e);
+        }
+        data.setPolicyXML(output);
+        return true;
     }
 }
