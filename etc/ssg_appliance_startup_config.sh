@@ -7,6 +7,7 @@ cd
 /sbin/chkconfig network on
 /sbin/chkconfig anacron on
 /sbin/chkconfig kudzu on
+/sbin/chkconfig irqbalance on
 # Smartd is only for ata disks. Scsi on appliance now
 # /sbin/chkconfig smartd on
 /sbin/chkconfig crond on

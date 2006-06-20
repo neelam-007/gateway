@@ -42,20 +42,8 @@ start() {
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse
 	echo "Increasing number of TIME_WAIT buckets"
 	echo 360000 > /proc/sys/net/ipv4/tcp_max_tw_buckets
-	echo "Disabling Route Triangulation"
-	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
-	echo "Disable logging of packets with malformed IP addresses"
-	echo 0 > /proc/sys/net/ipv4/conf/all/log_martians
-	echo "Disabling redirects"
-	echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
-	echo "Disabling source routed packets"
-	echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
-	echo "Disabling acceptance of ICMP redirects"
-	echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
 	echo "Turning on syncookie protection from Denial of Service (DOS) attacks"
 	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
-	echo "Disable responding to ping broadcasts"
-	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
         echo "Done"
         return 0
 }
