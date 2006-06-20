@@ -638,12 +638,15 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @throws ClientCertificateException if we need a client certificate but can't obtain one
      * @throws BadCredentialsException    if we need a certificate but our username and password is wrong
      * @throws PolicyRetryableException   if we should retry policy processing from the beginning
+     * @throws ConfigurationException     if there's no SAML token strategy for this SSG.  Shouldn't happen.
      */
     public SamlAssertion getOrCreateSamlHolderOfKeyAssertion()
-      throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-      ClientCertificateException, BadCredentialsException, PolicyRetryableException
+            throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
+            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException
     {
-        return (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).getOrCreate(ssg);
+        TokenStrategy samlStrat = ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION);
+        if (samlStrat == null) throw new ConfigurationException("No SAML token strategy is available for SSG " + ssg);
+        return (SamlAssertion)samlStrat.getOrCreate(ssg);
     }
 
     /**
