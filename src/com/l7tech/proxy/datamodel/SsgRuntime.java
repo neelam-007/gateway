@@ -86,28 +86,24 @@ public class SsgRuntime {
     private String policyServiceFile = SecureSpanConstants.POLICY_SERVICE_FILE;
 
     private DateTranslator fromSsgDateTranslator = new DateTranslator() {
-        public Date translate(Date source) {
-            if (source == null)
-                return null;
-            final long timeOffset = getTimeOffset();
-            if (timeOffset == 0)
-                return source;
-            final Date result = new Date(source.getTime() - timeOffset);
-            log.log(Level.FINE, "Translating date from SSG clock " + source + " to local clock " + result);
-            return result;
+        protected long getOffset() {
+            return -getTimeOffset();
+        }
+
+        protected void log(Date source, Date result) {
+            if (log.isLoggable(Level.FINE))
+                log.fine("Translating date from SSG clock " + source + " to local clock " + result);
         }
     };
 
     private DateTranslator toSsgDateTranslator = new DateTranslator() {
-        public Date translate(Date source) {
-            if (source == null)
-                return null;
-            final long timeOffset = getTimeOffset();
-            if (timeOffset == 0)
-                return source;
-            final Date result = new Date(source.getTime() + timeOffset);
-            log.log(Level.FINE, "Translating date from local clock " + source + " to SSG clock " + result);
-            return result;
+        protected long getOffset() {
+            return getTimeOffset();
+        }
+
+        protected void log(Date source, Date result) {
+            if (log.isLoggable(Level.FINE))
+                log.fine("Translating date from local clock " + source + " to SSG clock " + result);
         }
     };
 
