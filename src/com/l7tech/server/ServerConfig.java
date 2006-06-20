@@ -536,7 +536,7 @@ public class ServerConfig extends ApplicationObjectSupport {
         }
 
         if (ret < 1) {
-            int def = 131071;
+            int def = 1048576;
             String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + " is undefined or invalid. Please ensure the SecureSpan " +
                     "Gateway is properly configured.  (Will use default of " + def + ")";
             logger.severe(errorMsg);
