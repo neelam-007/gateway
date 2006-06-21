@@ -3,12 +3,16 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 
 /**
  * Config dialog for HardcodedResponseAssertion.
@@ -78,11 +82,43 @@ public class HardcodedResponseDialog extends JDialog {
             status = 1;
         }
         assertion.setResponseStatus(status);
-        assertion.responseBodyString(responseBody.getText());
-        assertion.setResponseContentType(contentType.getText());
+        final String ctype = contentType.getText();
+        assertion.setResponseContentType(ctype);
+        assertion.responseBodyString(getResponseBodyText(ctype, responseBody.getText()));
         modified = true;
         confirmed = true;
         setVisible(false);
+    }
+
+    private String getResponseBodyText(String contentType, String responseBody) {
+        String txt = responseBody;
+
+        // See if it wants to be XML
+        ContentTypeHeader ctype;
+        try {
+            ctype = ContentTypeHeader.parseValue(contentType);
+            if (ctype.isXml()) {
+                // It claims to be XML.  Make sure it really is.
+                try {
+                    XmlUtil.stringToDocument(txt);
+                    // FALLTHROUGH and save it as-is
+                } catch (SAXException e) {
+                    // Try trimming it
+                    try {
+                        XmlUtil.stringToDocument(txt.trim());
+
+                        // Yep, trimming it is Ok
+                        txt = txt.trim();
+                    } catch (SAXException e1) {
+                        // Nope, FALLTHROUGH and save the bogus XML as-is
+                    }
+                }
+            }
+        } catch (IOException e) {
+            // Not XML; FALLTHROUGH and let it through as-is, whatever it is
+        }
+
+        return txt;
     }
 
     private void doCancel() {
