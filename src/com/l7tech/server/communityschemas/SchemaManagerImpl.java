@@ -109,7 +109,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         httpSchemaCache = new HttpSchemaCache("HttpSchemaCache_" + System.identityHashCode(this),
                                               maxCacheEntries,
-                                              1,
+                                              53,
                                               maxCacheAge,
                                               maxCacheAge * 2); // if a URL schema hasn't been used in 2 refresh cycles, throw it out
     }
@@ -586,7 +586,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         public HttpSchemaCache(String cacheName,
                                int maxSchemas,
-                               int tunerIntervalMin,
+                               int tunerInterval,
                                long maxMillisWithNoPoll,
                                final long maxAgeUnused)
         {
@@ -623,7 +623,7 @@ public class SchemaManagerImpl implements SchemaManager {
                 }
             };
 
-            this.cache = WhirlycacheFactory.createCache(cacheName, maxSchemas, tunerIntervalMin, maintenancePolicy);
+            this.cache = WhirlycacheFactory.createCache(cacheName, maxSchemas, tunerInterval, maintenancePolicy);
         }
 
         protected AbstractCacheEntry<SchemaHandle> cacheGet(String url) {
