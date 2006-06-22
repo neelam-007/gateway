@@ -168,9 +168,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     return AssertionStatus.SERVER_ERROR;
                 } catch (InvalidDocumentFormatException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.SEVERE);
-                    status = AssertionStatus.SERVER_ERROR;
-                    return AssertionStatus.SERVER_ERROR;
+                    context.setAuditLevel(Level.WARNING);
+                    status = AssertionStatus.BAD_REQUEST;
+                    return AssertionStatus.BAD_REQUEST;
                 } catch (GeneralSecurityException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.SEVERE);
