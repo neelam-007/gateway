@@ -216,7 +216,7 @@ public abstract class ServerRoutingAssertion extends AbstractServerAssertion imp
         int value = defaultValue;
 
         try {
-            String configuredValue = ServerConfig.getInstance().getProperty(propName);
+            String configuredValue = ServerConfig.getInstance().getPropertyCached(propName);
             if(configuredValue!=null) {
                 value = Integer.parseInt(configuredValue);
 
