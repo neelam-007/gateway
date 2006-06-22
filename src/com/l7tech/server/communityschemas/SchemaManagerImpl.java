@@ -93,7 +93,7 @@ public class SchemaManagerImpl implements SchemaManager {
                                                       maxCacheAge,
                                                       httpClientFactory,
                                                       userObjectFactory,
-                                                      HttpObjectCache.WAIT_INITIAL);
+                                                      HttpObjectCache.WAIT_LATEST);
 
         if (tarariSchemaHandler != null) {
             final TimerTask task = new TimerTask() {
@@ -231,7 +231,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         if (compiledSchemasWithThisTns.size() == 1) {
             newSchema.setUniqueTns(true);
-            maybeHardwareEnable(newSchema, false);
+            maybeHardwareEnable(newSchema, false, false, new HashSet<CompiledSchema>());
         } else if (compiledSchemasWithThisTns.isEmpty()) {
             logger.log(Level.FINE, "No more schemas with targetNamespace {0}", tns);
             tnsCache.remove(tns);
@@ -299,6 +299,9 @@ public class SchemaManagerImpl implements SchemaManager {
      * Removes a CompiledSchema from caches.  If the targetNamespace of the schema to be
      * removed was previously duplicated, and a single survivor is left, it will be promoted
      * to hardware-accelerated.
+     * <p/>
+     * Caller must NOT hold the write lock.  Caller will typically be either and end user thread,
+     * the cache cleanup thread, or a finalizer thread.
      */
     void closeSchema(CompiledSchema schema) {
         reportCacheContents();
@@ -325,7 +328,7 @@ public class SchemaManagerImpl implements SchemaManager {
                 if (i.hasNext()) {
                     CompiledSchema survivingSchema = i.next();
                     survivingSchema.setUniqueTns(true);
-                    maybeHardwareEnable(survivingSchema, true);
+                    maybeHardwareEnable(survivingSchema, true, true, new HashSet<CompiledSchema>());
                 }
             }
 
@@ -337,21 +340,75 @@ public class SchemaManagerImpl implements SchemaManager {
         }
     }
 
+    /**
+     * Find the Roots of this schema: that is, set of schemas that directly or indirectly include this schema,
+     * but that themselves are not included by any other known schema.
+     * @param schema the schema whose roots to find.  Must not be null.
+     * @param foundRoots a Set to which found roots will be added.  Must not be null.
+     */
+    private void getRoots(CompiledSchema schema, Set<CompiledSchema> foundRoots) {
+        Set<CompiledSchema> exps = schema.getExports();
+        boolean haveExport = false;
+        for (CompiledSchema parent : exps) {
+            if (parent == null) continue;
+            haveExport = true;
+            getRoots(parent, foundRoots);
+        }
+        if (!haveExport) foundRoots.add(schema);
+    }
+
+    private void reportNode(CompiledSchema schema, Set<CompiledSchema> visited, StringBuilder sb, String indent) {
+        visited.add(schema);
+        sb.append(indent).append(schema);
+        for (int i = indent.length(); i < 14; ++i) sb.append(" ");
+        sb.append(schema.getTnsGen()).append("\n");
+        Set<SchemaHandle> kids = schema.getImports();
+        for (SchemaHandle schemaHandle : kids) {
+            CompiledSchema kid = schemaHandle.getCompiledSchema();
+            reportNode(kid, visited, sb, "    " + indent);
+        }
+    }
+
+    /** Caller must NOT hold the write lock. */
     private void reportCacheContents() {
         if (logger.isLoggable(Level.FINEST)) {
+            StringBuilder sb = new StringBuilder("\n\nSchema cache contents: \n\n");
+            Set<CompiledSchema> schemaSet = new HashSet<CompiledSchema>();
+            Set<CompiledSchema> reported = new HashSet<CompiledSchema>();
             try {
                 cacheLock.readLock().acquire();
-                for (WeakReference<CompiledSchema> ref : compiledSchemaCache.values()) {
+                // We'll do two passes.  In the first pass, we'll draw trees down from the roots.
+                // In second pass, we'll draw any schemas that we missed during the first pass (possible
+                // due to upward links being weak references)
+
+                // First pass: find all roots, then draw the trees top-down
+                final Collection<WeakReference<CompiledSchema>> allSchemas = compiledSchemaCache.values();
+                for (WeakReference<CompiledSchema> ref : allSchemas) {
                     if (ref == null) continue;
                     CompiledSchema cs = ref.get();
                     if (cs == null) continue;
-                    logger.finest("  In Cache: " + cs);
+                    getRoots(cs, schemaSet);
+                }
+
+                for (CompiledSchema schema : schemaSet) {
+                    reportNode(schema, reported, sb, " -");
+                }
+
+                // Second pass: draw any that we missed
+                for (WeakReference<CompiledSchema> ref : allSchemas) {
+                    if (ref == null) continue;
+                    CompiledSchema cs = ref.get();
+                    if (cs == null) continue;
+                    if (!reported.contains(cs))
+                        reportNode(cs, reported, sb, "?-");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } finally {
                 cacheLock.readLock().release();
             }
+            sb.append("\n\n");
+            logger.finest(sb.toString());
         }
     }
 
@@ -359,9 +416,11 @@ public class SchemaManagerImpl implements SchemaManager {
      * Check if this schema can be hardware-enabled
      * Caller must hold write lock.
      */
-    private boolean maybeHardwareEnable(CompiledSchema schema, boolean notifyParents) {
+    private boolean maybeHardwareEnable(CompiledSchema schema, boolean notifyParents, boolean notifyChildren, Set<CompiledSchema> visited) {
         // Short-circuit if we know we have no work to do
         if (tarariSchemaHandler == null) return false;
+        boolean notYetVisited = visited.add(schema);
+        assert notYetVisited;
         if (!schema.isUniqueTns()) return false;
         if (schema.isRejectedByTarari()) return false;
         if (schema.isHardwareEligible()) return false;
@@ -369,9 +428,18 @@ public class SchemaManagerImpl implements SchemaManager {
         // Check that all children are loaded
         Set<SchemaHandle> imports = schema.getImports();
         for (SchemaHandle directImport : imports) {
-            if (!directImport.getCompiledSchema().isHardwareEligible()) {
-                logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports is not hardware eligible", schema);
-                return false;
+            final CompiledSchema cs = directImport.getCompiledSchema();
+            if (visited.contains(cs)) continue; // prevent infinite downwards and upwards recursion
+            if (!cs.isHardwareEligible()) {
+                if (!notifyChildren) {
+                    logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports is not already hardware eligible", schema);
+                    return false;
+                }
+
+                if (!maybeHardwareEnable(cs, notifyParents, true, visited)) {
+                    logger.log(Level.FINE, "Unable to enable hardware eligibility for schema {0} because at least one of its imports could not be made hardware eligible", schema);
+                    return false;
+                }
             }
         }
 
@@ -383,8 +451,10 @@ public class SchemaManagerImpl implements SchemaManager {
 
         if (notifyParents) {
             // Let all our parents know that they might be hardware-enableable
-            for (CompiledSchema export : schema.getExports())
-                maybeHardwareEnable(export, notifyParents);
+            for (CompiledSchema export : schema.getExports()) {
+                if (visited.contains(export)) continue;
+                maybeHardwareEnable(export, notifyParents, notifyChildren, visited);
+            }
         }
         return true;
     }
@@ -438,7 +508,7 @@ public class SchemaManagerImpl implements SchemaManager {
         final long msSinceLastRebuild = beforeTime - lastHardwareRecompileTime;
         if (msSinceLastRebuild < hardwareRecompileLatency) {
             final long delay = hardwareRecompileLatency - msSinceLastRebuild;
-            logger.log(Level.FINE,
+            logger.log(Level.FINER,
                        "Too soon for another hardware schema cache rebuild -- will try again in {0} ms", delay);
             scheduleOneShotRebuildCheck(delay);
             return false;
@@ -456,7 +526,7 @@ public class SchemaManagerImpl implements SchemaManager {
         final long ageOfNewestSchema = beforeTime - lastSchemaEligibilityTime;
         if (ageOfNewestSchema < hardwareRecompileMinAge && !forceReload) {
             final long delay = hardwareRecompileMinAge - ageOfNewestSchema;
-            logger.log(Level.FINER, "New schema just became hardware eligible -- postponing hardware schema cache rebuild for {0} ms", delay);
+            logger.log(Level.FINEST, "New schema just became hardware eligible -- postponing hardware schema cache rebuild for {0} ms", delay);
             scheduleOneShotRebuildCheck(delay);
             return false;
         }
@@ -590,7 +660,7 @@ public class SchemaManagerImpl implements SchemaManager {
                                long maxMillisWithNoPoll,
                                final long maxAgeUnused)
         {
-            super(maxMillisWithNoPoll, WAIT_INITIAL);
+            super(maxMillisWithNoPoll, WAIT_LATEST);
 
             CacheMaintenancePolicy maintenancePolicy = new LFUMaintenancePolicy() {
                 public void performMaintenance() {

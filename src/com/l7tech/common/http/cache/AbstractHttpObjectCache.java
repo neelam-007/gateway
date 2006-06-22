@@ -109,6 +109,16 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
     protected abstract AbstractCacheEntry<UT> cacheRemove(String url);
 
     /**
+     * Called on the thread that will download a new object just before the download of the new object starts.
+     * Subclasses can override this to take some action on the about-to-be-superceded object.
+     * <p/>
+     * This method does nothing.
+     */
+    protected void onStaleEntryAboutToBeReplaced(AbstractCacheEntry<UT> cacheEntry, String urlStr) {
+        // Does nothing
+    }
+
+    /**
      * Fetch the user object corresponding to this URL, using a cached version one is available.
      * <p/>
      * If the request URL uses SSL, caller is responsible for ensuring that the HTTP client and/or request
@@ -139,6 +149,7 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
      *         is available for use.
      */
     public FetchResult<UT> fetchCached(String urlStr, WaitMode waitMode) {
+        final long threadId = Thread.currentThread().getId();
         if (waitMode == null) waitMode = defaultWaitMode;
 
         AbstractCacheEntry<UT> entry;
@@ -151,9 +162,17 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
             if (entry == null) {
                 // We are the first thread currently interested in this URL, so we'll be doing the download
                 entry = newCacheEntry();
-                entry.downloading = true;
+                entry.downloadingThread = threadId;
                 cachePut(urlStr, entry);
                 shouldDownload = true;
+            } else {
+                if (entry.downloadingThread == threadId) {
+                    // Prevent deadlock due to recursive fetch of same URL on the same thread
+                    entry = newCacheEntry();
+                    entry.exception = new IOException("Recursive or circular fetch of URL: " + urlStr);
+                    entry.exceptionCreated = System.currentTimeMillis();
+                    return new FetchResult<UT>(500, entry);
+                }
             }
         } finally {
             writeLock.unlock();
@@ -161,6 +180,7 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
 
         //noinspection ConstantConditions
         assert entry != null;
+        assert !Thread.holdsLock(entry);
 
         // See if we are creating the initial entry
         if (shouldDownload) {
@@ -168,17 +188,19 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
             return doPoll(entry, urlStr);
         }
 
+        assert entry.downloadingThread != threadId;
         synchronized (entry) {
-            if (entry.downloading) {
+            if (entry.downloadingThread != 0) {
                 // Another thread is currently downloading a fresh copy of the user object.  See if we need to wait.
                 if (waitMode == WAIT_LATEST ||
                         (waitMode == WAIT_INITIAL && entry.userObject == null && entry.exception == null))
                 {
                     // Wait for downloading to finish.
-                    while (entry.downloading) {
+                    // TODO check for deadlock due to circular download dependencies
+                    while (entry.downloadingThread != 0) {
                         try {
                             if (logger.isLoggable(Level.FINER)) logger.finer("Waiting for other thread to contact server for URL '" + urlStr + "'");
-                            entry.wait();
+                            entry.wait();  // TODO configurable max total wait time
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                             throw new RuntimeException("Interrupted while waiting for other thread to finish HTTP GET for URL '" + urlStr + "'", e);
@@ -199,7 +221,7 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
                     if (logger.isLoggable(Level.FINE)) logger.fine("Returning cached entry for URL '" + urlStr + "'");
                     return new FetchResult<UT>(RESULT_USED_CACHED, entry);
                 }
-                entry.downloading = true;
+                entry.downloadingThread = threadId;
                 shouldDownload = true;
                 /* FALLTHROUGH and poll again */
             }
@@ -210,6 +232,14 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
         assert shouldDownload;
 
         if (logger.isLoggable(Level.FINE)) logger.fine("Cache entry for URL '" + urlStr + "' is too old; contacting server");
+        boolean ok = false;
+        try {
+            onStaleEntryAboutToBeReplaced(entry, urlStr);
+            ok = true;
+        } finally {
+            // onStale.. threw an unchecked exception.  We'll let it pass through, but first ensure to unlock the entry
+            if (!ok) doCancelDownload(entry, urlStr);
+        }
         return doPoll(entry, urlStr);
     }
 
@@ -300,13 +330,21 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
         // so readers will be guaranteed to pick them up.
         long requestStart = System.currentTimeMillis();
 
+        boolean reported = false;
         try {
             DatedUserObject<UT> dup = doHttpGet(urlStr, entry.lastModified, entry.lastSuccessfulPollStarted);
             UT userObject = dup.getUserObject();
             if (userObject == null) userObject = entry.userObject;
-            return doSuccessfulDownload(entry, requestStart, dup.getLastModified(), userObject);
+            FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, dup.getLastModified(), userObject);
+            reported = true;
+            return ret;
         } catch (IOException e) {
-            return doFailedDownload(entry, e);
+            FetchResult<UT> ret = doFailedDownload(entry, e);
+            reported = true;
+            return ret;
+        } finally {
+            // Unchecked exceptions will pass through; just make sure we unlock the entry while they are on the way by
+            if (!reported) doCancelDownload(entry, urlStr);
         }
     }
 
@@ -353,9 +391,21 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
         synchronized (entry) {
             entry.exception = exception;
             entry.exceptionCreated = System.currentTimeMillis();
-            entry.downloading = false;
+            entry.downloadingThread = 0;
             entry.notifyAll();
             return new FetchResult<UT>(RESULT_DOWNLOAD_FAILED, entry);
+        }
+    }
+
+    /** Called if an unchecked exception occurs while we are holding the entry lock. */
+    private void doCancelDownload(AbstractCacheEntry<UT> entry, String urlStr) {
+        synchronized (entry) {
+            if (entry.exception == null) {
+                entry.exception = new IOException("Unexpected internal error while attempting to download external resource: " + urlStr);
+                entry.exceptionCreated = System.currentTimeMillis();
+            }
+            entry.downloadingThread = 0;
+            entry.notifyAll();
         }
     }
 
@@ -372,7 +422,7 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
             entry.exceptionCreated = 0;
             entry.userObject = userObject;
             entry.userObjectCreated = requestStart;
-            entry.downloading = false;
+            entry.downloadingThread = 0;
             entry.notifyAll();
             return new FetchResult<UT>(RESULT_DOWNLOAD_SUCCESS, entry);
         }
@@ -401,7 +451,7 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
      * by AbstractHttpObjectCache to keep multiple threads from reloading the same URL at the same time.
      */
     protected static class AbstractCacheEntry<UT> {
-        private boolean downloading;
+        private long downloadingThread;  // ID of downloading thread, or 0 if nobody is downloading
         private long lastSuccessfulPollStarted; // time of last successful poll; use only if lastModified not provided
         private String lastModified; // last Modified: header from server; use in preference to lastPollStarted
         private UT userObject;
@@ -484,7 +534,8 @@ public abstract class AbstractHttpObjectCache<UT> implements UrlResolver<UT> {
         /**
          * Get the error that occurred in the current download attempt, if any.  If this is non-null, it means
          * this thread or another thread just attempted a download and it resulted in the specified failure.
-         * Even in this case, {@link #getUserObject} might still return non-null if an existing
+         * Even in this case, {@link #getUserObject} might still return non-null if a previous download
+         * succeeded.
          *
          * @return the IO exception that occurred in the last download attempt, if this was sufficiently recent,
          *         or null if no IO exception was recently produced by this URL.

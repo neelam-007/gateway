@@ -114,6 +114,17 @@ public class HexUtils {
         return decoder.decodeBuffer(s);
     }
 
+    /** @return a hex string with exactly 8 nybbles, ie 000F0238 */
+    public static String to8NybbleHexString(int i) {
+        String hs = Integer.toHexString(i).toUpperCase();
+        final int hsl = hs.length();
+        if (hsl == 8) return hs;
+        StringBuffer sb = new StringBuffer();
+        while (sb.length() + hsl < 8) sb.append("0");
+        sb.append(hs);
+        return sb.toString();
+    }
+
     /**
      * Encodes the 128 bit (16 bytes) MD5 into a 32 character String.
      *

@@ -107,7 +107,6 @@ class CachingLSResourceResolver implements LSResourceResolver {
         // Try a carefully managed, perfectly safe, regex-protected, scientifically proven remote network call
         final URL baseUrl;
         try {
-            logger.finest("remote schema base url=" + baseURI + "  publicId=" + publicId + "  systemId=" + systemId);
             baseUrl = new URL(baseURI);
         } catch (MalformedURLException e) {
             logger.warning("Refusing remote schema reference to invalid base URL " + baseURI);
@@ -123,7 +122,6 @@ class CachingLSResourceResolver implements LSResourceResolver {
             URL fullUrl = new URL(baseUrl, systemId);
 
             String url = fullUrl.toExternalForm();
-            logger.finest("remote schema full url=" + url);
 
             if (!TextUtils.matchesAny(url, urlWhitelist)) {
                 logger.warning("Refusing remote schema reference to non-whitelisted resource URL: " + url);
