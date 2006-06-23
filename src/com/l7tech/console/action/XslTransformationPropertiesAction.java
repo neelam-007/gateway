@@ -5,7 +5,6 @@ import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XslTransformationTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,14 +40,14 @@ public class XslTransformationPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
-        XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, false, node.getAssertion());
+        XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, true, node.getAssertion());
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dlg.setSize(600, 580);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
-        Assertion ass = dlg.getAssertion();
-        if (ass == null) return;
-
+        if (!dlg.wasOKed()) {
+            return;
+        }
         JTree tree = TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();

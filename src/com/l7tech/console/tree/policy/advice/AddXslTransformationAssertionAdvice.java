@@ -41,8 +41,7 @@ public class AddXslTransformationAssertionAdvice implements Advice {
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         // make sure a xslt was entered
-        Assertion ass = dlg.getAssertion();
-        if (ass != null) {
+        if (dlg.wasOKed()) {
             pc.proceed();
         } else {
             log.info("Xsl Transformation must have been canceled");

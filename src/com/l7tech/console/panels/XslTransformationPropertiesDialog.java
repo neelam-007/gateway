@@ -42,6 +42,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private final XslTransformationSpecifyPanel specifyPanel;
     private final XslTransformationFetchPanel fetchPanel;
     private final XslTransformationSpecifyUrlPanel specifyUrlPanel;
+    private boolean wasoked = false;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
 
@@ -213,13 +214,13 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
         assertion.setWhichMimePart(((Number)whichMimePartSpinner.getValue()).intValue());
 
-        // exit
-        XslTransformationPropertiesDialog.this.dispose();
+        wasoked = true;
+        dispose();
     }
 
     private void cancel() {
-        assertion = null;
-        XslTransformationPropertiesDialog.this.dispose();
+        wasoked = false;
+        dispose();
     }
 
     void displayError(String msg, String title) {
@@ -234,8 +235,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         System.exit(0);
     }
 
-    public XslTransformation getAssertion() {
-        return assertion;
+    public boolean wasOKed() {
+        return wasoked;
     }
-
 }
