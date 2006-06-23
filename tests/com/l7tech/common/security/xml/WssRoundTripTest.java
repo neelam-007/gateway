@@ -325,7 +325,7 @@ public class WssRoundTripTest extends TestCase {
                            ((X509SecurityToken)signer).getCertificate().equals(td.senderCert));
             } else if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(new SamlAssertion(td.senderSamlAssertion).getSubjectCertificate()));
+                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(SamlAssertion.newInstance(td.senderSamlAssertion).getSubjectCertificate()));
             } else if (signer instanceof SecurityContextToken) {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());

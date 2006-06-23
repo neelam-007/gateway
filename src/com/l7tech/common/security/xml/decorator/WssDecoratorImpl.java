@@ -275,9 +275,12 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
-                final String assId = saml.getAttribute("AssertionID");
+                String assId = saml.getAttribute("AssertionID");
+                if (assId == null || assId.length() < 1) {
+                    assId = saml.getAttribute("ID");
+                }
                 if (assId == null || assId.length() < 1)
-                    throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID");
+                    throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, SoapUtil.VALUETYPE_SAML);
             } else if (dreq.getRecipientCertificate() != null) {
                 // create a new EncryptedKey and sign with that
@@ -1017,7 +1020,6 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
-            // TODO [WS-I BSP] encryptedData must have an Id attribute [ref: section 9.2.4 also section 9.3.1]
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
             numElementsEncrypted++;
         }

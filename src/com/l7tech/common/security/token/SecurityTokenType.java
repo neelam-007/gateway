@@ -16,6 +16,7 @@ import java.io.Serializable;
  */
 public class SecurityTokenType implements Serializable {
     public static final String SAML_NS = "urn:oasis:names:tc:SAML:1.0:assertion";
+    public static final String SAML2_NS = "urn:oasis:names:tc:SAML:2.0:assertion";
     public static final String SAML_ELEMENT = "Assertion";
     public static final String SECURECONVESATIONTOKEN_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
 
@@ -82,8 +83,12 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType UNKNOWN =
             new SecurityTokenType(n++, "Unknown", null, null, null, SecurityToken.class);
 
+    public static final SecurityTokenType SAML2_ASSERTION =
+            new SecurityTokenType(n++, "SAML2 Assertion", SecurityTokenType.SAML2_NS + "#Assertion", SAML2_NS, SAML_ELEMENT, SamlSecurityToken.class);
+
     private static final SecurityTokenType[] VALUES = {
         SAML_ASSERTION,
+        SAML2_ASSERTION,
         WSSC_CONTEXT,
         WSSC_DERIVED_KEY,
         WSS_USERNAME,

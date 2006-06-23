@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML1.*;
 
 import java.util.*;
@@ -50,12 +51,15 @@ public class SamlAssertionValidate {
         this.applicationContext = applicationContext;
         if (requestWssSaml.getAuthenticationStatement() != null) {
             validators.put(AuthenticationStatementType.class, new SamlAuthenticationStatementValidate(requestWssSaml, applicationContext));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AuthnStatementType.class, new Saml2AuthenticationStatementValidate(requestWssSaml, applicationContext));
         }
         if (requestWssSaml.getAuthorizationStatement() != null) {
             validators.put(AuthorizationDecisionStatementType.class, new SamlAuthorizationDecisionStatementValidate(requestWssSaml, applicationContext));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType.class, new Saml2AuthorizationDecisionStatementValidate(requestWssSaml, applicationContext));
         }
         if (requestWssSaml.getAttributeStatement() != null) {
             validators.put(AttributeStatementType.class, new SamlAttributeStatementValidate(requestWssSaml, applicationContext));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AttributeStatementType.class, new Saml2AttributeStatementValidate(requestWssSaml, applicationContext));
         }
     }
 
@@ -81,27 +85,59 @@ public class SamlAssertionValidate {
             XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken token = tokens[i];
-                if (token.getType() == SecurityTokenType.SAML_ASSERTION) {
+                if (token.getType() == SecurityTokenType.SAML_ASSERTION ||
+                    token.getType() == SecurityTokenType.SAML2_ASSERTION) {
                     assertion = (SamlAssertion)token;
-                    AssertionType assertionType = assertion.getXmlBeansAssertionType();
-                    Collection statementList = new ArrayList();
-                    statementList.addAll(Arrays.asList(assertionType.getAuthenticationStatementArray()));
-                    statementList.addAll(Arrays.asList(assertionType.getAuthorizationDecisionStatementArray()));
-                    statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
-
-                    StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{});
+                    XmlObject xmlObject = assertion.getXmlBeansAssertionType();
                     boolean assertionMatch = false;
-                    for (int j = 0; j < statementArray.length; j++) {
-                        StatementAbstractType statementAbstractType = statementArray[j];
-                        Set keys = validators.keySet();
-                        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-                            Class clazz = (Class)iterator.next();
-                            if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
-                                assertionMatch = true;
-                                SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
-                                validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
-                                validateConditions(assertionType, validationResults);
-                                statementValidate.validate(soapMessageDoc, (SubjectStatementAbstractType)statementAbstractType, wssResults, validationResults);
+
+                    if (xmlObject instanceof AssertionType) {
+                        AssertionType assertionType = (AssertionType) xmlObject;
+                        Collection statementList = new ArrayList();
+                        statementList.addAll(Arrays.asList(assertionType.getAuthenticationStatementArray()));
+                        statementList.addAll(Arrays.asList(assertionType.getAuthorizationDecisionStatementArray()));
+                        statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
+
+                        StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{});
+
+                        for (int j = 0; j < statementArray.length; j++) {
+                            StatementAbstractType statementAbstractType = statementArray[j];
+                            Set keys = validators.keySet();
+                            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+                                Class clazz = (Class)iterator.next();
+                                if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
+                                    assertionMatch = true;
+                                    SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
+                                    validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
+                                    validateConditions(assertionType, validationResults);
+                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults);
+                                }
+                            }
+                        }
+                    }
+                    else if (xmlObject instanceof x0Assertion.oasisNamesTcSAML2.AssertionType) {
+                        x0Assertion.oasisNamesTcSAML2.AssertionType assertionType =
+                                (x0Assertion.oasisNamesTcSAML2.AssertionType) xmlObject;
+                        validateSubjectConfirmation(assertionType.getSubject(), validationResults);
+                        validateConditions(assertionType.getConditions(), validationResults);
+
+                        Collection statementList = new ArrayList();
+                        statementList.addAll(Arrays.asList(assertionType.getAuthnStatementArray()));
+                        statementList.addAll(Arrays.asList(assertionType.getAuthzDecisionStatementArray()));
+                        statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
+
+                        XmlObject[] statementArray = (XmlObject[]) statementList.toArray(new XmlObject[]{});
+
+                        for (int j = 0; j < statementArray.length; j++) {
+                            XmlObject statementAbstractType = statementArray[j];
+                            Set keys = validators.keySet();
+                            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+                                Class clazz = (Class)iterator.next();
+                                if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
+                                    assertionMatch = true;
+                                    SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
+                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults);
+                                }
                             }
                         }
                     }
@@ -112,7 +148,6 @@ public class SamlAssertionValidate {
                         logger.finer(result.toString());
                         return;
                     }
-
                 }
             }
 
@@ -248,7 +283,7 @@ public class SamlAssertionValidate {
 
 
     /**
-     * Validate the SAML assertion conditions
+     * Validate the SAML assertion conditions for v1.x
      *
      * @param assertionType
      * @param validationResults
@@ -326,6 +361,9 @@ public class SamlAssertionValidate {
         }
     }
 
+    /**
+     * Subject validation for 1.x
+     */
     private void validateSubjectConfirmation(SubjectStatementAbstractType subjectStatementAbstractType, Collection validationResults) {
         SubjectType subject = subjectStatementAbstractType.getSubject();
         if (subject == null) {
@@ -348,7 +386,7 @@ public class SamlAssertionValidate {
                 }
             }
         }
-        String[] nameFormats = requestWssSaml.getNameFormats();
+        String[] nameFormats = filterNameFormats(requestWssSaml.getNameFormats());
         String presentedNameFormat = nameIdentifierType.getFormat();
         boolean nameFormatMatch = false;
         for (int i = 0; i < nameFormats.length; i++) {
@@ -411,6 +449,40 @@ public class SamlAssertionValidate {
             logger.finer(result.toString());
             return;
         }
+    }
+
+    /**
+     * Validate the SAML assertion conditions for v2.x
+     */
+    private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Collection validationResults) {
+        Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml, conditionsType, validationResults);
+    }
+
+    /**
+     * Subject validation for 2.x
+     */
+    private void validateSubjectConfirmation(x0Assertion.oasisNamesTcSAML2.SubjectType subjectType, Collection validationResults) {
+        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, validationResults);
+    }
+
+    /**
+     * Filter out any name formats that are not allowed in v1
+     */
+    private String[] filterNameFormats(String[] formats) {
+        return filter(formats, SamlConstants.ALL_NAMEIDENTIFIERS);
+    }
+
+    /**
+     * Remove any items from values that are not in the allowedValues
+     *
+     * @param values        The items to be filtered
+     * @param allowedValues The permitted items
+     * @return              The filtered values
+     */
+    static String[] filter(String[] values, String[] allowedValues) {
+        Set valueSet = new LinkedHashSet(Arrays.asList(values));
+        valueSet.retainAll(Arrays.asList(allowedValues));
+        return (String[]) valueSet.toArray(new String[valueSet.size()]);
     }
 
     static class Error {

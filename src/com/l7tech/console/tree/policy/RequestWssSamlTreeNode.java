@@ -17,14 +17,13 @@ import java.util.Arrays;
  */
 public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
 
-    private RequestWssSaml data;
-
     public RequestWssSamlTreeNode(Assertion assertion) {
         super(assertion);
-        data = (RequestWssSaml)assertion;
     }
 
     public String getName() {
+        RequestWssSaml data = (RequestWssSaml) getUserObject();
+
         String st = "Unknown Statement";
         if (data.getAuthenticationStatement() != null) {
             st = "Authentication Statement";
@@ -33,6 +32,11 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
         } else if (data.getAuthorizationStatement() !=null) {
             st = "Authorization Decision Statement";
         }
+
+        if (data.getVersion() != null && data.getVersion().intValue() != 0) {
+            st = "v" + data.getVersion().intValue() + " " + st;
+        }
+
         if (!data.getRecipientContext().localRecipient()) {
             return "SAML "+st+" [\'" + data.getRecipientContext().getActor() + "\' actor]";
         } else {

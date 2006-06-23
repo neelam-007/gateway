@@ -35,9 +35,9 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
     /**
      * @param tokenServerSsg what SSG is going to give me a SAML token
      */
-    public TrustedSsgSamlTokenStrategy(Ssg tokenServerSsg)
+    public TrustedSsgSamlTokenStrategy(Ssg tokenServerSsg, int version)
     {
-        super(SecurityTokenType.SAML_ASSERTION, tokenServerSsg);
+        super(getTokenForVersion(version), tokenServerSsg);
         this.tokenServerSsg = tokenServerSsg;
     }
 
@@ -62,7 +62,7 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
                                                        tokenServerSsg.getClientCertificate(),
                                                        tokenServerSsg.getClientCertificatePrivateKey(),
                                                        WsTrustRequestType.ISSUE,
-                                                       SecurityTokenType.SAML_ASSERTION,
+                                                       getType(),
                                                        null, // no base
                                                        null, // no appliesTo
                                                        null, // no wstIssuer
@@ -73,5 +73,16 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
         }
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         return s;
+    }
+
+    private static SecurityTokenType getTokenForVersion(int version) {
+        switch(version) {
+            case 1:
+                return SecurityTokenType.SAML_ASSERTION;
+            case 2:
+                return SecurityTokenType.SAML2_ASSERTION;
+            default:
+                throw new IllegalArgumentException("Unknown SAML version '"+version+"' requested.");
+        }       
     }
 }

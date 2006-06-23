@@ -187,7 +187,13 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             if (u == null) {
                 if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs
                 if (certSubjectDn == null) { ///no subject cert, but there was a DN
-                    u = createFakeUserForVirtualGroup(niValue, niFormat, niValue);
+                    // Virtual groups only match email or DN
+                    if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
+                        u = createFakeUserForVirtualGroup(null, niFormat, niValue);
+                    }
+                    else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
+                        u = createFakeUserForVirtualGroup(niValue, niFormat, niValue);
+                    }
                 } else {
                     u = createFakeUserForVirtualGroup(certSubjectDn, niFormat, niValue);
                 }

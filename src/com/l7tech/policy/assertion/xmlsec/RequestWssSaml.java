@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
  * authentication, authorization and attribute statements.
  */
 public class RequestWssSaml extends Assertion implements SecurityHeaderAddressable {
+    private Integer version;
     private String[] subjectConfirmations = new String[]{};
     private boolean noSubjectConfirmation = false;
     private String nameQualifier = null;
@@ -27,13 +28,18 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
     public RequestWssSaml() {
     }
 
+    public RequestWssSaml(RequestWssSaml requestWssSaml) {
+        copyFrom(requestWssSaml);
+    }
+
     /**
-         * Factory method that creates the Holder-Of-Key assertion
-         *
-         * @return the RequestWssSaml with Holder-Of-Key subject confirmation
-         */
+     * Factory method that creates the Holder-Of-Key assertion
+     *
+     * @return the RequestWssSaml with Holder-Of-Key subject confirmation
+     */
     public static RequestWssSaml newHolderOfKey() {
         RequestWssSaml ass = new RequestWssSaml();
+        ass.setVersion(Integer.valueOf(0));
         ass.setRequireHolderOfKeyWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
         return ass;
@@ -46,9 +52,48 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
          */
     public static RequestWssSaml newSenderVouches() {
         RequestWssSaml ass = new RequestWssSaml();
+        ass.setVersion(Integer.valueOf(0));
         ass.setRequireSenderVouchesWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SENDER_VOUCHES});
         return ass;
+    }
+
+    public void copyFrom(RequestWssSaml requestWssSaml) {
+        this.setAttributeStatement(requestWssSaml.getAttributeStatement());
+        this.setAudienceRestriction(requestWssSaml.getAudienceRestriction());
+        this.setAuthenticationStatement(requestWssSaml.getAuthenticationStatement());
+        this.setAuthorizationStatement(requestWssSaml.getAuthorizationStatement());
+        this.setCheckAssertionValidity(requestWssSaml.isCheckAssertionValidity());
+        this.setNameFormats(requestWssSaml.getNameFormats());
+        this.setNameQualifier(requestWssSaml.getNameQualifier());
+        this.setNoSubjectConfirmation(requestWssSaml.isNoSubjectConfirmation());
+        this.setParent(requestWssSaml.getParent());
+        this.setRecipientContext(requestWssSaml.getRecipientContext());
+        this.setRequireHolderOfKeyWithMessageSignature(requestWssSaml.isRequireHolderOfKeyWithMessageSignature());
+        this.setRequireSenderVouchesWithMessageSignature(requestWssSaml.isRequireSenderVouchesWithMessageSignature());
+        this.setSubjectConfirmations(requestWssSaml.getSubjectConfirmations());
+        this.setVersion(requestWssSaml.getVersion());
+    }
+
+    /**
+     * Get the SAML version for this assertion
+     *
+     * <p>The value 0 means any version, null means unspecified (in which case 1 should
+     * be used for backwards compatibility).</p>
+     *
+     * @return The saml version (0/1/2) or null.
+     */
+    public Integer getVersion() {
+        return version;
+    }
+
+    /**
+     * Set the SAML version for this assertion.
+     *
+     * @param version (may be null)
+     */
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     /**

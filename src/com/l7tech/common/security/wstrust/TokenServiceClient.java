@@ -318,7 +318,7 @@ public class TokenServiceClient {
                                                                 appliesToAddress,
                                                                 wstIssuerAddress,
                                                                 timestampCreatedDate);
-        requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
+        requestDoc.getDocumentElement().setAttribute("xmlns:saml", tokenType.getWstPrototypeElementNs());
         Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, httpBasicCredentials, requireWssSignedResponse);
 
         if (!(result instanceof SamlAssertion))
@@ -490,11 +490,13 @@ public class TokenServiceClient {
             return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
         }
 
-        Element samlTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SamlConstants.NS_SAML, SamlConstants.ELEMENT_ASSERTION);
+        Element samlTokenEl = XmlUtil.findOnlyOneChildElementByName(rst,
+                new String[]{SamlConstants.NS_SAML,SamlConstants.NS_SAML2},
+                SamlConstants.ELEMENT_ASSERTION);
         if (samlTokenEl != null) {
             // It's a signed SAML assertion
             try {
-                return new SamlAssertion(samlTokenEl);
+                return SamlAssertion.newInstance(samlTokenEl);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
             }

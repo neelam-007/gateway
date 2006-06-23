@@ -630,6 +630,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * Get a valid holder-of-key SAML assertion for this SSG (or the Trusted SSG if this is a federated SSG).
      * If we don't currently hold a valid holder-of-key SAML assertion we will apply for a new one.
      *
+     * @param version The SAML version (0 for any version)
      * @return A SAML assertion with us as the subject and our trusted SSG as the issuer.  Never null.
      * @throws OperationCanceledException if the user cancels the login dialog
      * @throws GeneralSecurityException   if there is a problem with a certificate, key, or signature
@@ -638,14 +639,28 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @throws ClientCertificateException if we need a client certificate but can't obtain one
      * @throws BadCredentialsException    if we need a certificate but our username and password is wrong
      * @throws PolicyRetryableException   if we should retry policy processing from the beginning
+     * @throws IllegalArgumentException   if an unsupported SAML version is requested
      * @throws ConfigurationException     if there's no SAML token strategy for this SSG.  Shouldn't happen.
      */
-    public SamlAssertion getOrCreateSamlHolderOfKeyAssertion()
+    public SamlAssertion getOrCreateSamlHolderOfKeyAssertion(int version)
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
             ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException
     {
-        TokenStrategy samlStrat = ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION);
-        if (samlStrat == null) throw new ConfigurationException("No SAML token strategy is available for SSG " + ssg);
+        TokenStrategy samlStrat;
+
+        if (version == 1) {
+            samlStrat = ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION);
+        }
+        else if (version == 2 || version == 0) {
+            samlStrat = ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML2_ASSERTION);
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported SAML version '" + version + "'.");
+        }
+
+        if (samlStrat == null)
+            throw new ConfigurationException("No SAML token strategy is available for SSG " + ssg);
+
         return (SamlAssertion)samlStrat.getOrCreate(ssg);
     }
 
@@ -654,8 +669,8 @@ public class PolicyApplicationContext extends ProcessingContext {
      *
      * @return a sender-vouches SAML assertion.  Never null.
      */
-    public SamlAssertion getOrCreateSamlSenderVouchesAssertion()
-            throws ConfigurationException, OperationCanceledException, GeneralSecurityException, 
+    public SamlAssertion getOrCreateSamlSenderVouchesAssertion(int version)
+            throws ConfigurationException, OperationCanceledException, GeneralSecurityException,
                    IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
                    PolicyRetryableException
     {
@@ -670,8 +685,17 @@ public class PolicyApplicationContext extends ProcessingContext {
         creds.setCredentialSourceAssertion(HttpBasic.class);
 
         String username = creds.getLogin();
-        TokenStrategy strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(username);
-        return (SamlAssertion)strategy.getOrCreate(ssg);
+        TokenStrategy strategy;
+        if (version == 1) {
+            strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(SecurityTokenType.SAML_ASSERTION, username);
+        }
+        else if (version == 2 || version == 0) {
+            strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(SecurityTokenType.SAML2_ASSERTION, username);
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported SAML version '" + version + "'.");
+        }
+        return (SamlAssertion) strategy.getOrCreate(ssg);
     }
 
     /**

@@ -1,23 +1,27 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import java.util.Collection;
+
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
-import x0Assertion.oasisNamesTcSAML1.ActionType;
-import x0Assertion.oasisNamesTcSAML1.AuthorizationDecisionStatementType;
-import x0Assertion.oasisNamesTcSAML1.DecisionType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
-import java.util.Collection;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+
+import x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType;
+import x0Assertion.oasisNamesTcSAML2.DecisionType;
+import x0Assertion.oasisNamesTcSAML2.ActionType;
+
 
 /**
- * @author emil
- * @version 27-Jan-2005
+ * Validation for SAML 2.x Authorization statement.
+ *
+ * @author Steve Jones, $Author$
+ * @version $Revision$
  */
-class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
+class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate {
     private SamlAuthorizationStatement authorizationStatementRequirements;
 
     /**
@@ -26,7 +30,7 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
      * @param requestWssSaml     the saml statement assertion
      * @param applicationContext the application context to allow access to components and services
      */
-    SamlAuthorizationDecisionStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
+    Saml2AuthorizationDecisionStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
         super(requestWssSaml, applicationContext);
         authorizationStatementRequirements = requestWssSaml.getAuthorizationStatement();
         if (authorizationStatementRequirements == null) {
@@ -46,10 +50,10 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
     protected void validate(Document document,
                             XmlObject statementAbstractType,
                             ProcessorResult wssResults, Collection validationResults) {
-        if (!(statementAbstractType instanceof AuthorizationDecisionStatementType)) {
-            throw new IllegalArgumentException("Expected " + AuthorizationDecisionStatementType.class);
+        if (!(statementAbstractType instanceof AuthzDecisionStatementType)) {
+            throw new IllegalArgumentException("Expected " + AuthzDecisionStatementType.class);
         }
-        AuthorizationDecisionStatementType authorizationDecisionStatementType = (AuthorizationDecisionStatementType)statementAbstractType;
+        AuthzDecisionStatementType authorizationDecisionStatementType = (AuthzDecisionStatementType)statementAbstractType;
 
         String resource = authorizationDecisionStatementType.getResource();
         if (resource == null) {

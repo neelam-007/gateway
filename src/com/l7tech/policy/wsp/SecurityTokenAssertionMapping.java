@@ -14,6 +14,8 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
+
 import org.w3c.dom.Element;
 
 /**
@@ -42,7 +44,8 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
 
     protected String getPropertiesElementName(SecurityTokenType tokenType) {
         // For backward compat with pre-4.0, use SamlParams for saml token properties
-        return SecurityTokenType.SAML_ASSERTION.equals(tokenType) ? "SamlParams" : "Properties";
+        return SecurityTokenType.SAML_ASSERTION.equals(tokenType) ||
+               SecurityTokenType.SAML2_ASSERTION.equals(tokenType) ? "SamlParams" : "Properties";
     }
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
@@ -89,6 +92,8 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
         final TypedReference ret;
         if (SecurityTokenType.SAML_ASSERTION.equals(tokenType))
             ret = new TypedReference(RequestWssSaml.class, new RequestWssSaml());
+        else if (SecurityTokenType.SAML2_ASSERTION.equals(tokenType))
+            ret = new TypedReference(RequestWssSaml2.class, new RequestWssSaml2());
         else if (SecurityTokenType.WSS_USERNAME.equals(tokenType))
             ret = new TypedReference(WssBasic.class, new WssBasic());
         else if (SecurityTokenType.WSSC_CONTEXT.equals(tokenType))

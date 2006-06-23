@@ -40,10 +40,11 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
      * Create a token strategy that will generated sender-vouches assertions vouching for the specified username.
      * Created assertions will be cached within the strategy instance and reused as long as they haven't expired.
      *
+     * @param tokenType        the type of token to get (SAML v1 or v2)
      * @param subjectUsername  the username to include as the Subject in the generated SAML assertions.  Must not be null or empty.
      */
-    public SenderVouchesSamlTokenStrategy(String subjectUsername) {
-        super(SecurityTokenType.SAML_ASSERTION, null); // Use the strategy itself for locking
+    public SenderVouchesSamlTokenStrategy(SecurityTokenType tokenType, String subjectUsername) {
+        super(tokenType, null); // Use the strategy itself for locking
         if (subjectUsername == null || subjectUsername.length() < 1) throw new IllegalArgumentException("A non-empty subjectUsername must be provided.");
         this.subjectUsername = subjectUsername;
     }
@@ -67,7 +68,10 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         opts.setExpiryMinutes(5);                // TODO configurable?
         opts.setId(SamlAssertionGenerator.generateAssertionId("SSB-SamlAssertion"));
         opts.setSignAssertion(true);             // TODO configurable?
-        opts.setUseThumbprintForSignature(true); // TODO configurable?
+        opts.setUseThumbprintForSignature(true); // TODO configurable?        
+        if (SecurityTokenType.SAML2_ASSERTION.equals(this.getType())) {
+            opts.setVersion(2);
+        }
 
         LoginCredentials credentials = new LoginCredentials(subjectUsername, null, HttpBasic.class);
         SubjectStatement authenticationStatement = SubjectStatement.createAuthenticationStatement(credentials,
@@ -77,7 +81,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(new X509Certificate[] { clientCertificate, ssg.getServerCertificate() });
 
         try {
-            return new SamlAssertion(sag.createAssertion(authenticationStatement, opts).getDocumentElement(), thumbResolver);
+            return SamlAssertion.newInstance(sag.createAssertion(authenticationStatement, opts).getDocumentElement(), thumbResolver);
         } catch (SAXException e) {
             throw new RuntimeException("Unable to generated SAML sender-vouches assertion", e); // can't happen
         }

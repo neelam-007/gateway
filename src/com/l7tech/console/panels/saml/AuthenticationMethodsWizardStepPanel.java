@@ -27,6 +27,7 @@ import java.util.List;
  */
 public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
+
     private JCheckBox checkBoxPasswordMethod;
     private JCheckBox checkBoxKerberosMethod;
     private JCheckBox checkBoxSrpMethod;
@@ -38,6 +39,24 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     private JCheckBox checkBoxXkmsPublicKey;
     private JCheckBox checkBoxXmlDigitalSignatureMethod;
     private JCheckBox checkBoxMethodUnspecified;
+
+    private JCheckBox checkBoxAuthenticatedTelephony;
+    private JCheckBox checkBoxInternetProtocol;
+    private JCheckBox checkBoxInternetProtocolPassword;
+    private JCheckBox checkBoxMobileOneFactorContract;
+    private JCheckBox checkBoxMobileOneFactorUnregistered;
+    private JCheckBox checkBoxMobileTwoFactorContract;
+    private JCheckBox checkBoxMobileTwoFactorUnregistered;
+    private JCheckBox checkBoxNomadTelephony;
+    private JCheckBox checkBoxPasswordProtectedTransport;
+    private JCheckBox checkBoxPersonalizedTelephony;
+    private JCheckBox checkBoxPreviousSession;
+    private JCheckBox checkBoxSmartcard;
+    private JCheckBox checkBoxSmartcardPKI;
+    private JCheckBox checkBoxSoftwarePKI;
+    private JCheckBox checkBoxTelephony;
+    private JCheckBox checkBoxTimeSyncToken;
+
     private JButton buttonSelectAll;
     private JButton buttonSelectNone;
     private JLabel titleLabel;
@@ -88,9 +107,12 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
             return;
         }
 
+        enableForVersion(assertion.getVersion()==null ? 1 : assertion.getVersion().intValue());
+
         for (int i = 0; i < allMethods.length; i++) {
             JCheckBox method = allMethods[i];
-            method.setSelected(false);
+            if (method.isEnabled())
+                method.setSelected(false);
         }
 
         String[] methods = statement.getAuthenticationMethods();
@@ -128,7 +150,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
             Map.Entry entry = (Map.Entry)iterator.next();
             entry.getKey();
             JCheckBox jc = (JCheckBox)entry.getValue();
-            if (jc.isSelected()) {
+            if (jc.isSelected() && jc.isEnabled()) {
                 methodsSelected.add(entry.getKey().toString());
             }
         }
@@ -144,36 +166,41 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
-        Collection lm = new ArrayList();
-        lm.add(checkBoxPasswordMethod);
         authenticationsMap.put(SamlConstants.PASSWORD_AUTHENTICATION, checkBoxPasswordMethod);
-        lm.add(checkBoxKerberosMethod);
         authenticationsMap.put(SamlConstants.KERBEROS_AUTHENTICATION, checkBoxKerberosMethod);
-        lm.add(checkBoxSrpMethod);
         authenticationsMap.put(SamlConstants.SRP_AUTHENTICATION, checkBoxSrpMethod);
-        lm.add(checkBoxHardwareTokenMethod);
         authenticationsMap.put(SamlConstants.HARDWARE_TOKEN_AUTHENTICATION, checkBoxHardwareTokenMethod);
-        lm.add(checkBoxSslTlsCLientCertMethod);
         authenticationsMap.put(SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION, checkBoxSslTlsCLientCertMethod);
-        lm.add(checkBoxX509PublicKey);
         authenticationsMap.put(SamlConstants.X509_PKI_AUTHENTICATION, checkBoxX509PublicKey);
-        lm.add(checkBoxPgpPublicKey);
         authenticationsMap.put(SamlConstants.PGP_AUTHENTICATION, checkBoxPgpPublicKey);
-        lm.add(checkBoxSpkiPublicKey);
         authenticationsMap.put(SamlConstants.SPKI_AUTHENTICATION, checkBoxSpkiPublicKey);
-        lm.add(checkBoxXkmsPublicKey);
         authenticationsMap.put(SamlConstants.XKMS_AUTHENTICATION, checkBoxXkmsPublicKey);
-        lm.add(checkBoxXmlDigitalSignatureMethod);
         authenticationsMap.put(SamlConstants.XML_DSIG_AUTHENTICATION, checkBoxXmlDigitalSignatureMethod);
-        lm.add(checkBoxMethodUnspecified);
         authenticationsMap.put(SamlConstants.UNSPECIFIED_AUTHENTICATION, checkBoxMethodUnspecified);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_TELEPHONY_AUTH, checkBoxAuthenticatedTelephony);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_IP, checkBoxInternetProtocol);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_IPPASSWORD, checkBoxInternetProtocolPassword);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_MOBILE_1FACTOR_CONTRACT, checkBoxMobileOneFactorContract);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_MOBILE_1FACTOR_UNREG, checkBoxMobileOneFactorUnregistered);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_MOBILE_2FACTOR_CONTRACT, checkBoxMobileTwoFactorContract);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_MOBILE_2FACTOR_UNREG, checkBoxMobileTwoFactorUnregistered);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_TELEPHONY_NOMAD, checkBoxNomadTelephony);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD_PROTECTED, checkBoxPasswordProtectedTransport);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_TELEPHONY_PERSONALIZED, checkBoxPersonalizedTelephony);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_SESSION, checkBoxPreviousSession);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_SMARTCARD, checkBoxSmartcard);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_SMARTCARD_PKI, checkBoxSmartcardPKI);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_SOFTWARE_PKI, checkBoxSoftwarePKI);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_TELEPHONY, checkBoxTelephony);
+        authenticationsMap.put(SamlConstants.AUTHENTICATION_SAML2_TIME_SYNC_TOKEN, checkBoxTimeSyncToken);
 
-        allMethods = (JCheckBox[])lm.toArray(new JCheckBox[] {});
+        allMethods = (JCheckBox[])authenticationsMap.values().toArray(new JCheckBox[] {});
         buttonSelectAll.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < allMethods.length; i++) {
                     JCheckBox method = allMethods[i];
-                    method.setSelected(true);
+                    if (method.isEnabled())
+                        method.setSelected(true);
                 }
             }
         });
@@ -181,7 +208,8 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < allMethods.length; i++) {
                     JCheckBox method = allMethods[i];
-                    method.setSelected(false);
+                    if (method.isEnabled())
+                        method.setSelected(false);
                 }
             }
         });
@@ -219,18 +247,40 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         return false;
     }
 
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean canFinish() {
-        return false;
-    }
-
     public String getDescription() {
         return
           "<html>Specify one or more accepted authentication methods that the SAML statement must assert. " +
             "At least one authentication method must be selected</html>";
+    }
+
+    /**
+     * Enable only the methods that are applicable for a given saml version(s)
+     */
+    private void enableForVersion(int samlVersion) {
+        if (samlVersion == 0) {
+            // enable all
+            for (int i = 0; i < allMethods.length; i++) {
+                JCheckBox method = allMethods[i];
+                method.setEnabled(true);
+            }
+        }
+        else if (samlVersion == 1) {
+            HashMap v1Map = new HashMap(authenticationsMap);
+            v1Map.keySet().retainAll(Arrays.asList(SamlConstants.ALL_AUTHENTICATIONS));
+            for (int i = 0; i < allMethods.length; i++) {
+                JCheckBox method = allMethods[i];
+                method.setEnabled(v1Map.containsValue(method));
+            }
+        }
+        else if (samlVersion == 2) {
+            HashMap v2Map = new HashMap(authenticationsMap);
+            Set v1Only = new HashSet(Arrays.asList(SamlConstants.ALL_AUTHENTICATIONS));
+            v1Only.removeAll(SamlConstants.AUTH_MAP_SAML_1TO2.keySet());
+            v2Map.keySet().removeAll(v1Only);
+            for (int i = 0; i < allMethods.length; i++) {
+                JCheckBox method = allMethods[i];
+                method.setEnabled(v2Map.containsValue(method));
+            }
+        }
     }
 }

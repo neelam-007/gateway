@@ -75,6 +75,8 @@ public class EditAttributeDialog extends JDialog {
         pack();
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
+        setResizable(false);
+        setAlwaysOnTop(true);
     }
 
     /**

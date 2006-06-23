@@ -5,6 +5,11 @@
 
 package com.l7tech.common.util;
 
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.lang.reflect.Array;
+
 /**
  * Utilities for manipulating arrays.
  */
@@ -155,5 +160,59 @@ public class ArrayUtils {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * Create an array that is a copy of the given array.
+     *
+     * @param data the array to copy
+     * @return The copy or null if data is null
+     */
+    public static Object[] copy(final Object[] data) {
+        Object[] copy = null;
+
+        if (data != null) {
+            copy = (Object[]) Array.newInstance(data.getClass().getComponentType(), data.length);
+            System.arraycopy(data, 0, copy, 0, data.length);
+        }
+
+        return copy;
+    }
+
+    /**
+     * Convert the given array to a Map.
+     *
+     * <p>Each item in the given entry array must be of length 2 with the
+     * key being the first item and the value the second.</p>
+     *
+     * @param keyValueArray the array with keys value pair sub arrays
+     * @param keyFirst true if the key is the first item in each sub array
+     * @return The map.
+     * @throws IllegalArgumentException if any keys are duplicated.
+     * @throws IllegalArgumentException if any sub-arrays have invalid dimensions.
+     */
+    public static Map asMap(Object[][] keyValueArray, boolean keyFirst) {
+        Map resultMap = new LinkedHashMap(keyValueArray.length);
+
+        int keyIndex = 0;
+        int valueIndex = 1;
+
+        if (!keyFirst) {
+            keyIndex = 1;
+            valueIndex = 0;
+        }
+
+        for (int i = 0; i < keyValueArray.length; i++) {
+            Object[] objects = keyValueArray[i];
+            if (objects.length != 2) {
+                throw new IllegalArgumentException("Invalid key/value array at position " + i);
+            }
+
+            if (resultMap.put(objects[keyIndex], objects[valueIndex]) != null) {
+                throw new IllegalArgumentException("Duplicated key at position " + i);
+            }
+        }
+
+        return Collections.unmodifiableMap(resultMap);
     }
 }

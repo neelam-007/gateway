@@ -456,7 +456,7 @@ public class SamlProcessingTest extends TestCase {
         final String signingCertThumbprint = CertUtils.getThumbprintSHA1(signingCert);
         final String signingCertSki = CertUtils.getSki(signingCert);
         SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(signingCert);
-        SamlAssertion sa = new SamlAssertion(assDoc.getDocumentElement(), thumbResolver);
+        SamlAssertion sa = SamlAssertion.newInstance(assDoc.getDocumentElement(), thumbResolver);
         assertTrue(sa.isSenderVouches());
         assertNotNull(sa.getIssuerCertificate());
         sa.verifyEmbeddedIssuerSignature();

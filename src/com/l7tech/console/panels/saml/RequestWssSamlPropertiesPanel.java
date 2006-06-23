@@ -62,8 +62,17 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
     }
 
     private void initialize() {
+        setAlwaysOnTop(true);
+        setResizable(false);
+
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);
         Collection panels = new ArrayList();
+
+        VersionWizardStepPanel versionWizardStepPanel = new VersionWizardStepPanel(null, false, this);
+        versionWizardStepPanel.setBorder(emptyBorder);
+        panels.add(versionWizardStepPanel);
+        tabbedPane.add(versionWizardStepPanel.getStepLabel(), versionWizardStepPanel);        
+
         if (assertion.getAuthenticationStatement() != null) {
             AuthenticationMethodsWizardStepPanel authenticationMethodsWizardStepPanel = new AuthenticationMethodsWizardStepPanel(null, false, this);
             authenticationMethodsWizardStepPanel.setBorder(emptyBorder);
@@ -99,6 +108,16 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         tabbedPane.add(subjectConfirmationNameIdentifierWizardStepPanel.getStepLabel(), subjectConfirmationNameIdentifierWizardStepPanel);
         tabbedPane.add(conditionsWizardStepPanel.getStepLabel(), conditionsWizardStepPanel);
 
+        // Save / restore when changing tabs
+        tabbedPane.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent e) {
+                for (int i = 0; i < wizardPanels.length; i++) {
+                    WizardStepPanel wizardPanel = wizardPanels[i];
+                    wizardPanel.storeSettings(assertion);
+                }
+                ((WizardStepPanel)tabbedPane.getSelectedComponent()).readSettings(assertion);
+            }
+        });
 
         wizardPanelChangeListener = new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
@@ -135,5 +154,6 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
             }
         });
         Utilities.equalizeButtonSizes(new JButton[]{buttonCancel, buttonOk});
+        pack();
     }
 }

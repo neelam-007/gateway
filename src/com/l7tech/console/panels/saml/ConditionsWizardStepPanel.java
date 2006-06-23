@@ -108,13 +108,4 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
           "<html>Specify SAML statement conditions such as Audience Restriction [optional] " +
             "and whether to check the assertion validity [optional]</html>";
     }
-
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean canFinish() {
-        return true;
-    }
 }

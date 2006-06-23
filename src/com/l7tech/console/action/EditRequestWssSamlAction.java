@@ -13,6 +13,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -52,6 +53,19 @@ public class EditRequestWssSamlAction extends NodeAction {
         assertionChanged = editSamlAssertion(requestWssSaml, mw);
 
         if (assertionChanged) {
+            RequestWssSaml updatedAssertion;
+            if (requestWssSaml.getVersion()==null ||
+                requestWssSaml.getVersion().intValue()==1) {
+                 updatedAssertion = new RequestWssSaml(requestWssSaml);
+            }
+            else {
+                updatedAssertion = new RequestWssSaml2(requestWssSaml);
+            }
+            node.setUserObject(updatedAssertion);
+            if (requestWssSaml.getParent() != null) {
+                requestWssSaml.getParent().replaceChild(requestWssSaml, updatedAssertion);
+            }
+
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
                 PolicyTreeModel model = (PolicyTreeModel)tree.getModel();

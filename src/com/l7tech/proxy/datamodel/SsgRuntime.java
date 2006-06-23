@@ -35,6 +35,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -348,13 +351,18 @@ public class SsgRuntime {
         synchronized (ssg) {
             if (tokenStrategiesByType == null) {
                 tokenStrategiesByType = new HashMap();
-                TokenStrategy samlStrat = ssg.getWsTrustSamlTokenStrategy();
-                if (samlStrat == null) {
+                TokenStrategy samlStrat1 = ssg.getWsTrustSamlTokenStrategy();
+                TokenStrategy samlStrat2 = null;
+                if (samlStrat1 == null) {
                     Ssg tokenServerSsg = ssg.getTrustedGateway();
                     if (tokenServerSsg == null) tokenServerSsg = ssg;
-                    samlStrat = new TrustedSsgSamlTokenStrategy(tokenServerSsg);
+                    samlStrat1 = new TrustedSsgSamlTokenStrategy(tokenServerSsg, 1);
+                    samlStrat2 = new TrustedSsgSamlTokenStrategy(tokenServerSsg, 2);
                 }
-                tokenStrategiesByType.put(SecurityTokenType.SAML_ASSERTION, samlStrat);
+                tokenStrategiesByType.put(SecurityTokenType.SAML_ASSERTION, samlStrat1);
+                if (samlStrat2 != null) {
+                    tokenStrategiesByType.put(SecurityTokenType.SAML2_ASSERTION, samlStrat2);                    
+                }
             }
             return tokenStrategiesByType;
         }
@@ -390,17 +398,23 @@ public class SsgRuntime {
     /**
      * Get the strategy for obtaining a SAML sender-vouches assertion vouching for the specified username.
      *
+     * @param tokenType the type of SecurityTokenType that is required
      * @param username  the username to vouch for
      * @return a strategy that will produce a token for this user.  Never null.
      */
-    public TokenStrategy getSenderVouchesStrategyForUsername(String username) {
+    public TokenStrategy getSenderVouchesStrategyForUsername(SecurityTokenType tokenType, String username) {
         synchronized (ssg) {
             if (senderVouchesTokenStrategiesByUser == null)
                 senderVouchesTokenStrategiesByUser = new LRUMap(MAX_SV_USERS);
-            TokenStrategy strat = (TokenStrategy)senderVouchesTokenStrategiesByUser.get(username);
+
+            List keyList = new ArrayList();
+            keyList.add(tokenType);
+            keyList.add(username);
+
+            TokenStrategy strat = (TokenStrategy) senderVouchesTokenStrategiesByUser.get(keyList);
             if (strat == null) {
-                strat = new SenderVouchesSamlTokenStrategy(username);
-                senderVouchesTokenStrategiesByUser.put(username, strat);
+                strat = new SenderVouchesSamlTokenStrategy(tokenType, username);
+                senderVouchesTokenStrategiesByUser.put(keyList, strat);
             }
             return strat;
         }

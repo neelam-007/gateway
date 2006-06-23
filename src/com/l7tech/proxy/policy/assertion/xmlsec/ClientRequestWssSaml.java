@@ -71,10 +71,20 @@ public class ClientRequestWssSaml extends ClientAssertion {
 
         final SamlAssertion ass;
         if (isSenderVouches()) {
-            ass = context.getOrCreateSamlSenderVouchesAssertion();
+            if (data.getVersion()==null || data.getVersion().intValue()==1) {
+                ass = context.getOrCreateSamlSenderVouchesAssertion(1);
+            }
+            else {
+                ass = context.getOrCreateSamlSenderVouchesAssertion(2);
+            }
         } else {
             // Look up or apply for SAML ticket
-            ass = context.getOrCreateSamlHolderOfKeyAssertion();
+            if (data.getVersion()==null || data.getVersion().intValue()==1) {
+                ass = context.getOrCreateSamlHolderOfKeyAssertion(1);
+            }
+            else {
+                ass = context.getOrCreateSamlHolderOfKeyAssertion(2);                
+            }
         }
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
@@ -119,7 +129,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
     }
 
     public String getName() {
-        return isSenderVouches() ? "SAML Sender-Vouches Authentication Statement" : "SAML Holder-of-Key Authentication Statement";
+        return isSenderVouches() ? "SAML v1 Sender-Vouches Authentication Statement" : "SAML v1 Holder-of-Key Authentication Statement";
     }
 
     public String iconResource(boolean open) {

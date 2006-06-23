@@ -183,7 +183,8 @@ public class WssProcessorImpl implements WssProcessor {
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
-                if (securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
+                if (securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML) ||
+                    securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML2)) {
                     processSamlSecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered SAML Assertion element but not of expected namespace (" +
@@ -319,6 +320,9 @@ public class WssProcessorImpl implements WssProcessor {
             if (referenceElement != null) {
                 isReference = true;
                 value = referenceElement.getAttribute("URI");
+                if (value != null && value.length()==0) {
+                    value = null; // we want null not empty string for missing URI
+                }
                 if (value != null && value.charAt(0) == '#') {
                     value = value.substring(1);
                 }
@@ -980,7 +984,7 @@ public class WssProcessorImpl implements WssProcessor {
     {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
-            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.securityTokenResolver);
+            final SamlAssertion samlToken = SamlAssertion.newInstance(securityTokenElement, context.securityTokenResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
 
@@ -1060,7 +1064,6 @@ public class WssProcessorImpl implements WssProcessor {
 
     // TODO centralize this KeyInfo processing into the KeyInfoElement class somehow
     private SigningSecurityToken resolveSigningTokenByRef(final Element parentElement, ProcessingStatusHolder cntx) {
-        // TODO SAML Assertion reference by URI (Bug #1434)  -- lyonsm: Bug #1434 was closed a long time ago, is this still an issue?
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,

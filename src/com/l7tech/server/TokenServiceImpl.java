@@ -6,6 +6,7 @@ import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
@@ -206,25 +207,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             } else if (isRequestForSecureConversationContext0502(rstTypes)) {
                 response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser, SoapUtil.WSSC_NAMESPACE2);
             } else if (isRequestForSAML20Token(rstTypes)) {
-                // todo, implement saml 2.0
-                logger.info("SAML 2.0 token requested but not yet supported.");
-                SoapFaultLevel fault = new SoapFaultLevel();
-                fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
-                        "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <faultcode>Server</faultcode>\n" +
-                        "            <faultstring>SAML 2.0 token requested but not yet supported</faultstring>\n" +
-                        "            <faultactor>${request.url}</faultactor>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>");
-                context.setFaultlevel(fault);
-                return AssertionStatus.NOT_YET_IMPLEMENTED;
+                response = handleSamlRequest(rstTypes, SamlConstants.NS_SAML2, context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             } else if (isRequestForSAMLToken(rstTypes)) {
-                response = handleSamlRequest(rstTypes, context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
+                response = handleSamlRequest(rstTypes, SamlConstants.NS_SAML, context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             } else {
                 status = AssertionStatus.BAD_REQUEST;
                 throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
@@ -314,7 +299,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return base;
     }
 
-    private Document handleSamlRequest(Map rstTypes, PolicyEnforcementContext context,
+    private Document handleSamlRequest(Map rstTypes, String samlNs, PolicyEnforcementContext context,
                                        boolean useThumbprintForSignature, boolean useThumbprintForSubject)
                                        throws TokenServiceException, GeneralSecurityException
     {
@@ -330,6 +315,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
             options.setUseThumbprintForSignature(useThumbprintForSignature);
             options.setSignAssertion(true);
+            if (SamlConstants.NS_SAML2.equals(samlNs)) {
+                options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
+            }
             SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
             SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
             SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);

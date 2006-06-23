@@ -1,25 +1,29 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlCursor;
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import x0Assertion.oasisNamesTcSAML1.AttributeStatementType;
-import x0Assertion.oasisNamesTcSAML1.AttributeType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
-
-import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.logging.Level;
+import java.text.MessageFormat;
+
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlCursor;
+
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+
+import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
+import x0Assertion.oasisNamesTcSAML2.AttributeType;
+
 
 /**
- * @author emil
- * @version 27-Jan-2005
+ * Validation for SAML 2.x Attribute statement.
+ *
+ * @author Steve Jones, $Author$
+ * @version $Revision$
  */
-class SamlAttributeStatementValidate extends SamlStatementValidate {
+class Saml2AttributeStatementValidate extends SamlStatementValidate {
     private SamlAttributeStatement attribueStatementRequirements;
 
     /**
@@ -28,7 +32,7 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
      * @param requestWssSaml     the saml statemenet assertion
      * @param applicationContext the applicaiton context to allo access to components and services
      */
-    SamlAttributeStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
+    Saml2AttributeStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
         super(requestWssSaml, applicationContext);
         attribueStatementRequirements = requestWssSaml.getAttributeStatement();
         if (attribueStatementRequirements == null) {
@@ -88,10 +92,7 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
 
         for (int i = 0; i < receivedAttributes.length; i++) {
             AttributeType receivedAttribute = receivedAttributes[i];
-            if (expectedName.equals(receivedAttribute.getAttributeName())) {
-                if (!isEmpty(expectedNamespace) && !expectedNamespace.equals(receivedAttribute.getAttributeNamespace())) {
-                    continue;
-                }
+            if (expectedName.equals(receivedAttribute.getName())) {
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
                 for (int j = 0; j < values.length; j++) {
                     XmlObject presentedValue = values[j];

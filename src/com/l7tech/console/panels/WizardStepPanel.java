@@ -107,7 +107,8 @@ public abstract class WizardStepPanel extends JPanel {
      * @return true if the panel is valid, false otherwis
      */
     public boolean canFinish() {
-        return true;
+        return (canAdvance() || isSkipped())
+                && (nextPanel==null ? true : nextPanel.canFinish());
     }
 
 

@@ -29,6 +29,11 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     private JCheckBox checkBoxEmailAddress;
     private JCheckBox checkBoxWindowsDomainQualifiedName;
     private JCheckBox checkBoxUnspecified;
+    private JCheckBox checkBoxKerberos;
+    private JCheckBox checkBoxEntityIdentifier;
+    private JCheckBox checkBoxPersistentIdentifier;
+    private JCheckBox checkBoxTransientIdentifier;
+
     private HashMap nameFormatsMap;
     private boolean showTitleLabel;
 
@@ -72,10 +77,12 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         if (nameQualifier !=null) {
             textFieldNameQualifier.setText(nameQualifier);
         }
+        enableForVersion(requestWssSaml.getVersion()==null ? 1 : requestWssSaml.getVersion().intValue());
         for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             JCheckBox jc = (JCheckBox)entry.getValue();
-            jc.setSelected(false);
+            if (jc.isEnabled())
+                jc.setSelected(false);
         }
         String[] formats = requestWssSaml.getNameFormats();
         for (int i = 0; i < formats.length; i++) {
@@ -107,7 +114,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             JCheckBox jc = (JCheckBox)entry.getValue();
-            if (jc.isSelected()) {
+            if (jc.isSelected() && jc.isEnabled()) {
                 formats.add(entry.getKey().toString());
             }
         }
@@ -129,6 +136,11 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_EMAIL, checkBoxEmailAddress);
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_WINDOWS, checkBoxWindowsDomainQualifiedName);
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED, checkBoxUnspecified);
+        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_KERBEROS, checkBoxKerberos);
+        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_ENTITY, checkBoxEntityIdentifier);
+        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_PERSISTENT, checkBoxPersistentIdentifier);
+        nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_TRANSIENT, checkBoxTransientIdentifier);
+
         for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             JCheckBox jc = (JCheckBox)entry.getValue();
@@ -172,11 +184,25 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     }
 
     /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
+     * Enable only the name identifiers that are applicable for a given saml version(s)
      */
-    public boolean canFinish() {
-        return false;
+    private void enableForVersion(int samlVersion) {
+        JCheckBox[] allFormats = (JCheckBox[]) nameFormatsMap.values().toArray(new JCheckBox[] {});
+        if (samlVersion == 0 ||
+            samlVersion == 2) {
+            // enable all
+            for (int i = 0; i < allFormats.length; i++) {
+                JCheckBox method = allFormats[i];
+                method.setEnabled(true);
+            }
+        }
+        else if (samlVersion == 1) {
+            HashMap v1Map = new HashMap(nameFormatsMap);
+            v1Map.keySet().retainAll(Arrays.asList(SamlConstants.ALL_NAMEIDENTIFIERS));
+            for (int i = 0; i < allFormats.length; i++) {
+                JCheckBox method = allFormats[i];
+                method.setEnabled(v1Map.containsValue(method));
+            }
+        }
     }
 }

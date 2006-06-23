@@ -9,6 +9,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
 import java.util.ArrayList;
@@ -49,13 +50,13 @@ public abstract class SamlStatementValidate {
      * errors in the validationResults collection.
      *
      * @param document              the message document
-     * @param statementAbstractType the subject statement type, that may be authentication statement
+     * @param statementObject       the subject statement type, that may be authentication statement
      *                              authorization statement or attribute statement
      * @param wssResults            the wssresults collection
      * @param validationResults     where the valida
      */
     protected abstract void validate(Document document,
-                                     SubjectStatementAbstractType statementAbstractType,
+                                     XmlObject statementObject,
                                      ProcessorResult wssResults, Collection validationResults);
 
 

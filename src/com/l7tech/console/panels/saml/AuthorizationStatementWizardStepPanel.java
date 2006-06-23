@@ -144,13 +144,13 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     public String getDescription() {
         return
         "<html>Specify the Resource [required] that the SAML statement MUST describe; the " +
-          "Resource Action [optional] and the Action Namespace [optional] " +
+          "Resource Action [required] and the Action Namespace [optional] " +
           "and whether the message signature is required as the proof material</html>";
     }
 
     /**
      * Test whether the step is finished and it is safe to advance to the next one.
-     * The resource must be specified
+     * The resource and action must be specified
      *
      * @return true if the panel is valid, false otherwis
      */
@@ -162,14 +162,5 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
 
     private boolean notNullOrEmpty(String s) {
         return s != null && !"".equals(s.trim());
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean canFinish() {
-        return false;
     }
 }

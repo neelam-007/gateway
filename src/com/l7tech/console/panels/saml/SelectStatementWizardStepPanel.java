@@ -105,8 +105,4 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
     public String getDescription() {
         return "Select the SAML Statement Type you wish to configure.";
     }
-
-    public boolean canFinish() {
-        return false;
-    }
 }

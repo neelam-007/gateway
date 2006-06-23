@@ -1,23 +1,28 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.apache.xmlbeans.XmlObject;
-import x0Assertion.oasisNamesTcSAML1.AuthenticationStatementType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
-
 import java.util.Collection;
 import java.util.Arrays;
 
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.apache.xmlbeans.XmlObject;
+
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.util.ArrayUtils;
+
+import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
+import x0Assertion.oasisNamesTcSAML2.AuthnContextType;
+
 /**
- * @author emil
- * @version 27-Jan-2005
+ * Validation for SAML 2.x Authentication statement.
+ *
+ * @author Steve Jones, $Author$
+ * @version $Revision$
  */
-class SamlAuthenticationStatementValidate extends SamlStatementValidate {
+class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
     private SamlAuthenticationStatement authenticationStatementConstraints;
 
     /**
@@ -26,7 +31,7 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
      * @param requestWssSaml the saml statement assertion
      * @param applicationContext the application context to allow access to components and services
      */
-    SamlAuthenticationStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
+    Saml2AuthenticationStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
         super(requestWssSaml, applicationContext);
         authenticationStatementConstraints = requestWssSaml.getAuthenticationStatement();
         if (authenticationStatementConstraints == null) {
@@ -44,18 +49,30 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
     protected void validate(Document document,
                             XmlObject statementAbstractType,
                             ProcessorResult wssResults, Collection validationResults) {
-        if (!(statementAbstractType instanceof AuthenticationStatementType)) {
-            throw new IllegalArgumentException("Expected "+AuthenticationStatementType.class);
+        if (!(statementAbstractType instanceof AuthnStatementType)) {
+            throw new IllegalArgumentException("Expected "+AuthnStatementType.class);
         }
-        AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statementAbstractType;
-        String authenticationMethod = authenticationStatementType.getAuthenticationMethod();
+        AuthnStatementType authenticationStatementType = (AuthnStatementType)statementAbstractType;
+        AuthnContextType authnContext = authenticationStatementType.getAuthnContext();
+        String authenticationMethod = null;
+        if (authnContext != null) {
+            authenticationMethod = authnContext.getAuthnContextClassRef();
+        }
         if (authenticationMethod == null) {
             SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Authentication Method specified", authenticationStatementType.toString(), null, null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
         }
-        String[] methods = filterAuthenticationMethods(authenticationStatementConstraints.getAuthenticationMethods());
+        String[] methods = (String[]) ArrayUtils.copy(authenticationStatementConstraints.getAuthenticationMethods());
+        for (int i = 0; i < methods.length; i++) {
+            String method = methods[i];
+            String v2method = (String) SamlConstants.AUTH_MAP_SAML_1TO2.get(method);
+            if (v2method != null) {
+                methods[i] = v2method;
+            }
+        }
+
         boolean methodMatches = methods.length == 0;
         for (int i = 0; i < methods.length; i++) {
             String method = methods[i];
@@ -72,12 +89,5 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
                                                                                 : Arrays.asList(methods).toString(), authenticationMethod}, null));
             logger.finer(msg);
         }
-    }
-
-    /**
-     * Filter out any name formats that are not allowed in v1
-     */
-    private String[] filterAuthenticationMethods(String[] authenticationMethods) {
-        return SamlAssertionValidate.filter(authenticationMethods, SamlConstants.ALL_AUTHENTICATIONS);
     }
 }

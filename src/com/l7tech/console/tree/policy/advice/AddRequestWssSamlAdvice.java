@@ -10,6 +10,7 @@ import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 
 import javax.swing.*;
 
@@ -31,13 +32,14 @@ public class AddRequestWssSamlAdvice implements Advice {
 
         IntroductionWizardStepPanel p =
           new IntroductionWizardStepPanel(
-            new SelectStatementWizardStepPanel(
-              new AuthenticationMethodsWizardStepPanel(
-                new AuthorizationStatementWizardStepPanel(
-                  new AttributeStatementWizardStepPanel(
-                    new SubjectConfirmationWizardStepPanel(
-                      new SubjectConfirmationNameIdentifierWizardStepPanel(
-                        new ConditionsWizardStepPanel(null))))))));
+            new VersionWizardStepPanel(
+              new SelectStatementWizardStepPanel(
+                new AuthenticationMethodsWizardStepPanel(
+                  new AuthorizationStatementWizardStepPanel(
+                    new AttributeStatementWizardStepPanel(
+                      new SubjectConfirmationWizardStepPanel(
+                        new SubjectConfirmationNameIdentifierWizardStepPanel(
+                          new ConditionsWizardStepPanel(null)))))))));
 
         final Wizard w = new RequestWssSamlStatementWizard(assertion, f, p);
         w.addWizardListener(new WizardAdapter() {
@@ -53,6 +55,14 @@ public class AddRequestWssSamlAdvice implements Advice {
         w.setVisible(true);
         // check that user oked this dialog
         if (proceed) {
+            if (assertion.getVersion()==null ||
+                assertion.getVersion().intValue()==1) {
+                pc.getNewChild().setUserObject(new RequestWssSaml(assertion));
+            }
+            else {
+                pc.getNewChild().setUserObject(new RequestWssSaml2(assertion));                
+            }
+
             pc.proceed();
         }
     }

@@ -56,8 +56,12 @@ class SecurityTokenTypeMapping implements TypeMapping {
             return new TypedReference(getMappedClass(), SecurityTokenType.WSS_USERNAME);
         if (PSCT.matcher(uri).find())
             return new TypedReference(getMappedClass(), SecurityTokenType.WSSC_CONTEXT);
-        if (PSAML.matcher(uri).find())
-            return new TypedReference(getMappedClass(), SecurityTokenType.SAML_ASSERTION);
+        if (PSAML.matcher(uri).find()) {
+            if (uri.indexOf("2.0") > 0)
+                return new TypedReference(getMappedClass(), SecurityTokenType.SAML2_ASSERTION);
+            else
+                return new TypedReference(getMappedClass(), SecurityTokenType.SAML_ASSERTION);
+        }
         if (PKERB.matcher(uri).find())
             return new TypedReference(getMappedClass(), SecurityTokenType.WSS_KERBEROS_BST);
 
