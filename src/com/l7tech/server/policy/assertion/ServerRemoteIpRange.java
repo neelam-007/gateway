@@ -12,6 +12,8 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -25,17 +27,18 @@ import java.util.logging.Level;
  */
 public class ServerRemoteIpRange extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
+    private final Pattern ipaddresspattern;
 
     public ServerRemoteIpRange(RemoteIpRange rule, ApplicationContext context) {
         super(rule);
         this.rule = rule;
         this.auditor = new Auditor(this, context, logger);
-
+        ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
         calculateIPRange();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        String remoteAddress;
+        String input;
         // get remote address
         if (rule.getIpSourceContextVariable() == null) {
             TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
@@ -43,29 +46,30 @@ public class ServerRemoteIpRange extends AbstractServerAssertion implements Serv
                 auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
                 return AssertionStatus.BAD_REQUEST;
             }
-            remoteAddress = tcp.getRemoteAddress();
+            input = tcp.getRemoteAddress();
         } else {
             try {
                 Object tmp = context.getVariable(rule.getIpSourceContextVariable());
                 if (tmp == null) throw new NoSuchVariableException("could not resolve " + rule.getIpSourceContextVariable());
-                remoteAddress = tmp.toString();
+                input = tmp.toString();
             } catch (NoSuchVariableException e) {
                 logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", e);
                 auditor.logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, new String[] {rule.getIpSourceContextVariable()});
                 return AssertionStatus.SERVER_ERROR;
             }
         }
-
-        if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
-            auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] {remoteAddress});
+        Matcher m = ipaddresspattern.matcher(input);
+        if (!m.find()) {
+            auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] {input});
             return AssertionStatus.FALSIFIED;
         }
+        String remotiptotest = input.substring(m.start(), m.end());
         // check assertion with this address
-        if (assertAddress(remoteAddress)) {
-            auditor.logAndAudit(AssertionMessages.IP_ACCEPTED, new String[] {remoteAddress});
+        if (assertAddress(remotiptotest)) {
+            auditor.logAndAudit(AssertionMessages.IP_ACCEPTED, new String[] {remotiptotest});
             return AssertionStatus.NONE;
         } else {
-            auditor.logAndAudit(AssertionMessages.IP_REJECTED, new String[] {remoteAddress});
+            auditor.logAndAudit(AssertionMessages.IP_REJECTED, new String[] {remotiptotest});
             return AssertionStatus.FALSIFIED;
         }
     }
@@ -100,7 +104,6 @@ public class ServerRemoteIpRange extends AbstractServerAssertion implements Serv
     /**
      * calculate 32 bit representation of an ip address
      * @param ipAddress
-     * @return
      */
     private int strTo32bitAdd(String ipAddress) {
         int[] ipx = decomposeAddress(ipAddress, null);
@@ -132,7 +135,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion implements Serv
     }
 
     private int[] decomposeAddress(String arg, int[] optionalOutput) {
-        int[] output = null;
+        int[] output;
         if (optionalOutput != null && optionalOutput.length == 4) {
             output = optionalOutput;
         } else output = new int[4];
