@@ -11,7 +11,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.LinkedHashSet;
 import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * Abstract superclass of all of the different types of audit record.
@@ -94,7 +96,7 @@ public abstract class AuditRecord extends SSGLogRecord {
 
     /** the IP address of the entity that caused this AuditRecord to be created. */
     protected String ipAddress;
-    
+
     /** the name of the service or system affected by event that generated the AuditRecord */
     protected String name;
 
@@ -138,5 +140,16 @@ public abstract class AuditRecord extends SSGLogRecord {
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setUserId( String userId ) {
         this.userId = userId;
+    }
+
+    /**
+     * Ensure we don't send any Hibernate implementation classes over the wire.
+     *
+     * @param out
+     * @throws IOException
+     */
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        details = new LinkedHashSet(details);
+        out.defaultWriteObject();
     }
 }

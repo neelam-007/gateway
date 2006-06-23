@@ -7,6 +7,16 @@
 package com.l7tech.common.util;
 
 import java.net.UnknownHostException;
+import java.util.Iterator;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 /**
  * Exception utilities.
@@ -16,6 +26,8 @@ import java.net.UnknownHostException;
  * Time: 12:03:26 PM
  */
 public class ExceptionUtils {
+
+    //- PUBLIC
 
     /**
      * Get the cause of this exception if it was caused by an instnace of class "cause", or null
@@ -115,6 +127,187 @@ public class ExceptionUtils {
         }
 
         return t.getClass().getName();
+    }
+
+    /**
+     * Filter the given Throwable by removing any Throwables in the given list.
+     *
+     * <p>This is useful when passing Throwables to external systems (e.g. over RMI).</p>
+     *
+     * <p>The filter will process each cause in turn until an unsupported cause is
+     * reached. It will then relace the unsupported exception and its children with
+     * a text version of the stack trace.</p>
+     *
+     * @param throwable The throwable to filter
+     * @param remove The unsupported throwables to be removed
+     * @param substituteStackAsText True to add the unsupported throwables stack trace as message text
+     * @return the given throwable or a copy that has unsupported throwable causes removed.
+     */
+    public static Throwable filter(final Throwable throwable, final Class[] remove, final boolean substituteStackAsText) {
+        Throwable result = throwable;
+
+        List processedThrowables = new ArrayList();
+        Throwable current = throwable;
+
+        while (current != null) {
+            if (isInstanceOfAny(current, remove)) {
+                // The we need to remove this throwable. We need to reconstruct all parent
+                // Throwables and textualize either this one or the first non-constructable parent.
+                result = rebuildThrowable(processedThrowables, substituteStackAsText);
+                break;
+            }
+            else {
+                processedThrowables.add(current);
+                current = current.getCause();
+            }
+        }
+
+        return result;
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(ExceptionUtils.class.getName());
+
+    /**
+     * Check if the throwable argument is of any of the given types.
+     *
+     * @param throwable      The throwable to check the type of.
+     * @param throwableTypes The types to check for.
+     * @return true if the given throwable is one of the given types.
+     */
+    private static boolean isInstanceOfAny(Throwable throwable, Class[] throwableTypes) {
+        boolean isInstance = false;
+
+        for (int i = 0; i < throwableTypes.length; i++) {
+            Class throwableType = throwableTypes[i];
+            if (throwableType.isInstance(throwable)) {
+                isInstance = true;
+                break;
+            }
+        }
+
+        return isInstance;
+    }
+
+    /**
+     * Rebuild the given list of Throwables with each being caused by the next.
+     *
+     * <p>The final item in the list will have its cause (if any) converted to a text version.</p>
+     *
+     * @param parents The list of throwables.
+     * @param substituteStackAsText True to add the unsupported throwables stack trace as message text
+     * @return the replacement
+     */
+    private static Throwable rebuildThrowable(final List parents, final boolean substituteStackAsText) {
+        Throwable constructed = null;
+
+        for (Iterator parentIter=parents.iterator(); parentIter.hasNext();) {
+            Throwable parent = (Throwable) parentIter.next();
+
+            boolean added = false;
+            try {
+                Constructor messageConstructor = findConstructor(parent, new Class[]{String.class});
+                if (messageConstructor != null) {
+                    Throwable replacement = (Throwable) messageConstructor.newInstance(new Object[]{parent.getMessage()});
+                    replacement.setStackTrace(parent.getStackTrace());
+                    constructed = addCause(constructed, replacement);
+                    added = true;
+                }
+                else { // then try for a constructor without the message
+                    Constructor emptyConstructor = findConstructor(parent, new Class[]{});
+                    if (emptyConstructor != null) {
+                        Throwable replacement = (Throwable) emptyConstructor.newInstance(new Object[]{});
+                        replacement.setStackTrace(parent.getStackTrace());
+                        constructed = addCause(constructed, replacement);
+                        added = true;
+                    }
+                }
+            }
+            catch(InstantiationException ie) {
+                logger.log(Level.INFO, "Could not create replacement exception", ie);
+            }
+            catch(IllegalAccessException iae) {
+                logger.log(Level.INFO, "Could not create replacement exception", iae);
+            }
+            catch(InvocationTargetException ite) {
+                logger.log(Level.INFO, "Could not create replacement exception", ite);
+            }
+
+            if (!added) {
+                // end of the line
+                if (substituteStackAsText) {
+                    constructed = addCause(constructed, textReplace(parent));
+                }
+                break;
+            }
+
+            if (!parentIter.hasNext() && parent.getCause()!=null && substituteStackAsText) {
+                // make the cause of the current exception the textualized child
+                constructed = addCause(constructed, textReplace(parent.getCause()));
+            }
+        }
+
+        return constructed;
+    }
+
+    /**
+     * Add the given cause as the child of the given target (and its children)
+     *
+     * @param target The exception being built
+     * @param cause The exception to add
+     * @return The cause or the target with the cause added.
+     */
+    private static Throwable addCause(Throwable target, Throwable cause) {
+        if (target == null) {
+            return cause;
+        }
+        else {
+            Throwable addTo = target;
+            while (addTo != null) {
+                Throwable current = addTo;
+                addTo = addTo.getCause();
+                if (addTo==null) {
+                    current.initCause(cause);
+                }
+            }
+
+            return target;
+        }
+    }
+
+    /**
+     * Replace the given (unsupported) exception with a generic Exception for which
+     * the message text is the stack trace.
+     *
+     * @param throwable The throwable to be replaced
+     * @return An Exception with a message that is the stacktrace / message for the original throwable.
+     */
+    private static Throwable textReplace(Throwable throwable) {
+        StringWriter exceptionWriter = new StringWriter();
+        throwable.printStackTrace(new PrintWriter(exceptionWriter));
+        return new Exception("Replaced exception of type '"+throwable.getClass().getName()+"', with message '"+
+                throwable.getMessage()+"', original stack was:\n" +
+                exceptionWriter.getBuffer().toString());
+    }
+
+    /**
+     * Find a constructor for the throwable.
+     */
+    private static Constructor findConstructor(Throwable throwable, Class[] constructorArgs) {
+        Constructor constructor = null;
+
+        Class throwableClass = throwable.getClass();
+        Constructor[] throwableConstructors = throwableClass.getConstructors();
+        for (int c=0; c<throwableConstructors.length; c++) {
+            Constructor currentConstructor = throwableConstructors[c];
+            if (Arrays.equals(currentConstructor.getParameterTypes(), constructorArgs)) {
+                constructor = currentConstructor;
+                break;
+            }
+        }
+
+        return constructor;
     }
 
     private static boolean isLong(String s) {
