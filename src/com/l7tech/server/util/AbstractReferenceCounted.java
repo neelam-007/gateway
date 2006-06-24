@@ -10,9 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Utility superclass containing a working implementation of {@link ReferenceCounted}.
  */
-public abstract class AbstractReferenceCounted<HT extends Handle> implements ReferenceCounted {
+public abstract class AbstractReferenceCounted<HT extends Handle> extends AbstractCloseable implements ReferenceCounted {
     private final AtomicInteger refcount = new AtomicInteger(0);
-    private boolean closed = false;
 
     protected abstract HT createHandle();
 
@@ -25,32 +24,6 @@ public abstract class AbstractReferenceCounted<HT extends Handle> implements Ref
         int nval = refcount.decrementAndGet();
         if (nval <= 0) {
             close();
-        }
-    }
-
-    protected synchronized boolean isClosed() {
-        return closed;
-    }
-
-    /** Sets the {@link #closed} flag and returns the old value. */
-    private synchronized boolean setClosed() {
-        boolean old = closed;
-        closed = true;
-        return old;
-    }
-
-    protected abstract void doClose();
-
-    protected final void close() {
-        if (setClosed()) return;
-        doClose();
-    }
-
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
         }
     }
 }

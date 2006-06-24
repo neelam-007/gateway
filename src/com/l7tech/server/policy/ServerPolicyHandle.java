@@ -21,7 +21,9 @@ public class ServerPolicyHandle extends Handle<ServerPolicy> {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        return getTarget().checkRequest(context);
+        ServerPolicy target = getTarget();
+        if (target == null) throw new IllegalStateException("ServerPolicyHandle has already been closed");
+        return target.checkRequest(context);
     }
 
     /** Open up access so service cache can use this.  ONLY ServiceCache should use this. */

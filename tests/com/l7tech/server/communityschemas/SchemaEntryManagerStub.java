@@ -34,16 +34,4 @@ public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry> imple
     public long save(SchemaEntry entry) throws SaveException {
         return 0;
     }
-
-    public SchemaEntry getSchemaEntryFromSystemId(String systemId) {
-        return null;
-    }
-
-    public SchemaHandle getCachedSchemaHandleByOid(long oid) {
-        return null;
-    }
-
-    public SchemaHandle getCachedSchemaHandleByTns(String tns) {
-        return null;
-    }
 }

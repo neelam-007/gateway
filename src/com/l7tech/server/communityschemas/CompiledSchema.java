@@ -7,7 +7,6 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.ElementCursor;
@@ -21,7 +20,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.ls.LSInput;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -32,8 +30,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 
-public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
+final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
     public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
             "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
@@ -47,11 +47,10 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
     private final byte[] namespaceNormalizedSchemaDocument;
     private final SchemaManagerImpl manager;
     private final String tnsGen;
-
-    // The sets are final but the contents will change when the schema is recompiled
-    private final Set<SchemaHandle> imports;  // Schemas that we directly use via import
-    private final Map<CompiledSchema, Object> exports = new WeakHashMap<CompiledSchema, Object>(); // Schemas that use us directly via import
-    private Schema softwareSchema;
+    private final boolean transientSchema; // if true, this schema was pulled down over the network and should be discarded when it hasn't been used for a while
+    private final Map<String, SchemaHandle> imports; // Full URL -> Handles of schemas that we import directly
+    private final Map<String, Reference<CompiledSchema>> exports = new WeakHashMap<String, Reference<CompiledSchema>>();
+    private final Schema softwareSchema;
 
     private boolean rejectedByTarari = false; // true if Tarari couldn't compile this schema
     private boolean uniqueTns = false; // true when we notice that we are the only user of this tns
@@ -65,13 +64,15 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
                    String namespaceNormalizedSchemaDocument,
                    Schema softwareSchema,
                    SchemaManagerImpl manager,
-                   Set<SchemaHandle> imports)
+                   Map<String, SchemaHandle> imports,
+                   boolean transientSchema)
     {
         if (targetNamespace == null || softwareSchema == null ||
                 schemaDocument == null || namespaceNormalizedSchemaDocument == null ||
-                imports == null || manager == null)
+                imports == null || manager == null || systemId == null)
             throw new NullPointerException();
 
+        this.transientSchema = transientSchema;
         this.targetNamespace = targetNamespace;
         this.systemId = systemId;
         this.softwareSchema = softwareSchema;
@@ -96,16 +97,20 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
         return gen;
     }
 
+    public SchemaHandle ref() {
+        return super.ref();
+    }
+
+    public boolean isTransientSchema() {
+        return transientSchema;
+    }
+
     String getTargetNamespace() {
         return targetNamespace;
     }
 
     public String getSystemId() {
         return systemId;
-    }
-
-    private synchronized Schema getSoftwareSchema() {
-        return softwareSchema;
     }
 
     String getSchemaDocument() {
@@ -210,26 +215,14 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
         }
 
         // Try to run the validation in software
-        Schema softwareSchema;
-        for (;;) {
-            try {
-                manager.getReadLock().acquire();
-                softwareSchema = getSoftwareSchema();
-                if (softwareSchema != null) {
-                    validateMessageDom(softwareSchema, msg, isSoap, errorHandler);
-                    return;
-                }
-                /* FALLTHROUGH and recompile this schema */
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
-            } finally {
-                manager.getReadLock().release();
-            }
-
-            //noinspection ConstantConditions
-            assert softwareSchema == null;
-            recompile();
+        try {
+            manager.getReadLock().acquire();
+            validateMessageDom(msg, isSoap, errorHandler);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
+        } finally {
+            manager.getReadLock().release();
         }
     }
 
@@ -258,21 +251,24 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
         return;
     }
 
-    Set<SchemaHandle> getImports() {
+    Map<String, SchemaHandle> getImports() {
         return imports;
     }
 
     void addExport(CompiledSchema schema) {
-        exports.put(schema, null);
+        exports.put(schema.getSystemId(), new WeakReference<CompiledSchema>(schema));
     }
 
     /**
-     * @return a set of this schema's exports.  Caller should avoid retaining references to the CompiledSchemas found within.
+     * @return a set of this schema's current exports.  Caller should avoid retaining references to the CompiledSchemas found within.
      */
     Set<CompiledSchema> getExports() {
         HashSet<CompiledSchema> ret = new HashSet<CompiledSchema>(exports.size());
-        for (CompiledSchema schema : exports.keySet()) {
-            if (schema != null) ret.add(schema);
+        for (Reference<CompiledSchema> ref : exports.values()) {
+            if (ref == null) continue;
+            CompiledSchema schema = ref.get();
+            if (schema == null || schema.isClosed()) continue;
+            ret.add(schema);
         }
         return ret;
     }
@@ -280,15 +276,13 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
     /**
      * Caller must hold the read lock.
      *
-     * @param softwareSchema must not be null
      * @param msg
      * @param soap
      * @param errorHandler
      * @throws SAXException
      * @throws IOException
      */
-    private void validateMessageDom(Schema softwareSchema, Message msg, boolean soap, SchemaValidationErrorHandler errorHandler) throws SAXException, IOException {
-        if (softwareSchema == null) throw new NullPointerException();
+    private void validateMessageDom(Message msg, boolean soap, SchemaValidationErrorHandler errorHandler) throws SAXException, IOException {
         final Document doc = msg.getXmlKnob().getDocumentReadOnly();
         Element[] elements;
         if (soap) {
@@ -315,7 +309,7 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
             elements = new Element[]{doc.getDocumentElement()};
         }
 
-        doValidateElements(softwareSchema, elements, errorHandler);
+        doValidateElements(elements, errorHandler);
     }
 
     /**
@@ -359,62 +353,26 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
      */
     void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
         setLastUsedTime();
-        Schema softwareSchema;
-        for (;;) {
-            try {
-                manager.getReadLock().acquire();
-                softwareSchema = getSoftwareSchema();
-                if (softwareSchema != null) {
-                    doValidateElements(softwareSchema, elementsToValidate, errorHandler);
-                    return;
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
-            } finally {
-                manager.getReadLock().release();
-            }
-
-            //noinspection ConstantConditions
-            assert softwareSchema == null;
-
-            recompile();
-        }
-    }
-
-    /** Recompile this schema and any child schemas.  */
-    private void recompile() {
-        if (getSoftwareSchema() != null)
-            return;
-
-        // TODO
-        throw new UnsupportedOperationException("TODO recompile");
-    }
-
-    /**
-     * Trigger recompilation of this schema and all children next time any of them are used.  Caller
-     * must hold the global schema write lock.
-     */
-    void invalidateSoftwareSchema() {
-        Set<SchemaHandle> imports = getImports();
-        for (SchemaHandle handle : imports)
-            handle.getCompiledSchema().invalidateSoftwareSchema();
-        setHardwareEligible(false);
-        synchronized (this) {
-            softwareSchema = null;
+        try {
+            manager.getReadLock().acquire();
+            doValidateElements(elementsToValidate, errorHandler);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
+        } finally {
+            manager.getReadLock().release();
         }
     }
 
     /**
      * Caller must hold the read lock.
      *
-     * @param softwareSchema the software schema to use.  Must not be null.
      * @param elementsToValidate
      * @param errorHandler
      * @throws IOException
      * @throws SAXException
      */
-    private void doValidateElements(Schema softwareSchema, Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
+    private void doValidateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
         if (isClosed()) throw new IllegalStateException();
         Validator v = softwareSchema.newValidator();
         v.setErrorHandler(errorHandler);
@@ -449,14 +407,17 @@ public final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle>
         return tnsGen;
     }
 
-    LSInput getLSInput() {
-        LSInputImpl lsi =  new LSInputImpl();
-        lsi.setStringData(schemaDocument);
-        lsi.setSystemId(systemId);
-        return lsi;
+    // Overridden to open up access to the communityschemas package, specifically SchemaManagerImpl
+    protected boolean isClosed() {
+        return super.isClosed();
     }
 
     protected void doClose() {
+        // Close imported references
+        for (SchemaHandle impHandle : imports.values())
+            impHandle.close();
+        imports.clear();
+        exports.clear();
         manager.closeSchema(this);
     }
 

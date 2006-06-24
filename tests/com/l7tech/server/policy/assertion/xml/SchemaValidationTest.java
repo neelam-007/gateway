@@ -19,8 +19,8 @@ import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.tarari.xml.rax.schema.SchemaResolver;
 import com.tarari.xml.rax.schema.SchemaLoader;
+import com.tarari.xml.rax.schema.SchemaResolver;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Tests for schema validation code.
@@ -156,9 +155,7 @@ public class SchemaValidationTest extends TestCase {
 
     public void testReutersUrlSchemaHttpObjectCache() throws Exception {
         SchemaManager sm = (SchemaManager)testApplicationContext.getBean("schemaManager");
-        String schemaDoc = new String(HexUtils.slurpStream(new URL(REUTERS_SCHEMA_URL).openStream()), "UTF-8");
-        SchemaHandle handle = sm.compile(schemaDoc, REUTERS_SCHEMA_URL, new Pattern[] { Pattern.compile(".*") });
-
+        SchemaHandle handle = sm.getSchemaByUrl(REUTERS_SCHEMA_URL);
         Document requestDoc = XmlUtil.parse(new URL(REUTERS_REQUEST_URL).openStream());
         Message request = new Message(requestDoc);
 

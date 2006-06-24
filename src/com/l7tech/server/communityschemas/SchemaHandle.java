@@ -21,15 +21,28 @@ public final class SchemaHandle extends Handle<CompiledSchema> {
 
     /** Validate the entire message against this schema. */
     public void validateMessage(Message msg, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
-        getTarget().validateMessage(msg, errorHandler);
+        getCompiledSchema().validateMessage(msg, errorHandler);
     }
 
     /** Validate just these elements against this schema.  This will not be hardware accelerated. */
     public void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
-        getTarget().validateElements(elementsToValidate, errorHandler);
+        getCompiledSchema().validateElements(elementsToValidate, errorHandler);
     }
 
+    /** Overridden in order to open up acces to this to the current package. */
+    protected CompiledSchema getTarget() {
+        return super.getTarget();
+    }
+
+    /**
+     * Get the CompiledSchema this handle points to.  Unlike {@link #getTarget()}, this can never return null.
+     *
+     * @return the CompiledSchema instance.  Never null.
+     * @throws IllegalStateException if this SchemaHandle has already been closed.
+     */
     CompiledSchema getCompiledSchema() {
-        return getTarget();
+        CompiledSchema target = getTarget();
+        if (target == null) throw new IllegalStateException("Unable to validate schema -- SchemaHandle has already been closed");
+        return target;
     }
 }

@@ -576,9 +576,6 @@
         <constructor-arg>
             <ref local="httpClientFactory"/>
         </constructor-arg>
-        <property name="schemaEntryManager">
-            <ref bean="schemaEntryManager"/>
-        </property>
     </bean>
 
     <bean id="schemaEntryManagerTarget" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">

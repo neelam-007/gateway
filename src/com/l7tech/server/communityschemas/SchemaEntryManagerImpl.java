@@ -10,15 +10,15 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.xml.sax.SAXException;
 
-import java.text.ParseException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * @author mike
@@ -29,24 +29,11 @@ public class SchemaEntryManagerImpl
 {
     private static final Logger logger = Logger.getLogger(SchemaEntryManagerImpl.class.getName());
 
-    private final Map<Long, SchemaHandle> compiledSchemasByOid = new HashMap<Long, SchemaHandle>();
-    private final Map<String, SchemaHandle> compiledSchemasByTns = new HashMap<String, SchemaHandle>();
+    private final Map<Long, String> systemIdsByOid = new HashMap<Long, String>();
     private SchemaManager schemaManager;
 
     public void setSchemaManager(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
-    }
-
-    public SchemaHandle getCachedSchemaHandleByOid(long oid) {
-        synchronized(this) {
-            return compiledSchemasByOid.get(oid);
-        }
-    }
-
-    public SchemaHandle getCachedSchemaHandleByTns(String tns) {
-        synchronized(this) {
-            return compiledSchemasByTns.get(tns);
-        }
     }
 
     protected void initDao() throws Exception {
@@ -55,7 +42,9 @@ public class SchemaEntryManagerImpl
             long oid = entry.getOid();
             try {
                 compileAndCache(oid, entry);
-            } catch (ParseException e) {
+            } catch (SAXException e) {
+                logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
+            } catch (IOException e) {
                 logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
             }
         }
@@ -146,7 +135,9 @@ public class SchemaEntryManagerImpl
         }
         try {
             compileAndCache(res, newSchema);
-        } catch (ParseException e) {
+        } catch (IOException e) {
+            throw new SaveException("Schema document imports remote document that is missing or invalid", e);
+        } catch (SAXException e) {
             throw new SaveException("Invalid schema document", e);
         }
         return res;
@@ -172,7 +163,9 @@ public class SchemaEntryManagerImpl
 
             try {
                 compileAndCache(fromDb.getOid(), fromDb);
-            } catch (ParseException e) {
+            } catch (IOException e) {
+                throw new UpdateException("Schema document imports missing or invalid remote document", e);
+            } catch (SAXException e) {
                 throw new UpdateException("Invalid schema document", e);
             }
         } catch (FindException fe) {
@@ -203,7 +196,9 @@ public class SchemaEntryManagerImpl
                         compileAndCache(oid, entry);
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Couldn't find invalidated SchemaEntry", e);
-                    } catch (ParseException e) {
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
+                    } catch (SAXException e) {
                         logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
                     }
                 }
@@ -219,43 +214,17 @@ public class SchemaEntryManagerImpl
         return defaultEntry;
     }
 
-    public SchemaEntry getSchemaEntryFromSystemId(final String systemId) {
-        SchemaEntry resolved = null;
-        String HOMEDIR = System.getProperty("user.dir");
+    private void compileAndCache(long oid, SchemaEntry entry) throws SAXException, IOException {
+        String systemId = entry.getName();
+        if (systemId == null) systemId = "policy:communityschema:" + oid;
+        schemaManager.registerSchema(systemId, entry.getSchema());
 
-        // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
-        String schemaId = systemId;
-        if (systemId != null && HOMEDIR != null) {
-            int pos = systemId.indexOf(HOMEDIR);
-            if (pos > -1) {
-                schemaId = systemId.substring(pos+HOMEDIR.length()+1);
-            }
-        }
+        // Make sure it compiles
+        SchemaHandle handle = schemaManager.getSchemaByUrl(systemId);
+        handle.close();
 
-        logger.fine("Searching for global schema with systemId '"+systemId+"', schemaId is '"+schemaId+"'.");
-        Collection matchingSchemas;
-        try {
-            matchingSchemas = findByName(schemaId);
-
-            if (matchingSchemas.isEmpty()) {
-                logger.fine("No global schema found with systemid '"+systemId+"', schemaId '"+schemaId+"'.");
-            } else {
-                resolved = (SchemaEntry) matchingSchemas.iterator().next();
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to load community schema with systemid '"+systemId+"', schemaId '"+schemaId+"'.", e);
-        }
-
-        return resolved;
-    }
-
-
-    private void compileAndCache(long oid, SchemaEntry entry) throws ParseException {
-        SchemaHandle handle = schemaManager.compile(entry.getSchema(), entry.getName(),
-                                                    new Pattern[] {Pattern.compile(".*")});
         synchronized(this) {
-            compiledSchemasByOid.put(oid, handle);
-            compiledSchemasByTns.put(handle.getCompiledSchema().getTargetNamespace(), handle);
+            systemIdsByOid.put(oid, systemId);
         }
     }
 
@@ -265,14 +234,10 @@ public class SchemaEntryManagerImpl
      */
     private boolean invalidateCompiledSchema(long oid) {
         // Cleanup old version
-        SchemaHandle handle;
         synchronized(this) {
-            handle = compiledSchemasByOid.get(oid);
-            if (handle == null) return false;
-            compiledSchemasByOid.remove(oid);
-            compiledSchemasByTns.remove(handle.getCompiledSchema().getTargetNamespace());
+            String systemId = systemIdsByOid.get(oid);
+            if (systemId != null) schemaManager.unregisterSchema(systemId);
         }
-        handle.close();
         return true;
     }
 

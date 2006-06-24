@@ -23,13 +23,4 @@ public interface SchemaEntryManager extends EntityManager<SchemaEntry> {
     void update(SchemaEntry entry) throws UpdateException;
 
     long save(SchemaEntry entry) throws SaveException;
-
-    /**
-     * Get the SchemaEntry or null if not found.
-     */
-    SchemaEntry getSchemaEntryFromSystemId(String systemId);
-
-    SchemaHandle getCachedSchemaHandleByOid(long oid);
-
-    SchemaHandle getCachedSchemaHandleByTns(String tns);
 }

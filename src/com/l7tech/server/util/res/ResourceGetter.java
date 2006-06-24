@@ -12,7 +12,6 @@ import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.server.policy.ServerPolicyException;
 
 import java.io.IOException;
@@ -139,7 +138,8 @@ public abstract class ResourceGetter<R> {
      * (AssertionResourceInfo and ResourceObjectFactory).
      *
      * @param assertion the assertion bean that owns the configuration of the type and paramaters for fetching the resource
-     *                  (static, single URL, URL from message, etc).  Must not be null.  assertion.getResourceInfo() must
+     *                  (static, single URL, URL from message, etc).  Must not be null.
+     * @param ri      instance of AssertionResourceInfo that describes how to fetch the resource.  Must not be null.
      * @param rof  strategy for converting the raw resource strings into the consumer's preferred resource object format
      *             for caching/reuse/metadata etc.  Must not be null.
      * @param urlFinder strategy for finding a URL within a message.  Must not be null if assertion.getResourceInfo()
@@ -152,14 +152,14 @@ public abstract class ResourceGetter<R> {
      * @throws ServerPolicyException if a ResourceGetter could not be created from the provided configuration
      * @throws IllegalArgumentException if the resource info type if MessageUrlResourceInfo but urlFinder is null
      */
-    public static <AC extends Assertion & UsesResourceInfo, R>
-    ResourceGetter<R> createResourceGetter(AC assertion,
+    public static <R>
+    ResourceGetter<R> createResourceGetter(Assertion assertion,
+                                           AssertionResourceInfo ri,
                                            ResourceObjectFactory<R> rof,
                                            UrlFinder urlFinder,
                                            UrlResolver<R> urlResolver)
             throws ServerPolicyException
     {
-        AssertionResourceInfo ri = assertion.getResourceInfo();
         if (ri == null) throw new ServerPolicyException(assertion, "Assertion contains no ResourceInfo provided");
 
         // TODO move this entire factory method to an instance method of ResourceInfo, as soon as generics are

@@ -6,24 +6,19 @@ package com.l7tech.server.communityschemas;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.http.cache.AbstractHttpObjectCache;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.LSInputImpl;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 import com.l7tech.common.xml.tarari.TarariSchemaSource;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
-import com.whirlycott.cache.Cache;
-import com.whirlycott.cache.CacheMaintenancePolicy;
-import com.whirlycott.cache.Item;
-import com.whirlycott.cache.policy.LFUMaintenancePolicy;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 
@@ -33,11 +28,9 @@ import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.ref.WeakReference;
-import java.text.ParseException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,31 +53,80 @@ public class SchemaManagerImpl implements SchemaManager {
     private final int hardwareRecompileMinAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
     private final int hardwareRecompileMaxAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
 
+    /** This LSInput will be returned to indicate "Resource not resolved, and don't try to get it over the network unless you know what you are doing" */
+    public static final LSInput LSINPUT_UNRESOLVED = new LSInputImpl();
+
     private final ReadWriteLock cacheLock = new WriterPreferenceReadWriteLock();
-    private final Map<String, WeakReference<CompiledSchema>> compiledSchemaCache = new WeakHashMap<String, WeakReference<CompiledSchema>>();
+
+    /**
+     * The latest version of every currently-known schema, by URL.  This includes SchemaEntry and policy assertion
+     * statis schemas, as well as transient schemas that were loaded from the network.
+     * <p/>
+     * Superseded schema versions are removed from this hashmap (and the handle from the hashmap is closed).
+     * A superseded schema's claim to its TNS will be released when its last user handle closes'.
+     * <p/>
+     * For the transient schemas loaded from the network, a periodic task removes URLs whose schemas have not
+     * been used recently.
+     * <p/>
+     * Access is not lock-protected.
+     */
+    private final Map<String, SchemaHandle> schemasBySystemId = new ConcurrentHashMap<String, SchemaHandle>();
+
+    /**
+     * For each currently-active TNS, stores (weakly) the set of currently-active schemas that use that TNS.
+     * Both global and remote schemas may be present in the TNS cache.
+     * <p/>
+     * Access is protected by {@link #cacheLock}.
+     */
     private final Map<String, Map<CompiledSchema, Object>> tnsCache = new WeakHashMap<String, Map<CompiledSchema, Object>>();
+
+    /**
+     * Weak set of schemas that became hardware-eligible since the last hardware reload.
+     * <p/>
+     * Access is protected by {@link #cacheLock}.
+     */
     private final Map<CompiledSchema, Object> schemasWaitingToLoad = new WeakHashMap<CompiledSchema, Object>();
 
-    /** Shared cache for all schema resources, system-wide.  This is the low-level cache that stores Strings, to save network calls. */
+    /**
+     * Shared cache for all remotely-loaded schema strings, system-wide.
+     * This is a low-level cache that stores Strings, to save network calls.
+     */
     private final HttpObjectCache<String> httpStringCache;
 
-    /** Top-level cache for all schemas loaded from remote URLs. */
-    private final HttpSchemaCache httpSchemaCache;
+    /**
+     * Stores the latest version of each globally-registered schema string (SchemaEntry, and policy assertion
+     * static schemas).
+     */
+    private final Map<String, String> globalSchemasByUrl = new ConcurrentHashMap<String, String>();
 
+    /**
+     * Stores the set of schema URLs that were superseded by new downloads since the last compile began.
+     * (Currently schema compilation is restricted to a single thread at a time.)
+     */
+    private final Map<String, Integer> schemasRecentlySuperseded = new ConcurrentHashMap<String, Integer>();
+
+    /**
+     * Stores handles that should be closed next time someone is free to do so (holding no locks).
+     * If nobody does it before then (such as the finalizer), the maintenance task will close these handles.
+     * Don't use this directly; use the {@link #deferredCloseHandle(SchemaHandle)} method instead.
+     */
+    private final Map<SchemaHandle, Object> handlesNeedingClosed = new WeakHashMap<SchemaHandle, Object>();
+
+    /** Bean that handles Tarari hardware reloads for us, null if no Tarari. */
     private final TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
 
-    private SchemaEntryManager schemaEntryManager;
     private long lastHardwareRecompileTime = 0;
     private long lastSchemaEligibilityTime = 0;
     private long firstSchemaEligibilityTime = 0;
 
-    private final Timer maybeRebuildHardwareCacheTimer;
+    private final Timer maintenanceTimer;
 
     public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
         if (httpClientFactory == null) throw new NullPointerException();
 
         HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory() {
             public String createUserObject(String url, String response) {
+                onUrlDownloaded(url);
                 return response;
             }
         };
@@ -95,104 +137,333 @@ public class SchemaManagerImpl implements SchemaManager {
                                                       userObjectFactory,
                                                       HttpObjectCache.WAIT_LATEST);
 
+        maintenanceTimer = new Timer();
+        TimerTask cacheCleanupTask = new TimerTask() {
+            public void run() {
+                cacheCleanup();
+            }
+        };
+        maintenanceTimer.schedule(cacheCleanupTask, 4539, maxCacheAge * 2 + 263);
+
         if (tarariSchemaHandler != null) {
-            final TimerTask task = new TimerTask() {
+            final TimerTask hardwareReloadTask = new TimerTask() {
                 public void run() {
                     maybeRebuildHardwareCache();
                 }
             };
-            maybeRebuildHardwareCacheTimer = new Timer();
-            maybeRebuildHardwareCacheTimer.schedule(task, 1000, hardwareRecompileLatency);
-        } else {
-            maybeRebuildHardwareCacheTimer = null;
+            maintenanceTimer.schedule(hardwareReloadTask, 1000, hardwareRecompileLatency);
         }
-
-        httpSchemaCache = new HttpSchemaCache("HttpSchemaCache_" + System.identityHashCode(this),
-                                              maxCacheEntries,
-                                              53,
-                                              maxCacheAge,
-                                              maxCacheAge * 2); // if a URL schema hasn't been used in 2 refresh cycles, throw it out
-    }
-
-    public void setSchemaEntryManager(SchemaEntryManager schemaEntryManager) {
-        this.schemaEntryManager = schemaEntryManager;
-    }
-
-    public SchemaHandle compile(String schemadoc,
-                                String systemId,
-                                Pattern[] urlWhitelist)
-            throws ParseException
-    {
-        setThreadLocalUrlWhitelist(urlWhitelist);
-        return doCompile(schemadoc, systemId, true, urlWhitelist);
-    }
-
-    public SchemaHandle fetchRemote(String url, Pattern[] urlWhitelist) throws IOException, ParseException {
-        setThreadLocalUrlWhitelist(urlWhitelist);
-        return httpSchemaCache.resolveUrl(url);
     }
 
     /**
-     * Get the {@link CompiledSchema} for the specified schema document, reusing an existing instance
-     * if possible.  If the schema was loaded from a URL, that URL should be supplied as a
-     * System ID, so that imports using relative URIs can be resolved.
+     * Report that a URL has just been downloaded.  If any previous schema with this URL was known, it and any
+     * schemas that make use of it will need to be recompiled before their next use.
      *
-     * @param   schemadoc the XML Schema Document to get a CompiledSchema for. Must not be null.
-     * @param   systemId  the System ID from which the document was loaded. May be null or empty.
-     * @param enableHardware if true, we'll call {@link #maybeEnableHardwareForNewSchema(CompiledSchema)} before
-     *                      relinquishing the write lock
-     * @return  a SchemaHandle for the given document.  Never null.
-     * @throws  ParseException if the schema or a dependent could not be compiled
+     * @param url  the URL that was just successfully downloaded.  Must not be null.
      */
-    private SchemaHandle doCompile(String schemadoc,
-                                   String systemId,
-                                   boolean enableHardware,
-                                   Pattern[] urlWhitelist)
-            throws ParseException
-    {
-        logger.log(Level.FINE, "Compiling schema with systemId \"{0}\"", systemId);
-        schemadoc = schemadoc.intern();
-        Sync read = null;
-        Sync write = null;
+    private void onUrlDownloaded(String url) {
+        SchemaHandle old = schemasBySystemId.remove(url);
+        if (old != null) {
+            schemasRecentlySuperseded.put(url, 1);
+            deferredCloseHandle(old);
+        }
+    }
+
+    private synchronized void deferredCloseHandle(SchemaHandle handle) {
+        handlesNeedingClosed.put(handle, null);
+    }
+
+    private void cacheCleanup() {
+        logger.finer("Running periodic schema cache cleanup task");
+
+        closeDeferred();
+
+        // Do some cache maintenance.  We'll decide what to do while holding the read lock;
+        // then, we'll grab the write lock and do it.
+        Map<String, SchemaHandle> urlsToRemove = new HashMap<String, SchemaHandle>();
+
+        long maxCacheEntries = this.maxCacheEntries + globalSchemasByUrl.size();
+
         try {
-            (read = cacheLock.readLock()).acquire();
-            CompiledSchema existingSchema;
+            cacheLock.readLock().acquire();
 
-            existingSchema = getCachedCompiledSchema(schemadoc);
-            if (existingSchema != null) {
-                logger.fine("Found cached CompiledSchema");
-                return existingSchema.ref();
+            // First, if the cache is too big, throw out the least-recently-used schemas until it isn't.
+            long extras = schemasBySystemId.size() - maxCacheEntries;
+            if (extras > 0) {
+                List<SchemaHandle> handles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
+                extras = maxCacheEntries - handles.size();
+                // Have to double check in case one went away while we were copying out of the map
+                if (extras > 0) {
+                    Collections.sort(handles, new Comparator<SchemaHandle>() {
+                        public int compare(SchemaHandle left, SchemaHandle right) {
+                            CompiledSchema leftCs = left.getTarget();
+                            CompiledSchema rightCs = right.getTarget();
+
+                            if (leftCs == null && rightCs == null) return 0;
+                            if (leftCs == null) return -1;
+                            if (rightCs == null) return 1;
+
+                            // Sort global schemas to the end so they never get thrown away, no matter how hoary they get
+                            if (leftCs.isTransientSchema() && !rightCs.isTransientSchema())
+                                return -1;
+                            if (rightCs.isTransientSchema() && !leftCs.isTransientSchema())
+                                return 1;
+
+                            Long leftTime = leftCs.getLastUsedTime();
+                            Long rightTime = rightCs.getLastUsedTime();
+                            return leftTime.compareTo(rightTime);
+                        }
+                    });
+
+                    for (int i = 0; i < extras; ++i) {
+                        final SchemaHandle handle = handles.get(i);
+                        final CompiledSchema schema = handle.getTarget();
+                        if (schema != null) urlsToRemove.put(schema.getSystemId(), handle);
+                    }
+                }
             }
-            read.release(); read = null;
 
-            // Compile outside of lock to avoid holding it during database activity
-            CompiledSchema newSchema = compileNoCache(systemId, schemadoc, urlWhitelist);
+            // Then scan for any duplicate-TNS-causers that haven't been used in a while
+            long now = System.currentTimeMillis();
+            long maxAge = maxCacheAge * 4;
+            for (SchemaHandle schemaHandle : schemasBySystemId.values()) {
+                CompiledSchema schema = schemaHandle.getTarget();
+                if (schema != null && schema.isTransientSchema()) {
+                    long lastUsed = schema.getLastUsedTime();
+                    long useAge = now - lastUsed;
+                    if (useAge > maxAge) {
+                        // It hasn't been used in a while.  Is it contributing to a TNS conflict?
+                        Map<CompiledSchema,Object> tnsUsers = tnsCache.get(schema.getTargetNamespace());
+                        if (tnsUsers == null || tnsUsers.size() < 2) continue;
 
-            // Check again under the write lock to make sure some other thread hasn't gotten here first
-            (write = cacheLock.writeLock()).acquire();
-            existingSchema = getCachedCompiledSchema(schemadoc);
-            if (existingSchema != null) {
-                logger.fine("Some other thread already compiled this schema");
-                return existingSchema.ref();
+                        // It is Part Of The Problem.  Throw it out until someone wants it again.
+                        urlsToRemove.put(schema.getSystemId(), schemaHandle);
+                    }
+                }
             }
-
-            logger.log(Level.FINE, "Caching compiled schema with targetNamespace \"{0}\", systemId \"{1}\"", new Object[] { newSchema.getTargetNamespace(), newSchema.getSystemId() });
-            // We got here first, it's our job to create and cache the CompiledSchema
-            compiledSchemaCache.put(schemadoc, new WeakReference<CompiledSchema>(newSchema));
-
-            if (enableHardware)
-                maybeEnableHardwareForNewSchema(newSchema);
-
-            return newSchema.ref();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted waiting for cache lock");
-        } catch (SAXException e) {
-            throw (ParseException)new ParseException("Schema is not well-formed: " + ExceptionUtils.getMessage(e), 0).initCause(e);
+            throw new RuntimeException(e);
         } finally {
-            if (write != null) write.release();
-            if (read != null) read.release();
+            cacheLock.readLock().release();
         }
+
+        // Now remove em
+        try {
+            cacheLock.writeLock().acquire();
+
+            for (Map.Entry<String, SchemaHandle> entry : urlsToRemove.entrySet()) {
+                String url = entry.getKey();
+                SchemaHandle handle = entry.getValue();
+
+                // Make sure it didn't get replaced while we were waiting for the write lock
+                SchemaHandle old = schemasBySystemId.get(url);
+                if (old == handle) {
+                    if (logger.isLoggable(Level.FINE)) logger.fine("Invalidating cached schema with systemId " + url);
+                    old = schemasBySystemId.remove(url);
+                    if (old != null) deferredCloseHandle(old);
+                }
+            }
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally {
+            cacheLock.writeLock().release();
+        }
+
+        // Close all the handles we kicked out
+        closeDeferred();
+
+        // Now run through and touch all the source strings, to make sure we keep up-to-date
+        for (SchemaHandle schemaHandle : schemasBySystemId.values()) {
+            CompiledSchema schema = schemaHandle.getTarget();
+            if (schema != null) {
+                final String url = schema.getSystemId();
+                try {
+                    getSchemaStringForUrl(url, url, true);
+                } catch (IOException e) {
+                    logger.warning("Unable to update remote schema from URL -- will keep using previous value: " + url);
+                }
+            }
+        }
+
+        if (!schemasRecentlySuperseded.isEmpty()) {
+            try {
+                cacheLock.writeLock().acquire();
+                invalidateParentsOfRecentlySupersededSchemas();
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } finally {
+                cacheLock.writeLock().release();
+            }
+        }
+
+        // Close all the handles we kicked out
+        closeDeferred();
+
+        if (logger.isLoggable(Level.FINEST)) reportCacheContents();
+    }
+
+    /**
+     * Close any handles whose closes were deferred.  Caller must not hold any locks (the monitor or cacheLock).
+     */
+    private void closeDeferred() {
+        final List<SchemaHandle> deferredClose;
+        synchronized (this ) {
+            if (handlesNeedingClosed.isEmpty()) return;
+            deferredClose = new ArrayList<SchemaHandle>(handlesNeedingClosed.keySet());
+            handlesNeedingClosed.clear();
+        }
+
+        logger.log(Level.FINE, "Schema cache closing {0} unused schem handles", deferredClose.size());
+
+        // Processed deferred closes while owning no locks
+        for (SchemaHandle handle : deferredClose)
+            if (handle != null) handle.close();
+    }
+
+    /** Caller must hold at least the read lock. */
+    private void visitAllParentsRecursive(CompiledSchema schema, Set<CompiledSchema> visited) {
+        if (visited.contains(schema)) return;
+        visited.add(schema);
+        Set<CompiledSchema> exps = schema.getExports();
+        for (CompiledSchema parent : exps) {
+            if (parent != null) visitAllParentsRecursive(parent, visited);
+        }
+    }
+
+    /** Caller must hold at least the read lock. */
+    private void getParents(String url, Set<CompiledSchema> collected) {
+        Collection<SchemaHandle> allHandles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
+        for (SchemaHandle schemaHandle : allHandles) {
+            final CompiledSchema schema = schemaHandle.getTarget();
+            if (schema == null) continue;
+            Collection<SchemaHandle> imports = schema.getImports().values();
+            for (SchemaHandle handle : imports) {
+                final CompiledSchema impSchema = handle.getTarget();
+                if (impSchema == null) continue;
+                if (url.equals(impSchema.getSystemId())) {
+                    visitAllParentsRecursive(impSchema, collected);
+                }
+            }
+        }
+    }
+
+    /**
+     * @return schema for URL, creating it if necessary.
+     *         This is a new handle duped just for the caller; caller must close it when they are finished with it.
+     */
+    public SchemaHandle getSchemaByUrl(String url) throws IOException, SAXException {
+        try {
+            cacheLock.readLock().acquire();
+            SchemaHandle ret = getSchemaByUrlNoCompile(url);
+            if (ret != null) return ret;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally {
+            cacheLock.readLock().release();
+        }
+
+        // Cache miss.  We'll need to compile a new instance of this schema.
+        String schemaDoc = getSchemaStringForUrl(url, url, true).getStringData();
+        assert schemaDoc != null;
+
+        // We'll prevent other threads from compiling new schemas concurrently, to avoid complications with other
+        // approaches:
+        // No lock: Thundering herd of threads all compiling the same new schema at the same time
+        // One-lock-per-schema-URL: results in deadlock:
+        //     - Thread A compiling Schema A needs to import (and compile) Schema B; while at the same time,
+        //     - Thread B compiling Schema B needs to import (and compile) Schema A
+        try {
+            cacheLock.writeLock().acquire();
+
+            // See if anyone else got it while we were waiting for the compiler mutex
+            SchemaHandle ret = getSchemaByUrlNoCompile(url);
+            if (ret != null) return ret;
+
+            return compileAndCache(url, schemaDoc);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally {
+            cacheLock.writeLock().release();
+        }
+    }
+
+    /**
+     * Check for a cached schema.
+     * <p/>
+     * Caller must hold at least the read lock.
+     *
+     * @return the already-compiled cached schema for this url, or null if there isn't one.
+     *         If a handle is returned, it will be a new handle duped just for the caller.
+     *         Caller must close the handle when they are finished with it.
+     */
+    private SchemaHandle getSchemaByUrlNoCompile(String url) {
+        SchemaHandle handle = schemasBySystemId.get(url);
+        if (handle != null) {
+            CompiledSchema schema = handle.getTarget();
+            if (schema != null) return schema.ref();
+        }
+        return null;
+    }
+
+    /**
+     * Get the schema text for the specified URL.  This may require a network fetch if the schema is remote.
+     *
+     * @param baseUrl       the base URL, for resolving url if it is relative.  Must not be null -- if there's no base URL,
+     *                      pass url as the base url.
+     * @param url           the URL to resolve.  Must not be null.  May be relative to baseUrl.  If it's not relative,
+     *                      or if it is relative but matches as-is in the global schema cache, baseUrl will be ignored.
+     * @param policyOk      if true, urls of the form "policy:whatever" will be allowed.  This should be allowed
+     *                      only if this is a top-level fetch; otherwise, policies can import each others static schemas,
+     *                      possibly in violation of access control partitions.
+     * @return as LSInput that contians both StringData and a SystemId.  Never null.
+     * @throws IOException  if schema text could not be fetched for the specified URL.
+     */
+    private LSInput getSchemaStringForUrl(String baseUrl, String url, boolean policyOk) throws IOException {
+        if (!policyOk && url.trim().toLowerCase().startsWith("policy:"))
+            throw new IOException("Schema URL not permitted in this context: " + url);
+
+        // Find any global schema strings
+        String schemaDoc = globalSchemasByUrl.get(url);
+        if (schemaDoc != null)
+            return makeLsInput(url, schemaDoc);
+
+        // Try to produce an absolute URL
+        url = computeEffectiveUrl(baseUrl, url);
+
+        // Try global cache again, with newly-qualified URL
+        schemaDoc = globalSchemasByUrl.get(url);
+        if (schemaDoc != null)
+            return makeLsInput(url, schemaDoc);
+
+        // Not a global schema -- do a remote schema load    TODO url whitelist goes here somewhere
+        AbstractHttpObjectCache.FetchResult<String> result =
+                httpStringCache.fetchCached(url, HttpObjectCache.WAIT_LATEST);
+
+        schemaDoc = result.getUserObject();
+        if (schemaDoc != null)
+            return makeLsInput(url, schemaDoc);
+
+        // Check for errors we should report
+        IOException e = result.getException();
+        if (e != null) throw new CausedIOException("Unable to download remote schema: " + ExceptionUtils.getMessage(e), e);
+
+        // Shouldn't happen
+        throw new IOException("Unable to download remote schema");
+    }
+
+    /** @return an LSInput that contains StringData and a SystemId. */
+    private LSInput makeLsInput(String url, String schemaDoc) {
+        LSInputImpl lsi =  new LSInputImpl();
+        lsi.setStringData(schemaDoc);
+        lsi.setSystemId(url);
+        return lsi;
     }
 
     /**
@@ -204,9 +475,10 @@ public class SchemaManagerImpl implements SchemaManager {
      * @param newSchema the schema for which to maybe enable hardware.
      */
     private void maybeEnableHardwareForNewSchema(CompiledSchema newSchema) {
+        if (newSchema == null) return;
         // Try to enable all children bottom-up
-        for (SchemaHandle child : newSchema.getImports())
-            maybeEnableHardwareForNewSchema(child.getCompiledSchema());
+        for (SchemaHandle child : newSchema.getImports().values())
+            maybeEnableHardwareForNewSchema(child.getTarget());
 
         String tns = newSchema.getTargetNamespace();
         if (tns == null) return;
@@ -242,56 +514,207 @@ public class SchemaManagerImpl implements SchemaManager {
         return cacheLock.readLock();
     }
 
-    private CompiledSchema getCachedCompiledSchema(String schemadoc) {
-        WeakReference<CompiledSchema> existingSchemaRef;
-        existingSchemaRef = compiledSchemaCache.get(schemadoc);
-        if (existingSchemaRef == null) return null;
-        return existingSchemaRef.get();
+    public void registerSchema(String globalUrl, String schemadoc) {
+        String old = globalSchemasByUrl.put(globalUrl, schemadoc);
+        if (old != null)
+            onUrlDownloaded(globalUrl);
     }
 
-    private CompiledSchema compileNoCache(String systemId,
-                                          String schemadoc,
-                                          final Pattern[] urlWhitelist) throws SAXException {
-        // Parse software schema
+    public void unregisterSchema(String globalUrl) {
+        String old = globalSchemasByUrl.remove(globalUrl);
+        if (old != null)
+            onUrlDownloaded(globalUrl);
+    }
+
+    private static class UnresolveableException extends RuntimeException {
+        public UnresolveableException() {
+        }
+
+        public UnresolveableException(String message) {
+            super(message);
+        }
+
+        public UnresolveableException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public UnresolveableException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    /**
+     * Analyze the specified schema, including fetching remote references if necessary, to produce
+     * an up-to-date and comprehensive set of all dependent schemas.  If this returns,
+     * all child and gradchild (etc) schema strings will be hot in the httpStringCache.
+     *
+     * @param systemId
+     * @param schemadoc
+     * @return the imports directly or indirectly used by this schema.  Never null.
+     * @throws SAXException if a schema is not valid
+     * @throws IOException if a remote schema cannot be fetched
+     */
+    private Set<String> precacheSchemaDependencies(String systemId, String schemadoc) throws SAXException, IOException {
+        final Set<String> imports = new HashSet<String>();
+
+        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+        LSResourceResolver lsrr = new LSResourceResolver() {
+            public LSInput resolveResource(String type,
+                                           String namespaceURI,
+                                           String publicId,
+                                           String systemId,
+                                           String baseURI)
+            {
+                try {
+                    LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
+                    assert lsi != null;
+                    imports.add(lsi.getSystemId());
+                    return lsi;
+                } catch (IOException e) {
+                    throw new UnresolveableException(e);
+                }
+            }
+        };
+        sf.setResourceResolver(lsrr);
+
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes("UTF-8"));
+            sf.newSchema(new StreamSource(bais, systemId)); // populates imports as side-effect
+            return imports;
+        } catch (RuntimeException e) {
+            UnresolveableException unres = (UnresolveableException)ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
+            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres);
+            throw e;
+        }
+    }
+
+    /**
+     * Compute effective URL when relative is evaluated in the context of base.
+     *
+     * @param base      base url, ie "http://foo.com/blah/blortch.xsd".  Must not be null.
+     * @param relative  URL that may be relative to base (ie, "bloo/bletch.xsd") or may be absolute.  Must not be null.
+     * @return  the effective URL when relative is evaluated relative to base.  Never null.
+     * @throws NullPointerException if either base or relative is null.
+     * @throws MalformedURLException if base is not an absolute URL,
+     *                                   or is absolute but uses a protocol other than "http" or "https"
+     * @throws MalformedURLException if relative is absolute and uses an unknown protocol
+     */
+    private String computeEffectiveUrl(String base, String relative) throws MalformedURLException {
+        if (base == null || relative == null) throw new NullPointerException();
+        final URL baseUrl = new URL(base);
+
+        final String proto = baseUrl.getProtocol();
+        if (!proto.equals("http") && !proto.equals("https"))
+            throw new MalformedURLException("Refusing remote schema reference with non-HTTP(S) base URL: " + base);
+
+        return new URL(baseUrl, relative).toExternalForm();
+    }
+
+    /**
+     * Compile this schema document.  This may require fetching remote schemas.
+     * Caller must hold the write lock.
+     *
+     * @param systemId
+     * @param schemadoc
+     * @return a new handle, duped just for the caller.  Caller must close it when they are finished with it.
+     * @throws SAXException
+     */
+    private SchemaHandle compileAndCache(String systemId, String schemadoc)
+            throws SAXException, IOException
+    {
+        // Do initial parse and get deps (strings are all hot in the HTTP cache after this)
+        precacheSchemaDependencies(systemId, schemadoc);
+
+        invalidateParentsOfRecentlySupersededSchemas();
+
+        return compileAndCacheRecursive(systemId, schemadoc);
+    }
+
+    /** Caller must hold the write lock. */
+    private void invalidateParentsOfRecentlySupersededSchemas() {
+        // Invalidate parents of anything reloaded since last time we checked something
+        while (!schemasRecentlySuperseded.isEmpty()) {
+            List<String> strings = new ArrayList<String>(schemasRecentlySuperseded.keySet());
+            schemasRecentlySuperseded.clear();
+            for (String url : strings) {
+                // This guy was reloaded or thrown out.  Make sure all parents are invalidated.
+                Set<CompiledSchema> parents = new HashSet<CompiledSchema>();
+                getParents(url, parents);
+                for (CompiledSchema schema : parents) {
+                    if (!schema.isClosed()) onUrlDownloaded(schema.getSystemId());
+                }
+            }
+        }
+    }
+
+    /**
+     * Build a new CompiledSchema for the specified URL and enter it into the cache.  Caller guarantees
+     * that any remote schemas are hot in the cache, and any schemas that are in need of a recompile due to
+     * changed remote schemas have already been invalidated and removed from schemasBySystemId.
+     * <p/>
+     * This will recursively compile the imported schemas.
+     * <p/>
+     * Caller must hold the write lock.
+     *
+     * @param systemId
+     * @param schemadoc
+     * @return a SchemaHandle to a new CompiledSchema instance, already duplicated for the caller.  Caller must close
+     *         this handle when they are finished with it.
+     */
+    private SchemaHandle compileAndCacheRecursive(String systemId, String schemadoc) throws SAXException, IOException {
+
+        // Reparse, building up CompiledSchema instances as needed from the bottom up
         SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
 
-        final LSResourceResolver lsrr;
+        final Map<String,SchemaHandle> directImports = new HashMap<String,SchemaHandle>();
+        final LSResourceResolver lsrr = new LSResourceResolver() {
+            public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+                try {
+                    LSInput lsi = getSchemaStringForUrl(baseURI, systemId, false);
+                    assert lsi != null;
 
-        final Set<SchemaHandle> directImports = new HashSet<SchemaHandle>();
-        CachingLSResourceResolver.ImportListener importListener = new CachingLSResourceResolver.ImportListener() {
-            public void foundImport(SchemaHandle imported) {
-                directImports.add(imported);
+                    SchemaHandle handle = schemasBySystemId.get(lsi.getSystemId());
+
+                    // Have to compile a new one
+                    if (handle == null) handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData());
+                    directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
+                    return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
+                } catch (IOException e) {
+                    throw new UnresolveableException(e);
+                } catch (SAXException e) {
+                    throw new UnresolveableException(e);
+                }
             }
         };
-
-        CachingLSResourceResolver.SchemaCompiler schemaCompiler = new CachingLSResourceResolver.SchemaCompiler() {
-            public SchemaHandle getSchema(String url, String response) throws ParseException {
-                return doCompile(response, url, false, urlWhitelist);
-            }
-        };
-
-        lsrr = new CachingLSResourceResolver(SCHEMA_FINDER, httpStringCache, urlWhitelist, schemaCompiler, importListener);
         sf.setResourceResolver(lsrr);
 
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(schemadoc.getBytes("UTF-8"));
             Schema softwareSchema = sf.newSchema(new StreamSource(bais, systemId));
-            bais.reset();
-            SchemaDocument sdoc = SchemaDocument.Factory.parse(bais);
-            String tns = sdoc.getSchema().getTargetNamespace();
+            String tns = XmlUtil.getSchemaTNS(schemadoc);
             Element mangledElement = XmlUtil.normalizeNamespaces(XmlUtil.stringToDocument(schemadoc).getDocumentElement());
             String mangledDoc = XmlUtil.nodeToString(mangledElement);
-            CompiledSchema newSchema = new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this, directImports);
-            for (SchemaHandle directImport : directImports)
-                directImport.getCompiledSchema().addExport(newSchema);
-            return newSchema;
+            CompiledSchema newSchema = new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this, directImports, true);
+            for (SchemaHandle directImport : directImports.values()) {
+                final CompiledSchema impSchema = directImport.getCompiledSchema();
+                if (impSchema == null) continue;
+                impSchema.addExport(newSchema);
+            }
+
+            SchemaHandle cacheRef = newSchema.ref(); // make a handle for the cache
+            SchemaHandle old = schemasBySystemId.put(newSchema.getSystemId(), cacheRef);
+            if (old != null) deferredCloseHandle(old);
+            maybeEnableHardwareForNewSchema(newSchema);
+            return newSchema.ref(); // make a handle for the caller
 
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new SAXException("XMLBeans couldn't parse Schema", e);
-        } catch (XmlException e) {
-            throw new SAXException("XMLBeans couldn't parse Schema", e);
+        } catch (XmlUtil.BadSchemaException e) {
+            throw new SAXException("Unable to parse Schema", e);
+        } catch (RuntimeException e) {
+            Throwable unres = ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
+            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres);
+            throw e;
         }
     }
 
@@ -311,7 +734,14 @@ public class SchemaManagerImpl implements SchemaManager {
 
         try {
             cacheLock.writeLock().acquire();
-            this.compiledSchemaCache.remove(schema.getSchemaDocument());
+
+            SchemaHandle old = schemasBySystemId.get(schema.getSystemId());
+            if (old != null && old.getTarget() == schema) {
+                // We were the active schema for this URL -- remove ourselves
+                schemasBySystemId.remove(schema.getSystemId());
+                schemasRecentlySuperseded.put(schema.getSystemId(), 1);
+            }
+
             if (tns == null) return;
 
             // The schema had a TNS, and might have been relevant to hardware
@@ -362,10 +792,11 @@ public class SchemaManagerImpl implements SchemaManager {
         sb.append(indent).append(schema);
         for (int i = indent.length(); i < 14; ++i) sb.append(" ");
         sb.append(schema.getTnsGen()).append("\n");
-        Set<SchemaHandle> kids = schema.getImports();
-        for (SchemaHandle schemaHandle : kids) {
-            CompiledSchema kid = schemaHandle.getCompiledSchema();
-            reportNode(kid, visited, sb, "    " + indent);
+        Map<String,SchemaHandle> kids = schema.getImports();
+        for (SchemaHandle schemaHandle : kids.values()) {
+            CompiledSchema kid = schemaHandle.getTarget();
+            if (kid != null)
+                reportNode(kid, visited, sb, "    " + indent);
         }
     }
 
@@ -382,10 +813,10 @@ public class SchemaManagerImpl implements SchemaManager {
                 // due to upward links being weak references)
 
                 // First pass: find all roots, then draw the trees top-down
-                final Collection<WeakReference<CompiledSchema>> allSchemas = compiledSchemaCache.values();
-                for (WeakReference<CompiledSchema> ref : allSchemas) {
+                final Collection<SchemaHandle> allSchemas = schemasBySystemId.values();
+                for (SchemaHandle ref : allSchemas) {
                     if (ref == null) continue;
-                    CompiledSchema cs = ref.get();
+                    CompiledSchema cs = ref.getTarget();
                     if (cs == null) continue;
                     getRoots(cs, schemaSet);
                 }
@@ -395,13 +826,31 @@ public class SchemaManagerImpl implements SchemaManager {
                 }
 
                 // Second pass: draw any that we missed
-                for (WeakReference<CompiledSchema> ref : allSchemas) {
+                for (SchemaHandle ref : allSchemas) {
                     if (ref == null) continue;
-                    CompiledSchema cs = ref.get();
+                    CompiledSchema cs = ref.getTarget();
                     if (cs == null) continue;
                     if (!reported.contains(cs))
                         reportNode(cs, reported, sb, "?-");
                 }
+
+
+                // Now draw the TNS cache
+                sb.append("\n\nTNS cache:\n");
+                for (Map.Entry<String, Map<CompiledSchema, Object>> entry : tnsCache.entrySet()) {
+                    String tns = entry.getKey();
+                    Map<CompiledSchema,Object> ss = entry.getValue();
+                    if (tns == null || ss == null || ss.isEmpty()) continue;
+                    sb.append("  TNS:").append(tns).append("\n");
+                    for (CompiledSchema schema : ss.keySet()) {
+                        if (schema == null) continue;
+                        final SchemaHandle current = schemasBySystemId.get(schema.getSystemId());
+                        String active = (current != null && current.getTarget() == schema) ? "*" : " ";
+                        sb.append("       ").append(active).append(schema).append("\n");
+                    }
+                }
+
+
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } finally {
@@ -426,9 +875,10 @@ public class SchemaManagerImpl implements SchemaManager {
         if (schema.isHardwareEligible()) return false;
 
         // Check that all children are loaded
-        Set<SchemaHandle> imports = schema.getImports();
-        for (SchemaHandle directImport : imports) {
-            final CompiledSchema cs = directImport.getCompiledSchema();
+        Map<String,SchemaHandle> imports = schema.getImports();
+        for (SchemaHandle directImport : imports.values()) {
+            final CompiledSchema cs = directImport.getTarget();
+            if (cs == null) continue;
             if (visited.contains(cs)) continue; // prevent infinite downwards and upwards recursion
             if (!cs.isHardwareEligible()) {
                 if (!notifyChildren) {
@@ -480,13 +930,13 @@ public class SchemaManagerImpl implements SchemaManager {
     /** Schedule a one-shot call to maybeRebuildHardwareCache(), delay ms from now. */
     private void scheduleOneShotRebuildCheck(long delay) {
         if (delay < 1) throw new IllegalArgumentException("Rebuild check delay must be positive");
-        if (maybeRebuildHardwareCacheTimer != null) {
+        if (maintenanceTimer != null) {
             TimerTask task = new TimerTask() {
                 public void run() {
                     maybeRebuildHardwareCache();
                 }
             };
-            maybeRebuildHardwareCacheTimer.schedule(task, delay);
+            maintenanceTimer.schedule(task, delay);
         }
     }
 
@@ -525,7 +975,8 @@ public class SchemaManagerImpl implements SchemaManager {
 
         final long ageOfNewestSchema = beforeTime - lastSchemaEligibilityTime;
         if (ageOfNewestSchema < hardwareRecompileMinAge && !forceReload) {
-            final long delay = hardwareRecompileMinAge - ageOfNewestSchema;
+            long delay = hardwareRecompileMinAge - ageOfNewestSchema;
+            if (delay < 100) delay = 100;
             logger.log(Level.FINEST, "New schema just became hardware eligible -- postponing hardware schema cache rebuild for {0} ms", delay);
             scheduleOneShotRebuildCheck(delay);
             return false;
@@ -539,7 +990,7 @@ public class SchemaManagerImpl implements SchemaManager {
      * Called periodically to see if it is time to rebuild the hardware schema cache.
      */
     private void maybeRebuildHardwareCache() {
-        // Do an initial fast check to see if there is still anything to do, before getting the write lock
+        // Do an initial fast check to see if there is anything to do, before getting the concurrency-killing write lock
         try {
             cacheLock.readLock().acquire();
             if (!shouldRebuildNow()) return;
@@ -579,8 +1030,8 @@ public class SchemaManagerImpl implements SchemaManager {
         LinkedHashMap<String, CompiledSchema> forHardware = new LinkedHashMap<String, CompiledSchema>();
         Set<CompiledSchema> alreadyAdded = new HashSet<CompiledSchema>();
 
-        for (WeakReference<CompiledSchema> ref : compiledSchemaCache.values()) {
-            CompiledSchema schema = ref.get();
+        for (SchemaHandle handle : schemasBySystemId.values()) {
+            CompiledSchema schema = handle.getTarget();
             if (schema == null) continue;
             schema.setLoaded(false);
             putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, forHardware, schema);
@@ -614,9 +1065,12 @@ public class SchemaManagerImpl implements SchemaManager {
                                                          LinkedHashMap<String, CompiledSchema> schemas,
                                                          CompiledSchema schema)
     {
-        Set<SchemaHandle> imports = schema.getImports();
-        for (SchemaHandle imp : imports)
-            putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, schemas, imp.getCompiledSchema());
+        Map<String,SchemaHandle> imports = schema.getImports();
+        for (SchemaHandle imp : imports.values()) {
+            final CompiledSchema impSchema = imp.getTarget();
+            if (impSchema == null) continue;
+            putAllHardwareEligibleSchemasDepthFirst(alreadyAdded, schemas, impSchema);
+        }
 
         if (schema.isHardwareEligible() && !alreadyAdded.contains(schema))
             schemas.put(schema.getTargetNamespace(), schema);
@@ -632,95 +1086,11 @@ public class SchemaManagerImpl implements SchemaManager {
             logger.log(Level.INFO, "Disabling hardware acceleration eligibility for schema with tns {0}",
                        schema.getTargetNamespace());
 
+        schemasWaitingToLoad.remove(schema);
         schema.setHardwareEligible(false);
         // Any schemas that import this schema must be hardware-disabled now
         for (CompiledSchema export : schema.getExports())
-            hardwareDisable(export);
-    }
-
-    private final CachingLSResourceResolver.SchemaFinder SCHEMA_FINDER = new CachingLSResourceResolver.SchemaFinder() {
-        public SchemaHandle getSchema(String namespaceURI, String systemId, String baseURI) {
-            SchemaHandle handle;
-            handle = schemaEntryManager.getCachedSchemaHandleByTns(namespaceURI);
-            if (handle == null) return null;
-            return handle.getCompiledSchema().ref();
-        }
-    };
-
-    private class HttpSchemaCache extends AbstractHttpObjectCache<SchemaHandle> {
-        private final Cache cache;
-
-        private final Lock lock = new ReentrantLock();
-        protected Lock getReadLock() { return lock; }
-        protected Lock getWriteLock() { return lock; }
-
-        public HttpSchemaCache(String cacheName,
-                               int maxSchemas,
-                               int tunerInterval,
-                               long maxMillisWithNoPoll,
-                               final long maxAgeUnused)
-        {
-            super(maxMillisWithNoPoll, WAIT_LATEST);
-
-            CacheMaintenancePolicy maintenancePolicy = new LFUMaintenancePolicy() {
-                public void performMaintenance() {
-                    final long now = System.currentTimeMillis();
-                    final boolean loggit = logger.isLoggable(Level.INFO);
-
-                    // First eliminate any schemas that have sat around for too long without being used
-                    //noinspection unchecked
-                    List<Map.Entry> entries = new ArrayList(new ConcurrentHashMap(managedCache).entrySet());
-                    for (Map.Entry entry : entries) {
-                        Item item = (Item)entry.getValue();
-                        if (item != null) {
-                            AbstractCacheEntry<SchemaHandle> ce = (AbstractCacheEntry<SchemaHandle>)item.getItem();
-                            if (ce != null) {
-                                final SchemaHandle schemaHandle = ce.getUserObject();
-                                if (schemaHandle != null) {
-                                    final CompiledSchema compiledSchema = schemaHandle.getCompiledSchema();
-                                    if (compiledSchema.getLastUsedTime() - now > maxAgeUnused) {
-                                        if (loggit) logger.info("Expiring not-recently-used remote schema loaded from URL " + compiledSchema.getSystemId());
-                                        managedCache.remove(entry.getKey());
-                                        schemaHandle.close();
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Now do LFU maintenance on whatever's left
-                    super.performMaintenance();
-                }
-            };
-
-            this.cache = WhirlycacheFactory.createCache(cacheName, maxSchemas, tunerInterval, maintenancePolicy);
-        }
-
-        protected AbstractCacheEntry<SchemaHandle> cacheGet(String url) {
-            return (AbstractCacheEntry<SchemaHandle>)cache.retrieve(url);
-        }
-
-        protected void cachePut(String url, AbstractCacheEntry<SchemaHandle> cacheEntry) {
-            cache.store(url, cacheEntry);
-        }
-
-        protected AbstractCacheEntry<SchemaHandle> cacheRemove(String url) {
-            return (AbstractCacheEntry<SchemaHandle>)cache.remove(url);
-        }
-
-        protected DatedUserObject<SchemaHandle> doHttpGet(String urlStr,
-                                                          String lastModifiedStr,
-                                                          long lastSuccessfulPollStarted)
-                throws IOException
-        {
-            try {
-                String schemaString = httpStringCache.resolveUrl(urlStr);
-                SchemaHandle schemaHandle = compile(schemaString, urlStr, getThreadLocalUrlWhitelist());
-                return new DatedUserObject<SchemaHandle>(schemaHandle, null);
-            } catch (ParseException e) {
-                throw new CausedIOException(e);
-            }
-        }
+            if (export != null) hardwareDisable(export);
     }
 
     private static ThreadLocal<Pattern[]> tlUrlWhitelist = new ThreadLocal<Pattern[]>();

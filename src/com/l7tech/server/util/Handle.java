@@ -10,9 +10,8 @@ import com.l7tech.common.util.Closeable;
 /**
  * Represents a handle to a referenceable object.  Subclasses will likely delegate to the target.
  */
-public class Handle<T extends ReferenceCounted> implements Closeable {
+public class Handle<T extends ReferenceCounted> extends AbstractCloseable implements Closeable {
     private final T target;
-    private volatile boolean closed = false;
 
     protected Handle(T cs) {
         this.target = cs;
@@ -24,20 +23,16 @@ public class Handle<T extends ReferenceCounted> implements Closeable {
      * if this was the last handle using it.
      */
     public void close() {
-        if (closed) return;
-        closed = true;
+        super.close();
+    }
+
+    protected void doClose() {
         target.unref();
     }
 
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
-    }
-
+    /** @return the target, or null if this handle has been closed (possibly by another thread). */
     protected T getTarget() {
+        if (isClosed()) return null;
         return target;
     }
 }

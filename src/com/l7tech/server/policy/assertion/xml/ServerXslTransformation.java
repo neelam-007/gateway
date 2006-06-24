@@ -140,6 +140,7 @@ public class ServerXslTransformation
 
 
         this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
+                                                                  assertion.getResourceInfo(),
                                                                   resourceObjectfactory,
                                                                   urlFinder,
                                                                   getCache(springContext));
@@ -265,21 +266,16 @@ public class ServerXslTransformation
     {
         try {
             final ElementCursor ec = input.getElementCursor();
-            Object resource = resourceGetter.getResource(ec, input.vars);
-            if (resource instanceof CachedStylesheet) {
-                return ((CachedStylesheet)resource).transform(input, output);
-            } else {
-                if (resource == null) {
-                    // Can't happen
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Internal server error: null resource"});
-                    return AssertionStatus.SERVER_ERROR;
-                }
+            CachedStylesheet resource = resourceGetter.getResource(ec, input.vars);
 
-                // XXX This is a design flaw when cache shared with Schema Val.  Not yet fixed.  See Bug #2535
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                    new String[] {"The specified XSL URL has recently been fetched and found to contain something other than XSL"});
+            if (resource == null) {
+                // Can't happen
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Internal server error: null resource"});
                 return AssertionStatus.SERVER_ERROR;
             }
+
+            return resource.transform(input, output);
+
         } catch (ResourceGetter.InvalidMessageException e) {
             auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
             return AssertionStatus.BAD_REQUEST;

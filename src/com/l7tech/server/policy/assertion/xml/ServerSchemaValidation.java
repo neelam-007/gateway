@@ -7,9 +7,12 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -33,13 +36,11 @@ import org.xml.sax.SAXParseException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -57,7 +58,8 @@ public class ServerSchemaValidation
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private final ResourceGetter<SchemaHandle> resourceGetter;
+    private final ResourceGetter<String> resourceGetter;
+    private final String registeredGlobalSchemaUrl;
     private final SchemaManager schemaManager;
     private final String[] varsUsed;
 
@@ -67,31 +69,40 @@ public class ServerSchemaValidation
         this.schemaManager = (SchemaManager)springContext.getBean("schemaManager");
         this.varsUsed = data.getVariablesUsed();
 
-        if (assertion.getResourceInfo()instanceof MessageUrlResourceInfo)
+
+        AssertionResourceInfo resourceInfo = assertion.getResourceInfo();
+        if (resourceInfo instanceof MessageUrlResourceInfo)
             throw new ServerPolicyException(assertion, "MessageUrlResourceInfo is not yet supported.");
 
-        final Pattern[] urlWhitelist = assertion.getResourceInfo().makeUrlPatterns();
+        if (resourceInfo instanceof StaticResourceInfo) {
+            StaticResourceInfo ri = (StaticResourceInfo)resourceInfo;
+            String schemaDoc = ri.getDocument();
+            registeredGlobalSchemaUrl = "policy:assertion:schemaval:sa" +
+                    System.identityHashCode(this) +
+                    ":sd" + HexUtils.encodeBase64(HexUtils.getMd5Digest(schemaDoc.getBytes()), true);
+            schemaManager.registerSchema(registeredGlobalSchemaUrl, schemaDoc);
 
-        final ResourceObjectFactory<SchemaHandle> rof = new ResourceObjectFactory<SchemaHandle>() {
-            public SchemaHandle createResourceObject(String resourceContent) throws ParseException {
-                try {
-                    logger.fine("Compiling schema for message validation.");
-                    return schemaManager.compile(resourceContent, "", urlWhitelist);
-                } catch (ParseException e) {
-                    String msg = "schema parsing exception";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, e);
-                    throw (ParseException)new ParseException(msg + "-" + e.getMessage(), e.getErrorOffset()).initCause(e);
-                }
+            // Change the resource info -- the static resource is this statically-registered URL now, not the schema
+            // document itself
+            resourceInfo = new StaticResourceInfo(registeredGlobalSchemaUrl);
+            
+        } else
+            registeredGlobalSchemaUrl = null;
+
+        final ResourceObjectFactory<String> rof = new ResourceObjectFactory<String>() {
+            public String createResourceObject(String resourceContent) {
+                return resourceContent;
             }
         };
 
-        final UrlResolver<SchemaHandle> urlResolver = new UrlResolver<SchemaHandle>() {
-            public SchemaHandle resolveUrl(String url) throws IOException, ParseException {
-                return schemaManager.fetchRemote(url, urlWhitelist);
+        final UrlResolver<String> urlResolver = new UrlResolver<String>() {
+            public String resolveUrl(String url) {
+                return url;
             }
         };
 
         this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
+                                                                  resourceInfo,
                                                                   rof,
                                                                   null,
                                                                   urlResolver);
@@ -131,20 +142,12 @@ public class ServerSchemaValidation
      * @throws IOException  if there is a problem reading the document to validate
      */
     AssertionStatus validateMessage(Message message, PolicyEnforcementContext context) throws IOException {
-        final SchemaHandle ps;
+        SchemaHandle ps = null;
         try {
             XmlKnob xmlKnob = message.getXmlKnob();
             Map vars = context.getVariableMap(varsUsed, auditor);
-            Object got = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
-            if (!(got instanceof SchemaHandle)) {
-                // XXX This is a design flaw when cache shared with XSLT assertion.  Not yet fixed.  See Bug #2535
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[]{"The specified Schema URL has recently been fetched and found to contain something other than a schema"});
-                return AssertionStatus.SERVER_ERROR;
-            }
-
-            ps = (SchemaHandle) got;
-
+            String schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
+            ps = schemaManager.getSchemaByUrl(schemaUrl);
 
             SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
             SAXException validationException = null;
@@ -247,6 +250,8 @@ public class ServerSchemaValidation
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
                     new String[]{"The document to validate was not well-formed XML"});
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+        } finally {
+            if (ps != null) ps.close();
         }
     }
 
@@ -329,7 +334,26 @@ public class ServerSchemaValidation
         return output;
     }
 
+    private boolean closed = false;
+
+    /** Sets the {@link #closed} flag and returns the old value. */
+    private synchronized boolean setClosed() {
+        boolean old = closed;
+        closed = true;
+        return old;
+    }
+
     public void close() {
+        if (setClosed()) return;
         resourceGetter.close();
+        if (registeredGlobalSchemaUrl != null) schemaManager.unregisterSchema(registeredGlobalSchemaUrl);
+    }
+
+    protected void finalize() throws Throwable {
+        try {
+            close();
+        } finally {
+            super.finalize();
+        }
     }
 }
