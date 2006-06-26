@@ -500,6 +500,12 @@
                 <include name="serverconfig.properties"/>
                 <include name="ehcache.xml"/>
             </fileset>
+            <fileset dir="${src.root}/src">
+                <include name="**/XMLSchema.xsd"/>
+                <include name="**/xml.xsd"/>
+                <include name="**/datatypes.dtd"/>
+                <include name="**/XMLSchema.dtd"/>
+            </fileset>
         </copy>
     </target>
 
@@ -805,6 +811,8 @@
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="**/*.form"/>
+                <include name="**/*.xsd"/>
+                <include name="**/*.dtd"/>
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <include name="com/l7tech/admin/Admin*.class"/>

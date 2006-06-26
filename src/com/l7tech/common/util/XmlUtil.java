@@ -11,7 +11,6 @@ import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.*;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -24,8 +23,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Schema;
+import javax.xml.validation.Validator;
+import javax.xml.XMLConstants;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -61,7 +65,8 @@ public class XmlUtil {
     public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
     public static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
-    
+    public static final String XERCES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
+
     /** This is the namespace that the special namespace prefix "xml" logically belongs to. */
     //public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";
 
@@ -1078,6 +1083,7 @@ public class XmlUtil {
             throw new BadSchemaException(e);
         }
         */
+        /* Replacing with non-xmlbeans version, this is slower but acceptable (means manager does not need XML Beans jar).
         // 2. pass through SchemaDocument
         SchemaDocument sdoc;
         try {
@@ -1086,20 +1092,27 @@ public class XmlUtil {
             throw new BadSchemaException(e);
         }
         return sdoc.getSchema().getTargetNamespace();
-    }
+        */
+        try {
+            Document schemaDocument = parse(new StringReader(schemaSrc), true);
+            Schema schemaSchema = getSchemaSchema();
+            Validator validator = schemaSchema.newValidator();
+            // use a string reader since the DOMSource seems to have problems with type prefixes
+            validator.validate(new StreamSource(new StringReader(schemaSrc)));
 
-    private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
-    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    public static final String XERCES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
+            String tns = schemaDocument.getDocumentElement().getAttribute("targetNamespace");
 
-    static {
-        dbf.setNamespaceAware(true);
-        dbf.setAttribute(XERCES_DISALLOW_DOCTYPE, Boolean.TRUE);
-    }
+            if (tns.length() == 0)
+                tns = null;
 
-    private static DocumentBuilderFactory dbfAllowingDoctype = DocumentBuilderFactory.newInstance();
-    static {
-        dbfAllowingDoctype.setNamespaceAware(true);
+            return tns;
+        }
+        catch(SAXException se) {
+            throw new BadSchemaException(se);
+        }
+        catch(IOException ioe) {
+            throw new BadSchemaException(ioe);
+        }
     }
 
     /**
@@ -1122,22 +1135,6 @@ public class XmlUtil {
         }
 
         return nsmap;
-    }
-
-    /**
-     * Add the specified element's namespace declarations to the specified map(prefix -> namespace).
-     * The default namespace is represented with the prefix "" (empty string).
-     */
-    private static void addToNamespaceMap(Element element, Map nsmap) {
-        NamedNodeMap attrs = element.getAttributes();
-        int numAttr = attrs.getLength();
-        for (int i = 0; i < numAttr; ++i) {
-            Attr attr = (Attr)attrs.item(i);
-            if ("xmlns".equals(attr.getName()))
-                nsmap.put("", attr.getValue()); // new default namespace
-            else if ("xmlns".equals(attr.getPrefix())) // new namespace decl for prefix
-                nsmap.put(attr.getLocalName(), attr.getValue());
-        }
     }
 
     /** Replace all descendants of the specified Element with the specified text content. */
@@ -1353,8 +1350,104 @@ public class XmlUtil {
         }
     }
 
-    private static final Pattern MATCH_QNAME = Pattern.compile("^\\s*([^:\\s]+):(\\S+?)\\s*$");
+    /**
+     * Hoist all namespace declarations to the
+     * @param element
+     * @return
+     */
+    public static Element normalizeNamespaces(Element element) {
+        // First clone the original to work on the clone
+        element = (Element) element.cloneNode(true);
 
+        // (need a set to track unique)
+        // First, build map of all namespace URI -> unique prefix
+
+        Map lastPrefixToUri = new HashMap();
+        Map lastUriToPrefix = new HashMap();
+        Map uniquePrefixToUri = new HashMap();
+        Map uniqueUriToPrefix = new HashMap();
+        Map prefixOldToNew = new HashMap();
+        normalizeNamespacesRecursively(element,
+                lastUriToPrefix,
+                lastPrefixToUri,
+                uniqueUriToPrefix,
+                uniquePrefixToUri,
+                prefixOldToNew);
+
+        // Element tree has been translated -- now just add namespace decls back onto root element.
+        for (Iterator i = uniqueUriToPrefix.entrySet().iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry) i.next();
+            String uri = (String) entry.getKey();
+            String prefix = (String) entry.getValue();
+            if (uri == null || prefix == null) throw new IllegalStateException();
+            element.setAttributeNS(XMLNS_NS, "xmlns:" + prefix, uri);
+        }
+
+        // We are done, we think
+        return element;
+    }
+
+    private static final Pattern MATCH_QNAME = Pattern.compile("^\\s*([^:\\s]+):(\\S+?)\\s*$");
+    private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
+    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    private static Schema SCHEMA_SCHEMA;
+
+    static {
+        dbf.setNamespaceAware(true);
+        dbf.setAttribute(XERCES_DISALLOW_DOCTYPE, Boolean.TRUE);
+    }
+
+    private static DocumentBuilderFactory dbfAllowingDoctype = DocumentBuilderFactory.newInstance();
+    static {
+        dbfAllowingDoctype.setNamespaceAware(true);
+    }
+
+    /**
+     * Get a Schema for validating Schema documents.
+     *
+     * <p>The XSD and DTD files for validating schemas are stored on the classpath.</p>
+     *
+     * @return The Schema for validating XML Schema documents.
+     * @throws SAXException if there's something wrong with the build ...
+     */
+    private static final Schema getSchemaSchema() throws SAXException {
+        Schema schemaSchema = SCHEMA_SCHEMA;
+        if (schemaSchema == null) {
+            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            factory.setResourceResolver(new LSResourceResolver(){
+                public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+                    LSInputImpl input = new LSInputImpl();
+                    // map this to the resource name
+                    if ("http://www.w3.org/2001/xml.xsd".equals(systemId))
+                        systemId = "xml.xsd";
+                    // resolve imports from the classpath
+                    input.setByteStream(XmlUtil.class.getResourceAsStream("/com/l7tech/common/resources/" + systemId));
+                    return input;
+                }
+            });
+            // load the Schema schema resource
+            schemaSchema = factory.newSchema(new StreamSource(XmlUtil.class.getResourceAsStream("/com/l7tech/common/resources/XMLSchema.xsd")));
+            SCHEMA_SCHEMA = schemaSchema;
+        }
+
+        return schemaSchema;
+    }
+
+    /**
+     * Add the specified element's namespace declarations to the specified map(prefix -> namespace).
+     * The default namespace is represented with the prefix "" (empty string).
+     */
+    private static void addToNamespaceMap(Element element, Map nsmap) {
+        NamedNodeMap attrs = element.getAttributes();
+        int numAttr = attrs.getLength();
+        for (int i = 0; i < numAttr; ++i) {
+            Attr attr = (Attr)attrs.item(i);
+            if ("xmlns".equals(attr.getName()))
+                nsmap.put("", attr.getValue()); // new default namespace
+            else if ("xmlns".equals(attr.getPrefix())) // new namespace decl for prefix
+                nsmap.put(attr.getLocalName(), attr.getValue());
+        }
+    }
     /**
      * Accumlate a map of all namespace URIs used by this element and all its children.
      *
@@ -1492,42 +1585,5 @@ public class XmlUtil {
                     }
             }
         }
-    }
-
-    /**
-     * Hoist all namespace declarations to the
-     * @param element
-     * @return
-     */
-    public static Element normalizeNamespaces(Element element) {
-        // First clone the original to work on the clone
-        element = (Element) element.cloneNode(true);
-
-        // (need a set to track unique)
-        // First, build map of all namespace URI -> unique prefix
-
-        Map lastPrefixToUri = new HashMap();
-        Map lastUriToPrefix = new HashMap();
-        Map uniquePrefixToUri = new HashMap();
-        Map uniqueUriToPrefix = new HashMap();
-        Map prefixOldToNew = new HashMap();
-        normalizeNamespacesRecursively(element,
-                lastUriToPrefix,
-                lastPrefixToUri,
-                uniqueUriToPrefix,
-                uniquePrefixToUri,
-                prefixOldToNew);
-
-        // Element tree has been translated -- now just add namespace decls back onto root element.
-        for (Iterator i = uniqueUriToPrefix.entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry) i.next();
-            String uri = (String) entry.getKey();
-            String prefix = (String) entry.getValue();
-            if (uri == null || prefix == null) throw new IllegalStateException();
-            element.setAttributeNS(XMLNS_NS, "xmlns:" + prefix, uri);
-        }
-
-        // We are done, we think
-        return element;
     }
 }
