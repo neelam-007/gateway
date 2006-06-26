@@ -56,7 +56,7 @@ public class DeleteAssertionAction extends SecureAction {
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }
-            boolean deleted = Actions.deleteAssertion(node);
+        boolean deleted = Actions.deleteAssertion(node);
         if (deleted) {
             JTree tree =
               (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);

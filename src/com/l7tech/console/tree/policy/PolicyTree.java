@@ -926,8 +926,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
         // fla bugfix 2531, if you pass one element to removeAll and children has that element more
         // than once, all instances will be removed
         // children.removeAll(remove);
+
         for (Assertion toRemove : remove) {
-            children.remove(toRemove);
+            for (int i = 0 ; i < children.size(); i++) {
+                Object o = children.get(i);
+                if (o == toRemove) {
+                    children.remove(i);
+                    break;
+                }
+            }
         }
         log.finer("children assertions = " + ca.getChildren().size());
         log.finer("nodes          tree = " + parent.getChildCount());
