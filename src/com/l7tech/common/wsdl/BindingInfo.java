@@ -69,7 +69,7 @@ public class BindingInfo implements Cloneable, Serializable {
     public Object clone() {
         try {
             BindingInfo clone = (BindingInfo) super.clone();
-            clone.bindingOperations = (Map) ((LinkedHashMap)bindingOperations).clone();
+            clone.bindingOperations = (Map)(((LinkedHashMap)bindingOperations).clone());
 
             for(Iterator iterator = clone.bindingOperations.entrySet().iterator(); iterator.hasNext(); ) {
                 Map.Entry entry = (Map.Entry) iterator.next();
