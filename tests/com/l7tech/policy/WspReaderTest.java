@@ -429,7 +429,7 @@ public class WspReaderTest extends TestCase {
         xslt.setResourceInfo(rinfo);
         String policy = WspWriter.getPolicyXml(xslt);
         XslTransformation newXslt = (XslTransformation) WspReader.parseStrictly(policy);
-        assertTrue(newXslt.getResourceInfo().equals(xslt.getResourceInfo()));
+        assertTrue(newXslt.equals(xslt));
     }
 
     public static void main(String[] args) {
