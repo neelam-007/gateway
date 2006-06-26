@@ -205,7 +205,7 @@ public class ThroughputQuotaForm extends JDialog {
         String tmp = quotaValueField.getText();
         if (tmp == null || tmp.length() < 1) {
             JOptionPane.showMessageDialog(okButton,
-                                          "Please enter a quota value between 1 and 100,000",
+                                          "Please enter a quota value between 1 and 100000",
                                           "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -214,13 +214,13 @@ public class ThroughputQuotaForm extends JDialog {
             qval = Long.parseLong(tmp);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(okButton,
-                                          "Please enter a quota value between 1 and 100,000",
+                                          "Please enter a quota value between 1 and 100000",
                                           "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (qval < 1 || qval > 100000) {
             JOptionPane.showMessageDialog(okButton,
-                                          "Please enter a quota value between 1 and 100,000",
+                                          "Please enter a quota value between 1 and 100000",
                                           "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
         }
