@@ -137,7 +137,7 @@ public class SchemaManagerImpl implements SchemaManager {
                                                       userObjectFactory,
                                                       HttpObjectCache.WAIT_LATEST);
 
-        maintenanceTimer = new Timer();
+        maintenanceTimer = new Timer("Schema cache maintenance", true);
         TimerTask cacheCleanupTask = new TimerTask() {
             public void run() {
                 cacheCleanup();
