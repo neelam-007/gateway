@@ -22,6 +22,8 @@ public final class HttpConstants {
     public static final String HEADER_LAST_MODIFIED = "Last-Modified";
     public static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
     public static final String HEADER_AUTHORIZATION = "Authorization";
+    public static final String HEADER_ACCEPT_ENCODING = "Accept-Encoding";
+    public static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
 
     // status codes
     public static final int STATUS_OK = 200;

@@ -2,12 +2,14 @@ package com.l7tech.spring.remoting.http;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.net.SocketException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.zip.GZIPInputStream;
 
 import org.springframework.remoting.httpinvoker.CommonsHttpInvokerRequestExecutor;
 import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
@@ -16,6 +18,9 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpRecoverableException;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.Header;
+
+import com.l7tech.common.http.HttpConstants;
 
 /**
  * Client side HTTP request executor.
@@ -31,12 +36,18 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
 
     public SecureHttpInvokerRequestExecutor() {
         super();
-        hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
+        this.userAgent = null;
+        this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
     }
 
     public SecureHttpInvokerRequestExecutor(HttpClient httpClient) {
+        this(httpClient, null);
+    }
+
+    public SecureHttpInvokerRequestExecutor(HttpClient httpClient, String userAgent) {
         super(httpClient);
-        hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
+        this.userAgent = userAgent;
+        this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
     }
 
     public void setSession(String host, int port, String sessionId) {
@@ -46,6 +57,26 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     //- PROTECTED
+
+    protected InputStream getResponseBody(HttpInvokerClientConfiguration config, PostMethod postMethod) throws IOException {
+        InputStream inputStream = super.getResponseBody(config, postMethod);
+
+        Header contentEncodingHeader = postMethod.getResponseHeader(HttpConstants.HEADER_CONTENT_ENCODING);
+        if (contentEncodingHeader != null) {
+            String encoding = contentEncodingHeader.getValue();
+            if (encoding != null) {
+                if (ENCODING_GZIP.equals(encoding)) {
+                    logger.finest("Using gzip compression.");
+                    inputStream = new GZIPInputStream(inputStream);
+                }
+                else {
+                    logger.fine("Unknown content encoding '"+encoding+"'.");
+                }
+            }
+        }
+
+        return inputStream;
+    }
 
     protected void executePostMethod(HttpInvokerClientConfiguration config, HttpClient httpClient, PostMethod postMethod) throws IOException {
         HostConfiguration hostConfiguration = new HostConfiguration(httpClient.getHostConfiguration());
@@ -73,7 +104,14 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     protected PostMethod createPostMethod(HttpInvokerClientConfiguration config) throws IOException {
-        return super.createPostMethod(new HttpInvokerClientConfigurationImpl(config));
+        PostMethod postMethod = super.createPostMethod(new HttpInvokerClientConfigurationImpl(config));
+
+        if (userAgent != null)
+            postMethod.addRequestHeader(HttpConstants.HEADER_USER_AGENT, userAgent);
+
+        postMethod.addRequestHeader(HttpConstants.HEADER_ACCEPT_ENCODING, ENCODING_GZIP);
+
+        return postMethod;
     }
 
     protected void validateResponse(HttpInvokerClientConfiguration httpInvokerClientConfiguration, PostMethod postMethod) throws IOException {
@@ -95,8 +133,6 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         }
     }
 
-
-
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SecureHttpInvokerRequestExecutor.class.getName());
@@ -105,7 +141,9 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
      * Regex for replacing the host name in the url with the host[:port] from the login dialog.
      */
     private static final String HOST_REGEX = "(?<=^http[s]?\\://)[a-zA-Z_\\-0-9\\.\\:]{1,1024}";
+    private static final String ENCODING_GZIP = "gzip";
 
+    private final String userAgent;
     private String host;
     private int port;
     private String sessionId;

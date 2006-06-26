@@ -20,6 +20,9 @@
         <constructor-arg>
             <ref local="httpClient"/>
         </constructor-arg>
+        <constructor-arg>
+            <value>SecureSpan-Manager/3.6</value>
+        </constructor-arg>
     </bean>
 
     <!-- shared invoker properties, inherited with parent= -->
