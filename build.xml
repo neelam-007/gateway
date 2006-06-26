@@ -739,7 +739,6 @@
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <!-- Omit the third-party crypto drivers unless we need to ship with one or more of them.  Including it causes testpackage to fail -->
-                <exclude name="com/l7tech/common/security/prov/phaos/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
@@ -1496,7 +1495,6 @@
             <exclude name="com/l7tech/common/http/cache/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
-            <exclude name="com/l7tech/common/security/prov/phaos/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
             <exclude name="com/l7tech/common/alert/**/*.java"/>
             <exclude name="com/l7tech/common/audit/**/*.java"/>
