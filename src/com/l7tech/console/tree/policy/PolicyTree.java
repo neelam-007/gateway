@@ -908,35 +908,29 @@ public class PolicyTree extends JTree implements DragSourceListener,
           (AssertionTreeNode)e.getTreePath().getLastPathComponent();
         CompositeAssertion ca = (CompositeAssertion)parent.asAssertion();
         java.util.List children = ca.getChildren();
-        java.util.List remove = new ArrayList();
+        java.util.List<Assertion> remove = new ArrayList<Assertion>();
         for (Iterator iterator = ca.getChildren().iterator(); iterator.hasNext();) {
             Assertion a = (Assertion)iterator.next();
-            if (removed.contains(a)) {
-                remove.add(a);
+            // fla bugfix 2531, this catches all assertions using equals instead of the one assertion targeted
+            // if (removed.contains(a)) {
+            //   remove.add(a);
+            // }
+            for (Object aRemoved : removed) {
+                Assertion toRemove = (Assertion) aRemoved;
+                if (toRemove == a) {
+                    remove.add(a);
+                }
             }
         }
         log.finer("removing " + remove);
-        children.removeAll(remove);
+        // fla bugfix 2531, if you pass one element to removeAll and children has that element more
+        // than once, all instances will be removed
+        // children.removeAll(remove);
+        for (Assertion toRemove : remove) {
+            children.remove(toRemove);
+        }
         log.finer("children assertions = " + ca.getChildren().size());
         log.finer("nodes          tree = " + parent.getChildCount());
-
-//        SwingUtilities.invokeLater(new Runnable() {
-//            public void run() {
-//                DefaultMutableTreeNode n = null;
-//                int currentIndex = 0;
-//                Enumeration e = parent.children();
-//                for (; e.hasMoreElements() && lastIndex >= currentIndex;) {
-//                    n = (DefaultMutableTreeNode)e.nextElement();
-//                }
-//                if (n != null) {
-//                    setSelectionPath(new TreePath(n.getPath()));
-//                } else {
-//                    if (parent != parent.getRoot()) {
-//                        setSelectionPath(new TreePath(parent.getPath()));
-//                    }
-//                }
-//            }
-//        });
     }
 
     public void treeStructureChanged(TreeModelEvent e) {
