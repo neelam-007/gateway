@@ -52,7 +52,7 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new XpathCredentialSourcePaletteNode(), index++);
         insert(new SamlBrowserArtifactPaletteNode(), index++);
         insert(new KerberosPaletteNode(), index++);
-        insert(new MappingAssertionPaletteNode(), index++);
+//        insert(new MappingAssertionPaletteNode(), index++);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
