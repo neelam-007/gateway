@@ -418,6 +418,22 @@ public abstract class Assertion implements Cloneable, Serializable {
 
         return found;
     }
+
+    /**
+     * Assertion beans must not try to override equals and hashcode --
+     * identity of an assertion depends on its position in the policy, not just its properties.
+     */
+    public final boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    /**
+     * Assertion beans must not try to override equals and hashcode --
+     * identity of an assertion depends on its position in the policy, not just its properties.
+     */
+    public final int hashCode() {
+        return super.hashCode();
+    }
 }
 
 

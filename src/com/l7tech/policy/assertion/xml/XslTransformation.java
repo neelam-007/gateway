@@ -134,29 +134,5 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
         return varsUsed;
     }
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        XslTransformation that = (XslTransformation) o;
-
-        if (direction != that.direction) return false;
-        if (whichMimePart != that.whichMimePart) return false;
-        if (resourceInfo != null ? !resourceInfo.equals(that.resourceInfo) : that.resourceInfo != null) return false;
-        if (transformName != null ? !transformName.equals(that.transformName) : that.transformName != null)
-            return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        int result;
-        result = direction;
-        result = 31 * result + (transformName != null ? transformName.hashCode() : 0);
-        result = 31 * result + (resourceInfo != null ? resourceInfo.hashCode() : 0);
-        result = 31 * result + whichMimePart;
-        return result;
-    }
-
     private transient String[] varsUsed;
 }
