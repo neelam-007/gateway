@@ -29,7 +29,7 @@ public class ConfigurationWizard {
     private List<ConfigWizardConsoleStep> steps = new ArrayList<ConfigWizardConsoleStep>();
     private Set<ConfigurationCommand> commands;
     private boolean hadFailures;
-    String currentVersion;
+    String currentVersion = null;
     private String keystoreType;
     private int clusteringType;
     private String hostname;
@@ -61,7 +61,7 @@ public class ConfigurationWizard {
         System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
         JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, LOGCONFIG_NAME);
         osFunctions = OSDetector.getOSSpecificFunctions();
-        currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+//        currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new HashSet<ConfigurationCommand>();
         manualSteps = new HashMap<String, List<String>>();
@@ -134,6 +134,8 @@ public class ConfigurationWizard {
     }
 
     public String getCurrentVersion() {
+        if (currentVersion == null)
+            currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         return currentVersion;
     }
 

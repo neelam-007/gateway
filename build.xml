@@ -526,7 +526,7 @@
       -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz"/>
+            depends="package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz, package.systemconfigwiz"/>
 
     <target name="bridge" description="Build and package the SSB" depends="package.installbridge"/>
     <target name="manager" description="Build and package the SSM" depends="package.installmanager"/>
@@ -1035,6 +1035,44 @@
         </jar>
     </target>
 
+    <target name="package.systemconfigwiz" unless="ssg.only" depends="compile">
+        <mkdir dir="${build.dir}/sysconfigwizard"/>
+        <mkdir dir="${build.dir}/sysconfigwizard/lib"/>
+
+        <copy todir="${build.dir}/sysconfigwizard/lib">
+            <fileset dir="${build.dir}/lib">
+                <include name="commons-lang-1.0.1.jar"/>
+                <include name="commons-logging-1.0.4.jar"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${build.dir}/sysconfigwizard">
+            <fileset dir="${src.root}/etc">
+                <include name="ssg_sys_config.pl"/>
+                <include name="systemconfig.sh"/>
+                <include name="configlogging.properties"/>
+            </fileset>
+        </copy>
+
+        <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${src.root}/etc/SystemConfigWizard.mf">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
+                <include name="com/l7tech/server/config/ui/console/ConfigurationWizard.class"/>
+                <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleStep.class"/>
+                <include name="com/l7tech/server/config/ui/console/BaseConsoleStep.class"/>
+                <include name="com/l7tech/server/config/ui/console/ConsoleWizardUtils.class"/>
+                <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleSummaryStep.class"/>
+                <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleResultsStep.class"/>
+                <include name="com/l7tech/server/config/commands/ConfigurationCommand.class"/>
+                <include name="com/l7tech/server/config/commands/BaseConfigurationCommand.class"/>
+                <include name="com/l7tech/server/config/beans/ConfigurationBean.class"/>
+                <include name="com/l7tech/server/config/beans/BaseConfigurationBean.class"/>
+                <include name="com/l7tech/server/config/exceptions/*.class"/>
+                <include name="com/l7tech/server/config/systemconfig**/*"/>
+                <include name="com/l7tech/server/config/*.class"/>
+            </fileset>
+        </jar>
+    </target>
 
     <target name="package.api" depends="compile">
 <!--
