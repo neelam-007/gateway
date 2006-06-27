@@ -58,6 +58,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             if (doRepeatConfiguration()) {
                 doUserInterview(true);
             }
+
+            doHostnamePrompt();
             storeInput();
 
         } catch (IOException e) {
@@ -65,53 +67,80 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         }
     }
 
-    private List<String> validateGateway(String gateway) {
-        List<String> errors = new ArrayList<String>();
-        if (StringUtils.isEmpty(gateway)) errors.add("Missing Gateway." + getEolChar());
-        if (!isValidIpAddress(gateway)) errors.add("Gateway \"" + gateway + "\" is an invalid IP Address" + getEolChar());
-        return errors;
-    }
+    private void doHostnamePrompt() throws IOException, WizardNavigationException {
+        String newHostname = getData(
+                new String[] {"Enter the hostname for this SSG: "},
+                ""
+        );
 
-    private boolean isValidIpAddress(String address) {
-        String[] octets = address.split("\\.");
-
-        if (octets == null || octets.length < 4) {
-            return false;
-        }
-
-        int octetNumber = 1;
-        int start = 0;
-        int end = 255;
-
-        for (String octetString : octets) {
-            try {
-                int octet = Integer.parseInt(octetString);
-                start = (octetNumber++ == 1 ? 1 : 0);
-                if (octet < start || octet > end) return false;
-
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private List<String> validateNetMask(String netMask) {
-        List<String> errors = new ArrayList<String>();
-
-        if (StringUtils.isEmpty(netMask)) errors.add("Missing Netmask." + getEolChar());
-        if (!isValidIpAddress(netMask)) errors.add("Netmask \"" + netMask + "\" is an invalid IP Address" + getEolChar());
-
-        return errors;
+        netBean.setHostname(newHostname);
     }
 
     private List<String> validateIpAddress(String ipAddress) {
         List<String> errors = new ArrayList<String>();
 
-        if (StringUtils.isEmpty(ipAddress)) errors.add("*** Missing IP Address ***" + getEolChar());
-        if (!isValidIpAddress(ipAddress)) errors.add("*** \"" + ipAddress+ "\" is an invalid IP Address ***" + getEolChar());
+        String message = null;
+        if (StringUtils.isEmpty(ipAddress))
+            message = "Missing IP Address";
+        else if (!isValidIpAddress(ipAddress, false))
+            message = ipAddress + "\" is not a valid IP Address";
+
+        if (message != null)
+            errors.add("*** " + message + " ***" + getEolChar());
 
         return errors;
+    }
+
+    private List<String> validateNetMask(String netMask) {
+        List<String> errors = new ArrayList<String>();
+
+        String message = null;
+        if (StringUtils.isEmpty(netMask))
+            message = "Missing Netmask.";
+        else if (!isValidIpAddress(netMask, true))
+            message = netMask + "\" is not a valid netmask ";
+
+        if (message != null)
+            errors.add("*** " + message + " ***" + getEolChar());
+
+        return errors;
+    }
+
+    private List<String> validateGateway(String gateway) {
+        List<String> errors = new ArrayList<String>();
+
+        String message = null;
+        if (StringUtils.isEmpty(gateway))
+            message = "Missing Gateway.";
+        else if (!isValidIpAddress(gateway, false))
+            message = gateway + "\" is not a valid gateway address";
+
+        if (message != null)
+            errors.add("*** " + message + " ***" + getEolChar());
+
+        return errors;
+    }
+
+    private List<String> validateNameServers(String[] nameServers) {
+        if (nameServers == null || nameServers.length == 0) return null;
+        List<String> errors = new ArrayList<String>();
+        for (String ns : nameServers) {
+            if (!isValidIpAddress(ns, false))
+                errors.add(ns);
+        }
+
+        if (!errors.isEmpty()) {
+            printText("*** The following nameserver entries are not valid ***" + getEolChar());
+            for (String invalidNs : errors) {
+               printText("\t" + invalidNs + getEolChar());
+            }
+        }
+
+        return errors;
+    }
+
+    private boolean isValidIpAddress(String address, boolean isNetworkAddressAllowed) {
+        return consoleWizardUtils.isValidIpAddress(address, isNetworkAddressAllowed);
     }
 
     private boolean doRepeatConfiguration() throws IOException, WizardNavigationException {
@@ -165,9 +194,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             whichConfig.setIpAddress(getIpAddress(whichConfig.getIpAddress(), whichConfig.getInterfaceName()));
             whichConfig.setNetMask(getNetMask(whichConfig.getNetMask(), whichConfig.getInterfaceName()));
             whichConfig.setGateway(getGateway(whichConfig.getGateway(), whichConfig.getInterfaceName()));
+            whichConfig.setNameServer(getNameServer(whichConfig.getNameServers(), whichConfig.getInterfaceName()));
         }
-
-        whichConfig.setHostname(getHostname(whichConfig.getHostname(), whichConfig.getInterfaceName()));
 
         return whichConfig;
     }
@@ -183,29 +211,50 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return theConfig;
     }
 
-    private String getHostname(String hostname, String interfaceName) throws IOException, WizardNavigationException {
-        String newHostname = null;
-        String defaultHostname = (StringUtils.isEmpty(hostname)?null:hostname);
-        String hostnamePrompt = "Enter the hostname to be associated with the \"" + interfaceName + "\" interface: ";
+    private String[] getNameServer(String[] currentNameServers, String interfaceName) throws IOException, WizardNavigationException {
+        boolean hasCurrentNameServers = (currentNameServers != null && currentNameServers.length != 0);
+        String[] nameServers = null;
 
-        if (StringUtils.isNotEmpty(hostname)) hostnamePrompt += "[" + hostname + "] ";
-
-        String[] prompt = new String[]{
-            "Would you like to configure a hostname for this interface? [no]",
-        };
-
-        String shouldConfigHostname = getData(
-                prompt,
+        String shouldConfigNameServers = getData(
+                new String[]{"Would you like to configure the nameservers for this interface? [no]"},
                 "no"
-                );
+        );
 
-        if (StringUtils.equalsIgnoreCase("yes", shouldConfigHostname) || StringUtils.equalsIgnoreCase("y", shouldConfigHostname)) {
-            newHostname = getData(
-                new String[] {hostnamePrompt},
-                defaultHostname
-            );
+        String defaultNameserversLine = null;
+        boolean isFirst = true;
+        if (hasCurrentNameServers) {
+            for (String s : currentNameServers) {
+                defaultNameserversLine += (isFirst?"":", ") + s;
+            }
         }
-        return newHostname;
+
+        boolean isValid = false;
+        String nameserversline;
+        if (isYes(shouldConfigNameServers)) {
+                do {
+                    isValid = false;
+                    nameserversline = null;
+
+                    nameserversline =
+                        getData(
+                            new String[] {"Enter the nameservers to be associated with the \"" + interfaceName + "\" interface (comma separated): "},
+                            defaultNameserversLine
+                        );
+
+                if (StringUtils.isEmpty(nameserversline)) {
+                    printText("*** No nameserver(s) specified ***" + getEolChar());
+                    isValid = false;
+                } else {
+                    nameServers = nameserversline.split(",");
+                    for (int i = 0; i < nameServers.length; i++) {
+                        nameServers[i] = nameServers[i].trim();
+                    }
+                    List<String> invalidNameServers = validateNameServers(nameServers);
+                    isValid = invalidNameServers.isEmpty();
+                }
+            } while (!isValid);
+        }
+        return nameServers;
     }
 
     private String getGateway(String gateway, String interfaceName) throws IOException, WizardNavigationException {
@@ -236,9 +285,10 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         boolean isValid = false;
         List<String> errors = new ArrayList<String>();
+        String defaultAddress = StringUtils.isNotEmpty(ipAddress)?ipAddress:"";
 
         do {
-            ipAddress = getData(new String[] {prompt}, ipAddress);
+            ipAddress = getData(new String[] {prompt}, defaultAddress);
             errors = validateIpAddress(ipAddress);
 
             isValid = errors.isEmpty();
@@ -256,12 +306,14 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         boolean isValid = false;
         List<String> errors = new ArrayList<String>();
 
+        String defaultNetMask = StringUtils.isNotEmpty(netMask)?netMask:"";
         do {
-            netMask = getData(new String[] {prompt}, netMask);
+            netMask = getData(new String[] {prompt}, defaultNetMask);
             errors = validateNetMask(netMask);
 
             isValid = errors.isEmpty();
-            if (!isValid) printText(errors);
+            if (!isValid)
+                printText(errors);
 
         } while (!isValid);
 
@@ -346,7 +398,6 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             String ipAddress = null;
             String netMask = null;
             String gateway = null;
-            String hostname = null;
 
             String line = null;
             while ((line = reader.readLine()) != null) {
@@ -360,7 +411,6 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
                     else if (key.equals("IPADDR")) ipAddress = value;
                     else if (key.equals("NETMASK")) netMask = value;
                     else if (key.equals("GATEWAY")) gateway = value;
-                    else if (key.equals("HOSTNAME")) hostname = value;
                 }
             }
             //finished reading the file, now make the network config
@@ -368,7 +418,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             if (StringUtils.isNotEmpty(ipAddress)) theNetConfig.setIpAddress(ipAddress);
             if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
             if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
-            if (StringUtils.isNotEmpty(hostname)) theNetConfig.setHostname(hostname);
+
         } catch (FileNotFoundException e) {
             logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
         } catch (IOException e) {

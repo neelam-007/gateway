@@ -26,12 +26,12 @@ public class PropertyHelper {
      *
      * @param propFileName the fileName for the properties file that will be used to fetch the properties. Must not be null or empty
      * @param propsToFetch a list of property names that should be fetched
-     * @return a map of property name -> property for each property that was found. Never null, but it may be empty
+     * @return a map of property propName -> property for each property that was found. Never null, but it may be empty
      * @throws IOException if reading the designated property file failed.
      */
     public static Map<String, String> getProperties(String propFileName, String[] propsToFetch) throws IOException {
         if (propFileName == null || propFileName.equalsIgnoreCase("")) {
-            throw new IllegalArgumentException("The property file name cannot be empty");
+            throw new IllegalArgumentException("The property file propName cannot be empty");
         }
         if (propsToFetch == null) {
             throw new IllegalArgumentException("List of proprties to fetch cannot be null)");
@@ -58,10 +58,10 @@ public class PropertyHelper {
     }
 
     /**
-     * <p>Merges properties from the properties file with name "newPropsFileName" into the properies obtained from file
+     * <p>Merges properties from the properties file with propName "newPropsFileName" into the properies obtained from file
      * "originalPropsFileName".</p>
      *
-     * <p>Any properties that exist in both are not replaced, but instead retain the value within
+     * <p>Any properties that exist in both are not replaced, but instead retain the propValue within
      * "originalPropsFileName"</p>
      *
      * @param origPropsFile the original properties file. This is the base list of properties used
@@ -144,10 +144,10 @@ public class PropertyHelper {
 
 
     /**
-     * <p>Merges properties from the properties file with name "newPropsFileName" into the properies obtained from file
+     * <p>Merges properties from the properties file with propName "newPropsFileName" into the properies obtained from file
      * "originalPropsFileName".</p>
      *
-     * <p>Any properties that exist in both are not replaced, but instead retain the value within
+     * <p>Any properties that exist in both are not replaced, but instead retain the propValue within
      * "originalPropsFileName"</p>
      *
      * @param originalPropsFileName the path to the original properties file. This is the base list of properties used
@@ -166,10 +166,10 @@ public class PropertyHelper {
      */
     public static Properties mergeProperties(String originalPropsFileName, String newPropsFileName, boolean createIfNew) throws IOException {
         if (StringUtils.isEmpty(originalPropsFileName))
-            throw new IllegalArgumentException("The original property file name cannot be empty");
+            throw new IllegalArgumentException("The original property file propName cannot be empty");
 
         if (StringUtils.isEmpty(newPropsFileName))
-            throw new IllegalArgumentException("The new property file name cannot be empty");
+            throw new IllegalArgumentException("The new property file propName cannot be empty");
 
         File origPropsFile = new File(originalPropsFileName);
         File newPropsFile = new File(newPropsFileName);

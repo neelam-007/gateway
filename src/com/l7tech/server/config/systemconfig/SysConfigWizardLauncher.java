@@ -1,16 +1,13 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.ui.console.ConfigWizardConsoleResultsStep;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleSummaryStep;
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleResultsStep;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: megery
@@ -37,6 +34,7 @@ public class SysConfigWizardLauncher {
     private static List<ConfigWizardConsoleStep> getSteps(SystemConfigurationWizard sysWizard) {
         List<ConfigWizardConsoleStep> stepsList = new ArrayList<ConfigWizardConsoleStep>();
         stepsList.add(new SystemConfigWizardNetworkingStep(sysWizard));
+        stepsList.add(new SystemConfigWizardNtpStep(sysWizard));
         stepsList.add(new ConfigWizardConsoleSummaryStep(sysWizard, "Networking Configuration Summary"));
 
         ConfigWizardConsoleResultsStep resultsStep = new ConfigWizardConsoleResultsStep(sysWizard, "Networking Configuration Results");

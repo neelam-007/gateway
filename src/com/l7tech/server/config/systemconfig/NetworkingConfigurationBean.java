@@ -16,15 +16,17 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     public static final String DYNAMIC_BOOT_PROTO = "dhcp";
     public static final String STATIC_BOOT_PROTO = "static";
 
+    private String hostname;
+
     public static class NetworkConfig {
         private String interfaceName;
         private String bootProto;
         private String ipAddress;
         private String netMask;
         private String gateway;
-        private String hostname;
         private boolean isNewInterface;
-        
+        private String[] nameservers;
+
         public NetworkConfig(String interfaceName, String bootProto) {
             this.interfaceName = interfaceName;
             this.bootProto = bootProto;
@@ -75,13 +77,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             if (StringUtils.isEmpty(getInterfaceName())) return "Configure an interface not listed";
 
             StringBuilder sb = new StringBuilder();
-            sb.append(getInterfaceName()).append(" (").append(getBootProto());
-            if (StringUtils.isNotEmpty(hostname))
-                sb.append(", HOSTNAME = ").append(hostname);
-            if (StringUtils.equalsIgnoreCase(STATIC_BOOT_PROTO, getBootProto()))
-                sb.append(", IP = ").append(getIpAddress()).append(", NETMASK = ").append(getNetMask()).append(", GATEWAY = ").append(getGateway());
-
-            sb.append(")");
+            sb.append(getInterfaceName()).append(" (").append(getBootProto()).append(")");
             return sb.toString();
         }
 
@@ -93,9 +89,12 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 sb.append("--ip=").append(ipAddress).append(eol);
                 sb.append("--netmask=").append(netMask).append(eol);
                 sb.append("--gateway=").append(gateway).append(eol);
+                if (nameservers != null) {
+                    for (String ns : nameservers) {
+                        sb.append("--nameserver").append(ns).append(eol);
+                    }
+                }
             }
-            if (StringUtils.isNotEmpty(hostname))
-                sb.append("--hostname=").append(hostname).append(eol);
 
             return sb.toString();
         }
@@ -108,12 +107,12 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             return isNewInterface;
         }
 
-        public String getHostname() {
-            return hostname;
+        public void setNameServer(String[] nameServers) {
+            this.nameservers = nameServers;
         }
 
-        public void setHostname(String hostname) {
-            this.hostname = hostname;
+        public String[] getNameServers() {
+            return nameservers;
         }
     }
 
@@ -143,8 +142,11 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
                 explanations.add("\tNETMASK=" + networkConfig.getNetMask());
                 explanations.add("\tGATEWAY=" + networkConfig.getGateway());
-                if (StringUtils.isNotEmpty(networkConfig.getHostname()))
-                    explanations.add("\tHOSTNAME=" + networkConfig.getHostname());
+                if (networkConfig.getNameServers() != null) {
+                    for (String ns : networkConfig.getNameServers()) {
+                        explanations.add("\tNAMESERVER=" + ns);
+                    }
+                }
             }
             explanations.add("");
         }
@@ -161,4 +163,13 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     public void addNetworkingConfig(NetworkConfig netConfig) {
         networkingConfigs.add(netConfig);
     }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
+
 }

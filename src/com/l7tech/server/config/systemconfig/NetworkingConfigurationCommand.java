@@ -5,10 +5,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 
 import java.util.List;
 import java.util.logging.Logger;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.FileOutputStream;
+import java.io.*;
 
 /**
  * User: megery
@@ -20,6 +17,7 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
 
     NetworkingConfigurationBean netBean;
 
+
     protected NetworkingConfigurationCommand(ConfigurationBean bean) {
         super(bean);
         netBean = (NetworkingConfigurationBean) configBean;
@@ -29,31 +27,56 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
         boolean success = true;
 
         List<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
-        File netconfigDir = new File(osFunctions.getSsgInstallRoot(), "networkingconfig");
-        if (!netconfigDir.mkdir()) {
-            logger.info("Created new directory for networking configuration: " + netconfigDir.getAbsolutePath());
-        }
+        File currentWorkingDir = new File(".");
+        File configDir = new File(currentWorkingDir, "configfiles");
+        if (!configDir.mkdir())
+            logger.info("Created new directory for networking configuration: " + configDir.getAbsolutePath());
 
-        File configFile = null;
+
         for (NetworkingConfigurationBean.NetworkConfig networkConfig : netConfigs) {
 
             if (networkConfig != null) {
                 String interfaceName = networkConfig.getInterfaceName();
                 logger.info("Configuring \"" + interfaceName + "\" interface");
-                configFile = new File(netconfigDir,     interfaceName + "_config");
+                File netConfigFile = new File(configDir, "netconfig_" + interfaceName);
+
                 PrintWriter pw = null;
                 try {
-                    if (configFile.createNewFile()) logger.info("created file \"" + configFile.getAbsolutePath() + "\"");
-                    else logger.info("editing file \"" + configFile.getAbsolutePath() + "\"");
-                    pw = new PrintWriter(new FileOutputStream(configFile));
+                    if (netConfigFile.createNewFile())
+                        logger.info("created file \"" + netConfigFile.getAbsolutePath() + "\"");
+                    else
+                        logger.info("editing file \"" + netConfigFile.getAbsolutePath() + "\"");
+
+                    pw = new PrintWriter(new FileOutputStream(netConfigFile));
                     pw.print(networkConfig);
+
                 } catch (IOException e) {
-                    logger.severe("Could not create file:" + configFile.getAbsolutePath());
+                    logger.severe("Could not create file:" + netConfigFile.getAbsolutePath());
                     success = false;
                 } finally {
-                    if (pw != null) pw.close();
+                    if (pw != null)
+                        pw.close();
                 }
             }
+        }
+
+
+        PrintWriter hostnameWriter = null;
+        File hostnameFile = new File(configDir, "hostname");
+        try {
+            if (hostnameFile.createNewFile())
+                logger.info("created file \"" + hostnameFile.getAbsolutePath() + "\"");
+            else
+                logger.info("editing file \"" + hostnameFile.getAbsolutePath() + "\"");
+
+            hostnameWriter = new PrintWriter(new FileOutputStream(hostnameFile));
+            hostnameWriter.println(netBean.getHostname());
+        } catch (IOException e) {
+            logger.severe("Error while creating file " + hostnameFile.getAbsoluteFile() + "\"" + e.getMessage() + "\"");
+            success = false;
+        } finally{
+            if (hostnameWriter != null)
+                hostnameWriter.close();
         }
         return success;
     }

@@ -187,4 +187,8 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
     public abstract void doUserInterview(boolean validated) throws WizardNavigationException;
 
     public abstract String getTitle();
+
+    protected boolean isYes(String answer) {
+        return consoleWizardUtils.isYes(answer);
+    }
 }

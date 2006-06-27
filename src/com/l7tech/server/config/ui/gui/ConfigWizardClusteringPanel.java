@@ -3,13 +3,10 @@ package com.l7tech.server.config.ui.gui;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.

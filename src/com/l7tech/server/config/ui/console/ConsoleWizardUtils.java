@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -24,6 +26,8 @@ public class ConsoleWizardUtils {
 
     private static ConsoleWizardUtils instance_ = null;
     public static final String EOL_CHAR = System.getProperty("line.separator");
+
+    private Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
 
     public static ConsoleWizardUtils getInstance(InputStream in, PrintStream out) {
         if (instance_ == null) {
@@ -186,7 +190,59 @@ public class ConsoleWizardUtils {
         return gotData;
     }
 
+    public boolean isYes(String answer) {
+        return StringUtils.equalsIgnoreCase("yes", answer) || StringUtils.equalsIgnoreCase("y", answer);
+    }
+
+    public boolean isValidIpAddress(String address, boolean isNetworkAddressAllowed) {
+
+        if (address == null) return false;
+
+        Matcher matcher = validIpAddressPattern.matcher(address);
+
+        if (matcher.matches())
+        {
+            //at least it's got a sane format.
+            int start = 0;
+            int end = 255;
+
+            for (int i = 1; i <= matcher.groupCount(); ++i) {
+                String octetString = matcher.group(i);
+                try {
+                    int octet = Integer.parseInt(octetString);
+                    if (i == 1)
+                        start = 1;
+                    else
+                        start = isNetworkAddressAllowed ? 0 : 1;
+
+                    if (octet < start || octet > end)
+                        return false;
+
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+
+            }
+            return true;
+        }
+
+        return false;
+    }
+
     private final BufferedReader reader;
     private final PrintStream out;
 
+    public String resolveHostName(String timeserverLine) throws UnknownHostException {
+        if (StringUtils.isEmpty(timeserverLine))
+            return null;
+
+        if (isValidIpAddress(timeserverLine, false))
+            return timeserverLine;
+
+        String resolvedIp = null;
+        resolvedIp = InetAddress.getByName(timeserverLine).getHostAddress();
+
+        return resolvedIp;
+
+    }
 }

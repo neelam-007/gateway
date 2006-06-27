@@ -40,7 +40,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     private final static String NOTHING_TO_DO_INFO = "Cluster configuration will be skipped";
     private final static String CLUSTER_HOSTFILE_UPDATE_INFO = "Update cluster hostname: ";
-//    private final static String CLUSTER_HOSTFILE_DELETE_INFO = "Delete cluster hostname file";
 
     public static final int CLUSTER_NONE = 0;
     public static final int CLUSTER_NEW = 1;
