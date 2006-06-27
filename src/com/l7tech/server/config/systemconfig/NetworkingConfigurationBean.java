@@ -91,7 +91,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 sb.append("--gateway=").append(gateway).append(eol);
                 if (nameservers != null) {
                     for (String ns : nameservers) {
-                        sb.append("--nameserver").append(ns).append(eol);
+                        sb.append("--nameserver=").append(ns).append(eol);
                     }
                 }
             }
