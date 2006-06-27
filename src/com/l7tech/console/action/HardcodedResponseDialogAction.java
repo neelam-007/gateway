@@ -25,14 +25,14 @@ public class HardcodedResponseDialogAction extends NodeAction{
      * @return the action name
      */
     public String getName() {
-        return "Hardcoded Response Properties";
+        return "Template Response Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View and edit hardcoded response properties";
+        return "View and edit template response properties";
     }
 
     /**

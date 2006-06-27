@@ -18,7 +18,7 @@ import java.io.IOException;
  * Config dialog for HardcodedResponseAssertion.
  */
 public class HardcodedResponseDialog extends JDialog {
-    private static final String TITLE = "Template Response";
+    private static final String TITLE = "Template Response Properties";
     private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
     private JButton cancelButton;
