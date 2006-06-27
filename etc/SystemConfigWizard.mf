@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: . lib/commons-lang-1.0.1.jar lib/commons-logging-1.0.4.jar
+Main-Class: com.l7tech.server.config.systemconfig.SysConfigWizardLauncher
