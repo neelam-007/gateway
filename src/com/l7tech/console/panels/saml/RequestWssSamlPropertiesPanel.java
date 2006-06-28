@@ -111,11 +111,12 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         // Save / restore when changing tabs
         tabbedPane.addChangeListener(new ChangeListener(){
             public void stateChanged(ChangeEvent e) {
+                RequestWssSaml workingCopy = (RequestWssSaml) assertion.clone();
                 for (int i = 0; i < wizardPanels.length; i++) {
                     WizardStepPanel wizardPanel = wizardPanels[i];
-                    wizardPanel.storeSettings(assertion);
+                    wizardPanel.storeSettings(workingCopy);
                 }
-                ((WizardStepPanel)tabbedPane.getSelectedComponent()).readSettings(assertion);
+                ((WizardStepPanel)tabbedPane.getSelectedComponent()).readSettings(workingCopy);
             }
         });
 

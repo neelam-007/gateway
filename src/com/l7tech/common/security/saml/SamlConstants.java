@@ -186,6 +186,11 @@ public class SamlConstants {
         NAMEIDENTIFIER_UNSPECIFIED,
     };
 
+    /** attribute name formats **/
+    public static final String ATTRIBUTE_NAME_FORMAT_UNSPECIFIED = "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified";
+    public static final String ATTRIBUTE_NAME_FORMAT_URIREFERENCE = "urn:oasis:names:tc:SAML:2.0:attrname-format:uri";
+    public static final String ATTRIBUTE_NAME_FORMAT_BASIC = "urn:oasis:names:tc:SAML:2.0:attrname-format:basic";
+
     /** SAML response status codes see saml core spec section 3.4.3.1 */
     public static final String STATUS_SUCCESS = "Success";
 

@@ -8,9 +8,6 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -20,6 +17,10 @@ import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.util.MessageId;
+import com.l7tech.server.util.MessageIdManager;
+import com.l7tech.cluster.DistributedMessageIdManager;
+
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
@@ -39,6 +40,8 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ServerRequestWssSaml extends AbstractServerAssertion implements ServerAssertion {
+    private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60L * 5L; // cache IDs for at least 5 min extra
+    private static final long DEFAULT_EXPIRY = 1000L * 60L * 5L; // 5 minutes
     private RequestWssSaml requestWssSaml;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ApplicationContext applicationContext;
@@ -61,7 +64,7 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
         }
 
         requestWssSaml = sa;
-        assertionValidate = new SamlAssertionValidate(requestWssSaml, context);
+        assertionValidate = new SamlAssertionValidate(requestWssSaml);
         auditor = new Auditor(this, context, logger);
     }
 
@@ -132,6 +135,21 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
                 auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, new String[] {sb2.toString()});
                 logger.log(Level.INFO, error);
                 return AssertionStatus.FALSIFIED;
+            }
+
+            // enforce one time use condition if requested
+            if (samlAssertion.isOneTimeUse()) {
+                long expires = samlAssertion.getExpires() == null ?
+                        System.currentTimeMillis() + DEFAULT_EXPIRY :
+                        samlAssertion.getExpires().getTimeInMillis();
+                MessageId messageId = new MessageId(SamlConstants.NS_SAML_PREFIX + "-" + samlAssertion.getUniqueId(), expires + CACHE_ID_EXTRA_TIME_MILLIS);
+                try {
+                    DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
+                    dmm.assertMessageIdIsUnique(messageId);
+                } catch (MessageIdManager.DuplicateMessageIdException e) {
+                    auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, new String[] {"Replay of assertion that is for OneTimeUse."});
+                    return AssertionStatus.FALSIFIED;
+                }
             }
 
             String nameIdentifier = null;

@@ -34,6 +34,13 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
 
     String getAssertionId();
 
+    /**
+     * Get a unique identifier for this assertion.
+     *
+     * @return The unique identifier for this assertion
+     */
+    String getUniqueId();
+
     boolean hasEmbeddedIssuerSignature();
 
     /**
@@ -52,6 +59,8 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
 
     /** @return the authentication method, or null if there wasn't one. {@see SamlConstants} */
     String getAuthenticationMethod();
+
+    boolean isOneTimeUse();
 
     Calendar getExpires();
 

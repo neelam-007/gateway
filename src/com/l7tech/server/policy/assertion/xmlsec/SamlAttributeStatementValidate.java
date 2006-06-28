@@ -5,11 +5,9 @@ import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlCursor;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML1.AttributeStatementType;
 import x0Assertion.oasisNamesTcSAML1.AttributeType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -26,10 +24,9 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml     the saml statemenet assertion
-     * @param applicationContext the applicaiton context to allo access to components and services
      */
-    SamlAttributeStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
-        super(requestWssSaml, applicationContext);
+    SamlAttributeStatementValidate(RequestWssSaml requestWssSaml) {
+        super(requestWssSaml);
         attribueStatementRequirements = requestWssSaml.getAttributeStatement();
         if (attribueStatementRequirements == null) {
             throw new IllegalArgumentException("Attribute requirements have not been specified");

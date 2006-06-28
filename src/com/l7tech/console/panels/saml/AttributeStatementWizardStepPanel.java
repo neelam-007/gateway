@@ -34,6 +34,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JButton removeButton;
     private JButton editButton;
     private DefaultTableModel attributesTableModel;
+    private int samlVersion;
     private static final String ANY = "<any>";
 
     /**
@@ -85,12 +86,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         int nrows = attributesTableModel.getRowCount();
         Collection attributes = new ArrayList();
         for (int i = 0; i < nrows; i++) {
-            String col2 = attributesTableModel.getValueAt(i, 2).toString();
-            boolean isAny = ANY.equals(col2);
+            String value = attributesTableModel.getValueAt(i, 3).toString();
+            boolean isAny = ANY.equals(value);
             SamlAttributeStatement.Attribute att = new SamlAttributeStatement.Attribute(
-                    attributesTableModel.getValueAt(i, 0).toString(),
-                    attributesTableModel.getValueAt(i, 1).toString(),
-                    isAny ? null : col2,
+                    toString(attributesTableModel.getValueAt(i, 0)),
+                    toString(attributesTableModel.getValueAt(i, 1)),
+                    toString(attributesTableModel.getValueAt(i, 2)),
+                    isAny ? null : value,
                     isAny);
             attributes.add(att);
         }
@@ -108,6 +110,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         RequestWssSaml assertion = (RequestWssSaml)settings;
+        samlVersion = assertion.getVersion();
+
         SamlAttributeStatement statement = assertion.getAttributeStatement();
         setSkipped(statement == null);
         if (statement == null) {
@@ -120,7 +124,11 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
         for (int i = 0; i < attributes.length; i++) {
             SamlAttributeStatement.Attribute att = attributes[i];
-            attributesTableModel.addRow(new Object[]{att.getName(), att.getNamespace(), att.isAnyValue() ? ANY : att.getValue()});
+            attributesTableModel.addRow(new Object[]{
+                    att.getName(),
+                    att.getNamespace(),
+                    att.getNameFormat(),
+                    att.isAnyValue() ? ANY : att.getValue()});
         }
     }
 
@@ -133,9 +141,14 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
-        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Value"}, 0);
+        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Value"}, 0){
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         attributeTableScrollPane.getViewport().setBackground(attributeTable.getBackground());
         attributeTable.setModel(attributesTableModel);
+        attributeTable.getTableHeader().setReorderingAllowed(false);
         ListSelectionModel selectionModel = attributeTable.getSelectionModel();
         selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         selectionModel.addListSelectionListener(new ListSelectionListener() {
@@ -158,17 +171,18 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             public void actionPerformed(ActionEvent e) {
                 final int row = attributeTable.getSelectedRow();
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
-                attribute.setName(attributesTableModel.getValueAt(row, 0).toString());
-                attribute.setNamespace(attributesTableModel.getValueAt(row, 1).toString());
-                String col2 = attributesTableModel.getValueAt(row, 2).toString();
-                if (ANY.equals(col2)) {
+                attribute.setName(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 0)));
+                attribute.setNamespace(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 1)));
+                attribute.setNameFormat(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 2)));
+                String value = AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 3));
+                if (ANY.equals(value)) {
                     attribute.setAnyValue(true);
                     attribute.setValue(null);
                 } else {
                     attribute.setAnyValue(false);
-                    attribute.setValue(col2);
+                    attribute.setValue(value);
                 }
-                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute);
+                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
                      * Fired when the bean edit is accepted.
@@ -179,7 +193,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.setValueAt(attribute.getName(), row, 0);
                         attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
-                        attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 2);
+                        attributesTableModel.setValueAt(attribute.getNameFormat(), row, 2);
+                        attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
                         notifyListeners();
                     }
                 });
@@ -189,7 +204,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         addAttributeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
-                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute);
+                EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
                      * Fired when the bean edit is accepted.
@@ -198,7 +213,11 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      * @param bean   the bean being edited
                      */
                     public void onEditAccepted(Object source, Object bean) {
-                        attributesTableModel.addRow(new Object[] {attribute.getName(), attribute.getNamespace(), attribute.isAnyValue() ? ANY : attribute.getValue()});
+                        attributesTableModel.addRow(new Object[] {
+                                attribute.getName(),
+                                attribute.getNamespace(),
+                                attribute.getNameFormat(),
+                                attribute.isAnyValue() ? ANY : attribute.getValue()});
                         notifyListeners();
                     }
                 });
@@ -230,5 +249,18 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      */
     public boolean canAdvance() {
         return attributesTableModel.getRowCount() > 0;
+    }
+
+    /**
+     * Null safe toString
+     */
+    private static String toString(Object object) {
+        String stringValue = null;
+
+        if (object != null) {
+            stringValue = object.toString();
+        }
+
+        return stringValue;
     }
 }

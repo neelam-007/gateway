@@ -328,4 +328,22 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
     public void setAttributeStatement(SamlAttributeStatement attributeStatement) {
         this.attributeStatement = attributeStatement;
     }
+
+    public Object clone() {
+        RequestWssSaml assertion = (RequestWssSaml) super.clone();
+
+        if (assertion.getAttributeStatement() != null) {
+            assertion.setAttributeStatement((SamlAttributeStatement)assertion.getAttributeStatement().clone());
+        }
+
+        if (assertion.getAuthenticationStatement() != null) {
+            assertion.setAuthenticationStatement((SamlAuthenticationStatement)assertion.getAuthenticationStatement().clone());
+        }
+
+        if (assertion.getAuthorizationStatement() != null) {
+            assertion.setAuthorizationStatement((SamlAuthorizationStatement)assertion.getAuthorizationStatement().clone());
+        }
+
+        return assertion;
+    }
 }

@@ -4,11 +4,9 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML1.AuthenticationStatementType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
 import java.util.Collection;
 import java.util.Arrays;
@@ -24,10 +22,9 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml the saml statement assertion
-     * @param applicationContext the application context to allow access to components and services
      */
-    SamlAuthenticationStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
-        super(requestWssSaml, applicationContext);
+    SamlAuthenticationStatementValidate(RequestWssSaml requestWssSaml) {
+        super(requestWssSaml);
         authenticationStatementConstraints = requestWssSaml.getAuthenticationStatement();
         if (authenticationStatementConstraints == null) {
             throw new IllegalArgumentException("Authentication requirements have not been specified");

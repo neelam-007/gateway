@@ -6,7 +6,7 @@ import java.io.Serializable;
  * The <code>SamlAuthenticationStatementAssertion</code> assertion describes
  * the SAML Authentication Statement constraints.
  */
-public class SamlAuthenticationStatement implements Serializable {
+public class SamlAuthenticationStatement implements Cloneable, Serializable {
     private String[] authenticationMethods = new String[] {};
 
     public SamlAuthenticationStatement() {
@@ -18,5 +18,14 @@ public class SamlAuthenticationStatement implements Serializable {
 
     public void setAuthenticationMethods(String[] authenticationMethods) {
         this.authenticationMethods = authenticationMethods;
+    }
+
+    public Object clone() {
+        try {
+            return super.clone();
+        }
+        catch(CloneNotSupportedException cnse) {
+            throw new RuntimeException("Clone error");
+        }
     }
 }

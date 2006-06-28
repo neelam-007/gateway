@@ -84,6 +84,11 @@ public class SamlStatementValidator implements AssertionValidator {
                 }
             }
         }
+
+        if (!requestWssSaml.isCheckAssertionValidity()) {
+            String message = "SAML assertion validity period checking is disabled.";
+            result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
+        }
     }
 
     private SslAssertion[] getSslAssertions(AssertionPath path) {

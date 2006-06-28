@@ -1,10 +1,13 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.console.beaneditor.BeanListener;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -49,17 +52,19 @@ public class EditAttributeDialog extends JDialog {
     private String CMD_OK = "cmd.ok";
 
     private JButton okButton;
-
-    /* attribute name text field */
-    private JTextField attributeNameField;
-    /* attribute namespace text field */
-    private JTextField attributeNamespaceField;
-    /* attribute value text field */
-    private JTextField attributeValueField;
-
     private JButton cancelButton;
+
+    private JTextField attributeNameField;
+    private JTextField attributeNamespaceField;
+    private JTextField attributeValueField;
+    private JRadioButton nameFormatUnspecifiedRadioButton;
+    private JRadioButton nameFormatURIRefRadioButton;
+    private JRadioButton nameFormatBasicRadioButton;
+    private JRadioButton nameFormatOtherRadioButton;
+    private JTextField attributeNameFormatTextField;
     private JRadioButton anyValueRadio;
     private JRadioButton specificValueRadio;
+    private JPanel nameFormatPanel;
     private JPanel mainPanel;
 
     private SamlAttributeStatement.Attribute attribute;
@@ -67,11 +72,11 @@ public class EditAttributeDialog extends JDialog {
     /**
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public EditAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute) {
+    public EditAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute, int samlVersion) {
         super(parent, true);
         this.attribute = attribute;
         initResources();
-        initComponents();
+        initComponents(samlVersion!=2, samlVersion!=1);
         pack();
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -109,7 +114,7 @@ public class EditAttributeDialog extends JDialog {
      * This method is called from within the constructor to
      * initialize the dialog.
      */
-    private void initComponents() {
+    private void initComponents(boolean enableNamespace, boolean enableNameFormat) {
         setTitle(resources.getString("dialog.title"));
 
         addWindowListener(new WindowAdapter() {
@@ -119,8 +124,32 @@ public class EditAttributeDialog extends JDialog {
             }
         });
 
+        ButtonGroup buttonGroup = new ButtonGroup();
+        buttonGroup.add(nameFormatUnspecifiedRadioButton);
+        buttonGroup.add(nameFormatURIRefRadioButton);
+        buttonGroup.add(nameFormatBasicRadioButton);
+        buttonGroup.add(nameFormatOtherRadioButton);
+
         attributeNameField.setText(attribute.getName());
         attributeNamespaceField.setText(attribute.getNamespace());
+        String nameFormat = attribute.getNameFormat();
+        if (nameFormat == null || nameFormat.length()==0 ||
+            SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED.equals(nameFormat)) {
+            nameFormatUnspecifiedRadioButton.setSelected(true);
+            attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED);
+        }
+        else if (SamlConstants.ATTRIBUTE_NAME_FORMAT_URIREFERENCE.equals(nameFormat)) {
+            nameFormatURIRefRadioButton.setSelected(true);
+            attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_URIREFERENCE);
+        }
+        else if (SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC.equals(nameFormat)) {
+            nameFormatBasicRadioButton.setSelected(true);
+            attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        }
+        else {
+            nameFormatOtherRadioButton.setSelected(true);;
+            attributeNameFormatTextField.setText(nameFormat);
+        }
         attributeValueField.setText(attribute.getValue());
         getRootPane().setDefaultButton(okButton);
 
@@ -150,6 +179,33 @@ public class EditAttributeDialog extends JDialog {
             }
         };
 
+        nameFormatOtherRadioButton.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent e) {
+                attributeNameFormatTextField.setEnabled(nameFormatOtherRadioButton.isSelected());
+                if (attributeNameFormatTextField.isEnabled()) {
+                    attributeNameFormatTextField.setText("");
+                    attributeNameFormatTextField.requestFocus();
+                }
+            }
+        });
+        ChangeListener nameFormatChangeLister = new ChangeListener(){
+            public void stateChanged(ChangeEvent e) {
+                if (nameFormatUnspecifiedRadioButton.isSelected()) {
+                    attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED);
+                }
+                else if (nameFormatURIRefRadioButton.isSelected()) {
+                    attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_URIREFERENCE);
+                }
+                else if (nameFormatBasicRadioButton.isSelected()) {
+                    attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+                }
+            }
+        };
+        nameFormatUnspecifiedRadioButton.addChangeListener(nameFormatChangeLister);
+        nameFormatURIRefRadioButton.addChangeListener(nameFormatChangeLister);
+        nameFormatBasicRadioButton.addChangeListener(nameFormatChangeLister);
+
+
         specificValueRadio.addActionListener(buttonEnabler);
         anyValueRadio.addActionListener(buttonEnabler);
 
@@ -161,6 +217,11 @@ public class EditAttributeDialog extends JDialog {
         }
 
         enableButtons();
+
+        // enable / disable optional elements
+        Utilities.setEnabled(attributeNamespaceField, enableNamespace);
+        Utilities.setEnabled(nameFormatPanel, enableNameFormat);
+        attributeNameFormatTextField.setEnabled(nameFormatOtherRadioButton.isSelected());
 
         add(mainPanel);
     }
@@ -196,6 +257,12 @@ public class EditAttributeDialog extends JDialog {
             if (validateInput()) {
                 attribute.setName(attributeNameField.getText());
                 attribute.setNamespace(attributeNamespaceField.getText());
+                if (SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED
+                        .equals(attributeNameFormatTextField.getText())) {
+                    attribute.setNameFormat(null); // unspecified is the default
+                } else {
+                    attribute.setNameFormat(attributeNameFormatTextField.getText());
+                }
                 if (anyValueRadio.isSelected()) {
                     attribute.setValue(null);
                     attribute.setAnyValue(true);
@@ -243,6 +310,20 @@ public class EditAttributeDialog extends JDialog {
                               JOptionPane.ERROR_MESSAGE);
             attributeNameField.requestFocus();
             return false;
+        }
+
+        if (nameFormatPanel.isEnabled() && nameFormatOtherRadioButton.isSelected()) {
+            String nameFormat = attributeNameFormatTextField.getText();
+
+            if (nameFormat == null || "".equals(nameFormat.trim())) {
+                JOptionPane.
+                showMessageDialog(this,
+                                  resources.getString("attributeNameFormatTextField.error.empty"),
+                                  resources.getString("attributeNameFormatTextField.error.title"),
+                                  JOptionPane.ERROR_MESSAGE);
+                attributeNameFormatTextField.requestFocus();
+                return false;
+            }
         }
 
         String value = attributeValueField.getText();

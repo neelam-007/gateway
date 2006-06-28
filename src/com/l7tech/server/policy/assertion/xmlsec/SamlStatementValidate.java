@@ -7,10 +7,8 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,18 +28,15 @@ public abstract class SamlStatementValidate {
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
     protected final RequestWssSaml requestWssSaml;
-    private ApplicationContext applicationContext;
 
 
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml the saml assertion that specifies constraints
-     * @param applicationContext the application context to allow access to components and services
      */
-    public SamlStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
+    public SamlStatementValidate(RequestWssSaml requestWssSaml) {
         this.requestWssSaml = requestWssSaml;
-        this.applicationContext = applicationContext;
     }
 
 
@@ -58,6 +53,5 @@ public abstract class SamlStatementValidate {
     protected abstract void validate(Document document,
                                      XmlObject statementObject,
                                      ProcessorResult wssResults, Collection validationResults);
-
 
 }

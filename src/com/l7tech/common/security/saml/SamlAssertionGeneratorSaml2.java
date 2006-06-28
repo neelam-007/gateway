@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
-import java.util.logging.Logger;
 import java.net.InetAddress;
 import java.math.BigInteger;
 
@@ -61,8 +60,6 @@ public class SamlAssertionGeneratorSaml2 {
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(SamlAssertionGeneratorSaml2.class.getName());
 
     /**
      * Create the statement depending on the SubjectStatement subclass and populating the subject
@@ -308,6 +305,39 @@ public class SamlAssertionGeneratorSaml2 {
             Map.Entry nsAndPrefix = (Map.Entry) nsIter.next();
             fixPrefixes(document.getDocumentElement(), (String) nsAndPrefix.getValue(), (String) nsAndPrefix.getKey());
         }
+        return document;
+    }
+
+    /**
+     * NOTE: Only required for Statements, not known types
+     *
+     * Ensure that any statements have the required xsi:type information.
+     * /
+    private Document fixTypes(Document document) {
+        Element documentElement = document.getDocumentElement();
+
+        // Add XSI Namespace
+        documentElement.setAttributeNS(
+                XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
+                XMLConstants.XMLNS_ATTRIBUTE + ":xsi",
+                XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);
+
+        // Add any xsi:type attributes.
+        String[] statementElements = {"AuthnStatement", "AuthzDecisionStatement", "AttributeStatement"};
+        for (int i = 0; i < statementElements.length; i++) {
+            String statementElementName = statementElements[i];
+            NodeList statementNodes = document.getElementsByTagNameNS(SamlConstants.NS_SAML2, statementElementName);
+            if (statementNodes != null) {
+                for (int n=0; n<statementNodes.getLength(); n++) {
+                    Element statementElement = (Element) statementNodes.item(n);
+                    statementElement.setAttributeNS(
+                            XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI,
+                            "xsi:type",
+                            SamlConstants.NS_SAML_PREFIX + ":" + statementElementName + "Type");
+                }
+            }
+        }
+
         return document;
     }
 

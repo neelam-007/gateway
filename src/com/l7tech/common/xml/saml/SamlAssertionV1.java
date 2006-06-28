@@ -4,6 +4,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.SignatureException;
 import java.security.PublicKey;
+import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.ArrayList;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
@@ -24,6 +27,7 @@ import org.apache.xmlbeans.XmlObject;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.KeyInfoElement;
@@ -32,6 +36,8 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.Validity;
+import com.ibm.xml.dsig.Transform;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import x0Assertion.oasisNamesTcSAML1.AssertionType;
 import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
 import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
@@ -59,6 +65,8 @@ public final class SamlAssertionV1 extends SamlAssertion {
     private X509Certificate issuerCertificate = null;
     private X509Certificate attestingEntity = null;
     private String assertionId = null;
+    private String uniqueId = null;
+    private String subjectId = null;
     private Calendar expires = null;
     private String nameIdentifierFormat;
     private String nameQualifier;
@@ -120,6 +128,7 @@ public final class SamlAssertionV1 extends SamlAssertion {
                 logger.warning(msg);
                 throw new SAXException(msg);
             }
+            subjectId = toString(subject);
             ConditionsType conditions = assertion.getConditions();
             if (conditions != null) {
                 expires = conditions.getNotOnOrAfter();
@@ -213,6 +222,14 @@ public final class SamlAssertionV1 extends SamlAssertion {
         return assertionId;
     }
 
+    public String getUniqueId() {
+        if (uniqueId == null) {
+            uniqueId = buildUniqueId();
+        }
+
+        return uniqueId;
+    }
+
     public boolean hasEmbeddedIssuerSignature() {
         return hasEmbeddedSignature;
     }
@@ -277,12 +294,23 @@ public final class SamlAssertionV1 extends SamlAssertion {
             PublicKey signingKey = signingCert.getPublicKey();
 
             // Validate signature
+            final boolean[] resolvedAssertionId = new boolean[1];
+            final boolean[] accessedEnveloping = new boolean[1];
             SignatureContext sigContext = new SignatureContext();
             sigContext.setIDResolver(new IDResolver() {
                 public Element resolveID(Document doc, String s) {
                     if (!s.equals(getAssertionId()))
                         throw new ResolveIdException("SAML signature contains signedinfo reference to unexpected element ID \"" + s + "\"");
+                    resolvedAssertionId[0] = true;
                     return assertionElement;
+                }
+            });
+            sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+                public Transform getTransform(String transform) throws NoSuchAlgorithmException {
+                    if (Transform.ENVELOPED.equals(transform)) {
+                        accessedEnveloping[0] = true;
+                    }
+                    return super.getTransform(transform);
                 }
             });
             Validity validity = sigContext.verify(signature, signingKey);
@@ -292,10 +320,20 @@ public final class SamlAssertionV1 extends SamlAssertion {
                 for (int i = 0; i < validity.getNumberOfReferences(); i++) {
                     msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
                 }
-                logger.warning(msg.toString());
                 throw new CausedSignatureException(msg.toString());
             }
 
+            if (!resolvedAssertionId[0]) {
+                throw new CausedSignatureException("SAML assertion signature does not reference assertion.");
+            }
+
+            if (!accessedEnveloping[0]) {
+                throw new CausedSignatureException("SAML assertion signature has invalid transform (must be enveloped).");
+            }
+
+            if (validity.getNumberOfReferences() != 1) {
+                throw new CausedSignatureException("SAML assertion signature has invalid number of references ("+validity.getNumberOfReferences()+").");
+            }
 
         } catch (TooManyChildElementsException e) {
             throw new CausedSignatureException(e);
@@ -320,6 +358,10 @@ public final class SamlAssertionV1 extends SamlAssertion {
         return authenticationMethod;
     }
 
+    public boolean isOneTimeUse() {
+        return false;
+    }
+
     public Calendar getExpires() {
         return expires;
     }
@@ -336,5 +378,62 @@ public final class SamlAssertionV1 extends SamlAssertion {
 
     public XmlObject getXmlBeansAssertionType() {
         return assertion;
+    }
+
+    private String buildUniqueId() {
+        String id;
+
+        if (hasEmbeddedIssuerSignature()) {
+            X509Certificate cert = getIssuerCertificate();
+            String samlIssuerSubjectDn = cert.getSubjectDN().getName();
+            try {
+                id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
+                        getAssertionId().getBytes("UTF-8"),
+                        samlIssuerSubjectDn.getBytes("UTF-8"),
+                        assertion.getSignature().getSignatureValue().getByteArrayValue()
+                }));
+            }
+            catch(UnsupportedEncodingException uee) {
+                throw new IllegalStateException("Support for UTF-8 is required.");
+            }
+        }
+        else {
+            try {
+                id = HexUtils.encodeBase64(HexUtils.getMd5Digest(new byte[][]{
+                        getAssertionId().getBytes("UTF-8"),
+                        assertion.getIssuer().getBytes("UTF-8"),
+                        BigInteger.valueOf(assertion.getIssueInstant().getTimeInMillis()).toByteArray(),
+                        subjectId.getBytes("UTF-8")
+                }));
+            }
+            catch(UnsupportedEncodingException uee) {
+                throw new IllegalStateException("Support for UTF-8 is required.");
+            }
+        }
+
+        return id;
+    }
+
+    private String toString(SubjectType subject) {
+        StringBuffer subjectBuffer = new StringBuffer();
+
+        if (subject != null) {
+            NameIdentifierType nameIdType = subject.getNameIdentifier();
+            if (nameIdType != null) {
+                if(nameIdType.getFormat() != null) {
+                    subjectBuffer.append(nameIdType.getFormat());
+                    subjectBuffer.append(" ");
+                }
+                if(nameIdType.getNameQualifier() != null) {
+                    subjectBuffer.append(nameIdType.getNameQualifier());
+                    subjectBuffer.append(" ");
+                }
+                if(nameIdType.getStringValue() != null) {
+                    subjectBuffer.append(nameIdType.getStringValue());
+                }
+            }
+        }
+
+        return subjectBuffer.toString().trim();
     }
 }

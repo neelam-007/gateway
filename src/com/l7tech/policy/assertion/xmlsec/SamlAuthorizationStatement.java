@@ -6,7 +6,7 @@ import java.io.Serializable;
  * The <code>SamlAuthorizationStatementAssertion</code> assertion describes
  * the SAML Authorization Statement constraints.
  */
-public class SamlAuthorizationStatement implements Serializable {
+public class SamlAuthorizationStatement implements Cloneable, Serializable {
     private String resource;
     private String action;
     private String actionNamespace;
@@ -33,5 +33,14 @@ public class SamlAuthorizationStatement implements Serializable {
 
     public void setActionNamespace(String actionNamespace) {
         this.actionNamespace = actionNamespace;
+    }
+
+    public Object clone() {
+        try {
+            return super.clone();
+        }
+        catch(CloneNotSupportedException cnse) {
+            throw new RuntimeException("Clone error");
+        }
     }
 }

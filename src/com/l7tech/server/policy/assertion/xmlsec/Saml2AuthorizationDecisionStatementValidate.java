@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import java.util.Collection;
 
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 
@@ -28,10 +27,9 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml     the saml statement assertion
-     * @param applicationContext the application context to allow access to components and services
      */
-    Saml2AuthorizationDecisionStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
-        super(requestWssSaml, applicationContext);
+    Saml2AuthorizationDecisionStatementValidate(RequestWssSaml requestWssSaml) {
+        super(requestWssSaml);
         authorizationStatementRequirements = requestWssSaml.getAuthorizationStatement();
         if (authorizationStatementRequirements == null) {
             throw new IllegalArgumentException("Authorization requirements have not been specified");
@@ -97,27 +95,31 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
 
         for (int i = 0; i < actionArray.length; i++) {
             ActionType actionType = actionArray[i];
-            if (!isNullOrEmpty(constraintsAction) || constraintsAction.equals(actionType.getStringValue())) {
-                if (isNullOrEmpty(constraintsAction)) {
-                    logger.finer("Matched empty Action");
-                } else {
-                    logger.finer("Matched Action " + constraintsAction);
-                }
 
-                if (!isNullOrEmpty(constraintsActionNameSpace)) {
-                    if (!constraintsActionNameSpace.equals(actionType.getNamespace())) {
-                        continue;
-                    }
-                    logger.finer("Matched Action Namespace" + constraintsActionNameSpace);
-                }
-                return;
+            if (isNullOrEmpty(constraintsAction)) {
+                logger.finer("Matched empty Action");
+            } else if(constraintsAction.equals(actionType.getStringValue())) {
+                logger.finer("Matched Action " + constraintsAction);
+            } else {
+                continue;
             }
+
+            if (isNullOrEmpty(constraintsActionNameSpace)) {
+                logger.finer("Matched empty Namespace");
+            } else if(constraintsActionNameSpace.equals(actionType.getNamespace())) {
+                logger.finer("Matched Action Namespace" + constraintsActionNameSpace);
+            } else {
+                continue;
+            }
+
+            // then this attribute matches our requirements
+            return;
         }
         if (!isNullOrEmpty(constraintsActionNameSpace)) {
-            validationResults.add(new SamlAssertionValidate.Error("No match action/namespace: {0}/{1}", authorizationDecisionStatementType.toString(),
+            validationResults.add(new SamlAssertionValidate.Error("No match for action/namespace: {0}/{1}", authorizationDecisionStatementType.toString(),
                                                                                        new Object[]{constraintsAction, constraintsActionNameSpace}, null));
         } else {
-            validationResults.add(new SamlAssertionValidate.Error("No match action: {0}", authorizationDecisionStatementType.toString(), constraintsAction, null));
+            validationResults.add(new SamlAssertionValidate.Error("No match for action: {0}", authorizationDecisionStatementType.toString(), constraintsAction, null));
         }
     }
 

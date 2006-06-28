@@ -363,6 +363,7 @@
             <test name="com.l7tech.server.policy.assertion.ServerWsiSamlAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.common.http.cache.HttpObjectCacheTest" haltonfailure="no" />
             <test name="com.l7tech.server.identity.AuthenticationResultTest" haltonfailure="no" />
+            <test name="com.l7tech.common.security.saml.Saml2ValidationTest" haltonfailure="no" />
 
 <!--
 ** add possibly-slow intensive nightly tests here **

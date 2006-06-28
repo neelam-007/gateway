@@ -2,6 +2,7 @@ package com.l7tech.common.security.saml;
 
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.KeyInfoDetails;
+import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -15,6 +16,7 @@ import com.l7tech.common.util.HexUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
@@ -187,6 +189,19 @@ public class SamlAssertionGenerator {
         });
 
         final Element signatureElement = template.getSignatureElement();
+        // Ensure that CanonicalizationMethod has required c14n subelement
+        Element signedInfoElement = template.getSignedInfoElement();
+        Element c14nMethod = XmlUtil.findFirstChildElementByName(signedInfoElement,
+                                                                 SoapUtil.DIGSIG_URI,
+                                                                 "CanonicalizationMethod");
+        DsigUtil.addInclusiveNamespacesToElement(c14nMethod);
+
+        // Ensure that any Transform has required c14n subelement
+        NodeList transforms = signedInfoElement.getElementsByTagNameNS(signedInfoElement.getNamespaceURI(), "Transform");
+        for (int i = 0; i < transforms.getLength(); ++i)
+            if (Transform.C14N_EXCLUSIVE.equals(((Element)transforms.item(i)).getAttribute("Algorithm")))
+                DsigUtil.addInclusiveNamespacesToElement((Element)transforms.item(i));
+
         if (options.getVersion()==Options.VERSION_1) {
             assertionDoc.getDocumentElement().appendChild(signatureElement);
         }

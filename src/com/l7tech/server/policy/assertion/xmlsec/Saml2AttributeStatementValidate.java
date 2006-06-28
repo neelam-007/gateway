@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.text.MessageFormat;
 
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlCursor;
@@ -12,6 +11,7 @@ import org.apache.xmlbeans.XmlCursor;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.saml.SamlConstants;
 
 import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
 import x0Assertion.oasisNamesTcSAML2.AttributeType;
@@ -30,10 +30,9 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml     the saml statemenet assertion
-     * @param applicationContext the applicaiton context to allo access to components and services
      */
-    Saml2AttributeStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
-        super(requestWssSaml, applicationContext);
+    Saml2AttributeStatementValidate(RequestWssSaml requestWssSaml) {
+        super(requestWssSaml);
         attribueStatementRequirements = requestWssSaml.getAttributeStatement();
         if (attribueStatementRequirements == null) {
             throw new IllegalArgumentException("Attribute requirements have not been specified");
@@ -80,11 +79,15 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
      */
     private boolean isAttributePresented(SamlAttributeStatement.Attribute expectedAttribute, AttributeType[] receivedAttributes, Collection validationResults) {
         String expectedName = expectedAttribute.getName();
-        String expectedNamespace = expectedAttribute.getNamespace();
+        String expectedNameFormat = expectedAttribute.getNameFormat();
+        if (expectedNameFormat == null || expectedNameFormat.length()==0) {
+            expectedNameFormat = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
+        }
+
         String expectedValue = expectedAttribute.getValue();
         boolean expectedAny = expectedAttribute.isAnyValue();
-        if (isEmpty(expectedName) || (!expectedAny && isEmpty(expectedValue))) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", null, null, null);
+        if (isEmpty(expectedName)) {
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name is null)", null, null, null);
             validationResults.add(result);
             logger.finer(result.toString());
             return false;
@@ -93,6 +96,22 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
         for (int i = 0; i < receivedAttributes.length; i++) {
             AttributeType receivedAttribute = receivedAttributes[i];
             if (expectedName.equals(receivedAttribute.getName())) {
+                String receivedNameFormat = receivedAttribute.getNameFormat();
+                if (receivedNameFormat == null) {
+                    receivedNameFormat = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
+                }
+
+                if (!expectedNameFormat.equals(receivedNameFormat)) {
+                    continue;
+                }
+
+                if (isEmpty(expectedValue) && receivedAttribute.getAttributeValueArray().length==0) {
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.log(Level.FINER, "Matched name {0} with no values presented.", new Object[]{expectedName});
+                    }
+                    return true;
+                }
+
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
                 for (int j = 0; j < values.length; j++) {
                     XmlObject presentedValue = values[j];

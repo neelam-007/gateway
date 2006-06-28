@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import java.util.Collection;
 import java.util.Arrays;
 
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 
@@ -29,10 +28,9 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml the saml statement assertion
-     * @param applicationContext the application context to allow access to components and services
      */
-    Saml2AuthenticationStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
-        super(requestWssSaml, applicationContext);
+    Saml2AuthenticationStatementValidate(RequestWssSaml requestWssSaml) {
+        super(requestWssSaml);
         authenticationStatementConstraints = requestWssSaml.getAuthenticationStatement();
         if (authenticationStatementConstraints == null) {
             throw new IllegalArgumentException("Authentication requirements have not been specified");

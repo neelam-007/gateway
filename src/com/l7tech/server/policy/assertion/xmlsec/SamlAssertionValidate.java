@@ -12,7 +12,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 import x0Assertion.oasisNamesTcSAML1.*;
@@ -37,29 +36,26 @@ public class SamlAssertionValidate {
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
     protected final RequestWssSaml requestWssSaml;
-    private ApplicationContext applicationContext;
     private Map validators = new HashMap();
 
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
      * @param requestWssSaml     the saml assertion that specifies constraints
-     * @param applicationContext the application context to allow access to components and services
      */
-    public SamlAssertionValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
+    public SamlAssertionValidate(RequestWssSaml requestWssSaml) {
         this.requestWssSaml = requestWssSaml;
-        this.applicationContext = applicationContext;
         if (requestWssSaml.getAuthenticationStatement() != null) {
-            validators.put(AuthenticationStatementType.class, new SamlAuthenticationStatementValidate(requestWssSaml, applicationContext));
-            validators.put(x0Assertion.oasisNamesTcSAML2.AuthnStatementType.class, new Saml2AuthenticationStatementValidate(requestWssSaml, applicationContext));
+            validators.put(AuthenticationStatementType.class, new SamlAuthenticationStatementValidate(requestWssSaml));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AuthnStatementType.class, new Saml2AuthenticationStatementValidate(requestWssSaml));
         }
         if (requestWssSaml.getAuthorizationStatement() != null) {
-            validators.put(AuthorizationDecisionStatementType.class, new SamlAuthorizationDecisionStatementValidate(requestWssSaml, applicationContext));
-            validators.put(x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType.class, new Saml2AuthorizationDecisionStatementValidate(requestWssSaml, applicationContext));
+            validators.put(AuthorizationDecisionStatementType.class, new SamlAuthorizationDecisionStatementValidate(requestWssSaml));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType.class, new Saml2AuthorizationDecisionStatementValidate(requestWssSaml));
         }
         if (requestWssSaml.getAttributeStatement() != null) {
-            validators.put(AttributeStatementType.class, new SamlAttributeStatementValidate(requestWssSaml, applicationContext));
-            validators.put(x0Assertion.oasisNamesTcSAML2.AttributeStatementType.class, new Saml2AttributeStatementValidate(requestWssSaml, applicationContext));
+            validators.put(AttributeStatementType.class, new SamlAttributeStatementValidate(requestWssSaml));
+            validators.put(x0Assertion.oasisNamesTcSAML2.AttributeStatementType.class, new Saml2AttributeStatementValidate(requestWssSaml));
         }
     }
 
@@ -79,14 +75,19 @@ public class SamlAssertionValidate {
             logger.finer(result.toString());
             return;
         }
-        try {
 
+        boolean acceptV1 = requestWssSaml.getVersion()==null || requestWssSaml.getVersion().intValue()!=2;
+        boolean acceptV2 = requestWssSaml.getVersion()!=null && requestWssSaml.getVersion().intValue()!=1;
+        Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+        now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
+
+        try {
             SamlAssertion assertion = null;
             XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken token = tokens[i];
-                if (token.getType() == SecurityTokenType.SAML_ASSERTION ||
-                    token.getType() == SecurityTokenType.SAML2_ASSERTION) {
+                if ((token.getType() == SecurityTokenType.SAML_ASSERTION && acceptV1)||
+                    (token.getType() == SecurityTokenType.SAML2_ASSERTION && acceptV2)) {
                     assertion = (SamlAssertion)token;
                     XmlObject xmlObject = assertion.getXmlBeansAssertionType();
                     boolean assertionMatch = false;
@@ -118,8 +119,8 @@ public class SamlAssertionValidate {
                     else if (xmlObject instanceof x0Assertion.oasisNamesTcSAML2.AssertionType) {
                         x0Assertion.oasisNamesTcSAML2.AssertionType assertionType =
                                 (x0Assertion.oasisNamesTcSAML2.AssertionType) xmlObject;
-                        validateSubjectConfirmation(assertionType.getSubject(), validationResults);
-                        validateConditions(assertionType.getConditions(), validationResults);
+                        validateConditions(assertionType.getConditions(), now, validationResults);
+                        validateSubjectConfirmation(assertionType.getSubject(), now, validationResults);
 
                         Collection statementList = new ArrayList();
                         statementList.addAll(Arrays.asList(assertionType.getAuthnStatementArray()));
@@ -140,6 +141,10 @@ public class SamlAssertionValidate {
                                 }
                             }
                         }
+
+                        // allow no statements if none are required
+                        if (!assertionMatch && validators.isEmpty())
+                            assertionMatch = true;
                     }
 
                     if (!assertionMatch) {
@@ -453,16 +458,18 @@ public class SamlAssertionValidate {
 
     /**
      * Validate the SAML assertion conditions for v2.x
+     *
+     * @return The overall expiry date if any.
      */
-    private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Collection validationResults) {
-        Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml, conditionsType, validationResults);
+    private void validateConditions(x0Assertion.oasisNamesTcSAML2.ConditionsType conditionsType, Calendar timeNow, Collection validationResults) {
+        Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml, conditionsType, timeNow, validationResults);
     }
 
     /**
      * Subject validation for 2.x
      */
-    private void validateSubjectConfirmation(x0Assertion.oasisNamesTcSAML2.SubjectType subjectType, Collection validationResults) {
-        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, validationResults);
+    private void validateSubjectConfirmation(x0Assertion.oasisNamesTcSAML2.SubjectType subjectType, Calendar timeNow, Collection validationResults) {
+        Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml, subjectType, timeNow, validationResults);
     }
 
     /**
