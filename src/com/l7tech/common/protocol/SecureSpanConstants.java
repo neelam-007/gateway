@@ -21,10 +21,12 @@ public class SecureSpanConstants {
     /** The MIME type of the X.509 certificate sent by the certificate discovery server. */
     public static final String CERTIFICATE_MIME_TYPE = "application/x-x509-ca-cert";
 
+    public static final String SSG_RESERVEDURI_PREFIX = "/ssg";
+
     /**
      * The filename portion of the URL of the message processing service on the Gateway.
      */
-    public static final String SSG_FILE = "/ssg/soap";
+    public static final String SSG_FILE = SSG_RESERVEDURI_PREFIX + "/soap";
 
     /**
      * The prefix of the filename portion of the URL of the message processing service that requires a service OID in the URL.
@@ -38,13 +40,13 @@ public class SecureSpanConstants {
      * The policy servlet is the service that client can use to look up the policy that must be followed in order
      * to access a particular server.
      */
-    public static final String POLICY_SERVICE_FILE = "/ssg/policy/disco";
+    public static final String POLICY_SERVICE_FILE = SSG_RESERVEDURI_PREFIX + "/policy/disco";
 
     /**
      * The filename portion fo the URL of the policy servlet for pre-3.2 Gateways and Bridges,
      * here for backward and forward compatibility.
      */
-    public static final String PRE32_POLICY_SERVICE_FILE = "/ssg/policy/disco.modulator";
+    public static final String PRE32_POLICY_SERVICE_FILE = SSG_RESERVEDURI_PREFIX + "/policy/disco.modulator";
 
     /**
      * The  filename portion of the URL of the certificate discovery server on the Gateway.
@@ -53,7 +55,7 @@ public class SecureSpanConstants {
      * the Gateway's CA cert over unencrypted HTTP, while remaining confident that it arrived unmodified and was
      * transmitted by someone able to prove that they know the client's password.
      */
-    public static final String CERT_PATH = "/ssg/policy/disco.modulator";
+    public static final String CERT_PATH = SSG_RESERVEDURI_PREFIX + "/policy/disco.modulator";
 
     /**
      * The filename portion of the URL of the certificate signing service on the Gateway.
@@ -64,7 +66,7 @@ public class SecureSpanConstants {
      * (with the proper username), this service will sign the CSR and return the new client certificate in
      * the response.
      */
-    public static final String CERT_REQUEST_FILE = "/ssg/csr";
+    public static final String CERT_REQUEST_FILE = SSG_RESERVEDURI_PREFIX + "/csr";
 
     /**
      * The filename portion of the URL of the Gateway's WSDL proxy service.
@@ -78,13 +80,13 @@ public class SecureSpanConstants {
      *
      * Example:  http://gateway.example.com:8080/ssg/wsdl?serviceoid=4653058
      */
-    public static final String WSDL_PROXY_FILE = "/ssg/wsdl";
+    public static final String WSDL_PROXY_FILE = SSG_RESERVEDURI_PREFIX + "/wsdl";
 
     /**
      * The filename portion of the URL for the Gateway's password changing service.
      * The Bridge calls this servlet to change the password of an internal account.
      */
-    public static final String PASSWD_SERVICE_FILE = "/ssg/passwd";
+    public static final String PASSWD_SERVICE_FILE = SSG_RESERVEDURI_PREFIX + "/passwd";
 
     /**
      * The filename portion of the URL for the Gateway's WS-Trust RequestSecurityToken service.
@@ -92,7 +94,7 @@ public class SecureSpanConstants {
      * The Bridge calls this servlet with a signed soap request for a new WS-SC SecurityContext,
      * or for a new SAML token.
      */
-    public static final String TOKEN_SERVICE_FILE = "/ssg/token";
+    public static final String TOKEN_SERVICE_FILE = SSG_RESERVEDURI_PREFIX + "/token";
 
     /**
      * The console compares this value with the value returned by IdentityAdmin.echoVersion()

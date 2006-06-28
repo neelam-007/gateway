@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.service.PublishedService;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,15 +33,6 @@ public class NonSoapServicePanel extends WizardStepPanel {
     }
 
     public String getDescription() {
-        /*return "Provide the SecureSpan Gateway basic information about the " +
-               "non-soap xml application you are about to publish.<p>" +
-               "The field \"Service Name\" lets you define a name to refer to " +
-               "this service in the SecureSpan Manager.<p>" +
-               "The field \"Target URL\" lets you define an HTTP URL to which " +
-               "the SecureSpan Gateway will forward the incoming requests to. " +
-               "This can later be changed by editing the resulting policy.<p>The field " +
-               "\"SSG URL\" lets you customize the incoming HTTP URL on the SecureSpan Gateway " +
-               "where clients will send their XML requests to consume this XML application.";*/
         return "Specify the connection and routing information for the non-SOAP application.";
     }
 
@@ -59,7 +50,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
             ssgUrl = ssgUrl.substring(0, pos);
             ssgUrl = ssgUrl + ":8080";
         }
-        prefixURL.setText(ssgUrl + PublishedService.ROUTINGURI_PREFIX);
+        prefixURL.setText(ssgUrl + "/");
     }
 
     private void bark(Component control, String msg) {
@@ -85,13 +76,18 @@ public class NonSoapServicePanel extends WizardStepPanel {
         }
         if (tmp.startsWith("/")) tmp = tmp.substring(1);
         ssgURLSuffix.setText(tmp);
-        if (tmp == null || tmp.length() < 1) {
+        if (tmp.length() < 1 || tmp.equals("")) {
             String msg = "Routing URI is not complete.";
             logger.info(msg);
             bark(ssgURLSuffix, msg);
             return false;
+        } else if (("/" + tmp).startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
+            String msg = "Routing URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
+            logger.info(msg);
+            bark(ssgURLSuffix, msg);
+            return false;
         } else {
-            routingURI = PublishedService.ROUTINGURI_PREFIX + tmp;
+            routingURI = "/" + tmp;
         }
         // check that this is a valid url
         try {

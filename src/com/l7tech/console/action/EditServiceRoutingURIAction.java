@@ -9,6 +9,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -109,18 +110,14 @@ public class EditServiceRoutingURIAction extends NodeAction {
             ssgUrl = ssgUrl.substring(0, pos);
             ssgUrl = ssgUrl + ":8080";
         }
-        String prefix = ssgUrl + PublishedService.ROUTINGURI_PREFIX;
+        String prefix = ssgUrl;
         String newURI = null;
         String previousRoutingURI = null;
         boolean updated = false;
         try {
             String existingRoutingURI = svc.getRoutingUri();
             previousRoutingURI = existingRoutingURI;
-            if (existingRoutingURI == null) existingRoutingURI = ""; //  should only happen for soap services
-            if (existingRoutingURI.length() > PublishedService.ROUTINGURI_PREFIX.length()) {
-                existingRoutingURI = existingRoutingURI.substring(PublishedService.ROUTINGURI_PREFIX.length());
-            }
-
+            if (existingRoutingURI == null) existingRoutingURI = "";
             newURI = (String)JOptionPane.showInputDialog(mw,
               "View or edit the SecureSpan Gateway URL that receives service requests:\n" + prefix,
               "View Gateway URL",
@@ -130,16 +127,19 @@ public class EditServiceRoutingURIAction extends NodeAction {
               existingRoutingURI);
 
             if (newURI != null && !newURI.equals(existingRoutingURI)) {
-                if (newURI.length() <= 0 && !svc.isSoap()) { // non-soap service cannot have null routing uri
+                if (newURI.length() <= 0 || newURI.equals("/")) { // non-soap service cannot have null routing uri
                     JOptionPane.showMessageDialog(mw, "Cannot set empty uri on non-soap service");
+                    return false;
+                } else if (newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
+                    JOptionPane.showMessageDialog(mw, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
                     return false;
                 } else {
                     if (newURI.length() <= 0) {
                         svc.setRoutingUri(null);
                     } else {
-                        if (newURI.startsWith("/")) newURI = newURI.substring(1);
-                        new URL(ssgUrl + PublishedService.ROUTINGURI_PREFIX + newURI);
-                        svc.setRoutingUri(PublishedService.ROUTINGURI_PREFIX + newURI);
+                        if (!newURI.startsWith("/")) newURI = "/" + newURI;
+                        new URL(ssgUrl + newURI);
+                        svc.setRoutingUri(newURI);
                     }
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
                     updated = true;
@@ -167,5 +167,4 @@ public class EditServiceRoutingURIAction extends NodeAction {
         }
         return false;
     }
-
 }

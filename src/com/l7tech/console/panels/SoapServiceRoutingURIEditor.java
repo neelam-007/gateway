@@ -11,6 +11,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,6 +21,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.Set;
 import java.util.HashSet;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * A dialog to view/edit the routing URI parameter of a soap web service.
@@ -98,7 +101,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         } else {
             noURIRadio.setSelected(false);
             customURIRadio.setSelected(true);
-            uriField.setText(existinguri.substring(PublishedService.ROUTINGURI_PREFIX.length()));
+            uriField.setText(existinguri);
         }
 
         rbMethodPost.setSelected(subject.isMethodAllowed("POST"));
@@ -116,7 +119,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         if (currentValue == null || currentValue.length() < 1) {
             urlvalue = ssgURL + "/ssg/soap";
         } else {
-            urlvalue = ssgURL + PublishedService.ROUTINGURI_PREFIX + currentValue;
+            urlvalue = ssgURL + currentValue;
         }
 
         routingURL.setText("<html><a href=\"" + urlvalue + "\">" + urlvalue + "</a></html>");
@@ -197,11 +200,30 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         String currentValue = null;
         if (customURIRadio.isSelected()) {
             currentValue = uriField.getText();
+            if (currentValue == null) {
+                currentValue = "";
+            }
+            if (!currentValue.startsWith("/")) {
+                currentValue = "/" + currentValue;
+                uriField.setText(currentValue);
+            }
         }
-        if (currentValue == null || currentValue.length() < 1) {
+        if (currentValue == null) {
             subject.setRoutingUri(null);
+        } else if (currentValue.length() < 2) {
+            JOptionPane.showMessageDialog(this, "URI cannot be empty");
+            return;
+        } else if (currentValue.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
+            JOptionPane.showMessageDialog(this, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
+            return;
         } else {
-            subject.setRoutingUri(PublishedService.ROUTINGURI_PREFIX + currentValue);
+            try {
+                new URL(ssgURL + currentValue);
+            } catch (MalformedURLException e) {
+                JOptionPane.showMessageDialog(this, ssgURL + currentValue + " is not a valid URL");
+                return;
+            }
+            subject.setRoutingUri(currentValue);
         }
         Set methods = new HashSet();
         if (rbMethodPost.isSelected()) methods.add("POST");

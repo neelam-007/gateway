@@ -32,11 +32,8 @@ import java.util.regex.Pattern;
  * @author alex
  */
 public class PublishedService extends NamedEntityImp {
-    // uncomment this if RMI is giving you problems with this class. todo, get to the bottom of this
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
-
-    public static final String ROUTINGURI_PREFIX = "/xml/";
 
     public static final String METHODNAMES_SOAP = "POST";
     public static final String METHODNAMES_REST = "POST,GET,PUT,DELETE,HEAD";

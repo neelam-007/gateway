@@ -59,14 +59,14 @@ public class HttpUriResolver extends NameValueServiceResolver {
         }
         if (originalUrl == null) {
             String uri = httpReqKnob.getRequestUri();
-            if (uri == null || !uri.startsWith("/xml")) uri = "";
+            if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
             logger.finest("returning uri " + uri);
             return uri;
         } else {
             try {
-                URL url = new URL( originalUrl );
+                URL url = new URL(originalUrl);
                 String uri = url.getFile();
-                if (!uri.startsWith("/xml")) uri = "";
+                if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
                 logger.finest("returning uri " + uri);
                 return uri;
             } catch (MalformedURLException e) {
