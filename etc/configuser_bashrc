@@ -1,0 +1,30 @@
+set -u
+set -e
+
+SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
+CONFWIZARD="/ssg/configwizard/ssgconfig.sh -console"
+
+echo "Welcome to the Secure Span Gateway"
+echo
+echo "This user account allows you to configure the appliance"
+echo
+
+isValid="n"
+while [ "$isValid" != y ]
+do
+        echo "What would you like to do?"
+        echo "1) Configure networking on this Secure Span Gateway appliance"
+        echo "2) Configure the Secure Span Gateway application on this appliance"
+        echo "3) Logout (no reboot)"
+        echo "4) Reboot the SSG appliance (apply the new configuration)"
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                1) clear; exec ${SYSWIZARD};;
+                2) clear; exec $CONFWIZARD};;
+                3) exit;;
+                4) reboot;;
+                *) isValid="n"; echo "$choice is not a valid selection";;
+        esac
+done
