@@ -63,7 +63,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             storeInput();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("Exception caught: " + e.getMessage());
         }
     }
 
@@ -172,7 +172,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         }
         promptList.add("Please make a selection [1] : ");
 
-        printText("Select the Interface you wish to configure. Current configurations are shown in ()" + getEolChar());
+        printText("Select the Interface you wish to configure." + getEolChar());
+        printText("Current configurations are shown in ()" + getEolChar());
 
         String whichChoice = getData(promptList, "1", choicesMap.keySet().toArray(new String[]{}));
 
@@ -191,9 +192,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         if (StringUtils.equalsIgnoreCase(bootProto, NetworkingConfigurationBean.STATIC_BOOT_PROTO)) {
 
-            whichConfig.setIpAddress(getIpAddress(whichConfig.getIpAddress(), whichConfig.getInterfaceName()));
-            whichConfig.setNetMask(getNetMask(whichConfig.getNetMask(), whichConfig.getInterfaceName()));
-            whichConfig.setGateway(getGateway(whichConfig.getGateway(), whichConfig.getInterfaceName()));
+            whichConfig.setIpAddress(getIpAddress(whichConfig));
+            whichConfig.setGateway(getGateway(whichConfig));
+            whichConfig.setNetMask(getNetMask(whichConfig));
             whichConfig.setNameServer(getNameServer(whichConfig.getNameServers(), whichConfig.getInterfaceName()));
         }
 
@@ -257,7 +258,10 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return nameServers;
     }
 
-    private String getGateway(String gateway, String interfaceName) throws IOException, WizardNavigationException {
+    private String getGateway(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
+
+        String interfaceName = whichConfig.getInterfaceName();
+        String gateway = whichConfig.getGateway();
 
         String prompt = "Enter the default gateway for interface \"" + interfaceName + "\"";
         if (StringUtils.isNotEmpty(gateway)) prompt += " [" + gateway + "] ";
@@ -278,7 +282,11 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
 
-    private String getIpAddress(String ipAddress, String interfaceName) throws IOException, WizardNavigationException {
+    private String getIpAddress(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
+        String interfaceName = netConfig.getInterfaceName();
+        String ipAddress = netConfig.getIpAddress();
+
+
         String prompt = "Enter the IP for interface \"" + interfaceName + "\"";
         if (StringUtils.isNotEmpty(ipAddress)) prompt += " [" + ipAddress + "] ";
         prompt += ": ";
@@ -298,7 +306,10 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return ipAddress;
     }
 
-    private String getNetMask(String netMask, String interfaceName) throws IOException, WizardNavigationException {
+    private String getNetMask(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
+        String interfaceName = netConfig.getInterfaceName();
+        String netMask = netConfig.getNetMask();
+
         String prompt = "Enter the netmask for interface \"" + interfaceName + "\"";
         if (StringUtils.isNotEmpty(netMask)) prompt += " [" + netMask + "] ";
         prompt += ": ";
@@ -320,9 +331,9 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return netMask;
     }
 
-    private String getBootProtocol(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
-        String whichInterface = whichConfig.getInterfaceName();
-        String bootProto = whichConfig.getBootProto();
+    private String getBootProtocol(NetworkingConfigurationBean.NetworkConfig netConfig) throws IOException, WizardNavigationException {
+        String whichInterface = netConfig.getInterfaceName();
+        String bootProto = netConfig.getBootProto();
 
         String defaultValue = (StringUtils.isEmpty(bootProto) || StringUtils.equalsIgnoreCase(NetworkingConfigurationBean.STATIC_BOOT_PROTO, bootProto)?"1":"2");
 
