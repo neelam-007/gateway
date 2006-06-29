@@ -55,7 +55,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             doDBInfoPrompts();
             storeInput();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
     }
 
@@ -245,7 +245,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 showErrorMessage("The Wizard cannot proceed without a valid database, please make a new selection");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
             return false;
         }
@@ -261,7 +261,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         try {
             username = doGetRootUsernamePrompt(defaultUsername == null?"root":defaultUsername);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
             return null;
         }
@@ -273,7 +273,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         try {
             passwd = doGetRootPasswordPrompt("");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
             return null;
         }
@@ -293,7 +293,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             input = getData(prompts, "n");
             return (input != null && (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
             return false;
         }
@@ -325,7 +325,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             return creds;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         } catch (WizardNavigationException e) {
             return null;
         }
