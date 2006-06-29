@@ -155,7 +155,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
         } catch (MalformedURLException e) {
             JOptionPane.showMessageDialog(mw, "Invalid URL " + prefix + newURI);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(mw, "Error while changing routinG URI " + e.getMessage());
+            JOptionPane.showMessageDialog(mw, "Error while changing routing URI " + e.getMessage());
         } finally {
             // go back to previous value if something was aborted
             if (!updated && svc != null) {
