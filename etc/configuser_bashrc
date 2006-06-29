@@ -22,7 +22,7 @@ do
 
         case $choice in
                 1) clear; exec ${SYSWIZARD};;
-                2) clear; exec $CONFWIZARD};;
+                2) clear; exec ${CONFWIZARD};;
                 3) exit;;
                 4) reboot;;
                 *) isValid="n"; echo "$choice is not a valid selection";;
