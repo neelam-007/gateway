@@ -32,24 +32,38 @@ mkdir %{buildroot}/etc/profile.d/
 mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/sysconfig
 mkdir %{buildroot}/etc/logrotate.d/
+mkdir -p %{buildroot}/home/ssgconfig/
 
-mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
+
+mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg
+mv %{buildroot}/ssg/bin/sysconfigscript-initd %{buildroot}/etc/init.d/ssgsysconfig
 mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
+mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
 
 # Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
 
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
-chmod 755 %{buildroot}/ssg/configwizard/*.sh
 
-%files 
+chmod 774 %{buildroot}/ssg/configwizard
+chmod -R 775 %{buildroot}/ssg/configwizard/lib
+chmod 774 %{buildroot}/ssg/configwizard/*
+chmod 775 %{buildroot}/ssg/configwizard/*.sh
+
+chmod 774 %{buildroot}/ssg/sysconfigwizard
+chmod -R 775 %{buildroot}/ssg/sysconfigwizard/lib
+chmod 774 %{buildroot}/ssg/sysconfigwizard/*
+chmod 775 %{buildroot}/ssg/sysconfigwizard/*.sh
+
+%files
 %defattr(-,root,root)
-/etc/init.d/ssg 
+/etc/init.d/ssg
+/etc/init.d/ssgsysconfig
 /etc/init.d/tcp_tune
 /etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh
@@ -60,6 +74,9 @@ chmod 755 %{buildroot}/ssg/configwizard/*.sh
 %config(noreplace) /ssg/tomcat/conf/*
 %config(noreplace) /ssg/*/jre/lib/security/java.security
 /ssg/*
+%defattr(-,ssgconfig,gateway)
+/home/ssgconfig/.bashrc
+
 
 
 %pre
@@ -68,6 +85,13 @@ if [ `grep ^gateway: /etc/passwd` ]; then
        #  echo "user/group gateway already exists"
 else
   adduser gateway
+fi
+
+if [ `grep ^ssgconfig: /etc/passwd` ]; then
+	echo -n ""
+       #  echo "user ssgconfig already exists"
+else
+  adduser -g gateway ssgconfig
 fi
 
 rebootparam=`grep kernel.panic /etc/sysctl.conf`
@@ -136,6 +160,19 @@ if [ "$1" = "0" ] ; then
         else
             echo -n ""
         fi
+
+        if [ `grep ^ssgconfig: /etc/passwd` ]; then
+            userdel -r ssgconfig
+        else
+            echo -n ""
+        fi
+
+        if [ `grep ^gateway: /etc/group` ]; then
+            groupdel gateway
+        else
+            echo -n ""
+        fi
+
 	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
 
 	if [ "$gettys" ]; then
