@@ -119,7 +119,11 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         if (currentValue == null || currentValue.length() < 1) {
             urlvalue = ssgURL + "/ssg/soap";
         } else {
-            urlvalue = ssgURL + currentValue;
+            if (currentValue.startsWith("/")) {
+                urlvalue = ssgURL + currentValue;
+            } else {
+                urlvalue = ssgURL + "/" + currentValue;
+            }
         }
 
         routingURL.setText("<html><a href=\"" + urlvalue + "\">" + urlvalue + "</a></html>");
