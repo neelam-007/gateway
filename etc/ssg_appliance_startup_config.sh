@@ -25,6 +25,7 @@ cd
 /sbin/chkconfig mysql on
 # Distro and msyql.com version
 /sbin/chkconfig ssg on
+/sbin/chkconfig ssgsysconfig on
 /sbin/chkconfig tcp_tune on
 /sbin/chkconfig tarari on
 
