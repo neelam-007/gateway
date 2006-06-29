@@ -4,8 +4,8 @@ use strict;
 use FileHandle;
 
 my @commandArray;
-my $hostnameToUse;
-my $ntpServerToUse;
+my $hostnameToUse = "";
+my $ntpServerToUse = "";
 my @filesToDelete;
 
 my $netConfigCommand = "/usr/sbin/netconfig";
@@ -42,14 +42,16 @@ for my $configFile(@netConfigFiles) {
 
 if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
 	my @hostnames = $inputFh->getlines();
-	chomp($hostnameToUse = $hostnames[0]);
+	$hostnameToUse = $hostnames[0];
+	chomp($hostnameToUse);
 	push (@filesToDelete, $inputFiles{'HOSTNAMEFILE'});
 	$inputFh->close();
 }
 
 if ($inputFh->open("<$inputFiles{'NTPFILE'}")) {
 	my @serverNames = $inputFh->getlines();
-	chomp($ntpServerToUse = $serverNames[0]);
+	$ntpServerToUse = $serverNames[0];
+	chomp($ntpServerToUse);
 	push (@filesToDelete, $inputFiles{'NTPFILE'});
 	$inputFh->close();
 }
@@ -61,28 +63,24 @@ for my $command (@commandArray) {
 
 #enable networking and setup hostname
 if ($outputFh->open(">$outputFiles{'NETFILE'}")) {
-	print $outputFh "NETWORKING=yes\n";
-	print $outputFh "HOSTNAME=$hostnameToUse\n";
-	push (@filesToDelete, $outputFiles{'NETFILE'});
+	$outputFh->print("NETWORKING=yes\n");
+	$outputFh->print("HOSTNAME=$hostnameToUse\n");
 	$outputFh->close();
 }
 
 #configure NTP
 if ($outputFh->open(">$outputFiles{'NTPCONFFILE'}")) {
-	print $outputFh "server $ntpServerToUse\n";
-	print $outputFh "restrict $ntpServerToUse mask 255.255.255.255 nomodify notrap noquery\n";
-	push (@filesToDelete, $outputFiles{'NTPCONFFILE'});
+	$outputFh->print("server $ntpServerToUse\n");
+	$outputFh->print("restrict $ntpServerToUse mask 255.255.255.255 nomodify notrap noquery\n");
 	$outputFh->close();
 }
 
 if ($outputFh->open(">$outputFiles{'STEPTICKERSFILE'}")) {
-    print $outputFh "$ntpServerToUse\n";
-    push (@filesToDelete, $outputFiles{'STEPTICKERSFILE'});
+    $outputFh->print("$ntpServerToUse\n");
     $outputFh->close();
 }
 
 my $backupFilename = "configfiles/sysconfigsettings.tgz";
-system("tar cfz $backupFilename @filesToDelete");
 unlink(@filesToDelete);
 
 
