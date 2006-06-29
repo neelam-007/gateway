@@ -2,7 +2,7 @@
 #
 # Utility for Secure Span Gateway Server system configuration
 #
-# chkconfig: - 99 01
+# chkconfig: 2345 09 91
 # description: Layer7's Secure Span Gateway System Configuration Utility
 
 # Source function library.
@@ -13,7 +13,7 @@ fi
 
 ssgconfigutil="perl $SSGHOME/sysconfigwizard/ssg_sys_config.pl"
 
-message="Applying Network Configuration"
+message="Applying Network (Re)Configuration"
 tries=3
 count=0
 USER=`whoami`
