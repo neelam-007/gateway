@@ -36,12 +36,13 @@ start() {
     return $RETVAL
 }
 
-# See how we were called.
+# See how we were called. Run this on both start and stop since this is a run and terminate script
 case "$1" in
   start)
 	start
 	;;
   stop)
+    start
 	;;
   restart)
 	;;
