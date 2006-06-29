@@ -90,7 +90,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
                       "Service already exists",
                       JOptionPane.ERROR_MESSAGE);
             } catch (Exception e) {
-                String msg = "Error while changing routinG URI ";
+                String msg = "Error while changing routing URI ";
                 logger.log(Level.INFO, msg, e);
                 JOptionPane.showMessageDialog(mw, msg + e.getMessage());
             }
