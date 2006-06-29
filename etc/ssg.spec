@@ -157,20 +157,14 @@ if [ "$1" = "0" ] ; then
 	# last uninstall
         if [ `grep ^gateway: /etc/passwd` ]; then
             userdel -r gateway
-        else
-            echo -n ""
         fi
 
         if [ `grep ^ssgconfig: /etc/passwd` ]; then
             userdel -r ssgconfig
-        else
-            echo -n ""
         fi
 
         if [ `grep ^gateway: /etc/group` ]; then
             groupdel gateway
-        else
-            echo -n ""
         fi
 
 	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
