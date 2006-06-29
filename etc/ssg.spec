@@ -1,6 +1,6 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.6m2
+Version: 3.6m3
 Release: 1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2005
@@ -146,9 +146,9 @@ fi
 
 %post
 
-echo "Layer 7 SecureSpan(tm) Gateway v4.0m4" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v3.6m3" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
-echo "Layer 7 SecureSpan(tm) Gateway v4.0m4" >/etc/issue.net
+echo "Layer 7 SecureSpan(tm) Gateway v3.6m3" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
 
 %preun
@@ -183,6 +183,8 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog 
+* Thu Jun 29 2006 CY
+- 3.6m3
 * Tue Jan 31 2006 JWT
 - install.pl is gone, other changes to track version 4.0
 * Tue Aug 04 2005 JWT
