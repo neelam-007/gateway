@@ -15,6 +15,8 @@ import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfig;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
@@ -491,6 +493,9 @@ public class PolicyApplicationContext extends ProcessingContext {
         Ssg ssg = getSsg();
         TokenServiceClient.SecureConversationSession s;
 
+        WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
+        TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig, getHttpClient());
+
         // TODO support WS-SC with Http basic to fed SSG with third-party token service?
         if (ssg.isFederatedGateway())
             prepareClientCertificate();
@@ -501,7 +506,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
             try {
-                s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(getHttpClient(), pw, url, ssg.getServerCertificateAlways());
+                s = tokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(pw, url, ssg.getServerCertificateAlways());
             } catch (TokenServiceClient.UnrecognizedServerCertException e) {
                 CurrentSslPeer.set(ssg);
                 throw new ServerCertificateUntrustedException(e);
@@ -512,7 +517,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
             try {
-                s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(getHttpClient(), url, timestampCreatedDate,
+                s = tokenServiceClient.obtainSecureConversationSessionUsingWssSignature(url, timestampCreatedDate,
                                                                                         ssg.getServerCertificateAlways(), ssg.getClientCertificate(),
                                                                                         ssg.getClientCertificatePrivateKey());
             } catch (TokenServiceClient.UnrecognizedServerCertException e) {

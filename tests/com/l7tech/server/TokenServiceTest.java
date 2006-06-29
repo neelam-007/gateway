@@ -14,6 +14,7 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -73,8 +74,9 @@ public class TokenServiceTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    private TokenServiceClient tokenServiceClient = new TokenServiceClient(WsTrustConfigFactory.getDefaultWsTrustConfig());
     public void testTokenServiceClient() throws Exception {
-        Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
+        Document requestMsg = tokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
                                                                     SecurityTokenType.WSSC_CONTEXT,
                                                                     WsTrustRequestType.ISSUE,
@@ -108,7 +110,7 @@ public class TokenServiceTest extends TestCase {
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
-        Object responseObj = TokenServiceClient.parseSignedRequestSecurityTokenResponse(responseMsg,
+        Object responseObj = tokenServiceClient.parseSignedRequestSecurityTokenResponse(responseMsg,
                                                                    TestDocuments.getDotNetServerCertificate(),
                                                                    TestDocuments.getDotNetServerPrivateKey(),
                                                                    TestDocuments.getDotNetServerCertificate());
@@ -125,7 +127,7 @@ public class TokenServiceTest extends TestCase {
         final PrivateKey subjectPrivateKey = TestDocuments.getDotNetServerPrivateKey();
         final X509Certificate issuerCertificate = TestDocuments.getDotNetServerCertificate();
         final PrivateKey issuerPrivateKey = TestDocuments.getDotNetServerPrivateKey();
-        Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(
+        Document requestMsg = tokenServiceClient.createRequestSecurityTokenMessage(
                 subjectCertificate,
                 subjectPrivateKey,
                 SecurityTokenType.SAML_ASSERTION,
@@ -163,7 +165,7 @@ public class TokenServiceTest extends TestCase {
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
-        Object responseObj = TokenServiceClient.parseSignedRequestSecurityTokenResponse(responseMsg,
+        Object responseObj = tokenServiceClient.parseSignedRequestSecurityTokenResponse(responseMsg,
                                                                                   subjectCertificate,
                                                                                   subjectPrivateKey,
                                                                                   issuerCertificate);
@@ -196,7 +198,7 @@ public class TokenServiceTest extends TestCase {
         SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
 
         // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
-        Document rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
+        Document rstDoc = tokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                                     WsTrustRequestType.VALIDATE,
                                                                                     usernameToken,
                                                                                     "http://samlpart.com/sso", null);
@@ -213,7 +215,7 @@ public class TokenServiceTest extends TestCase {
         InputStream respIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/tivoliFIM_RSTR.xml");
         final Document rstr = XmlUtil.parse(respIs);
 
-        Object got = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstr);
+        Object got = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstr);
 
         SamlAssertion saml = (SamlAssertion)got;
         assertEquals(saml.getNameIdentifierFormat(), SamlConstants.NAMEIDENTIFIER_EMAIL);

@@ -8,6 +8,9 @@ package com.l7tech.skunkworks.fim;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfig;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
+import com.l7tech.common.security.wstrust.WsTrustConfigException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
@@ -41,24 +44,19 @@ public class FimWorkshopTest extends TestCase {
     }
 
     /** Configure the token service client to use FIM-friendly namespace URIs. */
-    private void initFimNs() {
-        String wspNs = "http://schemas.xmlsoap.org/ws/2004/09/policy";
-        TokenServiceClient.setTscWspNs(wspNs);
-
-        String wstNs = "http://schemas.xmlsoap.org/ws/2005/02/trust";
-        TokenServiceClient.setTscWstNs(wstNs);
-
-        String wsaNs = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
-        TokenServiceClient.setTscWsaNs(wsaNs);
+    private WsTrustConfig initFimNs() throws WsTrustConfigException {
+        return WsTrustConfigFactory.getWsTrustConfigForNamespaceUri("http://schemas.xmlsoap.org/ws/2005/02/trust");
     }
 
     public void testReproClientRst() throws Exception {
-        initFimNs();
+        WsTrustConfig wstConfig = initFimNs();
+        TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
+
         Document clientRst = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_CLIENT_RST);
 
         String appliesTo = "http://s.example.com/services/EchoService";
         XmlSecurityToken usernameToken = new UsernameTokenImpl("testuser", "password".toCharArray());
-        Document got = TokenServiceClient.createRequestSecurityTokenMessage(null,
+        Document got = tokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                             WsTrustRequestType.VALIDATE,
                                                                             usernameToken,
                                                                             appliesTo,
@@ -75,10 +73,12 @@ public class FimWorkshopTest extends TestCase {
     }
 
     public void testParseClientRstr() throws Exception {
-        initFimNs();
+        WsTrustConfig wstConfig = initFimNs();
+        TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
+
         Document clientRstr = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_CLIENT_RSTR);
 
-        Object got = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(clientRstr);
+        Object got = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(clientRstr);
         assertNotNull(got);
         assertTrue(got instanceof SamlSecurityToken);
 
@@ -119,16 +119,18 @@ public class FimWorkshopTest extends TestCase {
     }
 
     public void testReproServerRst() throws Exception {
-        initFimNs();
+        WsTrustConfig wstConfig = initFimNs();
+        TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
+
         Document serverRst = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_SERVER_RST);
 
         // Get the saml assertion
         Document clientRstr = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_CLIENT_RSTR);
         SamlSecurityToken samlToken =
-                (SamlSecurityToken)TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(clientRstr);
+                (SamlSecurityToken)tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(clientRstr);
 
         String appliesTo = "http://s.example.com/services/EchoService";
-        Document got = TokenServiceClient.createRequestSecurityTokenMessage(null,
+        Document got = tokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                             WsTrustRequestType.VALIDATE,
                                                                             samlToken,
                                                                             appliesTo,
@@ -142,10 +144,12 @@ public class FimWorkshopTest extends TestCase {
     }
 
     public void testParseServerRstr() throws Exception {
-        initFimNs();
+        WsTrustConfig wstConfig = initFimNs();
+        TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
+
         Document serverRstr = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_SERVER_RSTR);
 
-        Object got = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(serverRstr);
+        Object got = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(serverRstr);
         assertNotNull(got);
         assertTrue(got instanceof UsernameToken);
 

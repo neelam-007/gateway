@@ -9,8 +9,11 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfig;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -56,7 +59,10 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
         Date timestampCreatedDate = tokenServerSsg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
         try {
-            s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg.getRuntime().getHttpClient(), null, url,
+            GenericHttpClient httpClient = tokenServerSsg.getRuntime().getHttpClient();
+            WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
+            TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig, httpClient);
+            s = tokenServiceClient.obtainSamlAssertion(null, url,
                                                        tokenServerSsg.getServerCertificateAlways(),
                                                        timestampCreatedDate,
                                                        tokenServerSsg.getClientCertificate(),

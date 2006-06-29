@@ -16,6 +16,8 @@ import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfig;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -150,7 +152,9 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 // Create RST
                 Document rstDoc = null;
                 GenericHttpRequestParams params = null;
-                rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
+                WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
+                TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
+                rstDoc = tokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                               assertion.getRequestType(),
                                                                               originalToken,
                                                                               assertion.getAppliesTo(),
@@ -170,7 +174,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 }
 
                 Document rstrDoc = response.getDocument();
-                rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
+                rstrObj = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
             }
             else {
                 fetched = false;

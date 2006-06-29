@@ -10,29 +10,39 @@ import java.util.*;
  */
 public final class WsTrustRequestType implements Serializable {
     private static final Map valueMap = new HashMap();
+
+    public static final String NAME_ISSUE = "Issue";
+    public static final String NAME_VALIDATE = "Validate";
+    public static final String NAME_RENEW = "Renew";
+    public static final String NAME_CANCEL = "Cancel";
+
     // TODO use NS factory to obtain the correct namespace URIs lazily
     public static final WsTrustRequestType ISSUE =
-            new WsTrustRequestType("Issue", new String[] {
+            new WsTrustRequestType(NAME_ISSUE, new String[] {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Issue", // TFIM beta
-                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Issue" // TFIM GA
+                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Issue", // TFIM GA
+                    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue",  // WS-SX 2005-12
             });
 
     public static final WsTrustRequestType VALIDATE =
-            new WsTrustRequestType("Validate", new String[] {
+            new WsTrustRequestType(NAME_VALIDATE, new String[] {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Validate", // TFIM beta
-                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Validate" // TFIM GA
+                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Validate", // TFIM GA
+                    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Validate",  // WS-SX 2005-12
             });
 
     public static final WsTrustRequestType RENEW =
-            new WsTrustRequestType("Renew", new String[] {
+            new WsTrustRequestType(NAME_RENEW, new String[] {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Renew", // TFIM beta
-                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Renew" // TFIM GA
+                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Renew", // TFIM GA
+                    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Renew",  // WS-SX 2005-12
             });
 
     public static final WsTrustRequestType CANCEL =
-            new WsTrustRequestType("Cancel", new String[] {
+            new WsTrustRequestType(NAME_CANCEL, new String[] {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Cancel", // TFIM beta
-                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Cancel" // TFIM GA
+                "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Cancel", // TFIM GA
+                    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Cancel",  // WS-SX 2005-12
             });
 
     private final String name;

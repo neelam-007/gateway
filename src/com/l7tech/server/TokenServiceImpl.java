@@ -309,26 +309,31 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             clientAddress = tcpKnob.getRemoteAddress();
         LoginCredentials creds = context.getCredentials();
 
+        // Generate the SAML assertion
+        SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
+        if (clientAddress != null) try {
+            options.setClientAddress(InetAddress.getByName(clientAddress));
+        } catch (UnknownHostException e) {
+            throw new TokenServiceException("Couldn't resolve client IP address", e);
+        }
+        options.setUseThumbprintForSignature(useThumbprintForSignature);
+        options.setSignAssertion(true);
+        if (SamlConstants.NS_SAML2.equals(samlNs)) {
+            options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
+        }
+        SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
+        SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);
+        Document signedAssertionDoc = generator.createAssertion(subjectStatement, options);
+
+        // Prepare the response
         StringBuffer responseXml = new StringBuffer(rstResponsePrefix((String)rstTypes.get(TRUSTNS), (String)rstTypes.get(SCNS)));
         try {
-            SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
-            if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
-            options.setUseThumbprintForSignature(useThumbprintForSignature);
-            options.setSignAssertion(true);
-            if (SamlConstants.NS_SAML2.equals(samlNs)) {
-                options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
-            }
-            SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
-            SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
-            SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);
-            Document signedAssertionDoc = generator.createAssertion(subjectStatement, options);
             responseXml.append(XmlUtil.nodeToString(signedAssertionDoc));
             responseXml.append(WST_RST_RESPONSE_INFIX);
             responseXml.append(WST_RST_RESPONSE_SUFFIX);
             Document response = XmlUtil.stringToDocument(responseXml.toString());
             return prepareSignedResponse(response);
-        } catch ( UnknownHostException e ) {
-            throw new TokenServiceException("Couldn't resolve client IP address", e);
         } catch ( IOException e ) {
             throw new TokenServiceException("Couldn't read signing key", e);
         } catch ( SAXException e ) {

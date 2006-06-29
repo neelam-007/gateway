@@ -6,6 +6,8 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfig;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -345,7 +347,9 @@ public class FederationPassiveClient {
             }
 
             // Parse
-            Object rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(soapWrapped);
+            WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
+            TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
+            Object rstrObj = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(soapWrapped);
             if (!(rstrObj instanceof SamlAssertion)) {
                 throw new InvalidTokenException("Unsupported token type");
             }

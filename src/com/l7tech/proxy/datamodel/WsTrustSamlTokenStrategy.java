@@ -12,6 +12,8 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.security.wstrust.WsTrustConfig;
+import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -126,7 +128,10 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
         try {
             while(s==null) {
                 try {
-                    s = TokenServiceClient.obtainSamlAssertion(httpClient, null, url,
+                    WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
+                    TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig, httpClient);
+
+                    s = tokenServiceClient.obtainSamlAssertion(null, url,
                                                                tokenServerCert,
                                                                null, // not overriding timestamp created date
                                                                null, // no client cert (not signing message)
