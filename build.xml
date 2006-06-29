@@ -1853,6 +1853,7 @@
 
         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
         <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
+        <property name="install.src.sysconfigwizard" value="${install.src.base}/sysconfigwizard"/>
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
@@ -1905,6 +1906,13 @@
 		</fileset>
 	</copy>
 
+    <!--copy the system config wizard -->
+    <copy todir="${install.src.sysconfigwizard}">
+        <fileset dir="${build.dir}/sysconfigwizard">
+			<include name="**/*"/>
+		</fileset>
+    </copy>
+
         <!-- Copy WAR file into position -->
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
 
@@ -1944,6 +1952,9 @@
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
                 <include name="snmpd.conf"/>
+                <include name="configuser_bashrc"/>
+                <include name="sysconfigscript-initd"/>
+
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
