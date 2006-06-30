@@ -45,6 +45,7 @@ import x0Assertion.oasisNamesTcSAML2.SubjectConfirmationType;
 import x0Assertion.oasisNamesTcSAML2.ConditionsType;
 import x0Assertion.oasisNamesTcSAML2.AssertionDocument;
 import x0Assertion.oasisNamesTcSAML2.KeyInfoConfirmationDataType;
+import x0Assertion.oasisNamesTcSAML2.DecisionType;
 
 /**
  * SAML Assertion Generator for SAML 2.x assertions.
@@ -162,6 +163,7 @@ public class SamlAssertionGeneratorSaml2 {
             AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
             AuthzDecisionStatementType atzStatement = assertionType.addNewAuthzDecisionStatement();
             atzStatement.setResource(as.getResource());
+            atzStatement.setDecision(DecisionType.PERMIT);
             if (as.getAction() != null) {
                 ActionType actionType = atzStatement.addNewAction();
                 actionType.setStringValue(as.getAction());

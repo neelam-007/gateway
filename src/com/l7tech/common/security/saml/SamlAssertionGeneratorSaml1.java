@@ -76,6 +76,7 @@ class SamlAssertionGeneratorSaml1 {
             AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
             AuthorizationDecisionStatementType atzStatement = assertionType.addNewAuthorizationDecisionStatement();
             atzStatement.setResource(as.getResource());
+            atzStatement.setDecision(DecisionType.PERMIT);
             if (as.getAction() != null) {
                 ActionType actionType = atzStatement.addNewAction();
                 actionType.setStringValue(as.getAction());
