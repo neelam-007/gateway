@@ -155,9 +155,11 @@ public class SearchWsdlDialog extends JDialog {
                             WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry((String) uddiURLcomboBox.getSelectedItem(), searchString, caseSensitiveCheckBox.isSelected());
                             return urls;
                         } catch (RemoteException e) {
+                            logger.log(Level.WARNING, "error finding wsdl urls from uddi", e);
                             JOptionPane.showMessageDialog(SearchWsdlDialog.this, "Remote Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);
                             return null;
                         } catch (FindException e) {
+                            logger.log(Level.WARNING, "error finding wsdl urls from uddi", e);
                             JOptionPane.showMessageDialog(SearchWsdlDialog.this, "Find Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);
                             return null;
                         }
