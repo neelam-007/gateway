@@ -7,6 +7,8 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -25,6 +27,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xmlsec.*;
 
@@ -182,7 +185,23 @@ public class AllAssertions {
         new WsiBspAssertion(),
         new WsiSamlAssertion(),
         new EchoRoutingAssertion(),
-        new WsspAssertion(),            
+        new WsspAssertion(),
+        new FaultLevel(),
+        new RequestWssSaml2(),
+        new SchemaValidation(),
+        new XslTransformation(),
+        new TimeRange(),
+        new RemoteIpRange(),
+        new AuditDetailAssertion(),
+        new XpathCredentialSource(),
+        new SamlBrowserArtifact(),
+        new HttpFormPost(),
+        new InverseHttpFormPost(),
+        new Operation(),
+        new HardcodedResponseAssertion(),
+        new ResponseWssSecurityToken(),
+        new MappingAssertion(),
+        new SetVariableAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {

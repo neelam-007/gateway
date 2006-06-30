@@ -293,7 +293,7 @@
             <test name="com.l7tech.common.http.ParameterizedStringTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.wsfederation.FederationPassiveClientTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.EncryptionUtilTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.xml.ElementCursorTest" haltonfailure="no"/> <!-- move to test.intensive after a release or so, when it's not so new -->
+            <test name="com.l7tech.server.GatewayFeatureSetsTest" haltonfailure="no"/>
 
             <!-- Move these WS-SecurityPolicy tests to test.intensive after a release or so, when it's no longer so new. -->
             <test name="com.l7tech.policy.wssp.WsspReaderTest" haltonfailure="no"/>
@@ -364,6 +364,7 @@
             <test name="com.l7tech.common.http.cache.HttpObjectCacheTest" haltonfailure="no" />
             <test name="com.l7tech.server.identity.AuthenticationResultTest" haltonfailure="no" />
             <test name="com.l7tech.common.security.saml.Saml2ValidationTest" haltonfailure="no" />
+            <test name="com.l7tech.common.xml.ElementCursorTest" haltonfailure="no"/>
 
 <!--
 ** add possibly-slow intensive nightly tests here **

@@ -8,6 +8,7 @@ package com.l7tech.server;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -21,6 +22,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -95,9 +97,19 @@ public class GatewayFeatureSets {
             ass(ExactlyOneAssertion.class),
             ass(OneOrMoreAssertion.class));
 
-        FeatureSet threatProtection =
-        fsr("set:Gateway:ThreatProtection", "All threat protection",
+        FeatureSet threatProtectionBasic =
+        fsr("set:Gateway:ThreatProtection", "Basic threat protection",
             ass(Regex.class),
+            ass(SqlAttackAssertion.class),
+            ass(OversizedTextAssertion.class),
+            ass(RequestSizeLimit.class),
+            ass(RequestWssReplayProtection.class),
+            ass(SchemaValidation.class),
+            ass(FaultLevel.class));
+
+        FeatureSet threatProtectionFull =
+        fsr("set:Gateway:ThreatProtection:All", "All threat protection",
+            fs(threatProtectionBasic),
             ass(SqlAttackAssertion.class),
             ass(OversizedTextAssertion.class),
             ass(RequestSizeLimit.class),
@@ -138,7 +150,8 @@ public class GatewayFeatureSets {
         FeatureSet xpath =
         fsr("set:Gateway:XML:XPath", "XPath features",
             ass(RequestXpathAssertion.class),
-            ass(ResponseXpathAssertion.class));
+            ass(ResponseXpathAssertion.class),
+            ass(Operation.class));
 
         FeatureSet xslt =
         fsr("set:Gateway:XML:XSLT", "XSLT features",
@@ -189,6 +202,12 @@ public class GatewayFeatureSets {
         fsr("set:Gateway:Creds:WSS:Basic", "Allow simple message-level credential sources",
             ass(WssBasic.class));
 
+        FeatureSet allCreds =
+        fsr("set:Gateway:Creds:All", "Allow all credential sources",
+            fs(httpCredsAll),
+            fs(wssBasicCreds),
+            ass(XpathCredentialSource.class));
+
         FeatureSet wssSimple =
         fsr("set:Gateway:WSS:Intermediate", "Allow simple WSS 1.0 message-level security assertions, not including SAML",
             fs(wssBasicCreds),
@@ -208,6 +227,7 @@ public class GatewayFeatureSets {
             ass(RequestWssReplayProtection.class),
             ass(RequestWssTimestamp.class),
             ass(ResponseWssTimestamp.class),
+            ass(ResponseWssSecurityToken.class),
             ass(RequestWssKerberos.class));
 
         FeatureSet attachments =
@@ -218,10 +238,15 @@ public class GatewayFeatureSets {
         fsr("set:Gateway:Auth:Users", "Allow SpecificUser authentication",
             ass(SpecificUser.class));
 
-        FeatureSet authAll =
-        fsr("set:Gateway:Auth:All", "Allow all user and group authentication",
+        FeatureSet authGroups =
+        fsr("set:Gateway:Auth:Groups", "Allow all user and group authentication",
             fs(authUsers),
             ass(MemberOfGroup.class));
+
+        FeatureSet authAll =
+        fsr("set:Gateway:Auth:All", "Allow all forms of authentication (including credential mapping)",
+            fs(authGroups),
+            ass(MappingAssertion.class));
 
         FeatureSet customAss =
         fsr("set:Gateway:CustomAssertion", "Allow CustomAssertionHolder to appear in a policy",
@@ -233,10 +258,13 @@ public class GatewayFeatureSets {
             ass(SecureConversation.class));
 
         FeatureSet wsTrust =
-        fsr("set:Gateway:WsTrust", "Enable WS-Trust-specific assertions",
+        fsr("set:Gateway:WsTrust", "Enable WS-Trust-specific and federated identity assertions",
             ass(WsTrustCredentialExchange.class),
             ass(WsFederationPassiveTokenExchange.class),
-            ass(WsFederationPassiveTokenRequest.class));
+            ass(WsFederationPassiveTokenRequest.class),
+            ass(SamlBrowserArtifact.class),
+            ass(HttpFormPost.class),
+            ass(InverseHttpFormPost.class));
 
         FeatureSet csrSrv =
         fsr("set:Gateway:CertAuthority", "Enable Certificate Authority service (CSRHandler)",
@@ -277,7 +305,6 @@ public class GatewayFeatureSets {
             ass(EchoRoutingAssertion.class),
             ass(HardcodedResponseAssertion.class));
 
-
         FeatureSet http =
         fsr("set:Gateway:HTTP", "Basic HTTP appliance", "HTTP routing + credential sources.  No authentication on its own.",
             fs(policy),
@@ -291,6 +318,13 @@ public class GatewayFeatureSets {
             fs(jmsFront),
             fs(jmsBack),
             fs(wssBasicCreds));
+
+        fsr("set:Gateway:BridgeSupport", "Features needed for best use of the SecureSpan Bridge",
+            fs(policySrv),
+            fs(csrSrv),
+            fs(wsdlProxy),
+            fs(passwdSrv),
+            fs(bra));
 
 
 
@@ -313,7 +347,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Gateway:XmlFirewall:Silver", "Intermediate \"Silver\" HTTP XML firewall",
             "HTTP-based XML firewall with authentication, message-level security, auditing, and attachments.",
             fs(xmlFirewallBronze),
-            fs(authAll),
+            fs(authGroups),
             fs(audit),
             fs(attachments),
             fs(wsdlProxy));
@@ -325,7 +359,7 @@ public class GatewayFeatureSets {
             fs(jms),
             fs(xml),
             fs(wss),
-            fs(threatProtection),
+            fs(threatProtectionBasic),
             fs(validationAll),
             fs(sts),
             fs(wsTrust),
@@ -351,12 +385,13 @@ public class GatewayFeatureSets {
             fs(email),
             fs(snmp),
             fs(customAss),
-            fs(threatProtection),
+            fs(threatProtectionFull),
             fs(validationAll),
             fs(availability),
             fs(sts),
             fs(wsTrust),
-            fs(experimental));
+            fs(experimental),
+            fs(allCreds));
 
     }
 

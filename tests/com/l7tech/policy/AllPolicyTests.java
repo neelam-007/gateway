@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.AssertionTest;
 import com.l7tech.policy.validator.DefaultPolicyValidatorTest;
+import com.l7tech.policy.wsp.WspConstantsTest;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -30,7 +31,8 @@ public class AllPolicyTests extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.addTest(new TestSuite(AssertionTest.class));
-    	suite.addTest(new TestSuite(SamplePolicyTest.class));
+        suite.addTest(new TestSuite(WspConstantsTest.class));
+        suite.addTest(new TestSuite(SamplePolicyTest.class));
         suite.addTest(new TestSuite(WspReaderTest.class));
         suite.addTest(new TestSuite(WspWriterTest.class));
         suite.addTest(new TestSuite(CompositeAssertionTest.class));

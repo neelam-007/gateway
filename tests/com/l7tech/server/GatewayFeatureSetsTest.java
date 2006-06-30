@@ -35,6 +35,7 @@ public class GatewayFeatureSetsTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    /** Ensures that the feature sets tree is internally consistent and assembles itself without error, and emits wiki doc. */
     public void testEmitWikiDocs() throws Exception {
         Map<String, GatewayFeatureSets.FeatureSet> profiles = GatewayFeatureSets.getProductProfiles();
         Map<String, GatewayFeatureSets.FeatureSet> roots = GatewayFeatureSets.getRootFeatureSets();
