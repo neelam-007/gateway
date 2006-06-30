@@ -234,9 +234,6 @@ public class SamlAssertionGeneratorSaml2 {
 
             X509Certificate cert = (X509Certificate)keyInfo;
             if (subjectStatement.isUseThumbprintForSubject()) {
-
-                System.out.println("Using thumbprint");
-
                 Node node = kicdt.getDomNode();
                 NamespaceFactory nsf = new NamespaceFactory();
                 KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert),
@@ -244,9 +241,6 @@ public class SamlAssertionGeneratorSaml2 {
                                          SoapUtil.VALUETYPE_X509_THUMB_SHA1);
                 kid.createAndAppendKeyInfoElement(nsf, node);
             } else {
-
-                System.out.println("Not using thumbprint");
-
                 KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
                 X509DataType x509Data = keyInfoType.addNewX509Data();
                 x509Data.addX509Certificate(cert.getEncoded());
