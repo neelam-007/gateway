@@ -73,7 +73,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion implem
     }
 
     /**
-     * Create normal assertion instance.  This is invoked reflectively by the ServerPolicyFactory.
+     * Create normal assertion instance.
      *
      * @param data             assertion bean instance configuring the constraints to check.  Must not be null.
      * @param springContext    spring context for getting access to server beans.  Must not be null.
