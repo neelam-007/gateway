@@ -6,7 +6,7 @@
 package com.l7tech.common;
 
 /**
- * Typesafe enumeration for features enabled by the LicenseManager.
+ * Represents features enabled by the LicenseManager.
  */
 public final class Feature {
     public static final Feature MESSAGEPROCESSOR = new Feature("MessageProcessor");
