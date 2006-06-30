@@ -303,9 +303,10 @@ public class ServiceAdminImpl implements ServiceAdmin {
         try {
             UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
             return uddiAgent.getWsdlByServiceName(uddiURL, namePattern, caseSensitive);
-        }
-        catch(UddiAgentException uae) {
-            throw new FindException("Error searching UDDI registry '"+uae.getMessage()+"'.");
+        } catch (UddiAgentException e) {
+            String msg = "Error searching UDDI registry";
+            logger.log(Level.WARNING, msg);
+            throw new FindException(msg, e);
         }
     }
 
