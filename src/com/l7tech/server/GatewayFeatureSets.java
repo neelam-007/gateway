@@ -6,23 +6,23 @@
 package com.l7tech.server;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -85,216 +85,180 @@ public class GatewayFeatureSets {
         // Declare "twig" feature sets
         // (feature sets that don't include other feature sets, totally useless on their own, but not
         //  a "leaf" feature set like a single assertion or servlet)
+        // Naming convention: set:all:lowercase
         //
         FeatureSet core =
-        fsr("set:Gateway:Core", "Core features, without which nothing else will work", "Always needed",
+        fsr("set:core", "Core features, without which nothing else will work",
+            "Always needed",
             ass(AllAssertion.class),
             ass(UnknownAssertion.class));
 
         FeatureSet branching =
-        fsr("set:Gateway:Policy:Branching", "Support for branching policies",
+        fsr("set:policy:branching", "Support for branching policies",
             ass(AllAssertion.class),
             ass(ExactlyOneAssertion.class),
             ass(OneOrMoreAssertion.class));
 
-        FeatureSet threatProtectionBasic =
-        fsr("set:Gateway:ThreatProtection", "Basic threat protection",
-            ass(Regex.class),
-            ass(SqlAttackAssertion.class),
-            ass(OversizedTextAssertion.class),
-            ass(RequestSizeLimit.class),
-            ass(RequestWssReplayProtection.class),
-            ass(SchemaValidation.class),
-            ass(FaultLevel.class));
-
-        FeatureSet threatProtectionFull =
-        fsr("set:Gateway:ThreatProtection:All", "All threat protection",
-            fs(threatProtectionBasic),
-            ass(SqlAttackAssertion.class),
-            ass(OversizedTextAssertion.class),
-            ass(RequestSizeLimit.class),
-            ass(RequestWssReplayProtection.class),
-            ass(SchemaValidation.class));
-
-        FeatureSet validationBasic =
-        fsr("set:Gateway:Validation:Basic", "Basic message validation features",
-            ass(RequestSizeLimit.class),
-            ass(OversizedTextAssertion.class));
-
-        FeatureSet validationAll =
-        fsr("set:Gateway:Validation:All", "All message validation features",
-            fs(validationBasic),
-            ass(WsiBspAssertion.class),
-            ass(WsiSamlAssertion.class));
-
-        FeatureSet audit =
-        fsr("set:Gateway:Audit", "Auditing features",
-            ass(AuditAssertion.class),
-            ass(AuditDetailAssertion.class));
-
-        FeatureSet snmp =
-        fsr("set:Gateway:SNMP", "SNMP features",
-            srv(SnmpQueryServlet.class),
-            ass(SnmpTrapAssertion.class));
-
-        FeatureSet email =
-        fsr("set:Gateway:Email", "Email features",
-            ass(EmailAlertAssertion.class));
-
-        FeatureSet availability =
-        fsr("set:Gateway:Availability", "Service availability features",
-            ass(TimeRange.class),
-            ass(RemoteIpRange.class),
-            ass(ThroughputQuota.class));
-
-        FeatureSet xpath =
-        fsr("set:Gateway:XML:XPath", "XPath features",
-            ass(RequestXpathAssertion.class),
-            ass(ResponseXpathAssertion.class),
-            ass(Operation.class));
-
-        FeatureSet xslt =
-        fsr("set:Gateway:XML:XSLT", "XSLT features",
-            ass(XslTransformation.class));
-
-        FeatureSet schema =
-        fsr("set:Gateway:XML:Schema", "Schema validation features",
-            ass(SchemaValidation.class));
-
-        FeatureSet xml =
-        fsr("set:Gateway:XML", "All XML features",
-            fs(xpath),
-            fs(xslt),
-            fs(schema));
-
-        FeatureSet bra =
-        fsr("set:Gateway:BRA", "Bridge Routing Assertion",
-            ass(BridgeRoutingAssertion.class));
-
-        FeatureSet httpFront =
-        fsr("set:Gateway:HTTP:Front", "Allow incoming HTTP messages",
-            srv(SoapMessageProcessingServlet.class, "service:HttpMessageProcessor"));
-
-        FeatureSet httpBack =
-        fsr("set:Gateway:HTTP:Back", "Allow outgoing HTTP messages",
-            ass(HttpRoutingAssertion.class));
-
-        FeatureSet jmsFront =
-        fsr("set:Gateway:JMS:Front", "Allow incoming JMS messages",
-            misc("service:JmsMessageProcessor", "JMS message processor"));
-
-        FeatureSet jmsBack =
-        fsr("set:Gateway:JMS:Back", "Allow outgoing JMS messages",
-            ass(JmsRoutingAssertion.class));
-
-        FeatureSet httpCredsSimple =
-        fsr("set:Gateway:Creds:HTTP:Simple", "Allow simple HTTP-based credential sources (not including SSL or SPNEGO)",
-            ass(HttpBasic.class),
-            ass(HttpDigest.class));
-
-        FeatureSet httpCredsAll =
-        fsr("set:Gateway:Creds:HTTP:All", "Allow all HTTP-based credential sources (including SSL and SPNEGO)",
-            fs(httpCredsSimple),
-            ass(HttpNegotiate.class),
-            ass(SslAssertion.class));
-
-        FeatureSet wssBasicCreds =
-        fsr("set:Gateway:Creds:WSS:Basic", "Allow simple message-level credential sources",
-            ass(WssBasic.class));
-
-        FeatureSet allCreds =
-        fsr("set:Gateway:Creds:All", "Allow all credential sources",
-            fs(httpCredsAll),
-            fs(wssBasicCreds),
-            ass(XpathCredentialSource.class));
-
-        FeatureSet wssSimple =
-        fsr("set:Gateway:WSS:Intermediate", "Allow simple WSS 1.0 message-level security assertions, not including SAML",
-            fs(wssBasicCreds),
-            ass(RequestWssX509Cert.class),
-            ass(RequestWssIntegrity.class),
-            ass(RequestWssConfidentiality.class),
-            ass(ResponseWssIntegrity.class),
-            ass(ResponseWssConfidentiality.class),
-            ass(WssTimestamp.class));
-
-        FeatureSet wss =
-        fsr("set:Gateway:WSS:All", "Allow all WSS message-level-security assertions including SAML and EncryptedUsernameToken",
-            fs(wssSimple),
-            ass(RequestWssSaml.class),
-            ass(RequestWssSaml2.class),
-            ass(EncryptedUsernameTokenAssertion.class),
-            ass(RequestWssReplayProtection.class),
-            ass(RequestWssTimestamp.class),
-            ass(ResponseWssTimestamp.class),
-            ass(ResponseWssSecurityToken.class),
-            ass(RequestWssKerberos.class));
-
-        FeatureSet attachments =
-        fsr("set:Gateway:SwA", "Allow SOAP-with-attachments assertion",
-            ass(RequestSwAAssertion.class));
-
-        FeatureSet authUsers =
-        fsr("set:Gateway:Auth:Users", "Allow SpecificUser authentication",
-            ass(SpecificUser.class));
-
-        FeatureSet authGroups =
-        fsr("set:Gateway:Auth:Groups", "Allow all user and group authentication",
-            fs(authUsers),
-            ass(MemberOfGroup.class));
-
-        FeatureSet authAll =
-        fsr("set:Gateway:Auth:All", "Allow all forms of authentication (including credential mapping)",
-            fs(authGroups),
-            ass(MappingAssertion.class));
-
-        FeatureSet customAss =
-        fsr("set:Gateway:CustomAssertion", "Allow CustomAssertionHolder to appear in a policy",
-            ass(CustomAssertionHolder.class));
-
-        FeatureSet sts =
-        fsr("set:Gateway:STS", "Enable built-in Security Token Service",
+        FeatureSet wssc =
+        fsr("set:wssc", "WS-SecureConversation support",
+            "Requires enabling the STS",
             srv(TokenServiceServlet.class),
             ass(SecureConversation.class));
 
-        FeatureSet wsTrust =
-        fsr("set:Gateway:WsTrust", "Enable WS-Trust-specific and federated identity assertions",
-            ass(WsTrustCredentialExchange.class),
-            ass(WsFederationPassiveTokenExchange.class),
-            ass(WsFederationPassiveTokenRequest.class),
-            ass(SamlBrowserArtifact.class),
-            ass(HttpFormPost.class),
-            ass(InverseHttpFormPost.class));
+        FeatureSet httpFront =
+        fsr("set:http:front", "Allow incoming HTTP messages",
+            srv(SoapMessageProcessingServlet.class, "service:HttpMessageProcessor"));
 
-        FeatureSet csrSrv =
-        fsr("set:Gateway:CertAuthority", "Enable Certificate Authority service (CSRHandler)",
-            srv(CSRHandler.class));
+        FeatureSet httpBack =
+        fsr("set:http:back", "Allow outgoing HTTP messages",
+            ass(HttpRoutingAssertion.class));
 
-        FeatureSet passwdSrv =
-        fsr("set:Gateway:PasswdChange", "Enable password-change service",
-            srv(PasswdServlet.class));
+        FeatureSet jmsFront =
+        fsr("set:jms:front", "Allow incoming JMS messages",
+            misc("service:JmsMessageProcessor", "JMS message processor"));
 
-        FeatureSet policySrv =
-        fsr("set:Gateway:PolicyService", "Enable policy-discovery service",
-            srv(PolicyServlet.class));
+        FeatureSet jmsBack =
+        fsr("set:jms:back", "Allow outgoing JMS messages",
+            ass(JmsRoutingAssertion.class));
 
-        FeatureSet wsdlProxy =
-        fsr("set:Gateway:WsdlProxy", "Enable WSDL proxy service",
+        FeatureSet ssb =
+        fsr("set:ssb", "Features needed for best use of the SecureSpan Bridge",
+            srv(CSRHandler.class),
+            srv(PasswdServlet.class),
+            srv(PolicyServlet.class),
             srv(WsdlProxyServlet.class));
 
+        FeatureSet snmp =
+        fsr("set:snmp", "SNMP features",
+            srv(SnmpQueryServlet.class),
+            ass(SnmpTrapAssertion.class));
+
         FeatureSet experimental =
-        fsr("set:Gateway:Experimental", "Enable experimental features",
+        fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during developement, and that will be moved or renamed before shipping.",
             ass(WsspAssertion.class));
-
 
         //
         // Declare "building block" feature sets
         // (feature sets built out of "twig" feature sets, and which may include other building block feature sets,
         //  but which on their own may still be useless or of little value as a product.)
+        // Naming convention:  set:CamelCaseCategory:LevelName
         //
-        FeatureSet policy =
-        fsr("set:Gateway:Policy", "Support for complex policy logic",
+
+        // Access control
+        FeatureSet accessAccel =
+        fsr("set:AccessControl:Accel", "SecureSpan Accelerator access control",
+            "User and group auth, and basic HTTP, SSL, and XML credential sources.  No WSS message-level security.",
+            ass(SpecificUser.class),
+            ass(MemberOfGroup.class),
+            ass(HttpBasic.class),
+            ass(HttpDigest.class),
+            ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
+            ass(XpathCredentialSource.class));
+
+        FeatureSet accessFw =
+        fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
+            "Adds WSS message-level security (including WS-SecureConversation) and identity mapping",
+            fs(accessAccel),
+            fs(wssc),
+            ass(MappingAssertion.class),
+            ass(WssBasic.class),
+            ass(RequestWssX509Cert.class),
+            ass(RequestWssSaml.class),
+            ass(RequestWssSaml2.class),
+            ass(EncryptedUsernameTokenAssertion.class),
+            ass(WsTrustCredentialExchange.class),
+            ass(SamlBrowserArtifact.class));
+
+        FeatureSet accessGateway =
+        fsr("set:AccessControl:Gateway", "SecureSpan Gateway access control",
+            "Adds SSL client certs (although currently this comes with our SSL support and can't be disabled)",
+            fs(accessFw),
+            ass(SslAssertion.class)); // TODO enable client cert here exclusively (when it is possible to do so)
+
+        // XML Security
+        FeatureSet xmlsecAccel =
+        fsr("set:XmlSec:Accel", "SecureSpan Accelerator XML security",
+            "Element signature and encryption using WSS",
+            ass(RequestWssIntegrity.class),
+            ass(RequestWssConfidentiality.class),
+            ass(ResponseWssIntegrity.class),
+            ass(ResponseWssConfidentiality.class),
+            ass(ResponseWssTimestamp.class));
+
+        FeatureSet xmlsecFw =
+        fsr("set:XmlSec:Firewall", "SecureSpan Firewall XML security",
+            "Adds timestamp and token manipulation",
+            fs(xmlsecAccel),
+            ass(RequestWssReplayProtection.class),
+            ass(RequestWssTimestamp.class),
+            ass(WssTimestamp.class),
+            ass(ResponseWssSecurityToken.class));
+
+        // Message Validation/Transform
+        FeatureSet validationAccel =
+        fsr("set:Validation:Accel", "SecureSpan Accelerator message validation and transformation",
+            "XPath, Schema, XSLT, and SOAP operation detector",
+            ass(RequestXpathAssertion.class),
+            ass(ResponseXpathAssertion.class),
+            ass(Operation.class),
+            ass(SchemaValidation.class),
+            ass(XslTransformation.class));
+
+        FeatureSet validationFw =
+        fsr("set:Validation:Firewall", "SecureSpan Firewall message validation and transformation",
+            "Adds regex and attachments",
+            fs(validationAccel),
+            ass(RequestSwAAssertion.class),
+            ass(Regex.class),
+            ass(WsiBspAssertion.class),
+            ass(WsiSamlAssertion.class));
+
+        FeatureSet validationGateway =
+        fsr("set:Validation:Gateway", "SecureSpan Gateway message validation and transformation",
+            "Adds HTTP form/MIME conversion assertions",
+            fs(validationFw),
+            ass(HttpFormPost.class),
+            ass(InverseHttpFormPost.class));
+
+        // Message routing
+        FeatureSet routingAccel =
+        fsr("set:Routing:Accel", "SecureSpan Accelerator message routing",
+            "HTTP and hardcoded responses.",
+            fs(httpFront),
+            fs(httpBack),
+            ass(HardcodedResponseAssertion.class),
+            ass(EchoRoutingAssertion.class));
+
+        FeatureSet routingGateway =
+        fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",
+            "Adds BRA and JMS routing.",
+            fs(routingAccel),
+            fs(jmsFront),
+            fs(jmsBack),
+            ass(BridgeRoutingAssertion.class));
+
+        // Service availability
+        FeatureSet availabilityAccel =
+        fsr("set:Availability:Accel", "SecureSpan Accelerator service availability",
+            "Time/Day, IP range, and throughput qutoa",
+            ass(TimeRange.class),
+            ass(RemoteIpRange.class),
+            ass(ThroughputQuota.class));
+
+        // Logging/auditing and alerts
+        FeatureSet auditAccel =
+        fsr("set:Audit:Accel", "SecureSpan Accelerator logging/auditing and alerts",
+            "Auditing, email and SNMP traps",
+            fs(snmp),
+            ass(AuditAssertion.class),
+            ass(AuditDetailAssertion.class),
+            ass(EmailAlertAssertion.class));
+
+        // Policy logic
+        FeatureSet policyAccel =
+        fsr("set:Policy:Accel", "SecureSpan Accelerator complex policy logic",
+            "Branches, comments, comparisons, variables, and echoing",
             fs(core),
             fs(branching),
             ass(CommentAssertion.class),
@@ -305,96 +269,98 @@ public class GatewayFeatureSets {
             ass(EchoRoutingAssertion.class),
             ass(HardcodedResponseAssertion.class));
 
-        FeatureSet http =
-        fsr("set:Gateway:HTTP", "Basic HTTP appliance", "HTTP routing + credential sources.  No authentication on its own.",
-            fs(policy),
-            fs(httpFront),
-            fs(httpBack),
-            fs(httpCredsAll));
+        FeatureSet threatIps =
+        fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
+            "Stealth fault, size limits, document structure threats, schema validation, and XTM (when it's done)",
+            ass(FaultLevel.class),
+            ass(OversizedTextAssertion.class),
+            ass(RequestSizeLimit.class),
+            ass(SchemaValidation.class)); // TODO Assertion for XTM Signature goes here, as soon as it exists
 
-        FeatureSet jms =
-        fsr("set:Gateway:JMS", "Basic JMS appliance", "JMS routing + credential sources.  No authentication on its own.",
-            fs(policy),
-            fs(jmsFront),
-            fs(jmsBack),
-            fs(wssBasicCreds));
+        FeatureSet threatAccel =
+        fsr("set:Threats:Accel", "SecureSpan Accelerator threat protection",
+            "Just document structure threats and schema validation",
+            ass(OversizedTextAssertion.class),
+            ass(SchemaValidation.class));
 
-        fsr("set:Gateway:BridgeSupport", "Features needed for best use of the SecureSpan Bridge",
-            fs(policySrv),
-            fs(csrSrv),
-            fs(wsdlProxy),
-            fs(passwdSrv),
-            fs(bra));
+        FeatureSet threatFw =
+        fsr("set:Threats:Firewall", "SecureSpan Firewall threat protection",
+            "Both of the above, plus adds regex, SQL attacks, and cluster-wide replay protection",
+            fs(threatIps),
+            fs(threatAccel),
+            ass(Regex.class),
+            ass(SqlAttackAssertion.class),
+            ass(RequestWssReplayProtection.class));
 
-
+        // Custom assertions
+        FeatureSet customFw =
+        fsr("set:Custom:Firewall", "SecureSpan Firewall custom assertions",
+            "Synamtec, TAM, SM, TM, CT, ADFS, OAM",
+            ass(CustomAssertionHolder.class),
+            ass(HttpNegotiate.class),
+            ass(WsFederationPassiveTokenExchange.class),
+            ass(WsFederationPassiveTokenRequest.class),
+            ass(RequestWssKerberos.class));
 
 
         //
         // Declare "product profile" feature sets
         // (feature sets built out of "building block" feature sets, and which each constitutes a useable,
         //  complete product in its own right.)
+        // Naming convention:   set:Profile:ProfileName
         //
-        FeatureSet xmlFirewallBronze =
-        fsp("set:Profile:Gateway:XmlFirewall:Bronze", "Basic \"Bronze\" HTTP XML firewall",
-            "HTTP-based XML firewall with authentication and message-level security.",
-            fs(http),
-            fs(wssSimple),
-            fs(authUsers),
-            fs(xml),
-            fs(audit));
+        fsp("set:Profile:IPS", "SecureSpan XML IPS",
+            "Threat protection features only.  (No routing assertions?  Not even hardcoded response?)",
+            fs(core),
+            fs(httpFront),
+            fs(threatIps));
 
-        FeatureSet xmlFirewallSilver =
-        fsp("set:Profile:Gateway:XmlFirewall:Silver", "Intermediate \"Silver\" HTTP XML firewall",
-            "HTTP-based XML firewall with authentication, message-level security, auditing, and attachments.",
-            fs(xmlFirewallBronze),
-            fs(authGroups),
-            fs(audit),
-            fs(attachments),
-            fs(wsdlProxy));
+        fsp("set:Profile:Accel", "SecureSpan Accelerator",
+            "XML acceleration features with basic authentication",
+            fs(core),
+            fs(accessAccel),
+            fs(xmlsecAccel),
+            fs(validationAccel),
+            fs(routingAccel),
+            fs(availabilityAccel),
+            fs(auditAccel),
+            fs(policyAccel),
+            fs(threatAccel));
 
-        FeatureSet xmlFirewallGold =
-        fsp("set:Profile:Gateway:XmlFirewall:Gold", "Advanced \"Gold\" HTTP and JMS XML firewall",
-            "HTTP/JMS XML firewall with authentication, message-level security, auditing, Bridge support, and more.",
-            fs(xmlFirewallSilver),
-            fs(jms),
-            fs(xml),
-            fs(wss),
-            fs(threatProtectionBasic),
-            fs(validationAll),
-            fs(sts),
-            fs(wsTrust),
-            fs(bra),
-            fs(email),
-            fs(snmp),
-            fs(policySrv),
-            fs(csrSrv),
-            fs(passwdSrv));
+        fsp("set:Profile:Firewall", "SecureSpan Firewall",
+            "XML firewall with custom assertions.  No BRA, no JMS, no special Bridge support",
+            fs(core),
+            fs(accessFw),
+            fs(xmlsecFw),
+            fs(validationFw),
+            fs(routingAccel),
+            fs(availabilityAccel),
+            fs(auditAccel),
+            fs(policyAccel),
+            fs(threatFw),
+            fs(customFw));
+
+        FeatureSet profileGateway =
+        fsp("set:Profile:Gateway", "SecureSpan Gateway",
+            "All features enabled.",
+            fs(core),
+            fs(accessGateway),
+            fs(xmlsecFw),
+            fs(validationGateway),
+            fs(routingGateway),
+            fs(availabilityAccel),
+            fs(auditAccel),
+            fs(policyAccel),
+            fs(threatFw),
+            fs(customFw),
+            fs(ssb),
+            fs(experimental));
 
         PROFILE_ALL =
-        fsp("set:Profile:Gateway:Platinum", "Complete, full-featured \"Platinum\" SecureSpan Gateway",
-            "The ultimate SecureSpan Gateway, with all possible features enabled",
-            fs(xmlFirewallGold),
-            fs(http),
-            fs(jms),
-            fs(wss),
-            fs(xml),
-            fs(authAll),
-            fs(bra),
-            fs(attachments),
-            fs(audit),
-            fs(email),
-            fs(snmp),
-            fs(customAss),
-            fs(threatProtectionFull),
-            fs(validationAll),
-            fs(availability),
-            fs(sts),
-            fs(wsTrust),
-            fs(experimental),
-            fs(allCreds));
-
+        fsp("set:Profile:Federal", "SecureSpan Federal",
+            "Exactly the same features as SecureSpan Gateway, but Bridge software is not bundled.",
+            fs(profileGateway));
     }
-
 
     static class FeatureSet {
         final String name;
