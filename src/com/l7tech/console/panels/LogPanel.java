@@ -14,9 +14,11 @@ import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.console.util.Registry;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.objectmodel.FindException;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import net.sf.nachocalendar.CalendarFactory;
@@ -72,6 +74,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
+import java.rmi.RemoteException;
 
 /*
  * This class creates a log panel.
@@ -158,6 +161,8 @@ public class LogPanel extends JPanel {
     private JSplitPane logSplitPane;
     private JSplitPane selectionSplitPane;
     private boolean connected = false;
+
+    private final HashMap<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
 
     /**
      * Constructor
@@ -565,7 +570,7 @@ public class LogPanel extends JPanel {
 
                     int id = ad.getMessageId();
                     // TODO get the CellRenderer to display the user messages differently when id < 0 (add field to AssociatedLog class?)
-                    String associatedLogMessage = Messages.getMessageById(id);
+                    String associatedLogMessage = getMessageById(id);
                     String associatedLogLevel = Messages.getSeverityLevelNameById(id);
 
                     StringBuffer result = new StringBuffer();
@@ -587,6 +592,26 @@ public class LogPanel extends JPanel {
                 // Scroll to top
                 getMsgDetails().getCaret().setDot(1);
         }
+    }
+
+    private String getMessageById(int id) {
+        // lookup each value only once per session. this should be fast enough
+        String output = cachedAuditMessages.get(id);
+        if (output == null) {
+            Registry reg = Registry.getDefault();
+            try {
+                output = reg.getClusterStatusAdmin().getProperty(Messages.OVERRIDE_PREFIX + id);
+            } catch (RemoteException e) {
+                logger.log(Level.WARNING, "cannot get property", e);
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "cannot get property", e);
+            }
+            if (output == null) {
+                output = Messages.getMessageById(id);
+            }
+            cachedAuditMessages.put(id, output);
+        }
+        return output;
     }
 
     private String reformat(String xml) {

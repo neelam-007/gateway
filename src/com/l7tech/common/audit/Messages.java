@@ -28,6 +28,13 @@ public class Messages {
      *
      */
 
+    /**
+     * this is the prefix for cluster propreties which override default message values as you would
+     * normally get through Messages.getMessageById(id). the prefix is followed by the id of the message
+     * which is to be overriden
+     */
+    public static final String OVERRIDE_PREFIX = "auditmsg.override.";
+
     private static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
 
     // must appear after the instantiation of messageById HaspMap.

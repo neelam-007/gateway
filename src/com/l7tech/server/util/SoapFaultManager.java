@@ -46,10 +46,10 @@ public class SoapFaultManager implements ApplicationContextAware {
     private Auditor auditor;
     private ClusterPropertyManager clusterPropertiesManager;
     private ApplicationContext applicationContext;
-    private final HashMap<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
+    private final HashMap<Integer, String> cachedOverrideAuditMessages = new HashMap<Integer, String>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
-    public static final String OVERRIDE_PREFIX = "auditmsg.override.";
+
     private final Timer checker = new Timer(true);
 
     public SoapFaultManager(ServerConfig serverConfig) {
@@ -257,7 +257,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         ReentrantReadWriteLock.ReadLock lock = cacheLock.readLock();
         lock.lock();
         try {
-            String cachedMessage = cachedAuditMessages.get(msgid);
+            String cachedMessage = cachedOverrideAuditMessages.get(msgid);
             if (cachedMessage != null) {
                 return cachedMessage;
             }
@@ -317,14 +317,14 @@ public class SoapFaultManager implements ApplicationContextAware {
             ReentrantReadWriteLock.WriteLock lock = cacheLock.writeLock();
             lock.lock();
             try {
-                cachedAuditMessages.clear();
+                cachedOverrideAuditMessages.clear();
                 for (Object aFromTable : fromTable) {
                     ClusterProperty clusterProperty = (ClusterProperty) aFromTable;
-                    if (clusterProperty.getName() != null && clusterProperty.getName().startsWith(OVERRIDE_PREFIX)) {
+                    if (clusterProperty.getName() != null && clusterProperty.getName().startsWith(Messages.OVERRIDE_PREFIX)) {
                         try {
-                            Integer key = new Integer(clusterProperty.getName().substring(OVERRIDE_PREFIX.length()));
+                            Integer key = new Integer(clusterProperty.getName().substring(Messages.OVERRIDE_PREFIX.length()));
                             if (clusterProperty.getValue() != null) {
-                                cachedAuditMessages.put(key, clusterProperty.getValue());
+                                cachedOverrideAuditMessages.put(key, clusterProperty.getValue());
                             }
                         } catch (NumberFormatException e) {
                             logger.fine("thought this was an override, but it's not (" + clusterProperty.getName() + ")");
