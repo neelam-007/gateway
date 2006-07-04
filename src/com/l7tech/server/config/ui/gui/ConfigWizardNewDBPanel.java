@@ -36,7 +36,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     private JTextField dbHostname;
     private JTextField dbName;
     private JTextField dbUsername;
-    private JTextField dbPassword;
+    private JPasswordField dbPassword;
     private JTextPane errorMessagePane;
 
     private DBActions dbActions;
@@ -159,7 +159,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
 
         dbConfigBean.setDbHostname(dbHostname.getText());
         dbConfigBean.setDbUsername(dbUsername.getText());
-        dbConfigBean.setDbPassword(dbPassword.getText());
+        dbConfigBean.setDbPassword(new String(dbPassword.getPassword()));
         dbConfigBean.setDbName(dbName.getText());
     }
 
@@ -173,7 +173,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         String rootPassword = "";
 
         String username = dbUsername.getText();
-        String password = dbPassword.getText();
+        String password = new String(dbPassword.getPassword());
 
         String currentVersion = ConfigurationWizard.getCurrentVersion();
         String theDbName = dbName.getText();
