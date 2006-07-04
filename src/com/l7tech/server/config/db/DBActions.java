@@ -256,7 +256,7 @@ public class DBActions {
             stmt = conn.createStatement();
             dropDatabase(stmt, dbName);
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.severe("Failure while dropping the database: " + e.getMessage());
         } finally {
             if (stmt != null) {
                 try {
@@ -279,7 +279,7 @@ public class DBActions {
         File f = new File(osFunctions.getPathToDBCreateFile());
         File parentDir = f.getParentFile();
 
-        HashMap upgradeMap = buildUpgradeMap(parentDir);
+        Map upgradeMap = buildUpgradeMap(parentDir);
 
         Connection conn = null;
         Statement stmt = null;
@@ -374,7 +374,7 @@ public class DBActions {
     }
 
     //will return the version of the DB, or null if it cannot be determined
-    private String getDbVersion(Hashtable tableData) {
+    private String getDbVersion(Hashtable<String, Set> tableData) {
         String version = null;
         //make sure we're even dealing with something that smells like an SSG database
         if (ssgDbChecker.doCheck(tableData)) {
@@ -395,12 +395,12 @@ public class DBActions {
     //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
     //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
     private String checkDbVersion(Connection conn) throws SQLException {
-        Hashtable tableData = collectMetaInfo(conn);
+        Hashtable<String, Set> tableData = collectMetaInfo(conn);
         //now we have a hashtable of tables and their columns
         return getDbVersion(tableData);
     }
 
-    private Hashtable collectMetaInfo(Connection conn) throws SQLException {
+    private Hashtable<String, Set> collectMetaInfo(Connection conn) throws SQLException {
         Hashtable<String, Set> tableData = new Hashtable<String, Set>();
 
         DatabaseMetaData metadata = conn.getMetaData();
@@ -450,7 +450,7 @@ public class DBActions {
     }
 
     private String[] getGrantStatements(String dbName, String hostname, String username, String password, boolean isWindows) {
-        ArrayList list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         list.add(new String(SQL_GRANT_ALL + dbName + ".* to " + username + "@'%' identified by '" + password + "'"));
         list.add(new String(SQL_GRANT_ALL + dbName + ".* to " + username + "@" + hostname + " identified by '" + password + "'"));
 
@@ -458,7 +458,7 @@ public class DBActions {
             list.add(new String(SQL_GRANT_ALL + dbName + ".* to " + username + "@localhost.localdomain identified by '" + password + "'"));
         }
         list.add(new String("FLUSH PRIVILEGES"));
-        return (String[]) list.toArray(new String[list.size()]);
+        return list.toArray(new String[]{});
     }
 
     private String[] getCreateDbStatements(String dbCreateScript) throws IOException {
@@ -515,7 +515,7 @@ public class DBActions {
     }
 
 
-    private HashMap buildUpgradeMap(File parentDir) {
+    private Map buildUpgradeMap(File parentDir) {
         File[] upgradeScripts = parentDir.listFiles(new FilenameFilter() {
                 public boolean accept(File file, String s) {
                     return s.toUpperCase().startsWith("UPGRADE") &&
@@ -524,7 +524,7 @@ public class DBActions {
         });
 
         Pattern upgradePattern = Pattern.compile(UPGRADE_SQL_PATTERN);
-        HashMap upgradeMap = new HashMap();
+        Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
 
         for (int i = 0; i < upgradeScripts.length; i++) {
             File upgradeScript = upgradeScripts[i];
@@ -697,7 +697,7 @@ public class DBActions {
                 case DBActions.DB_AUTHORIZATION_FAILURE:
                     logger.info(CONNECTION_UNSUCCESSFUL_MSG);
                     errorMsg = "There was an authentication error when attempting to connect to the database \"" + dbName + "\" using the username \"" +
-                            username + "\" and password \"" + password + "\". Please check your input and try again.";
+                            username + "\". Perhaps the password is wrong. Please check your input and try again.";
                     if (ui != null) ui.showErrorMessage(errorMsg);
                     logger.warning("There was an authentication error when attempting to connect to the database \"" + dbName + "\" using the username \"" +
                             username + "\" and password \"" + password + "\".");
