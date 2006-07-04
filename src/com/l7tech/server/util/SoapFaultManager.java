@@ -12,6 +12,9 @@ import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.objectmodel.FindException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -21,7 +24,8 @@ import org.w3c.dom.NodeList;
 
 import java.text.FieldPosition;
 import java.text.MessageFormat;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,7 +44,13 @@ public class SoapFaultManager implements ApplicationContextAware {
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
     private Auditor auditor;
+    private ClusterPropertyManager clusterPropertiesManager;
+    private ApplicationContext applicationContext;
+    private final HashMap<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
+    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
+    public static final String OVERRIDE_PREFIX = "auditmsg.override.";
+    private final Timer checker = new Timer(true);
 
     public SoapFaultManager(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -223,7 +233,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                             detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
                             // add text node with actual message. see below for logpanel sample:
                             StringBuffer msgbuf = new StringBuffer();
-                            MessageFormat mf = new MessageFormat(Messages.getMessageById(msgid));
+                            MessageFormat mf = new MessageFormat(getMessageById(msgid));
                             mf.format(detail.getParams(), msgbuf, new FieldPosition(0));
                             detailMsgEl.setTextContent(msgbuf.toString());
                             assertionResultEl.appendChild(tmp.importNode(detailMsgEl, true));
@@ -237,6 +247,24 @@ public class SoapFaultManager implements ApplicationContextAware {
             logger.log(Level.WARNING, "could not construct generic fault", e);
         }
         return output;
+    }
+
+    /**
+     * gets the assertion detail message giving priority to overriden defaults in the cluster property table.
+     * caches the cluster overrides so it does not have to look them up all the time.
+     */
+    private String getMessageById(int msgid) {
+        ReentrantReadWriteLock.ReadLock lock = cacheLock.readLock();
+        lock.lock();
+        try {
+            String cachedMessage = cachedAuditMessages.get(msgid);
+            if (cachedMessage != null) {
+                return cachedMessage;
+            }
+        } finally {
+            lock.unlock();
+        }
+        return Messages.getMessageById(msgid);
     }
 
     private static final String GENERIC_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -265,5 +293,50 @@ public class SoapFaultManager implements ApplicationContextAware {
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         auditor = new Auditor(this, applicationContext, logger);
+        this.applicationContext = applicationContext;
+        clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+        final SoapFaultManager tasker = this;
+        TimerTask task = new TimerTask() {
+            public void run() {
+                tasker.updateOverrides();
+            }
+        };
+        checker.schedule(task, 10000, 30000);
+    }
+
+    private void updateOverrides() {
+        if (clusterPropertiesManager == null) {
+            clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+            if (clusterPropertiesManager == null) {
+                logger.info("cant get handle on ClusterPropertiesManager");
+                return;
+            }
+        }
+        try {
+            Collection fromTable = clusterPropertiesManager.findAll();
+            ReentrantReadWriteLock.WriteLock lock = cacheLock.writeLock();
+            lock.lock();
+            try {
+                cachedAuditMessages.clear();
+                for (Object aFromTable : fromTable) {
+                    ClusterProperty clusterProperty = (ClusterProperty) aFromTable;
+                    if (clusterProperty.getName() != null && clusterProperty.getName().startsWith(OVERRIDE_PREFIX)) {
+                        try {
+                            Integer key = new Integer(clusterProperty.getName().substring(OVERRIDE_PREFIX.length()));
+                            if (clusterProperty.getValue() != null) {
+                                cachedAuditMessages.put(key, clusterProperty.getValue());
+                            }
+                        } catch (NumberFormatException e) {
+                            logger.fine("thought this was an override, but it's not (" + clusterProperty.getName() + ")");
+                        }
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Cannot get cluster properties", e);
+        }
     }
 }

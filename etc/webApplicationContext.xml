@@ -690,7 +690,7 @@
         </property>
     </bean>
 
-    <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager">
+    <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
         <constructor-arg>
             <ref bean="serverConfig"/>
         </constructor-arg>
