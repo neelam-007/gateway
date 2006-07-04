@@ -3,6 +3,7 @@ package com.l7tech.server.service.uddi;
 import java.util.Properties;
 
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UddiAgentException;
 
 /**
  * For UDDI agent implementations.

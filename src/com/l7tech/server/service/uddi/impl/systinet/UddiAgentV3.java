@@ -34,8 +34,8 @@ import org.systinet.uddi.client.v3.struct.TModelInstanceInfo;
 import org.systinet.uddi.client.v3.struct.TModelInstanceInfoArrayList;
 
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.server.service.uddi.UddiAgent;
-import com.l7tech.server.service.uddi.UddiAgentException;
 
 /**
  * UDDI agent implementation that uses Systinet v3 client.
