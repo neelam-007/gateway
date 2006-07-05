@@ -540,13 +540,15 @@ public class DBActions {
     }
 
     public boolean doCreateDb(String pUsername, String pPassword, String hostname, String name, String username, String password, boolean overwriteDb, DBActionsListener ui) {
-        if (StringUtils.isEmpty(pUsername) || StringUtils.isEmpty(pPassword)) {
+        //check if the root username is "" or null, or the password is null. Password is allowed to be "", if there isn't a password
+        if (StringUtils.isEmpty(pUsername) || pPassword == null
+                ) {
             if (ui != null) {
                 String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
                 Map<String, String> creds = ui.getPrivelegedCredentials(
                             "Please enter the credentials for the root database user (needed to create a database)",
-                            "",
-                            "",
+                            "Please enter the username for the root database user (needed to create a database): [" + defaultUserName + "] ",
+                            "Please enter the password for the root database user: ",
                             defaultUserName);
 
                 if (creds != null) {

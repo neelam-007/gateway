@@ -1,20 +1,18 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBActionsListener;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
-import java.util.Map;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -41,6 +39,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private static final String TITLE = "SSG Database Setup";
     private DBActions dbActions;
     private boolean createNewDb;
+    private static final String REALLY_CONFIRM_OVERWRITE = "Are you sure you want to overwrite the database? This cannot be undone.";
+    private static final String WIZARD_CANNOT_PROCEED = "The Wizard cannot proceed without a valid database, please make a new selection";
 
     public ConfigWizardConsoleDatabaseStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -125,7 +125,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String defaultHostname = null;
         String defaultDbName = null;
         String defaultDbUsername = null;
-        String defaultDbPassword = null;
+//        String defaultDbPassword = null;
 
         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
 
@@ -240,9 +240,9 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         try {
             confirmed = getConfirmationFromUser(errorMsg);
             if (confirmed) {
-                confirmed = getConfirmationFromUser("Are you sure you wan to overwrite the database? This cannot be undone.");
+                confirmed = getConfirmationFromUser(REALLY_CONFIRM_OVERWRITE);
             } else {
-                showErrorMessage("The Wizard cannot proceed without a valid database, please make a new selection");
+                showErrorMessage(WIZARD_CANNOT_PROCEED);
             }
         } catch (IOException e) {
             logger.severe(e.getMessage());
