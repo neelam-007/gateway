@@ -1,12 +1,11 @@
 package com.l7tech.server.service;
 
 import com.l7tech.admin.AccessManager;
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.uddi.UddiAgentException;
+import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
@@ -14,10 +13,11 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.systinet.RegistryPublicationManager;
-import com.l7tech.server.service.uddi.UddiAgentFactory;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.service.uddi.UddiAgent;
+import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
+import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
@@ -85,7 +85,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     private void checkLicense() throws RemoteException {
         try {
-            licenseManager.requireFeature(Feature.ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             throw new RemoteException(e.getMessage());
         }

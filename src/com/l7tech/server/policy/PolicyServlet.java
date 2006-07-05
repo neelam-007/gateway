@@ -1,6 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.Feature;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
@@ -23,6 +24,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.event.system.PolicyServiceEvent;
@@ -94,6 +96,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         catch (IOException e) {
             throw new ServletException(e);
         }
+    }
+
+    protected Feature getFeature() {
+        return GatewayFeatureSets.SERVICE_POLICYDISCO;
     }
 
     /**

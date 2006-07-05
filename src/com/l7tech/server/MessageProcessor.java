@@ -4,7 +4,6 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.audit.AuditContext;
@@ -121,7 +120,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         // License check hook
-        licenseManager.requireFeature(Feature.MESSAGEPROCESSOR);
+        licenseManager.requireFeature(GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR);
 
         final Message request = context.getRequest();
         final Message response = context.getResponse();

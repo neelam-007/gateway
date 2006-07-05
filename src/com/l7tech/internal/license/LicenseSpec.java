@@ -9,7 +9,7 @@ import com.l7tech.common.License;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.util.*;
 
 /**
  * Represents parameters for generating a license.  Pass to {@link LicenseGenerator} to generate a license.
@@ -29,6 +29,7 @@ public class LicenseSpec {
     private String product = "*";
     private String versionMinor = "*";
     private String versionMajor = "*";
+    private Set<String> rootFeatures = new LinkedHashSet<String>();
 
     /**
      * Create a LicenseSpec for generating an unsigned license.  Primarily useful for testing, since unsigned
@@ -80,6 +81,24 @@ public class LicenseSpec {
         this.setProduct(grants.getProduct());
         this.setVersionMajor(grants.getVersionMajor());
         this.setVersionMinor(grants.getVersionMinor());
+
+        this.clearRootFeatures();
+        this.rootFeatures.addAll(Arrays.asList(grants.getRootFeatureSetNames()));
+    }
+
+    /** @return a read-only view of the root feature names that will be enabled by this licensespec. */
+    public Set<String> getRootFeatures() {
+        return Collections.unmodifiableSet(rootFeatures);
+    }
+
+    /** Clear all root features for this license spec. */
+    public void clearRootFeatures() {
+        rootFeatures.clear();
+    }
+
+    /** Add a root feature (named feature set, ie "set:Profile:IPS" or "assertion:OneOrMore") to this license spec. */
+    public void addRootFeature(String featureName) {
+        rootFeatures.add(featureName);
     }
 
     /**

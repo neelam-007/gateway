@@ -7,11 +7,11 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.admin.AccessManager;
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.GatewayFeatureSets;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -42,7 +42,7 @@ public class JmsAdminImpl implements JmsAdmin {
 
     private void checkLicense() throws RemoteException {
         try {
-            licenseManager.requireFeature(Feature.ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             throw new RemoteException(e.getMessage());
         }

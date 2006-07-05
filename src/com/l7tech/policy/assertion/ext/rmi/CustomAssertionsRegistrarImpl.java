@@ -1,13 +1,13 @@
 package com.l7tech.policy.assertion.ext.rmi;
 
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.Feature;
-import com.l7tech.common.LicenseException;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 

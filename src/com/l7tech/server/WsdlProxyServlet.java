@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.Feature;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
@@ -82,6 +83,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         serverConfig = (ServerConfig)appcontext.getBean("serverConfig");
         filterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager");
+    }
+
+    protected Feature getFeature() {
+        return GatewayFeatureSets.SERVICE_WSDLPROXY;
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {

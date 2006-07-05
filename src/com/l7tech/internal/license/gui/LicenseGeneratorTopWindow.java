@@ -15,6 +15,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.internal.license.LicenseGenerator;
 import com.l7tech.internal.license.LicenseSpec;
+import com.l7tech.server.GatewayFeatureSets;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -447,7 +448,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
     private void doUpdateAllFromXml(String xml) {
         License license;
         try {
-            license = new License(xml, getTrustedIssuers());
+            license = new License(xml, getTrustedIssuers(), GatewayFeatureSets.getFeatureSetExpander());
             licensePanel.setLicense(license);
             getSignLicenseAction().setEnabled(license != null && !license.isValidSignature());
             LicenseSpec spec = new LicenseSpec();

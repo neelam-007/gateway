@@ -11,6 +11,7 @@ import com.l7tech.common.License;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.server.GatewayFeatureSets;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -18,6 +19,7 @@ import org.w3c.dom.Document;
 
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
+import java.util.Random;
 import java.util.logging.Logger;
 
 /**
@@ -56,12 +58,24 @@ public class LicenseRoundTripTest extends TestCase {
         spec.setProduct(BuildInfo.getProductName());
         spec.setVersionMajor("3");
         spec.setVersionMinor("4");
+        spec.addRootFeature("set:Profile:IPS");
+        spec.addRootFeature("service:SnmpQuery");
+        spec.addRootFeature("assertion:JmsRouting");
         return spec;
     }
 
     public void testSignedRoundTrip() throws Exception {
+        doTestSignedRoundTrip(false);
+    }
+
+    public void testSignedRoundTripWithFeatureSets() throws Exception {
+        doTestSignedRoundTrip(true);
+    }
+
+    public void doTestSignedRoundTrip(boolean includeFeatureSets) throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         LicenseSpec spec = makeSpec(signingCert);
+        if (!includeFeatureSets) spec.clearRootFeatures();
 
         Document lic = LicenseGenerator.generateSignedLicense(spec);
 
@@ -71,7 +85,7 @@ public class LicenseRoundTripTest extends TestCase {
 
         log.info("Generated signed license (pretty-printed): \n" + prettyString);
 
-        License license = new License(prettyString, new X509Certificate[] { signingCert });
+        License license = new License(prettyString, new X509Certificate[] { signingCert }, GatewayFeatureSets.getFeatureSetExpander());
         assertTrue(license.isValidSignature());
         assertTrue(CertUtils.certsAreEqual(license.getTrustedIssuer(), signingCert)); // must match
         assertTrue(license.getTrustedIssuer() == signingCert); // in fact, must be the exact same object we passed in
@@ -86,6 +100,22 @@ public class LicenseRoundTripTest extends TestCase {
         assertTrue(license.isHostnameEnabled(spec.getHostname()));
         assertTrue(license.isIpEnabled(spec.getIp()));
 
+        if (includeFeatureSets) {
+            // Must enable the ones we gave it
+            assertTrue(license.isFeatureEnabled("set:Profile:IPS"));
+            assertTrue(license.isFeatureEnabled("service:SnmpQuery"));
+            assertTrue(license.isFeatureEnabled("assertion:JmsRouting"));
+
+            // Must enable the leaf features implied by the ones we gave it
+            assertTrue(license.isFeatureEnabled("assertion:composite.All"));
+            assertTrue(license.isFeatureEnabled("assertion:OversizedText"));
+
+            // Must not enable any other features
+            assertFalse(license.isFeatureEnabled("assertion:BridgeRouting"));
+            assertFalse(license.isFeatureEnabled("service:Bridge"));
+            assertFalse(license.isFeatureEnabled("blarf:" + new Random().nextInt()));
+        }
+
         license.checkValidity();
     }
 
@@ -98,7 +128,7 @@ public class LicenseRoundTripTest extends TestCase {
         Document lic = LicenseGenerator.generateSignedLicense(spec);
         final String licenseXml = XmlUtil.nodeToFormattedString(lic);
         log.info("Generated signed license: " + licenseXml);
-        License license = new License(licenseXml, new X509Certificate[] {signingCert});
+        License license = new License(licenseXml, new X509Certificate[] {signingCert}, GatewayFeatureSets.getFeatureSetExpander());
         try {
             license.checkValidity();
             fail("Expired license considered valid");
@@ -114,7 +144,7 @@ public class LicenseRoundTripTest extends TestCase {
         Document lic = LicenseGenerator.generateUnsignedLicense(spec, false);
         final String licenseXml = XmlUtil.nodeToFormattedString(lic);
         log.info("Generated unsigned license: " + licenseXml);
-        License license = new License(licenseXml, new X509Certificate[] {signingCert});
+        License license = new License(licenseXml, new X509Certificate[] {signingCert}, GatewayFeatureSets.getFeatureSetExpander());
         try {
             license.checkValidity();
             fail("Unsigned license considered valid");
@@ -133,7 +163,7 @@ public class LicenseRoundTripTest extends TestCase {
         Document lic = LicenseGenerator.generateSignedLicense(spec);
         final String licenseXml = XmlUtil.nodeToFormattedString(lic);
         log.info("Generated signed license: " + licenseXml);
-        License license = new License(licenseXml, new X509Certificate[] {signingCert});
+        License license = new License(licenseXml, new X509Certificate[] {signingCert}, GatewayFeatureSets.getFeatureSetExpander());
         try {
             license.checkValidity();
             fail("Not-yet-valid license considered valid");

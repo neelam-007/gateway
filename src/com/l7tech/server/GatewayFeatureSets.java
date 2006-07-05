@@ -29,15 +29,16 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.server.identity.cert.CSRHandler;
 import com.l7tech.server.policy.PolicyServlet;
+import com.l7tech.common.Feature;
+import com.l7tech.common.License;
+import com.l7tech.proxy.BridgeServlet;
 
 import javax.servlet.http.HttpServlet;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Master list of Feature Sets
+ * Master list of Feature Sets for the SSG, hard-baked into the code so it will be obfuscated.
  */
 public class GatewayFeatureSets {
     private static final Logger logger = Logger.getLogger(GatewayFeatureSets.class.getName());
@@ -54,29 +55,21 @@ public class GatewayFeatureSets {
     /** The ultimate Product Profile that enables every possible feature. */
     private static final FeatureSet PROFILE_ALL;
 
-    /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */
-    public static Map<String, FeatureSet> getAllFeatureSets() {
-        return Collections.unmodifiableMap(sets);
-    }
+    /** Feature set to use for (usually old) licenses that, while valid, do not explicitly name any feature sets. */
+    private static final FeatureSet PROFILE_LICENSE_NAMES_NO_FEATURES;
 
-
-    /** @return all root-level FeatureSets, including all product profiles, building blocks, and twig features. */
-    public static Map<String, FeatureSet> getRootFeatureSets() {
-        return Collections.unmodifiableMap(rootSets);
-    }
-
-
-    /** @return all Product Profile FeatureSets. */
-    public static Map<String, FeatureSet> getProductProfiles() {
-        return Collections.unmodifiableMap(profileSets);
-    }
-
-
-    /** @return the product profile that has all features enabled. */
-    public static FeatureSet getBestProductProfile() {
-        return PROFILE_ALL;
-    }
-
+    // Top-level services queried for by enforcement points throughout the code
+    public static final FeatureSet SERVICE_MESSAGEPROCESSOR = misc("service:MessageProcessor", "Core Gateway message processing module");
+    public static final FeatureSet SERVICE_HTTP_MESSAGE_INPUT = srv(SoapMessageProcessingServlet.class, "Accept incoming messages over HTTP", "service:HttpMessageInput");
+    public static final FeatureSet SERVICE_JMS_MESSAGE_INPUT = misc("service:JmsMessageInput", "Accept incoming messages over JMS");
+    public static final FeatureSet SERVICE_ADMIN = misc("service:Admin", "All admin APIs, over all admin API transports");
+    public static final FeatureSet SERVICE_POLICYDISCO = srv(PolicyServlet.class, "Policy discovery service");
+    public static final FeatureSet SERVICE_STS = srv(TokenServiceServlet.class, "Security token service");
+    public static final FeatureSet SERVICE_CSRHANDLER = srv(CSRHandler.class, "Certificate signer (CA) service");
+    public static final FeatureSet SERVICE_PASSWD = srv(PasswdServlet.class, "Internal user password change service");
+    public static final FeatureSet SERVICE_WSDLPROXY = srv(WsdlProxyServlet.class, "WSDL proxy service");
+    public static final FeatureSet SERVICE_SNMPQUERY = srv(SnmpQueryServlet.class, "HTTP SNMP query service");
+    public static final FeatureSet SERVICE_BRIDGE = srv(BridgeServlet.class, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"); // experimental bridge servlet, disabled by default (neither SSB nor BRA!)
 
     static {
         // Declare all baked-in feature sets
@@ -90,8 +83,14 @@ public class GatewayFeatureSets {
         FeatureSet core =
         fsr("set:core", "Core features, without which nothing else will work",
             "Always needed",
+            SERVICE_MESSAGEPROCESSOR,
             ass(AllAssertion.class),
             ass(UnknownAssertion.class));
+
+        FeatureSet admin =
+        fsr("set:admin", "All admin APIs, over all admin API transports",
+            "Everything that used to be enabled by the catchall Feature.ADMIN",
+            SERVICE_ADMIN);
 
         FeatureSet branching =
         fsr("set:policy:branching", "Support for branching policies",
@@ -102,12 +101,12 @@ public class GatewayFeatureSets {
         FeatureSet wssc =
         fsr("set:wssc", "WS-SecureConversation support",
             "Requires enabling the STS",
-            srv(TokenServiceServlet.class),
+            SERVICE_STS,
             ass(SecureConversation.class));
 
         FeatureSet httpFront =
         fsr("set:http:front", "Allow incoming HTTP messages",
-            srv(SoapMessageProcessingServlet.class, "service:HttpMessageProcessor"));
+            SERVICE_HTTP_MESSAGE_INPUT);
 
         FeatureSet httpBack =
         fsr("set:http:back", "Allow outgoing HTTP messages",
@@ -115,7 +114,7 @@ public class GatewayFeatureSets {
 
         FeatureSet jmsFront =
         fsr("set:jms:front", "Allow incoming JMS messages",
-            misc("service:JmsMessageProcessor", "JMS message processor"));
+            SERVICE_JMS_MESSAGE_INPUT);
 
         FeatureSet jmsBack =
         fsr("set:jms:back", "Allow outgoing JMS messages",
@@ -123,19 +122,20 @@ public class GatewayFeatureSets {
 
         FeatureSet ssb =
         fsr("set:ssb", "Features needed for best use of the SecureSpan Bridge",
-            srv(CSRHandler.class),
-            srv(PasswdServlet.class),
-            srv(PolicyServlet.class),
-            srv(WsdlProxyServlet.class));
+            SERVICE_CSRHANDLER,
+            SERVICE_PASSWD,
+            SERVICE_POLICYDISCO,
+            SERVICE_WSDLPROXY);
 
         FeatureSet snmp =
         fsr("set:snmp", "SNMP features",
-            srv(SnmpQueryServlet.class),
+            SERVICE_SNMPQUERY,
             ass(SnmpTrapAssertion.class));
 
         FeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
-            "Enables features that are only present during developement, and that will be moved or renamed before shipping.",
+            "Enables features that are only present during development, and that will be moved or renamed before shipping.",
+            SERVICE_BRIDGE,
             ass(WsspAssertion.class));
 
         //
@@ -312,12 +312,14 @@ public class GatewayFeatureSets {
         fsp("set:Profile:IPS", "SecureSpan XML IPS",
             "Threat protection features only.  (No routing assertions?  Not even hardcoded response?)",
             fs(core),
+            fs(admin),
             fs(httpFront),
             fs(threatIps));
 
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
             "XML acceleration features with basic authentication",
             fs(core),
+            fs(admin),
             fs(accessAccel),
             fs(xmlsecAccel),
             fs(validationAccel),
@@ -330,6 +332,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Firewall", "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special Bridge support",
             fs(core),
+            fs(admin),
             fs(accessFw),
             fs(xmlsecFw),
             fs(validationFw),
@@ -344,6 +347,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Gateway", "SecureSpan Gateway",
             "All features enabled.",
             fs(core),
+            fs(admin),
             fs(accessGateway),
             fs(xmlsecFw),
             fs(validationGateway),
@@ -360,9 +364,69 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but Bridge software is not bundled.",
             fs(profileGateway));
+
+        // For now, if a license names no features explicitly, we will enable all features.
+        // TODO in the future, we should enable only those features that existed in 3.5.
+        PROFILE_LICENSE_NAMES_NO_FEATURES =
+        fsp("set:Profile:Compat:Pre36License", "Profile for old license files that don't name any feature sets",
+            "Backward compatibility with license files that lack featureset elements, but would otherwise be perfectly valid. " +
+            "Such licenses were intended to allow upgrades (within their version and date constraints) and should enable " +
+            "at least all features that were enabled by a valid 3.5 license.",
+            fs(PROFILE_ALL));
     }
 
-    static class FeatureSet {
+    /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */
+    public static Map<String, FeatureSet> getAllFeatureSets() {
+        return Collections.unmodifiableMap(sets);
+    }
+
+
+    /** @return all root-level FeatureSets, including all product profiles, building blocks, and twig features. */
+    public static Map<String, FeatureSet> getRootFeatureSets() {
+        return Collections.unmodifiableMap(rootSets);
+    }
+
+
+    /** @return all Product Profile FeatureSets. */
+    public static Map<String, FeatureSet> getProductProfiles() {
+        return Collections.unmodifiableMap(profileSets);
+    }
+
+
+    /** @return the product profile that has all features enabled. */
+    public static FeatureSet getBestProductProfile() {
+        return PROFILE_ALL;
+    }
+
+    /** @return the FeatureSetExpander to use when parsing License files. */
+    public static License.FeatureSetExpander getFeatureSetExpander() {
+        return new License.FeatureSetExpander() {
+            public Set getAllEnabledFeatures(Set inputSet) {
+                //noinspection unchecked
+                Set<String> ret = new HashSet<String>((Set<String>)inputSet);
+
+                if (ret.isEmpty()) {
+                    // Backwards compatibility mode for licenses that never contained any featureset elements
+                    PROFILE_LICENSE_NAMES_NO_FEATURES.collectAllFeatureNames(ret);
+                    return ret;
+                }
+
+                for (Iterator i = inputSet.iterator(); i.hasNext();) {
+                    String topName = (String)i.next();
+                    FeatureSet fs = sets.get(topName);
+                    if (fs == null) {
+                        logger.fine("Ignoring unrecognized feature set name: " + topName);
+                        continue;
+                    }
+                    fs.collectAllFeatureNames(ret);
+                }
+
+                return ret;
+            }
+        };
+    }
+
+    static class FeatureSet implements Feature {
         final String name;
         final String desc;
         final String note;
@@ -390,6 +454,17 @@ public class GatewayFeatureSets {
             for (FeatureSet featureSet : sets)
                 if (featureSet.contains(name)) return true;
             return false;
+        }
+
+        /** Collect the names of this feature set and any sub sets it enables into the specified set. */
+        public void collectAllFeatureNames(Set<String> collector) {
+            for (FeatureSet subset : sets)
+                subset.collectAllFeatureNames(collector);
+            collector.add(name);
+        }
+
+        public String getName() {
+            return name;
         }
     }
 
@@ -444,17 +519,15 @@ public class GatewayFeatureSets {
         String classname = ass.getName();
         String desc = "Policy assertion: " + classname;
 
-        return getOrMakeFeatureSet(name, desc, classname);
+        return getOrMakeFeatureSet(name, desc);
     }
 
-    private static FeatureSet getOrMakeFeatureSet(String name, String desc, String classname) {
+    private static FeatureSet getOrMakeFeatureSet(String name, String desc) {
         FeatureSet got = sets.get(name);
         if (got != null) {
             if (!desc.equals(got.desc)) throw new IllegalArgumentException("Already have different feature set named: " + name);
             return got;
         }
-
-        logger.info("Registered FeatureSet for " + classname + " named " + name); // TODO remove this line after testing
 
         got = new FeatureSet(name, desc);
         sets.put(name, got);
@@ -483,21 +556,20 @@ public class GatewayFeatureSets {
     }
 
     /** Create (and register, if new) a new FeatureSet for the specified HttpServlet and return it. */
-    private static FeatureSet srv(Class<? extends HttpServlet> srv) {
-        return srv(srv, null);
+    private static FeatureSet srv(Class<? extends HttpServlet> srv, String desc) {
+        return srv(srv, desc, null);
     }
 
     /**
      * Create (and register, if new) a new FeatureSet for the specified HttpServlet and return it,
      * but using the specified name instead of the default.
      */
-    private static FeatureSet srv(Class<? extends HttpServlet> srv, String preferredName) {
+    private static FeatureSet srv(Class<? extends HttpServlet> srv, String desc, String preferredName) {
         String classname = srv.getName();
         int lastdot = classname.lastIndexOf('.');
         String rest = classname.substring(lastdot + 1);
         rest = stripSuffix(rest, "Servlet");
         String name = "service:" + rest;
-        String desc = "Servlet: " + classname;
 
         if (preferredName != null) {
             if (!preferredName.startsWith("service:"))
@@ -507,7 +579,7 @@ public class GatewayFeatureSets {
             name = preferredName;
         }
 
-        return getOrMakeFeatureSet(name, desc, classname);
+        return getOrMakeFeatureSet(name, desc);
     }
 
 }

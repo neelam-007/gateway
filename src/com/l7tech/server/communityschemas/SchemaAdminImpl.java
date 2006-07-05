@@ -7,7 +7,6 @@
 package com.l7tech.server.communityschemas;
 
 import com.l7tech.admin.AccessManager;
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.xml.schema.SchemaAdmin;
@@ -16,6 +15,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.GatewayFeatureSets;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -38,7 +38,7 @@ public class SchemaAdminImpl implements SchemaAdmin {
 
     private void checkLicense() throws RemoteException {
         try {
-            licenseManager.requireFeature(Feature.ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             throw new RemoteException(e.getMessage());
         }

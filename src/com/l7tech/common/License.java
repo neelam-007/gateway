@@ -18,8 +18,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.*;
 
 /**
  * Immutable in-memory representation of a License file.
@@ -37,9 +36,40 @@ public final class License implements Serializable {
     private final String description;
     private final String licenseeName;
     private final String licenseeContactEmail;
+    private final Set allEnabledFeatures;
 
     // Grant information -- details of how grants are expressed and stored is not exposed in the License interface.
     private final LicenseGrants g;
+
+    /**
+     * Interface provided by callers that expands feature names into the complete set of all enabled feature
+     * names implied by the input names.
+     */
+    public interface FeatureSetExpander {
+        /**
+         * Expand the input feature names into the complete set of feature names implied by the input set.
+         * <p/>
+         * For example, if a license included the features "set:Profile:Firewall", "set:ssb", and "assertion:Wssp",
+         * getAllEnabledFeatures() would be called with a Set containing just these three names, and would be expected
+         * to return an expanded Set containing all the leaf Feature names implied by these.  In the preceding example,
+         * this would return a large set of many dozens of feature sets, including subsets and leaf features,
+         * specifically including (for example) "set:core", "assertion:HttpRouting", "service:MessageProcessor",
+         * and "assertion:Wssp".
+         *
+         * @param inputSet  a Set of Strings consisting of all feature set names that were explicitly named in
+         *                  the license XML.  Never null, and never contains null or empty strings.
+         *                  <p/>
+         *                  This may be empty if the license contained no featureset elements.  <b>Any license
+         *                  generated prior to summer of 2006 will be like this.</b>  The FeatureSetExpander
+         *                  is responsible for ensuring backwards compatibility by deciding what features to
+         *                  enable in this case (a license that is signed and valid but that names no features).
+         * @return the complete set of all features that should be enabled given this input set.  Typically this
+         *         would always include the input set (and any intermediate sets) as a subset,
+         *         but this isn't strictly necessary.  Must never return null.  Returning the empty set
+         *         will cause all features to be disabled, roughly equivalent to rejecting the entire license.
+         */
+        Set getAllEnabledFeatures(Set inputSet);
+    }
 
     /**
      * Store the license grants.  The format of grants will change in the future.
@@ -53,13 +83,17 @@ public final class License implements Serializable {
         final String product;
         final String versionMajor;
         final String versionMinor;
+        final String[] rootFeatureSetNames;
 
-        public LicenseGrants(String hostname, String ip, String product, String versionMajor, String versionMinor) {
+        public LicenseGrants(String hostname, String ip, String product, String versionMajor, String versionMinor,
+                             String[] rootFeatureSetNames)
+        {
             this.hostname = hostname;
             this.ip = ip;
             this.product = product;
             this.versionMajor = versionMajor;
             this.versionMinor = versionMinor;
+            this.rootFeatureSetNames = rootFeatureSetNames;
         }
 
         public String getHostname() {
@@ -80,6 +114,10 @@ public final class License implements Serializable {
 
         public String getVersionMinor() {
             return versionMinor;
+        }
+
+        public String[] getRootFeatureSetNames() {
+            return rootFeatureSetNames;
         }
 
         /** Get a string description of the grants. */
@@ -156,6 +194,9 @@ public final class License implements Serializable {
      *         ip address=1.2.3.4 (or "*")
      *         product name="SecureSpan Gateway" (or "*")
      *             version major=3(or "*") minor=4(or "*")
+     *             featureset name=set:Profile:Whatever
+     *             featureset name=set:Profile:Somethingelse
+     *             featureset name=assertion:Extra
      *         licensee contactEmail="whatever@wherever"(optional) name="Organization Name"
      *         ds:Signature (optional, assuming license is signed)
      *             ds:SignedInfo ... (signed info must cover the license root element)
@@ -166,15 +207,18 @@ public final class License implements Serializable {
      *
      * @param licenseXml     a String containing the License as XML data.
      * @param trustedIssuers
+     * @param featureSetExpander  a {@link FeatureSetExpander} to explode out the complete set of leaf features given
+     *                            the possibly-more-abstract feature set names explicitly listed in the License.  Must not be null.
      * @throws SAXException if the licenseXml is not well-formed XML
      * @throws ParseException if one of the fields of the license contains illegally-formatted data
      * @throws TooManyChildElementsException if there is more than one copy of an element that there can be only one of (ie, expires, Signature, etc)
      * @throws SignatureException if the license is signed, but the signature wasn't valid or wasn't made by a trusted licence issuer
      * @throws InvalidLicenseException if the license is invalid for immediately-obvious semantic reasons
      */
-    public License(String licenseXml, X509Certificate[] trustedIssuers)
+    public License(String licenseXml, X509Certificate[] trustedIssuers, FeatureSetExpander featureSetExpander)
             throws SAXException, ParseException, TooManyChildElementsException, SignatureException, InvalidLicenseException {
-        if (licenseXml == null) throw new NullPointerException();
+        if (licenseXml == null) throw new NullPointerException("licenseXml must not be null");
+        if (featureSetExpander == null) throw new NullPointerException("featureSetExpander must not be null");
         Document ld = XmlUtil.stringToDocument(licenseXml);
         XmlUtil.stripWhitespace(ld.getDocumentElement());
 
@@ -203,7 +247,14 @@ public final class License implements Serializable {
         String product = parseWildcardStringAttribute(ld, "product", "name");
         String versionMajor = parseWildcardStringAttribute(ld, "product", "version", "major");
         String versionMinor = parseWildcardStringAttribute(ld, "product", "version", "minor");
-        this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor);
+
+        Set featureSets = new HashSet();
+        collectFeatureSets(ld, "product", "featureset", featureSets);
+        allEnabledFeatures = featureSetExpander.getAllEnabledFeatures(featureSets);
+
+        //noinspection unchecked
+        this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor,
+                                   (String[])featureSets.toArray(new String[0]));
         licenseeName = parseWildcardStringAttribute(ld, "licensee", "name");
         requireValue("licensee name", licenseeName);
         final String cemail = parseWildcardStringAttribute(ld, "licensee", "contactEmail");
@@ -215,6 +266,7 @@ public final class License implements Serializable {
             // See if it is valid and if we trust it
             X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));
             X509Certificate foundTrustedIssuer = null;
+            //noinspection ForLoopReplaceableByForEach
             for (int i = 0; i < trustedIssuers.length; i++) {
                 X509Certificate issuer = trustedIssuers[i];
                 if (CertUtils.certsAreEqual(issuer, gotCert)) {
@@ -232,6 +284,45 @@ public final class License implements Serializable {
             trustedIssuer = null;
         }
 
+    }
+
+    /**
+     * Collect all feature sets enabled in the specified license document.
+     *
+     * @param ld  the license document.  Must not be null.  Must be a valid license document.
+     * @param nameTopEl  name of the top-level element to search for.  Must be an immediate child of the license root element.
+     * @param name2ndEl  name of the 2nd-level element to search for.  Must be an immediate child of nameTopEl.
+     * @param featureSets  the set to add them to.  Must not be null.
+     *
+     * @return the number of feature set names that were added to the set.  May be zero if none were found.
+     *
+     * @throws InvalidLicenseException        if the document format is incorrect
+     * @throws TooManyChildElementsException  if the document format is incorrect
+     */
+    private int collectFeatureSets(Document ld, String nameTopEl, String name2ndEl, Set featureSets)
+            throws InvalidLicenseException, TooManyChildElementsException
+    {
+        Element lic = ld.getDocumentElement();
+        Element telm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), nameTopEl);
+        if (telm == null) throw new InvalidLicenseException("License contains no product element");
+
+        List elms = XmlUtil.findChildElementsByName(telm, lic.getNamespaceURI(), name2ndEl);
+        if (elms == null || elms.isEmpty())
+            return 0; // No features enabled -- FeatureSetExpander should enable backwards-compat-mode
+
+        int added = 0;
+        //noinspection ForLoopReplaceableByForEach
+        for (Iterator i = elms.iterator(); i.hasNext();) {
+            Element element = (Element)i.next();
+            String featureSetName = element.getAttribute("name");
+            if (featureSetName == null || featureSetName.trim().length() < 1)
+                throw new InvalidLicenseException("product contains feature set with no name");
+            //noinspection unchecked
+            featureSets.add(featureSetName);
+            ++added;
+        }
+
+        return added;
     }
 
     private void requireValue(String name, String val) throws InvalidLicenseException {
@@ -419,12 +510,11 @@ public final class License implements Serializable {
      * Notes: For performance, this method does not check the validity of this license.  It is assumed that the
      * caller has already checked this before querying for individual features.
      *
-     * @param name
+     * @param name  the name of the feature.  Must not be null or empty.
      * @return true iff. this feature is enabled by this license.
      */
     public boolean isFeatureEnabled(String name) {
-        // Currently there is no feature-granular control -- all features are enabled by any valid license.
-        return true;
+        return allEnabledFeatures.contains(name);
     }
 
     /**

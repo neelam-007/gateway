@@ -7,9 +7,9 @@ package com.l7tech.internal.license;
 
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -17,8 +17,8 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.security.cert.X509Certificate;
 import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.logging.Logger;
 
@@ -112,7 +112,28 @@ public class LicenseGeneratorTest extends TestCase {
 
     }
 
-    public void testSimpleSigned() throws Exception {
+    public void testFeaturesetsUnsigned() throws Exception {
+        LicenseSpec spec = new LicenseSpec();
+
+        Calendar cal = Calendar.getInstance();
+
+        spec.setDescription("Simple unsigned demo license");
+        spec.setStartDate(cal.getTime());
+        cal.set(2100, 12, 1);
+        spec.setExpiryDate(cal.getTime());
+        spec.setLicenseeName("Demo User");
+        spec.setLicenseId(1001);
+        spec.setLicenseeContactEmail("nomailbox@NOWHERE");
+        spec.addRootFeature("set:Profile:IPS");
+        spec.addRootFeature("service:SnmpQuery");
+        spec.addRootFeature("assertion:JmsRouting");
+
+        Document lic = LicenseGenerator.generateUnsignedLicense(spec, false);
+
+        log.info("Generated unsigned license (pretty-printed): \n" + XmlUtil.nodeToFormattedString(lic));
+    }
+
+    public void testFeaturesetsSigned() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         LicenseSpec spec = new LicenseSpec(signingCert,
                                            TestDocuments.getDotNetServerPrivateKey());
@@ -126,6 +147,9 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseeName("Demo User");
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
+        spec.addRootFeature("set:Profile:IPS");
+        spec.addRootFeature("service:SnmpQuery");
+        spec.addRootFeature("assertion:JmsRouting");
 
         Document lic = LicenseGenerator.generateSignedLicense(spec);
 

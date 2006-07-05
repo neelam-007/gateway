@@ -6,14 +6,14 @@
 
 package com.l7tech.proxy;
 
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.XmlUtil;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -33,6 +33,13 @@ public class BridgeServlet extends HttpServlet {
     private SecureSpanBridge secureSpanBridge;
     private WebApplicationContext applicationContext;
 
+    // Define locally, since we can't reference GatewayFeatureSets from this package without dragging entire SSG into SSB
+    private static final Feature FEATURE = new Feature() {
+        public String getName() {
+            return "service:Bridge";
+        }
+    };
+
     protected void doGet(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
             throws ServletException, IOException
     {
@@ -41,7 +48,7 @@ public class BridgeServlet extends HttpServlet {
         LicenseManager licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
 
         try {
-            licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+            licenseManager.requireFeature(FEATURE);
         } catch (LicenseException e) {
             throw new ServletException(e);
         }
@@ -59,7 +66,7 @@ public class BridgeServlet extends HttpServlet {
         Document message = null;
         try {
             LicenseManager licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
-            licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+            licenseManager.requireFeature(FEATURE);
 
             message = XmlUtil.parse(servletRequest.getInputStream());
             SecureSpanBridge.Result result = secureSpanBridge.send(soapAction, message);

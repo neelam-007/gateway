@@ -80,6 +80,11 @@ public final class LicenseGenerator {
         version.setAttribute("major", spec.getVersionMajor());
         version.setAttribute("minor", spec.getVersionMinor());
 
+        for (String featureName : spec.getRootFeatures()) {
+            Element featureset = appendSimpleElement(product, "featureset", null);
+            featureset.setAttribute("name", featureName);
+        }
+
         Element licensee = appendSimpleElement(de, "licensee", null);
         licensee.setAttribute("name", name);
         setAttributeIfNonEmpty(licensee, "contactEmail", spec.getLicenseeContactEmail());

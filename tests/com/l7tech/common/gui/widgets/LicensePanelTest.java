@@ -8,6 +8,7 @@ package com.l7tech.common.gui.widgets;
 import com.l7tech.common.License;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.server.GatewayFeatureSets;
 
 import javax.swing.*;
 import java.awt.*;
@@ -121,7 +122,7 @@ public class LicensePanelTest {
 
     private static License getTestLicense() {
         try {
-            return new License(TEST_LICENSE, new X509Certificate[] { TestDocuments.getDotNetServerCertificate() });
+            return new License(TEST_LICENSE, new X509Certificate[] { TestDocuments.getDotNetServerCertificate() }, GatewayFeatureSets.getFeatureSetExpander());
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }

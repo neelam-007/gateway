@@ -3,6 +3,7 @@ package com.l7tech.server.identity.cert;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.Feature;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.KeystoreUtils;
@@ -14,6 +15,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.AuthenticationResult;
 
 import javax.net.ssl.HostnameVerifier;
@@ -66,6 +68,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             logger.log(Level.SEVERE, msg);
             throw new ServletException(msg);
         }
+    }
+
+    protected Feature getFeature() {
+        return GatewayFeatureSets.SERVICE_CSRHANDLER;
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)

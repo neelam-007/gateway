@@ -13,6 +13,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.GatewayFeatureSets;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
@@ -50,7 +51,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     private void checkLicense() throws RemoteException {
         try {
-            licenseManager.requireFeature(Feature.ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             throw new RemoteException(e.getMessage());
         }

@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.Feature;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
@@ -36,6 +37,10 @@ import java.util.logging.Level;
 public class PasswdServlet extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+    }
+
+    protected Feature getFeature() {
+        return GatewayFeatureSets.SERVICE_PASSWD;
     }
 
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {

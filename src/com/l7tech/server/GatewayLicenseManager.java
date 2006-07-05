@@ -177,7 +177,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
 
         final License license;
         try {
-            license = new License(licenseXml, getTrustedIssuers());
+            license = new License(licenseXml, getTrustedIssuers(), GatewayFeatureSets.getFeatureSetExpander());
             license.checkValidity();
             checkProductVersion(license);
         } catch (InvalidLicenseException e) {

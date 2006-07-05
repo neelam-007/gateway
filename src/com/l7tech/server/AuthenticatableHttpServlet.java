@@ -78,6 +78,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return bean;
     }
 
+    /** @return the license Feature that must be required for an authenticated request to succeed. */
+    protected abstract Feature getFeature();
+
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.
      * If credentials are provided but they are invalid, this will throw a BadCredentialsException
@@ -95,7 +98,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throws BadCredentialsException, IssuedCertNotPresentedException, LicenseException
     {
 
-        licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+        licenseManager.requireFeature(getFeature());
 
         try {
             AuthenticationResult[] results = authenticateRequestAgainstAllIdProviders(req);
@@ -230,7 +233,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, PublishedService service)
             throws IOException, BadCredentialsException, IssuedCertNotPresentedException, LicenseException
     {
-        licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+        licenseManager.requireFeature(getFeature());
 
         // Try to authenticate against identity providers
         try {

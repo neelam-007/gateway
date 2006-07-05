@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayLicenseManager;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsBin;
 
@@ -62,7 +63,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
 
     private void checkLicense() throws RemoteException {
         try {
-            licenseManager.requireFeature(Feature.ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
             throw new RemoteException(e.getMessage());
         }
