@@ -126,6 +126,7 @@ Section "SecureSpan Gateway" SecCopyUI
   CreateDirectory "$INSTDIR\etc\conf"
   CreateDirectory "$INSTDIR\etc\keys"
   CreateDirectory "$INSTDIR\var\attachments"
+  CreateDirectory "$INSTDIR\modules\lib"
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
@@ -154,6 +155,9 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR/etc/conf"
   File "${BUILD_DIR}\..\etc\db\mysql\my.ini"
+
+  SetOutPath "$INSTDIR/modules/lib"
+  File "${BUILD_DIR}\ssg-uddi-module-systinetv3.jar"
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\configwizard"
