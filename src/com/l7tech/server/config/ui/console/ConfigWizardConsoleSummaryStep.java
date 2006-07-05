@@ -1,11 +1,10 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.List;
-import java.util.Iterator;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -13,6 +12,7 @@ import java.util.Iterator;
  * Time: 10:00:47 AM
  */
 public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
+    private static final Logger logger = Logger.getLogger(ConfigWizardConsoleSummaryStep.class.getName());
     private String title = "SSG Configuration Summary";
 
     public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz) {
@@ -29,23 +29,21 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
         try {
             printText("The following configuration changes will be made:\n");
 
-            List commandSummary = getParentWizard().getCommandDescriptions();
-            for (Iterator iterator = commandSummary.iterator(); iterator.hasNext();) {
-                String[] s = (String[]) iterator.next();
-                for (int i = 0; i < s.length; i++) {
-                    String s1 = s[i];
-                    printText(s1 + "\n");
+            List<String[]> commandSummary = getParentWizard().getCommandDescriptions();
+            for (String[] strings : commandSummary) {
+                for (String s : strings) {
+                    printText(s + "\n");
                 }
                 printText("\n");
-
             }
+
             printText(new String[] {
                     "\n",
                     "Press <Enter> to continue\n"
             });
             handleInput(readLine());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("Exception caught: " + e.getMessage());
         }
     }
 

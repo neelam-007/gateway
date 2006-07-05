@@ -1,13 +1,12 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.OSSpecificFunctions;
 
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,6 +52,7 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     }
 
     public String[] explain() {
+        explanations.clear();
         populateExplanations();
         return explanations.toArray(new String[explanations.size()]);
     }
