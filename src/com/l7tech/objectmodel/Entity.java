@@ -7,5 +7,4 @@ public interface Entity {
     void setVersion( int version );
     long getOid();
     void setOid( long oid );
-    long getLoadTime();
 }
