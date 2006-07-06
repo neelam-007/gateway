@@ -8,6 +8,7 @@ package com.l7tech.common.audit;
 
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Entity;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -24,7 +25,7 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public abstract class AuditRecord extends SSGLogRecord {
+public abstract class AuditRecord extends SSGLogRecord implements Entity {
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
     protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
     /** Login or name of the user that is making the request if known, or null otherwise. */
