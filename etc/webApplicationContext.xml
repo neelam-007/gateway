@@ -17,7 +17,15 @@
             <ref local="serverConfig"/>
         </property>
     </bean>
-<!--
+
+    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="jmsConnectionManager"/>
+        <constructor-arg ref="jmsEndpointManager"/>
+    </bean>
+
+    <!--
     * singleton using the factory method. This is transitional, as it is referencef from
     * too many places.
     -->

@@ -6,6 +6,7 @@
 
 package com.l7tech.server;
 
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
@@ -17,6 +18,8 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -64,6 +67,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private ServerConfig serverConfig;
     private SoapFaultManager soapFaultManager;
     private ClusterPropertyManager clusterPropertyManager;
+    private LicenseManager licenseManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -76,6 +80,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+        licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
     }
 
     /**
@@ -87,6 +92,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      * @throws IOException
      */
     public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        try {
+            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
+        } catch (LicenseException e) {
+            throw new ServletException(e);
+        }
         this.service(hrequest, hresponse);
     }
 

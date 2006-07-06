@@ -8,16 +8,23 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.Background;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.PeriodicVersionCheck;
-import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.event.system.LicenseEvent;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -27,11 +34,30 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsBootProcess implements ServerComponentLifecycle, ApplicationContextAware {
+public class JmsBootProcess implements InitializingBean, DisposableBean, ApplicationContextAware, ApplicationListener {
     private ApplicationContext applicationContext;
-    private ServerConfig serverConfig;
+    private final ServerConfig serverConfig;
+    private final LicenseManager licenseManager;
+    private final JmsConnectionManager _connectionManager;
+    private final JmsEndpointManager _endpointManager;
 
-    public JmsBootProcess() {
+    private Set _activeReceivers = new HashSet();
+
+    private final Logger _logger = Logger.getLogger(getClass().getName());
+    private boolean started = false;
+    private ConnectionVersionChecker connectionChecker;
+    private PeriodicVersionCheck endpointChecker;
+
+
+    public JmsBootProcess(ServerConfig serverConfig,
+                          LicenseManager licenseManager,
+                          JmsConnectionManager _connectionManager,
+                          JmsEndpointManager _endpointManager)
+    {
+        this.serverConfig = serverConfig;
+        this.licenseManager = licenseManager;
+        this._connectionManager = _connectionManager;
+        this._endpointManager = _endpointManager;
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -43,16 +69,37 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
         return "JMS Boot Process";
     }
 
-    public synchronized void setServerConfig(ServerConfig config) throws LifecycleException {
-        if (initialized) throw new LifecycleException("Can't boot JmsBootProcess twice!");
-        try {
-            _connectionManager = (JmsConnectionManager)applicationContext.getBean("jmsConnectionManager");
-            _endpointManager = (JmsEndpointManager)applicationContext.getBean("jmsEndpointManager");
-        } catch (NoSuchBeanDefinitionException e) {
-            throw new LifecycleException("Couldn't find JMS Managers! JMS functionality will be disabled!", e);
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (applicationEvent instanceof LicenseEvent) {
+            // If the JMS input subsystem becomes licensed after bootup, start it now
+            // We do not, however, support de-licensing an already-active JMS subsystem without a reboot
+            synchronized (this) {
+                if (started)
+                    return;  //avoid cost of scheduling oneshot timertask if we have already started
+            }
+
+            if (licenseManager.isFeatureEnabled(GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT)) {
+                Background.scheduleOneShot(new TimerTask() {
+                    public void run() {
+                        try {
+                            start();
+                        } catch (LifecycleException e) {
+                            _logger.log(Level.SEVERE,
+                                        "Unable to start JMS message input subsystem: " + ExceptionUtils.getMessage(e),
+                                        e);
+                        }
+                    }
+                }, 250);
+            }
         }
-        serverConfig = config;
-        initialized = true;
+    }
+
+    public void destroy() throws Exception {
+        stop();
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        start();
     }
 
     /**
@@ -100,8 +147,14 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
      * <p/>
      * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
      */
-    public synchronized void start() throws LifecycleException {
-        if ( !initialized ) return;
+    private void start() throws LifecycleException {
+        if (!licenseManager.isFeatureEnabled(GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT))
+            return; // should we log here?  currently (per req.) we just pretend there is no JMS code present at all
+
+        synchronized (this) {
+            if (started) return;
+            started = true;  // "started" just means that we have already once attempted to start the JMS listener subsystem
+        }
 
         try {
             // Start up receivers for initial configuration
@@ -138,23 +191,15 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
             }
         } catch ( FindException e ) {
             String msg = "Couldn't start JMS subsystem!  JMS functionality will be disabled.";
-            initialized = false;
             _logger.log( Level.SEVERE, msg, e );
             throw new LifecycleException( msg, e );
         }
 
-        // Stop old timer if this isn't the first start
-        if (_versionTimer != null) {
-            _versionTimer.cancel();
-            _versionTimer = null;
-        }
-
         // Start periodic check timer
-        _versionTimer = new Timer(true);
-        _versionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
+        Background.scheduleRepeated( connectionChecker, connectionChecker.getFrequency() * 2,
                                 connectionChecker.getFrequency() );
 
-        _versionTimer.schedule( endpointChecker, endpointChecker.getFrequency() * 2,
+        Background.scheduleRepeated( endpointChecker, endpointChecker.getFrequency() * 2,
                                 endpointChecker.getFrequency() );
     }
 
@@ -163,58 +208,25 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
      * {@link ConnectionVersionChecker}
      */
     // todo make this idempotent?
-    public synchronized void stop() {
+    private void stop() {
+        connectionChecker.cancel();
+        endpointChecker.cancel();
         for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
-            _logger.info("Stopping JMS receiver '" + receiver.toString() + "'");
-            stop(receiver);
-        }
-        if (_versionTimer !=null) {
-            _versionTimer.cancel();
-            _versionTimer = null;
-        }
-        connectionChecker = null;
-        endpointChecker = null;
-    }
-
-    /**
-     * Attempts to close all JMS receivers.
-     */
-    public synchronized void close() {
-        // todo call stop() after it's been made idempotent?
-        if (_versionTimer !=null) {
-            _versionTimer.cancel();
-            _versionTimer = null;
-        }
-        connectionChecker = null;
-        endpointChecker = null;
-
-        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
-            JmsReceiver receiver = (JmsReceiver)i.next();
-            _logger.info("Closing JMS receiver '" + receiver.toString() + "'");
-            close(receiver);
+            _logger.info("Stopping and closing JMS receiver '" + receiver.toString() + "'");
+            stopAndClose(receiver);
         }
     }
 
     /**
      * Stops a JmsReceiver. Logs but does not propagate any exception that might be thrown.
      */
-    private void stop(JmsReceiver component) {
+    private void stopAndClose(JmsReceiver component) {
         try {
             component.stop();
-        } catch (LifecycleException e) {
-            _logger.warning("Exception while stopping " + component);
-        }
-    }
-
-    /**
-     * Closes a JmsReceiver.  Logs but does not propagate any exception that might be thrown.
-     */
-    private void close(JmsReceiver component) {
-        try {
             component.close();
         } catch (LifecycleException e) {
-            _logger.warning("Exception while closing " + component);
+            _logger.warning("Exception while stopping or closing " + component);
         }
     }
 
@@ -225,8 +237,7 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
         for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             if (receiver.getConnection().getOid() == deletedConnectionOid ) {
-                stop(receiver);
-                close(receiver);
+                stopAndClose(receiver);
                 i.remove();
             }
         }
@@ -263,8 +274,7 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
             JmsReceiver receiver = (JmsReceiver)i.next();
             JmsEndpoint existingEndpoint = receiver.getInboundRequestEndpoint();
             if (existingEndpoint.getOid() == deletedEndpointOid ) {
-                stop(receiver);
-                close(receiver);
+                stopAndClose(receiver);
                 i.remove();
             }
         }
@@ -314,16 +324,4 @@ public class JmsBootProcess implements ServerComponentLifecycle, ApplicationCont
                 endpoint.getReplyType());
         return receiver;
     }
-
-    private JmsConnectionManager _connectionManager;
-    private JmsEndpointManager _endpointManager;
-    private Set _activeReceivers = new HashSet();
-
-    private Timer _versionTimer = null;
-
-    private final Logger _logger = Logger.getLogger(getClass().getName());
-    private boolean initialized = false;
-    public static final int FREQUENCY = 4 * 1000;
-    private ConnectionVersionChecker connectionChecker;
-    private PeriodicVersionCheck endpointChecker;
 }
