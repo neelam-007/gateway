@@ -122,6 +122,8 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet jmsBack =
         fsr("set:jms:back", "Allow outgoing JMS messages",
+            "Current requires allowing the JMS front end as well",
+            SERVICE_JMS_MESSAGE_INPUT,
             ass(JmsRoutingAssertion.class));
 
         GatewayFeatureSet ssb =
