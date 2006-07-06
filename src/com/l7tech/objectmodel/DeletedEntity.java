@@ -62,10 +62,6 @@ public class DeletedEntity implements NamedEntity, Serializable {
         throw new UnsupportedOperationException();
     }
 
-    public long getLoadTime() {
-        return 0;
-    }
-
     /** @deprecated */
     public void setName(String name) {
         throw new UnsupportedOperationException();

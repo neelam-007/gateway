@@ -20,10 +20,6 @@ public class EntityImp implements Entity, Serializable {
         _loadTime = System.currentTimeMillis();
     }
 
-    public long getLoadTime() {
-        return _loadTime;
-    }
-
     public int getVersion() { return _version; }
     public void setVersion(int version) { _version = version; }
 
