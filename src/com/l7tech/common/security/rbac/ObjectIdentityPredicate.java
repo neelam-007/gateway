@@ -22,7 +22,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         return targetEntityOid;
     }
 
-    public void setTargetEntity(long targetEntityOid) {
+    public void setTargetEntityOid(long targetEntityOid) {
         this.targetEntityOid = targetEntityOid;
     }
 
