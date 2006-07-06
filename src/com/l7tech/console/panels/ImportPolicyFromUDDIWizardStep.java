@@ -62,7 +62,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     }
 
     public boolean canFinish() {
-        return readyToAdvance;
+        return false;
     }
 
     public boolean onNextButton() {
