@@ -1,11 +1,12 @@
 package com.l7tech.logging;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.objectmodel.Entity;
 
 import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.text.MessageFormat;
 
 /**
  * Log record that can be persisted.
@@ -17,7 +18,7 @@ import java.text.MessageFormat;
  * @version $Id$<br/>
  *
  */
-public class SSGLogRecord extends LogRecord implements Serializable {
+public class SSGLogRecord extends LogRecord implements Entity, Serializable {
 
     public SSGLogRecord() {
         super(Level.FINEST, null);
@@ -170,6 +171,14 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         return true;
     }
 
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
     /**
      * Get the oid of the log record.
      *
@@ -191,6 +200,7 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     private static final long serialVersionUID = -2234601153074484000L;
 
     private long oid;
+    private int version;
     protected String requestId;
     protected String nodeId;
 }

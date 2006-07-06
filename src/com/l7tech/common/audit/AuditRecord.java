@@ -6,15 +6,14 @@
 
 package com.l7tech.common.audit;
 
-import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.logging.SSGLogRecord;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.LinkedHashSet;
-import java.util.logging.Level;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Abstract superclass of all of the different types of audit record.
@@ -25,7 +24,7 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public abstract class AuditRecord extends SSGLogRecord implements Entity {
+public abstract class AuditRecord extends SSGLogRecord {
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
     protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
     /** Login or name of the user that is making the request if known, or null otherwise. */
