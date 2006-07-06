@@ -1533,6 +1533,7 @@
             <exclude name="com/l7tech/policy/variable/**/*.java"/>
             <exclude name="com/l7tech/common/Authorizer.java"/>
             <exclude name="com/l7tech/common/http/cache/**/*.java"/>
+	    <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
