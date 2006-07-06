@@ -9,28 +9,28 @@ import com.l7tech.objectmodel.Entity;
  * Matches any {@link Entity} that is of the expected type and has a matching {@link Entity#getOid()}.
  */
 public class ObjectIdentityPredicate extends ScopePredicate {
-    private Entity targetEntity;
+    private long targetEntityOid;
 
-    public ObjectIdentityPredicate(Permission permission, Entity targetEntity) {
+    public ObjectIdentityPredicate(Permission permission, long targetEntityOid) {
         super(permission);
-        this.targetEntity = targetEntity;
+        this.targetEntityOid = targetEntityOid;
     }
 
     protected ObjectIdentityPredicate() { }
 
-    public Entity getTargetEntity() {
-        return targetEntity;
+    public long getTargetEntityOid() {
+        return targetEntityOid;
     }
 
-    public void setTargetEntity(Entity targetEntity) {
-        this.targetEntity = targetEntity;
+    public void setTargetEntity(long targetEntityOid) {
+        this.targetEntityOid = targetEntityOid;
     }
 
     public boolean matches(Entity entity) {
         EntityType etype = permission.getEntityType();
         if (etype == null || etype == EntityType.ANY)
             throw new IllegalStateException("Can't evaluate an ObjectIdentityPredicate without a specific EntityType");
-        return etype.getEntityClass().isAssignableFrom(entity.getClass()) && targetEntity.getOid() == entity.getOid();
+        return etype.getEntityClass().isAssignableFrom(entity.getClass()) && targetEntityOid == entity.getOid();
     }
 
     public boolean equals(Object o) {
@@ -40,14 +40,14 @@ public class ObjectIdentityPredicate extends ScopePredicate {
 
         ObjectIdentityPredicate that = (ObjectIdentityPredicate) o;
 
-        if (targetEntity != null ? !targetEntity.equals(that.targetEntity) : that.targetEntity != null) return false;
+        if (targetEntityOid != that.targetEntityOid) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (targetEntity != null ? targetEntity.hashCode() : 0);
+        result = 31 * result + (int) (targetEntityOid ^ (targetEntityOid >>> 32));
         return result;
     }
 }
