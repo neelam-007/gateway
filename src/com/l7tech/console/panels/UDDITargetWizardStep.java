@@ -26,6 +26,8 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     private static final Logger logger = Logger.getLogger(UDDITargetWizardStep.class.getName());
     public static final String UDDI_ACCOUNT_NAME = "UDDI.ACCOUNT.NAME";
     public static final String UDDI_URL = "UDDI.URL";
+    private String panelDescription = "Provide the UDDI registry URL and account information to publish this policy";
+    private JLabel descLabel;
 
     public UDDITargetWizardStep(WizardStepPanel next) {
         super(next);
@@ -33,7 +35,12 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "Provide the UDDI registry URL and account information to publish this policy";
+        return panelDescription;
+    }
+
+    public void setPanelDescription(String panelDescription) {
+        this.panelDescription = panelDescription;
+        if (descLabel != null) descLabel.setText(panelDescription);
     }
 
     public String getStepLabel() {

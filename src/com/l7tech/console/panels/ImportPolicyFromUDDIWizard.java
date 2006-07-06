@@ -20,12 +20,13 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
         ImportPolicyFromUDDIFinalStep fstep = new ImportPolicyFromUDDIFinalStep(null);
         ImportPolicyFromUDDIWizardStep istep = new ImportPolicyFromUDDIWizardStep(fstep);
         UDDITargetWizardStep tstep = new UDDITargetWizardStep(istep);
+        tstep.setPanelDescription("Provide the UDDI registry URL and account information to retrieve the policy");
         return new ImportPolicyFromUDDIWizard(parent, tstep);
     }
 
     protected ImportPolicyFromUDDIWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
-        setTitle("Publish WS-Policy Document Reference to UDDI Registry");
+        setTitle("Pull WS-Policy Document from URL in UDDI Registry");
         getButtonHelp().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(ImportPolicyFromUDDIWizard.this);
