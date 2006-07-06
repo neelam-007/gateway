@@ -149,7 +149,11 @@
     </bean>
 
     <!-- server side policy factory -->
-    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory"></bean>
+    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
+    </bean>
     <!-- server side service manager -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
         <constructor-arg>

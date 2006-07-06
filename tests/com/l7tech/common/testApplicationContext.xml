@@ -58,6 +58,9 @@
 
     <!-- server side policy factory -->
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
     </bean>
 
     <!-- server side trusted cert manager -->

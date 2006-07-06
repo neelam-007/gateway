@@ -151,6 +151,30 @@ public final class License implements Serializable {
             if (!anyHost)
                 sb.append(anyIp ? ", with" : " and").append(" the host name ").append(hostname);
 
+            if (rootFeatureSetNames.length > 0) {
+                String setprof = "set:Profile:";
+                int setproflen = setprof.length();
+                sb.append(" featuring ");
+                for (int i = 0; i < rootFeatureSetNames.length; i++) {
+                    String name = rootFeatureSetNames[i];
+                    if (i > 0) {
+                        if (i == rootFeatureSetNames.length - 1) sb.append(" and ");
+                        else sb.append(", ");
+                    }
+
+                    // TODO look up the human-readable marketing name rather than attempting to make one up here
+                    if (name.startsWith(setprof) && name.length() > setproflen) {
+                        sb.append("SecureSpan ");
+                        name = name.substring(setproflen);
+                        if (name.equals("Accel")) name = "Acceleration";
+                        else if (name.equals("IPS")) name = "XML IPS";
+                        sb.append(name);
+                    } else
+                        sb.append(name);
+
+                }
+            }
+
             return sb.toString();
         }
 

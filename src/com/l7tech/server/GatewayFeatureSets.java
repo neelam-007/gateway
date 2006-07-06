@@ -5,36 +5,37 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.Feature;
+import com.l7tech.common.License;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.proxy.BridgeServlet;
 import com.l7tech.server.identity.cert.CSRHandler;
 import com.l7tech.server.policy.PolicyServlet;
-import com.l7tech.common.Feature;
-import com.l7tech.common.License;
-import com.l7tech.proxy.BridgeServlet;
 
 import javax.servlet.http.HttpServlet;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -44,32 +45,35 @@ public class GatewayFeatureSets {
     private static final Logger logger = Logger.getLogger(GatewayFeatureSets.class.getName());
 
     /** All pre-configured FeatureSets. */
-    private static final Map<String, FeatureSet> sets = new LinkedHashMap<String, FeatureSet>();
+    private static final Map<String, GatewayFeatureSet> sets = new LinkedHashMap<String, GatewayFeatureSet>();
 
     /** Only the root-level FeatureSets. */
-    private static final Map<String, FeatureSet> rootSets = new LinkedHashMap<String, FeatureSet>();
+    private static final Map<String, GatewayFeatureSet> rootSets = new LinkedHashMap<String, GatewayFeatureSet>();
 
     /** Only the root-level Product Profile feature sets. */
-    private static final Map<String, FeatureSet> profileSets = new LinkedHashMap<String, FeatureSet>();
+    private static final Map<String, GatewayFeatureSet> profileSets = new LinkedHashMap<String, GatewayFeatureSet>();
 
     /** The ultimate Product Profile that enables every possible feature. */
-    private static final FeatureSet PROFILE_ALL;
+    public static final GatewayFeatureSet PROFILE_ALL;
 
     /** Feature set to use for (usually old) licenses that, while valid, do not explicitly name any feature sets. */
-    private static final FeatureSet PROFILE_LICENSE_NAMES_NO_FEATURES;
+    public static final GatewayFeatureSet PROFILE_LICENSE_NAMES_NO_FEATURES;
 
     // Top-level services queried for by enforcement points throughout the code
-    public static final FeatureSet SERVICE_MESSAGEPROCESSOR = misc("service:MessageProcessor", "Core Gateway message processing module");
-    public static final FeatureSet SERVICE_HTTP_MESSAGE_INPUT = srv(SoapMessageProcessingServlet.class, "Accept incoming messages over HTTP", "service:HttpMessageInput");
-    public static final FeatureSet SERVICE_JMS_MESSAGE_INPUT = misc("service:JmsMessageInput", "Accept incoming messages over JMS");
-    public static final FeatureSet SERVICE_ADMIN = misc("service:Admin", "All admin APIs, over all admin API transports");
-    public static final FeatureSet SERVICE_POLICYDISCO = srv(PolicyServlet.class, "Policy discovery service");
-    public static final FeatureSet SERVICE_STS = srv(TokenServiceServlet.class, "Security token service");
-    public static final FeatureSet SERVICE_CSRHANDLER = srv(CSRHandler.class, "Certificate signer (CA) service");
-    public static final FeatureSet SERVICE_PASSWD = srv(PasswdServlet.class, "Internal user password change service");
-    public static final FeatureSet SERVICE_WSDLPROXY = srv(WsdlProxyServlet.class, "WSDL proxy service");
-    public static final FeatureSet SERVICE_SNMPQUERY = srv(SnmpQueryServlet.class, "HTTP SNMP query service");
-    public static final FeatureSet SERVICE_BRIDGE = srv(BridgeServlet.class, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"); // experimental bridge servlet, disabled by default (neither SSB nor BRA!)
+    public static final GatewayFeatureSet SERVICE_MESSAGEPROCESSOR = misc("service:MessageProcessor", "Core Gateway message processing module", null);
+    public static final GatewayFeatureSet SERVICE_HTTP_MESSAGE_INPUT = srv(SoapMessageProcessingServlet.class, "Accept incoming messages over HTTP", "service:HttpMessageInput");
+    public static final GatewayFeatureSet SERVICE_JMS_MESSAGE_INPUT = misc("service:JmsMessageInput", "Accept incoming messages over JMS", null);
+    public static final GatewayFeatureSet SERVICE_ADMIN = misc("service:Admin", "All admin APIs, over all admin API transports", null);
+    public static final GatewayFeatureSet SERVICE_POLICYDISCO = srv(PolicyServlet.class, "Policy discovery service");
+    public static final GatewayFeatureSet SERVICE_STS = srv(TokenServiceServlet.class, "Security token service");
+    public static final GatewayFeatureSet SERVICE_CSRHANDLER = srv(CSRHandler.class, "Certificate signer (CA) service");
+    public static final GatewayFeatureSet SERVICE_PASSWD = srv(PasswdServlet.class, "Internal user password change service");
+    public static final GatewayFeatureSet SERVICE_WSDLPROXY = srv(WsdlProxyServlet.class, "WSDL proxy service");
+    public static final GatewayFeatureSet SERVICE_SNMPQUERY = srv(SnmpQueryServlet.class, "HTTP SNMP query service");
+    public static final GatewayFeatureSet SERVICE_BRIDGE = srv(BridgeServlet.class, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"); // experimental bridge servlet, disabled by default (neither SSB nor BRA!)
+
+    /** Private cache for quickly looking up feature instance from assertion classname. */
+    private static final Map<String, Feature> FEATURE_FOR_ASSERTION = new ConcurrentHashMap<String, Feature>();
 
     static {
         // Declare all baked-in feature sets
@@ -80,59 +84,59 @@ public class GatewayFeatureSets {
         //  a "leaf" feature set like a single assertion or servlet)
         // Naming convention: set:all:lowercase
         //
-        FeatureSet core =
+        GatewayFeatureSet core =
         fsr("set:core", "Core features, without which nothing else will work",
             "Always needed",
             SERVICE_MESSAGEPROCESSOR,
             ass(AllAssertion.class),
             ass(UnknownAssertion.class));
 
-        FeatureSet admin =
+        GatewayFeatureSet admin =
         fsr("set:admin", "All admin APIs, over all admin API transports",
             "Everything that used to be enabled by the catchall Feature.ADMIN",
             SERVICE_ADMIN);
 
-        FeatureSet branching =
+        GatewayFeatureSet branching =
         fsr("set:policy:branching", "Support for branching policies",
             ass(AllAssertion.class),
             ass(ExactlyOneAssertion.class),
             ass(OneOrMoreAssertion.class));
 
-        FeatureSet wssc =
+        GatewayFeatureSet wssc =
         fsr("set:wssc", "WS-SecureConversation support",
             "Requires enabling the STS",
             SERVICE_STS,
             ass(SecureConversation.class));
 
-        FeatureSet httpFront =
+        GatewayFeatureSet httpFront =
         fsr("set:http:front", "Allow incoming HTTP messages",
             SERVICE_HTTP_MESSAGE_INPUT);
 
-        FeatureSet httpBack =
+        GatewayFeatureSet httpBack =
         fsr("set:http:back", "Allow outgoing HTTP messages",
             ass(HttpRoutingAssertion.class));
 
-        FeatureSet jmsFront =
+        GatewayFeatureSet jmsFront =
         fsr("set:jms:front", "Allow incoming JMS messages",
             SERVICE_JMS_MESSAGE_INPUT);
 
-        FeatureSet jmsBack =
+        GatewayFeatureSet jmsBack =
         fsr("set:jms:back", "Allow outgoing JMS messages",
             ass(JmsRoutingAssertion.class));
 
-        FeatureSet ssb =
+        GatewayFeatureSet ssb =
         fsr("set:ssb", "Features needed for best use of the SecureSpan Bridge",
             SERVICE_CSRHANDLER,
             SERVICE_PASSWD,
             SERVICE_POLICYDISCO,
             SERVICE_WSDLPROXY);
 
-        FeatureSet snmp =
+        GatewayFeatureSet snmp =
         fsr("set:snmp", "SNMP features",
             SERVICE_SNMPQUERY,
             ass(SnmpTrapAssertion.class));
 
-        FeatureSet experimental =
+        GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
             SERVICE_BRIDGE,
@@ -146,7 +150,7 @@ public class GatewayFeatureSets {
         //
 
         // Access control
-        FeatureSet accessAccel =
+        GatewayFeatureSet accessAccel =
         fsr("set:AccessControl:Accel", "SecureSpan Accelerator access control",
             "User and group auth, and basic HTTP, SSL, and XML credential sources.  No WSS message-level security.",
             ass(SpecificUser.class),
@@ -156,7 +160,7 @@ public class GatewayFeatureSets {
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
             ass(XpathCredentialSource.class));
 
-        FeatureSet accessFw =
+        GatewayFeatureSet accessFw =
         fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
             "Adds WSS message-level security (including WS-SecureConversation) and identity mapping",
             fs(accessAccel),
@@ -170,14 +174,14 @@ public class GatewayFeatureSets {
             ass(WsTrustCredentialExchange.class),
             ass(SamlBrowserArtifact.class));
 
-        FeatureSet accessGateway =
+        GatewayFeatureSet accessGateway =
         fsr("set:AccessControl:Gateway", "SecureSpan Gateway access control",
             "Adds SSL client certs (although currently this comes with our SSL support and can't be disabled)",
             fs(accessFw),
             ass(SslAssertion.class)); // TODO enable client cert here exclusively (when it is possible to do so)
 
         // XML Security
-        FeatureSet xmlsecAccel =
+        GatewayFeatureSet xmlsecAccel =
         fsr("set:XmlSec:Accel", "SecureSpan Accelerator XML security",
             "Element signature and encryption using WSS",
             ass(RequestWssIntegrity.class),
@@ -186,7 +190,7 @@ public class GatewayFeatureSets {
             ass(ResponseWssConfidentiality.class),
             ass(ResponseWssTimestamp.class));
 
-        FeatureSet xmlsecFw =
+        GatewayFeatureSet xmlsecFw =
         fsr("set:XmlSec:Firewall", "SecureSpan Firewall XML security",
             "Adds timestamp and token manipulation",
             fs(xmlsecAccel),
@@ -196,7 +200,7 @@ public class GatewayFeatureSets {
             ass(ResponseWssSecurityToken.class));
 
         // Message Validation/Transform
-        FeatureSet validationAccel =
+        GatewayFeatureSet validationAccel =
         fsr("set:Validation:Accel", "SecureSpan Accelerator message validation and transformation",
             "XPath, Schema, XSLT, and SOAP operation detector",
             ass(RequestXpathAssertion.class),
@@ -205,7 +209,7 @@ public class GatewayFeatureSets {
             ass(SchemaValidation.class),
             ass(XslTransformation.class));
 
-        FeatureSet validationFw =
+        GatewayFeatureSet validationFw =
         fsr("set:Validation:Firewall", "SecureSpan Firewall message validation and transformation",
             "Adds regex and attachments",
             fs(validationAccel),
@@ -214,7 +218,7 @@ public class GatewayFeatureSets {
             ass(WsiBspAssertion.class),
             ass(WsiSamlAssertion.class));
 
-        FeatureSet validationGateway =
+        GatewayFeatureSet validationGateway =
         fsr("set:Validation:Gateway", "SecureSpan Gateway message validation and transformation",
             "Adds HTTP form/MIME conversion assertions",
             fs(validationFw),
@@ -222,7 +226,7 @@ public class GatewayFeatureSets {
             ass(InverseHttpFormPost.class));
 
         // Message routing
-        FeatureSet routingAccel =
+        GatewayFeatureSet routingAccel =
         fsr("set:Routing:Accel", "SecureSpan Accelerator message routing",
             "HTTP and hardcoded responses.",
             fs(httpFront),
@@ -230,7 +234,7 @@ public class GatewayFeatureSets {
             ass(HardcodedResponseAssertion.class),
             ass(EchoRoutingAssertion.class));
 
-        FeatureSet routingGateway =
+        GatewayFeatureSet routingGateway =
         fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",
             "Adds BRA and JMS routing.",
             fs(routingAccel),
@@ -239,7 +243,7 @@ public class GatewayFeatureSets {
             ass(BridgeRoutingAssertion.class));
 
         // Service availability
-        FeatureSet availabilityAccel =
+        GatewayFeatureSet availabilityAccel =
         fsr("set:Availability:Accel", "SecureSpan Accelerator service availability",
             "Time/Day, IP range, and throughput qutoa",
             ass(TimeRange.class),
@@ -247,7 +251,7 @@ public class GatewayFeatureSets {
             ass(ThroughputQuota.class));
 
         // Logging/auditing and alerts
-        FeatureSet auditAccel =
+        GatewayFeatureSet auditAccel =
         fsr("set:Audit:Accel", "SecureSpan Accelerator logging/auditing and alerts",
             "Auditing, email and SNMP traps",
             fs(snmp),
@@ -256,7 +260,7 @@ public class GatewayFeatureSets {
             ass(EmailAlertAssertion.class));
 
         // Policy logic
-        FeatureSet policyAccel =
+        GatewayFeatureSet policyAccel =
         fsr("set:Policy:Accel", "SecureSpan Accelerator complex policy logic",
             "Branches, comments, comparisons, variables, and echoing",
             fs(core),
@@ -269,7 +273,7 @@ public class GatewayFeatureSets {
             ass(EchoRoutingAssertion.class),
             ass(HardcodedResponseAssertion.class));
 
-        FeatureSet threatIps =
+        GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
             "Stealth fault, size limits, document structure threats, schema validation, and XTM (when it's done)",
             ass(FaultLevel.class),
@@ -277,13 +281,13 @@ public class GatewayFeatureSets {
             ass(RequestSizeLimit.class),
             ass(SchemaValidation.class)); // TODO Assertion for XTM Signature goes here, as soon as it exists
 
-        FeatureSet threatAccel =
+        GatewayFeatureSet threatAccel =
         fsr("set:Threats:Accel", "SecureSpan Accelerator threat protection",
             "Just document structure threats and schema validation",
             ass(OversizedTextAssertion.class),
             ass(SchemaValidation.class));
 
-        FeatureSet threatFw =
+        GatewayFeatureSet threatFw =
         fsr("set:Threats:Firewall", "SecureSpan Firewall threat protection",
             "Both of the above, plus adds regex, SQL attacks, and cluster-wide replay protection",
             fs(threatIps),
@@ -293,7 +297,7 @@ public class GatewayFeatureSets {
             ass(RequestWssReplayProtection.class));
 
         // Custom assertions
-        FeatureSet customFw =
+        GatewayFeatureSet customFw =
         fsr("set:Custom:Firewall", "SecureSpan Firewall custom assertions",
             "Synamtec, TAM, SM, TM, CT, ADFS, OAM",
             ass(CustomAssertionHolder.class),
@@ -343,9 +347,10 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw));
 
-        FeatureSet profileGateway =
+        PROFILE_ALL =
         fsp("set:Profile:Gateway", "SecureSpan Gateway",
             "All features enabled.",
+            misc("bundle:Bridge", "Bundled SecureSpan Bridge", "No effect on Gateway license code -- only purpose is to distinguish two otherwise-identical feature sets"),
             fs(core),
             fs(admin),
             fs(accessGateway),
@@ -360,10 +365,21 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(experimental));
 
-        PROFILE_ALL =
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but Bridge software is not bundled.",
-            fs(profileGateway));
+            fs(core),
+            fs(admin),
+            fs(accessGateway),
+            fs(xmlsecFw),
+            fs(validationGateway),
+            fs(routingGateway),
+            fs(availabilityAccel),
+            fs(auditAccel),
+            fs(policyAccel),
+            fs(threatFw),
+            fs(customFw),
+            fs(ssb),
+            fs(experimental));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO in the future, we should enable only those features that existed in 3.5.
@@ -376,25 +392,25 @@ public class GatewayFeatureSets {
     }
 
     /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */
-    public static Map<String, FeatureSet> getAllFeatureSets() {
+    public static Map<String, GatewayFeatureSet> getAllFeatureSets() {
         return Collections.unmodifiableMap(sets);
     }
 
 
     /** @return all root-level FeatureSets, including all product profiles, building blocks, and twig features. */
-    public static Map<String, FeatureSet> getRootFeatureSets() {
+    public static Map<String, GatewayFeatureSet> getRootFeatureSets() {
         return Collections.unmodifiableMap(rootSets);
     }
 
 
     /** @return all Product Profile FeatureSets. */
-    public static Map<String, FeatureSet> getProductProfiles() {
+    public static Map<String, GatewayFeatureSet> getProductProfiles() {
         return Collections.unmodifiableMap(profileSets);
     }
 
 
     /** @return the product profile that has all features enabled. */
-    public static FeatureSet getBestProductProfile() {
+    public static GatewayFeatureSet getBestProductProfile() {
         return PROFILE_ALL;
     }
 
@@ -413,7 +429,7 @@ public class GatewayFeatureSets {
 
                 for (Iterator i = inputSet.iterator(); i.hasNext();) {
                     String topName = (String)i.next();
-                    FeatureSet fs = sets.get(topName);
+                    GatewayFeatureSet fs = sets.get(topName);
                     if (fs == null) {
                         logger.fine("Ignoring unrecognized feature set name: " + topName);
                         continue;
@@ -426,85 +442,54 @@ public class GatewayFeatureSets {
         };
     }
 
-    static class FeatureSet implements Feature {
-        final String name;
-        final String desc;
-        final String note;
-        final FeatureSet[] sets;
-
-        public FeatureSet(String name, String desc, String note, FeatureSet[] sets) {
-            if (name == null || name.trim().length() < 1) throw new IllegalArgumentException("Invalid set name: " + name);
-            this.name = name;
-            this.desc = desc;
-            this.note = note;
-            this.sets = sets;
-        }
-
-        public FeatureSet(String name, String desc) {
-            this(name, desc, null, new FeatureSet[0]);
-        }
-
-        public String getNote() {
-            return note == null ? "" : note;
-        }
-
-        /** @return true if the specified feature set is containing in this or any subset.  This does a deep search and may be slow.  */
-        public boolean contains(String name) {
-            if (name.equals(this.name)) return true;
-            for (FeatureSet featureSet : sets)
-                if (featureSet.contains(name)) return true;
-            return false;
-        }
-
-        /** Collect the names of this feature set and any sub sets it enables into the specified set. */
-        public void collectAllFeatureNames(Set<String> collector) {
-            for (FeatureSet subset : sets)
-                subset.collectAllFeatureNames(collector);
-            collector.add(name);
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    /** Find already-registered FeatureSet by FeatureSet.  (Basically just asserts that a featureset is registered already.) */
-    private static FeatureSet fs(FeatureSet fs)  throws IllegalArgumentException {
+    /** Find already-registered GatewayFeatureSet by GatewayFeatureSet.  (Basically just asserts that a featureset is registered already.) */
+    private static GatewayFeatureSet fs(GatewayFeatureSet fs)  throws IllegalArgumentException {
         return fs(fs.name);
     }
 
-    /** Find already-registered FeatureSet by name. */
-    private static FeatureSet fs(String name) throws IllegalArgumentException {
-        FeatureSet got = sets.get(name);
+    /** Find already-registered GatewayFeatureSet by name. */
+    private static GatewayFeatureSet fs(String name) throws IllegalArgumentException {
+        GatewayFeatureSet got = sets.get(name);
         if (got == null || name == null) throw new IllegalArgumentException("Unknown feature set name: " + name);
         return got;
     }
 
-    /** Create and register a new root-level FeatureSet with no note. */
-    private static FeatureSet fsr(String name, String desc, FeatureSet... deps) {
+    /** Create and register a new root-level GatewayFeatureSet with no note. */
+    private static GatewayFeatureSet fsr(String name, String desc, GatewayFeatureSet... deps) {
         return fsr(name, desc, null, deps);
     }
 
-    /** Create and register a new root-level FeatureSet. */
-    private static FeatureSet fsr(String name, String desc, String note, FeatureSet... deps) throws IllegalArgumentException {
+    /** Create and register a new root-level GatewayFeatureSet. */
+    private static GatewayFeatureSet fsr(String name, String desc, String note, GatewayFeatureSet... deps) throws IllegalArgumentException {
         if (!name.startsWith("set:")) throw new IllegalArgumentException("Non-leaf feature set name must start with \"set:\": " + name);
-        FeatureSet newset = new FeatureSet(name, desc, note, deps);
-        FeatureSet old = sets.put(name, newset);
+        GatewayFeatureSet newset = new GatewayFeatureSet(name, desc, note, deps);
+        GatewayFeatureSet old = sets.put(name, newset);
         if (old != null) throw new IllegalArgumentException("Duplicate feature set name: " + name);
         rootSets.put(name, newset);
         return newset;
     }
 
-    /** Create and register a new root-level "product profile" FeatureSet. */
-    private static FeatureSet fsp(String name, String desc, String note, FeatureSet... deps) throws IllegalArgumentException {
-        FeatureSet got = fsr(name, desc, note, deps);
+    /** Create and register a new root-level "product profile" GatewayFeatureSet. */
+    private static GatewayFeatureSet fsp(String name, String desc, String note, GatewayFeatureSet... deps) throws IllegalArgumentException {
+        GatewayFeatureSet got = fsr(name, desc, note, deps);
         profileSets.put(name, got);
         return got;
     }
 
-    /** @return the feature name to use for the specified Assertion class name. */
-    static String getFeatureSetNameForAssertion(Class<? extends Assertion> assertion) {
-        String classname = assertion.getName();
+    /** @return the feature name to use for the specified Assertion class. */
+    static String getFeatureSetNameForAssertion(Class<? extends Assertion> assertionClass) {
+        String classname = assertionClass.getName();
+        return getFeatureSetNameForAssertion(classname);
+    }
+
+    /**
+     * Get the name of the feature set for the specified policy assertion classname.  For example,
+     * "com.l7tech.policy.assertion.composite.OneOrMoreAssertion" would return "assertion:composite.OneOrMore".
+     *
+     * @return the feature set name to use for the specified Assertion classname.  Never null.
+     * @throws IllegalArgumentException if the specified classname is not under com.l7tech.policy.assertion.
+     */
+    static String getFeatureSetNameForAssertion(String classname) {
         String pass = "com.l7tech.policy.assertion.";
         if (!classname.startsWith(pass))
             throw new IllegalArgumentException("Assertion concrete classname must start with " + pass);
@@ -513,8 +498,31 @@ public class GatewayFeatureSets {
         return "assertion:" + rest;
     }
 
+    /**
+     * Quickly get the Feature that represents the specified policy assertion classname.
+     *
+     * @param assertionClassname  the assertion class name, which must start with "com.l7tech.policy.assertion.".
+     * @return the Feature for this assertion class.  Never null.
+     * @throws IllegalArgumentException if the specified classname is not under com.l7tech.policy.assertion.
+     * @throws IllegalArgumentException if the specified assertion does not have a feature set registered.  Shouldn't happen.
+     */
+    public static Feature getFeatureForAssertionClassname(String assertionClassname) throws IllegalArgumentException {
+        Feature got = FEATURE_FOR_ASSERTION.get(assertionClassname);
+        if (got != null) return got;
+
+        String featureName = getFeatureSetNameForAssertion(assertionClassname);
+        got = sets.get(featureName);
+        if (got != null) {
+            FEATURE_FOR_ASSERTION.put(assertionClassname, got);
+            return got;
+        }
+
+        throw new IllegalArgumentException("No feature set name registered for the assertion class " + assertionClassname);
+    }
+
+
     /** Create (and register, if new) a feature set for the specified policy assertion and return it. */
-    private static FeatureSet ass(Class<? extends Assertion> ass) {
+    private static GatewayFeatureSet ass(Class<? extends Assertion> ass) {
         String name = getFeatureSetNameForAssertion(ass);
         String classname = ass.getName();
         String desc = "Policy assertion: " + classname;
@@ -522,14 +530,14 @@ public class GatewayFeatureSets {
         return getOrMakeFeatureSet(name, desc);
     }
 
-    private static FeatureSet getOrMakeFeatureSet(String name, String desc) {
-        FeatureSet got = sets.get(name);
+    private static GatewayFeatureSet getOrMakeFeatureSet(String name, String desc) {
+        GatewayFeatureSet got = sets.get(name);
         if (got != null) {
             if (!desc.equals(got.desc)) throw new IllegalArgumentException("Already have different feature set named: " + name);
             return got;
         }
 
-        got = new FeatureSet(name, desc);
+        got = new GatewayFeatureSet(name, desc);
         sets.put(name, got);
         return got;
     }
@@ -541,30 +549,30 @@ public class GatewayFeatureSets {
         return rest;
     }
 
-    /** Create (and register, if new) a new miscellaneous FeatureSet with the specified name and description. */
-    private static FeatureSet misc(String name, String desc) {
-        FeatureSet got = sets.get(name);
+    /** Create (and register, if new) a new miscellaneous GatewayFeatureSet with the specified name and description. */
+    private static GatewayFeatureSet misc(String name, String desc, String note) {
+        GatewayFeatureSet got = sets.get(name);
         if (got != null) {
             if (!desc.equals(got.desc))
                 throw new IllegalArgumentException("Feature set name already in use with different description: " + name);
             return got;
         }
 
-        got = new FeatureSet(name, desc);
+        got = new GatewayFeatureSet(name, desc, note, null);
         sets.put(name, got);
         return got;
     }
 
-    /** Create (and register, if new) a new FeatureSet for the specified HttpServlet and return it. */
-    private static FeatureSet srv(Class<? extends HttpServlet> srv, String desc) {
+    /** Create (and register, if new) a new GatewayFeatureSet for the specified HttpServlet and return it. */
+    private static GatewayFeatureSet srv(Class<? extends HttpServlet> srv, String desc) {
         return srv(srv, desc, null);
     }
 
     /**
-     * Create (and register, if new) a new FeatureSet for the specified HttpServlet and return it,
+     * Create (and register, if new) a new GatewayFeatureSet for the specified HttpServlet and return it,
      * but using the specified name instead of the default.
      */
-    private static FeatureSet srv(Class<? extends HttpServlet> srv, String desc, String preferredName) {
+    private static GatewayFeatureSet srv(Class<? extends HttpServlet> srv, String desc, String preferredName) {
         String classname = srv.getName();
         int lastdot = classname.lastIndexOf('.');
         String rest = classname.substring(lastdot + 1);

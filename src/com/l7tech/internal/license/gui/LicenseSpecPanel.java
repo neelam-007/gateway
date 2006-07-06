@@ -5,27 +5,34 @@
 
 package com.l7tech.internal.license.gui;
 
-import com.l7tech.internal.license.LicenseSpec;
-import com.l7tech.common.util.ISO8601Date;
-import com.l7tech.common.util.Background;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.Background;
+import com.l7tech.common.util.ISO8601Date;
+import com.l7tech.common.util.TextUtils;
+import com.l7tech.internal.license.LicenseSpec;
+import com.l7tech.server.GatewayFeatureSet;
+import com.l7tech.server.GatewayFeatureSets;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
-import java.util.*;
-import java.awt.event.FocusListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.*;
 import java.awt.*;
-import java.text.ParseException;
+import java.awt.event.*;
 import java.security.SecureRandom;
+import java.text.ParseException;
+import java.util.*;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Panel for editing a LicenseSpec in the internal L7 license builder GUI.
  */
 public class LicenseSpecPanel extends JPanel {
+    private static final Logger logger = Logger.getLogger(LicenseSpecPanel.class.getName());
+
     /**
      * Property whose PropertyChangeEvent signals that a field has been edited.  Call getSpec() to pick up the changes.
      */
@@ -62,15 +69,44 @@ public class LicenseSpecPanel extends JPanel {
     private JButton anyHostButton;
     private JTextField ipField;
     private JButton anyIpButton;
+    private JTree featureTree;
+    private JButton featureExpandAllButton;
+    private JButton featureCollapseAllButton;
+    private JButton featureClearAll;
 
     private JTextField defaultTextField = new JTextField();
     private FocusListener focusListener;
     private DocumentListener documentListener;
     private Map oldFieldValues = new HashMap();
     private Random random = new SecureRandom();
+    private TreeModel featureTreeModel;
+    private TreeCellEditor featureTreeEditor;
+    private FeatureTreeRenderer featureTreeRenderer;
+    private Set<String> featureNamesChecked = new HashSet<String>();
+    private Set<String> featureNamesWithCheckedKids = new HashSet<String>();
+    private Map<String, Set<GatewayFeatureSet>> featureParents = new HashMap<String, Set<GatewayFeatureSet>>();
 
     private boolean fieldChanged = false;
     private long fieldChangedWhen = 0;
+    private boolean featureCheckChangedSinceLastOptimize = false;
+
+    private final List<GatewayFeatureSet> profilesForward;
+    private final List<GatewayFeatureSet> profilesReverse;
+    {
+        List<GatewayFeatureSet> fwd = new ArrayList<GatewayFeatureSet>(GatewayFeatureSets.getProductProfiles().values());
+        fwd.remove(GatewayFeatureSets.PROFILE_LICENSE_NAMES_NO_FEATURES); // don't show this as an option in GUI
+
+        List<GatewayFeatureSet> rev = new ArrayList<GatewayFeatureSet>(fwd);
+        Collections.reverse(rev);
+
+        profilesForward = Collections.unmodifiableList(fwd);
+        profilesReverse = Collections.unmodifiableList(rev);
+    }
+
+    private GatewayFeatureSet rootSet = new GatewayFeatureSet("set:ROOT", "All registered feature sets",
+                                                              "Holds all registered feature sets",
+                                                              profilesForward.toArray(new GatewayFeatureSet[0]));
+    private JLabel detailsLabel;
 
     public LicenseSpecPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -103,6 +139,49 @@ public class LicenseSpecPanel extends JPanel {
         hostField.getDocument().addDocumentListener(getDocumentListener());
         ipField.getDocument().addDocumentListener(getDocumentListener());
 
+        featureTree.setModel(getFeatureTreeModel());
+        featureTree.setCellRenderer(getFeatureTreeRenderer());
+        featureTree.setCellEditor(getFeatureTreeEditor());
+        featureTree.setRootVisible(false);
+        featureTree.setShowsRootHandles(true);
+        featureTree.setEditable(true);
+        featureTree.addTreeSelectionListener(new TreeSelectionListener() {
+            public void valueChanged(TreeSelectionEvent e) {
+                String note = null;
+                TreePath path = featureTree.getSelectionPath();
+                if (path != null) {
+                    FeatureNode fn = (FeatureNode)path.getLastPathComponent();
+                    GatewayFeatureSet fs = (GatewayFeatureSet)fn.getUserObject();
+                    note = fs.getNote();
+                }
+                String str = note == null || note.length() < 1 ? "&nbsp;" : note;
+                str = TextUtils.wrapString(str, 70, 5, "<br>\n");
+                detailsLabel.setText("<HTML>" + str);
+            }
+        });
+        featureExpandAllButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int erow = 0;
+                while (erow < featureTree.getRowCount())
+                    featureTree.expandRow(erow++);
+            }
+        });
+        featureCollapseAllButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int erow = featureTree.getRowCount() - 1;
+                while (erow >= 0)
+                    featureTree.collapseRow(erow--);
+            }
+        });
+        featureClearAll.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                featureNamesChecked.clear();
+                featureNamesWithCheckedKids.clear();
+                featureTree.repaint();
+                fireUpdate();
+            }
+        });
+
         Background.scheduleRepeated(new TimerTask() {
             public void run() {
                 if (!fieldChanged) return;
@@ -132,6 +211,28 @@ public class LicenseSpecPanel extends JPanel {
         anyIpButton.addActionListener(blankFieldAction(ipField));
 
         setSpec(null);
+    }
+
+    private TreeModel getFeatureTreeModel() {
+        if (featureTreeModel == null) {
+            FeatureNode rootNode = new FeatureNode(rootSet);
+            featureTreeModel = new DefaultTreeModel(rootNode, true);
+        }
+        return featureTreeModel;
+    }
+
+    private FeatureTreeRenderer getFeatureTreeRenderer() {
+        if (featureTreeRenderer == null) {
+            featureTreeRenderer = new FeatureTreeRenderer();
+        }
+        return featureTreeRenderer;
+    }
+
+    private TreeCellEditor getFeatureTreeEditor() {
+        if (featureTreeEditor == null) {
+            featureTreeEditor = new FeatureCellEditor(new JCheckBox());
+        }
+        return featureTreeEditor;
     }
 
     private void checkForChangedField() {
@@ -228,6 +329,19 @@ public class LicenseSpecPanel extends JPanel {
 
         setText(hostField, tt(spec.getHostname()));
         setText(ipField, tt(spec.getIp()));
+
+        featureNamesChecked.clear();
+        featureNamesWithCheckedKids.clear();
+        Set<String> rootFeatures = spec.getRootFeatures();
+        Map<String, GatewayFeatureSet> byname = GatewayFeatureSets.getAllFeatureSets();
+        for (String name : rootFeatures) {
+            GatewayFeatureSet fs = byname.get(name);
+            if (fs == null) continue; // ignore unrecognized feature name
+            setFeatureChecked(fs, true);
+        }
+        optimizeCheckedFeatures(true);
+        featureTree.repaint();
+
         fieldChanged = false;
         getSpec(); // update all field colors
     }
@@ -253,7 +367,69 @@ public class LicenseSpecPanel extends JPanel {
         spec.setVersionMinor(fts(minorVersionField));
         spec.setHostname(fts(hostField));
         spec.setIp(fts(ipField));
+        addCheckedFeaturesToSpec(spec);
         return spec;
+    }
+
+    /** Find all checked features and make sure they get added to spec. */
+    private void addCheckedFeaturesToSpec(LicenseSpec spec) {
+        // make sure features are optimized first if they need to be
+        optimizeCheckedFeatures(true);
+
+        // Scan roots from bottom of list up, then each root from top of tree down, adding all checked features
+        // and stopping, without adding features already implied by features already added.
+        Set<String> topEnabled = new LinkedHashSet<String>();
+        Set<String> allEnabled = new LinkedHashSet<String>();
+
+        int maxDepth = 1;
+        for (;;) {
+            boolean atLeastOneDepthLimitReached = false;
+            for (GatewayFeatureSet fs : profilesReverse) {
+                if (recursiveAdd(maxDepth, fs, topEnabled, allEnabled))
+                    atLeastOneDepthLimitReached = true;
+            }
+            if (atLeastOneDepthLimitReached)
+                maxDepth++; // search deeper
+            else
+                break; // done
+        }
+
+        logger.finer("Search got to depth: " + maxDepth);
+
+        for (String name : topEnabled)
+            spec.addRootFeature(name);
+    }
+
+    private boolean recursiveAdd(int maxDepth, GatewayFeatureSet fs, Set<String> topEnabled, Set<String> allEnabled) {
+        if (maxDepth < 1) return true; // ask to try again with more depth
+        maxDepth--;
+
+        String name = fs.getName();
+        if (allEnabled.contains(name))
+            return false; // already enabled, skip it
+
+        if (isFeatureChecked(fs)) {
+            // Enable this parent explicitly, then mark it and all kids as implicitly enabled
+            topEnabled.add(name);
+            allEnabled.add(name);
+            for (GatewayFeatureSet kid : fs.getChildren())
+                markAllEnabled(kid, allEnabled);
+            return false;
+        } else {
+            // Feature not checked -- check children
+            boolean anyBottomedOut = false;
+            for (GatewayFeatureSet kid : fs.getChildren()) {
+                if (recursiveAdd(maxDepth, kid, topEnabled, allEnabled))
+                    anyBottomedOut = true;
+            }
+            return anyBottomedOut;
+        }
+    }
+
+    private void markAllEnabled(GatewayFeatureSet fs, Set<String> allEnabled) {
+        allEnabled.add(fs.getName());
+        for (GatewayFeatureSet kid : fs.getChildren())
+            markAllEnabled(kid, allEnabled);
     }
 
     /** from text to date. */
@@ -379,4 +555,263 @@ public class LicenseSpecPanel extends JPanel {
             fireUpdate();
         }
     }
+
+    /**
+     * Set feature check status and trigger optimization if anything changes.
+     */
+    private void setFeatureChecked(GatewayFeatureSet fs, boolean checked) {
+        boolean changeMade = setFeatureCheckedNoRecurse(fs, checked);
+        if (!changeMade) return;
+
+        // Check or uncheck kids
+        List<GatewayFeatureSet> kids = fs.getChildren();
+        for (GatewayFeatureSet kid : kids) {
+            setFeatureChecked(kid, checked);
+        }
+
+        // Request an optimization of the feature tree
+        featureCheckChangedSinceLastOptimize = true;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                optimizeCheckedFeatures(false);
+            }
+        });
+    }
+
+    /**
+     * Set feature check status but never trigger any optimization.
+     *
+     * @return true if the check status was changed.
+     */
+    private boolean setFeatureCheckedNoRecurse(GatewayFeatureSet fs, boolean checked) {
+        boolean wasChecked = isFeatureChecked(fs);
+
+        // Bail early if this one's state hasn't changed
+        if (wasChecked == checked)
+            return false;
+
+        if (checked) {
+            featureNamesChecked.add(fs.getName());
+        } else {
+            featureNamesChecked.remove(fs.getName());
+        }
+
+        return true;
+    }
+
+    private boolean isFeatureChecked(GatewayFeatureSet fs) {
+        return featureNamesChecked.contains(fs.getName());
+    }
+
+    private boolean isFeatureHaveAnyCheckedKids(String featureName) {
+        return featureNamesWithCheckedKids.contains(featureName);
+    }
+
+    /**
+     * Analyze the checked feature tree and ensure that parents are on if and only if all their children are on.
+     */
+    private void optimizeCheckedFeatures(boolean suppressUpdate) {
+        if (!featureCheckChangedSinceLastOptimize)
+            return;
+        Map<String,GatewayFeatureSet> profiles = GatewayFeatureSets.getProductProfiles();
+        for (GatewayFeatureSet set : profiles.values()) {
+            optimizeCheckedFeatures(set);
+        }
+        featureCheckChangedSinceLastOptimize = false;
+        featureTree.repaint();
+        if (!suppressUpdate)
+            fireUpdate();
+    }
+
+    /**
+     * @return the check status of this feature set after optimization:
+     *           Boolean.TRUE:   feature and all children (if any) checked
+     *           Boolean.FALSE:  neither feature nor any children checked
+     *           null:           feature not checked, but at least one child was TRUE or null
+     */
+    private Boolean optimizeCheckedFeatures(GatewayFeatureSet set) {
+        List<GatewayFeatureSet> kids = set.getChildren();
+
+        // If no kids, status will never change -- it's always whatever was set by the last user action
+        if (kids.isEmpty()) {
+            featureNamesWithCheckedKids.remove(set.getName());
+            return isFeatureChecked(set);
+        }
+
+        // Otherwise, status will be whatever is implied by the union of all child statuses.
+        boolean anyCheckedOrMaybe = false;  // true if at least one child returned TRUE or null
+        boolean anyUncheckedOrMaybe = false;      // true if at least one child returned FALSE or null
+        boolean noneChecked = true;
+        for (GatewayFeatureSet kid : kids) {
+            Boolean kidChecked = optimizeCheckedFeatures(kid);
+            if (kidChecked == null) {
+                anyCheckedOrMaybe = true;
+                anyUncheckedOrMaybe = true;
+                noneChecked = false;
+            } else {
+                if (kidChecked) {
+                    anyCheckedOrMaybe = true;
+                    noneChecked = false;
+                } else
+                    anyUncheckedOrMaybe = true;
+            }
+        }
+
+        // All kids checked as long as none are unchecked
+        boolean allchecked = !anyUncheckedOrMaybe;
+
+        // Propagate removal up to parents, but not auto-adds
+        if (!allchecked)
+            setFeatureCheckedNoRecurse(set, allchecked);
+        if (anyCheckedOrMaybe)
+            featureNamesWithCheckedKids.add(set.getName());
+        else
+            featureNamesWithCheckedKids.remove(set.getName());
+
+        if (allchecked) return Boolean.TRUE;
+        if (noneChecked) return Boolean.FALSE;
+        return null;
+    }
+
+
+    /** Register a child->parent relationship. */
+    private void addFeatureParent(GatewayFeatureSet kid, GatewayFeatureSet parent) {
+        // The rootSet doesn't really exist, it's a fiction for the benefit of the JTree, so don't let it bung up
+        // our record of which are the root-most feature sets.
+        if (parent == rootSet) return;
+
+        Set<GatewayFeatureSet> parents = featureParents.get(kid.getName());
+        if (parents == null) {
+            parents = new HashSet<GatewayFeatureSet>();
+            featureParents.put(kid.getName(), parents);
+        }
+        parents.add(parent);
+    }
+
+    private class FeatureNode extends DefaultMutableTreeNode {
+        public FeatureNode(GatewayFeatureSet fs) {
+            super(null, fs.getChildren().size() > 0);
+            setUserObject(fs);
+            for (GatewayFeatureSet kid : fs.getChildren()) {
+                addFeatureParent(kid, fs);
+                add(new FeatureNode(kid));
+            }
+        }
+
+        public void setUserObject(Object userObject) {
+            if (userObject == null) throw new NullPointerException("No userObject provided");
+            if (userObject instanceof GatewayFeatureSet) {
+                super.setUserObject(userObject);
+            } else if (userObject instanceof Boolean) {
+                // Consume this and translate it into the correct behavior
+                Boolean b = (Boolean)userObject;
+                GatewayFeatureSet fs = (GatewayFeatureSet)getUserObject();
+                LicenseSpecPanel.this.setFeatureChecked(fs, b);
+            } else
+                throw new ClassCastException("Unacceptable user object type: " + userObject.getClass());
+        }
+    }
+
+    private void setText(JCheckBox cb, GatewayFeatureSet fs) {
+        cb.setText("<HTML><B>" + fs.getName() + "</B>: " + fs.getDescription());
+    }
+
+    private static final GreyableCheckBox cbtristate = new GreyableCheckBox();
+
+    private static class GreyableCheckBox extends JCheckBox {
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+        }
+    }
+
+    /** A JCheckBox that will display itself as a grey box if its unchecked but at least one child feature is checked. */
+    private class SuspiciousCheckBox extends JCheckBox {
+
+        protected void paintComponent(Graphics g) {
+            // Check for a feature name
+            if (!isSelected()) {
+                String text = getText();
+                if (text != null && text.startsWith("<HTML><B>")) {
+                    int slash = text.indexOf('/');
+                    String featureName = text.substring(9, slash - 1);
+                    if (LicenseSpecPanel.this.isFeatureHaveAnyCheckedKids(featureName)) {
+                        drawPartialCheck(g);
+                        return;
+                    }
+                }
+            }
+
+            super.paintComponent(g);
+        }
+
+        private void drawPartialCheck(Graphics g) {
+            cbtristate.setSize(getSize());
+            cbtristate.setLocation(getLocation());
+            cbtristate.setText(getText());
+            cbtristate.setForeground(getForeground());
+            cbtristate.setBackground(getBackground());
+            cbtristate.setOpaque(isOpaque());
+            cbtristate.getModel().setRollover(true);
+            cbtristate.getModel().setArmed(true);
+            cbtristate.paintComponent(g);
+        }
+    }
+
+    private class FeatureTreeRenderer extends DefaultTreeCellRenderer {
+        final Color[] gcol = new Color[] { Color.CYAN };
+
+        JCheckBox comp = new SuspiciousCheckBox();
+
+        /** @return the renderer, as it is currently configured. */
+        public JCheckBox getCheckBox() {
+            return comp;
+        }
+
+
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel,
+                                                      boolean expanded, boolean leaf, int row, boolean hasFocus)
+        {
+            super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            if (!(value instanceof FeatureNode))
+                throw new ClassCastException("Not a FeatureNode: " + value);
+
+            FeatureNode fn = (FeatureNode)value;
+            GatewayFeatureSet fs = (GatewayFeatureSet)fn.getUserObject();
+            LicenseSpecPanel.this.setText(comp, fs);
+            comp.setSelected(LicenseSpecPanel.this.isFeatureChecked(fs));
+            if (sel) {
+                comp.setForeground(getTextSelectionColor());
+                comp.setBackground(getBackgroundSelectionColor());
+            } else {
+                comp.setForeground(getTextNonSelectionColor());
+                comp.setBackground(getBackgroundNonSelectionColor());
+            }
+            return comp;
+        }
+    }
+
+    private class FeatureCellEditor extends DefaultCellEditor {
+        FeatureTreeRenderer renderer = new FeatureTreeRenderer();
+        GatewayFeatureSet lastFs = null;
+
+        public FeatureCellEditor(JCheckBox checkBox) {
+            super(checkBox);
+        }
+
+        private final ItemListener itemListener = new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                LicenseSpecPanel.this.setFeatureChecked(lastFs, e.getStateChange() == ItemEvent.SELECTED);
+            }
+        };
+
+        public Component getTreeCellEditorComponent(JTree tree, Object value, boolean isSelected, boolean expanded, boolean leaf, int row) {
+            FeatureNode fn = (FeatureNode)value;
+            GatewayFeatureSet gfs = (GatewayFeatureSet)fn.getUserObject();
+            boolean b = LicenseSpecPanel.this.isFeatureChecked(gfs);
+            JCheckBox editor = (JCheckBox)super.getTreeCellEditorComponent(tree, b, isSelected, expanded, leaf, row);
+            LicenseSpecPanel.this.setText(editor, gfs);
+            return editor;
+        }
+    }
+
 }

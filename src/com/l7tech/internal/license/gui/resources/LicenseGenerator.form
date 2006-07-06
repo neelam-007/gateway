@@ -12,7 +12,7 @@
       <xy id="faeeb" binding="displayPanel" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="150" y="262" width="612" height="370"/>
+          <xy x="94" y="262" width="668" height="370"/>
           <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
             <minimum-size width="500" height="350"/>
           </grid>
@@ -21,16 +21,6 @@
         <border type="bevel-lowered"/>
         <children/>
       </xy>
-      <grid id="c8dad" binding="specHolderPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <xy x="7" y="262" width="133" height="370"/>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-        </constraints>
-        <properties/>
-        <border type="none"/>
-        <children/>
-      </grid>
       <grid id="18e25" row-count="8" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
@@ -113,8 +103,8 @@
       <xy id="6eacc" binding="xmlEditorPanel" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="7" y="7" width="638" height="250"/>
-          <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
+          <xy x="94" y="7" width="551" height="250"/>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
             <minimum-size width="-1" height="250"/>
           </grid>
         </constraints>
@@ -122,6 +112,16 @@
         <border type="none"/>
         <children/>
       </xy>
+      <grid id="c8dad" binding="specHolderPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="7" y="7" width="77" height="250"/>
+          <grid row="0" column="0" row-span="2" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children/>
+      </grid>
     </children>
   </grid>
 </form>
