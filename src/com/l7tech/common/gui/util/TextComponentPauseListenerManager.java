@@ -68,7 +68,9 @@ public class TextComponentPauseListenerManager {
         public void start() {
             if (_task != null) _task.cancel();
             _task = new MyTimerTask();
-            _timer.scheduleAtFixedRate(_task, 0, TIMER_PERIOD);
+            // bugzilla #2615
+            //_timer.scheduleAtFixedRate(_task, 0, TIMER_PERIOD);
+            (new Timer(true)).scheduleAtFixedRate(_task, 0, TIMER_PERIOD);
             _updated = System.currentTimeMillis();
         }
 
@@ -155,6 +157,6 @@ public class TextComponentPauseListenerManager {
         TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay);
         holder.addPauseListener(pl);
     }
-
-    private static Timer _timer = new Timer(true);
+    // bugzilla #2615
+    //private static Timer _timer = new Timer(true);
 }
