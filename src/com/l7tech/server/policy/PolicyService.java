@@ -460,7 +460,7 @@ public class PolicyService extends ApplicationObjectSupport {
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
-        return policyFactory.compileSubtree(base);
+        return policyFactory.compilePolicy(base, false); // dogfood policy is allowed to use whatever assertions it wants, regardless of license
     }
 
     private void addIdAssertionToList(Assertion assertion, List receptacle) {
