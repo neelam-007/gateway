@@ -37,6 +37,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceMetrics;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.beans.factory.InitializingBean;
@@ -68,6 +69,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final ServiceMetricsManager serviceMetricsManager;
     private final AuditContext auditContext;
     private final ServerConfig serverConfig;
+    private final TrafficLogger trafficLogger;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -90,7 +92,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             LicenseManager licenseManager,
                             ServiceMetricsManager metricsManager,
                             AuditContext auditContext,
-                            ServerConfig serverConfig)
+                            ServerConfig serverConfig,
+                            TrafficLogger trafficLogger)
       throws IllegalArgumentException {
         if (sm == null) throw new IllegalArgumentException("Service Manager is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
@@ -109,6 +112,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.serviceMetricsManager = metricsManager;
         this.auditContext = auditContext;
         this.serverConfig = serverConfig;
+        this.trafficLogger = trafficLogger;
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -475,6 +479,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             } catch (Throwable t) {
                 auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
             }
+            // this may or may not log traffic based on server properties (by default, not)
+            trafficLogger.log(context);
         }
     }
 

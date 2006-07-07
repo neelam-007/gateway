@@ -45,7 +45,7 @@ public class TestMessageProcessor extends MessageProcessor {
      */
     public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"), new AuditContextStub(), ServerConfig.getInstance());
+        super(sm, wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"), new AuditContextStub(), ServerConfig.getInstance(), null);
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

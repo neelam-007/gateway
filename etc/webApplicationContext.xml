@@ -439,6 +439,9 @@
         <constructor-arg>
             <ref bean="serverConfig"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="trafficLogger"/>
+        </constructor-arg>
      </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
@@ -718,4 +721,10 @@
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
+
+    <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">
+        <property name="serverConfig">
+            <ref bean="serverConfig"/>
+        </property>
+    </bean>
 </beans>
