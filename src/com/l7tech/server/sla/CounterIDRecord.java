@@ -14,8 +14,9 @@ import java.io.Serializable;
  * @author flascelles@layer7-tech.com
  */
 public class CounterIDRecord implements Serializable {
+    public static final String UNIDENTIFIED_USER = "*";
     public long counterId = -1;
-    public String userId = null;
+    public String userId = UNIDENTIFIED_USER;
     public long providerId = -1;
     public String counterName;
 
@@ -32,7 +33,8 @@ public class CounterIDRecord implements Serializable {
     }
 
     public void setUserId(String userId) {
-        this.userId = userId;
+        if (userId == null) this.userId = UNIDENTIFIED_USER;
+        else this.userId = userId;
     }
 
     public long getProviderId() {

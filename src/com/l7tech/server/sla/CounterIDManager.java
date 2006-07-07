@@ -82,10 +82,7 @@ public class CounterIDManager extends HibernateDaoSupport {
     }
 
     /**
-     * record in database the new counterid and return it's id
-     *
-     * todo, in a cluster, this could be a problem because the database may return a new id but we dont really know
-     * if it's valid until the transaction is comitted. let's figure this out after the poc
+     * Record in database the new counterid and return it's id
      */
     private long getIdFromDbOrCreateEntry(String counterName, User identity) throws SaveException {
         CounterIDRecord data = new CounterIDRecord();
@@ -97,19 +94,13 @@ public class CounterIDManager extends HibernateDaoSupport {
             if (identity != null) {
                 data.setUserId(identity.getUniqueIdentifier());
                 data.setProviderId(identity.getProviderId());
-                query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
-                        " where " + TABLE_NAME + "." + "counterName" + " = ?" +
-                        " and " + TABLE_NAME + "." + "userId" + " = ? and " + TABLE_NAME + "." + "providerId" + " = ?";
-                res = getHibernateTemplate().find(query, new Object[] {data.getCounterName(),
-                                                                       data.getUserId(),
-                                                                       new Long(data.getProviderId())});
-            } else {
-                query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
-                        " where " + TABLE_NAME + "." + "counterName" + " = ? and " + TABLE_NAME + "." + "userId = null" +
-                        " and " + TABLE_NAME + "." + "providerId" + " = ?";
-                res = getHibernateTemplate().find(query, new Object[]{data.getCounterName(),
-                                                                      new Long(data.getProviderId())});
             }
+            query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
+                    " where " + TABLE_NAME + "." + "counterName" + " = ?" +
+                    " and " + TABLE_NAME + "." + "userId" + " = ? and " + TABLE_NAME + "." + "providerId" + " = ?";
+            res = getHibernateTemplate().find(query, new Object[] {data.getCounterName(),
+                                                                   data.getUserId(),
+                                                                   new Long(data.getProviderId())});
             // check whether this is already in the db
             if (res != null && !res.isEmpty()) {
                 CounterIDRecord existing = (CounterIDRecord)res.get(0);
@@ -118,7 +109,7 @@ public class CounterIDManager extends HibernateDaoSupport {
                 return ((Long)getHibernateTemplate().save(data)).longValue();
             }
         } catch (DataAccessException e) {
-            String msg = "problem getting existing id from db or creating new one";
+            String msg = "problem getting existing id from db or creating new one. possible race condition";
             logger.log(Level.WARNING, msg, e);
             throw new SaveException(msg, e);
         }
