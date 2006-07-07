@@ -597,6 +597,9 @@
         <property name="schemaManager">
             <ref bean="schemaManager"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
 
     <bean id="registryPublicationManager" class="com.l7tech.server.systinet.RegistryPublicationManager">

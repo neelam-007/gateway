@@ -10,6 +10,10 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionCallback;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -31,9 +35,14 @@ public class SchemaEntryManagerImpl
 
     private final Map<Long, String> systemIdsByOid = new HashMap<Long, String>();
     private SchemaManager schemaManager;
+    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
     public void setSchemaManager(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
+    }
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 
     protected void initDao() throws Exception {
@@ -55,7 +64,12 @@ public class SchemaEntryManagerImpl
 
         // make sure the soapenv schema is always there
         if (!containsSoapEnv(output)) {
-            output = addSoapEnv(output);
+            final Collection<SchemaEntry> current = output;
+            output = (Collection<SchemaEntry>) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                public Object doInTransaction(TransactionStatus status) {
+                    return addSoapEnv(current);
+                }
+            });
         }
 
         return output;
