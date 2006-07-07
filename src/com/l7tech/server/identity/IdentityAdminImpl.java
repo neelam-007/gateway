@@ -2,7 +2,6 @@ package com.l7tech.server.identity;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Authorizer;
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;

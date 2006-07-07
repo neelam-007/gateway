@@ -97,12 +97,12 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     public void afterPropertiesSet() throws Exception {
     }
 
-    public boolean isFeatureEnabled(Feature feature) {
+    public boolean isFeatureEnabled(String feature) {
         check();
-        return license != null && feature != null && license.isFeatureEnabled(feature.getName());
+        return license != null && feature != null && license.isFeatureEnabled(feature);
     }
 
-    public void requireFeature(Feature feature) throws LicenseException {
+    public void requireFeature(String feature) throws LicenseException {
         if (!isFeatureEnabled(feature)) {
             checkCount = CHECKCOUNT_CHECK_NOW;
             throw new LicenseException("The specified feature is not supported on this Gateway: " + feature);

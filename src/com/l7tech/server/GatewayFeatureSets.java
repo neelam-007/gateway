@@ -5,7 +5,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.Feature;
 import com.l7tech.common.License;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -29,13 +28,9 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.proxy.BridgeServlet;
-import com.l7tech.server.identity.cert.CSRHandler;
-import com.l7tech.server.policy.PolicyServlet;
 
 import javax.servlet.http.HttpServlet;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -59,21 +54,18 @@ public class GatewayFeatureSets {
     /** Feature set to use for (usually old) licenses that, while valid, do not explicitly name any feature sets. */
     public static final GatewayFeatureSet PROFILE_LICENSE_NAMES_NO_FEATURES;
 
-    // Top-level services queried for by enforcement points throughout the code
-    public static final GatewayFeatureSet SERVICE_MESSAGEPROCESSOR = misc("service:MessageProcessor", "Core Gateway message processing module", null);
-    public static final GatewayFeatureSet SERVICE_HTTP_MESSAGE_INPUT = srv(SoapMessageProcessingServlet.class, "Accept incoming messages over HTTP", "service:HttpMessageInput");
-    public static final GatewayFeatureSet SERVICE_JMS_MESSAGE_INPUT = misc("service:JmsMessageInput", "Accept incoming messages over JMS", null);
-    public static final GatewayFeatureSet SERVICE_ADMIN = misc("service:Admin", "All admin APIs, over all admin API transports", null);
-    public static final GatewayFeatureSet SERVICE_POLICYDISCO = srv(PolicyServlet.class, "Policy discovery service");
-    public static final GatewayFeatureSet SERVICE_STS = srv(TokenServiceServlet.class, "Security token service");
-    public static final GatewayFeatureSet SERVICE_CSRHANDLER = srv(CSRHandler.class, "Certificate signer (CA) service");
-    public static final GatewayFeatureSet SERVICE_PASSWD = srv(PasswdServlet.class, "Internal user password change service");
-    public static final GatewayFeatureSet SERVICE_WSDLPROXY = srv(WsdlProxyServlet.class, "WSDL proxy service");
-    public static final GatewayFeatureSet SERVICE_SNMPQUERY = srv(SnmpQueryServlet.class, "HTTP SNMP query service");
-    public static final GatewayFeatureSet SERVICE_BRIDGE = srv(BridgeServlet.class, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"); // experimental bridge servlet, disabled by default (neither SSB nor BRA!)
-
-    /** Private cache for quickly looking up feature instance from assertion classname. */
-    private static final Map<String, Feature> FEATURE_FOR_ASSERTION = new ConcurrentHashMap<String, Feature>();
+    // Constants for service names
+    public static final String SERVICE_MESSAGEPROCESSOR = "service:MessageProcessor";
+    public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
+    public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
+    public static final String SERVICE_ADMIN = "service:Admin";
+    public static final String SERVICE_POLICYDISCO = "service:Policy";
+    public static final String SERVICE_STS = "service:TokenService";
+    public static final String SERVICE_CSRHANDLER = "service:CSRHandler";
+    public static final String SERVICE_PASSWD = "service:Passwd";
+    public static final String SERVICE_WSDLPROXY = "service:WsdlProxy";
+    public static final String SERVICE_SNMPQUERY = "service:SnmpQuery";
+    public static final String SERVICE_BRIDGE = "service:Bridge";
 
     static {
         // Declare all baked-in feature sets
@@ -87,14 +79,14 @@ public class GatewayFeatureSets {
         GatewayFeatureSet core =
         fsr("set:core", "Core features, without which nothing else will work",
             "Always needed",
-            SERVICE_MESSAGEPROCESSOR,
+            misc(SERVICE_MESSAGEPROCESSOR, "Core Gateway message processing module", null),
             ass(AllAssertion.class),
             ass(UnknownAssertion.class));
 
         GatewayFeatureSet admin =
         fsr("set:admin", "All admin APIs, over all admin API transports",
             "Everything that used to be enabled by the catchall Feature.ADMIN",
-            SERVICE_ADMIN);
+            misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null));
 
         GatewayFeatureSet branching =
         fsr("set:policy:branching", "Support for branching policies",
@@ -105,43 +97,44 @@ public class GatewayFeatureSets {
         GatewayFeatureSet wssc =
         fsr("set:wssc", "WS-SecureConversation support",
             "Requires enabling the STS",
-            SERVICE_STS,
+            srv(SERVICE_STS, "Security token service"),
             ass(SecureConversation.class));
 
         GatewayFeatureSet httpFront =
         fsr("set:http:front", "Allow incoming HTTP messages",
-            SERVICE_HTTP_MESSAGE_INPUT);
+            srv(SERVICE_HTTP_MESSAGE_INPUT, "Accept incoming messages over HTTP"));
 
         GatewayFeatureSet httpBack =
         fsr("set:http:back", "Allow outgoing HTTP messages",
             ass(HttpRoutingAssertion.class));
 
+        GatewayFeatureSet srvJms = misc(SERVICE_JMS_MESSAGE_INPUT, "Accept incoming messages over JMS", null);
         GatewayFeatureSet jmsFront =
         fsr("set:jms:front", "Allow incoming JMS messages",
-            SERVICE_JMS_MESSAGE_INPUT);
+            srvJms);
 
         GatewayFeatureSet jmsBack =
         fsr("set:jms:back", "Allow outgoing JMS messages",
             "Current requires allowing the JMS front end as well",
-            SERVICE_JMS_MESSAGE_INPUT,
+            srvJms,
             ass(JmsRoutingAssertion.class));
 
         GatewayFeatureSet ssb =
         fsr("set:ssb", "Features needed for best use of the SecureSpan Bridge",
-            SERVICE_CSRHANDLER,
-            SERVICE_PASSWD,
-            SERVICE_POLICYDISCO,
-            SERVICE_WSDLPROXY);
+            srv(SERVICE_CSRHANDLER, "Certificate signer (CA) service"),
+            srv(SERVICE_PASSWD, "Internal user password change service"),
+            srv(SERVICE_POLICYDISCO, "Policy discovery service"),
+            srv(SERVICE_WSDLPROXY, "WSDL proxy service"));
 
         GatewayFeatureSet snmp =
         fsr("set:snmp", "SNMP features",
-            SERVICE_SNMPQUERY,
+            srv(SERVICE_SNMPQUERY, "HTTP SNMP query service"),
             ass(SnmpTrapAssertion.class));
 
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
-            SERVICE_BRIDGE,
+            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
             ass(WsspAssertion.class));
 
         //
@@ -480,48 +473,17 @@ public class GatewayFeatureSets {
 
     /** @return the feature name to use for the specified Assertion class. */
     static String getFeatureSetNameForAssertion(Class<? extends Assertion> assertionClass) {
-        String classname = assertionClass.getName();
-        return getFeatureSetNameForAssertion(classname);
+        return Assertion.getFeatureSetName(assertionClass.getName());
     }
 
-    /**
-     * Get the name of the feature set for the specified policy assertion classname.  For example,
-     * "com.l7tech.policy.assertion.composite.OneOrMoreAssertion" would return "assertion:composite.OneOrMore".
-     *
-     * @return the feature set name to use for the specified Assertion classname.  Never null.
-     * @throws IllegalArgumentException if the specified classname is not under com.l7tech.policy.assertion.
-     */
-    static String getFeatureSetNameForAssertion(String classname) {
-        String pass = "com.l7tech.policy.assertion.";
-        if (!classname.startsWith(pass))
-            throw new IllegalArgumentException("Assertion concrete classname must start with " + pass);
-        String rest = classname.substring(pass.length());
-        rest = stripSuffix(rest, "Assertion");
-        return "assertion:" + rest;
+    /** @return the feature name to use for the specified HttpServlet class. */
+    static String getFeatureSetNameForServlet(Class<? extends HttpServlet> servletClass) {
+        String classname = servletClass.getName();
+        int lastdot = classname.lastIndexOf('.');
+        String rest = classname.substring(lastdot + 1);
+        rest = stripSuffix(rest, "Servlet");
+        return "service:" + rest;
     }
-
-    /**
-     * Quickly get the Feature that represents the specified policy assertion classname.
-     *
-     * @param assertionClassname  the assertion class name, which must start with "com.l7tech.policy.assertion.".
-     * @return the Feature for this assertion class.  Never null.
-     * @throws IllegalArgumentException if the specified classname is not under com.l7tech.policy.assertion.
-     * @throws IllegalArgumentException if the specified assertion does not have a feature set registered.  Shouldn't happen.
-     */
-    public static Feature getFeatureForAssertionClassname(String assertionClassname) throws IllegalArgumentException {
-        Feature got = FEATURE_FOR_ASSERTION.get(assertionClassname);
-        if (got != null) return got;
-
-        String featureName = getFeatureSetNameForAssertion(assertionClassname);
-        got = sets.get(featureName);
-        if (got != null) {
-            FEATURE_FOR_ASSERTION.put(assertionClassname, got);
-            return got;
-        }
-
-        throw new IllegalArgumentException("No feature set name registered for the assertion class " + assertionClassname);
-    }
-
 
     /** Create (and register, if new) a feature set for the specified policy assertion and return it. */
     private static GatewayFeatureSet ass(Class<? extends Assertion> ass) {
@@ -565,30 +527,14 @@ public class GatewayFeatureSets {
         return got;
     }
 
-    /** Create (and register, if new) a new GatewayFeatureSet for the specified HttpServlet and return it. */
-    private static GatewayFeatureSet srv(Class<? extends HttpServlet> srv, String desc) {
-        return srv(srv, desc, null);
-    }
 
     /**
      * Create (and register, if new) a new GatewayFeatureSet for the specified HttpServlet and return it,
      * but using the specified name instead of the default.
      */
-    private static GatewayFeatureSet srv(Class<? extends HttpServlet> srv, String desc, String preferredName) {
-        String classname = srv.getName();
-        int lastdot = classname.lastIndexOf('.');
-        String rest = classname.substring(lastdot + 1);
-        rest = stripSuffix(rest, "Servlet");
-        String name = "service:" + rest;
-
-        if (preferredName != null) {
-            if (!preferredName.startsWith("service:"))
-                throw new IllegalArgumentException("Preferred feature name for service must start with \"service:\": " + preferredName);
-            if (sets.containsKey(name))
-                throw new IllegalArgumentException("Service with preferred feature name " + preferredName + " has already been registered as default name " + name);
-            name = preferredName;
-        }
-
+    private static GatewayFeatureSet srv(String name, String desc) {
+        if (!name.startsWith("service:"))
+            throw new IllegalArgumentException("Preferred feature name for service must start with \"service:\": " + name);
         return getOrMakeFeatureSet(name, desc);
     }
 

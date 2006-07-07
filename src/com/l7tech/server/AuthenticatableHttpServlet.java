@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.util.CertUtils;
@@ -79,7 +78,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     }
 
     /** @return the license Feature that must be required for an authenticated request to succeed. */
-    protected abstract Feature getFeature();
+    protected abstract String getFeature();
 
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.

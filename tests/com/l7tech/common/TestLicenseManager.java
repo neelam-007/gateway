@@ -14,20 +14,20 @@ import java.util.Set;
 public class TestLicenseManager implements LicenseManager {
     Set disabledFeatures = new HashSet();
 
-    public boolean isFeatureEnabled(Feature feature) {
+    public boolean isFeatureEnabled(String feature) {
         return !disabledFeatures.contains(feature);
     }
 
-    public void requireFeature(Feature feature) throws LicenseException {
+    public void requireFeature(String feature) throws LicenseException {
         if (!isFeatureEnabled(feature))
             throw new LicenseException("feature " + feature + " is not enabled");
     }
 
-    public void enableFeature(Feature feature) {
+    public void enableFeature(String feature) {
         disabledFeatures.remove(feature);
     }
 
-    public void disableFeature(Feature feature) {
+    public void disableFeature(String feature) {
         disabledFeatures.add(feature);
     }
 }

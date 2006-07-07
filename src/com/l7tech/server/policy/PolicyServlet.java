@@ -1,7 +1,6 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.Feature;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
@@ -98,7 +97,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    protected Feature getFeature() {
+    protected String getFeature() {
         return GatewayFeatureSets.SERVICE_POLICYDISCO;
     }
 

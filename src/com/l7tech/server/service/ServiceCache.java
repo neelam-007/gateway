@@ -235,7 +235,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 }
             }
             // cache the server policy for this service
-            serverRootAssertion = policyFactory.makeServerAssertion(service.rootAssertion());
+            serverRootAssertion = policyFactory.compilePolicy(service.rootAssertion(), true);
             if (serverRootAssertion != null) {
                 serverPolicies.put(key, new ServerPolicy(serverRootAssertion).ref());
             } else {

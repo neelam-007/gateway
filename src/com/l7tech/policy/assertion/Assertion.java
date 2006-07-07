@@ -127,7 +127,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     public boolean isCredentialSource() {
         return false;
     }
-    
+
     /**
      * Test whether the assertion is a credential modifier. Defaults to <code>false</code>
      *
@@ -421,7 +421,9 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     /**
      * Assertion beans must not try to override equals and hashcode --
-     * identity of an assertion depends on its position in the policy, not just its properties.
+     * identity of an assertion depends on things other than just the content of its fields (such as its position in a
+     * policy or service), not just its properties.  Otherwise, for example, it would be impossible to store a set
+     * of child assertions that contains two XSLT assertions that implement the same transformation.
      */
     public final boolean equals(Object obj) {
         return super.equals(obj);
@@ -429,10 +431,30 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     /**
      * Assertion beans must not try to override equals and hashcode --
-     * identity of an assertion depends on its position in the policy, not just its properties.
+     * identity of an assertion depends on things other than just the content of its fields (such as its position in a
+     * policy or service), not just its properties.  Otherwise, for example, it would be impossible to store a set
+     * of child assertions that contains two XSLT assertions that implement the same transformation.
      */
     public final int hashCode() {
         return super.hashCode();
+    }
+
+    /**
+     * Get the name of the leaf feature set for the specified assertion class name.
+     * For example, for "com.l7tech.policy.assertion.composite.OneOrMoreAssertion", will return
+     * the string "assertion:OneOrMore".
+     *
+     * @param assertionClassname assertion class name.  Must start with "com.l7tech.policy.assertion.".
+     * @return the leaf feature set name for this assertion.
+     */
+    public static String getFeatureSetName(String assertionClassname) {
+        String pass = "com.l7tech.policy.assertion.";
+        if (!assertionClassname.startsWith(pass))
+            throw new IllegalArgumentException("Assertion concrete classname must start with " + pass);
+        String rest = assertionClassname.substring(pass.length());
+        if (rest.endsWith("Assertion"))
+            rest = rest.substring(0, rest.length() - "Assertion".length());
+        return "assertion:" + rest;
     }
 }
 

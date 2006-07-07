@@ -134,7 +134,8 @@ public class AdminWebServiceFilter implements Filter {
             throw new ServletException(ERR_PREFIX + "ServerPolicyFactory");
         }
         try {
-            adminPolicy = policyFactory.makeServerAssertion(policy);
+            // Bypass license enforcement for dogfood policies -- it can use any assertion it wants
+            adminPolicy = policyFactory.compilePolicy(policy, false);
         } catch (ServerPolicyException e) {
             log.log(Level.SEVERE, "Unable to instantiate admin service policy: " + ExceptionUtils.getMessage(e), e);
             // fallthrough and complain

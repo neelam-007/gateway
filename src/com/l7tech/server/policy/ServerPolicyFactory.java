@@ -5,16 +5,15 @@
 
 package com.l7tech.server.policy;
 
-import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.GatewayFeatureSets;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -28,18 +27,54 @@ import java.lang.reflect.Constructor;
 public class ServerPolicyFactory implements ApplicationContextAware {
     private final LicenseManager licenseManager;
     private ApplicationContext applicationContext;
+    private ThreadLocal<Boolean> licenseEnforcement = new ThreadLocal<Boolean>() {
+        protected Boolean initialValue() {
+            return null;
+        }
+    };
 
     public ServerPolicyFactory(LicenseManager licenseManager) {
         this.licenseManager = licenseManager;
     }
 
-    private boolean isAssertionEnabled(Class<? extends Assertion> assertionClass) {
-        return licenseManager.isFeatureEnabled(GatewayFeatureSets.getFeatureForAssertionClassname(assertionClass.getName()));
+    /**
+     * Compile the specified generic policy tree using the specified license enforcement setting.
+     *
+     * @param genericAssertion  root of the assertion subtree to compile.  Must not be null.
+     * @param licenseEnforcement  if true, the compilation will fail if an unlicensed assertion is referenced.
+     *                            if false, no license enforcement will be performed.
+     * @return the server assertion subtree for this generic subtree.  Never null.
+     * @throws ServerPolicyException if this policy subtree could not be compiled
+     */
+    public ServerAssertion compilePolicy(Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException {
+        try {
+            this.licenseEnforcement.set(licenseEnforcement);
+            return doMakeServerAssertion(genericAssertion);
+        } finally {
+            this.licenseEnforcement.set(null);
+        }
     }
 
-    public ServerAssertion makeServerAssertion(Assertion genericAssertion) throws ServerPolicyException {
+    /**
+     * Compile the specified assertion subtree using the current license enforcement settings.
+     * This should only be called from within server composite assertion constructors; others should use
+     * {@link #compilePolicy} instead to set an initial license enforcement mode.
+     *
+     * @param genericAsertion  root of the assertion subtree to compile.  Must not be null.
+     * @return the server assertion subtree for this generic subtree.  Never null.
+     * @throws ServerPolicyException if this policy subtree could not be compiled
+     */
+    public ServerAssertion compileSubtree(Assertion genericAsertion) throws ServerPolicyException {
+        return doMakeServerAssertion(genericAsertion);
+    }
+
+    /** Compile the specified assertion tree, with license enforcement. */
+    private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException {
         try {
-            if (!isAssertionEnabled(genericAssertion.getClass())) 
+            Boolean le = licenseEnforcement.get();
+            if (le == null)
+                throw new ServerPolicyException(genericAssertion, "No license enforcement state set; use compilePolicy() instead of compileSubtree()");
+            if (le && !licenseManager.isFeatureEnabled(Assertion.getFeatureSetName(genericAssertion.getClass().getName())))
                 throw new ServerPolicyException(genericAssertion,
                                                 "The specified assertion is not supported on this Gateway: " +
                                                         genericAssertion.getClass());

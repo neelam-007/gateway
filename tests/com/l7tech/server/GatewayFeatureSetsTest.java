@@ -7,6 +7,9 @@ package com.l7tech.server;
 
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.BridgeServlet;
+import com.l7tech.server.identity.cert.CSRHandler;
+import com.l7tech.server.policy.PolicyServlet;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -108,17 +111,17 @@ public class GatewayFeatureSetsTest extends TestCase {
     }
 
     private static final String[] ALL_SERVICES = {
-            "service:MessageProcessor",
-            "service:Admin",
-            "service:HttpMessageInput",
-            "service:JmsMessageInput",
-            "service:CSRHandler",
-            "service:Passwd",
-            "service:Policy",
-            "service:TokenService",
-            "service:SnmpQuery",
-            "service:WsdlProxy",
-            "service:Bridge",
+            "service:MessageProcessor", // Not named after a servlet
+            "service:Admin",            // Not named after a servlet
+            "service:HttpMessageInput", // Not named after a servlet
+            "service:JmsMessageInput",  // Not named after a servlet
+            "service:CSRHandler",       GatewayFeatureSets.getFeatureSetNameForServlet(CSRHandler.class),
+            "service:Passwd",           GatewayFeatureSets.getFeatureSetNameForServlet(PasswdServlet.class),
+            "service:Policy",           GatewayFeatureSets.getFeatureSetNameForServlet(PolicyServlet.class),
+            "service:TokenService",     GatewayFeatureSets.getFeatureSetNameForServlet(TokenServiceServlet.class),
+            "service:SnmpQuery",        GatewayFeatureSets.getFeatureSetNameForServlet(SnmpQueryServlet.class),
+            "service:WsdlProxy",        GatewayFeatureSets.getFeatureSetNameForServlet(WsdlProxyServlet.class),
+            "service:Bridge",           GatewayFeatureSets.getFeatureSetNameForServlet(BridgeServlet.class),
     };
 
     /** Makes sure that all registered services are included in ALL_SERVICES.  Dual of testAllServicesMapped. */

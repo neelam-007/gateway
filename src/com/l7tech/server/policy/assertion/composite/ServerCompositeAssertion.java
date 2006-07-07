@@ -42,7 +42,7 @@ public abstract class ServerCompositeAssertion extends AbstractServerAssertion<C
         List<ServerAssertion> result = new ArrayList<ServerAssertion>();
         for (Iterator i = composite.children(); i.hasNext();) {
             child = (Assertion)i.next();
-            ServerAssertion sass = pf.makeServerAssertion(child);
+            ServerAssertion sass = pf.compileSubtree(child);
             if (sass != null)
                 result.add(sass);
         }

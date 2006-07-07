@@ -5,8 +5,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.Feature;
-
 import java.util.Set;
 import java.util.List;
 import java.util.Collections;
@@ -15,7 +13,7 @@ import java.util.Arrays;
 /**
  * @author mike
  */
-public class GatewayFeatureSet implements Feature {
+public class GatewayFeatureSet {
     final String name;
     final String desc;
     final String note;

@@ -6,7 +6,6 @@
 
 package com.l7tech.proxy;
 
-import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.util.XmlUtil;
@@ -34,11 +33,7 @@ public class BridgeServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
 
     // Define locally, since we can't reference GatewayFeatureSets from this package without dragging entire SSG into SSB
-    private static final Feature FEATURE = new Feature() {
-        public String getName() {
-            return "service:Bridge";
-        }
-    };
+    private static final String FEATURE = "service:Bridge";
 
     protected void doGet(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
             throws ServletException, IOException

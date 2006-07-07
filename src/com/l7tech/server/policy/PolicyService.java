@@ -460,7 +460,7 @@ public class PolicyService extends ApplicationObjectSupport {
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
-        return policyFactory.makeServerAssertion(base);
+        return policyFactory.compileSubtree(base);
     }
 
     private void addIdAssertionToList(Assertion assertion, List receptacle) {
