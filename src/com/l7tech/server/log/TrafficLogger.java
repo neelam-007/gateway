@@ -33,6 +33,52 @@ import org.springframework.beans.BeansException;
  * Date: Jul 7, 2006<br/>
  */
 public class TrafficLogger implements ApplicationContextAware {
+    /**
+     * the time between each update of logger settings
+     */
+    public static final long SETTINGS_UPDATE_PERIOD = 30000;
+    /**
+     * serverconfig property name meaning
+     * whether or not traffic should be recorded (true or false)
+     */
+    public static final String SERVCFG_ENABLE = "trafficLoggerEnabled";
+    /**
+     * serverconfig property name meaning
+     * what we actually log for each request (may contain context variables)
+     */
+    public static final String SERVCFG_DETAIL = "trafficLoggerDetail";
+    /**
+     * serverconfig property name meaning
+     * a log file pattern where those details are recorded
+     * @see java.util.logging.FileHandler
+     */
+    public static final String SERVCFG_PATTERN = "trafficLoggerPattern";
+    /**
+     * serverconfig property name meaning
+     * specifies an approximate maximum amount to write (in bytes) to any one
+     * file. If this is zero, then there is no limit.
+     * @see java.util.logging.FileHandler
+     */
+    public static final String SERVCFG_LIMIT = "trafficLoggerLimit";
+    /**
+     * serverconfig property name meaning
+     * specifies how many output files to cycle through
+     * @see java.util.logging.FileHandler
+     */
+    public static final String SERVCFG_COUNT = "trafficLoggerCount";
+    /**
+     * serverconfig property name meaning
+     * whether or not to append at the end of each record the actual
+     * contents of the request received by the ssg
+     */
+    public static final String SERVCFG_ADDREQ = "trafficLoggerRecordReq";
+    /**
+     * serverconfig property name meaning
+     * whether or not to append at the end of each record the actual contents
+     * of the response returned by the ssg
+     */
+    public static final String SERVCFG_ADDRES = "trafficLoggerRecordRes";
+
     private boolean enabled = false;
     private String detail = "${request.time}, ${request.soap.namespace}, ${request.soap.operationname}, ${response.http.status}";
     private String pattern = "/ssg/logs/traffic_%g_%u.log";
@@ -50,6 +96,11 @@ public class TrafficLogger implements ApplicationContextAware {
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
+    /**
+     * Logs request to the traffic logger as per server setting. By default, this functionality is
+     * disabled in which case, calling this will return immediatly.
+     * @param pec the request context to record in the traffic logger
+     */
     public void log(PolicyEnforcementContext pec) {
         ReentrantReadWriteLock.ReadLock lock = cacheLock.readLock();
         lock.lock();
@@ -97,6 +148,7 @@ public class TrafficLogger implements ApplicationContextAware {
                         // if no response is yet available, we're about to return a soap fault
                         responseXml = soapFaultManager.constructReturningFault(pec.getFaultlevel(), pec);
                     } else {
+                        // sometimes, there is just no response
                         responseXml = "No response";
                     }
                 }
@@ -109,6 +161,9 @@ public class TrafficLogger implements ApplicationContextAware {
         }
     }
 
+    /**
+     * meant for spring to call
+     */
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
         // initialize the timer which checks for config changes
@@ -117,40 +172,40 @@ public class TrafficLogger implements ApplicationContextAware {
                 TrafficLogger.this.updateSettings();
             }
         };
-        checker.schedule(task, 5000, 30000);
+        checker.schedule(task, 5000, SETTINGS_UPDATE_PERIOD);
     }
 
     private void updateSettings() {
         boolean somethingChanged = false;
         boolean loggerChanged = false;
-        boolean tmpenabled = Boolean.parseBoolean(serverConfig.getProperty("trafficLoggerEnabled"));
+        boolean tmpenabled = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ENABLE));
         if (tmpenabled != enabled) {
             somethingChanged = true;
         }
-        String tmpdetail = serverConfig.getProperty("trafficLoggerDetail");
+        String tmpdetail = serverConfig.getProperty(SERVCFG_DETAIL);
         if (!tmpdetail.equals(detail)) {
             somethingChanged = true;
         }
-        String tmpPattern = serverConfig.getProperty("trafficLoggerPattern");
+        String tmpPattern = serverConfig.getProperty(SERVCFG_PATTERN);
         if (!tmpPattern.equals(pattern)) {
             somethingChanged = true;
             loggerChanged = true;
         }
-        int tmpLimit = Integer.parseInt(serverConfig.getProperty("trafficLoggerLimit"));
+        int tmpLimit = Integer.parseInt(serverConfig.getProperty(SERVCFG_LIMIT));
         if (tmpLimit != limit) {
             somethingChanged = true;
             loggerChanged = true;
         }
-        int tmpCount = Integer.parseInt(serverConfig.getProperty("trafficLoggerCount"));
+        int tmpCount = Integer.parseInt(serverConfig.getProperty(SERVCFG_COUNT));
         if (tmpCount != count) {
             somethingChanged = true;
             loggerChanged = true;
         }
-        boolean tmpIncludeReq = Boolean.parseBoolean(serverConfig.getProperty("trafficLoggerRecordReq"));
+        boolean tmpIncludeReq = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ADDREQ));
         if (tmpIncludeReq != includeReq) {
             somethingChanged = true;
         }
-        boolean tmpIncludeRes = Boolean.parseBoolean(serverConfig.getProperty("trafficLoggerRecordRes"));
+        boolean tmpIncludeRes = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ADDRES));
         if (tmpIncludeRes != includeRes) {
             somethingChanged = true;
         }
@@ -197,6 +252,9 @@ public class TrafficLogger implements ApplicationContextAware {
         return record.getMessage() + LINE_SEPARATOR;
     }
 
+    /**
+     * meant for spring to call
+     */
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         if (auditor == null) {
             auditor = new Auditor(this, applicationContext, logger);
