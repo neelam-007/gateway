@@ -299,7 +299,8 @@ public class XmlUtilTest extends TestCase {
 
     private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
 
-    public void testTranslateReutersSchemaNamespaces() throws Exception {
+    // Test disabled because it depends on a resource on Alex's workstation
+    public void DISABLED_testTranslateReutersSchemaNamespaces() throws Exception {
         InputStream is = new URL(REUTERS_SCHEMA_URL).openStream();
         String schemaXml = new String(HexUtils.slurpStream(is));
 
