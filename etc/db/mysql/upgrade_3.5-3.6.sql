@@ -79,3 +79,7 @@ alter table internal_user_group add index (provider_oid);
 alter table internal_user_group add index (user_id);
 alter table internal_user_group add index (subgroup_id);
 
+------------------------------------
+-- GLOBAL COUNTERS IN CLUSTER FIX --
+------------------------------------
+alter table counters modify column userid varchar(128) NOT NULL;
