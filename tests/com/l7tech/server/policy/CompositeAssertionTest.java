@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.policy;
+package com.l7tech.server.policy;
 
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.io.EmptyInputStream;
@@ -55,6 +55,7 @@ public class CompositeAssertionTest extends TestCase {
     }
 
     public void testSimpleLogic() throws Exception {
+        ServerPolicyFactory.licenseEnforcement.set(false);
         PolicyEnforcementContext context = new
           PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                                    ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message());
@@ -148,6 +149,7 @@ public class CompositeAssertionTest extends TestCase {
         final AllAssertion false4 = new AllAssertion(kidsTrueFalse);
         final ExactlyOneAssertion true4 = new ExactlyOneAssertion(kidsTrueFalse);
 
+        ServerPolicyFactory.licenseEnforcement.set(false);
         assertTrue( new ServerOneOrMoreAssertion( true1, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
         assertTrue( new ServerOneOrMoreAssertion( true2, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
         assertTrue( new ServerAllAssertion( true3, applicationContext ).checkRequest(context) == AssertionStatus.NONE);

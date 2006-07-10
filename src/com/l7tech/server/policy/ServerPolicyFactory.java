@@ -27,7 +27,7 @@ import java.lang.reflect.Constructor;
 public class ServerPolicyFactory implements ApplicationContextAware {
     private final LicenseManager licenseManager;
     private ApplicationContext applicationContext;
-    private ThreadLocal<Boolean> licenseEnforcement = new ThreadLocal<Boolean>() {
+    static ThreadLocal<Boolean> licenseEnforcement = new ThreadLocal<Boolean>() {
         protected Boolean initialValue() {
             return null;
         }

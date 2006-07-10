@@ -3,6 +3,7 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.AssertionTest;
 import com.l7tech.policy.validator.DefaultPolicyValidatorTest;
 import com.l7tech.policy.wsp.WspConstantsTest;
+import com.l7tech.server.policy.CompositeAssertionTest;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
