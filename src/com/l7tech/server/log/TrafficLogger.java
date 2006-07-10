@@ -1,9 +1,15 @@
 package com.l7tech.server.log;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.mime.NoSuchPartException;
 
 import java.util.logging.*;
 import java.util.Timer;
@@ -39,20 +45,65 @@ public class TrafficLogger implements ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(TrafficLogger.class.getName());
     private ServerConfig serverConfig;
     private final Timer checker = new Timer(true);
-    private ApplicationContext applicationContext;
     private Auditor auditor;
+    private SoapFaultManager soapFaultManager;
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     public void log(PolicyEnforcementContext pec) {
         ReentrantReadWriteLock.ReadLock lock = cacheLock.readLock();
         lock.lock();
         try {
             if (!enabled) return;
-            String tolog = detail;
+            StringBuffer tolog = new StringBuffer();
             if (varsUsed.length > 0) {
-                tolog = ExpandVariables.process(tolog, pec.getVariableMap(varsUsed, auditor));
+                tolog.append(ExpandVariables.process(detail, pec.getVariableMap(varsUsed, auditor)));
+            } else {
+                tolog.append(detail);
             }
-            specialLogger.finest(tolog);
+            if (includeReq) {
+                String requestXml = null;
+                try {
+                    Message request = pec.getRequest();
+                    if (request.getKnob(MimeKnob.class) != null) {
+                        byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false));
+                        String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                        requestXml = new String(req, encoding);
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Could not get request contents", e);
+                } catch (NoSuchPartException e) {
+                    logger.log(Level.WARNING, "Could not get request contents", e);
+                }
+                if (requestXml == null) requestXml = "Request contents not available";
+                tolog.append(" ").append(requestXml);
+            }
+            if (includeRes) {
+                String responseXml = null;
+                Message response = pec.getResponse();
+                if (response.getKnob(MimeKnob.class) != null) {
+                    try {
+                        byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
+                        String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                        responseXml = new String(resp, encoding);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Could not get response contents", e);
+                    } catch (NoSuchPartException e) {
+                        logger.log(Level.WARNING, "Could not get response contents", e);
+                    }
+                } else {
+                    AssertionStatus globalstatus = pec.getPolicyResult();
+                    if (globalstatus != null && globalstatus != AssertionStatus.NONE) {
+                        // if no response is yet available, we're about to return a soap fault
+                        responseXml = soapFaultManager.constructReturningFault(pec.getFaultlevel(), pec);
+                    } else {
+                        responseXml = "No response";
+                    }
+                }
+                if (responseXml == null) responseXml = "Response contents not available";
+                tolog.append(" ").append(responseXml);
+            }
+            specialLogger.finest(tolog.toString());
         } finally {
             lock.unlock();
         }
@@ -119,7 +170,7 @@ public class TrafficLogger implements ApplicationContextAware {
                     }
                     fileHandler.setFormatter(new Formatter() {
                         public String format(LogRecord record) {
-                            return record.getMessage() + "\n";
+                            return TrafficLogger.this.format(record);
                         }
                     });
                     tmpSpecialLogger.addHandler(fileHandler);
@@ -142,10 +193,16 @@ public class TrafficLogger implements ApplicationContextAware {
         }
     }
 
+    private String format(LogRecord record) {
+        return record.getMessage() + LINE_SEPARATOR;
+    }
+
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
         if (auditor == null) {
             auditor = new Auditor(this, applicationContext, logger);
+        }
+        if (soapFaultManager == null) {
+            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         }
     }
 }
