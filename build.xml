@@ -903,13 +903,16 @@
                 <include name="com/l7tech/common/util/**/*"/>
                 <include name="com/l7tech/common/BuildInfo.class"/>
                 <include name="com/l7tech/common/gui/**/*"/>
+                <include name="com/l7tech/common/io/**/*"/>
                 <include name="com/l7tech/common/security/xml/DsigUtil*"/>
-                <include name="com/l7tech/common/security/xml/CertificateResolver.class"/>
+                <include name="com/l7tech/common/security/xml/SecurityTokenResolver*.class"/>
                 <include name="com/l7tech/common/security/xml/KeyInfoElement*"/>
                 <include name="com/l7tech/common/security/token/ParsedElement*"/>
                 <include name="com/l7tech/common/xml/*Exception.class"/>
                 <include name="com/l7tech/common/security/xml/*Exception.class"/>
                 <include name="com/l7tech/common/security/xml/SimpleCertificateResolver*"/>
+                <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/server/GatewayFeatureSet*.class"/>
 
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/*SoapMessage*"/>
