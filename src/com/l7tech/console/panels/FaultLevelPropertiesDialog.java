@@ -318,7 +318,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = TEMPLATE_LEVEL_DESCRIPTION;
                 xmlContainer.setEditable(true);
-                editor.setText(lastUserEdits);
+                showCustomFault();
                 urlCheckBox.setEnabled(true);
                 break;
             default:
@@ -326,5 +326,22 @@ public class FaultLevelPropertiesDialog extends JDialog {
                 throw new RuntimeException("Unhandeled SoapFaultLevel");
         }
         descriptionPane.setText(description);
+    }
+
+    private void showCustomFault() {
+        String toShow = lastUserEdits;
+        if (toShow == null || toShow.length() < 1) {
+            toShow = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>YOUR_FAULT_CODE</faultcode>\n" +
+                        "            <faultstring>YOUR_FAULT_STRING</faultstring>\n" +
+                        "            <faultactor>YOUR_FAULT_ACTOR</faultactor>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+        }
+        editor.setText(toShow);
     }
 }
