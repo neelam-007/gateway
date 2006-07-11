@@ -98,6 +98,7 @@ public class MainWindow extends JFrame {
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
+    private JMenuItem manageRolesMenuItem = null;
     private JMenuItem dashboardMenuItem;
     private JMenuItem manageClusterLicensesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
@@ -124,6 +125,7 @@ public class MainWindow extends JFrame {
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private ManageKerberosAction manageKerberosAction = null;
+    private ManageRolesAction manageRolesAction = null;
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
@@ -516,6 +518,8 @@ public class MainWindow extends JFrame {
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
+            menu.add(getManageRolesMenuItem());
+
 
             int mnemonic = menu.getText().toCharArray()[0];
             menu.setMnemonic(mnemonic);
@@ -2136,6 +2140,23 @@ public class MainWindow extends JFrame {
         manageKerberosMenuItem = new JMenuItem(getManageKerberosAction());
 
         return manageKerberosMenuItem;
+    }
+
+    public JMenuItem getManageRolesMenuItem() {
+
+        if (manageRolesMenuItem == null)
+            manageRolesMenuItem = new JMenuItem(getManageRolesAction());
+
+        return manageRolesMenuItem;
+    }
+
+    private Action getManageRolesAction() {
+        if (manageRolesAction == null) {
+            manageRolesAction = new ManageRolesAction();
+            manageRolesAction.setEnabled(false);
+            this.addLogonListener(manageRolesAction);
+        }
+        return manageRolesAction;
     }
 
     public JMenuItem getManageCertificatesMenuItem() {
