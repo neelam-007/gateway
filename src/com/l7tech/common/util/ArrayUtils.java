@@ -180,6 +180,25 @@ public class ArrayUtils {
     }
 
     /**
+     * Create an array that is a copy of the given arrays.
+     *
+     * <p>The 2nd array must be the same or a sub-type of the 1st array.</p>
+     *
+     * @param data1 the array to copy (must not be null)
+     * @param data2 the array to copy (must not be null)
+     * @return The copy or null if data is null
+     */
+    public static Object[] copy(final Object[] data1, final Object[] data2) {
+        Object[] copy = null;
+
+        copy = (Object[]) Array.newInstance(data1.getClass().getComponentType(), data1.length + data2.length);
+        System.arraycopy(data1, 0, copy, 0, data1.length);
+        System.arraycopy(data2, 0, copy, data1.length, data2.length);
+
+        return copy;
+    }
+
+    /**
      * Convert the given array to a Map.
      *
      * <p>Each item in the given entry array must be of length 2 with the

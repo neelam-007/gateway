@@ -28,6 +28,11 @@ public class SubjectStatement {
      * sender vouches confirmation type
      */
     public static final Confirmation SENDER_VOUCHES = new Confirmation(SamlConstants.CONFIRMATION_SENDER_VOUCHES);
+    /**
+     * bearer confirmation type
+     */
+    public static final Confirmation BEARER = new Confirmation(SamlConstants.CONFIRMATION_BEARER);
+
     private String confirmationMethod = null;
     private String nameQualifier = null;
     private String nameFormat = null;
@@ -49,6 +54,28 @@ public class SubjectStatement {
                                                                  Confirmation confirmation,
                                                                  boolean useThumbprintForSubject) {
         return new AuthenticationStatement(credentials, confirmation, useThumbprintForSubject);
+    }
+
+    /**
+     * Creates an attribute statement
+     *
+     * @param credentials  the credentials source for subject statement
+     * @param confirmation the confirmation method type
+     * @param useThumbprintForSubject if true, an X.509 subject will include just the thumbprintSHA1 of the subject cert.
+     *                                Otherwise, it will contain the entire base64-encoded signing cert.
+     * @return the authentication statement for the subject statement, confirmation and method
+     */
+    public static SubjectStatement createAttributeStatement(LoginCredentials credentials,
+                                                                 Confirmation confirmation,
+                                                                 String attributeName,
+                                                                 String attributeNamespaceOrFormat,
+                                                                 String attributeValue,
+                                                                 boolean useThumbprintForSubject) {
+        AttributeStatement.Attribute[] attributes = new AttributeStatement.Attribute[]{
+            new AttributeStatement.Attribute(attributeName, attributeNamespaceOrFormat, attributeValue)
+        };
+
+        return new AttributeStatement(credentials, confirmation, attributes, useThumbprintForSubject);
     }
 
     /**
@@ -77,7 +104,7 @@ public class SubjectStatement {
         }
 
         CredentialFormat format = credentials.getFormat();
-        if (confirmation.equals(HOLDER_OF_KEY)) {
+        if (HOLDER_OF_KEY.equals(confirmation)) {
             final X509Certificate clientCert = credentials.getClientCert();
             if (!CredentialFormat.CLIENTCERT.equals(format) || clientCert == null) {
                 throw new IllegalArgumentException("Credential format of Client cert and client certificate are required");

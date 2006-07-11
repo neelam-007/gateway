@@ -12,6 +12,7 @@ import java.math.BigInteger;
 
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlString;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
@@ -97,8 +98,8 @@ class SamlAssertionGeneratorSaml1 {
                 if (attribute.getNameSpace() != null) {
                     attributeType.setAttributeNamespace(attribute.getNameSpace());
                 }
-                XmlObject attributeValue = attributeType.addNewAttributeValue();
-                attributeValue.set(XmlObject.Factory.newValue(attribute.getValue()));
+                XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
+                attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
             }
             subjectStatementAbstractType = attStatement;
         } else {

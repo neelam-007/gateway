@@ -10,18 +10,31 @@ import com.whirlycott.cache.Cache;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.apache.harmony.security.asn1.ASN1Sequence;
+import org.apache.harmony.security.asn1.ASN1Type;
+import org.apache.harmony.security.asn1.ASN1Integer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.cert.Certificate;
 import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
+import java.math.BigInteger;
 
 /**
  *
@@ -29,6 +42,13 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class CertUtils {
+    public static final String PEM_CERT_BEGIN_MARKER = "-----BEGIN CERTIFICATE-----";
+    public static final String PEM_CERT_END_MARKER = "-----END CERTIFICATE-----";
+    public static final String PEM_RSAKEY_BEGIN_MARKER = "-----BEGIN RSA PRIVATE KEY-----";
+    public static final String PEM_RSAKEY_END_MARKER = "-----END RSA PRIVATE KEY-----";
+    public static final String PEM_DSAKEY_BEGIN_MARKER = "-----BEGIN DSA PRIVATE KEY-----";
+    public static final String PEM_DSAKEY_END_MARKER = "-----END DSA PRIVATE KEY-----";
+
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static final String PROPBASE = CertUtils.class.getName();
     private static final int CERT_VERIFY_CACHE_MAX = Integer.getInteger(PROPBASE + ".certVerifyCacheSize", 500).intValue();
@@ -178,15 +198,98 @@ public class CertUtils {
     public static byte[] encodeAsPEM(byte[] cert) throws IOException {
         BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
         try {
-            bos.write("-----BEGIN CERTIFICATE-----\n".getBytes());
-            bos.write(HexUtils.encodeBase64(cert).getBytes("UTF-8"));
-            bos.write("\n-----END CERTIFICATE-----\n".getBytes());
+            String encoding = "UTF-8";
+            bos.write(PEM_CERT_BEGIN_MARKER.getBytes(encoding));
+            bos.write("\n".getBytes(encoding));
+            bos.write(HexUtils.encodeBase64(cert).getBytes(encoding));
+            bos.write("\n".getBytes(encoding));
+            bos.write(PEM_CERT_END_MARKER.getBytes(encoding));
+            bos.write("\n".getBytes(encoding));
             return bos.toByteArray();
         } finally {
             bos.close();
         }
     }
 
+    /**
+     * Get the X509Certifcate that is PEM (Base64) encoded in the given text.
+     *
+     * @param certificateText The PEM encoded certficate data
+     * @return the X509Certificate certificate
+     * @throws IOException if the text is not a PEM/Base64 data
+     * @throws CertificateException if the certificate decoding fails
+     */
+    public static X509Certificate decodeFromPEM(String certificateText) throws IOException, CertificateException {
+        int startIndex = certificateText.indexOf(PEM_CERT_BEGIN_MARKER);
+        int endIndex = certificateText.indexOf(PEM_CERT_END_MARKER);
+
+        if (startIndex <=0 || endIndex <= startIndex) {
+            throw new CausedIOException("Certificate data not found (missing begin or end marker)");
+        }
+
+        String base64Certificate = certificateText.substring(
+                startIndex+PEM_CERT_BEGIN_MARKER.length(),
+                endIndex);
+
+        byte[] certificateBytes = HexUtils.decodeBase64(base64Certificate, true);
+
+        return decodeCert(certificateBytes);
+    }
+
+    /**
+     * Decode a private key from a PEM encoded file
+     *
+     * @param keyText the PEM encoded key data
+     * @return the private key
+     */
+    public static PrivateKey decodeKeyFromPEM(String keyText) throws IOException {
+        int startIndex = keyText.indexOf(PEM_RSAKEY_BEGIN_MARKER);
+        int endIndex = keyText.indexOf(PEM_RSAKEY_END_MARKER);
+        int markerLength = PEM_RSAKEY_BEGIN_MARKER.length();
+        boolean rsa = true;
+
+        if (startIndex == -1 && endIndex == -1 ) {
+            startIndex = keyText.indexOf(PEM_DSAKEY_BEGIN_MARKER);
+            endIndex = keyText.indexOf(PEM_DSAKEY_END_MARKER);
+            markerLength = PEM_DSAKEY_BEGIN_MARKER.length();
+            rsa = false;
+        }
+
+        if (startIndex <0 || endIndex <= startIndex) {
+            throw new CausedIOException("Key data not found (missing begin or end marker)");
+        }
+
+        String keyHeadersAndData = keyText.substring(
+                startIndex+markerLength,
+                endIndex);
+
+        String encryptionHeader = "DEK-Info"; // encryption not supported
+        int saltTextIndex = keyHeadersAndData.indexOf(encryptionHeader);
+        if (saltTextIndex >= 0) {
+            throw new CausedIOException("Key data not valid (encryption not supported)");
+        }
+
+        byte[] keyData = HexUtils.decodeBase64(keyHeadersAndData, true);
+        PrivateKey privateKey = null;
+        try {
+            if (rsa) {
+                KeyFactory kf = KeyFactory.getInstance("RSA");
+                BigInteger[] keyModulusAndExponent = decodePKCS1RSA(keyData);
+                privateKey = kf.generatePrivate(new RSAPrivateKeySpec(keyModulusAndExponent[0], keyModulusAndExponent[1]));
+            } else {
+                KeyFactory kf = KeyFactory.getInstance("DSA");
+                privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(keyData));
+            }
+        }
+        catch(NoSuchAlgorithmException nsae) {
+            throw new CausedIOException("Key data not valid (unsupported key type)");
+        }
+        catch(InvalidKeySpecException ikse) {
+            throw new CausedIOException("Key data not valid (invalid key spec)");
+        }
+
+        return privateKey;
+    }
 
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     private static final String[] KEY_USAGES = {
@@ -654,6 +757,56 @@ public class CertUtils {
         System.arraycopy(derEncodedValue, bytesToStrip, abyte0, 0, abyte0.length);
         return abyte0;
     }
+
+    /**
+     * Decode the ASN.1 RSA data.
+     *
+     * <pre>
+     * RSAPrivateKey ::= SEQUENCE {
+     *   version Version,
+     *   modulus INTEGER, -- n
+     *   publicExponent INTEGER, -- e
+     *   privateExponent INTEGER, -- d
+     *   prime1 INTEGER, -- p
+     *   prime2 INTEGER, -- q
+     *   exponent1 INTEGER, -- d mod (p-1)
+     *   exponent2 INTEGER, -- d mod (q-1)
+     *   coefficient INTEGER -- (inverse of q) mod p }
+     *
+     * Version ::= INTEGER
+     * </pre>
+     *
+     * @return A BigInteger array containing the modulus and exponent.
+     */
+    private static BigInteger[] decodePKCS1RSA(byte[] data) throws IOException {
+        ASN1Sequence keySequence = new ASN1Sequence(new ASN1Type[]{
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer(),
+                new ASN1Integer()
+        });
+        Object decoded = keySequence.decode(data);
+
+        if (!(decoded instanceof Object[])) {
+            throw new IOException("Incorrect type when decoding RSAPrivateKey.");
+        }
+
+        Object[] sequence = (Object[]) decoded;
+        if (!(sequence[1] instanceof byte[]) ||
+            !(sequence[3] instanceof byte[])) {
+            throw new IOException("Incorrect modulus or exponent type when decoding RSAPrivateKey.");
+        }
+
+        BigInteger modulus = new BigInteger((byte[])sequence[1]);
+        BigInteger exponent = new BigInteger((byte[])sequence[3]);
+
+        return new BigInteger[]{modulus, exponent};
+    }    
 
     private static final String FACTORY_ALGORITHM = "X.509";
 }

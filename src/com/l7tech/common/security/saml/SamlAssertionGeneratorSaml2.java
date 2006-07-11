@@ -179,8 +179,9 @@ public class SamlAssertionGeneratorSaml2 {
                 AttributeStatement.Attribute attribute = attributes[i];
                 AttributeType attributeType = attStatement.addNewAttribute();
                 attributeType.setName(attribute.getName());
-                XmlObject attributeValue = attributeType.addNewAttributeValue();
-                attributeValue.set(XmlObject.Factory.newValue(attribute.getValue()));
+                attributeType.setNameFormat(attribute.getNameSpace());
+                XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
+                attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
             }
         } else {
             throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());

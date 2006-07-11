@@ -7,9 +7,9 @@ import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
 import sun.security.util.ObjectIdentifier;
 
-import com.l7tech.common.util.HexUtils;
-
 /**
+ * TODO replace use of the sun ASN.1 classes with the apache harmony ones.
+ *
  * Utility class for unwrapping SPNEGO tokens.
  *
  *   3.  DATA ELEMENTS

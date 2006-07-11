@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ant build file for UneasyRooster
+-->
+<project name="UneasyRooster" default="package" basedir="../../../../..">
+<!-- Uncomment for jikes/emacs to be used
+    <property name="build.compiler" value="jikes"/>
+    <property name="build.compiler.emacs" value="true"/> -->
+
+    <!-- Set src.root to ${basedir} if not already set -->
+    <property name="src.root" location="${basedir}"/>
+
+    <!-- Set src.root to ${basedir} if not already set -->
+    <property name="build.dir" location="${basedir}/build"/>
+
+    <!-- get the version -->
+    <property file="${src.root}/build.version"/>
+
+    <!-- override configuration with user properties -->
+    <property file="${user.home}/build.properties"/>
+
+<!--
+      ** Set default build properties
+      ** Properties that were not specified in user properties
+    -->
+    <property file="${src.root}/etc/default_build.properties"/>
+
+    <!-- where the builds go -->
+    <property name="dev.build.home" value="${src.root}/build"/>
+
+    <!-- distribution archive names -->
+    <property name="war" value="ROOT.war"/>
+
+    <!-- project classpath -->
+    <path id="project.classpath">
+        <pathelement location="src"/>
+        <fileset dir="lib">
+            <include name="**/*.jar"/>
+            <include name="**/*.zip"/>
+<!--
+               * Issue with multiple parsers.
+               * JDK 1.4 ships it's own parses and contributes to the
+               * overall parser mess. java.beans.XmlEncoder and other
+               * classes  do not like xerces so excluded it from project
+               * classpath.
+               * It is not throughly tested to see if this breaks other things.
+
+           fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
+           <exclude name="*xerces*"/>
+           <exclude name="*xml-api*"/>
+           -->
+           <!-- Exclude since this is not necessary to compile and it includes old
+                versions of some of the xml-apis.jar classes -->
+           <exclude name="xml4j.jar"/>
+           <!-- Exclude build related classes -->
+           <exclude name="ant.jar"/>
+           <exclude name="optional.jar"/>
+        </fileset>
+        <fileset dir="lib">
+            <include name="*.zip"/>
+        </fileset>
+    </path>
+
+    <!--
+      Classpath for Idea form compiler
+    -->
+    <path id="uidesigner.classpath">
+        <fileset dir="${src.root}/lib/tools">
+            <include name="jdom.jar"/>
+            <include name="asm.jar"/>
+            <include name="asm-commons.jar"/>
+            <include name="javac2.jar"/>
+        </fileset>
+    </path>
+
+    <!--
+      Task definition for Idea form compiler
+    -->
+    <taskdef name="javac2"
+             classname="com.intellij.ant.Javac2"
+             classpathref="uidesigner.classpath"/>
+
+    <!--
+      Classpath for obfuscation
+    -->
+    <path id="zelix.classpath">
+        <fileset dir="${src.root}/etc/obfuscation">
+            <include name="ZKM.jar"/>
+        </fileset>
+    </path>
+
+    <!--
+      Task definition for class file obfuscation
+    -->
+    <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
+
+    <!--
+      Various bolt-on task definitions
+    -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="lib/ant-contrib.jar"/>
+        </classpath>
+    </taskdef>
+
+    <!--
+      ** 'package' target.
+      ** package the application ( both client and server) in their
+      ** respective archives (war, jar).
+      ** This target is invoked by other targets such as deploy and dist.
+      -->
+    <target name="package"
+            description="Create the SAML Test Tool."
+            >
+        <jar jarfile="${build.dir}/SamlTestTool.jar" manifest="${src.root}/tests/com/l7tech/skunkworks/saml/SamlTestTool.mf">
+            <fileset dir="${build.dir}/test-classes">
+                <include name="com/l7tech/skunkworks/saml/**/*"/>
+            </fileset>
+            <fileset dir="${build.dir}/classes">
+                <exclude name="**/*.form"/>
+                <exclude name="com/l7tech/internal/**/*"/>
+
+                <!-- Omit the third-party crypto drivers unless we need to ship with one or more of them.  Including it causes testpackage to fail -->
+                <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/luna/**/*"/>
+                <!-- goes in lib/ext -->
+                <exclude name="com/l7tech/common/security/TrustedCert**"/>
+                <exclude name="com/l7tech/common/security/CertEntity**"/>
+                <exclude name="com/l7tech/common/security/X509Entity**"/>
+
+                <!-- Tarari drivers not available in standalone Agent -->
+                <exclude name="com/l7tech/common/xml/tarari/TarariUtil*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariFactories*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/GlobalTarariContextImpl*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariElementCursor*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariCompiledXpath*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariCompiledStylesheetImpl*.class" />
+                <exclude name="com/l7tech/common/xml/tarari/TarariSchemaSource*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariSchemaHandler*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/util/**/*"/>
+
+                <!-- SchemaEntry relies on NamedEntityImp -->
+                <exclude name="com/l7tech/common/xml/schema/SchemaEntry*.class/"/>
+
+                <!-- Exclude unless Log4j is used -->
+                <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
+
+                <exclude name="com/l7tech/common/audit/**/*"/>
+                <exclude name="com/l7tech/common/alert/**/*"/>
+
+                <exclude name="com/l7tech/policy/server/**/*"/>
+                <exclude name="com/l7tech/policy/exporter/**/*"/>
+                <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
+                <exclude name="com/l7tech/policy/validator/ValidatorFactory.class"/>
+
+                <include name="com/l7tech/proxy/**/*"/>
+                <exclude name="com/l7tech/common/transport/jms/*"/>
+                <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/logging/**/*"/>
+                <include name="com/l7tech/policy/**/*"/>
+                <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
+            </fileset>
+            <fileset dir="${src.root}/etc">
+                <include name="login.config"/>
+            </fileset>
+        </jar>
+
+    </target>
+
+</project>

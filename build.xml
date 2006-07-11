@@ -779,8 +779,8 @@
 
                 <include name="com/l7tech/proxy/**/*"/>
                 <exclude name="com/l7tech/common/transport/jms/*"/>
+                <exclude name="com/l7tech/common/security/rbac/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
-                <include name="com/l7tech/logging/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
             </fileset>
@@ -1003,6 +1003,7 @@
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
 
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
+                <include name="com/l7tech/common/util/CausedIOException*.class"/>
                 <include name="com/l7tech/common/util/WhirlycacheFactory*.class"/>
                 <include name="com/l7tech/common/util/ExceptionUtils.class"/>
                 <include name="com/l7tech/common/gui/util/Utilities*.class"/>
@@ -1536,7 +1537,7 @@
             <exclude name="com/l7tech/policy/variable/**/*.java"/>
             <exclude name="com/l7tech/common/Authorizer.java"/>
             <exclude name="com/l7tech/common/http/cache/**/*.java"/>
-	    <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
+            <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
@@ -1654,6 +1655,15 @@
             </fileset>
         </copy>
     </target>
+
+    <!-- ** test forms compilation target (skunkworks testing apps) -->
+    <target name="compile-test-forms" depends="compile-tests">
+        <javac2 srcdir="tests" destdir="${build.test.classes}" debug="on" target="1.4" optimize="on" source="1.4"
+                classpathref="project.test.classpath">
+            <include name="**/*.form"/>
+        </javac2>
+    </target>
+ 
 
     <target name="test-ssg">
         <parallel>
