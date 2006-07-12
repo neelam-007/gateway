@@ -86,7 +86,10 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PROPS_RESOURCE_PATH = "serverconfig.properties";
 
     public static final String PROPS_OVER_PATH_PROPERTY = "com.l7tech.server.serverConfigOverridePropertiesPath";
-    public static final String PROPS_OVER_PATH_DEFAULT = "/ssg/etc/conf/serverconfig_override.properties";
+    public static final String PROPS_OVER_PATH_DEFAULT =
+            System.getProperty("com.l7tech.server.home") == null
+            ? "/ssg/etc/conf/serverconfig_override.properties"
+            : System.getProperty("com.l7tech.server.home") + File.separator + "etc" + File.separator + "conf" + File.separator + "serverconfig_override.properties";
 
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
