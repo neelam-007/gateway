@@ -12,6 +12,16 @@ import java.util.Collection;
  * the runtime.
  */
 public interface CustomAssertionsRegistrar {
+
+    /**
+     * Get the class bytes for a CustomAssertion class.
+     *
+     * @param className The class to load
+     * @return The class data or null
+     * @throws RemoteException on remote communication error
+     */
+    byte[] getAssertionClass(String className) throws RemoteException;
+
     /**
      * @return the list of all assertions known to the runtime
      * @throws RemoteException on remote communication error

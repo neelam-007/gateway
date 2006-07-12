@@ -181,10 +181,10 @@ public class Main {
     }
 
     /**
-     * Utility routine that removes the security manager if
-     * present.
+     * Utility routine that removes the security manager if present.
      *
-     * This ensures that we disable downloading of classes over RMI.
+     * This ensures that we disable downloading of classes using the default
+     * RMI mechanism.
      */
     private void ensureNoSecurityManager() {
         if (System.getSecurityManager() != null) {
@@ -205,6 +205,9 @@ public class Main {
 
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+
+        // Set property for use by Spring HTTP remoting (its not RMI but uses this to load classes)
+        System.setProperty("java.rmi.server.RMIClassLoaderSpi", "com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi");
     }
 
     /**

@@ -30,6 +30,9 @@
         <property name="httpInvokerRequestExecutor">
             <ref local="httpRequestExecutor"/>
         </property>
+        <property name="codebaseUrl">
+            <value>must not be empty</value>
+        </property>
     </bean>
 
     <!--

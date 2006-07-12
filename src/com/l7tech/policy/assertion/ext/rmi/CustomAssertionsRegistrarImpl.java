@@ -42,6 +42,11 @@ public class CustomAssertionsRegistrarImpl
         this.delegate = delegate;
     }
 
+    public byte[] getAssertionClass(String className) throws RemoteException {
+        checkLicense();
+        return delegate.getAssertionClass(className);
+    }
+
     /**
      * @return the list of all assertions known to the runtime
      * @throws java.rmi.RemoteException

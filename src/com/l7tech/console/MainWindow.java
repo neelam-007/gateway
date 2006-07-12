@@ -47,6 +47,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.rmi.server.RMIClassLoader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -2233,6 +2234,9 @@ public class MainWindow extends JFrame {
               ssgURL = serverURL;
               String statusMessage = id;
               connectionContext = "";
+
+              /* init rmi cl */
+              RMIClassLoader.getDefaultProviderInstance();
 
               /* set the preferences */
               try {

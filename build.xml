@@ -111,13 +111,6 @@
         <property name="build.lib" value="${build.dir}/lib"/>
         <property name="build.etc" value="${build.dir}/etc"/>
 
-        <!--Custom Assertions subproject-->
-        <property name="customassertions.src.dir" value="${src.root}/CustomAssertions"/>
-        <property name="customassertions.build.dir" value="${customassertions.src.dir}/build/output"/>
-        <property name="customassertions.jar.name" value="CustomAssertions.jar"/>
-        <property name="customassertions.jar.path" value="${customassertions.build.dir}/${customassertions.jar.name}"/>
-
-
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
         <property name="app.name" value="Layer 7 SecureSpan Suite"/>
@@ -412,7 +405,7 @@
       ** Clean the directory structure.
       ** This is used only by developer's build.
       -->
-    <target name="clean" depends="init-dev,clean.ca,clean.test" description="Delete all build output.">
+    <target name="clean" depends="init-dev,clean.test" description="Delete all build output.">
         <delete dir="${build.classes}"/>
         <delete dir="${build.test.classes}"/>
         <delete dir="${doc.root}"/>
@@ -441,13 +434,6 @@
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
         <property name="buildinfo.update" value="true"/>
-    </target>
-
-    <target name="clean.ca" depends="ca.availablecheck" if="customassertion.available">
-        <!-- clean up the custom assertions subtree as well-->
-        <exec executable="sh" dir="${customassertions.src.dir}">
-            <arg line="./build.sh clean"/>
-        </exec>
     </target>
 
     <!-- javadoc target -->
@@ -790,25 +776,7 @@
         </jar>
     </target>
 
-    <target name="ca.availablecheck">
-	<available file="${customassertions.src.dir}" property="customassertion.available"/>
-    </target>
-
-    <!--
-      Target to create an empty CA jar if we're not building CA (keeps packager happy)
-    -->
-    <target name="ca.createemptyjar" unless="customassertion.available">
-        <jar jarfile="${build.lib}/${customassertions.jar.name}"/>
-    </target>
-
-    <target name="package.manager.ca" depends="ca.availablecheck, ca.createemptyjar" if="customassertion.available">
-        <exec executable="sh" dir="${customassertions.src.dir}">
-            <arg line="./build.sh build-deployment-jar"/>
-        </exec>
-        <copy todir="${build.lib}" file="${customassertions.jar.path}"/>
-    </target>
-
-    <target name="package.manager" unless="ssg.only" depends="compile, package.manager.ca">
+    <target name="package.manager" unless="ssg.only" depends="compile">
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="**/*.form"/>

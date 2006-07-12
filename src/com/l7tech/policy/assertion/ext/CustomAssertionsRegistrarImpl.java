@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.ext;
 
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
@@ -30,6 +31,34 @@ public class CustomAssertionsRegistrarImpl
   extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
 
     //- PUBLIC
+
+    public byte[] getAssertionClass(String className) throws RemoteException {
+        byte[] classData = null;
+
+        // ensure a name such as "com.something.MyClass"
+        if (className != null && className.lastIndexOf('.') > className.indexOf('.')) {
+            String classAsResource = className.replace('.','/') + ".class";
+            if (logger.isLoggable(Level.FINEST))
+                logger.finest("Serving custom assertion class '"+className+"' as resource '"+classAsResource+"'.");
+            if (customAssertionClassloader != null) {
+                InputStream classIn = null;
+                try {
+                    if (isCustomAssertionResource(classAsResource)) {
+                        classIn = customAssertionClassloader.getResourceAsStream(classAsResource);
+                        classData = HexUtils.slurpStream(classIn);
+                    }
+                }
+                catch(IOException ioe) {
+                    logger.log(Level.WARNING, "Error loading custom assertion class '"+className+"'.", ioe);
+                }
+                finally {
+                    ResourceUtils.closeQuietly(classIn);
+                }
+            }
+        }
+
+        return classData;
+    }
 
     /**
      * @return the list of all assertions known to the runtime
@@ -116,6 +145,7 @@ public class CustomAssertionsRegistrarImpl
 
     private boolean initialized = false;
     private ServerConfig serverConfig;
+    private ClassLoader customAssertionClassloader;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
@@ -166,6 +196,8 @@ public class CustomAssertionsRegistrarImpl
 
             ClassLoaderUtil.setClassloader(caClassLoader);
         }
+
+        customAssertionClassloader = caClassLoader;
 
         try {
             // Support multiple config files, so there can be one per CA Jar
@@ -307,4 +339,33 @@ public class CustomAssertionsRegistrarImpl
         }
     }
 
+    /**
+     * Check if the given resource is within a known custom assertion package.
+     *
+     * @param resourcePath The path to check
+     * @return true for a CA resource
+     */
+    private boolean isCustomAssertionResource(final String resourcePath) {
+        boolean isCustomAssertionRes = false;
+
+        Set descriptors = CustomAssertions.getAllDescriptors();
+        for (Iterator iterator = descriptors.iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor customAssertionDescriptor = (CustomAssertionDescriptor) iterator.next();
+
+            // only check classes relevant to the SSM (not SSB or SSG)
+            Class beanClass = customAssertionDescriptor.getAssertion();
+            Class uiClass = customAssertionDescriptor.getUiClass();
+
+            if (beanClass != null && resourcePath.startsWith(beanClass.getPackage().getName().replace('.', '/'))) {
+                isCustomAssertionRes = true;
+                break;
+            }
+            if (uiClass != null && resourcePath.startsWith(uiClass.getPackage().getName().replace('.', '/'))) {
+                isCustomAssertionRes = true;
+                break;
+            }
+        }
+
+        return isCustomAssertionRes;
+    }
 }

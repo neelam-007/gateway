@@ -142,7 +142,10 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
             }
 
             if (clazz == null) {
-                throw recnfe;
+                if (recnfe != null)
+                    throw recnfe;
+                else
+                    throw new ClassNotFoundException(desc.getName());
             }
 
             return clazz;
