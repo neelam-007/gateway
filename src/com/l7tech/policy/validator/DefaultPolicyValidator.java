@@ -3,6 +3,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -38,7 +39,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         Assertion[] ass = ap.getPath();
 
         // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
@@ -62,7 +63,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
         }
 
-        PathValidator pv = new PathValidator(ap, r, service);
+        PathValidator pv = new PathValidator(ap, r, service, assertionLicense);
         for (int i = 0; i < ass.length; i++) {
             if (ass[i] instanceof CommentAssertion) continue;
             pv.validate(ass[i]);

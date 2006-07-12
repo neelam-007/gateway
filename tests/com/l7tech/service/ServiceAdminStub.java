@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.console.util.Registry;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -85,7 +86,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceId);
             Assertion assertion = WspReader.parsePermissively(policyXml);
-            return policyValidator.validate(assertion, service);
+            return policyValidator.validate(assertion, service, Registry.getDefault().getLicenseManager());
         } catch (FindException e) {
             throw new RemoteException("cannot get existing service: " + serviceId, e);
         } catch (IOException e) {

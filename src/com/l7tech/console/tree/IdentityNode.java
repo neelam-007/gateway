@@ -65,4 +65,8 @@ public class IdentityNode extends AbstractLeafPaletteNode {
             throw new RuntimeException("Couldn't retrieve user or group", e);
         }
     }
+
+    protected boolean isEnabledByLicense() {
+        return Registry.getDefault().getLicenseManager().isAuthenticationEnabled();
+    }
 }

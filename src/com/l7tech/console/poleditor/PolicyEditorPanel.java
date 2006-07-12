@@ -178,7 +178,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     public void validatePolicy() {
         final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                                                   getPublishedService());
+                                                                                   getPublishedService(),
+                                                                                   Registry.getDefault().getLicenseManager());
         displayPolicyValidateResult(pruneDuplicates(result));
     }
 
@@ -476,7 +477,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 protected void performAction() {
                     PolicyValidatorResult result
                       = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
-                                                              getPublishedService());
+                                                              getPublishedService(),
+                                                              Registry.getDefault().getLicenseManager());
                     displayPolicyValidateResult(pruneDuplicates(result));
 
                 }
@@ -490,7 +492,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private String fullValidate() {
         PolicyValidatorResult result = PolicyValidator.getDefault().
-                                            validate(rootAssertion.asAssertion(), getPublishedService());
+                                            validate(rootAssertion.asAssertion(), getPublishedService(),
+                                                     Registry.getDefault().getLicenseManager());
         String policyXml = null;
         try {
             policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());

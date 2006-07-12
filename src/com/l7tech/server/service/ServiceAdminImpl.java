@@ -22,6 +22,7 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.console.util.Registry;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -186,7 +187,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceid);
             Assertion assertion = WspReader.parseStrictly(policyXml);
-            return policyValidator.validate(assertion, service);
+            return policyValidator.validate(assertion, service, Registry.getDefault().getLicenseManager());
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);
             throw new RemoteException("cannot get existing service: " + serviceid, e);

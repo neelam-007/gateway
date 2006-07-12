@@ -129,6 +129,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             if (getAllowsChildren()) {
                 loadChildren();
                 hasLoadedChildren = true;
+                filterChildren();
             }
         }
         return super.getChildCount();
@@ -194,6 +195,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         hasLoadedChildren = false;
         loadChildren();
         hasLoadedChildren = true;
+        filterChildren();
     }
 
 
@@ -201,6 +203,11 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * subclasses may override this method
      */
     protected void loadChildren(){};
+
+    /**
+     * Subclasses may override this method to take some action immediately after loadChildren is called.
+     */
+    protected void filterChildren(){};
 
     /**
      * Get the set of actions associated with this node.

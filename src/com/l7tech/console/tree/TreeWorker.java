@@ -76,7 +76,10 @@ public class TreeWorker extends SwingWorker {
      */
     public Object construct() {
         dnode.removeAllChildren();
+        dnode.hasLoadedChildren = false;
         dnode.loadChildren();
+        dnode.hasLoadedChildren = true;
+        dnode.filterChildren();
         return dnode.children();
     }
 

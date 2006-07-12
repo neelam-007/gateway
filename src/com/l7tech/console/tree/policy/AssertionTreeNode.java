@@ -7,12 +7,14 @@ import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
@@ -205,8 +207,11 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         int position = (this instanceof CompositeAssertionTreeNode) ? 0 : this.getParent().getIndex(this) + 1;
         Action a = new AddAllAssertionAction(ca, position);
         list.add(a);
-        a = new AddOneOrMoreAssertionAction(ca, position);
-        list.add(a);
+
+        if (Registry.getDefault().getLicenseManager().isAssertionEnabled(OneOrMoreAssertion.class.getName())) {
+            a = new AddOneOrMoreAssertionAction(ca, position);
+            list.add(a);
+        }
 
         Action da = new DeleteAssertionAction(this);
         da.setEnabled(canDelete());

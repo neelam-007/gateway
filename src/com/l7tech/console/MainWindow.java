@@ -6,6 +6,7 @@ import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LicenseDialog;
@@ -174,7 +175,6 @@ public class MainWindow extends JFrame {
     private IdentitiesRootNode identitiesRootNode;
     private ServicesFolderNode servicesRootNode;
     private JTextPane descriptionText;
-    private LogonListener licenseCheckingLogonListener;
     private JSplitPane verticalSplitPane;
     private double preferredVerticalSplitLocation = 0.57;
     private double preferredHorizontalSplitLocation = 0.27;
@@ -1214,6 +1214,18 @@ public class MainWindow extends JFrame {
 
         getMainSplitPaneRight().removeAll();
         addComponentToGridBagContainer(getMainSplitPaneRight(), getWorkSpacePanel());
+
+        Registry.getDefault().getLicenseManager().addLicenseListener(new Runnable() {
+            public void run() {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        AbstractTreeNode root = (AbstractTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                        root.reloadChildren();
+                        getAssertionPaletteTree().repaint();
+                    }
+                });
+            }
+        });
     }
 
 
@@ -1578,9 +1590,12 @@ public class MainWindow extends JFrame {
         JScrollPane assertionScroller = new JScrollPane(getAssertionPaletteTree());
         configureScrollPane(assertionScroller);
         treePanel.addTab("Assertions", assertionScroller);
-        JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
-        configureScrollPane(identityScroller);
-        treePanel.addTab("Identity Providers", identityScroller);
+
+        if (Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) {
+            JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
+            configureScrollPane(identityScroller);
+            treePanel.addTab("Identity Providers", identityScroller);
+        }
 
         Component descriptionPane = getAssertionDescriptionPane();
         JScrollPane descriptionScrollPane = new JScrollPane(descriptionPane);
@@ -1796,7 +1811,6 @@ public class MainWindow extends JFrame {
         });
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
-        this.addLogonListener(getLicenseChecker());
         setTitle(resapplication.getString("SSG"));
         Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         ImageIcon imageIcon = new ImageIcon(icon);
@@ -1835,32 +1849,6 @@ public class MainWindow extends JFrame {
             style.addAttribute(StyleConstants.FontSize, new Integer(font.getSize()).toString());
         }
         label = null;
-    }
-
-    private LogonListener getLicenseChecker() {
-        if (licenseCheckingLogonListener == null) {
-            licenseCheckingLogonListener = new LogonListener() {
-                public void onLogon(LogonEvent e) {
-                    License lic = null;
-                    try {
-                        Registry reg = Registry.getDefault();
-                        ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
-                        lic = admin.getCurrentLicense();
-
-                        if (lic == null) {
-                            showLicenseWarning(false);
-                        }
-                    } catch (RemoteException e1) {
-                    } catch (InvalidLicenseException e1) {
-                        showLicenseWarning(true);
-                    }
-                }
-
-                public void onLogoff(LogonEvent e) {
-                }
-            };
-        }
-        return licenseCheckingLogonListener;
     }
 
     /**
@@ -2252,6 +2240,21 @@ public class MainWindow extends JFrame {
 
               ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
 
+              // Gather and cache the cluster license early, since components like the assertion palette will need it
+              Registry reg = Registry.getDefault();
+              License lic = null;         // if null, license is missing or invalid
+              boolean licInvalid = false; // if true, license is invalid
+              try {
+                  lic = clusterStatusAdmin.getCurrentLicense();
+              } catch (RemoteException e1) {
+                  log.log(Level.WARNING, "getCurrentLicense(): " + ExceptionUtils.getMessage(e1), e1);
+              } catch (InvalidLicenseException e1) {
+                  licInvalid = true;
+              } finally {
+                  // Cache it
+                  reg.getLicenseManager().setLicense(lic);
+              }
+
               String nodeName = "";
               try {
                   nodeName = clusterStatusAdmin.getSelfNodeName();
@@ -2281,6 +2284,8 @@ public class MainWindow extends JFrame {
               });
               toggleConnectedMenus(true);
               homeAction.actionPerformed(null);
+
+              if (lic == null) showLicenseWarning(licInvalid);
           }
 
           /* invoked on authentication failure */

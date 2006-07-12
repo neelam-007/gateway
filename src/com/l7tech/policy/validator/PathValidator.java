@@ -4,6 +4,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.*;
@@ -67,19 +68,43 @@ class PathValidator {
     private Map seenWssSignature = new HashMap();
     private Map seenSamlSecurity = new HashMap();
     private Map seenVariables = new HashMap();
+    private Map assertionFeatureName = new HashMap();
     private boolean seenSpecificUserAssertion = false;
+    private final AssertionLicense assertionLicense;
 
     boolean seenAccessControl = false;
     boolean seenRouting = false;
 
-    PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
+    PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         result = r;
         assertionPath = ap;
         this.service = service;
+        this.assertionLicense = assertionLicense;
+        if (assertionLicense == null) throw new NullPointerException();
+    }
+
+    private boolean isAssertionEnabled(Assertion ass) {
+        String assclass = ass.getClass().getName();
+        String featureName = (String)assertionFeatureName.get(assclass);
+        if (featureName == null) {
+            featureName = Assertion.getFeatureSetName(assclass);
+            assertionFeatureName.put(assclass, featureName);
+        }
+
+        return assertionLicense.isAssertionEnabled(featureName);
     }
 
     public void validate(Assertion a) {
         ValidatorFactory.getValidator(a).validate(assertionPath, service, result);
+
+        // Check licensing
+        if (assertionLicense != null) {
+            if (!assertionLicense.isAssertionEnabled(a.getClass().getName())) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                      "This assertion is not available on this Gateway cluster", null));
+            }
+        }
+
         // has precondition
         if (hasPreconditionAssertion(a)) {
             processPrecondition(a);

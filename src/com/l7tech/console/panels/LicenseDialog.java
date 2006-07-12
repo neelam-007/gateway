@@ -12,9 +12,9 @@ import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -177,6 +177,7 @@ public class LicenseDialog extends JDialog {
                         License license = admin.getCurrentLicense();
                         showingLicenseOrError = license != null;
                         licensePanel.setLicense(license);
+                        reg.getLicenseManager().setLicense(license);
                         pack();
                         return;
                     } catch (InvalidLicenseException e1) {
@@ -210,6 +211,7 @@ public class LicenseDialog extends JDialog {
             Registry reg = Registry.getDefault();
             ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
             License license = admin.getCurrentLicense();
+            reg.getLicenseManager().setLicense(license);
             licensePanel.setLicense(license);
             showingLicenseOrError = license != null;
             pack();

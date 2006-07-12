@@ -42,7 +42,7 @@ public abstract class PolicyValidator {
     /**
      * Validates the specified assertion tree.
      */
-    public PolicyValidatorResult validate(Assertion assertion, PublishedService service) {
+    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) {
         assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -54,7 +54,7 @@ public abstract class PolicyValidator {
 
         for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
-            validatePath(assertionPath, result, service);
+            validatePath(assertionPath, result, service, assertionLicense);
         }
         return result;
     }
@@ -65,5 +65,5 @@ public abstract class PolicyValidator {
      * @param ap the assertion path to validate
      * @param r  the result collect parameter
      */
-    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service);
+    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense);
 }

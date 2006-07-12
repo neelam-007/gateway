@@ -64,15 +64,15 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private IdentityProviderFactory identityProviderFactory;
     private SchemaEntryManager schemaEntryManager;
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
         for (int i = 0; i < ass.length; i++) {
-            validateAssertion(ass[i], pathContext, r, ap);
+            validateAssertion(ass[i], pathContext, r, ap, assertionLicense);
         }
     }
 
-    private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap) {
+    private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap, AssertionLicense assertionLicense) {
         if (a instanceof IdentityAssertion) {
             final IdentityAssertion identityAssertion = (IdentityAssertion)a;
             int idStatus = getIdentityStatus(identityAssertion);

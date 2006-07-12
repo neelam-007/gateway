@@ -17,6 +17,8 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.event.admin.ClusterPropertyEvent;
 import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.policy.AssertionLicense;
+import com.l7tech.policy.assertion.Assertion;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
 /**
  * Keeps track of license permissions.
  */
-public class GatewayLicenseManager extends ApplicationObjectSupport implements InitializingBean, ApplicationListener, LicenseManager {
+public class GatewayLicenseManager extends ApplicationObjectSupport implements InitializingBean, ApplicationListener, AssertionLicense, LicenseManager {
     private static final Logger logger = Logger.getLogger(GatewayLicenseManager.class.getName());
     private static final long CHECK_INTERVAL = (5L * 60L * 1000L) + (new SecureRandom().nextInt(60000)); // recheck every 5 min + random desync interval
     private static final int CHECK_THRESHOLD = 30; // dont recheck more often than once per this many license hook calls
@@ -310,5 +312,9 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         setLicense(oldLicense);
         this.licenseLoaded = oldLoadTime;
         throw new UpdateException("New license was valid, but could not be installed: " + ExceptionUtils.getMessage(oops), oops);
+    }
+
+    public boolean isAssertionEnabled(String assertionClassname) {
+        return isFeatureEnabled(Assertion.getFeatureSetName(assertionClassname));
     }
 }

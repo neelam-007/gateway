@@ -65,6 +65,15 @@ public class PoliciesFolderNode extends AbstractPaletteFolderNode {
         }
     }
 
+    protected boolean isEnabledByLicense() {
+        // Policy templates always shown, regardless of license
+        return true;
+    }
+
+    protected void filterChildren() {
+        // Suppress filtering for policy templates
+    }
+
     private String getTemplatesPath() {
         return (String)getUserObject();
     }

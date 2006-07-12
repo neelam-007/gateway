@@ -2,13 +2,14 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.util.Preferences;
 
-import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * The class represents an <code>AbstractTreeNode</code> specialization
  * element that represents the assertions palette root.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -29,7 +30,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
     protected void loadChildren() {
         String homePath = null;
         homePath = Preferences.getPreferences().getHomePath();
-        List nodeList = new ArrayList();
+        List nodeList = new LinkedList();
         nodeList.add(new AccessControlFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());
         nodeList.add(new XmlSecurityFolderNode());
@@ -40,6 +41,12 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new ThreatProtectionFolderNode());
         nodeList.add(new PoliciesFolderNode(homePath));
+
+        for (Iterator i = nodeList.iterator(); i.hasNext();) {
+            AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();
+            if (!node.isEnabledByLicense() || node.getChildCount() < 1) i.remove();
+        }
+
 
         AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
 

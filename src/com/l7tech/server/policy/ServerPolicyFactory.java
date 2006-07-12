@@ -5,9 +5,9 @@
 
 package com.l7tech.server.policy;
 
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
@@ -25,7 +25,7 @@ import java.lang.reflect.Constructor;
  * @author alex
  */
 public class ServerPolicyFactory implements ApplicationContextAware {
-    private final LicenseManager licenseManager;
+    private final AssertionLicense licenseManager;
     private ApplicationContext applicationContext;
     static ThreadLocal<Boolean> licenseEnforcement = new ThreadLocal<Boolean>() {
         protected Boolean initialValue() {
@@ -33,7 +33,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         }
     };
 
-    public ServerPolicyFactory(LicenseManager licenseManager) {
+    public ServerPolicyFactory(AssertionLicense licenseManager) {
         this.licenseManager = licenseManager;
     }
 
@@ -48,10 +48,10 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      */
     public ServerAssertion compilePolicy(Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException {
         try {
-            this.licenseEnforcement.set(licenseEnforcement);
+            ServerPolicyFactory.licenseEnforcement.set(licenseEnforcement);
             return doMakeServerAssertion(genericAssertion);
         } finally {
-            this.licenseEnforcement.set(null);
+            ServerPolicyFactory.licenseEnforcement.set(null);
         }
     }
 
@@ -74,7 +74,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             Boolean le = licenseEnforcement.get();
             if (le == null)
                 throw new ServerPolicyException(genericAssertion, "No license enforcement state set; use compilePolicy() instead of compileSubtree()");
-            if (le && !licenseManager.isFeatureEnabled(Assertion.getFeatureSetName(genericAssertion.getClass().getName())))
+            if (le && !licenseManager.isAssertionEnabled(genericAssertion.getClass().getName()))
                 throw new ServerPolicyException(genericAssertion,
                                                 "The specified assertion is not supported on this Gateway: " +
                                                         genericAssertion.getClass());

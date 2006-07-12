@@ -104,6 +104,10 @@ public abstract class Registry {
       */
      abstract public SecurityProvider getSecurityProvider();
 
+    public ConsoleLicenseManager getLicenseManager() {
+        return ConsoleLicenseManager.getInstance();
+    }
+
     /**
      * Implementation of the default 'no-op' registry
      */
