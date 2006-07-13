@@ -178,7 +178,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         return null;
                     }
                 });
-                if (isAuthAssertion)
+                if (isAuthAssertion && principalCredentials != null)
                     context.setAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
                 return AssertionStatus.NONE;
             } catch (PrivilegedActionException e) {
