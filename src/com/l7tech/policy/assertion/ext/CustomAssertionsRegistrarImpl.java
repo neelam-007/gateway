@@ -45,7 +45,8 @@ public class CustomAssertionsRegistrarImpl
                 try {
                     if (isCustomAssertionResource(classAsResource)) {
                         classIn = customAssertionClassloader.getResourceAsStream(classAsResource);
-                        classData = HexUtils.slurpStream(classIn);
+                        if (classIn != null)
+                            classData = HexUtils.slurpStream(classIn);
                     }
                 }
                 catch(IOException ioe) {
