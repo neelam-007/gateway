@@ -141,7 +141,14 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 return null;
             }
             for (NameValueServiceResolver resolver : resolvers) {
-                Set<PublishedService> resolvedServices = resolver.resolve(req, serviceSet);
+                Set<PublishedService> resolvedServices;
+                boolean passthrough = false;
+                try {
+                    resolvedServices = resolver.resolve(req, serviceSet);
+                } catch (NoServiceOIDResolutionPassthroughException e) {
+                    resolvedServices = serviceSet;
+                    passthrough = true;
+                }
 
                 int newResolvedServicesSize = 0;
                 if (resolvedServices != null) {
@@ -149,7 +156,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 }
 
                 // if remaining services are 0 or 1, we are done
-                if (newResolvedServicesSize == 1) {
+                if (newResolvedServicesSize == 1 && !passthrough) {
                     logger.finest("service resolved by " + resolver.getClass().getName());
                     return resolvedServices.iterator().next();
                 } else if (newResolvedServicesSize == 0) {

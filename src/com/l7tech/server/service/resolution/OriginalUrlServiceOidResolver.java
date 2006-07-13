@@ -120,11 +120,16 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         // special case: if the request does not follow pattern, then all services passed
         // match, the next resolver will narrow it down
         if (value == null) {
-            return serviceSubset;
+            if (serviceSubset.size() == 1) {
+                // in this case, i can't return the set, otherwize it will be interpreted as a match!
+                throw new NoServiceOIDResolutionPassthroughException();
+            } else {
+                return serviceSubset;
+            }
         } else {
             return super.resolve(value, serviceSubset);
         }
     }
 
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+    protected static final Logger logger = Logger.getLogger(OriginalUrlServiceOidResolver.class.getName());
 }
