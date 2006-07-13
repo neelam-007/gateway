@@ -33,6 +33,7 @@ public class AddOneOrMoreAssertionAction extends SecureAction {
     }
 
     public AddOneOrMoreAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
+        super(true, OneOrMoreAssertion.class);
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }

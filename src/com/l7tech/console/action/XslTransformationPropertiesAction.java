@@ -5,6 +5,7 @@ import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XslTransformationTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,6 +24,7 @@ import java.util.logging.Logger;
 public class XslTransformationPropertiesAction extends SecureAction {
 
     public XslTransformationPropertiesAction(XslTransformationTreeNode node) {
+        super(true, XslTransformation.class);
         this.node = node;
     }
 

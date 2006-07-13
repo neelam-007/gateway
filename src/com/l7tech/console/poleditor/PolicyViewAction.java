@@ -14,6 +14,7 @@ import com.l7tech.identity.Group;
 public class PolicyViewAction extends SecureAction {
 
     public PolicyViewAction() {
+        super(true);
     }
 
     /**

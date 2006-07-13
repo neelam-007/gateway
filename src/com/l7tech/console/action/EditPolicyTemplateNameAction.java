@@ -33,6 +33,7 @@ public class EditPolicyTemplateNameAction extends SecureAction {
     protected PolicyTemplateNode node;
 
     public EditPolicyTemplateNameAction(PolicyTemplateNode node) {
+        super(true);
         if (node == null) {
             throw new IllegalArgumentException();
         }

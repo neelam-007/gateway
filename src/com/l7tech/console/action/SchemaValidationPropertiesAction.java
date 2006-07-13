@@ -9,6 +9,7 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
 public class SchemaValidationPropertiesAction extends SecureAction {
 
     public SchemaValidationPropertiesAction(SchemaValidationTreeNode node, PublishedService service) {
+        super(true, SchemaValidation.class);
         this.node = node;
         this.service = service;
     }

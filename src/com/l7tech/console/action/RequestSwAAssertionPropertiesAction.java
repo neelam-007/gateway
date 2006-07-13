@@ -29,7 +29,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(RequestSwAAssertionPropertiesAction.class.getName());
 
     public RequestSwAAssertionPropertiesAction(RequestSwAAssertionPolicyTreeNode nodePolicy) {
-        super(nodePolicy);
+        super(nodePolicy, RequestSwAAssertion.class);
     }
 
     /**

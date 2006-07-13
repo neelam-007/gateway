@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.NewInternalUserDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -17,7 +18,7 @@ public class NewInternalUserAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewInternalUserAction.class.getName());
 
     public NewInternalUserAction(AbstractTreeNode node) {
-        super(node);
+        super(node, SpecificUser.class);
     }
 
     /**

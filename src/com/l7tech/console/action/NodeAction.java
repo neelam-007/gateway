@@ -9,9 +9,13 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.assertion.Assertion;
 
-import javax.swing.JTree;
+import javax.swing.*;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -34,9 +38,10 @@ public abstract class NodeAction extends SecureAction {
      * The tree will be set to <b>null<b/>
      *
      * @param node the node this action will acto on
+     * @param requiredAssertionLicense assertion class that must be licensed, or null to allow action regardless of licensing
      */
-    public NodeAction(AbstractTreeNode node) {
-        this(node, null);
+    public NodeAction(AbstractTreeNode node, Class<? extends Assertion> requiredAssertionLicense) {
+        this(node, null, requiredAssertionLicense == null ? null : (List)Arrays.asList(requiredAssertionLicense));
     }
 
     /**
@@ -45,8 +50,11 @@ public abstract class NodeAction extends SecureAction {
      *
      * @param node the node that this action will act on
      * @param tree the tree where the node lives
+     * @param permittedAssertionLicenses list of assertion classes, at least one of which must be licensed;
+     *                                   or null or empty to allow action regardless of licensing
      */
-    public NodeAction(AbstractTreeNode node, JTree tree) {
+    public NodeAction(AbstractTreeNode node, JTree tree, Collection<Class<? extends Assertion>> permittedAssertionLicenses) {
+        super(true, permittedAssertionLicenses);
         this.node = node;
         this.tree = tree;
     }

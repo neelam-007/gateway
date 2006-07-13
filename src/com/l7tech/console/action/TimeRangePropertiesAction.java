@@ -8,6 +8,7 @@ import com.l7tech.console.panels.TimeRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.TimeRangeTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.TimeRange;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,6 +25,7 @@ import java.util.logging.Level;
  */
 public class TimeRangePropertiesAction extends SecureAction {
     public TimeRangePropertiesAction(TimeRangeTreeNode subject) {
+        super(true, TimeRange.class);
         this.subject = subject;
     }
 

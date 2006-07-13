@@ -38,7 +38,7 @@ import java.util.logging.Level;
 public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
 
     public FeedNewWSDLToPublishedServiceAction(ServiceNode node) {
-        super(node);
+        super(node, null);
     }
 
     public String getName() {

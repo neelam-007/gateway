@@ -26,7 +26,7 @@ public class EditXpathCredentialSourceAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditXpathCredentialSourceAction(AbstractTreeNode node) {
-        super(node);
+        super(node, XpathCredentialSource.class);
         if (!(node.asAssertion() instanceof XpathCredentialSource)) {
             throw new IllegalArgumentException();
         }

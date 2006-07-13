@@ -23,7 +23,7 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(SetVariableAssertionPropertiesAction.class.getName());
 
     public SetVariableAssertionPropertiesAction(SetVariableAssertionPolicyNode node) {
-        super(node);
+        super(node, SetVariableAssertion.class);
     }
 
     /**

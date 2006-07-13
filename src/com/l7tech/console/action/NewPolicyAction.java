@@ -26,6 +26,7 @@ public class NewPolicyAction extends SecureAction {
     private AllAssertion root;
 
     public NewPolicyAction() {
+        super(true);
     }
 
     /**

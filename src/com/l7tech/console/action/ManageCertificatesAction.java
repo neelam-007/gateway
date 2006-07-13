@@ -24,6 +24,7 @@ public class ManageCertificatesAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageCertificatesAction() {
+        super(true, LIC_AUTH_ASSERTIONS);
     }
 
     /**

@@ -20,6 +20,10 @@ import java.rmi.RemoteException;
 public class DeleteAuditEventsAction extends SecureAction {
     private Action chainAction = null;
 
+    public DeleteAuditEventsAction() {
+        super(true);
+    }
+
     public String getName() {
         return "Delete Old Audit Events";
     }

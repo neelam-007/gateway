@@ -17,7 +17,7 @@ public class NewFederatedUserAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewFederatedUserAction.class.getName());
 
     public NewFederatedUserAction(AbstractTreeNode node) {
-        super(node);
+        super(node, null, LIC_AUTH_ASSERTIONS);
     }
 
     /**

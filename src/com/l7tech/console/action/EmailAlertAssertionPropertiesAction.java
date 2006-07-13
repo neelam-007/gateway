@@ -5,6 +5,7 @@ import com.l7tech.console.panels.EmailAlertPropertiesDialog;
 import com.l7tech.console.tree.policy.EmailAlertAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +16,7 @@ import java.util.logging.Level;
  */
 public class EmailAlertAssertionPropertiesAction extends SecureAction {
     public EmailAlertAssertionPropertiesAction(EmailAlertAssertionTreeNode subject) {
+        super(true, EmailAlertAssertion.class);
         this.subject = subject;
     }
 

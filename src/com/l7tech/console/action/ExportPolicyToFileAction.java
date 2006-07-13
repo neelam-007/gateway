@@ -36,9 +36,11 @@ public class ExportPolicyToFileAction extends SecureAction {
     protected File lastSavedFile;
 
     public ExportPolicyToFileAction() {
+        super(true);
     }
 
     public ExportPolicyToFileAction(AssertionTreeNode node) {
+        super(true);
         if (node == null) {
             throw new IllegalArgumentException();
         }

@@ -134,4 +134,15 @@ public class FindIdentityAction extends BaseAction {
         Utilities.centerOnScreen(dialog);
         dialog.setVisible(true);
     }
+
+    public void setEnabled(boolean newValue) {
+        super.setEnabled(newValue);
+        super.setEnabled(isEnabled());
+    }
+
+    public boolean isEnabled() {
+        boolean e = super.isEnabled();
+        if (!e) return false;
+        return Registry.getDefault().getLicenseManager().isAuthenticationEnabled();
+    }
 }

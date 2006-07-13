@@ -20,7 +20,7 @@ abstract public class NewProviderAction extends NodeAction {
     protected EventListenerList listenerList = new EventListenerList();
 
     public NewProviderAction(AbstractTreeNode node) {
-        super(node);
+        super(node, null, LIC_AUTH_ASSERTIONS);
     }
 
     /**

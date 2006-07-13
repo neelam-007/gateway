@@ -17,7 +17,7 @@ import java.util.logging.Level;
 public class HardcodedResponseDialogAction extends NodeAction{
     private HardcodedResponseTreeNode treeNode;
     public HardcodedResponseDialogAction(HardcodedResponseTreeNode node) {
-        super(node);
+        super(node, HardcodedResponseAssertion.class);
         treeNode = node;
     }
 

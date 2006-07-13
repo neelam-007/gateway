@@ -32,6 +32,10 @@ import java.util.logging.Logger;
 public class ImportCertificateAction extends SecureAction {
     static Logger log = Logger.getLogger(ImportCertificateAction.class.getName());
 
+    protected ImportCertificateAction() {
+        super(true, LIC_AUTH_ASSERTIONS);
+    }
+
     /**
      * @return the action name
      */

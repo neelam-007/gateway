@@ -30,7 +30,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
     private static final Logger log = Logger.getLogger(BridgeRoutingAssertionPropertiesAction.class.getName());
 
     public BridgeRoutingAssertionPropertiesAction(BridgeRoutingAssertionTreeNode node) {
-        super(node);
+        super(node, BridgeRoutingAssertion.class);
     }
 
     /**

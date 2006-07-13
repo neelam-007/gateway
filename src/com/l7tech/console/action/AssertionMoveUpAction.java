@@ -14,6 +14,7 @@ public class AssertionMoveUpAction extends SecureAction {
     protected AssertionTreeNode node;
 
     public AssertionMoveUpAction(AssertionTreeNode node) {
+        super(true);
         this.node = node;
     }
 

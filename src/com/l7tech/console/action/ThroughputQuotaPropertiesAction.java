@@ -11,6 +11,7 @@ import com.l7tech.console.tree.policy.ThroughputQuotaTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.ThroughputQuotaForm;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
 public class ThroughputQuotaPropertiesAction extends SecureAction {
 
     public ThroughputQuotaPropertiesAction(ThroughputQuotaTreeNode subject) {
+        super(true, ThroughputQuota.class);
         this.subject = subject;
     }
 

@@ -32,7 +32,7 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditWsTrustCredentialExchangeAction(AbstractTreeNode node) {
-        super(node);
+        super(node, WsTrustCredentialExchange.class);
         if (!(node.asAssertion() instanceof WsTrustCredentialExchange)) {
             throw new IllegalArgumentException();
         }

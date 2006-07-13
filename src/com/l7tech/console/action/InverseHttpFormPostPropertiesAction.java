@@ -21,7 +21,7 @@ public class InverseHttpFormPostPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(InverseHttpFormPostPropertiesAction.class.getName());
 
     public InverseHttpFormPostPropertiesAction(InverseHttpFormPostPolicyNode node) {
-        super(node);
+        super(node, InverseHttpFormPost.class);
     }
 
     /**

@@ -1,9 +1,5 @@
 package com.l7tech.console.action;
 
-import java.awt.*;
-import java.util.logging.Level;
-import javax.swing.*;
-
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WsFederationPassiveTokenRequestPropertiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
@@ -12,6 +8,10 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.logging.Level;
 
 /**
  * Edit action for WS-Federation PRP assertions.
@@ -32,7 +32,7 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditWsFederationPassiveTokenRequestAction(AbstractTreeNode node) {
-        super(node);
+        super(node, WsFederationPassiveTokenRequest.class);
         Assertion assertion = node.asAssertion();
         if (!(assertion instanceof WsFederationPassiveTokenRequest)) {
             throw new IllegalArgumentException();

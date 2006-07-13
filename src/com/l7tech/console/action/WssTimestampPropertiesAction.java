@@ -23,7 +23,7 @@ public class WssTimestampPropertiesAction extends NodeAction {
     //- PUBLIC
 
     public WssTimestampPropertiesAction(WssTimestampPolicyNode node) {
-        super(node);
+        super(node, WssTimestamp.class);
     }
 
     /**

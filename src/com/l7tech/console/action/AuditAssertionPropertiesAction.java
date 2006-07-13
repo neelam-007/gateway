@@ -13,6 +13,7 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.AuditAssertion;
 
 import javax.swing.*;
 import java.rmi.RemoteException;
@@ -25,6 +26,7 @@ public class AuditAssertionPropertiesAction extends SecureAction {
     private AuditAssertionTreeNode subject;
 
     public AuditAssertionPropertiesAction(AuditAssertionTreeNode subject) {
+        super(true, AuditAssertion.class);
         this.subject = subject;
     }
     public String getName() {

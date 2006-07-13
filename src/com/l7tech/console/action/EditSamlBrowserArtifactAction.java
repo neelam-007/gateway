@@ -32,7 +32,7 @@ public class EditSamlBrowserArtifactAction extends NodeAction {
      * @param node the node this action will acto on
      */
     public EditSamlBrowserArtifactAction(AbstractTreeNode node) {
-        super(node);
+        super(node, SamlBrowserArtifact.class);
         if (!(node.asAssertion() instanceof SamlBrowserArtifact)) {
             throw new IllegalArgumentException();
         }

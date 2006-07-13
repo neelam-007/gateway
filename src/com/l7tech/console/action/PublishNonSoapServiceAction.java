@@ -29,6 +29,10 @@ import java.util.logging.Level;
  * $Id$<br/>
  */
 public class PublishNonSoapServiceAction extends SecureAction {
+    public PublishNonSoapServiceAction() {
+        super(true);
+    }
+
     public String getName() {
         return "Publish XML Application";
     }

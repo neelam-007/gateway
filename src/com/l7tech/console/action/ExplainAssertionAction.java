@@ -10,6 +10,10 @@ package com.l7tech.console.action;
  * @version 1.0
  */
 public class ExplainAssertionAction extends SecureAction {
+    protected ExplainAssertionAction() {
+        super(true);
+    }
+
     /**
      * @return the action name
      */

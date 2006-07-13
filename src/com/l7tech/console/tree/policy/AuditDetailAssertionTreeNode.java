@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
+import com.l7tech.policy.assertion.AuditAssertion;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
@@ -67,7 +68,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new SecureAction() {
+        return new SecureAction(true, AuditAssertion.class) {
             public String getName() {
                 return "Audit Detail Properties";
             }

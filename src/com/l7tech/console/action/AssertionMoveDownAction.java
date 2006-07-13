@@ -15,6 +15,7 @@ public class AssertionMoveDownAction extends SecureAction {
 
 
     public AssertionMoveDownAction(AssertionTreeNode node) {
+        super(true);
         this.node = node;
     }
 

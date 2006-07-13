@@ -20,7 +20,7 @@ public class ComparisonAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(ComparisonAssertionPropertiesAction.class.getName());
 
     public ComparisonAssertionPropertiesAction(ComparisonAssertionPolicyNode node) {
-        super(node);
+        super(node, ComparisonAssertion.class);
     }
 
     /**

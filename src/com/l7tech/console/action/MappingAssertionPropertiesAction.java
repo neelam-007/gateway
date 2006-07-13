@@ -6,6 +6,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.MappingAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -17,6 +18,7 @@ public class MappingAssertionPropertiesAction extends SecureAction {
     private MappingAssertionPolicyNode subject;
 
     public MappingAssertionPropertiesAction(MappingAssertionPolicyNode subject) {
+        super(true, MappingAssertion.class);
         this.subject = subject;
     }
     public String getName() {

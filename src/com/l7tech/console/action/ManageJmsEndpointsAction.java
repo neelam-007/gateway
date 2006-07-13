@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.JmsQueuesWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 
 import java.util.logging.Logger;
 
@@ -21,6 +22,7 @@ public class ManageJmsEndpointsAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageJmsEndpointsAction() {
+        super(true, JmsRoutingAssertion.class);
     }
 
     /**

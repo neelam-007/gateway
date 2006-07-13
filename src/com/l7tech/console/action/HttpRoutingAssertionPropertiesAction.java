@@ -29,7 +29,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(HttpRoutingAssertionPropertiesAction.class.getName());
 
     public HttpRoutingAssertionPropertiesAction(HttpRoutingAssertionTreeNode node) {
-        super(node);
+        super(node, HttpRoutingAssertion.class);
     }
 
     /**

@@ -14,6 +14,10 @@ import com.l7tech.common.gui.util.Utilities;
  * Action to manage the Gateway's license from the SSM.
  */
 public class ManageClusterLicensesAction extends SecureAction {
+    public ManageClusterLicensesAction() {
+        super(true);
+    }
+
     public String getName() {
         return "Manage Gateway License";
     }

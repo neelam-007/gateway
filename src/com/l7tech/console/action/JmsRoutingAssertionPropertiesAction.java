@@ -9,7 +9,6 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.JmsRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 
 import javax.swing.*;
@@ -27,7 +26,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(JmsRoutingAssertionPropertiesAction.class.getName());
 
     public JmsRoutingAssertionPropertiesAction(JmsRoutingAssertionTreeNode node) {
-        super(node);
+        super(node, JmsRoutingAssertion.class);
     }
 
     /**

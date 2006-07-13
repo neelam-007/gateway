@@ -22,7 +22,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(RequestWssTimestampPropertiesAction.class.getName());
 
     public RequestWssTimestampPropertiesAction(RequestWssTimestampPolicyNode node) {
-        super(node);
+        super(node, RequestWssTimestamp.class);
     }
 
     /**

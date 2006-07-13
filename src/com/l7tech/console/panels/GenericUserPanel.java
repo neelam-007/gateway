@@ -724,6 +724,10 @@ public class GenericUserPanel extends UserPanel {
     };
 
     class OkAction extends SecureAction {
+        protected OkAction() {
+            super(true);
+        }
+
         /**
          * Actually perform the action.
          */

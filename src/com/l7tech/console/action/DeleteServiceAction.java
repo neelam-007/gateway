@@ -28,6 +28,7 @@ public class DeleteServiceAction extends SecureAction {
      * @param en the node to delete
      */
     public DeleteServiceAction(ServiceNode en) {
+        super(true);
         node = en;
     }
 

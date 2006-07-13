@@ -530,6 +530,10 @@ public abstract class GroupPanel extends EntityEditorPanel {
     };
 
     class OkAction extends SecureAction {
+        protected OkAction() {
+            super(true);
+        }
+
         /**
          * Actually perform the action.
          */

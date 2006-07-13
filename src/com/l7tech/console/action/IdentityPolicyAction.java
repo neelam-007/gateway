@@ -27,6 +27,7 @@ public class IdentityPolicyAction extends SecureAction {
      * @param ia the identity assertion
      */
     public IdentityPolicyAction(IdentityAssertionTreeNode ia) {
+        super(true);
         assertion = ia;
     }
 

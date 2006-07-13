@@ -5,13 +5,13 @@
 
 package com.l7tech.console.util;
 
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.LicenseException;
 import com.l7tech.common.License;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.policy.AssertionLicense;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import java.util.*;
 
@@ -68,6 +68,13 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
 
     public boolean isAuthenticationEnabled() {
         return isAssertionEnabled(SpecificUser.class.getName()) || isAssertionEnabled(MemberOfGroup.class.getName());
+    }
+
+    public boolean isAtLeastOneAssertionEnabled(List<Class<? extends Assertion>> assertionClasses) {
+        for (Class<? extends Assertion> aClass : assertionClasses) {
+            if (isAssertionEnabled(aClass.getName())) return true;
+        }
+        return false;
     }
 
     public boolean isAssertionEnabled(Assertion prototype) {

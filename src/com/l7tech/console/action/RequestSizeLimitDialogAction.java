@@ -1,15 +1,12 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.policy.SqlAttackAssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.panels.RequestSizeLimitDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RequestSizeLimitTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.SqlAttackDialog;
-import com.l7tech.console.panels.RequestSizeLimitDialog;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.RequestSizeLimit;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -24,7 +21,7 @@ import java.util.logging.Level;
 public class RequestSizeLimitDialogAction extends NodeAction{
     private RequestSizeLimitTreeNode treeNode;
     public RequestSizeLimitDialogAction(RequestSizeLimitTreeNode node) {
-        super(node);
+        super(node, RequestSizeLimit.class);
         treeNode = node;
     }
 

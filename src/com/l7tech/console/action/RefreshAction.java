@@ -22,7 +22,7 @@ public abstract class RefreshAction extends NodeAction {
      * @param node the node to refresh
      */
     public RefreshAction(AbstractTreeNode node) {
-        super(node);
+        super(node, null);
     }
 
     /**

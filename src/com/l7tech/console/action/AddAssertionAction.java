@@ -17,6 +17,10 @@ public class AddAssertionAction extends SecureAction {
     protected AbstractTreeNode paletteNode;
     protected AssertionTreeNode assertionNode;
 
+    protected AddAssertionAction() {
+        super(true);
+    }
+
     /**
      * @return the action name
      */

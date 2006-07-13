@@ -19,9 +19,11 @@ public class DeleteAssertionAction extends SecureAction {
     protected AssertionTreeNode node;
 
     public DeleteAssertionAction() {
+        super(true);
     }
 
     public DeleteAssertionAction(AssertionTreeNode node) {
+        super(true);
         this.node = node;
     }
     /**

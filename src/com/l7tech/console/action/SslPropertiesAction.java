@@ -22,7 +22,7 @@ public class SslPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(SslPropertiesAction.class.getName());
 
     public SslPropertiesAction(SslAssertionTreeNode node) {
-        super(node);
+        super(node, SslAssertion.class);
     }
 
     /**

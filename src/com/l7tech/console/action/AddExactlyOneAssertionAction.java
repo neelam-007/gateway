@@ -28,6 +28,7 @@ public class AddExactlyOneAssertionAction extends SecureAction {
      * @param n the assertion tree node must be composite
      */
     public AddExactlyOneAssertionAction(AssertionTreeNode n) {
+        super(true, ExactlyOneAssertion.class);
         treeNode = n;
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();

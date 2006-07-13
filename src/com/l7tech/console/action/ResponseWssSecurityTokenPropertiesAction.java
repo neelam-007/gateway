@@ -19,7 +19,7 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(ResponseWssSecurityTokenPropertiesAction.class.getName());
 
     public ResponseWssSecurityTokenPropertiesAction(ResponseWssSecurityTokenPolicyNode node) {
-        super(node);
+        super(node, ResponseWssSecurityToken.class);
     }
 
     /**

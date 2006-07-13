@@ -12,6 +12,10 @@ import java.awt.*;
  * Time: 9:49:40 AM
  */
 public class ManageRolesAction extends SecureAction {
+    public ManageRolesAction() {
+        super(true);
+    }
+
     public String getName() {
         return "Manage Access Controls";
     }

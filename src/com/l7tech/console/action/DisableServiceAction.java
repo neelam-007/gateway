@@ -28,6 +28,7 @@ public class DisableServiceAction extends SecureAction {
      * @param en the node to deleteEntity
      */
     public DisableServiceAction(ServiceNode en) {
+        super(true);
         node = en;
     }
 

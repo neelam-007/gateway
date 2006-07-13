@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.ResponseWssConfidentialityTreeNode;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 
 /**
  * Action to edit properties of a ResponseWssConfidentialityTreeNode node.
@@ -13,7 +14,7 @@ import com.l7tech.console.tree.policy.ResponseWssConfidentialityTreeNode;
  */
 public class ResponseConfidentialityPropertiesAction extends XpathBasedAssertionPropertiesAction {
     public ResponseConfidentialityPropertiesAction(ResponseWssConfidentialityTreeNode node) {
-        super(node);
+        super(node, ResponseWssConfidentiality.class);
     }
 
     public String getName() {

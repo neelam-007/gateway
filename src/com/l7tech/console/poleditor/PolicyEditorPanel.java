@@ -886,7 +886,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public Action getUDDIImportAction() {
-        return new SecureAction() {
+        return new SecureAction(true, SecureAction.LIC_AUTH_ASSERTIONS) {
 
             public String getName() {
                 return "Import From UDDI";

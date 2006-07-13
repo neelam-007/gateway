@@ -44,6 +44,7 @@ public class DeleteEntityAction extends SecureAction {
      * @param en the node to deleteEntity
      */
     public DeleteEntityAction(EntityHeaderNode en, IdentityProviderConfig ip) {
+        super(true);
         node = en;
         config = ip;
     }

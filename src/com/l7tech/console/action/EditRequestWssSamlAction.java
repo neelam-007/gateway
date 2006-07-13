@@ -28,7 +28,7 @@ public class EditRequestWssSamlAction extends NodeAction {
     private RequestWssSaml requestWssSaml;
 
     public EditRequestWssSamlAction(AssertionTreeNode node) {
-        super(node);
+        super(node, RequestWssSaml.class);
         if (!(node.asAssertion() instanceof RequestWssSaml)) {
             throw new IllegalArgumentException();
         }

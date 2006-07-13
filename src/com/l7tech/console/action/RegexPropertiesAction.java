@@ -24,7 +24,7 @@ public class RegexPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(RegexPropertiesAction.class.getName());
 
     public RegexPropertiesAction(RegexPolicyNode node) {
-        super(node);
+        super(node, Regex.class);
     }
 
     /**

@@ -41,6 +41,7 @@ public class AddIdentityAssertionAction extends SecureAction {
     }
 
     public AddIdentityAssertionAction(AssertionTreeNode node, int inserPosition) {
+        super(true, LIC_AUTH_ASSERTIONS);
         if (!(node.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }

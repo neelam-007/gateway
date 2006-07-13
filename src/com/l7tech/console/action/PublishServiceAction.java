@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
@@ -10,7 +11,6 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -30,6 +30,7 @@ public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
+        super(true, LIC_AUTH_ASSERTIONS);
     }
 
     /**

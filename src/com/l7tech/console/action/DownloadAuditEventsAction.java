@@ -27,6 +27,10 @@ import java.util.logging.Level;
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
  */
 public class DownloadAuditEventsAction extends SecureAction {
+    public DownloadAuditEventsAction() {
+        super(true);
+    }
+
     public String getName() {
         return "Download All Audit Events";
     }

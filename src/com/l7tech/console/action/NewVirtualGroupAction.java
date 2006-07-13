@@ -4,6 +4,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.NewVirtualGroupDialog;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -17,7 +18,7 @@ public class NewVirtualGroupAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewVirtualGroupAction.class.getName());
 
     public NewVirtualGroupAction(AbstractTreeNode node) {
-        super(node);
+        super(node, MemberOfGroup.class);
     }
 
     /**

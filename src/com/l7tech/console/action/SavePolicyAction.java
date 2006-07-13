@@ -24,9 +24,11 @@ public class SavePolicyAction extends SecureAction {
     protected AssertionTreeNode node;
 
     public SavePolicyAction() {
+        super(true);
     }
 
     public SavePolicyAction(AssertionTreeNode node) {
+        super(true);
         if (node == null) {
             throw new IllegalArgumentException();
         }

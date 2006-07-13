@@ -22,7 +22,7 @@ import java.util.logging.Level;
 public class OversizedTextDialogAction extends NodeAction {
     private OversizedTextAssertionTreeNode treeNode;
     public OversizedTextDialogAction(OversizedTextAssertionTreeNode node) {
-        super(node);
+        super(node, OversizedTextAssertion.class);
         treeNode = node;
     }
 

@@ -6,6 +6,7 @@ import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -43,8 +44,8 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
         throw new RuntimeException("Type not supported " + node.getClass().getName());
     }
 
-    protected XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node) {
-        super(node);
+    protected XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node, Class<? extends XpathBasedAssertion> concreteAssertionClass) {
+        super(node, concreteAssertionClass);
     }
 
     /**

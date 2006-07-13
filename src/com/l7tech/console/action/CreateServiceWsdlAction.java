@@ -55,6 +55,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
 
     public CreateServiceWsdlAction() {
+        super(true, LIC_AUTH_ASSERTIONS);
     }
 
     /**

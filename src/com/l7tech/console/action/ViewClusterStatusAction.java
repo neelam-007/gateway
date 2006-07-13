@@ -1,9 +1,8 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.ClusterStatusWindow;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.Group;
 
 import java.awt.*;
@@ -22,6 +21,7 @@ public class ViewClusterStatusAction extends SecureAction {
     private ClusterStatusWindow clusterStatusWindow;
 
     public ViewClusterStatusAction() {
+        super(true);
     }
 
     /**

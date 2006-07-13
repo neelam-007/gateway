@@ -10,6 +10,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -24,7 +25,7 @@ import java.util.NoSuchElementException;
 public class GroupPropertiesAction extends NodeAction {
 
     public GroupPropertiesAction(GroupNode node) {
-        super(node);
+        super(node, MemberOfGroup.class);
     }
 
     /**

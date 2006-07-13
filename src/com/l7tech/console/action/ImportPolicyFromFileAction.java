@@ -31,9 +31,11 @@ public class ImportPolicyFromFileAction extends SecureAction {
     protected PublishedService pubService;
 
     public ImportPolicyFromFileAction() {
+        super(true);
     }
 
     public ImportPolicyFromFileAction(PublishedService svc) {
+        super(true);
         if (svc == null) {
             throw new IllegalArgumentException();
         }

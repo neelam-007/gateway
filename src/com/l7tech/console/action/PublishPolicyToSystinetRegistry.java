@@ -23,7 +23,7 @@ import java.rmi.RemoteException;
  */
 public class PublishPolicyToSystinetRegistry extends NodeAction {
     public PublishPolicyToSystinetRegistry(ServiceNode node) {
-        super(node);
+        super(node, null, LIC_AUTH_ASSERTIONS);
     }
 
     public String getName() {

@@ -1,13 +1,12 @@
 package com.l7tech.console.action;
 
-import java.util.logging.Logger;
-import java.rmi.RemoteException;
-
-import com.l7tech.console.panels.JmsQueuesWindow;
 import com.l7tech.console.panels.KerberosDialog;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.identity.Group;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
+
+import java.rmi.RemoteException;
+import java.util.logging.Logger;
 
 /**
  * The <code>ManageKerberosAction</code>
@@ -22,6 +21,7 @@ public class ManageKerberosAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageKerberosAction() {
+        super(true, RequestWssKerberos.class);
     }
 
     /**

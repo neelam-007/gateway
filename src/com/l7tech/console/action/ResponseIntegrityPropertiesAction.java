@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.ResponseWssIntegrityTreeNode;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 /**
  * Action to edit properties of a ResponseWssIntegrityTreeNode node.
@@ -13,7 +14,7 @@ import com.l7tech.console.tree.policy.ResponseWssIntegrityTreeNode;
  */
 public class ResponseIntegrityPropertiesAction extends XpathBasedAssertionPropertiesAction {
     public ResponseIntegrityPropertiesAction(ResponseWssIntegrityTreeNode node) {
-        super(node);
+        super(node, ResponseWssIntegrity.class);
     }
 
     public String getName() {

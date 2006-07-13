@@ -21,7 +21,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(HttpFormPostPropertiesAction.class.getName());
 
     public HttpFormPostPropertiesAction(HttpFormPostPolicyNode node) {
-        super(node);
+        super(node, HttpFormPost.class);
     }
 
     /**

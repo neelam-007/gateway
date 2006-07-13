@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 
 /**
  * Properties action for node type RequestXpathPolicyTreeNode.
@@ -13,7 +14,7 @@ import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
  */
 public class RequestXpathPropertiesAction extends XpathBasedAssertionPropertiesAction {
     public RequestXpathPropertiesAction(RequestXpathPolicyTreeNode node) {
-        super(node);
+        super(node, RequestXpathAssertion.class);
     }
 
     public String getName() {

@@ -19,6 +19,10 @@ public class ShowDashboardAction extends SecureAction {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
     private DashboardWindow dashboardWindow;
 
+    public ShowDashboardAction() {
+        super(true);
+    }
+
     public String getName() {
         return resources.getString("menu.text");
     }

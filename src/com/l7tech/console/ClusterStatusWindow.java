@@ -1039,6 +1039,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         private final int tableRow;
 
         public DeleteNodeEntryAction(int row, boolean buttonEnabled) {
+            super(true);
             setEnabled(buttonEnabled);
             tableRow = row;
         }
@@ -1131,6 +1132,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         private final int tableRow;
 
         public RenameNodeAction(int row) {
+            super(true);
             tableRow = row;
         }
 

@@ -1,20 +1,13 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.GatewayAuditWindow;
-import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
-import com.l7tech.logging.GenericLogAdmin;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Arrays;
-import java.util.Collection;
 
 
 /**
@@ -26,6 +19,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayAuditWindow gatewayAuditWindow;
 
     public ViewGatewayAuditsAction() {
+        super(true);
     }
 
     /**

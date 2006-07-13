@@ -243,7 +243,7 @@ public class Utilities {
         if (frameSize.width > screenSize.width)
             frameSize.width = screenSize.width;
         window.setLocation((screenSize.width - frameSize.width) / 2,
-          (screenSize.height - frameSize.height) / 2);
+                           (screenSize.height - frameSize.height) / 2);
     }
 
 

@@ -21,7 +21,7 @@ import java.util.logging.Level;
 public class SqlAttackDialogAction extends NodeAction {
     private SqlAttackAssertionTreeNode treeNode;
     public SqlAttackDialogAction(SqlAttackAssertionTreeNode node) {
-        super(node);
+        super(node, SqlAttackAssertion.class);
         treeNode = node;
     }
 

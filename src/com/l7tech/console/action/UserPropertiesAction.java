@@ -11,6 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.NoSuchElementException;
@@ -23,7 +24,7 @@ import java.util.NoSuchElementException;
 public class UserPropertiesAction extends NodeAction {
 
     public UserPropertiesAction(UserNode node) {
-        super(node);
+        super(node, SpecificUser.class);
     }
 
    /**

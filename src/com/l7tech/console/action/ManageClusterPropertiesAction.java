@@ -16,6 +16,10 @@ import com.l7tech.common.gui.util.Utilities;
  * @author flascelles@layer7-tech.com
  */
 public class ManageClusterPropertiesAction extends SecureAction {
+    public ManageClusterPropertiesAction() {
+        super(true);
+    }
+
     public String getName() {
         return "Manage Cluster-Wide Properties";
     }

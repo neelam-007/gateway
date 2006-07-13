@@ -9,6 +9,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.GlobalSchemaDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 /**
  * Action to manage global schemas
@@ -16,6 +17,10 @@ import com.l7tech.common.gui.util.Utilities;
  * @author flascelles@layer7-tech.com
  */
 public class ManageGlobalSchemasAction extends SecureAction {
+    public ManageGlobalSchemasAction() {
+        super(true, SchemaValidation.class);
+    }
+
     public String getName() {
         return "Manage Global XML Schemas";
     }

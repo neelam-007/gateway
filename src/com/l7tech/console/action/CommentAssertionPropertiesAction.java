@@ -20,7 +20,7 @@ public class CommentAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(CommentAssertionPropertiesAction.class.getName());
 
     public CommentAssertionPropertiesAction(CommentAssertionPolicyNode node) {
-        super(node);
+        super(node, CommentAssertion.class);
     }
 
     /**

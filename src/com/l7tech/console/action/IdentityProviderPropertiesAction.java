@@ -32,7 +32,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     private EventListenerList listenerList = new EventListenerList();
 
     public IdentityProviderPropertiesAction(IdentityProviderNode nodeIdentity) {
-        super(nodeIdentity);
+        super(nodeIdentity, null, LIC_AUTH_ASSERTIONS);
     }
 
     /**

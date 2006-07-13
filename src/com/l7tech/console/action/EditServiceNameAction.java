@@ -27,7 +27,7 @@ public class EditServiceNameAction extends NodeAction {
     private String lastServiceName; // remeber old name fro for rename property event
 
     public EditServiceNameAction(ServiceNode node) {
-        super(node);
+        super(node, null);
     }
 
     /**

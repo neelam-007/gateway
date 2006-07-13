@@ -14,9 +14,11 @@ public class ValidatePolicyAction extends SecureAction {
     protected AssertionTreeNode rootNode;
 
     public ValidatePolicyAction() {
+        super(true);
     }
 
     public ValidatePolicyAction(AssertionTreeNode node) {
+        super(true);
         this.rootNode = node;
     }
 

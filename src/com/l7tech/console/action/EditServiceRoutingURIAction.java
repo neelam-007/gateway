@@ -29,7 +29,7 @@ import java.util.logging.Level;
  */
 public class EditServiceRoutingURIAction extends NodeAction {
     public EditServiceRoutingURIAction(ServiceNode node) {
-        super(node);
+        super(node, null);
     }
 
     public String getName() {

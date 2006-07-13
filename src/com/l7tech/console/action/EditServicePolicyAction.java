@@ -36,7 +36,7 @@ public class EditServicePolicyAction extends NodeAction {
      * @param b    true validate the policy, false
      */
     public EditServicePolicyAction(ServiceNode node, boolean b) {
-        super(node);
+        super(node, null);
         validate = b;
     }
 
