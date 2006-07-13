@@ -10,6 +10,7 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 
 /**
@@ -380,6 +381,35 @@ public class Utilities {
     }
 
     /**
+     * Fully expand all possible paths in the specified tree.
+     * The tree will be expanded as though the user had patiently clicked every "Expand branch" grapple from the
+     * top down until there were no more left to click on.
+     * <p/>
+     * This must never be invoked on trees with infinite (or merely enormous)
+     * dynamic tree models, for hopefully-obvious reasons.
+     *
+     * @param tree the tree to expand.  Must not be null.
+     */
+    public static void expandTree(JTree tree) {
+        int erow = 0;
+        while (erow < tree.getRowCount())
+            tree.expandRow(erow++);
+    }
+
+    /**
+     * Fully collapse all open paths in the specified tree.
+     * The tree will be collapsed as though the user had patiently clicked every "Collapse branch" grapple from the
+     * bottom up until there were no more left to click on.
+     *
+     * @param tree the tree to collapse.  Must not be null.
+     */
+    public static void collapseTree(JTree tree) {
+        int erow = tree.getRowCount() - 1;
+        while (erow >= 0)
+            tree.collapseRow(erow--);
+    }
+
+    /**
      * Creates pop-up menus for text components.
      */
     public static interface ContextMenuFactory {
@@ -709,4 +739,33 @@ public class Utilities {
 
         return tooltipText;
     }
+
+    /**
+     * Synchronously invokes the specified runnable on the Swing thread.
+     * If this thread is the Swing thread, just runs the runnable directly.
+     * Any exceptions thrown by the invocation, including InterruptedException, will be rethrown wrapped
+     * as RuntimeException.
+     *
+     * @param runnable the runnable to run on the swing thread.  Must not be null.
+     * @throws RuntimeException if the runnable threw an unchecked exception.  The original exception is wrapped.
+     * @throws RuntimeException if the current thread was interrupted while waiting for the target thread.
+     *         The InterruptedException is wrapped, and the interrupt status has been reasserted for this thread.
+     */
+    public static void invokeOnSwingThreadAndWait(Runnable runnable) throws RuntimeException {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(runnable);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+
 }

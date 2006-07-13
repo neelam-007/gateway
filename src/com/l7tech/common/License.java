@@ -190,6 +190,7 @@ public final class License implements Serializable {
             if (product != null ? !product.equals(that.product) : that.product != null) return false;
             if (versionMajor != null ? !versionMajor.equals(that.versionMajor) : that.versionMajor != null) return false;
             if (versionMinor != null ? !versionMinor.equals(that.versionMinor) : that.versionMinor != null) return false;
+            if (!Arrays.equals(rootFeatureSetNames, that.rootFeatureSetNames)) return false;
 
             return true;
         }
@@ -201,6 +202,7 @@ public final class License implements Serializable {
             result = 29 * result + (product != null ? product.hashCode() : 0);
             result = 29 * result + (versionMajor != null ? versionMajor.hashCode() : 0);
             result = 29 * result + (versionMinor != null ? versionMinor.hashCode() : 0);
+            result = 29 * result + Arrays.hashCode(rootFeatureSetNames);
             return result;
         }
     }

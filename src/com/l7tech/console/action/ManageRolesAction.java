@@ -13,7 +13,7 @@ import java.awt.*;
  */
 public class ManageRolesAction extends SecureAction {
     public ManageRolesAction() {
-        super(true);
+        super(true, LIC_AUTH_ASSERTIONS);
     }
 
     public String getName() {

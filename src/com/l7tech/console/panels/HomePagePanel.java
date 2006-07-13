@@ -12,6 +12,8 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.LicenseListener;
 import com.l7tech.identity.Group;
 import com.l7tech.common.gui.util.Utilities;
 
@@ -36,6 +38,11 @@ public class HomePagePanel extends JPanel {
     private JLabel toolbarIndenter;
     private List<HomePageToolbarAction> actions = new ArrayList<HomePageToolbarAction>();
     private ImageIcon pageBanner;
+    private final LicenseListener licenseListener = new LicenseListener() {
+        public void licenseChanged(ConsoleLicenseManager licenseManager) {
+                rebuildToolbar();
+            }
+        };
 
     public HomePagePanel() {
         setLayout(new BorderLayout());
@@ -61,9 +68,16 @@ public class HomePagePanel extends JPanel {
         footerLabel.setText("");
         footerLabel.setIcon(logoSmall);
 
-        toolbarPanel.setLayout(new BorderLayout());
         toolbarPanel.setBackground(getBackground());
+        rebuildToolbar();
+    }
+
+    private void rebuildToolbar() {
+        toolbarPanel.removeAll();
+        toolbarPanel.setLayout(new BorderLayout());
         toolbarPanel.add(getToolbar(), BorderLayout.CENTER);
+        validate();
+        repaint();
     }
 
     private boolean isAdmin() {
@@ -104,7 +118,7 @@ public class HomePagePanel extends JPanel {
                 button.setBackground(rootPanel.getBackground());
                 button.setHorizontalAlignment(SwingConstants.LEFT);
                 button.setIconTextGap(48);
-                button.setMargin(new Insets(8, 48, 8, 8));
+                button.setMargin(new Insets(6, 48, 6, 8));
 
                 Font curfont = button.getFont();
                 curfont = new Font(curfont.getName(), Font.PLAIN, (int)(curfont.getSize() * 1.6));
@@ -130,6 +144,8 @@ public class HomePagePanel extends JPanel {
         Component[] kids = tb.getComponents();
         for (Component component : kids)
             component.setBackground(tb.getBackground());
+
+        Registry.getDefault().getLicenseManager().addLicenseListener(licenseListener);
 
         return tb;
     }

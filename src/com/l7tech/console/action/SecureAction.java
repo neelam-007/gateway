@@ -5,6 +5,7 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.LicenseListener;
 import com.l7tech.identity.Group;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  * @author emil
  * @version 3-Sep-2004
  */
-public abstract class SecureAction extends BaseAction implements LogonListener {
+public abstract class SecureAction extends BaseAction implements LogonListener, LicenseListener {
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
@@ -55,6 +56,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
         this(requireAdmin);
         if (requiredAssertionLicense != null)
             assertionLicenseClassnames.add(requiredAssertionLicense.getName());
+        initLicenseListener();
     }
 
     /**
@@ -69,6 +71,13 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
         if (allowedAssertionLicenses != null)
             for (Class<? extends Assertion> clazz : allowedAssertionLicenses)
                 assertionLicenseClassnames.add(clazz.getName());
+        initLicenseListener();
+    }
+
+    /** Registers this action as a license listener, if any license requirements were set on it. */
+    private void initLicenseListener() {
+        if (assertionLicenseClassnames.isEmpty()) return;
+        Registry.getDefault().getLicenseManager().addLicenseListener(this);
     }
 
     /**
@@ -132,8 +141,16 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
      * @see javax.swing.Action#setEnabled
      */
     public final void setEnabled(boolean b) {
+        boolean wasEnabled = isEnabled();
         final boolean enabled = b && isAuthorized() && isLicensed();
         super.setEnabled(enabled);
+        boolean isEnabled = isEnabled();
+        if (wasEnabled != isEnabled)
+            firePropertyChange("enabled", wasEnabled, isEnabled);
+    }
+
+    public void licenseChanged(ConsoleLicenseManager licenseManager) {
+        setEnabled(true); // it'll immediately get forced back to false if the license disallows it
     }
 
     /**

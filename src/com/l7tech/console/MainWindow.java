@@ -152,6 +152,7 @@ public class MainWindow extends JFrame {
     private JSplitPane mainSplitPane = null;
     private JPanel mainLeftPanel = null;
     private JPanel mainSplitPaneRight = null;
+    private JTabbedPane paletteTabbedPane;
 
     /* progress bar indicator */
     private ProgressBar progressBar = null;
@@ -1215,17 +1216,7 @@ public class MainWindow extends JFrame {
         getMainSplitPaneRight().removeAll();
         addComponentToGridBagContainer(getMainSplitPaneRight(), getWorkSpacePanel());
 
-        Registry.getDefault().getLicenseManager().addLicenseListener(new Runnable() {
-            public void run() {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        AbstractTreeNode root = (AbstractTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                        root.reloadChildren();
-                        getAssertionPaletteTree().repaint();
-                    }
-                });
-            }
-        });
+        Registry.getDefault().getLicenseManager().addLicenseListener(paletteTreeLicenseListener);
     }
 
 
@@ -1575,6 +1566,35 @@ public class MainWindow extends JFrame {
         return splitLocation;
     }
 
+    private void showOrHideIdentityProvidersTab() {
+        JTabbedPane treePanel = getPaletteTabbedPane();
+        ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
+        if (licenseManager.isAuthenticationEnabled()) {
+            if (treePanel.getTabCount() < 2) {
+                // Add missing Identity Providers tab
+                JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
+                configureScrollPane(identityScroller);
+                treePanel.addTab("Identity Providers", identityScroller);
+            }
+        } else {
+            if (treePanel.getTabCount() > 1) {
+                // Remove unwanted Identity Providers tab
+                treePanel.remove(1);
+            }
+        }
+    }
+
+    private JTabbedPane getPaletteTabbedPane() {
+        if (paletteTabbedPane != null) return paletteTabbedPane;
+        paletteTabbedPane = new JTabbedPane();
+        paletteTabbedPane.setPreferredSize(new Dimension(140, 280));
+        JScrollPane assertionScroller = new JScrollPane(getAssertionPaletteTree());
+        configureScrollPane(assertionScroller);
+        paletteTabbedPane.addTab("Assertions", assertionScroller);
+        Registry.getDefault().getLicenseManager().addLicenseListener(paletteTabbedPaneLicenseListener);
+        return paletteTabbedPane;
+    }
+
     /**
      * Return the TreeJPanel property value.
      *
@@ -1585,17 +1605,8 @@ public class MainWindow extends JFrame {
             return mainLeftPanel;
 
         //setup the tabs for the palette tree and identity pane
-        JTabbedPane treePanel = new JTabbedPane();
-        treePanel.setPreferredSize(new Dimension(140, 280));
-        JScrollPane assertionScroller = new JScrollPane(getAssertionPaletteTree());
-        configureScrollPane(assertionScroller);
-        treePanel.addTab("Assertions", assertionScroller);
-
-        if (Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) {
-            JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
-            configureScrollPane(identityScroller);
-            treePanel.addTab("Identity Providers", identityScroller);
-        }
+        JTabbedPane treePanel = getPaletteTabbedPane();
+        showOrHideIdentityProvidersTab();
 
         Component descriptionPane = getAssertionDescriptionPane();
         JScrollPane descriptionScrollPane = new JScrollPane(descriptionPane);
@@ -2213,6 +2224,25 @@ public class MainWindow extends JFrame {
         }
         return nodeNameMsg;
     }
+
+    private final LicenseListener paletteTreeLicenseListener = new LicenseListener() {
+        public void licenseChanged(ConsoleLicenseManager licenseManager) {
+            JTree tree = getAssertionPaletteTree();
+            AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
+            Utilities.collapseTree(tree);
+            root.removeAllChildren();
+            root.reloadChildren();
+            ((DefaultTreeModel)(tree.getModel())).nodeStructureChanged(root);
+            tree.validate();
+            tree.repaint();
+        }
+    };
+
+    private final LicenseListener paletteTabbedPaneLicenseListener = new LicenseListener() {
+        public void licenseChanged(ConsoleLicenseManager licenseManager) {
+            showOrHideIdentityProvidersTab();
+        }
+    };
 
     private
     LogonDialog.LogonListener logonListenr =

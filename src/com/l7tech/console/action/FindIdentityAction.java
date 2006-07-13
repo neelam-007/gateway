@@ -9,6 +9,8 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.LicenseListener;
+import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -26,7 +28,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class FindIdentityAction extends BaseAction {
+public class FindIdentityAction extends BaseAction implements LicenseListener {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
     Options options = new Options();
 
@@ -39,6 +41,7 @@ public class FindIdentityAction extends BaseAction {
      */
     public FindIdentityAction() {
         this(new Options());
+        Registry.getDefault().getLicenseManager().addLicenseListener(this);
     }
 
     /**
@@ -50,6 +53,7 @@ public class FindIdentityAction extends BaseAction {
             throw new IllegalArgumentException();
         }
         options = opts;
+        Registry.getDefault().getLicenseManager().addLicenseListener(this);
     }
 
 
@@ -136,13 +140,21 @@ public class FindIdentityAction extends BaseAction {
     }
 
     public void setEnabled(boolean newValue) {
+        boolean wasEnabled = isEnabled();
         super.setEnabled(newValue);
         super.setEnabled(isEnabled());
+        boolean isEnabled = isEnabled();
+        if (wasEnabled != isEnabled)
+            firePropertyChange("enabled", wasEnabled, isEnabled);
     }
 
     public boolean isEnabled() {
         boolean e = super.isEnabled();
         if (!e) return false;
         return Registry.getDefault().getLicenseManager().isAuthenticationEnabled();
+    }
+
+    public void licenseChanged(ConsoleLicenseManager licenseManager) {
+        setEnabled(true); // it'll immediately get forced back to false if the license disallows it
     }
 }

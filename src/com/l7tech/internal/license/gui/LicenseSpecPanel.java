@@ -6,6 +6,7 @@
 package com.l7tech.internal.license.gui;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.TextUtils;
@@ -161,16 +162,14 @@ public class LicenseSpecPanel extends JPanel {
         });
         featureExpandAllButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                int erow = 0;
-                while (erow < featureTree.getRowCount())
-                    featureTree.expandRow(erow++);
+                JTree tree = featureTree;
+                Utilities.expandTree(tree);
             }
         });
         featureCollapseAllButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                int erow = featureTree.getRowCount() - 1;
-                while (erow >= 0)
-                    featureTree.collapseRow(erow--);
+                JTree tree = featureTree;
+                Utilities.collapseTree(tree);
             }
         });
         featureClearAll.addActionListener(new ActionListener() {

@@ -8,6 +8,7 @@ package com.l7tech.console.util;
 import com.l7tech.common.License;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -21,7 +22,7 @@ import java.util.*;
 public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
     private static final ConsoleLicenseManager INSTANCE = new ConsoleLicenseManager();
     private License license = null;
-    private Map listeners = new WeakHashMap();
+    private Map<LicenseListener, Object> licenseListeners = new WeakHashMap<LicenseListener, Object>();
 
     protected ConsoleLicenseManager() {
     }
@@ -42,23 +43,42 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
      * @param license the license to cache, or null to clear any cached license.
      */
     public void setLicense(License license) {
-        this.license = license;
-        fireLicenseEvent();
+        if (this.license != license) {
+            if (this.license != null && this.license.equals(license)) return;
+            this.license = license;
+            fireLicenseEvent();
+        }
     }
 
-    public void addLicenseListener(Runnable licenseListener) {
-        listeners.put(licenseListener, null);
+    /**
+     * Add a license listener.
+     * <p/>
+     * License change events are always delivered on the Swing thread, but delivery is always synchronous
+     * with the license change.
+     * <p/>
+     * Caller must ensure that they keep a hard reference to the listener, or it will immediately be GC'ed
+     * and never receive any events.
+     *
+     * @param licenseListener the runnable to be invoked when the license is changed.  Must not be null.
+     */
+    public void addLicenseListener(LicenseListener licenseListener) {
+        if (licenseListener == null) throw new NullPointerException();
+        licenseListeners.put(licenseListener, null);
     }
 
-    public boolean removeLicenseListener(Runnable licenseListener) {
-        return listeners.remove(licenseListener) != null;
+    public boolean removeLicenseListener(LicenseListener licenseListener) {
+        return licenseListeners.remove(licenseListener) != null;
     }
 
     protected void fireLicenseEvent() {
-        for (Iterator i = listeners.keySet().iterator(); i.hasNext();) {
-            Runnable runnable = (Runnable)i.next();
-            if (runnable != null) runnable.run();
-        }
+        Utilities.invokeOnSwingThreadAndWait(new Runnable() {
+            public void run() {
+                List<LicenseListener> listeners = new ArrayList<LicenseListener>(licenseListeners.keySet());
+                for (LicenseListener listener : listeners) {
+                    if (listener != null) listener.licenseChanged(ConsoleLicenseManager.this);
+                }
+            }
+        });
     }
 
     public boolean isFeatureEnabled(String featureName) {
