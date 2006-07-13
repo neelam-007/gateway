@@ -5,6 +5,7 @@
 
 package com.l7tech.server.policy;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.AssertionLicense;
@@ -19,6 +20,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
@@ -45,8 +47,9 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      *                            if false, no license enforcement will be performed.
      * @return the server assertion subtree for this generic subtree.  Never null.
      * @throws ServerPolicyException if this policy subtree could not be compiled
+     * @throws LicenseException if this policy subtree made use of an unlicensed assertion
      */
-    public ServerAssertion compilePolicy(Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException {
+    public ServerAssertion compilePolicy(Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException, LicenseException {
         try {
             ServerPolicyFactory.licenseEnforcement.set(licenseEnforcement);
             return doMakeServerAssertion(genericAssertion);
@@ -63,21 +66,20 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      * @param genericAsertion  root of the assertion subtree to compile.  Must not be null.
      * @return the server assertion subtree for this generic subtree.  Never null.
      * @throws ServerPolicyException if this policy subtree could not be compiled
+     * @throws LicenseException if this policy subtree made use of an unlicensed assertion
      */
-    public ServerAssertion compileSubtree(Assertion genericAsertion) throws ServerPolicyException {
+    public ServerAssertion compileSubtree(Assertion genericAsertion) throws ServerPolicyException, LicenseException {
         return doMakeServerAssertion(genericAsertion);
     }
 
     /** Compile the specified assertion tree, with license enforcement. */
-    private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException {
+    private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException, LicenseException {
         try {
             Boolean le = licenseEnforcement.get();
             if (le == null)
-                throw new ServerPolicyException(genericAssertion, "No license enforcement state set; use compilePolicy() instead of compileSubtree()");
+                throw new IllegalStateException("No license enforcement state set; use compilePolicy() instead of compileSubtree()");
             if (le && !licenseManager.isAssertionEnabled(genericAssertion.getClass().getName()))
-                throw new ServerPolicyException(genericAssertion,
-                                                "The specified assertion is not supported on this Gateway: " +
-                                                        genericAssertion.getClass());
+                throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
 
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
@@ -101,6 +103,14 @@ public class ServerPolicyFactory implements ApplicationContextAware {
 
             ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] { genericAssertionClass });
             return (ServerAssertion)ctor.newInstance(genericAssertion);
+        } catch (LicenseException le) {
+            throw le;
+        } catch (InvocationTargetException ite) {
+            // Handle exceptions thrown by the server assertion constructor
+            Throwable cause = ite.getCause();
+            if (cause instanceof LicenseException)
+                throw new LicenseException(ite);
+            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ite);
         } catch (Exception ie) {
             throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ie);
         }

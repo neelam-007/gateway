@@ -7,9 +7,13 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.LicenseException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.policy.ServerPolicy;
@@ -17,11 +21,16 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.service.resolution.*;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
 import java.util.*;
@@ -42,7 +51,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Nov 26, 2003<br/>
  */
-public class ServiceCache extends ApplicationObjectSupport implements DisposableBean {
+public class ServiceCache extends ApplicationObjectSupport implements DisposableBean, ApplicationListener {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     private ServerPolicyFactory policyFactory;
@@ -68,6 +77,45 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             };
             checker.schedule(task, INTEGRITY_CHECK_FREQUENCY, INTEGRITY_CHECK_FREQUENCY);
             running = true;
+        }
+    }
+
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (applicationEvent instanceof LicenseEvent) {
+            Background.scheduleOneShot(new TimerTask() {
+                public void run() {
+                    resetUnlicensed();
+                }
+            }, 0);
+        }
+    }
+
+    private void resetUnlicensed() {
+        Sync write = rwlock.writeLock();
+        try {
+            write.acquire();
+            List<Long> unlicensed = new ArrayList<Long>(servicesThatAreUnlicensed);
+
+            int numUnlicensed = unlicensed.size();
+            if (numUnlicensed < 0) return;
+            logger.info("License has changed -- resetting " + numUnlicensed + " affected services");
+            for (Long oid : unlicensed) {
+                PublishedService service = services.get(oid);
+                if (service == null) continue; // no longer relevant
+
+                removeNoLock(service);
+                try {
+                    cacheNoLock(service);
+                } catch (ServerPolicyException e) {
+                    logger.log(Level.WARNING, "Unable to reenable service after license change: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "interruption in service cache", e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally {
+            if (write != null) write.release();
         }
     }
 
@@ -242,7 +290,17 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 }
             }
             // cache the server policy for this service
-            serverRootAssertion = policyFactory.compilePolicy(service.rootAssertion(), true);
+            try {
+                serverRootAssertion = policyFactory.compilePolicy(service.rootAssertion(), true);
+                servicesThatAreUnlicensed.remove(service.getOid());
+            } catch (final LicenseException e) {
+                serverRootAssertion = new AbstractServerAssertion<UnknownAssertion>(new UnknownAssertion()) {
+                    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException {
+                        throw new PolicyAssertionException(getAssertion(), "Assertion not available: " + ExceptionUtils.getMessage(e));
+                    }
+                };
+                servicesThatAreUnlicensed.add(service.getOid());
+            }
             if (serverRootAssertion != null) {
                 serverPolicies.put(key, new ServerPolicy(serverRootAssertion).ref());
             } else {
@@ -533,6 +591,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     private final Map<Long, ServerPolicyHandle> serverPolicies = new HashMap<Long, ServerPolicyHandle>();
     private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
     private final Map<Long, Integer> servicesThatAreThrowing = new HashMap<Long, Integer>();
+    private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
 
     // the resolvers
     private final NameValueServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};

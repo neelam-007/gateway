@@ -5,6 +5,8 @@
 
 package com.l7tech.common;
 
+import com.l7tech.common.util.ExceptionUtils;
+
 /**
  * Exception thrown if an operation is not permitted by any currently-installed license.
  * Note the subtle difference between this and {@link LicenseException} -- LicenseException is thrown when an
@@ -19,14 +21,14 @@ public class LicenseException extends Exception {
     }
 
     public LicenseException(String message) {
-        super(message == null ? MSG : MSG + ": " + message);
+        super(message == null ? MSG : message);
     }
 
     public LicenseException(String message, Throwable cause) {
-        super(message == null ? MSG : MSG + ": " + message, cause);
+        super(message == null ? ExceptionUtils.getMessage(cause, MSG) : message, cause);
     }
 
     public LicenseException(Throwable cause) {
-        super(MSG, cause);
+        super(ExceptionUtils.getMessage(cause, MSG), cause);
     }
 }

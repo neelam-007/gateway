@@ -90,7 +90,20 @@ public class ExceptionUtils {
      * @return a diagnostic message that can be displayed.  Never null.
      */
     public static String getMessage(final Throwable t) {
-        return getMessage(t, 2);
+        return getMessage(t, 2, null);
+    }
+
+    /**
+     * Get the message for the specified exception that is at least 2 characters long.
+     * If the exception itself has a null message or it is too short,
+     * checks for a message in its cause.  If all causes have been exhaused, returns the
+     * classname of the original exception.
+     *
+     * @param t the Throwable to examine.  Must not be null.
+     * @return a diagnostic message that can be displayed.  Never null.
+     */
+    public static String getMessage(final Throwable t, final String defaultMessage) {
+        return getMessage(t, 2, defaultMessage);
     }
 
     /**
@@ -102,9 +115,11 @@ public class ExceptionUtils {
      * @param t the Throwable to examine.  Must not be null.
      * @param n the minimum length of message that is acceptable, or 0 to accept any non-null message.
      *          For example, set to 2 to disallow the exception message "0".
+     * @param defaultMessage last-resort message to use if no good message could be found, or null to use the classname
+     *                       of the original exception if nothing better could be unearthed.
      * @return a diagnostic message that can be displayed.  Never null.
      */
-    public static String getMessage(final Throwable t, int n) {
+    public static String getMessage(final Throwable t, int n, String defaultMessage) {
         if (t == null)
             return "null";
 
@@ -126,7 +141,7 @@ public class ExceptionUtils {
             current = current.getCause();
         }
 
-        return t.getClass().getName();
+        return defaultMessage != null ? defaultMessage : t.getClass().getName();
     }
 
     /**

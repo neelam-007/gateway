@@ -18,6 +18,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilder;
@@ -460,7 +461,11 @@ public class PolicyService extends ApplicationObjectSupport {
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
-        return policyFactory.compilePolicy(base, false); // dogfood policy is allowed to use whatever assertions it wants, regardless of license
+        try {
+            return policyFactory.compilePolicy(base, false); // dogfood policy is allowed to use whatever assertions it wants, regardless of license
+        } catch (LicenseException e) {
+            throw new RuntimeException(e); // can't happen, we said no license enforcement
+        }
     }
 
     private void addIdAssertionToList(Assertion assertion, List receptacle) {

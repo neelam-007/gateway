@@ -14,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public abstract class ServerCompositeAssertion extends AbstractServerAssertion<C
     private final CompositeAssertion bean;
     protected ServerAssertion[] children;
 
-    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext spring) throws PolicyAssertionException {
+    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext spring) throws PolicyAssertionException, LicenseException {
         super(composite);
         this.bean = composite;
         if (spring == null)

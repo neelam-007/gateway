@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class ServerExactlyOneAssertion extends ServerCompositeAssertion implements ServerAssertion {
-    public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) throws PolicyAssertionException {
+    public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) throws PolicyAssertionException, LicenseException {
         super( data, applicationContext );
         this.data = data;
     }

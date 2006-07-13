@@ -20,6 +20,7 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -102,6 +103,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             this.tokenServicePolicy = policyFactory.compilePolicy(getGenericEnforcementPolicy(), false);
         } catch (ServerPolicyException e) {
             throw new RuntimeException(e); // can't happen
+        } catch (LicenseException e) {
+            throw new RuntimeException(e); // can't happen, we said no license enforcement
         }
     }
 

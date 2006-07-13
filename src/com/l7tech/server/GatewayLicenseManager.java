@@ -9,6 +9,7 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.*;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
@@ -33,6 +34,7 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.TimerTask;
 
 /**
  * Keeps track of license permissions.
@@ -212,9 +214,14 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
                     product + " " + major + "." + minor + ")");
     }
 
-    private void fireEvent(AuditDetailMessage message, String suffix, String action) {
-        suffix = suffix == null ? "" : ": " + suffix;
-        getApplicationContext().publishEvent(new LicenseEvent(action, message.getLevel(), action, message.getMessage() + suffix));
+    private void fireEvent(final AuditDetailMessage message, final String suffix, final String action) {
+        // Avoid firing the event while still holding the license manage lock
+        Background.scheduleOneShot(new TimerTask() {
+            public void run() {
+                String suffix2 = suffix == null ? "" : ": " + suffix;
+                getApplicationContext().publishEvent(new LicenseEvent(action, message.getLevel(), action, message.getMessage() + suffix2));
+            }
+        }, 0);
     }
 
     private X509Certificate[] getTrustedIssuers() {

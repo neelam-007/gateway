@@ -2228,6 +2228,7 @@ public class MainWindow extends JFrame {
     private final LicenseListener paletteTreeLicenseListener = new LicenseListener() {
         public void licenseChanged(ConsoleLicenseManager licenseManager) {
             JTree tree = getAssertionPaletteTree();
+            if (tree == null || tree.getModel() == null) return; // not constructed yet
             AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
             Utilities.collapseTree(tree);
             root.removeAllChildren();

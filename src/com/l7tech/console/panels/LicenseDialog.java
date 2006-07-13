@@ -68,6 +68,7 @@ public class LicenseDialog extends JDialog {
                 setVisible(false);
             }
         });
+
         installButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fc = new JFileChooser();
@@ -178,6 +179,7 @@ public class LicenseDialog extends JDialog {
                         showingLicenseOrError = license != null;
                         licensePanel.setLicense(license);
                         reg.getLicenseManager().setLicense(license);
+                        installButton.setVisible(false);
                         pack();
                         return;
                     } catch (InvalidLicenseException e1) {
@@ -214,6 +216,7 @@ public class LicenseDialog extends JDialog {
             reg.getLicenseManager().setLicense(license);
             licensePanel.setLicense(license);
             showingLicenseOrError = license != null;
+            installButton.setText(showingLicenseOrError ? "Change License" : "Install License");
             pack();
         } catch (InvalidLicenseException e) {
             licensePanel.setLicenseError(ExceptionUtils.getMessage(e));

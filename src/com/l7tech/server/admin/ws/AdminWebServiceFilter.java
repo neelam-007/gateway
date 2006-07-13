@@ -14,6 +14,7 @@ import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -139,6 +140,8 @@ public class AdminWebServiceFilter implements Filter {
         } catch (ServerPolicyException e) {
             log.log(Level.SEVERE, "Unable to instantiate admin service policy: " + ExceptionUtils.getMessage(e), e);
             // fallthrough and complain
+        } catch (LicenseException e) {
+            throw new RuntimeException(e); // can't happen, we said no license enforcement
         }
         if (adminPolicy == null) {
             throw new ServletException(ERR_PREFIX + "policy");

@@ -18,6 +18,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.tree.TreeModel;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.List;
@@ -181,7 +182,9 @@ public class HomePagePanel extends JPanel {
     }
 
     private AbstractTreeNode getIdentitiesRoot() {
-        return (AbstractTreeNode)getIdentitiesTree().getModel().getRoot();
+        TreeModel model = getIdentitiesTree().getModel();
+        if (model == null) return null; // It's not built yet
+        return (AbstractTreeNode)model.getRoot();
     }
 
     private JTree getIdentitiesTree() {
