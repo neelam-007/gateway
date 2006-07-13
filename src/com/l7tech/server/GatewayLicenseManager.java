@@ -32,6 +32,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Keeps track of license permissions.
@@ -83,7 +84,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
 
     // Brake to prevent calls to System.currentTimeMillis every time a license check is made.
     // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
-    private volatile int checkCount = CHECKCOUNT_CHECK_NOW;
+    private final AtomicInteger checkCount = new AtomicInteger(CHECKCOUNT_CHECK_NOW);
     private long lastCheck = TIME_CHECK_NOW;
 
     private boolean licenseSet = false;
@@ -106,14 +107,14 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
 
     public void requireFeature(String feature) throws LicenseException {
         if (!isFeatureEnabled(feature)) {
-            checkCount = CHECKCOUNT_CHECK_NOW;
+            checkCount.set(CHECKCOUNT_CHECK_NOW);
             throw new LicenseException("The specified feature is not supported on this Gateway: " + feature);
         }
     }
 
     /** Update the license if we haven't done so in a while.  Returns quickly if no update is indicated. */
     private void check() {
-        if (checkCount++ < CHECK_THRESHOLD) // Don't care much about out-of-date reads or lost writes here
+        if (checkCount.getAndIncrement() < CHECK_THRESHOLD)
             return;
         synchronized (this) {
             long now = System.currentTimeMillis();
@@ -121,7 +122,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
                 reloadLicenseFromDatabase();
                 lastCheck = System.currentTimeMillis();
             }
-            checkCount = 0;
+            checkCount.set(0);
         }
     }
 
@@ -252,7 +253,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
      */
     private void requestReload() {
         synchronized (this) {
-            checkCount = CHECKCOUNT_CHECK_NOW;
+            checkCount.set(CHECKCOUNT_CHECK_NOW);
             lastCheck = TIME_CHECK_NOW;
         }
     }
