@@ -24,13 +24,12 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.Subject;
-import java.rmi.server.ServerNotActiveException;
-import java.rmi.server.UnicastRemoteObject;
 import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.server.ServerNotActiveException;
 
 /**
  * @author alex
@@ -221,7 +220,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }
             return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
-                                        Group.OPERATOR_GROUP_NAME.equals(role) ? "Operator logged in" : "Administrator logged in", 
+                                        Group.OPERATOR_GROUP_NAME.equals(role) ? "Operator logged in" : "Administrator logged in",
                                         admin.getProviderId(), admin.getLogin(), admin.getUniqueIdentifier(), ip);
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
@@ -241,7 +240,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         String address = null;
         long providerOid = IdentityProviderConfig.DEFAULT_OID;
         try {
-            address = UnicastRemoteObject.getClientHost();
+            address = RemoteUtils.getClientHost();
             clientSubject = Subject.getSubject(AccessController.getContext());
         } catch (ServerNotActiveException e) {
             logger.warning("The administrative event caused as local call, outside of servicing an adminstrative remote call." +
