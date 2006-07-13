@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -707,9 +708,19 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * @return the private key, or null if we don't yet have a client certificate.
      */
     public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException {
+        return getClientCertificatePrivateKey(null);
+    }
+
+    /**
+     * Get the private key.  Might take a long time if it needs to prompt for a password.
+     * @param passwordAuthentication OPTIONAL credentials to use (may be null)
+     * @return the private key, or null if we don't yet have a client certificate.
+     */
+    public PrivateKey getClientCertificatePrivateKey(PasswordAuthentication passwordAuthentication) throws BadCredentialsException {
+        PasswordAuthentication pa = passwordAuthentication;
         for (;;) {
             try {
-                return getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey();
+                return getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey(pa);
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException("Unable to read private key from keystore", e);
             } catch (KeyStoreCorruptException e) {

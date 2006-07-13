@@ -204,7 +204,9 @@ public class RequestHandler extends AbstractHttpHandler {
                         reqPassword = new String(authStuff, i + 1, authStuff.length - i - 1);
                     }
                 }
-            } else {
+            }
+
+            if (reqUsername == null || reqPassword == null) {
                 sendChallenge(httpResponse);
                 log.info("Send HTTP Basic auth challenge back to the client");
                 return;
@@ -253,6 +255,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 interceptor.onMessageError(e);
                 sendChallenge(httpResponse);
                 log.info("Send HTTP Basic auth challenge back to the client");
+                return;
             }
 
             int status = 200;

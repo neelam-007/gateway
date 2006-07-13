@@ -772,6 +772,7 @@
             </fileset>
             <fileset dir="${src.root}/etc">
                 <include name="login.config"/>
+                <include name="bridgePolicyTemplates/*"/>
             </fileset>
         </jar>
     </target>

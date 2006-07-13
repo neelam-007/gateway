@@ -453,6 +453,10 @@ public class PolicyApplicationContext extends ProcessingContext {
                     trusted.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(getFederatedCredentials());
                 }
             }
+            else {
+                logger.info("PendingRequest: ensuring client certificate key is accessible");
+                ssg.getClientCertificatePrivateKey(getCredentialsForTrustedSsg());
+            }
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
             //            but not if it's a federated gw, since in that case we may have needed the cert to DL the policy

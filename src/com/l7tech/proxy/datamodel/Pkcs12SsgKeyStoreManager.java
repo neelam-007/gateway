@@ -173,7 +173,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         }
     }
 
-    public PrivateKey getClientCertPrivateKey()
+    public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication)
             throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
     {
         if (Thread.holdsLock(ssg))
@@ -181,7 +181,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
 
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
-            return trusted.getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey();
+            return trusted.getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey(null);
         if (ssg.isFederatedGateway()) {
             CertLoader cc = CertLoader.getConfiguredCertLoader();
             if (cc != null) {
@@ -198,15 +198,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             if (ssg.getRuntime().getCachedPrivateKey() != null)
                 return ssg.getRuntime().getCachedPrivateKey();
         }
-        PasswordAuthentication pw;
-        pw = ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg,
-                                                                          CredentialManager.ReasonHint.PRIVATE_KEY,
-                                                                          false,
-                                                                          false);
-        if (pw == null) {
-            log.finer("No credentials configured -- unable to access private key");
-            return null;
-        }
 
         synchronized (ssg) {
             if (!isClientCertAvailabile())
@@ -214,7 +205,29 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             if (ssg.getRuntime().getCachedPrivateKey() != null)
                 return ssg.getRuntime().getCachedPrivateKey();
             try {
-                PrivateKey gotKey = (PrivateKey) getKeyStore(pw.getPassword()).getKey(CLIENT_CERT_ALIAS, pw.getPassword());
+                PrivateKey gotKey = null;
+                if (passwordAuthentication != null) {
+                    try {
+                        char[] password = passwordAuthentication.getPassword();
+                        gotKey = (PrivateKey) getKeyStore(password).getKey(CLIENT_CERT_ALIAS, password);
+                    } catch(KeyStoreException e) {
+                        log.log(Level.WARNING, "Could not open key store.", e);
+                    } catch (UnrecoverableKeyException e) {
+                        log.log(Level.WARNING, "Error getting private key from keystore.", e);
+                    }
+                }
+                if (gotKey == null) {
+                    PasswordAuthentication pw;
+                    pw = ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg,
+                                                                                      CredentialManager.ReasonHint.PRIVATE_KEY,
+                                                                                      false,
+                                                                                      false);
+                    if (pw == null) {
+                        log.finer("No credentials configured -- unable to access private key");
+                        return null;
+                    }
+                    gotKey = (PrivateKey) getKeyStore(pw.getPassword()).getKey(CLIENT_CERT_ALIAS, pw.getPassword());
+                }
                 ssg.getRuntime().setCachedPrivateKey(gotKey);
                 ssg.getRuntime().setPasswordCorrectForPrivateKey(true);
                 return gotKey;

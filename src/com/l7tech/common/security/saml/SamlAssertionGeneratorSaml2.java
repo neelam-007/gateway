@@ -187,7 +187,7 @@ public class SamlAssertionGeneratorSaml2 {
             throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
         }
 
-        populateSubjectStatement(subjectStatementAbstractType, subjectStatement);
+        populateSubjectStatement(subjectStatementAbstractType, subjectStatement, caDn);
         return assertionType;
     }
 
@@ -199,7 +199,8 @@ public class SamlAssertionGeneratorSaml2 {
      * @throws CertificateEncodingException
      */
     private void populateSubjectStatement(SubjectType subjectType,
-                                          SubjectStatement subjectStatement) throws CertificateEncodingException {
+                                          SubjectStatement subjectStatement,
+                                          String alternateNameId) throws CertificateEncodingException {
 
         NameIDType nameIdentifierType = subjectType.addNewNameID();
         nameIdentifierType.setStringValue(subjectStatement.getName());
@@ -211,6 +212,7 @@ public class SamlAssertionGeneratorSaml2 {
         }
 
         String confirmationMethod = subjectStatement.getConfirmationMethod();
+        String confirmationNameId = null;
         if (SamlConstants.CONFIRMATION_BEARER.equals(confirmationMethod)) {
             confirmationMethod = SamlConstants.CONFIRMATION_SAML2_BEARER;
         }
@@ -219,11 +221,17 @@ public class SamlAssertionGeneratorSaml2 {
         }
         else if (SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(confirmationMethod)) {
             confirmationMethod = SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES;
+            confirmationNameId = alternateNameId;
         }
 
         if (confirmationMethod != null) {
             SubjectConfirmationType subjectConfirmation = subjectType.addNewSubjectConfirmation();
             subjectConfirmation.setMethod(confirmationMethod);
+
+            if (confirmationNameId != null) {
+                NameIDType confirmationNameIdType = subjectConfirmation.addNewNameID();
+                confirmationNameIdType.setStringValue(confirmationNameId);
+            }
 
             final Object keyInfo = subjectStatement.getKeyInfo();
             if (keyInfo == null || !(keyInfo instanceof X509Certificate)) {
@@ -284,7 +292,7 @@ public class SamlAssertionGeneratorSaml2 {
 
         XmlOptions xo = new XmlOptions();
         Map namespaces = new LinkedHashMap();
-        namespaces.put(SamlConstants.NS_SAML2, SamlConstants.NS_SAML_PREFIX);
+        namespaces.put(SamlConstants.NS_SAML2, SamlConstants.NS_SAML2_PREFIX);
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
         namespaces.put(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");

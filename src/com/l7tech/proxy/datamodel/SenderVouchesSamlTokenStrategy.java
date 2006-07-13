@@ -77,6 +77,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         SubjectStatement authenticationStatement = SubjectStatement.createAuthenticationStatement(credentials,
                                                                                                   SubjectStatement.SENDER_VOUCHES,
                                                                                                   true);
+        authenticationStatement.setKeyInfo(ssg.getClientCertificate());
         SamlAssertionGenerator sag = new SamlAssertionGenerator(si);
         SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(new X509Certificate[] { clientCertificate, ssg.getServerCertificate() });
 

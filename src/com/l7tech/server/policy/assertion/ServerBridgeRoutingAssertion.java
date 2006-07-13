@@ -9,7 +9,6 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -711,7 +710,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             return useClientCert ? signerInfo.getCertificateChain()[0] : null;
         }
 
-        public PrivateKey getClientCertPrivateKey() throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException {
+        public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException {
             return useClientCert ? signerInfo.getPrivate() : null;
         }
 

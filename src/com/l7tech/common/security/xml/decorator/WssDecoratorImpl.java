@@ -281,7 +281,10 @@ public class WssDecoratorImpl implements WssDecorator {
                 }
                 if (assId == null || assId.length() < 1)
                     throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
-                signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, SoapUtil.VALUETYPE_SAML);
+                if (!SamlConstants.NS_SAML.equals(saml.getNamespaceURI()))
+                    signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, SoapUtil.VALUETYPE_SAML5);
+                else
+                    signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, SoapUtil.VALUETYPE_SAML3);
             } else if (dreq.getRecipientCertificate() != null) {
                 // create a new EncryptedKey and sign with that
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
@@ -775,7 +778,10 @@ public class WssDecoratorImpl implements WssDecorator {
                 final String assId = element.getAttribute("AssertionID");
                 if (assId == null || assId.length() < 1)
                     throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID");
-                Element str = addSamlSecurityTokenReference(securityHeader, assId);
+                String samlValueType = SoapUtil.VALUETYPE_SAML_ASSERTIONID2;
+                if (!SamlConstants.NS_SAML.equals(element.getNamespaceURI()))
+                    samlValueType = SoapUtil.VALUETYPE_SAML_ASSERTIONID3;
+                Element str = addSamlSecurityTokenReference(securityHeader, assId, samlValueType);
                 ref = template.createReference("#" + getOrCreateWsuId(c, str, "SamlSTR"));
                 ref.addTransform(SoapUtil.TRANSFORM_STR); // need SecurityTokenReference transform to go through indirection
                 strTransformsNodeToNode.put(str, element);
@@ -866,12 +872,12 @@ public class WssDecoratorImpl implements WssDecorator {
         return signatureElement;
     }
 
-    private Element addSamlSecurityTokenReference(Element securityHeader, String assertionId) {
+    private Element addSamlSecurityTokenReference(Element securityHeader, String assertionId, String valueType) {
         String wsseNs = securityHeader.getNamespaceURI();
         String wsse = securityHeader.getPrefix();
         Element str = XmlUtil.createAndAppendElementNS(securityHeader, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
         Element keyid = XmlUtil.createAndAppendElementNS(str, SoapUtil.KEYIDENTIFIER_EL_NAME, wsseNs, wsse);
-        keyid.setAttribute("ValueType", SoapUtil.VALUETYPE_SAML_ASSERTIONID);
+        keyid.setAttribute("ValueType", valueType);
         keyid.appendChild(XmlUtil.createTextNode(keyid, assertionId));
         return str;
     }

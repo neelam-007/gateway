@@ -176,12 +176,13 @@ public abstract class SsgKeyStoreManager {
      * Get the private key for our client certificate with this SSG.  Caller *must not* hold the SSG monitor
      * when calling this method.
      *
+     * @param passwordAuthentication Optional credentials that MAY be used to obtain the key (may be null) 
      * @return      The PrivateKey, or null if we haven't yet applied for a client certificate with this SSG.
      * @throws java.security.NoSuchAlgorithmException   if the VM is misconfigured, or the keystore was tampered with
      * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG password does not match the password used to encrypt the key.
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user canceled the password prompt
      */
-    public abstract PrivateKey getClientCertPrivateKey()
+    public abstract PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication)
             throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException;
 
     /**

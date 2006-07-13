@@ -22,6 +22,19 @@ public class OkCancelDialog extends JDialog {
 
     private final ValidatedPanel validatedPanel;
 
+    public static OkCancelDialog createOKCancelDialog(Component owner, String title, boolean modal, ValidatedPanel panel) {
+        OkCancelDialog dialog;
+        Window window = SwingUtilities.getWindowAncestor(owner);
+
+        if (window instanceof Frame) {
+            dialog = new OkCancelDialog((Frame)window, title, modal, panel);
+        } else {
+            dialog = new OkCancelDialog((Dialog)window, title, modal, panel);
+        }
+
+        return dialog;
+    }
+
     public OkCancelDialog(Frame owner, String title, boolean modal, ValidatedPanel panel) {
         super(owner, title, modal);
         this.validatedPanel = panel;

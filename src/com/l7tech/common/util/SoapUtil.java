@@ -176,9 +176,27 @@ public class SoapUtil {
     public static final String VALUETYPE_ENCRYPTED_KEY = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKey";
     public static final String VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX = "EncryptedKeySHA1";
     public static final String VALUETYPE_ENCRYPTED_KEY_SHA1 = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKeySHA1";
-    public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
-    public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
-    public static final String VALUETYPE_SAML_ASSERTION1_1 = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-saml-token-profile-1.0#SAMLAssertion-1.1"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
+    public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // from a DRAFT spec?
+    public static final String VALUETYPE_SAML2 = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-saml-token-profile-1.0#SAMLAssertion-1.1"; // from a DRAFT spec?
+    public static final String VALUETYPE_SAML3 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertion-1.1";
+    public static final String VALUETYPE_SAML4 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1";
+    public static final String VALUETYPE_SAML5 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0";
+    public static final String[] VALUETYPE_SAML_ARRAY = {
+        VALUETYPE_SAML,
+        VALUETYPE_SAML2,
+        VALUETYPE_SAML3, // SAML 1.1 assertion from STP 1.0
+        VALUETYPE_SAML4, // SAML 1.1 assertion from STP 1.1
+        VALUETYPE_SAML5, // SAML 2.0 assertion
+    };
+    public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // from a DRAFT spec?
+    public static final String VALUETYPE_SAML_ASSERTIONID2 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID";
+    public static final String VALUETYPE_SAML_ASSERTIONID3 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID";
+    public static final String[] VALUETYPE_SAML_ASSERTIONID_ARRAY = {
+        VALUETYPE_SAML_ASSERTIONID,
+        VALUETYPE_SAML_ASSERTIONID2, // SAML 1.1 assertion id ref (STP 1.0 and 1.1)
+        VALUETYPE_SAML_ASSERTIONID3, // SAML 2.0 assertion id ref (STP 1.1)
+    };
+
     public static final String VALUETYPE_DERIVEDKEY = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk";
     public static final String VALUETYPE_DERIVEDKEY2 = "http://schemas.xmlsoap.org/ws/2005/02/sc/dk";
     public static final String VALUETYPE_SECURECONV = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
@@ -1082,9 +1100,8 @@ public class SoapUtil {
      * @return true if valueType matches one of known Saml valueType constants, false otherwise
      */
     public static boolean isValueTypeSaml(String valueType) {
-        return VALUETYPE_SAML.equals(valueType) ||
-               VALUETYPE_SAML_ASSERTIONID.equals(valueType) ||
-               VALUETYPE_SAML_ASSERTION1_1.equals(valueType);
+        return ArrayUtils.contains(VALUETYPE_SAML_ARRAY,valueType) ||
+               ArrayUtils.contains(VALUETYPE_SAML_ASSERTIONID_ARRAY,valueType);
     }
 
     /**
