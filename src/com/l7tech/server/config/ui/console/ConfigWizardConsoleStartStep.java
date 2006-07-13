@@ -4,6 +4,7 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.*;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -11,6 +12,7 @@ import java.io.*;
  * Time: 10:00:38 AM
  */
 public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
+    private static final Logger logger = Logger.getLogger(ConfigWizardConsoleStartStep.class.getName());
 
     public ConfigWizardConsoleStartStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -22,20 +24,20 @@ public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
     }
 
     public String getTitle() {
-        return "Welcome to the Secure Span Gateway Configuration Wizard";
+        return "Welcome to the SecureSpan Gateway Configuration Wizard";
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         printText(new String[] {
-                "This wizard will configure a newly installed Secure Span Gateway (SSG)" + getEolChar(),
+                "This wizard will configure a newly installed SecureSpan Gateway (SSG)" + getEolChar(),
                 "Press <Enter> to continue" + getEolChar(),
         });
-        
+
 
         try {
             handleInput(consoleWizardUtils.readLine());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("Exception caught: " + e.getMessage());
         }
     }
 }

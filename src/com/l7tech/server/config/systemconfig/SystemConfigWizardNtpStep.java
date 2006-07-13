@@ -6,6 +6,7 @@ import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -15,6 +16,8 @@ import org.apache.commons.lang.StringUtils;
  * Time: 10:14:03 AM
  */
 public class SystemConfigWizardNtpStep extends BaseConsoleStep {
+    private static final Logger logger = Logger.getLogger(SystemConfigWizardNtpStep.class.getName());
+
     private static final String TITLE = "Configure Time Synchronization (NTP)";
     private NtpConfigurationBean ntpBean;
 
@@ -46,7 +49,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             }
             storeInput();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("Exception caught: " + e.getMessage());
         }
     }
 
