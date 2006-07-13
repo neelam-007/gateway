@@ -11,7 +11,7 @@
     <soap:Header>
         <wsse:Security>
             <wsse:SecurityTokenReference>
-                <wsse:KeyIdentifier ValueType='http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID'>
+                <wsse:KeyIdentifier xsi:type="xs:string" ValueType='http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID'>
                   keyidhere<InvalidElementContent/> <!-- Invalid content for SAML KeyIdentifier -->
                 </wsse:KeyIdentifier>
             </wsse:SecurityTokenReference>

@@ -5,7 +5,7 @@
     xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
     xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
     xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"
-    xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol"
+    xmlns:samlp2="urn:oasis:names:tc:SAML:1.0:protocol"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <soap:Header>
@@ -13,7 +13,7 @@
             <wsse:SecurityTokenReference>
                 <saml:AuthorityBinding Binding="urn:oasis:names:tc:SAML:1.0:bindings:SOAP-binding"
                                        Location="http://www.opensaml.org/SAML-Authority"
-                                       >
+                                       AuthorityKind="samlp2:AssertionIdReference">
                 </saml:AuthorityBinding>
                 <wsse:KeyIdentifier ValueType="http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID">
                   keyidhere
