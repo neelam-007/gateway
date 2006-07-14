@@ -6,6 +6,7 @@
 package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
@@ -31,9 +32,22 @@ public class ClientCookieCredentialSourceAssertion extends ClientAssertion {
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
-        // TODO do stuff here, assuming there is even anything extra that needs to be done above and beyond faithfully returing cookies
-        logger.info("Client assertion not yet implemented: " + getClass().getName());
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        String cookieName = assertion.getCookieName();
+        if (cookieName == null || cookieName.length() < 1) {
+            logger.warning("Unable to confirm client cookie -- policy has missing or empty cookie name");
+            return AssertionStatus.SERVER_ERROR;
+        }
+        
+        // If we are currently caching a cookie with the correct name, we will continue with this policy branch
+        HttpCookie[] cookies = context.getSsg().getRuntime().getSessionCookies();
+        for (int i = 0; i < cookies.length; i++) {
+            HttpCookie cookie = cookies[i];
+            if (cookieName.equals(cookie.getCookieName()))
+                return AssertionStatus.NONE;
+        }
+
+        // No cookie by this name cached.  Fail this branch and try something else.
+        return AssertionStatus.NOT_APPLICABLE;
     }
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
