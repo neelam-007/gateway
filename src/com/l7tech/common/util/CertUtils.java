@@ -223,7 +223,7 @@ public class CertUtils {
         int startIndex = certificateText.indexOf(PEM_CERT_BEGIN_MARKER);
         int endIndex = certificateText.indexOf(PEM_CERT_END_MARKER);
 
-        if (startIndex <=0 || endIndex <= startIndex) {
+        if (startIndex < 0 || endIndex <= startIndex) {
             throw new CausedIOException("Certificate data not found (missing begin or end marker)");
         }
 
