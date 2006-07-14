@@ -160,7 +160,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         Sync read = rwlock.readLock();
         try {
             read.acquire();
-            return serverPolicies.get(serviceOid).getTarget().ref();
+            ServerPolicyHandle handle = serverPolicies.get(serviceOid);
+            if (handle == null) return null;
+            return handle.getTarget().ref();
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
