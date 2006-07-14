@@ -597,7 +597,7 @@ CREATE TABLE rbac_role (
 --
 
 DROP TABLE IF EXISTS rbac_assignment;
-CREATE TABLE rbac_assign_user (
+CREATE TABLE rbac_assignment (
   objectid bigint(20) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   role_oid bigint(20) NOT NULL,
