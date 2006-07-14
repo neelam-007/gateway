@@ -832,6 +832,7 @@
                 <include name="com/l7tech/objectmodel/Entity.class"/>
                 <include name="com/l7tech/objectmodel/NamedEntity.class"/>
                 <include name="com/l7tech/objectmodel/EntityHeader*.class"/>
+                <include name="com/l7tech/objectmodel/IdentityHeader.class"/>
                 <include name="com/l7tech/objectmodel/EntityType.class"/>
                 <include name="com/l7tech/objectmodel/EntityManager.class"/>
                 <include name="com/l7tech/objectmodel/ObjectPermission.class"/>
