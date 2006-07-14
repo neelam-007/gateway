@@ -44,7 +44,7 @@ import com.l7tech.common.gui.ExceptionDialog;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class CertUtil {
+public class GuiCertUtil {
 
     //- PUBLIC
 
@@ -365,7 +365,7 @@ public class CertUtil {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(CertUtil.class.getName());
+    private static final Logger logger = Logger.getLogger(GuiCertUtil.class.getName());
 
     private static final String SAVE_DIALOG_ERROR_TITLE = "Error saving certificate";
 

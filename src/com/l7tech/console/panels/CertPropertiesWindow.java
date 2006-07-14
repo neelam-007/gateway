@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.CertUtil;
+import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -190,7 +190,7 @@ public class CertPropertiesWindow extends JDialog {
         exportButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 try {
-                    CertUtil.exportCertificate(CertPropertiesWindow.this, trustedCert.getCertificate());
+                    GuiCertUtil.exportCertificate(CertPropertiesWindow.this, trustedCert.getCertificate());
                 } catch (CertificateException e) {
                     logger.warning(resources.getString("cert.decode.error"));
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),

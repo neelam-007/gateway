@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.CertUtil;
+import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -166,7 +166,7 @@ public abstract class UserCertPanel extends JPanel {
             exportCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
                     if (cert != null) {
-                        CertUtil.exportCertificate(SwingUtilities.getWindowAncestor(UserCertPanel.this), cert);
+                        GuiCertUtil.exportCertificate(SwingUtilities.getWindowAncestor(UserCertPanel.this), cert);
                     }
                     else {
                         // something is wrong, the button should not have been enabled

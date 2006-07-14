@@ -19,7 +19,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.CertUtil;
+import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ArrayUtils;
@@ -157,7 +157,7 @@ public class SamlGenerator {
 
         issuerCertButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
-                CertUtil.ImportedData data = CertUtil.importCertificate(mainFrame, true, getCallbackHandler());
+                GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(mainFrame, true, getCallbackHandler());
                 if (data != null) {
                     issuerCertificate = data.getCertificate();
                     issuerPrivateKey = data.getPrivateKey();
@@ -171,7 +171,7 @@ public class SamlGenerator {
 
         subjectCertButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
-                CertUtil.ImportedData data = CertUtil.importCertificate(mainFrame, false, getCallbackHandler());
+                GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(mainFrame, false, getCallbackHandler());
                 if (data != null) {
                     subjectCertificate = data.getCertificate();
                     subjectPrivateKey = data.getPrivateKey();
