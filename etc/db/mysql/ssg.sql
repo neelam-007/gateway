@@ -604,7 +604,6 @@ CREATE TABLE rbac_assignment (
   user_id varchar(255) NOT NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
-  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
