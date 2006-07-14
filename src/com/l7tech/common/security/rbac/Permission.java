@@ -26,11 +26,11 @@ public class Permission extends EntityImp {
     /**
      * Construct a new Permission attached to the given Role.
      * @param role the Role to which this Permission belongs
-     * @param operation the Operation to which this Permission applies
-     * @param entityType the type of entity to which this Permission applies, or {@link EntityType#ANY} if it applies to any entity.
+     * @param operation the Operation to which this Permission applies, or <code>null</code> if not yet known.
+     * @param entityType the type of entity to which this Permission applies, {@link EntityType#ANY} if it applies to any entity, or <code>null</code> if not yet known.
      */
     public Permission(Role role, OperationType operation, EntityType entityType) {
-        if (role == null || operation == null || entityType == null) throw new NullPointerException();
+        if (role == null) throw new NullPointerException();
         this.role = role;
         this.operation = operation;
         this.entityType = entityType;
