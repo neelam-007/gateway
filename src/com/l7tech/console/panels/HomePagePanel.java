@@ -164,7 +164,7 @@ public class HomePagePanel extends JPanel {
         add("group32.png", new NewGroupAction(null));
 
         Options options = new Options();
-        options.enableDeleteAction();
+        options.setEnableDeleteAction(true);
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add("SearchIdentityProvider32x32.gif", new FindIdentityAction(options));
 
