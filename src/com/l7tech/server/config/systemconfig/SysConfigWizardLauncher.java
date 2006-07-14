@@ -35,7 +35,7 @@ public class SysConfigWizardLauncher {
         List<ConfigWizardConsoleStep> stepsList = new ArrayList<ConfigWizardConsoleStep>();
         stepsList.add(new SystemConfigWizardNetworkingStep(sysWizard));
         stepsList.add(new SystemConfigWizardNtpStep(sysWizard));
-        stepsList.add(new ConfigWizardConsoleSummaryStep(sysWizard, "Networking Configuration Summary"));
+        stepsList.add(new ConfigWizardConsoleSummaryStep(sysWizard, "System Configuration Summary"));
 
         ConfigWizardConsoleResultsStep resultsStep = new ConfigWizardConsoleResultsStep(sysWizard, "Networking Configuration Results");
         resultsStep.setManualStepsFileName("ssg_networkingconfig_manualsteps.txt");
