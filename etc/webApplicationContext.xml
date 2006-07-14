@@ -621,21 +621,11 @@
     </bean>
 
     <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
-        <property name="clientCertManager">
-            <ref bean="clientCertManager"/>
-        </property>
-
-        <property name="trustedCertManager">
-            <ref bean="trustedCertManager"/>
-        </property>
-
-        <property name="sslKeystoreCertificate">
-            <ref bean="sslKeystoreCertificate"/>
-        </property>
-
-        <property name="rootCertificate">
-            <ref bean="rootCertificate"/>
-        </property>
+        <constructor-arg ref="clientCertManager"/>
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="rootCertificate"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">

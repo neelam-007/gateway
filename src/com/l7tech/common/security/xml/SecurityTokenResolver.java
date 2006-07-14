@@ -49,6 +49,13 @@ public interface SecurityTokenResolver {
     EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1);
 
     /**
+     * Report that an EncryptedKey was decrypted, so it can be saved for later reuse by its EncryptedKeySHA1.
+     *
+     * @param encryptedKey      the encrypted key to cache for later reuse.  Must not be null.
+     */
+    void cacheEncryptedKey(EncryptedKey encryptedKey);
+
+    /**
      * Look up a Kerberos token using a Kerberosv5APREQSHA1 reference.
      *
      * @param kerberosSha1  the base64-encoded Kerberosv5APREQSHA1 identifier to look up

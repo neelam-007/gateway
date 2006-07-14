@@ -702,6 +702,8 @@ public class WssProcessorImpl implements WssProcessor {
             final EncryptedKeyImpl ekTok = new EncryptedKeyImpl(encryptedKeyElement,
                                                                 aesKey,
                                                                 encryptedKeySha1Haver);
+            if (cntx.securityTokenResolver != null)
+                cntx.securityTokenResolver.cacheEncryptedKey(ekTok);
             cntx.encryptedKeyById.put(wsuId, ekTok);
             cntx.securityTokens.add(ekTok);
         }

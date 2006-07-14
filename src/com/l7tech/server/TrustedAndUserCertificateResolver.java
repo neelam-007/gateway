@@ -10,9 +10,11 @@ import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.WhirlycacheFactory;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
+import com.whirlycott.cache.Cache;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -26,46 +28,61 @@ import java.util.logging.Logger;
  */
 public class TrustedAndUserCertificateResolver implements SecurityTokenResolver {
     private static final Logger logger = Logger.getLogger(TrustedAndUserCertificateResolver.class.getName());
-    private TrustedCertManager trustedCertManager = null;
-    private ClientCertManager clientCertManager = null;
+    private final TrustedCertManager trustedCertManager;
+    private final ClientCertManager clientCertManager;
 
-    private X509Certificate sslKeystoreCertificate = null;
-    private String sslKeystoreCertThumbprint = null;
-    private String sslKeystoreCertSki = null;
+    private final X509Certificate sslKeystoreCertificate;
+    private final String sslKeystoreCertThumbprint;
+    private final String sslKeystoreCertSki;
 
-    private X509Certificate rootCertificate = null;
-    private String rootCertificateThumbprint = null;
-    private String rootCertificateSki = null;
+    private final X509Certificate rootCertificate;
+    private final String rootCertificateThumbprint;
+    private final String rootCertificateSki;
 
-    public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
+    private final Cache encryptedKeyCache;
+
+
+    /**
+     * Construct the Gateway's security token resolver.
+     *
+     * @param clientCertManager
+     * @param trustedCertManager
+     * @param sslKeystoreCertificate
+     * @param rootCertificate
+     * @param serverConfig
+     */
+    public TrustedAndUserCertificateResolver(ClientCertManager clientCertManager,
+                                             TrustedCertManager trustedCertManager,
+                                             X509Certificate sslKeystoreCertificate,
+                                             X509Certificate rootCertificate,
+                                             ServerConfig serverConfig)
+    {
         this.trustedCertManager = trustedCertManager;
-    }
-
-    public void setClientCertManager(ClientCertManager clientCertManager) {
         this.clientCertManager = clientCertManager;
-    }
-
-    public void setSslKeystoreCertificate(X509Certificate sslKeystoreCertificate) {
         this.sslKeystoreCertificate = sslKeystoreCertificate;
+        this.rootCertificate = rootCertificate;
+
+        int maxEphemeralKeys = serverConfig.getIntProperty(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, 1000);
+        encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache", maxEphemeralKeys, 127,
+                                                                     WhirlycacheFactory.POLICY_LFU);
+
         try {
             if (sslKeystoreCertificate != null) {
                 this.sslKeystoreCertThumbprint = CertUtils.getThumbprintSHA1(sslKeystoreCertificate);
                 this.sslKeystoreCertSki = CertUtils.getSki(sslKeystoreCertificate);
+            } else {
+                this.sslKeystoreCertThumbprint = null;
+                this.sslKeystoreCertSki = null;
             }
-        } catch (CertificateException e) {
-            throw new RuntimeException("Invalid SSL certificate", e);
-        }
-    }
-
-    public void setRootCertificate(X509Certificate rootCertificate) {
-        this.rootCertificate = rootCertificate;
-        try {
             if (rootCertificate != null) {
                 this.rootCertificateThumbprint = CertUtils.getThumbprintSHA1(rootCertificate);
                 this.rootCertificateSki = CertUtils.getSki(rootCertificate);
+            } else {
+                this.rootCertificateThumbprint = null;
+                this.rootCertificateSki = null;
             }
         } catch (CertificateException e) {
-            throw new RuntimeException("Invalid root certificate", e);
+            throw new RuntimeException("Invalid SSL or root certificate", e);
         }
     }
 
@@ -132,13 +149,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
         return null;
     }
 
-    /**
-     * Ssg implementation lookup of encrypted key; currently always fails.
-     *
-     * @return currently always returns null
-     */
     public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
-        return null;
+        return (EncryptedKey)encryptedKeyCache.retrieve(encryptedKeySha1);
+    }
+
+    public void cacheEncryptedKey(EncryptedKey encryptedKey) {
+        encryptedKeyCache.store(encryptedKey.getEncryptedKeySHA1(), encryptedKey);
     }
 
     /**

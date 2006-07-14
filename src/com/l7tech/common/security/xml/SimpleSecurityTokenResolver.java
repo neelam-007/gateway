@@ -132,6 +132,10 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return (EncryptedKey)encryptedKeys.get(encryptedKeySha1);
     }
 
+    public void cacheEncryptedKey(EncryptedKey encryptedKey) {
+        encryptedKeys.put(encryptedKey.getEncryptedKeySHA1(), encryptedKey);
+    }
+
     public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return (KerberosSecurityToken)kerberosTokens.get(kerberosSha1);
     }
