@@ -10,6 +10,7 @@ import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
@@ -18,6 +19,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.policy.assertion.*;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpDigest;
+import com.l7tech.proxy.policy.assertion.credential.http.ClientCookieCredentialSourceAssertion;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientEncryptedUsernameTokenAssertion;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssBasic;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity;
@@ -83,7 +85,8 @@ public class ClientPolicyFactory {
         new ClientResponseWssIntegrity(new ResponseWssIntegrity()),
         new ClientRequestWssIntegrity(new RequestWssIntegrity()),
         new ClientRequestXpathAssertion(new RequestXpathAssertion()),
-        new ClientRequestWssKerberos(new RequestWssKerberos())
+        new ClientRequestWssKerberos(new RequestWssKerberos()),
+        new ClientCookieCredentialSourceAssertion(new CookieCredentialSourceAssertion()),            
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),

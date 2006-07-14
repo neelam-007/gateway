@@ -39,6 +39,7 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new IdentityNode(), index++);
         insert(new HttpBasicAuthNode(), index++);
         insert(new HttpDigestAuthNode(), index++);
+        insert(new CookieCredentialSourceAssertionPaletteNode(), index++);
         /* not in 3.6 as per bugzilla #2610
         insert(new HttpNegotiateAuthNode(), index++);
         */

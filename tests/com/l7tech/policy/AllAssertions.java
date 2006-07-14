@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.ext.Category;
@@ -64,6 +65,7 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestWssKerberos(),
+        new CookieCredentialSourceAssertion(),
     };
 
     private static CustomAssertionHolder CUSTOM_ASSERTION_HOLDER = new CustomAssertionHolder();
@@ -129,6 +131,7 @@ public class AllAssertions {
         new WsiSamlAssertion(),
         new EchoRoutingAssertion(),
         new WsspAssertion(),
+        new CookieCredentialSourceAssertion(),
     };
 
 
@@ -202,6 +205,7 @@ public class AllAssertions {
         new ResponseWssSecurityToken(),
         new MappingAssertion(),
         new SetVariableAssertion(),
+        new CookieCredentialSourceAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
@@ -218,6 +222,7 @@ public class AllAssertions {
         new WsFederationPassiveTokenRequest(),
         new XpathCredentialSource(),
         new RequestWssKerberos(),
+        new CookieCredentialSourceAssertion(),
     };
 
 }

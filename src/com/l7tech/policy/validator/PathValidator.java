@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
@@ -50,6 +51,7 @@ class PathValidator {
     private static final Class ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
     private static final Class ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
     private static final Class ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
+    private static final Class ASSERTION_COOKIECREDS = CookieCredentialSourceAssertion.class;
 
 
     private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
@@ -215,9 +217,9 @@ class PathValidator {
                   "authentication scheme.", null));
             } else {
                 // if the credential source is not HTTP Basic
-                if (!haveSeen(ASSERTION_HTTPBASIC)){
+                if (!haveSeen(ASSERTION_HTTPBASIC) && !haveSeen(ASSERTION_COOKIECREDS)){
                     result.addWarning(new PolicyValidatorResult.
-                      Warning(a, assertionPath, "HTTP Basic Authentication is usually used as the authentication " +
+                      Warning(a, assertionPath, "HTTP Basic Authentication (or HTTP Cookie session token) is usually used as the authentication " +
                         "scheme when a policy contains a Custom Assertion.", null));
                 }
             }

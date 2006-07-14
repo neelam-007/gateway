@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -115,5 +116,6 @@ public class Advices {
         advicesMap.put(AuditDetailAssertion.class, new Class[] {AddAuditAdviceAssertion.class});
         advicesMap.put(Operation.class, new Class[]{AddWSDLOperationAssertionAdvice.class});
         advicesMap.put(SetVariableAssertion.class, new Class[]{SetVariableAssertionAdvice.class});
+        advicesMap.put(CookieCredentialSourceAssertion.class, new Class[]{AddCookieCredentialSourceAssertionAdvice.class});
     }
 }

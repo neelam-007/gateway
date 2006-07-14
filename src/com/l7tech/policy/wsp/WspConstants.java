@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -286,6 +287,7 @@ public class WspConstants {
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),
         new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
         new AssertionMapping(new SetVariableAssertion(), "SetVariable"),
+        new AssertionMapping(new CookieCredentialSourceAssertion(), "CookieCredentialSource"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

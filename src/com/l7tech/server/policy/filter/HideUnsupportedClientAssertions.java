@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -80,6 +81,7 @@ public class HideUnsupportedClientAssertions implements Filter {
         RequestWssReplayProtection.class,
         RequestWssSaml.class,
         RequestWssKerberos.class,
-        WssTimestamp.class
+        WssTimestamp.class,
+        CookieCredentialSourceAssertion.class,
     };
 }

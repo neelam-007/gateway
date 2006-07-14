@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -299,7 +300,8 @@ public class GatewayFeatureSets {
             ass(HttpNegotiate.class),
             ass(WsFederationPassiveTokenExchange.class),
             ass(WsFederationPassiveTokenRequest.class),
-            ass(RequestWssKerberos.class));
+            ass(RequestWssKerberos.class),
+            ass(CookieCredentialSourceAssertion.class));
 
 
         //

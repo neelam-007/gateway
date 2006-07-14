@@ -116,6 +116,7 @@
                 <L7p:ResponseWssSecurityToken/>
                 <L7p:IdentityMapping/>
                 <L7p:SetVariable/>
+                <L7p:CookieCredentialSource/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

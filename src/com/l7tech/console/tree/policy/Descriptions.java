@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
@@ -205,5 +206,6 @@ public class Descriptions {
         descriptionsMap.put(JmsRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(RequestWssIntegrity.class, NoParam.class);
         descriptionsMap.put(ResponseWssIntegrity.class, NoParam.class);
+        descriptionsMap.put(CookieCredentialSourceAssertion.class, NoParam.class);
     }
 }

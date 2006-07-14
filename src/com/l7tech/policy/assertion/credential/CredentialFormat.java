@@ -43,6 +43,11 @@ public class CredentialFormat {
      */
     public static final CredentialFormat KERBEROSTICKET = new CredentialFormat( "Kerberos Ticket");
 
+    /**
+     * An opaque token such as a single sign on session cookie.
+     */
+    public static final CredentialFormat OPAQUETOKEN = new CredentialFormat("Opaque Token");
+
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";
     }
