@@ -17,8 +17,8 @@ public interface GroupManager {
     void deleteAllVirtual( long ipoid ) throws DeleteException, ObjectNotFoundException;
     String save( Group group ) throws SaveException;
     void update( Group group ) throws UpdateException, ObjectNotFoundException;
-    String save( Group group, Set<EntityHeader> userHeaders ) throws SaveException;
-    void update( Group group, Set<EntityHeader> userHeaders ) throws UpdateException, ObjectNotFoundException;
+    String save( Group group, Set<IdentityHeader> userHeaders ) throws SaveException;
+    void update( Group group, Set<IdentityHeader> userHeaders ) throws UpdateException, ObjectNotFoundException;
     Collection search(String searchString) throws FindException;
     Class getImpClass();
 
@@ -91,12 +91,12 @@ public interface GroupManager {
      * @return
      * @throws FindException
      */
-    Set<EntityHeader> getGroupHeaders( User user ) throws FindException;
+    Set<IdentityHeader> getGroupHeaders( User user ) throws FindException;
 
-    Set<EntityHeader> getGroupHeaders( String userId ) throws FindException;
+    Set<IdentityHeader> getGroupHeaders( String userId ) throws FindException;
 
-    void setGroupHeaders( User user, Set<EntityHeader> groupHeaders ) throws FindException, UpdateException;
-    void setGroupHeaders( String userId, Set<EntityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setGroupHeaders( User user, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setGroupHeaders( String userId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
 
     /**
      * Retrieve the Set of Users belonging to a particular Group.
@@ -104,13 +104,13 @@ public interface GroupManager {
      * @return
      * @throws FindException
      */
-    Set<EntityHeader> getUserHeaders( Group group ) throws FindException;
-    Set<EntityHeader> getUserHeaders( String groupId ) throws FindException;
+    Set<IdentityHeader> getUserHeaders( Group group ) throws FindException;
+    Set<IdentityHeader> getUserHeaders( String groupId ) throws FindException;
 
-    void setUserHeaders( Group group, Set<EntityHeader> groupHeaders ) throws FindException, UpdateException;
-    void setUserHeaders( String groupId, Set<EntityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setUserHeaders( Group group, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setUserHeaders( String groupId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
 
-    Collection findAllHeaders() throws FindException;
+    Collection<IdentityHeader> findAllHeaders() throws FindException;
 
     Collection findAll() throws FindException;
 }

@@ -11,9 +11,9 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.identity.PersistentUserManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
@@ -38,12 +38,12 @@ public class FederatedUserManager extends PersistentUserManager {
     protected FederatedUserManager() {
     }
 
-    public EntityHeader userToHeader( User user ) {
+    public IdentityHeader userToHeader( User user ) {
         FederatedUser imp = (FederatedUser)cast(user);
-        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
+        return new IdentityHeader(imp.getProviderId(), imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
     }
 
-    public User headerToUser(EntityHeader header) {
+    public User headerToUser(IdentityHeader header) {
         FederatedUser fu = new FederatedUser();
         fu.setOid(header.getOid());
         fu.setName(header.getName());

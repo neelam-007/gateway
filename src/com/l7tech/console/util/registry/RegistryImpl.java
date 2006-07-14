@@ -1,30 +1,30 @@
 package com.l7tech.console.util.registry;
 
 import com.l7tech.admin.AdminContext;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.console.util.Registry;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.cluster.ClusterStatusAdmin;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.rmi.RemoteException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -49,6 +49,7 @@ public final class RegistryImpl extends Registry
     private AuditAdmin auditAdmin;
     private ClusterStatusAdmin clusterStatusAdmin;
     private KerberosAdmin kerberosAdmin;
+    private RbacAdmin rbacAdmin;
 
     /**
      * @return the {@link IdentityAdmin} implementation
@@ -193,6 +194,19 @@ public final class RegistryImpl extends Registry
         try {
             kerberosAdmin = adminContext.getKerberosAdmin();
             return kerberosAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public RbacAdmin getRbacAdmin() {
+        checkAdminContext();
+        if (rbacAdmin != null) {
+            return rbacAdmin;
+        }
+        try {
+            rbacAdmin = adminContext.getRbacAdmin();
+            return rbacAdmin;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }

@@ -79,7 +79,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @return
      * @throws SaveException
      */
-    public long save(PublishedService service) throws SaveException, ServerPolicyException {
+    public long save(PublishedService service) throws SaveException {
         long oid = StubDataStore.defaultStore().nextObjectId();
         service.setOid(oid);
         if (services.get(oid) != null) {
@@ -88,7 +88,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         services.put(oid, service);
         try {
             serviceCache.cache(service);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return oid;
@@ -106,7 +106,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * @param service
      * @throws UpdateException
      */
-    public void update(PublishedService service) throws UpdateException, ServerPolicyException {
+    public void update(PublishedService service) throws UpdateException {
         Long key = service.getOid();
         if (services.get(key) == null) {
             throw new UpdateException("Record missing, service oid= " + service.getOid());
@@ -116,7 +116,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         try {
             serviceCache.removeFromCache(oldService);
             serviceCache.cache(service);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 

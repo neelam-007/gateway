@@ -18,16 +18,7 @@ import java.util.Collection;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public interface ServiceManager extends EntityManager<PublishedService> {
-    /**
-     * Retreive the actual PublishedService object from it's oid.
-     *
-     * @param oid
-     * @return
-     * @throws FindException
-     */
-    PublishedService findByPrimaryKey(long oid) throws FindException;
-
+public interface ServiceManager extends EntityManager<PublishedService, EntityHeader> {
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.
@@ -39,16 +30,6 @@ public interface ServiceManager extends EntityManager<PublishedService> {
     String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
 
     /**
-     * saves a published service along with it's policy assertions
-     *
-     * @param service
-     * @return
-     * @throws SaveException
-     * @throws PolicyAssertionException if a server assertion constructor threw an exception
-     */
-    long save(PublishedService service) throws SaveException, PolicyAssertionException;
-
-    /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
      * either way and the oid will dictate whether the object should be saved
@@ -58,7 +39,7 @@ public interface ServiceManager extends EntityManager<PublishedService> {
      * @throws UpdateException
      * @throws PolicyAssertionException if a server assertion constructor threw an exception
      */
-    void update(PublishedService service) throws UpdateException, VersionException, PolicyAssertionException;
+    void update(PublishedService service) throws UpdateException, VersionException;
 
     /**
      * deletes the service

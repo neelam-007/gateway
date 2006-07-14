@@ -52,40 +52,38 @@ public interface UserManager {
     void update( User user ) throws UpdateException, ObjectNotFoundException;
 
     /**
-     * Saves a new user and replaces its group memberships based on a {@link Set} of {@link EntityHeader}s pointing to {@link Group}s.
+     * Saves a new user and replaces its group memberships based on a {@link Set} of {@link IdentityHeader}s pointing to {@link Group}s.
      */
-    String save( User user, Set<EntityHeader> groupHeaders ) throws SaveException;
+    String save( User user, Set<IdentityHeader> groupHeaders ) throws SaveException;
 
     /**
-     * Updates an existing user and replaces its group memberships based on a {@link Set} of {@link EntityHeader}s pointing to {@link Group}s.
+     * Updates an existing user and replaces its group memberships based on a {@link Set} of {@link IdentityHeader}s pointing to {@link Group}s.
      * @param user
      * @param groupHeaders
      * @throws UpdateException
      * @throws ObjectNotFoundException
      */
-    void update( User user, Set<EntityHeader> groupHeaders ) throws UpdateException, ObjectNotFoundException;
+    void update( User user, Set<IdentityHeader> groupHeaders ) throws UpdateException, ObjectNotFoundException;
 
     /**
      * Finds users whose name or login matches the specified pattern.
      */
-    Collection<EntityHeader> search(String searchString) throws FindException;
+    Collection<IdentityHeader> search(String searchString) throws FindException;
 
     /**
-     * Creates an {@link EntityHeader} pointing to the specified {@link User}.
+     * Creates an {@link IdentityHeader} pointing to the specified {@link User}.
      */
-    EntityHeader userToHeader(User user);
+    IdentityHeader userToHeader(User user);
 
     /**
-     * Creates a fake {@link User} containing any relevant fields from the provided {@link EntityHeader}.
+     * Creates a fake {@link User} containing any relevant fields from the provided {@link IdentityHeader}.
      */
-    User headerToUser(EntityHeader header);
+    User headerToUser(IdentityHeader header);
 
     /**
      * @return the {@link Class} that entities managed by this manager belong to.
      */
     Class getImpClass();
 
-    Collection<EntityHeader> findAllHeaders() throws FindException;
-
-    Collection<User> findAll() throws FindException;
+    Collection<IdentityHeader> findAllHeaders() throws FindException;
 }

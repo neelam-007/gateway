@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * A Role groups zero or more {@link Permission}s so they can be assigned as a whole
- * to individual identities using {@link IdentityRoleAssignment}s.  Roles do not point back to
+ * to individual users using {@link UserRoleAssignment}s.  Roles do not point back to
  * identities, because:
  * <ul>
  * <li>They can be shared by multiple identites;
@@ -20,6 +20,7 @@ import java.util.Set;
  */
 public class Role extends NamedEntityImp {
     private Set<Permission> permissions = new HashSet<Permission>();
+    private Set<UserRoleAssignment> userAssignments = new HashSet<UserRoleAssignment>();
 
     public Set<Permission> getPermissions() {
         return permissions;
@@ -29,7 +30,15 @@ public class Role extends NamedEntityImp {
         this.permissions = permissions;
     }
 
+    public Set<UserRoleAssignment> getUserAssignments() {
+        return userAssignments;
+    }
+
+    protected void setUserAssignments(Set<UserRoleAssignment> userAssignments) {
+        this.userAssignments = userAssignments;
+    }
+
     public String toString() {
-        return "<role id=\"" + getOid() + "\" name=\"" + getName() + "\" permissions=\"" + getPermissions() + "\"/>";
+        return _name;
     }
 }

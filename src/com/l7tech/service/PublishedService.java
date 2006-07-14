@@ -21,8 +21,8 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Logger;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -129,7 +129,7 @@ public class PublishedService extends NamedEntityImp {
      * get base URI
      *
      */
-     public String getBaseURI() {
+    public String getBaseURI() {
          if (_wsdlUrl == null) return null;
          return Wsdl.extractBaseURI(_wsdlUrl);
     }
@@ -159,8 +159,7 @@ public class PublishedService extends NamedEntityImp {
      */
     public synchronized Port wsdlPort() throws WSDLException {
         if (_wsdlPort == null) {
-            Port soapPort = parsedWsdl().getSoapPort();
-            _wsdlPort = soapPort;
+            _wsdlPort = parsedWsdl().getSoapPort();
         }
 
         return _wsdlPort;
@@ -230,7 +229,7 @@ public class PublishedService extends NamedEntityImp {
      *
      * @param objToCopy
      */
-    public void copyFrom(PublishedService objToCopy) throws MalformedURLException, IOException {
+    public void copyFrom(PublishedService objToCopy) throws IOException {
         setName(objToCopy.getName());
         setPolicyXml(objToCopy.getPolicyXml());
         setWsdlUrl(objToCopy.getWsdlUrl());
@@ -344,7 +343,7 @@ public class PublishedService extends NamedEntityImp {
      *
      * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
      */
-    public Set getHttpMethods() {
+    public Set<String> getHttpMethods() {
         if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
         if (httpMethods == null) httpMethods = createSetFromMethods(httpMethodNames);
         return Collections.unmodifiableSet(httpMethods);
@@ -356,11 +355,10 @@ public class PublishedService extends NamedEntityImp {
      *
      * @param set a set of Strings such as "GET", "POST", "PUT".  Will be converted to all upper-case.
      */
-    public void setHttpMethods(Set set) {
-        httpMethods = new HashSet();
+    public void setHttpMethods(Set<String> set) {
+        httpMethods = new HashSet<String>();
         if (set != null) {
-            for (Iterator i = set.iterator(); i.hasNext();) {
-                String s = (String)i.next();
+            for (String s : set) {
                 httpMethods.add(s.trim().toUpperCase());
             }
         }
@@ -429,7 +427,7 @@ public class PublishedService extends NamedEntityImp {
     private transient Port _wsdlPort;
     private transient URL _serviceUrl;
     private transient Assertion _rootAssertion;
-    private transient Set httpMethods; // invariants: never null, always in sync with httpMethodNames
+    private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
 
     /**
@@ -438,8 +436,8 @@ public class PublishedService extends NamedEntityImp {
      * @param methods  the methods to include in the set, ie "GET,PUT,POST".  Must not be null but may be empty.
      * @return a Set containing the uppercased method names.  May be empty but never null.
      */
-    private static Set createSetFromMethods(String methods) {
-        Set s = new HashSet();
+    private static Set<String> createSetFromMethods(String methods) {
+        Set<String> s = new HashSet<String>();
         addMethodsToSet(s, methods);
         return s;
     }
@@ -451,7 +449,7 @@ public class PublishedService extends NamedEntityImp {
      * @param methods a comma-separated list of HTTP method names.  Will be converted to upper case.  May
      *                not be null or empty.
      */
-    private static void addMethodsToSet(Set set, String methods) {
+    private static void addMethodsToSet(Set<String> set, String methods) {
         set.addAll(Arrays.asList(SPLIT_COMMAS.split(methods.trim().toUpperCase())));
     }
 

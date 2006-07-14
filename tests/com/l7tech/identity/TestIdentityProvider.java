@@ -45,6 +45,14 @@ public class TestIdentityProvider implements IdentityProvider {
 
 
     private static class TestEntityManager implements EntityManager {
+        public Entity findByPrimaryKey(long oid) throws FindException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        public long save(Entity entity) throws SaveException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
         public Collection findAllHeaders() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
@@ -66,6 +74,10 @@ public class TestIdentityProvider implements IdentityProvider {
         }
 
         public Map findVersionMap() throws FindException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        public void delete(Entity entity) throws DeleteException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -284,11 +296,11 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public EntityHeader userToHeader(User user) {
+        public IdentityHeader userToHeader(User user) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public User headerToUser(EntityHeader header) {
+        public User headerToUser(IdentityHeader header) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 

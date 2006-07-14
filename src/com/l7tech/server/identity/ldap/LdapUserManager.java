@@ -66,27 +66,27 @@ public class LdapUserManager implements UserManager {
 
             UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
             Attribute objectclasses = attributes.get("objectclass");
-            for (int i = 0; i < userTypes.length; i++) {
-                String userclass = userTypes[i].getObjClass();
+            for (UserMappingConfig userType : userTypes) {
+                String userclass = userType.getObjClass();
                 if (LdapIdentityProvider.attrContainsCaseIndependent(objectclasses, userclass)) {
                     LdapUser out = new LdapUser();
                     out.setProviderId(ldapIdentityProviderConfig.getOid());
                     out.setDn(dn);
                     out.setAttributes(attributes);
-                    Object tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getEmailNameAttrName());
+                    Object tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userType.getEmailNameAttrName());
                     if (tmp != null) out.setEmail(tmp.toString());
-                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getFirstNameAttrName());
+                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userType.getFirstNameAttrName());
                     if (tmp != null) out.setFirstName(tmp.toString());
-                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getLastNameAttrName());
+                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userType.getLastNameAttrName());
                     if (tmp != null) out.setLastName(tmp.toString());
-                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getLoginAttrName());
+                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userType.getLoginAttrName());
                     if (tmp != null) out.setLogin(tmp.toString());
-                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getNameAttrName());
+                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userType.getNameAttrName());
                     if (tmp != null) out.setCn(tmp.toString());
-                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getPasswdAttrName());
+                    tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userType.getPasswdAttrName());
                     // todo, something about the passwd type
                     if (tmp != null) {
-                        byte[] tmp2 = (byte[])tmp;
+                        byte[] tmp2 = (byte[]) tmp;
                         out.setPassword(new String(tmp2));
                     }
                     return out;
@@ -122,9 +122,9 @@ public class LdapUserManager implements UserManager {
             StringBuffer filter = new StringBuffer("(|");
             UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
 
-            for (int i = 0; i < userTypes.length; i++) {
+            for (UserMappingConfig userType : userTypes) {
                 filter.append("(");
-                filter.append(userTypes[i].getLoginAttrName());
+                filter.append(userType.getLoginAttrName());
                 filter.append("=");
                 filter.append(login);
                 filter.append(")");
@@ -133,7 +133,7 @@ public class LdapUserManager implements UserManager {
 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            NamingEnumeration answer = null;
+            NamingEnumeration answer;
             answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter.toString(), sc);
 
             String dn = null;
@@ -217,26 +217,26 @@ public class LdapUserManager implements UserManager {
     /**
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.USER}, "*");
      */
-    public Collection findAllHeaders() throws FindException {
+    public Collection<IdentityHeader> findAllHeaders() throws FindException {
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
     /**
      * throws UnsupportedOperationException
      */
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    public Collection search(String searchString) throws FindException {
+    public Collection<IdentityHeader> search(String searchString) throws FindException {
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
-    public EntityHeader userToHeader(User user) {
-        return new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), user.getName());
+    public IdentityHeader userToHeader(User user) {
+        return new IdentityHeader(user.getProviderId(), user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), user.getName());
     }
 
-    public User headerToUser(EntityHeader header) {
+    public User headerToUser(IdentityHeader header) {
         LdapUser user = new LdapUser();
         user.setProviderId(this.identityProvider.getConfig().getOid());
         user.setDn(header.getStrId());
@@ -247,26 +247,10 @@ public class LdapUserManager implements UserManager {
     /**
      * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
      */
-    public Collection findAll() throws FindException {
-        Collection headers = findAllHeaders();
-        Collection output = new ArrayList();
-        Iterator i = headers.iterator();
-        while (i.hasNext()) {
-            EntityHeader header = (EntityHeader)i.next();
-            output.add(findByPrimaryKey(header.getStrId()));
-        }
-        return output;
-    }
-
-    /**
-     * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
-     */
     public Collection findAll(int offset, int windowSize) throws FindException {
-        Collection headers = findAllHeaders(offset, windowSize);
-        Collection output = new ArrayList();
-        Iterator i = headers.iterator();
-        while (i.hasNext()) {
-            EntityHeader header = (EntityHeader)i.next();
+        Collection<IdentityHeader> headers = findAllHeaders(offset, windowSize);
+        Collection<User> output = new ArrayList<User>();
+        for (IdentityHeader header : headers) {
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
@@ -310,7 +294,7 @@ public class LdapUserManager implements UserManager {
             env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT);
             env.lock();
 
-            DirContext userCtx = null;
+            DirContext userCtx;
             try {
                 userCtx = new InitialDirContext(env);
                 // Close the context when we're done
@@ -320,7 +304,6 @@ public class LdapUserManager implements UserManager {
             } catch (CommunicationException e) {
                 logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
                 ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                continue;
             } catch (AuthenticationException e) {
                 // when you get bad credentials
                 logger.info("User failed to authenticate: " + dn + " in provider " + ldapIdentityProviderConfig.getName());

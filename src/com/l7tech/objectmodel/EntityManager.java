@@ -4,20 +4,25 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
+ * ET is the Entity type; HT is the EntityHeader type.
  * @author alex
  */
-public interface EntityManager<ET extends Entity> {
+public interface EntityManager<ET extends Entity, HT extends EntityHeader> {
+    ET findByPrimaryKey(long oid) throws FindException;
+
+    long save(ET entity) throws SaveException;
+
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection<EntityHeader> findAllHeaders() throws FindException;
+    public Collection<HT> findAllHeaders() throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection<EntityHeader> findAllHeaders( int offset, int windowSize ) throws FindException;
+    public Collection<HT> findAllHeaders( int offset, int windowSize ) throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>Entity</code> objects for all instances of the entity class corresponding to this Manager.
@@ -34,6 +39,8 @@ public interface EntityManager<ET extends Entity> {
     Integer getVersion( long oid ) throws FindException;
 
     Map<Long, Integer> findVersionMap() throws FindException;
+
+    void delete(ET entity) throws DeleteException;
 
     /**
      * Returns the {@link Entity} with the specified OID. If the entity's version was last checked more than

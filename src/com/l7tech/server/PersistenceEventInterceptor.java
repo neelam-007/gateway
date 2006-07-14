@@ -10,6 +10,10 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.ScopePredicate;
+import com.l7tech.common.security.rbac.ObjectIdentityPredicate;
+import com.l7tech.common.security.rbac.AttributePredicate;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.Entity;
@@ -54,6 +58,11 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(SystemAuditRecord.class.getName());
         ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());
         ignoredClassNames.add(AuditDetail.class.getName());
+        
+        ignoredClassNames.add(Permission.class.getName());
+        ignoredClassNames.add(ScopePredicate.class.getName());
+        ignoredClassNames.add(ObjectIdentityPredicate.class.getName());
+        ignoredClassNames.add(AttributePredicate.class.getName());
     }
 
     private final Set ignoredClassNames;

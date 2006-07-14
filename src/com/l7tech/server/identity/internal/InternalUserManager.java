@@ -34,12 +34,12 @@ public class InternalUserManager extends PersistentUserManager {
         return "internal_user";
     }
 
-    public EntityHeader userToHeader(User user) {
+    public IdentityHeader userToHeader(User user) {
         InternalUser imp = (InternalUser)cast(user);
-        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
+        return new IdentityHeader(imp.getProviderId(), imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
     }
 
-    public User headerToUser(EntityHeader header) {
+    public User headerToUser(IdentityHeader header) {
         InternalUser iu = new InternalUser();
         iu.setProviderId(getProviderOid());
         iu.setOid(header.getOid());

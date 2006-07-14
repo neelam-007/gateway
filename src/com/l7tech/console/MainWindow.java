@@ -927,7 +927,7 @@ public class MainWindow extends JFrame {
         if (findAction != null) return findAction;
 
         Options options = new Options();
-        options.enableDeleteAction();
+        options.setEnableDeleteAction(true);
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         findAction = new FindIdentityAction(options);

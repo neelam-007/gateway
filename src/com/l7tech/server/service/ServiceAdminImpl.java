@@ -34,9 +34,7 @@ import java.net.*;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
-import java.util.Properties;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,7 +89,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         }
     }
 
-    public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
+    public String resolveWsdlTarget(String url) throws IOException {
         try {
             checkLicense();
             URL urltarget = new URL(url);
@@ -115,14 +113,15 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 state.setAuthenticationPreemptive(true);
                 state.setCredentials(null, null, new UsernamePasswordCredentials(login, passwd));
             }
+
             HostConfiguration hconf = getHostConfigurationWithTrustManager(urltarget);
-            int ret = -1;
+            int ret;
             if (hconf != null) {
                 ret = client.executeMethod(hconf, get);
             } else {
                 ret = client.executeMethod(get);
             }
-            byte[] body = null;
+            byte[] body;
             if (ret == 200) {
                 Header contentTypeHeader = get.getResponseHeader(
                         com.l7tech.common.http.HttpConstants.HEADER_CONTENT_TYPE);
@@ -172,13 +171,13 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
-            Collection res = serviceManager.findAllHeaders();
+            Collection<EntityHeader> res = serviceManager.findAllHeaders();
             return collectionToHeaderArray(res);
     }
 
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws RemoteException, FindException {
-            Collection res = serviceManager.findAllHeaders(offset, windowSize);
+            Collection<EntityHeader> res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
     }
 
@@ -208,7 +207,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
             throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
             accessManager.enforceAdminRole();
             checkLicense();
-            long oid = PublishedService.DEFAULT_OID;
+            long oid;
 
             if (service.getOid() > 0) {
                 // UPDATING EXISTING SERVICE
@@ -224,7 +223,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
-        PublishedService service = null;
+        PublishedService service;
         try {
             long oid = toLong(serviceID);
             accessManager.enforceAdminRole();
@@ -241,14 +240,13 @@ public class ServiceAdminImpl implements ServiceAdmin {
     // PRIVATES
     // ************************************************
 
-    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
+    private EntityHeader[] collectionToHeaderArray(Collection<EntityHeader> input) throws RemoteException {
         if (input == null) return new EntityHeader[0];
         EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
-        java.util.Iterator i = input.iterator();
-        while (i.hasNext()) {
+        for (EntityHeader in : input) {
             try {
-                output[count] = (EntityHeader)i.next();
+                output[count] = in;
             } catch (ClassCastException e) {
                 logger.log(Level.SEVERE, null, e);
                 throw new RemoteException("Collection contained something other than a EntityHeader", e);
@@ -269,22 +267,18 @@ public class ServiceAdminImpl implements ServiceAdmin {
         // get all UDDI Registry URLs
         int uddiNumber = 1;
         String url;
-        Vector urlList = new Vector();
+        List<String> urlList = new ArrayList<String>();
         do {
             url = uddiProps.getProperty(UddiAgent.PROP_INQUIRY_URLS + "." + uddiNumber++);
-            if(url != null) {
-                urlList.add(url);
-            }
-
+            if (url != null) urlList.add(url);
         } while (url != null);
 
         String[] urls = new String[urlList.size()];
         if(urlList.size() > 0) {
             for (int i = 0; i < urlList.size(); i++) {
-                String s = (String) urlList.elementAt(i);
-                urls[i] = s;
+                urls[i] = urlList.get(i);
             }
-        } 
+        }
         return urls;
     }
 
@@ -345,23 +339,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
         sampleMessageManager.delete(message);
     }
 
-    private int getInt(Object o) {
-        if (o == null)
-            return 0;
-        if (o instanceof Integer)
-            return ((Integer)o).intValue();
-        else if (o instanceof Long)
-            return (int)((Long)o).longValue();
-        else if (o instanceof String) {
-            try {
-                return Integer.parseInt((String)o);
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-        return 0;
-    }
-
 
     /**
      * Parse the String service ID to long (database format). Throws runtime exc
@@ -372,7 +349,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
      * @throws NumberFormatException on parse error
      */
     private long toLong(String serviceID)
-      throws IllegalArgumentException, NumberFormatException {
+      throws IllegalArgumentException {
         if (serviceID == null) {
                 throw new IllegalArgumentException();
             }
@@ -412,15 +389,15 @@ public class ServiceAdminImpl implements ServiceAdmin {
             final int port = url.getPort() == -1 ? 443 : url.getPort();
             hconf = new HostConfiguration();
             Protocol protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
-                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
                 }
 
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(host, port, clientAddress, clientPort);
                 }
 
-                public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                public Socket createSocket(String host, int port) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(host, port);
                 }
             }, port);

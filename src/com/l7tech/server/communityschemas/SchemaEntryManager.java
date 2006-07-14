@@ -13,7 +13,7 @@ import java.util.Collection;
 /**
  * @author mike
  */
-public interface SchemaEntryManager extends EntityManager<SchemaEntry> {
+public interface SchemaEntryManager extends EntityManager<SchemaEntry, EntityHeader> {
     Collection<SchemaEntry> findByTNS(String tns) throws FindException;
 
     void delete(SchemaEntry existingSchema) throws DeleteException;

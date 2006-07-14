@@ -24,6 +24,7 @@ public class EntityType implements Serializable {
     public static final EntityType ALERT_ACTION = new EntityType(9);
     public static final EntityType SAMPLE_MESSAGE = new EntityType(10);
     public static final EntityType MAXED_OUT_SEARCH_RESULT = new EntityType(11);
+    public static final EntityType RBAC_ROLE = new EntityType(12);
     public static final EntityType UNDEFINED = new EntityType(-1);
 
     private static final long serialVersionUID = -5485680679515491927L;
@@ -108,6 +109,8 @@ public class EntityType implements Serializable {
                 return "SAMPLE_MESSAGE";
             case 11:
                 return "MAXED_OUT_SEARCH_RESULT";
+            case 12:
+                return "RBAC_ROLE";
             default:
                 return "?";
         }
@@ -144,6 +147,8 @@ public class EntityType implements Serializable {
                 return SAMPLE_MESSAGE;
             case 11:
                 return MAXED_OUT_SEARCH_RESULT;
+            case 12:
+                return RBAC_ROLE;
             default:
                 return UNDEFINED;
         }

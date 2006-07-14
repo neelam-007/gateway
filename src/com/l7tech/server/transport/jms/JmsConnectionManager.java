@@ -106,17 +106,6 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
         }
     }
 
-    /**
-     * Overridden to take care of dependent objects
-     *
-     * @param oid
-     * @throws DeleteException
-     * @throws FindException
-     */
-    public void delete(long oid) throws DeleteException, FindException {
-        delete(findConnectionByPrimaryKey(oid));
-    }
-
     public Class getImpClass() {
         return JmsConnection.class;
     }

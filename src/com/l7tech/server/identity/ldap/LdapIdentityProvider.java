@@ -12,10 +12,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderComparator;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -188,7 +185,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
             KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
 
-            Collection headers = null;
+            Collection<IdentityHeader> headers;
             String upn = ticket.getClientPrincipalName();
             try {
                 headers = search(true, false, getKerberosLdapAttributeMapping(), upn);
@@ -196,8 +193,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                     throw new AuthenticationException("Found multiple LDAP users with userPrincipalName '" + upn + "'.");
                 }
                 else if (!headers.isEmpty()){
-                    for (Iterator i = headers.iterator(); i.hasNext();) {
-                        EntityHeader header = (EntityHeader) i.next();
+                    for (IdentityHeader header : headers) {
                         if (header.getType() == EntityType.USER) {
                             realUser = (LdapUser) userManager.findByPrimaryKey(header.getStrId());
                         }
@@ -279,7 +275,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
      * @param searchString the search string for the users and group names, use "*" for all
      * @return a collection containing EntityHeader objects
      */
-    public Collection search(EntityType[] types, String searchString) throws FindException {
+    public Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
         if (types == null || types.length < 1) {
             throw new IllegalArgumentException("must pass at least one type");
         }
@@ -287,10 +283,10 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         boolean wantUsers = false;
         boolean wantGroups = false;
 
-        for (int i = 0; i < types.length; i++) {
-            if (types[i] == EntityType.USER)
+        for (EntityType type : types) {
+            if (type == EntityType.USER)
                 wantUsers = true;
-            else if (types[i] == EntityType.GROUP) wantGroups = true;
+            else if (type == EntityType.GROUP) wantGroups = true;
         }
         if (!wantUsers && !wantGroups) {
             throw new IllegalArgumentException("types must contain users and or groups");
@@ -313,14 +309,14 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
 
         // no group mapping is now allowed
         if (filter == null) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         return doSearch(filter);
     }
 
-    private Collection doSearch(String filter) {
-        Collection output = new TreeSet(new EntityHeaderComparator());
+    private Collection<IdentityHeader> doSearch(String filter) {
+        Collection<IdentityHeader> output = new TreeSet<IdentityHeader>(new EntityHeaderComparator());
         DirContext context = null;
         NamingEnumeration answer = null;
         try {
@@ -335,7 +331,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 SearchResult sr = (SearchResult)answer.next();
                 // set the dn (unique id)
                 String dn = sr.getName() + "," + config.getSearchBase();
-                EntityHeader header = searchResultToHeader(sr, dn);
+                IdentityHeader header = searchResultToHeader(sr, dn);
                 // if we successfully constructed a header, add it to result list
                 if (header != null)
                     output.add(header);
@@ -349,7 +345,8 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                                    "EntityType.MAXED_OUT_SEARCH_RESULT to the results '" +
                                    e.getMessage() + "'");
 
-            EntityHeader maxExceeded = new EntityHeader("noid",
+            IdentityHeader maxExceeded = new IdentityHeader(config.getOid(),
+                                                        "noid",
                                                         EntityType.MAXED_OUT_SEARCH_RESULT,
                                                         "Search criterion too wide",
                                                         "This search yields too many entities. " +
@@ -378,34 +375,34 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         return output;
     }
 
-    public Collection search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
+    public Collection<IdentityHeader> search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
         if (mapping instanceof LdapAttributeMapping) {
             LdapAttributeMapping lam = (LdapAttributeMapping) mapping;
             String attName = lam.getAttributeName();
 
             if (!(getusers || getgroups)) {
                 logger.info("Nothing to search for - specified EntityType not supported by this IdentityMapping");
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             }
 
             String userFilter = null;
             String groupFilter = null;
             if (getusers) {
-                ArrayList terms = new ArrayList();
+                ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
                 for (int i = 0; i < config.getUserMappings().length; i++) {
                     UserMappingConfig userMappingConfig = config.getUserMappings()[i];
                     terms.add(new LdapSearchTerm(userMappingConfig.getObjClass(), attName, attValue.toString()));
                 }
-                userFilter = makeSearchFilter((LdapSearchTerm[])terms.toArray(new LdapSearchTerm[0]));
+                userFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
             }
 
             if (getusers) {
-                ArrayList terms = new ArrayList();
+                ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
                 for (int i = 0; i < config.getGroupMappings().length; i++) {
                     GroupMappingConfig groupMappingConfig = config.getGroupMappings()[i];
                     terms.add(new LdapSearchTerm(groupMappingConfig.getObjClass(), attName, attValue.toString()));
                 }
-                groupFilter = makeSearchFilter((LdapSearchTerm[])terms.toArray(new LdapSearchTerm[0]));
+                groupFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
             }
 
             String filter;
@@ -434,15 +431,14 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         if (config == null) throw new IllegalStateException("this provider needs a config!");
 
         UserMappingConfig[] userTypes = config.getUserMappings();
-        ArrayList terms = new ArrayList();
+        ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
 
         // Find all known classes of user, by both name and login
-        for (int i = 0; i < userTypes.length; i++) {
-            UserMappingConfig userType = userTypes[i];
+        for (UserMappingConfig userType : userTypes) {
             terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getLoginAttrName(), param));
             terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getNameAttrName(), param));
         }
-        return makeSearchFilter(((LdapSearchTerm[])terms.toArray(new LdapSearchTerm[0])));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
     }
 
     private static class LdapSearchTerm {
@@ -461,10 +457,10 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         StringBuffer output = new StringBuffer();
         if (terms.length > 1) output.append("(|");
 
-        for (int i = 0; i < terms.length; i++) {
+        for (LdapSearchTerm term : terms) {
             output.append("(&");
-            output.append(  "(objectClass=").append(terms[i].objectclass).append(")");
-            output.append(  "(").append(terms[i].searchAttribute).append("=").append(terms[i].searchValue).append(")");
+            output.append("(objectClass=").append(term.objectclass).append(")");
+            output.append("(").append(term.searchAttribute).append("=").append(term.searchValue).append(")");
             output.append(")");
         }
 
@@ -482,13 +478,12 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         GroupMappingConfig[] groupTypes = config.getGroupMappings();
         if (groupTypes == null || groupTypes.length <= 0) return null;
 
-        ArrayList terms = new ArrayList();
-        for (int i = 0; i < groupTypes.length; i++) {
-            GroupMappingConfig groupType = groupTypes[i];
+        ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
+        for (GroupMappingConfig groupType : groupTypes) {
             terms.add(new LdapSearchTerm(groupType.getObjClass(), groupType.getNameAttrName(), param));
         }
 
-        return makeSearchFilter((LdapSearchTerm[])terms.toArray(new LdapSearchTerm[0]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
     }
 
     public DirContext getBrowseContext() throws NamingException {
@@ -574,27 +569,27 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         // check user mappings. make sure they work
         boolean atLeastOneUser = false;
         UserMappingConfig[] userTypes = config.getUserMappings();
-        Collection offensiveUserMappings = new ArrayList();
-        Collection userMappingsWithoutLoginAttribute = new ArrayList();
-        for (int i = 0; i < userTypes.length; i++) {
-            if (userTypes[i].getLoginAttrName() == null || userTypes[i].getLoginAttrName().length() < 1) {
-                userMappingsWithoutLoginAttribute.add(userTypes[i]);
+        Collection<UserMappingConfig> offensiveUserMappings = new ArrayList<UserMappingConfig>();
+        Collection<UserMappingConfig> userMappingsWithoutLoginAttribute = new ArrayList<UserMappingConfig>();
+        for (UserMappingConfig userType : userTypes) {
+            if (userType.getLoginAttrName() == null || userType.getLoginAttrName().length() < 1) {
+                userMappingsWithoutLoginAttribute.add(userType);
                 continue;
             }
             filter = "(|" +
-              "(&" +
-              "(objectClass=" + userTypes[i].getObjClass() + ")" +
-              "(" + userTypes[i].getLoginAttrName() + "=*)" +
-              ")" +
-              "(&" +
-              "(objectClass=" + userTypes[i].getObjClass() + ")" +
-              "(" + userTypes[i].getNameAttrName() + "=*)" +
-              ")" +
-              ")";
+                    "(&" +
+                    "(objectClass=" + userType.getObjClass() + ")" +
+                    "(" + userType.getLoginAttrName() + "=*)" +
+                    ")" +
+                    "(&" +
+                    "(objectClass=" + userType.getObjClass() + ")" +
+                    "(" + userType.getNameAttrName() + "=*)" +
+                    ")" +
+                    ")";
             try {
                 answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
-                    SearchResult sr = (SearchResult)answer.next();
+                    SearchResult sr = (SearchResult) answer.next();
                     // set the dn (unique id)
                     String dn = sr.getName() + "," + config.getSearchBase();
                     EntityHeader header = searchResultToHeader(sr, dn);
@@ -606,24 +601,24 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 }
                 answer.close();
             } catch (NamingException e) {
-                offensiveUserMappings.add(userTypes[i]);
-                logger.log(Level.FINE, "error testing user mapping" + userTypes[i].getObjClass(), e);
+                offensiveUserMappings.add(userType);
+                logger.log(Level.FINE, "error testing user mapping" + userType.getObjClass(), e);
             }
         }
 
         // check group mappings. make sure they work
         GroupMappingConfig[] groupTypes = config.getGroupMappings();
-        Collection offensiveGroupMappings = new ArrayList();
+        Collection<GroupMappingConfig> offensiveGroupMappings = new ArrayList<GroupMappingConfig>();
         boolean atLeastOneGroup = false;
-        for (int i = 0; i < groupTypes.length; i++) {
+        for (GroupMappingConfig groupType : groupTypes) {
             filter = "(&" +
-              "(objectClass=" + groupTypes[i].getObjClass() + ")" +
-              "(" + groupTypes[i].getNameAttrName() + "=*)" +
-              ")";
+                    "(objectClass=" + groupType.getObjClass() + ")" +
+                    "(" + groupType.getNameAttrName() + "=*)" +
+                    ")";
             try {
                 answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
-                    SearchResult sr = (SearchResult)answer.next();
+                    SearchResult sr = (SearchResult) answer.next();
                     // set the dn (unique id)
                     String dn = sr.getName() + "," + config.getSearchBase();
                     EntityHeader header = searchResultToHeader(sr, dn);
@@ -635,8 +630,8 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 }
                 answer.close();
             } catch (NamingException e) {
-                offensiveGroupMappings.add(groupTypes[i]);
-                logger.log(Level.FINE, "error testing group mapping" + groupTypes[i].getObjClass(), e);
+                offensiveGroupMappings.add(groupType);
+                logger.log(Level.FINE, "error testing group mapping" + groupType.getObjClass(), e);
             }
         }
         try {
@@ -651,8 +646,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         if (userMappingsWithoutLoginAttribute.size() > 0) {
             if (error.length() > 0) error.append('\n');
             error.append("The following user mapping(s) do not define login attribute.");
-            for (Iterator iterator = userMappingsWithoutLoginAttribute.iterator(); iterator.hasNext();) {
-                UserMappingConfig userMappingConfig = (UserMappingConfig)iterator.next();
+            for (UserMappingConfig userMappingConfig : userMappingsWithoutLoginAttribute) {
                 error.append(" ").append(userMappingConfig.getObjClass());
             }
         }
@@ -660,13 +654,11 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         if (offensiveUserMappings.size() > 0 || offensiveGroupMappings.size() > 0) {
             if (error.length() > 0) error.append('\n');
             error.append("The following mappings caused errors:");
-            for (Iterator iterator = offensiveUserMappings.iterator(); iterator.hasNext();) {
-                UserMappingConfig userMappingConfig = (UserMappingConfig)iterator.next();
-                error.append(" User mapping ").append(userMappingConfig.getObjClass());
+            for (UserMappingConfig offensiveUserMapping : offensiveUserMappings) {
+                error.append(" User mapping ").append(offensiveUserMapping.getObjClass());
             }
-            for (Iterator iterator = offensiveGroupMappings.iterator(); iterator.hasNext();) {
-                GroupMappingConfig groupMappingConfig = (GroupMappingConfig)iterator.next();
-                error.append(" Group mapping ").append(groupMappingConfig.getObjClass());
+            for (GroupMappingConfig offensiveGroupMapping : offensiveGroupMappings) {
+                error.append(" Group mapping ").append(offensiveGroupMapping.getObjClass());
 
             }
         }
@@ -816,14 +808,14 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
      * @return the EntityHeader for the dn or null if the object class is not supported or if the entity
      *         should be ignored (perhaps disabled)
      */
-    EntityHeader searchResultToHeader(SearchResult sr, String dn) {
+    IdentityHeader searchResultToHeader(SearchResult sr, String dn) {
         Attributes atts = sr.getAttributes();
         // is it user or group ?
         Attribute objectclasses = atts.get("objectclass");
         // check if it's a user
         UserMappingConfig[] userTypes = config.getUserMappings();
-        for (int i = 0; i < userTypes.length; i++) {
-            String userclass = userTypes[i].getObjClass();
+        for (UserMappingConfig userType : userTypes) {
+            String userclass = userType.getObjClass();
             if (attrContainsCaseIndependent(objectclasses, userclass)) {
                 if (!isValidEntryBasedOnUserAccountControlAttribute(atts)) {
                     logger.fine("Account " + dn + " is disabled or blocked.");
@@ -835,7 +827,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 Object tmp;
                 String login = null;
                 try {
-                    tmp = extractOneAttributeValue(atts, userTypes[i].getLoginAttrName());
+                    tmp = extractOneAttributeValue(atts, userType.getLoginAttrName());
                 } catch (NamingException e) {
                     logger.log(Level.WARNING, "cannot extract user login", e);
                     tmp = null;
@@ -855,7 +847,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                     description = tmp.toString();
                 }
                 if (login != null) {
-                    return new EntityHeader(dn, EntityType.USER, login, description);
+                    return new IdentityHeader(config.getOid(), dn, EntityType.USER, login, description);
                 } else {
                     return null;
                 }
@@ -863,10 +855,10 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         }
         // check that it's a group
         GroupMappingConfig[] groupTypes = config.getGroupMappings();
-        for (int i = 0; i < groupTypes.length; i++)
-            if (attrContainsCaseIndependent(objectclasses, groupTypes[i].getObjClass())) {
+        for (GroupMappingConfig groupType : groupTypes)
+            if (attrContainsCaseIndependent(objectclasses, groupType.getObjClass())) {
                 String groupName = null;
-                Attribute valuesWereLookingFor = atts.get(groupTypes[i].getNameAttrName());
+                Attribute valuesWereLookingFor = atts.get(groupType.getNameAttrName());
                 if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
                     try {
                         groupName = valuesWereLookingFor.get(0).toString();
@@ -887,7 +879,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 if (tmp != null) {
                     description = tmp.toString();
                 }
-                return new EntityHeader(dn, EntityType.GROUP, groupName, description);
+                return new IdentityHeader(config.getOid(), dn, EntityType.GROUP, groupName, description);
             }
         return null;
     }

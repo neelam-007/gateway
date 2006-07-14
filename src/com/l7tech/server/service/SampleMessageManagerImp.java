@@ -12,13 +12,12 @@ import java.util.List;
 /**
  * Manages persistent instances of {@link SampleMessage}.
  */
-public class SampleMessageManagerImp extends HibernateEntityManager implements SampleMessageManager {
+public class SampleMessageManagerImp
+        extends HibernateEntityManager<SampleMessage, EntityHeader>
+        implements SampleMessageManager
+{
     private static final String PROP_SERVICE_OID = "serviceOid";
     private static final String PROP_OPERATION_NAME = "operationName";
-
-    public SampleMessage findByPrimaryKey(long oid) throws FindException {
-        return (SampleMessage)super.findByPrimaryKey(getImpClass(), oid);
-    }
 
     public EntityHeader[] findHeaders(long serviceOid, String operationName) throws FindException {
         try {
@@ -49,15 +48,6 @@ public class SampleMessageManagerImp extends HibernateEntityManager implements S
 
     }
 
-    public long save(SampleMessage sm) throws SaveException {
-        try {
-            Long o = (Long)getHibernateTemplate().save(sm);
-            return o.longValue();
-        } catch (DataAccessException e) {
-            throw new SaveException("Couldn't save SampleMessage", e);
-        }
-    }
-
     public void update(SampleMessage sm) throws UpdateException {
         try {
             SampleMessage original = findByPrimaryKey(sm.getOid());
@@ -70,14 +60,6 @@ public class SampleMessageManagerImp extends HibernateEntityManager implements S
             getHibernateTemplate().update(original);
         } catch (Exception e) {
             throw new UpdateException("Couldn't update SampleMessage", e);
-        }
-    }
-
-    public void delete(SampleMessage sm) throws DeleteException {
-        try {
-            getHibernateTemplate().delete(sm);
-        } catch (DataAccessException e) {
-            throw new DeleteException("Couldn't delete SampleMessage", e);
         }
     }
 

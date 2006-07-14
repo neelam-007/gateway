@@ -24,7 +24,7 @@ CREATE TABLE hibernate_unique_key (
 --
 
 
-INSERT INTO hibernate_unique_key VALUES (70);
+INSERT INTO hibernate_unique_key VALUES (0);
 
 --
 -- Table structure for table 'identity_provider'
@@ -578,5 +578,89 @@ CREATE TABLE service_metrics (
   INDEX i_sm_pstart (period_start),
   PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
 ) TYPE=InnoDB;
+
+--
+-- Table structure for table rbac_role
+--
+
+DROP TABLE IF EXISTS rbac_role;
+CREATE TABLE rbac_role (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(128) default NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY name (name)
+) TYPE=InnoDB;
+
+--
+-- Table structure for table rbac_assignment
+--
+
+DROP TABLE IF EXISTS rbac_assignment;
+CREATE TABLE rbac_assign_user (
+  objectid bigint(20) NOT NULL,
+  provider_oid bigint(20) NOT NULL,
+  role_oid bigint(20) NOT NULL,
+  user_id varchar(255) NOT NULL,
+  PRIMARY KEY  (objectid),
+  UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
+  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
+--
+-- Table structure for table rbac_permission
+--
+
+DROP TABLE IF EXISTS rbac_permission;
+CREATE TABLE rbac_permission (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  role_oid bigint(20) default NULL,
+  operation_type varchar(16) default NULL,
+  other_operation varchar(255) default NULL,
+  entity_type varchar(255) default NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
+--
+-- Table structure for table rbac_predicate
+--
+
+DROP TABLE IF EXISTS rbac_predicate;
+CREATE TABLE rbac_predicate (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  permission_oid bigint(20) default NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (permission_oid) REFERENCES rbac_permission (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
+--
+-- Table structure for table rbac_predicate_attribute
+--
+
+DROP TABLE IF EXISTS rbac_predicate_attribute;
+CREATE TABLE rbac_predicate_attribute (
+  objectid bigint(20) NOT NULL,
+  attribute varchar(255) default NULL,
+  value varchar(255) default NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
+--
+-- Table structure for table rbac_predicate_oid
+--
+
+DROP TABLE IF EXISTS rbac_predicate_oid;
+CREATE TABLE rbac_predicate_oid (
+  objectid bigint(20) NOT NULL,
+  entity_oid bigint(20) default NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
 
 SET FOREIGN_KEY_CHECKS = 1;

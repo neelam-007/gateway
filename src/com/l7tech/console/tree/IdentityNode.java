@@ -39,8 +39,8 @@ public class IdentityNode extends AbstractLeafPaletteNode {
     public Assertion[] asAssertions() {
         Frame f = TopComponents.getInstance().getMainWindow();
         Options options = new Options();
-        options.disableOpenProperties();
-        options.disposeOnSelect();
+        options.setDisableOpenProperties(true);
+        options.setDisposeOnSelect(true);
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         Utilities.centerOnScreen(fd);

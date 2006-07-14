@@ -380,6 +380,13 @@ public class Utilities {
         layeredPane.getActionMap().put("close-it", action);
     }
 
+    public static void doWithConfirmation(Component parent, String title, String message, Runnable runnable) {
+        int result = JOptionPane.showConfirmDialog(
+            parent, message, title, JOptionPane.YES_NO_CANCEL_OPTION);
+
+        if (result == JOptionPane.YES_OPTION) runnable.run();
+    }
+
     /**
      * Fully expand all possible paths in the specified tree.
      * The tree will be expanded as though the user had patiently clicked every "Expand branch" grapple from the

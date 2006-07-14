@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * Manages PublishedService instances.
  */
 public class ServiceManagerImp
-        extends HibernateEntityManager<PublishedService>
+        extends HibernateEntityManager<PublishedService, EntityHeader>
         implements ServiceManager, ApplicationContextAware
 {
     private ServiceCache serviceCache;
@@ -58,13 +58,9 @@ public class ServiceManagerImp
         throw new UnsupportedOperationException();
     }
 
-    public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return (PublishedService)findByPrimaryKey(getImpClass(), oid);
-    }
-
     public long save(PublishedService service) throws SaveException {
         // 1. record the service
-        long oid = ((Long)getHibernateTemplate().save(service)).longValue();
+        long oid = super.save(service);
         logger.info("Saved service #" + oid);
         service.setOid(oid);
         // 2. record resolution parameters
@@ -146,7 +142,6 @@ public class ServiceManagerImp
         getHibernateTemplate().update(original);
         logger.info("Updated service " + service.getName() + "  #" + service.getOid());
 
-
         // update cache after commit
         final long passedServiceId = service.getOid();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
@@ -174,7 +169,7 @@ public class ServiceManagerImp
     }
 
     public void delete(PublishedService service) throws DeleteException {
-        getHibernateTemplate().delete(service);
+        super.delete(service);
         resolutionManager.deleteResolutionParameters(service.getOid());
         logger.info("Deleted service " + service.getName() + " #" + service.getOid());
 

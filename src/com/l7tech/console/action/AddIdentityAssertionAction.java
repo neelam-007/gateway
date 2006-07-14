@@ -82,8 +82,8 @@ public class AddIdentityAssertionAction extends SecureAction {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 Options options = new Options();
-                options.disposeOnSelect();
-                options.disableOpenProperties();
+                options.setDisposeOnSelect(true);
+                options.setDisableOpenProperties(true);
                 FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
                 fd.pack();
                 Utilities.centerOnScreen(fd);

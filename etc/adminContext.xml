@@ -388,6 +388,16 @@
         </constructor-arg>
     </bean>
 
+    <!-- RBAC admin impl -->
+    <bean id="rbacAdmin" class="com.l7tech.server.security.rbac.RbacAdminImpl">
+        <constructor-arg>
+            <ref bean="roleManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
+    </bean>
+
     <!-- admin context servant - - >
     <bean id="adminContext" class="com.l7tech.admin.rmi.AdminContextImpl">
         <constructor-arg>

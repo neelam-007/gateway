@@ -47,7 +47,7 @@ public class IdentityProviderNode extends EntityHeaderNode {
         java.util.List list = new ArrayList();
         list.add(new IdentityProviderPropertiesAction(this));
         Options options = new Options();
-        options.enableDeleteAction();
+        options.setEnableDeleteAction(true);
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Object obj = getUserObject();
         if (obj instanceof EntityHeader) {

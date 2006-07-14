@@ -13,7 +13,11 @@ import java.util.Map;
  * @author emil
  * @version Feb 17, 2005
  */
-public class EntityManagerStub<ET extends Entity> implements EntityManager<ET> {
+public abstract class EntityManagerStub<ET extends Entity> implements EntityManager<ET, EntityHeader> {
+    public ET findByPrimaryKey(long oid) throws FindException {
+        return null;
+    }
+
     /**
          * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
          *

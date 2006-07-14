@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * @author mike
  */
 public class SchemaEntryManagerImpl
-        extends HibernateEntityManager<SchemaEntry>
+        extends HibernateEntityManager<SchemaEntry, EntityHeader>
         implements SchemaEntryManager, ApplicationListener
 {
     private static final Logger logger = Logger.getLogger(SchemaEntryManagerImpl.class.getName());
@@ -143,10 +143,8 @@ public class SchemaEntryManagerImpl
             invalidateCompiledSchema(newSchema.getOid());
         }
 
-        Long res = (Long) getHibernateTemplate().save(newSchema);
-        if (res == null) {
-            throw new SaveException("unexpected value returned from HibernateTemplate.save (null)");
-        }
+        long res = super.save(newSchema);
+
         try {
             compileAndCache(res, newSchema);
         } catch (IOException e) {
@@ -189,7 +187,7 @@ public class SchemaEntryManagerImpl
 
     public void delete(SchemaEntry existingSchema) throws DeleteException {
         try {
-            getHibernateTemplate().delete(existingSchema);
+            super.delete(existingSchema);
         } finally {
             invalidateCompiledSchema(existingSchema.getOid());
         }

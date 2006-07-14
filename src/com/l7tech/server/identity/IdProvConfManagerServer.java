@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Date: Jun 20, 2003
  */
 public class IdProvConfManagerServer
-    extends HibernateEntityManager<IdentityProviderConfig>
+    extends HibernateEntityManager<IdentityProviderConfig, EntityHeader>
     implements IdentityProviderConfigManager
 {
     private static final Logger logger = Logger.getLogger(IdProvConfManagerServer.class.getName());
@@ -32,7 +32,7 @@ public class IdProvConfManagerServer
         if (oid == INTERNALPROVIDER_SPECIAL_OID)
             return internalProvider.getConfig();
         else
-            return (IdentityProviderConfig)findByPrimaryKey(getImpClass(), oid);
+            return super.findByPrimaryKey(oid);
     }
 
     /**
@@ -56,23 +56,9 @@ public class IdProvConfManagerServer
             logger.warning("Attempt to save internal id provider");
             throw new SaveException("this type of config cannot be saved");
         }
-        /*if (!LdapConfigSettings.isValidConfigObject(identityProviderConfig)) {
-            // not the food additive
-            String msg = "This IdentityProviderConfig object does not meet the requirements for the IdentityProviderType.LDAP type.";
-            logger.warning("Attempt to save invalid ldap id provider config. " + msg);
-            throw new SaveException(msg);
-        }*/
-/*
-        if (!identityProviderConfig.type().equals(IdentityProviderType.LDAP) ||
-                !(identityProviderConfig instanceof LdapIdentityProviderConfig)) {
-            // not the food additive
-            String msg = "This IdentityProviderConfig object is not supported";
-            logger.warning("Attempt to save invalid ldap id provider config. " + msg);
-            throw new SaveException(msg);
-        }
-*/
 
         // first, check that there isn't an existing provider with same name
+        // TODO there's already a unique constraint, and this is prone to SQL injection attacks!
         try {
             List existingProvidersWithSameName =
               getHibernateTemplate().find("from " + getTableName() + " in class " + getImpClass().getName() +
@@ -88,12 +74,7 @@ public class IdProvConfManagerServer
               identityProviderConfig.getName(), e);
         }
 
-        // then, try to save it
-        try {
-            return ((Long)getHibernateTemplate().save(identityProviderConfig)).longValue();
-        } catch (DataAccessException se) {
-            throw new SaveException(se.toString(), se);
-        }
+        return super.save(identityProviderConfig);
     }
 
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
@@ -118,7 +99,7 @@ public class IdProvConfManagerServer
         }
         try {
             identityProviderFactory.dropProvider(identityProviderConfig);
-            getHibernateTemplate().delete(identityProviderConfig);
+            super.delete(identityProviderConfig);
         } catch (DataAccessException se) {
             throw new DeleteException(se.toString(), se);
         }

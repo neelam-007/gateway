@@ -11,7 +11,7 @@ import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
@@ -19,12 +19,15 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,20 +39,16 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
+public class AuditRecordManagerImpl
+        extends HibernateEntityManager<AuditRecord, EntityHeader>
+        implements AuditRecordManager, ApplicationContextAware
+{
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     //- PUBLIC
 
     public void setApplicationContext(ApplicationContext applicationContext) {
         if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
         this.applicationContext = applicationContext;
-    }
-
-    public AuditRecord findByPrimaryKey(long oid) throws FindException {
-        Object obj = findByPrimaryKey(AuditRecord.class, oid);
-        if (obj == null) return null;
-        if (obj instanceof AuditRecord) return (AuditRecord)obj;
-        throw new FindException("Expected to find '" + obj.getClass().getName() + "' but found '" + obj.getClass().getName() + "'");
     }
 
     public Collection find(AuditSearchCriteria criteria) throws FindException {
@@ -66,8 +65,9 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             Date fromTime = criteria.fromTime;
             Date toTime = criteria.toTime;
 
-            if (fromTime != null) query.add(Restrictions.ge(PROP_TIME, new Long(fromTime.getTime())));
-            if (toTime != null) query.add(Restrictions.le(PROP_TIME, new Long(toTime.getTime())));
+            // TODO For some dumb reason this yellow becomes a red in IDEA if I autobox it...
+            if (fromTime != null) query.add(Restrictions.ge(PROP_TIME, Long.valueOf(fromTime.getTime())));
+            if (toTime != null) query.add(Restrictions.le(PROP_TIME, Long.valueOf(toTime.getTime())));
 
             Level fromLevel = criteria.fromLevel;
             if (fromLevel == null) fromLevel = Level.FINEST;
@@ -78,9 +78,8 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
                 query.add(Restrictions.eq(PROP_LEVEL, fromLevel.getName()));
             } else {
                 if (fromLevel.intValue() > toLevel.intValue()) throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
-                Set levels = new HashSet();
-                for ( int i = 0; i < LEVELS_IN_ORDER.length; i++ ) {
-                    Level level = LEVELS_IN_ORDER[i];
+                Set<String> levels = new HashSet<String>();
+                for (Level level : LEVELS_IN_ORDER) {
                     if (level.intValue() >= fromLevel.intValue() && level.intValue() <= toLevel.intValue()) {
                         levels.add(level.getName());
                     }
@@ -88,28 +87,16 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
                 query.add(Restrictions.in(PROP_LEVEL, levels));
             }
 
+            // TODO For some dumb reason this yellow becomes a red in IDEA if I autobox it...
             // The semantics of these start & end parameters seem to be kinda backwards
-            if (criteria.startMessageNumber > 0) query.add(Restrictions.le(PROP_OID, new Long(criteria.startMessageNumber)));
-            if (criteria.endMessageNumber > 0) query.add(Restrictions.gt(PROP_OID, new Long(criteria.endMessageNumber)));
+            if (criteria.startMessageNumber > 0) query.add(Restrictions.le(PROP_OID, Long.valueOf(criteria.startMessageNumber)));
+            if (criteria.endMessageNumber > 0) query.add(Restrictions.gt(PROP_OID, Long.valueOf(criteria.endMessageNumber)));
 
             if (criteria.nodeId != null) query.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
 
             return query.list();
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
-        }
-    }
-
-    public long save(AuditRecord rec) throws SaveException {
-        try {
-            if(logger.isLoggable(Level.FINE)) logger.fine("Saving AuditRecord " + rec);
-            Object id = getSession().save(rec);
-            if (id instanceof Long)
-                return ((Long)id).longValue();
-            else
-                throw new SaveException("Primary key was " + id.getClass().getName() + ", expected Long");
-        } catch ( HibernateException e ) {
-            throw new SaveException("Couldn't save AuditRecord", e);
         }
     }
 
@@ -135,7 +122,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             deleteStmt.setLong(2, maxTime);
             int numDeleted = deleteStmt.executeUpdate();
             if(logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "Deleted {0} audit events.", Integer.valueOf(numDeleted));
+                logger.log(Level.INFO, "Deleted {0} audit events.", numDeleted);
             applicationContext.publishEvent(new AuditPurgeEvent(this, numDeleted));
         } catch (Exception e) {
             throw new DeleteException("Couldn't delete audit records", e);

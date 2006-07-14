@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
@@ -40,6 +41,7 @@ public class AdminContextImpl
     private final CustomAssertionsRegistrar customAssertionsRegistrar;
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final KerberosAdmin kerberosAdmin;
+    private final RbacAdmin rbacAdmin;
 
     public AdminContextImpl(IdentityAdmin identityAdmin,
                             AuditAdmin auditAdmin,
@@ -49,7 +51,8 @@ public class AdminContextImpl
                             CustomAssertionsRegistrar customAssertionsRegistrar,
                             ClusterStatusAdmin clusterStatusAdmin,
                             SchemaAdmin schemaAdmin,
-                            KerberosAdmin kerberosAdmin) {
+                            KerberosAdmin kerberosAdmin,
+                            RbacAdmin rbacAdmin) {
         this.identityAdmin = identityAdmin;
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
@@ -59,6 +62,7 @@ public class AdminContextImpl
         this.clusterStatusAdmin = clusterStatusAdmin;
         this.schemaAdmin = schemaAdmin;
         this.kerberosAdmin = kerberosAdmin;
+        this.rbacAdmin = rbacAdmin;
     }
 
     public String getVersion() {
@@ -113,6 +117,10 @@ public class AdminContextImpl
         return kerberosAdmin;
     }
 
+    public RbacAdmin getRbacAdmin() throws RemoteException, SecurityException {
+        return rbacAdmin;
+    }
+
     public void afterPropertiesSet() throws Exception {
         checkServices();
     }
@@ -143,6 +151,10 @@ public class AdminContextImpl
 
         if (kerberosAdmin == null) {
             throw new IllegalArgumentException("Kerberos Admin is required");
+        }
+
+        if (rbacAdmin == null) {
+            throw new IllegalArgumentException("RBAC Admin is required");
         }
     }
 }

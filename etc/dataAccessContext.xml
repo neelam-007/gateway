@@ -32,6 +32,7 @@
             <list>
                 <value>SSG.hbm.xml</value>
                 <value>audit.hbm.xml</value>
+                <value>rbac.hbm.xml</value>
             </list>
         </property>
         <property name="hibernateProperties">
@@ -95,6 +96,8 @@
                 <idref bean="clientCertManager"/>
                 <idref bean="auditRecordManager"/>
                 <idref bean="statusUpdateManager"/>
+                <idref bean="roleManager"/>
+                <idref bean="rbacAdmin"/>
                 <idref bean="serviceAdmin"/>
                 <idref bean="trustedCertAdmin"/>
                 <idref bean="auditAdmin"/>

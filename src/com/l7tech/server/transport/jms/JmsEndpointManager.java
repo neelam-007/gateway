@@ -19,13 +19,9 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsEndpointManager extends HibernateEntityManager {
+public class JmsEndpointManager extends HibernateEntityManager<JmsEndpoint, EntityHeader> {
     private static final Logger logger = Logger.getLogger(JmsEndpointManager.class.getName());
     
-    public JmsEndpoint findByPrimaryKey(long oid) throws FindException {
-        return (JmsEndpoint)findByPrimaryKey(JmsEndpoint.class, oid);
-    }
-
     public Collection findMessageSourceEndpoints() throws FindException {
         StringBuffer query = new StringBuffer("from endpoint in class ");
         query.append(JmsEndpoint.class.getName());
@@ -77,15 +73,6 @@ public class JmsEndpointManager extends HibernateEntityManager {
             return result.toArray(new EntityHeader[0]);
         } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
-        }
-    }
-
-    public long save(final JmsEndpoint endpoint) throws SaveException {
-        _logger.info("Saving JmsEndpoint " + endpoint);
-        try {
-            return ((Long)getHibernateTemplate().save(endpoint)).longValue();
-        } catch (DataAccessException e) {
-            throw new SaveException(e.toString(), e);
         }
     }
 

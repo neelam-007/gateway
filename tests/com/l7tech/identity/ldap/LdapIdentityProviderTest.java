@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.ldap.*;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.objectmodel.IdentityHeader;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
@@ -173,10 +174,10 @@ public class LdapIdentityProviderTest {
             System.out.println("NOT READY");
             return;
         }
-        Collection users = localProvider.getUserManager().findAll();
-        for (Iterator i = users.iterator(); i.hasNext();) {
-            LdapUser user = (LdapUser)i.next();
-            System.out.println("found user " + user);
+        Collection<IdentityHeader> users = localProvider.getUserManager().findAllHeaders();
+        for (Iterator<IdentityHeader> i = users.iterator(); i.hasNext();) {
+            IdentityHeader h = i.next();
+            System.out.println("found user " + h);
         }
     }
 

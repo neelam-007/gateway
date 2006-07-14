@@ -23,6 +23,7 @@ public class IHQL {
         Configuration config = new Configuration();
         config.addFile("etc/db/SSG.hbm.xml");
         config.addFile("etc/db/audit.hbm.xml");
+        config.addFile("etc/db/rbac.hbm.xml");
         this.sessionFactory = config.buildSessionFactory();
     }
 

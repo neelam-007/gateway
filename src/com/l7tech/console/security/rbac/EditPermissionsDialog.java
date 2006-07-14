@@ -1,6 +1,8 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -17,6 +19,7 @@ public class EditPermissionsDialog extends JDialog {
     private JComboBox operationSelection;
     private JTextField scopeField;
     private JButton browseForScope;
+
     private Permission permission;
 
     public EditPermissionsDialog(Permission permission, Dialog parent) {
@@ -30,10 +33,17 @@ public class EditPermissionsDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
+        typeSelection.setModel(new DefaultComboBoxModel(EntityType.values()));
+        EntityType etype = permission.getEntityType();
+        if (etype != null) typeSelection.setSelectedItem(etype);
+
+        operationSelection.setModel(new DefaultComboBoxModel(OperationType.values()));
+        operationSelection.setSelectedItem(permission.getOperation());
+
         setupButtonListeners();
         setupActionListeners();
 
-        if (permission == null)
+        if (permission.getOid() == Permission.DEFAULT_OID)
             setTitle("Create new Permission");
         else
             setTitle("Edit Permission");
@@ -51,6 +61,26 @@ public class EditPermissionsDialog extends JDialog {
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
+            }
+        });
+
+        typeSelection.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                EntityType etype = (EntityType)typeSelection.getSelectedItem();
+                browseForScope.setEnabled(etype != EntityType.ANY);
+                permission.setEntityType(etype);
+            }
+        });
+
+        operationSelection.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                permission.setOperation((OperationType)operationSelection.getSelectedItem());
+            }
+        });
+
+        browseForScope.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // TODO
             }
         });
     }
@@ -72,11 +102,11 @@ public class EditPermissionsDialog extends JDialog {
     }
 
     private void onOK() {
-
         dispose();
     }
 
     private void onCancel() {
+        permission = null;
         dispose();
     }
 }

@@ -33,6 +33,12 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         return etype.getEntityClass().isAssignableFrom(entity.getClass()) && targetEntityOid == entity.getOid();
     }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder(permission.getEntityType().getName());
+        sb.append(" #").append(targetEntityOid);
+        return sb.toString();
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

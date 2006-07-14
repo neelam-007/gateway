@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
@@ -100,6 +101,11 @@ public abstract class Registry {
     abstract public KerberosAdmin getKerberosAdmin();
 
     /**
+     * @return the RBAC admin interface implementation.
+     */
+    public abstract RbacAdmin getRbacAdmin();
+
+    /**
       * @return the security provider implementation.
       */
      abstract public SecurityProvider getSecurityProvider();
@@ -161,8 +167,12 @@ public abstract class Registry {
             return null;
         }
 
+        public RbacAdmin getRbacAdmin() {
+            return null;
+        }
+
         public SecurityProvider getSecurityProvider() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return null;
         }
     }
 }

@@ -34,15 +34,11 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class TrustedCertManagerImp
-        extends HibernateEntityManager<TrustedCert>
+        extends HibernateEntityManager<TrustedCert, EntityHeader>
         implements TrustedCertManager
 {
     private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());
     
-    public TrustedCert findByPrimaryKey(long oid) throws FindException {
-        return (TrustedCert)findByPrimaryKey(getImpClass(), oid);
-    }
-
     public TrustedCert findBySubjectDn(String dn) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
@@ -102,10 +98,7 @@ public class TrustedCertManagerImp
     public long save(TrustedCert cert) throws SaveException {
         try {
             checkCachable(cert);
-            return ((Long)getHibernateTemplate().save(cert)).longValue();
-        } catch (DataAccessException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new SaveException("Couldn't save cert", e);
+            return super.save(cert);
         } catch (CacheVeto e) {
             logger.log(Level.WARNING, e.getMessage(), e.getCause());
             throw new SaveException(e.getMessage(), e.getCause());

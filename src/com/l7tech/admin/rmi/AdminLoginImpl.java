@@ -75,8 +75,8 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             logger.info("User '" + user.getLogin() + "' with role '" + getHighestRole(roles) + "' logged in from IP '" +
                     RemoteUtils.getClientHost() + "'.");
 
-            AdminContext adminContext = adminContext = new AdminContextBean(
-                        null,null,null,null,null,null,null,null,null,
+            AdminContext adminContext = new AdminContextBean(
+                        null,null,null,null,null,null,null,null,null,null,
                         SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
                         BuildInfo.getProductVersion());
 

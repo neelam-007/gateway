@@ -1,16 +1,10 @@
 package com.l7tech.cluster;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Collections;
+import com.l7tech.objectmodel.*;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.NamedEntity;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Mock CPM, not currently functional, should probably use serverconfig.properties to get default values.
@@ -35,6 +29,14 @@ public class MockClusterPropertyManager implements ClusterPropertyManager {
         return Collections.EMPTY_LIST;
     }
 
+    public Entity findByPrimaryKey(long oid) throws FindException {
+        return null;
+    }
+
+    public long save(Entity entity) throws SaveException {
+        return 0;
+    }
+
     public Collection findAllHeaders() throws FindException {
         return Collections.EMPTY_LIST;
     }
@@ -45,6 +47,9 @@ public class MockClusterPropertyManager implements ClusterPropertyManager {
 
     public Map findVersionMap() throws FindException {
         return Collections.EMPTY_MAP;
+    }
+
+    public void delete(Entity entity) throws DeleteException {
     }
 
     public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {

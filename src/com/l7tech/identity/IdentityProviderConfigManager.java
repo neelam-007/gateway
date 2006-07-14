@@ -8,12 +8,10 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public interface IdentityProviderConfigManager extends EntityManager<IdentityProviderConfig> {
+public interface IdentityProviderConfigManager extends EntityManager<IdentityProviderConfig, EntityHeader> {
     // since this provider config is not persisted, we need a special id to identify it for certain operations
     long INTERNALPROVIDER_SPECIAL_OID = -2;
 
-    IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException;
-    long save( IdentityProviderConfig identityProviderConfig ) throws SaveException;
     void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
     void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
     Collection findAllIdentityProviders() throws FindException;

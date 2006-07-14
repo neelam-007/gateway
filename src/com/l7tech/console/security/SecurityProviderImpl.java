@@ -1,5 +1,41 @@
 package com.l7tech.console.security;
 
+import com.l7tech.admin.AdminContext;
+import com.l7tech.admin.AdminContextBean;
+import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
+import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.VersionException;
+import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.kerberos.KerberosAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.console.action.ImportCertificateAction;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.spring.remoting.http.SecureHttpClient;
+import com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor;
+import com.l7tech.spring.remoting.rmi.NamingURL;
+import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
+import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.remoting.RemoteAccessException;
+import sun.security.x509.X500Name;
+
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -9,46 +45,10 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.security.auth.login.LoginException;
-
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.remoting.RemoteAccessException;
-import sun.security.x509.X500Name;
-
-import com.l7tech.admin.AdminLogin;
-import com.l7tech.admin.AdminLoginResult;
-import com.l7tech.admin.AdminContext;
-import com.l7tech.admin.AdminContextBean;
-import com.l7tech.common.VersionException;
-import com.l7tech.common.BuildInfo;
-import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.kerberos.KerberosAdmin;
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.audit.AuditAdmin;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.console.action.ImportCertificateAction;
-import com.l7tech.spring.remoting.rmi.NamingURL;
-import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
-import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
-import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
-import com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor;
-import com.l7tech.spring.remoting.http.SecureHttpClient;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.cluster.ClusterStatusAdmin;
 
 /**
  * Default SSM <code>SecurityProvider</code> implementaiton that is a central security
@@ -137,6 +137,7 @@ public class SecurityProviderImpl extends SecurityProvider
                             (ClusterStatusAdmin) applicationContext.getBean("clusterStatusAdmin"),
                             (SchemaAdmin) applicationContext.getBean("schemaAdmin"),
                             (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
+                            (RbacAdmin) applicationContext.getBean("rbacAdmin"),
                             "", "");
 
             LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON);

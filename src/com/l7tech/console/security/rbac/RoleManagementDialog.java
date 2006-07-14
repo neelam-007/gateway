@@ -1,31 +1,38 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.security.rbac.Role;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 
 import javax.swing.*;
-import java.awt.event.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+import java.awt.event.*;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 
 public class RoleManagementDialog extends JDialog {
     private JButton buttonOK;
-    private JButton buttonCancel;;
+    private JButton buttonCancel;
     private JPanel buttonPane;
     private JPanel informationPane;
 
-    private JTextPane propertiesPane;
     private JList roleList;
     private JButton addRole;
     private JButton editRole;
     private JButton removeRole;
-    private JTabbedPane tabs;
 
-    private JList assignmentList;
-
-    private final DefaultListModel listModel = new DefaultListModel();
+    private DefaultComboBoxModel listModel;
     private JPanel mainPanel;
-    private JButton addAssignment;
-    private JButton removeAssignment;
     private JTextField filterText;
+    private JTextPane propertiesPane;
+
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
+    private final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
+    private final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
 
     private final ActionListener roleActionListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -34,31 +41,36 @@ public class RoleManagementDialog extends JDialog {
     };
 
     public RoleManagementDialog(Dialog parent) throws HeadlessException {
-        super(parent);
+        super(parent, resources.getString("manageRoles.title"));
         initialize();
     }
 
     public RoleManagementDialog(Frame parent) throws HeadlessException {
-        super(parent);
+        super(parent, resources.getString("manageRoles.title"));
         initialize();
     }
 
     private void initialize() {
-
         populateList();
         setupButtonListeners();
         setupActionListeners();
 
-        roleList.setModel(listModel);
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        roleList.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() >= 2)
+                    showEditDialog(getSelectedRole());
+            }
+        });
+        roleList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+            }
+        });
         add(mainPanel);
 
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        propertiesPane.setForeground(informationPane.getBackground());
-        assignmentList.setForeground(informationPane.getBackground());
-        
         pack();
     }
 
@@ -85,13 +97,28 @@ public class RoleManagementDialog extends JDialog {
 
         JButton srcButton = (JButton) source;
         if (srcButton == addRole) {
-            showEditDialog(null);
+            Role newRole = showEditDialog(new Role());
+            if (newRole != null) populateList();
         } else if (srcButton == editRole) {
-            showEditDialog(getSelectedRole());
+            Role r = showEditDialog(getSelectedRole());
+            if (r != null) populateList();
         } else if (srcButton == removeRole) {
-            deleteWithConfirm(getSelectedRole());
-        } else {
-            return;
+            final Role selectedRole = getSelectedRole();
+            if (selectedRole == null) return;
+            Utilities.doWithConfirmation(
+                this,
+                resources.getString("manageRoles.deleteTitle"),
+                MessageFormat.format(resources.getString("manageRoles.deleteMessage"), selectedRole.getName()),
+                new Runnable() {
+                    public void run() {
+                        try {
+                            rbacAdmin.deleteRole(selectedRole);
+                            populateList();
+                        } catch (Exception e1) {
+                            throw new RuntimeException("Couldn't delete Role", e1);
+                        }
+                    }
+                });
         }
     }
 
@@ -113,57 +140,38 @@ public class RoleManagementDialog extends JDialog {
         });
     }
 
-    private void deleteWithConfirm(String selectedRole) {
-        if (selectedRole == null)
-            return;
-
-        int result = JOptionPane.showConfirmDialog(this, "Remove the \"" + selectedRole + "\" role from the system?", "Confirm Role Removal", JOptionPane.YES_NO_CANCEL_OPTION);
-        if (result == JOptionPane.YES_OPTION) {
-            listModel.removeElement(selectedRole);
-        }
+    private Role getSelectedRole() {
+        return (Role)roleList.getSelectedValue();
     }
 
-    private String getSelectedRole() {
-        int index = roleList.getSelectedIndex();
-        Object obj = null;
-        try {
-            obj = listModel.get(index);
-        } catch (ArrayIndexOutOfBoundsException aobe) {
-            return null;
-        }
-
-        return (String)obj;
-    }
-
-    private void showEditDialog(String selectedRole) {
-        Dialog dlg = new EditRoleDialog(selectedRole, this);
+    private Role showEditDialog(Role selectedRole) {
+        EditRoleDialog dlg = new EditRoleDialog(selectedRole, this);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
+        Role updated = dlg.getRole();
+        if (updated != null) {
+            Role sel = (Role) roleList.getSelectedValue();
+            populateList();
+            roleList.setSelectedValue(sel, true);
+        }
+        return updated;
     }
 
     private void populateList() {
-
-        String[] roles = new String[] {
-                "Administrator",
-                "Operator",
-                "Customer Representative",
-                "Logs View Only",
-        };
-
-        for (String role : roles) {
-            listModel.addElement(role);
+        try {
+            Role[] roles = rbacAdmin.findAllRoles().toArray(new Role[0]);
+            listModel = new DefaultComboBoxModel(roles);
+            roleList.setModel(listModel);
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get initial list of Roles", e);
         }
-
-        roleList.setSelectedIndex(0);
     }
 
     private void onOK() {
-
         dispose();
     }
 
     private void onCancel() {
-
         dispose();
     }
 

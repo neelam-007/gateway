@@ -58,9 +58,9 @@ public class AttributePredicate extends ScopePredicate {
                 Class[] types = method.getParameterTypes();
                 if (types.length != 0) continue;
                 Class rtype = method.getReturnType();
-                if (Long.class.isAssignableFrom(rtype) || rtype == Long.TYPE ||
-                    CharSequence.class.isAssignableFrom(rtype) || rtype == Boolean.TYPE ||
-                    Boolean.class.isAssignableFrom(rtype))
+                if (Number.class.isAssignableFrom(rtype) || rtype == Long.TYPE || rtype == Integer.TYPE || rtype == Byte.TYPE || rtype == Short.TYPE ||
+                    CharSequence.class.isAssignableFrom(rtype) || 
+                    rtype == Boolean.TYPE || Boolean.class.isAssignableFrom(rtype))
                 {
                     this.getter = method;
                     break;
@@ -98,6 +98,13 @@ public class AttributePredicate extends ScopePredicate {
             logger.log(Level.SEVERE, "Couldn't invoke " + entity.getClass().getName() + "." + getter.getName(), e);
             return false;
         }
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(permission.getEntityType().getName());
+        sb.append(" with ").append(attribute).append(" = ").append(value);
+        return sb.toString(); 
     }
 
     public boolean equals(Object o) {

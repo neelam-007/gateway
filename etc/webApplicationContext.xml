@@ -720,6 +720,15 @@
         </property>
     </bean>
 
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl">
+        <constructor-arg>
+            <ref local="identityProviderFactory"/>
+        </constructor-arg>
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
 
     <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">

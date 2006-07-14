@@ -767,6 +767,7 @@
                 <exclude name="com/l7tech/common/transport/jms/*"/>
                 <exclude name="com/l7tech/common/security/rbac/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/logging/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
             </fileset>
@@ -872,16 +873,13 @@
                 <include name="com/l7tech/common/util/**/*"/>
                 <include name="com/l7tech/common/BuildInfo.class"/>
                 <include name="com/l7tech/common/gui/**/*"/>
-                <include name="com/l7tech/common/io/**/*"/>
                 <include name="com/l7tech/common/security/xml/DsigUtil*"/>
-                <include name="com/l7tech/common/security/xml/SecurityTokenResolver*.class"/>
+                <include name="com/l7tech/common/security/xml/CertificateResolver.class"/>
                 <include name="com/l7tech/common/security/xml/KeyInfoElement*"/>
                 <include name="com/l7tech/common/security/token/ParsedElement*"/>
                 <include name="com/l7tech/common/xml/*Exception.class"/>
                 <include name="com/l7tech/common/security/xml/*Exception.class"/>
                 <include name="com/l7tech/common/security/xml/SimpleCertificateResolver*"/>
-                <include name="com/l7tech/policy/**/*"/>
-                <include name="com/l7tech/server/GatewayFeatureSet*.class"/>
 
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/*SoapMessage*"/>
@@ -972,7 +970,6 @@
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
 
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
-                <include name="com/l7tech/common/util/CausedIOException*.class"/>
                 <include name="com/l7tech/common/util/WhirlycacheFactory*.class"/>
                 <include name="com/l7tech/common/util/ExceptionUtils.class"/>
                 <include name="com/l7tech/common/gui/util/Utilities*.class"/>
@@ -1382,6 +1379,7 @@
 
             <fileset dir="${src.root}/etc/db">
                 <include name="SSG.hbm.xml"/>
+                <include name="rbac.hbm.xml"/>
                 <include name="audit.hbm.xml"/>
                 <include name="identityMapping.hbm.xml"/>
                 <include name="c3p0.properties"/>
@@ -1504,9 +1502,11 @@
 
             <!-- The following, as well as anything not included above, can go to 1.5 -->
             <exclude name="com/l7tech/policy/variable/**/*.java"/>
+            <exclude name="com/l7tech/policy/PolicyValidator.java"/>
+            <exclude name="com/l7tech/policy/validator/**/*.java"/>
             <exclude name="com/l7tech/common/Authorizer.java"/>
             <exclude name="com/l7tech/common/http/cache/**/*.java"/>
-            <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
+	        <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
@@ -1624,15 +1624,6 @@
             </fileset>
         </copy>
     </target>
-
-    <!-- ** test forms compilation target (skunkworks testing apps) -->
-    <target name="compile-test-forms" depends="compile-tests">
-        <javac2 srcdir="tests" destdir="${build.test.classes}" debug="on" target="1.4" optimize="on" source="1.4"
-                classpathref="project.test.classpath">
-            <include name="**/*.form"/>
-        </javac2>
-    </target>
- 
 
     <target name="test-ssg">
         <parallel>

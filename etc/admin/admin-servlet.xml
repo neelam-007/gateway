@@ -58,4 +58,9 @@
         <property name="serviceInterface" value="com.l7tech.cluster.ClusterStatusAdmin"/>
     </bean>   
 
+    <bean name="/RbacAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="rbacAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.common.security.rbac.RbacAdmin"/>
+    </bean>
+
 </beans>

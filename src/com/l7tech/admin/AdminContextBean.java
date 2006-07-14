@@ -1,20 +1,21 @@
 package com.l7tech.admin;
 
-import java.rmi.RemoteException;
-import java.io.Serializable;
-
+import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.kerberos.KerberosAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.common.audit.AuditAdmin;
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.kerberos.KerberosAdmin;
-import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.service.ServiceAdmin;
+
+import java.io.Serializable;
+import java.rmi.RemoteException;
 
 /**
  * Replacement for old 'remote' admin context.
@@ -35,6 +36,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     private final CustomAssertionsRegistrar customAssertionsRegistrar;
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final KerberosAdmin kerberosAdmin;
+    private final RbacAdmin rbacAdmin;
     private final String version;
     private final String softwareVersion;
 
@@ -47,6 +49,7 @@ public class AdminContextBean implements AdminContext, Serializable {
                             ClusterStatusAdmin clusterStatusAdmin,
                             SchemaAdmin schemaAdmin,
                             KerberosAdmin kerberosAdmin,
+                            RbacAdmin rbacAdmin,
                             String version,
                             String softwareVersion) {
         this.identityAdmin = identityAdmin;
@@ -58,6 +61,7 @@ public class AdminContextBean implements AdminContext, Serializable {
         this.clusterStatusAdmin = clusterStatusAdmin;
         this.schemaAdmin = schemaAdmin;
         this.kerberosAdmin = kerberosAdmin;
+        this.rbacAdmin = rbacAdmin;
         this.version = version;
         this.softwareVersion = softwareVersion;
     }
@@ -109,5 +113,9 @@ public class AdminContextBean implements AdminContext, Serializable {
 
     public KerberosAdmin getKerberosAdmin() throws SecurityException {
         return kerberosAdmin;
+    }
+
+    public RbacAdmin getRbacAdmin() throws RemoteException, SecurityException {
+        return rbacAdmin;
     }
 }

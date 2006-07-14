@@ -20,9 +20,9 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public abstract class HibernateEntityManager<ET extends Entity>
+public abstract class HibernateEntityManager<ET extends Entity, EHT extends EntityHeader>
         extends HibernateDaoSupport
-        implements EntityManager<ET>
+        implements EntityManager<ET, EHT>
 {
     public static final String EMPTY_STRING = "";
     public static final String F_OID = "oid";
@@ -50,6 +50,23 @@ public abstract class HibernateEntityManager<ET extends Entity>
             "FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_OID + " = ?";
+
+    public ET findByPrimaryKey(long oid) throws FindException {
+        return findEntity(oid);
+    }
+
+    public long save(ET entity) throws SaveException {
+        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity });
+        try {
+            Object key = getHibernateTemplate().save(entity);
+            if (!(key instanceof Long))
+                throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Long");
+
+            return ((Long)key);
+        } catch (Exception e) {
+            throw new SaveException("Couldn't save entity", e);
+        }
+    }
 
     /**
      * Returns the current version (in the database) of the entity with the specified OID.
@@ -143,18 +160,25 @@ public abstract class HibernateEntityManager<ET extends Entity>
 
     public abstract String getTableName();
 
-    public Collection<EntityHeader> findAllHeaders() throws FindException {
+    public Collection<EHT> findAllHeaders() throws FindException {
         Collection<ET> entities = findAll();
-        List<EntityHeader> headers = new ArrayList<EntityHeader>();
+        List<EHT> headers = new ArrayList<EHT>();
         for (Object entity1 : entities) {
             Entity entity = (Entity) entity1;
             String name = null;
             if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
             if (name == null) name = "";
             final long id = entity.getOid();
-            headers.add(new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING));
+            headers.add((EHT) newHeader(id, name));
         }
         return Collections.unmodifiableList(headers);
+    }
+
+    /**
+     * Override this method to customize how EntityHeaders get created
+     */
+    protected EntityHeader newHeader(long id, String name) {
+        return new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING);
     }
 
     /**
@@ -165,7 +189,7 @@ public abstract class HibernateEntityManager<ET extends Entity>
     protected void addFindAllCriteria(Criteria allHeadersCriteria) {
     }
 
-    public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<EHT> findAllHeaders(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
@@ -192,6 +216,14 @@ public abstract class HibernateEntityManager<ET extends Entity>
     public void delete(long oid) throws DeleteException, FindException {
         //getHibernateTemplate().d
         delete(getImpClass(), oid);
+    }
+
+    public void delete(ET et) throws DeleteException {
+        try {
+            getHibernateTemplate().delete(et);
+        } catch (DataAccessException e) {
+            throw new DeleteException("Couldn't delete entity", e);
+        }
     }
 
     public boolean isCacheCurrent(long objectid, int maxAge) throws FindException {

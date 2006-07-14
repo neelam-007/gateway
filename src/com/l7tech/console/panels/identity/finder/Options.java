@@ -17,26 +17,44 @@ public class Options {
 
     /**
      * Enable the delete action
+     * @param enableDeleteAction
      */
-    public void enableDeleteAction() {
-        enableDeleteAction = true;
+    public void setEnableDeleteAction(boolean enableDeleteAction) {
+        this.enableDeleteAction = enableDeleteAction;
     }
 
     /**
      * Disable the properties opening for the selected item
      * Enabled by default.
+     * @param disableOpenProperties
      */
-    public void disableOpenProperties() {
-        enableOpenProperties = false;
+    public void setDisableOpenProperties(boolean disableOpenProperties) {
+        enableOpenProperties = disableOpenProperties;
     }
 
     /**
      * Dispose on select Disabled by default.
+     * @param dispose
      */
-    public void disposeOnSelect() {
-        disposeOnSelect = true;
+    public void setDisposeOnSelect(boolean dispose) {
+        disposeOnSelect = dispose;
     }
 
+    public boolean isEnableDeleteAction() {
+        return enableDeleteAction;
+    }
+
+    public boolean isEnableOpenProperties() {
+        return enableOpenProperties;
+    }
+
+    public int getSelectionMode() {
+        return selectionMode;
+    }
+
+    public long getInitialProviderOid() {
+        return initialProviderOid;
+    }
 
     /**
      * Set the selection mode. Use one of the values from

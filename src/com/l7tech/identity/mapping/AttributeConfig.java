@@ -17,8 +17,8 @@ import java.util.Set;
 public class AttributeConfig extends NamedEntityImp {
     private String variableName;
     private String description;
-    private Set securityTokenMappings;
-    private Set identityMappings;
+    private Set<? extends SecurityTokenMapping> securityTokenMappings;
+    private Set<? extends IdentityMapping> identityMappings;
 
     /**
      * A short, unique and unambiguous name for this attribute, for use in
@@ -52,19 +52,19 @@ public class AttributeConfig extends NamedEntityImp {
         this.description = description;
     }
 
-    public Set getSecurityTokenMappings() {
+    public Set<? extends SecurityTokenMapping> getSecurityTokenMappings() {
         return securityTokenMappings;
     }
 
-    public void setSecurityTokenMappings(Set securityTokenMappings) {
+    public void setSecurityTokenMappings(Set<? extends SecurityTokenMapping> securityTokenMappings) {
         this.securityTokenMappings = securityTokenMappings;
     }
 
-    public Set getIdentityMappings() {
+    public Set<? extends IdentityMapping> getIdentityMappings() {
         return identityMappings;
     }
 
-    public void setIdentityMappings(Set identityMappings) {
+    public void setIdentityMappings(Set<? extends IdentityMapping> identityMappings) {
         this.identityMappings = identityMappings;
     }
 }

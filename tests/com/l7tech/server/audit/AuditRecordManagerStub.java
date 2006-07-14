@@ -19,17 +19,16 @@ import java.util.Collection;
  * @author emil
  * @version Feb 17, 2005
  */
-public class AuditRecordManagerStub extends EntityManagerStub implements AuditRecordManager {
-    public AuditRecord findByPrimaryKey(long oid) throws FindException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
+public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord> implements AuditRecordManager {
     public Collection find(AuditSearchCriteria criteria) throws FindException {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public long save(AuditRecord rec) throws SaveException {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void delete(AuditRecord auditRecord) throws DeleteException {
     }
 
     public void deleteOldAuditRecords() throws DeleteException {

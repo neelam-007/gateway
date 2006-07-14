@@ -5,6 +5,7 @@ import com.l7tech.cluster.ClusterStatusAdminStub;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
@@ -83,6 +84,10 @@ public class RegistryStub extends Registry {
     }
 
     public KerberosAdmin getKerberosAdmin() {
+        return null;
+    }
+
+    public RbacAdmin getRbacAdmin() {
         return null;
     }
 

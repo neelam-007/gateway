@@ -20,15 +20,7 @@ import java.util.List;
  * @author alex
  * @version $Revision$
  */
-public interface TrustedCertManager extends EntityManager<TrustedCert> {
-    /**
-     * Retrieves the {@link TrustedCert} with the specified oid, or null if it does not exist.
-     * @param oid the oid of the {@link TrustedCert} to retrieve
-     * @return the retrieved {@link TrustedCert}, or null if it does not exist.
-     * @throws FindException if the retrieval fails for any reason other than nonexistence
-     */
-    TrustedCert findByPrimaryKey(long oid) throws FindException;
-
+public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHeader> {
     /**
      * Retrieves the {@link TrustedCert} with the specified DN, or null if it does not exist.
      * <b>NOTE:</b> The corresponding field in the database must have a unique constraint!
@@ -37,14 +29,6 @@ public interface TrustedCertManager extends EntityManager<TrustedCert> {
      * @throws FindException if the retrieval fails for any reason other than nonexistence
      */
     TrustedCert findBySubjectDn(String dn) throws FindException;
-
-    /**
-     * Saves a new {@link TrustedCert}, returning the oid that was generated.
-     * @param cert The new {@link TrustedCert} to be saved.
-     * @return the oid of the newly saved object
-     * @throws SaveException if the {@link TrustedCert} cannot be saved for any reason.
-     */
-    long save(TrustedCert cert) throws SaveException;
 
     /**
      * Updates an existing {@link TrustedCert} in the database.

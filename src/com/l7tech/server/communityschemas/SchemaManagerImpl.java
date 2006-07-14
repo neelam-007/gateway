@@ -124,7 +124,7 @@ public class SchemaManagerImpl implements SchemaManager {
     public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
         if (httpClientFactory == null) throw new NullPointerException();
 
-        HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory() {
+        HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
             public String createUserObject(String url, String response) {
                 onUrlDownloaded(url);
                 return response;

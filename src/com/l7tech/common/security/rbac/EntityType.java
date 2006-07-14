@@ -25,43 +25,53 @@ import com.l7tech.cluster.ClusterProperty;
  * @author alex
  */
 public enum EntityType {
-    ANY(Entity.class),
+    ANY("<any>", Entity.class),
 
-    ID_PROVIDER_CONFIG(IdentityProviderConfig.class),
-    USER(PersistentUser.class),
-    GROUP(PersistentGroup.class),
-    SERVICE(PublishedService.class),
-    JMS_CONNECTION(JmsConnection.class),
-    JMS_ENDPOINT(JmsEndpoint.class),
-    TRUSTED_CERT(TrustedCert.class),
-    ALERT_TRIGGER(AlertEvent.class),
-    ALERT_ACTION(Notification.class),
-    SAMPLE_MESSAGE(SampleMessage.class),
+    ID_PROVIDER_CONFIG("Identity Provider", IdentityProviderConfig.class),
+    USER("User", PersistentUser.class),
+    GROUP("Group", PersistentGroup.class),
+    SERVICE("Published Service", PublishedService.class),
+    JMS_CONNECTION("JMS Connection", JmsConnection.class),
+    JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class),
+    TRUSTED_CERT("Trusted Certificate", TrustedCert.class),
+    ALERT_TRIGGER("Alert Event", AlertEvent.class),
+    ALERT_ACTION("Alert Notification", Notification.class),
+    SAMPLE_MESSAGE("Sample Message", SampleMessage.class),
 
-    MAP_ATTRIBUTE(AttributeConfig.class),
-    MAP_IDENTITY(IdentityMapping.class),
-    MAP_TOKEN(SecurityTokenMapping.class),
+    MAP_ATTRIBUTE("Attribute Configuration", AttributeConfig.class),
+    MAP_IDENTITY("Identity Provider Attribute Mapping", IdentityMapping.class),
+    MAP_TOKEN("Security Token Attribute Mapping", SecurityTokenMapping.class),
 
-    CLUSTER_PROPERTY(ClusterProperty.class),
-    SCHEMA_ENTRY(SchemaEntry.class),
+    CLUSTER_PROPERTY("Cluster Property", ClusterProperty.class),
+    SCHEMA_ENTRY("Schema Entry", SchemaEntry.class),
 
-    RBAC_ROLE(Role.class),
-    RBAC_PERMISSION(Permission.class),
-    RBAC_PREDICATE(ScopePredicate.class),
-    RBAC_ASSIGNMENT(IdentityRoleAssignment.class),
+    RBAC_ROLE("RBAC Role", Role.class),
+    RBAC_PERMISSION("RBAC Permission", Permission.class),
+    RBAC_PREDICATE("RBAC Scope Predicate", ScopePredicate.class),
+    RBAC_ASSIGNMENT("RBAC User Assignment", UserRoleAssignment.class),
 
-    AUDIT_MESSAGE(MessageSummaryAuditRecord.class),
-    AUDIT_ADMIN(AdminAuditRecord.class),
-    AUDIT_SYSTEM(SystemAuditRecord.class),
+    AUDIT_MESSAGE("Message Audit Record", MessageSummaryAuditRecord.class),
+    AUDIT_ADMIN("Admin Audit Record", AdminAuditRecord.class),
+    AUDIT_SYSTEM("System Audit Record", SystemAuditRecord.class),
     ;
 
+    private final String name;
     private final Class<? extends Entity> entityClass;
 
     public Class<? extends Entity> getEntityClass() {
         return entityClass;
     }
 
-    private EntityType(Class<? extends Entity> entityClass) {
+    public String getName() {
+        return name;
+    }
+
+    private EntityType(String name, Class<? extends Entity> entityClass) {
+        this.name = name;
         this.entityClass = entityClass;
+    }
+
+    public String toString() {
+        return name;
     }
 }

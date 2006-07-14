@@ -163,4 +163,6 @@ public class Permission extends EntityImp {
     public String toString() {
         return "<permission id=\"" + getOid() + "\" op=\"" + operation + "\" type=\"" + entityType + "\" scope=\"" + scope + "\"/>";
     }
+
+    
 }
