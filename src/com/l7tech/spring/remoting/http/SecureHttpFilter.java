@@ -75,7 +75,6 @@ public class SecureHttpFilter implements Filter {
                          final ServletResponse servletResponse,
                          final FilterChain filterChain) throws IOException, ServletException {
 
-        RemoteUtils.setClientHost(servletRequest.getRemoteAddr());
         HttpServletRequest hsr = (HttpServletRequest) servletRequest;
 
         if (logger.isLoggable(Level.FINEST)) {
@@ -94,11 +93,28 @@ public class SecureHttpFilter implements Filter {
             }
         }
 
-        // Pass on down the chain with the auth'd user (if any)
+        // Pass on down the chain with the auth'd user and remote host set(if any)
         try {
             Subject.doAs(subject, new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
-                    filterChain.doFilter(servletRequest, servletResponse);
+                    final IOException[] ioeHolder = new IOException[1];
+                    final ServletException[] seHolder = new ServletException[1];
+                    RemoteUtils.runWithClientHost(servletRequest.getRemoteAddr(), new Runnable(){
+                        public void run() {
+                            try {
+                                filterChain.doFilter(servletRequest, servletResponse);
+                            } catch(IOException ioe) {
+                                ioeHolder[0] = ioe;
+                            } catch(ServletException se) {
+                                seHolder[0] = se;
+                            }
+                        }
+                    });
+
+                    // rethrow exceptions 
+                    if (ioeHolder[0] != null) throw ioeHolder[0];
+                    if (seHolder[0] != null) throw seHolder[0];
+
                     return null;
                 }
             });

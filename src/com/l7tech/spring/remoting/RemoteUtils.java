@@ -16,12 +16,19 @@ public class RemoteUtils {
     //- PUBLIC
 
     /**
-     * Set the remote host for the current thread.
+     * Run a runnable with the given host in the context.
      *
      * @param host the remote ip
+     * @param runnable the runnable to run
      */
-    public static void setClientHost(String host) {
+    public static void runWithClientHost(String host, Runnable runnable) {
         clientHost.set(host);
+        try {
+            runnable.run();
+        }
+        finally {
+            clientHost.set(null);
+        }
     }
 
     /**
