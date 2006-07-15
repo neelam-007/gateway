@@ -55,13 +55,12 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         setContentPane(mainPanel);
         setTitle("Audit Detail Properties");
 
-        ArrayList levels = new ArrayList();
-        for (int i = 0; i < AuditAssertion.ALLOWED_LEVELS.length; i++) {
-            String name = AuditAssertion.ALLOWED_LEVELS[i];
-            Level level = Level.parse(name);
-            if (level.intValue() >= serverDetailThreshold.intValue()) levels.add(level.getLocalizedName());
-        }
-        levelComboBox.setModel(new DefaultComboBoxModel(levels.toArray(new String[0])));
+        String[] levels = {
+            Level.INFO.getLocalizedName(),
+            Level.WARNING.getLocalizedName(),
+        };
+
+        levelComboBox.setModel(new DefaultComboBoxModel(levels));
         levelComboBox.setSelectedItem(assertion.getLevel());
         detailTextArea.setText(assertion.getDetail());
 

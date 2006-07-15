@@ -36,16 +36,12 @@ public class AuditAssertionDialog extends JDialog {
         this.assertion = ass;
         currentServerThreshold = Level.parse(serverThreshold);
 
-        List allLevels = Arrays.asList(AuditAssertion.ALLOWED_LEVELS);
-        int thresholdPos = allLevels.indexOf(currentServerThreshold.getName());
-        if (thresholdPos > 0) thresholdPos -= 1; // Include one less than threshold
-        ArrayList levels = new ArrayList();
-        for (int i = thresholdPos; i < AuditAssertion.ALLOWED_LEVELS.length; i++) {
-            String s = AuditAssertion.ALLOWED_LEVELS[i];
-            levels.add(Level.parse(s).getLocalizedName());
-        }
+        String[] levels = {
+            Level.INFO.getLocalizedName(),
+            Level.WARNING.getLocalizedName(),
+        };
 
-        levelCombo.setModel(new DefaultComboBoxModel(levels.toArray(new String[0])));
+        levelCombo.setModel(new DefaultComboBoxModel(levels));
         levelCombo.setSelectedItem(ass.getLevel());
         saveRequestCheckbox.setSelected(ass.isSaveRequest());
         saveResponseCheckbox.setSelected(ass.isSaveResponse());
