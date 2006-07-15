@@ -38,7 +38,8 @@ public class EditPermissionsDialog extends JDialog {
         if (etype != null) typeSelection.setSelectedItem(etype);
 
         operationSelection.setModel(new DefaultComboBoxModel(OperationType.values()));
-        operationSelection.setSelectedItem(permission.getOperation());
+        OperationType op = permission.getOperation();
+        if (op != null) operationSelection.setSelectedItem(op);
 
         setupButtonListeners();
         setupActionListeners();
@@ -49,6 +50,10 @@ public class EditPermissionsDialog extends JDialog {
             setTitle("Edit Permission");
 
         pack();
+    }
+
+    void enableDisable() {
+        buttonOK.setEnabled(typeSelection.getSelectedItem() != null && operationSelection.getSelectedItem() != null);
     }
 
     private void setupButtonListeners() {
@@ -102,11 +107,17 @@ public class EditPermissionsDialog extends JDialog {
     }
 
     private void onOK() {
+        permission.setEntityType((EntityType) typeSelection.getSelectedItem());
+        permission.setOperation((OperationType) operationSelection.getSelectedItem());
         dispose();
     }
 
     private void onCancel() {
         permission = null;
         dispose();
+    }
+
+    public Permission getPermission() {
+        return permission;
     }
 }

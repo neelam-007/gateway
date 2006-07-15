@@ -149,7 +149,11 @@ public class EditRoleDialog extends JDialog {
                 case 2:
                     switch(perm.getScope().size()) {
                         case 0:
-                            return "<Any " + perm.getEntityType().getName() + ">";
+                            StringBuilder sb = new StringBuilder("<Any");
+                            if (perm.getEntityType() != EntityType.ANY)
+                                sb.append(perm.getEntityType().getName());
+                            sb.append(">");
+                            return sb.toString();
                         case 1:
                             return perm.getScope().iterator().next().toString();
                         default:
@@ -159,16 +163,26 @@ public class EditRoleDialog extends JDialog {
                     throw new RuntimeException("Unsupported column " + columnIndex);
             }
         }
+
+        public void add(Permission p) {
+            permissions.add(p);
+            fireTableDataChanged();
+        }
+
+        public void remove(Permission p) {
+            permissions.remove(p);
+            fireTableDataChanged();
+        }
     }
 
     private void inititialize() {
         try {
-            assignmentListModel = new AssignmentListModel();
-
             EntityHeader[] hs = identityAdmin.findAllIdentityProviderConfig();
             for (EntityHeader h : hs) {
                 idpNames.put(h.getOid(), h.getName());
             }
+
+            assignmentListModel = new AssignmentListModel();
         } catch (Exception e) {
             throw new RuntimeException("Couldn't lookup Identity Providers", e);
         }
@@ -176,16 +190,6 @@ public class EditRoleDialog extends JDialog {
         this.tableModel = new PermissionTableModel();
         this.permissionsTable.setModel(tableModel);
         permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        if (role.getOid() != Role.DEFAULT_OID) {
-            try {
-                for (UserRoleAssignment ura : role.getUserAssignments()) {
-                    assignmentListModel.add(ura);
-                }
-            } catch (Exception e1) {
-                throw new RuntimeException("Couldn't find assigned users", e1);
-            }
-        }
 
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
@@ -206,7 +210,7 @@ public class EditRoleDialog extends JDialog {
         private final List<UserHolder> holders = new ArrayList<UserHolder>();
 
         public AssignmentListModel() throws RemoteException, FindException {
-            for (UserRoleAssignment assignment : assignments) {
+            for (UserRoleAssignment assignment : role.getUserAssignments()) {
                 assignments.add(assignment);
                 holders.add(new UserHolder(assignment));
             }
@@ -219,14 +223,12 @@ public class EditRoleDialog extends JDialog {
         public synchronized void remove(UserHolder holder) {
             holders.remove(holder);
             assignments.remove(holder.getUserRoleAssignment());
-            role.getUserAssignments().remove(holder.getUserRoleAssignment());
             fireContentsChanged(userAssignmentList, 0, assignments.size());
         }
 
         public synchronized void add(UserRoleAssignment ura) throws RemoteException, FindException {
             assignments.add(ura);
             holders.add(new UserHolder(ura));
-            role.getUserAssignments().add(ura);
             fireContentsChanged(userAssignmentList, 0, assignments.size());
         }
 
@@ -287,7 +289,6 @@ public class EditRoleDialog extends JDialog {
                         for (Object o : selected) {
                             UserHolder u = (UserHolder)o;
                             assignmentListModel.remove(u);
-                            role.getUserAssignments().remove(u.getUserRoleAssignment());
                         }
                     }
                 });
@@ -319,38 +320,32 @@ public class EditRoleDialog extends JDialog {
             return;
 
         JButton srcButton = (JButton) src;
-        if (srcButton == addPermission)
-            showEditPermissionDialog(new Permission(role, null, null));
-        else if (srcButton == editPermission) {
-            Permission perm = getSelectedPermission();
-            if (perm != null) showEditPermissionDialog(perm);
-        } else if (srcButton == removePermission) {
-            final Permission perm = getSelectedPermission();
-            if (perm != null) {
-                Utilities.doWithConfirmation(EditRoleDialog.this, "Remove Permission", "Are you sure you want to remove this permission", new Runnable() {
-                    public void run() {
-                        tableModel.getPermissions().remove(perm);
-                        role.getPermissions().remove(perm);
-                    }
-                });
-            }
-        }
-    }
-
-    private void deleteWithConfirm(Permission selectedPermission) {
-        if (selectedPermission == null)
+        if (srcButton == addPermission) {
+            Permission p = showEditPermissionDialog(new Permission(role, null, null));
+            if (p != null) tableModel.add(p);
             return;
+        }
 
-        int result = JOptionPane.showConfirmDialog(this, "Remove the \"" + selectedPermission + "\" role from the system?", "Confirm Role Removal", JOptionPane.YES_NO_CANCEL_OPTION);
-        if (result == JOptionPane.YES_OPTION) {
-//            listModel.remove(selectedPermission);
+        final Permission perm = getSelectedPermission();
+        if (perm == null) return;
+
+        if (srcButton == editPermission) {
+            Permission p = showEditPermissionDialog(perm);
+            if (p != null) tableModel.fireTableDataChanged();
+        } else if (srcButton == removePermission) {
+            Utilities.doWithConfirmation(EditRoleDialog.this, "Remove Permission", "Are you sure you want to remove this permission", new Runnable() {
+                public void run() {
+                    tableModel.remove(perm);
+                }
+            });
         }
     }
 
-    private void showEditPermissionDialog(Permission perm) {
+    private Permission showEditPermissionDialog(Permission perm) {
         EditPermissionsDialog dlg = new EditPermissionsDialog(perm, this);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
+        return dlg.getPermission();
     }
 
     private Permission getSelectedPermission() {
@@ -365,6 +360,11 @@ public class EditRoleDialog extends JDialog {
         perms.clear();
         for (Permission perm : tableModel.getPermissions()) {
             perms.add(perm);
+        }
+
+        role.getUserAssignments().clear();
+        for (UserRoleAssignment assignment : assignmentListModel.assignments) {
+            role.getUserAssignments().add(assignment);
         }
 
         try {
