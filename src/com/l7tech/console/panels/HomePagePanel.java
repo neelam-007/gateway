@@ -158,6 +158,10 @@ public class HomePagePanel extends JPanel {
 
     private List<HomePageToolbarAction> createActionList() {
         actions.clear();
+        if (Registry.getDefault().getLicenseManager().getLicense() == null) {
+            add("cert32.gif", new ManageClusterLicensesAction());
+        }
+
         add("CreateIdentityProvider32x32.gif", new NewLdapProviderAction(getIdentitiesRoot()));
         add("CreateIdentityProvider32x32.gif", new NewFederatedIdentityProviderAction(getIdentitiesRoot()));
         add("user32.png", new NewInternalUserAction(null));

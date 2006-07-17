@@ -12,6 +12,7 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -30,7 +31,7 @@ import java.util.logging.Level;
  */
 public class PublishNonSoapServiceAction extends SecureAction {
     public PublishNonSoapServiceAction() {
-        super(true);
+        super(true, SchemaValidation.class);
     }
 
     public String getName() {
