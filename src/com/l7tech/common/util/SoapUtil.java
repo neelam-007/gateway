@@ -233,6 +233,9 @@ public class SoapUtil {
      */
     public static final String SOAP_HEADER_XPATH = SOAP_ENVELOPE_XPATH + "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Header";
 
+    public static final String C14N_EXCLUSIVE = "http://www.w3.org/2001/10/xml-exc-c14n#";
+    public static final String C14N_EXCLUSIVEWC = "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
+
     /**
      * Get the SOAP envelope from the message
      *

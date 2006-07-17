@@ -121,14 +121,14 @@ public class WssProcessorTest extends TestCase {
         log.info("WSU namespace observed:\n" + result.getWSUNS());
     }
 
-    private static class TestDocument {
-        String name;
-        Document document;
-        X509Certificate senderCeritifcate;
-        PrivateKey recipientPrivateKey;
-        X509Certificate recipientCertificate;
-        SecurityContextFinder securityContextFinder = null;
-        SecurityTokenResolver securityTokenResolver;
+    public static class TestDocument {
+        public String name;
+        public Document document;
+        public X509Certificate senderCeritifcate;
+        public PrivateKey recipientPrivateKey;
+        public X509Certificate recipientCertificate;
+        public SecurityContextFinder securityContextFinder = null;
+        public SecurityTokenResolver securityTokenResolver;
 
         TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc,
                      SecurityContextFinder securityContextFinder, X509Certificate senderCert,
@@ -336,7 +336,7 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
-    private static TestDocument makeDotNetTestDocument(String testname, String docname) {
+    public static TestDocument makeDotNetTestDocument(String testname, String docname) {
         try {
             Document d = TestDocuments.getTestDocument(docname);
             final SecureConversationSession session = new SecureConversationSession();
