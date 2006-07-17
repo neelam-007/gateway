@@ -3,10 +3,20 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
+import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.io.IOException;
+
+import org.systinet.uddi.client.v3.UDDIException;
+import org.systinet.uddi.client.v3.UDDI_Security_PortType;
+import org.systinet.uddi.client.v3.UDDISecurityStub;
+import org.systinet.uddi.client.v3.struct.Get_authToken;
+import org.systinet.uddi.InvalidParameterException;
 
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard pertaining
@@ -74,19 +84,95 @@ public class UDDITargetWizardStep extends WizardStepPanel {
                 return false;
             }
         }
-        Preferences.getPreferences().putProperty(UDDI_URL, tmp);
+        String url = normalizeURL(tmp);
+        uddiURLField.setText(url);
+        Preferences.getPreferences().putProperty(UDDI_URL, url);
+
         tmp = uddiAccountNameField.getText();
         if (tmp == null || tmp.length() < 1) {
             showError("UDDI account name cannot be empty");
             return false;
         }
-        Preferences.getPreferences().putProperty(UDDI_ACCOUNT_NAME, tmp);
+        String name = tmp;
+        Preferences.getPreferences().putProperty(UDDI_ACCOUNT_NAME, name);
+
         tmp = uddiAccountPasswdField.getText();
         if (tmp == null || tmp.length() < 1) {
             showError("UDDI account password cannot be empty");
             return false;
         }
+
+        // try the credentials
+        // (bugzilla #2601 preemptively try the credentials)
+        try {
+            testAuthInfo(url, name, tmp);
+        } catch (SOAPException e) {
+            String msg = "Could not get UDDI auth_token using this target and these credentials.";
+            Throwable t = e;
+            while (t.getCause() != null) t = t.getCause();
+            showError(msg + " " + catchDispositionReport(t.getMessage()));
+            logger.log(Level.WARNING, msg, e);
+            return false;
+        } catch (UDDIException e) {
+            String msg = "Could not get UDDI auth_token using this target and these credentials.";
+            Throwable t = e;
+            while (t.getCause() != null) t = t.getCause();
+            showError(msg + " " + catchDispositionReport(t.getMessage()));
+            logger.log(Level.WARNING, msg, e);
+            return false;
+        } catch (InvalidParameterException e) {
+            String msg = "Could not get UDDI auth_token using this target and these credentials.";
+            Throwable t = e;
+            while (t.getCause() != null) t = t.getCause();
+            showError(msg + " " + catchDispositionReport(t.getMessage()));
+            logger.log(Level.WARNING, msg, e);
+            return false;
+        } catch (Exception e) {
+            String msg = "Could not get UDDI auth_token using this target and these credentials.";
+            Throwable t = e;
+            while (t.getCause() != null) t = t.getCause();
+            showError(msg + " " + catchDispositionReport(t.getMessage()));
+            logger.log(Level.WARNING, msg, e);
+            return false;
+        }
         return true;
+    }
+
+    private String catchDispositionReport(String msg) {
+        String output = msg;
+        if (msg != null && msg.startsWith("<dispositionReport")) {
+            int end = msg.indexOf("</errInfo>");
+            if (end > 0) {
+                int start = end-1;
+                while (start > 0) {
+                    if (msg.charAt(start) == '>') break;
+                    start--;
+                }
+                output = msg.substring(start+1, end);
+            }
+        }
+        return output;
+    }
+
+    private String normalizeURL(String uddiurl) {
+        if (uddiurl.indexOf("/uddi") < 1) {
+            if (uddiurl.endsWith("/")) {
+                uddiurl = uddiurl + "uddi/";
+            } else {
+                uddiurl = uddiurl + "/uddi/";
+            }
+        }
+        if (!uddiurl.endsWith("/")) {
+            uddiurl = uddiurl + "/";
+        }
+        return uddiurl;
+    }
+
+    private String testAuthInfo(String url, String accountName, String accountpasswd) throws SOAPException, UDDIException, InvalidParameterException {
+        String authInfo;
+        UDDI_Security_PortType security = UDDISecurityStub.getInstance(url + "security");
+        authInfo = security.get_authToken(new Get_authToken(accountName, accountpasswd)).getAuthInfo();
+        return authInfo;
     }
 
     public void storeSettings(Object settings) throws IllegalArgumentException {
@@ -96,13 +182,14 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         data.setAccountPasswd(uddiAccountPasswdField.getText());
     }
 
-    private void showError(String err) {
-        JOptionPane.showMessageDialog(this, err, "Invalid Input", JOptionPane.ERROR_MESSAGE);
-    }
-
     public interface Data {
         void setUddiurl(String in);
         void setAccountName(String in);
         void setAccountPasswd(String in);
+    }
+
+    private void showError(String err) {
+        JOptionPane.showMessageDialog(this, UDDIPolicyDetailsWizardStep.breakOnMultipleLines(err, 30),
+                                      "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
