@@ -33,7 +33,9 @@ public class AddCookieCredentialSourceAssertionAdvice implements Advice {
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
 
-        if (dlg.isConfirmed())
+        if (dlg.isConfirmed()) {
+            dlg.getData(assertion);
             pc.proceed();
+        }
     }
 }
