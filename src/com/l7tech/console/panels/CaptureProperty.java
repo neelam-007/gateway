@@ -9,6 +9,9 @@ package com.l7tech.console.panels;
 import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
+import java.util.Map;
 
 /**
  * Simple dialog to capture a property (key+value)
@@ -18,7 +21,7 @@ import java.awt.event.ActionEvent;
 public class CaptureProperty extends JDialog {
     private JPanel mainPanel;
     private JTextArea valueField;
-    private JTextField keyField;
+    private JComboBox keyComboBox;
     private JTextArea descField;
     private JButton cancelButton;
     private JButton okButton;
@@ -28,13 +31,15 @@ public class CaptureProperty extends JDialog {
     private String initialValue;
     private String title;
     private boolean oked = false;
+    private Map propertyNamesToDescriptions;
 
-    public CaptureProperty(JDialog parent, String title, String description, String initialKey, String initialValue) {
+    public CaptureProperty(JDialog parent, String title, String description, String initialKey, String initialValue, Map suggestedValues) {
         super(parent, true);
         this.title = title;
         this.description = description;
         this.initialKey = initialKey;
         this.initialValue = initialValue;
+        this.propertyNamesToDescriptions = suggestedValues;
         initialize();
     }
 
@@ -43,8 +48,30 @@ public class CaptureProperty extends JDialog {
         setTitle(title);
         descField.setText(description);
         if(initialKey!=null) {
-            keyField.setText(initialKey);
-            keyField.setEditable(false);
+            keyComboBox.setModel(new DefaultComboBoxModel(new String[]{initialKey}));
+            keyComboBox.setSelectedIndex(0);
+            keyComboBox.setEnabled(false);
+            keyComboBox.setEditable(false);
+        } else {
+            if (propertyNamesToDescriptions == null || propertyNamesToDescriptions.isEmpty()) {
+                keyComboBox.setModel(new DefaultComboBoxModel());
+                keyComboBox.setEnabled(true);
+                keyComboBox.setEditable(true);
+            } else {
+                keyComboBox.setModel(new DefaultComboBoxModel(propertyNamesToDescriptions.keySet().toArray(new String[0])));
+                keyComboBox.setEnabled(true);
+                keyComboBox.setEditable(true);
+                ItemListener itemListener = new ItemListener() {
+                    public void itemStateChanged(ItemEvent e) {
+                        String description = (String) propertyNamesToDescriptions.get(keyComboBox.getSelectedItem());
+                        if (description == null) description = "";
+                        descField.setText(description);
+                    }
+                };
+                keyComboBox.addItemListener(itemListener);
+                keyComboBox.setSelectedIndex(0);
+                itemListener.itemStateChanged(null); // init desc
+            }
         }
         valueField.setText(initialValue);
         cancelButton.addActionListener(new ActionListener() {
@@ -72,7 +99,7 @@ public class CaptureProperty extends JDialog {
     }
 
     public String newKey() {
-        return keyField.getText();
+        return (String) keyComboBox.getSelectedItem();
     }
 
     public String newValue() {

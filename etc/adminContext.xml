@@ -386,6 +386,9 @@
         <constructor-arg>
             <ref bean="serviceMetricsManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="serverConfig"/>
+        </constructor-arg>        
     </bean>
 
     <!-- RBAC admin impl -->

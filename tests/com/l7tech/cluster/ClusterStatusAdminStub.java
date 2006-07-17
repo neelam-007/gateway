@@ -13,6 +13,7 @@ import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -113,6 +114,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
 
     public Collection getAllProperties() throws RemoteException, FindException {
         throw new UnsupportedOperationException();
+    }
+
+    public Map getKnownProperties() throws RemoteException {
+        throw new UnsupportedOperationException();        
     }
 
     public String getProperty(String key) throws RemoteException, FindException {

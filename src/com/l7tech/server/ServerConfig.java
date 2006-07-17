@@ -221,6 +221,15 @@ public class ServerConfig extends ApplicationObjectSupport {
         return value;
     }
 
+    /**
+     * Get the list of all declared cluster properties.
+     *
+     * @return The Map of declared property names to descriptions.
+     */
+    public Map getClusterPropertyNames() {
+        return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_DESC);
+    }
+
     public String getNameFromClusterName(String clusterPropertyName) {
         return getServerConfigPropertyName(SUFFIX_CLUSTER_KEY, clusterPropertyName);
     }
@@ -248,6 +257,27 @@ public class ServerConfig extends ApplicationObjectSupport {
             }
         }
         return name;
+    }
+
+    private Map getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
+        Map keyValueToMappedValue = new TreeMap();
+        if(keySuffix!=null) {
+            Set propEntries = _properties.entrySet();
+            for (Iterator iterator = propEntries.iterator(); iterator.hasNext();) {
+                Map.Entry propEntry = (Map.Entry) iterator.next();
+                String propKey = (String) propEntry.getKey();
+                String propVal = (String) propEntry.getValue();
+
+                if(propKey==null || propVal==null) continue;
+
+                if(propKey.endsWith(keySuffix)) {
+                    keyValueToMappedValue.put(
+                            propVal,
+                            _properties.getProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
+                }
+            }
+        }
+        return keyValueToMappedValue;
     }
 
     private String getServerConfigProperty(String prop) {

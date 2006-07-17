@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsBin;
 
@@ -16,6 +17,7 @@ import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -31,16 +33,14 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * Constructs the new cluster status admin implementation.
      * On constructir change update the spring bean definition
-     *
-     * @param clusterInfoManager
-     * @param serviceUsageManager
      */
     public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
                                  ServiceUsageManager serviceUsageManager,
                                  ClusterPropertyManager clusterPropertyManager,
                                  AccessManager accessManager,
                                  LicenseManager licenseManager,
-                                 ServiceMetricsManager metricsManager)
+                                 ServiceMetricsManager metricsManager,
+                                 ServerConfig serverConfig)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -48,17 +48,22 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.clusterPropertyManager = clusterPropertyManager;
         this.licenseManager = (GatewayLicenseManager)licenseManager;
         this.serviceMetricsManager = metricsManager;
-        if (clusterInfoManager == null) {
+        this.serverConfig = serverConfig;
+
+        if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
-        }
-        if (serviceUsageManager == null) {
+        if (serviceUsageManager == null)
             throw new IllegalArgumentException("Service Usage manager is required");
-        }
-        if (accessManager == null) {
+        if (clusterPropertyManager == null)
+            throw new IllegalArgumentException("Cluster Property manager is required");
+        if (accessManager == null)
             throw new IllegalArgumentException("Access manager is required");
-        }
         if (licenseManager == null)
             throw new IllegalArgumentException("License manager is required");
+        if (metricsManager == null)
+            throw new IllegalArgumentException("Metrics manager is required");
+        if (serverConfig == null)
+            throw new IllegalArgumentException("Server Config manager is required");
     }
 
     private void checkLicense() throws RemoteException {
@@ -153,6 +158,10 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return clusterPropertyManager.findAll();
     }
 
+    public Map getKnownProperties() throws RemoteException {
+        return serverConfig.getClusterPropertyNames();
+    }
+
     public String getProperty(String key) throws RemoteException, FindException {
         return clusterPropertyManager.getProperty(key);
     }
@@ -194,6 +203,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final AccessManager accessManager;
     private final GatewayLicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
+    private final ServerConfig serverConfig;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

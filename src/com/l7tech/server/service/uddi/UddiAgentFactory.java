@@ -52,7 +52,6 @@ public class UddiAgentFactory {
      * @throws com.l7tech.common.uddi.UddiAgentException if an error occurs
      */
     public Properties getUddiProperties() throws UddiAgentException {
-        ServerConfig serverConfig = ServerConfig.getInstance();
         Properties properties = new Properties();
         addUDDIConfig(properties);
         addClusterProperties(properties);

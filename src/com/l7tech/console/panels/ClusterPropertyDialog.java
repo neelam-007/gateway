@@ -44,6 +44,7 @@ public class ClusterPropertyDialog extends JDialog {
     private JButton closeButton;
     private final ArrayList properties = new ArrayList();
     private final Logger logger = Logger.getLogger(ClusterPropertyDialog.class.getName());
+    private Map knownProperties;
 
     public ClusterPropertyDialog(Frame owner) {
         super(owner, true);
@@ -199,7 +200,15 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, null, null);
+            if (knownProperties == null) {
+                try {
+                    knownProperties = reg.getClusterStatusAdmin().getKnownProperties();
+                } catch(RemoteException e) {
+                    logger.log(Level.SEVERE, "Error getting list of available properties", e);
+                }
+            }
+
+            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, null, null, knownProperties);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);
@@ -232,7 +241,7 @@ public class ClusterPropertyDialog extends JDialog {
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
             CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property",
-                    prop.getDescription(), prop.getName(), prop.getValue());
+                    prop.getDescription(), prop.getName(), prop.getValue(), null);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);

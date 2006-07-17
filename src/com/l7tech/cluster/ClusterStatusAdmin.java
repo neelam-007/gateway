@@ -11,6 +11,7 @@ import com.l7tech.service.MetricsBin;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -78,6 +79,15 @@ public interface ClusterStatusAdmin {
      * @return a list containing ClusterProperty objects (never null)
      */
     Collection getAllProperties() throws RemoteException, FindException;
+
+    /**
+     * Get a map of all known cluster wide properties.
+     *
+     * <p>Keys are names, values are descriptions which may be null</p>
+     *
+     * @return a Map of names / descriptions
+     */
+    Map getKnownProperties() throws RemoteException;
 
     /**
      * get cluster wide property
