@@ -10,6 +10,7 @@ import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.StashManager;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Makes stash managers for server code that needs one.
@@ -17,10 +18,10 @@ import java.io.File;
 public final class StashManagerFactory {
     private StashManagerFactory() {}
 
-    private static int stashFileUnique = 0;
+    private static AtomicLong stashFileUnique = new AtomicLong(0);
 
-    private static synchronized int getStashFileUnique() {
-        return stashFileUnique++;
+    private static long getStashFileUnique() {
+        return stashFileUnique.getAndIncrement();
     }
 
     private static class ConfigHolder {
@@ -31,7 +32,7 @@ public final class StashManagerFactory {
     /**
      * Create a new StashManager to use for some request.  A HybridStashManager will be created
      *
-     * @return
+     * @return a new StashManager instance.  Never null.
      */
     public static StashManager createStashManager() {
         StashManager stashManager = new HybridStashManager(ConfigHolder.DISK_THRESHOLD,
