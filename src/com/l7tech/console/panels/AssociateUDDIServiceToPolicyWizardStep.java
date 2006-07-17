@@ -98,6 +98,9 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             logger.log(Level.SEVERE, "Find_service structure did not check out ok", e);
         }
         String filter = serviceNameField.getText();
+        if (filter != null) {
+            filter = filter.toLowerCase();
+        }
         try {
             KeyedReference category = new KeyedReference("uddi:uddi.org:wsdl:types", "service", "");
             findService.setCategoryBag(new CategoryBag(new KeyedReferenceArrayList(category)));
@@ -116,6 +119,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
                 String businessKey = serviceInfo.getBusinessKey();
                 if (businessKey != null && !businessKey.startsWith("uddi:systinet")) {
                     String name = serviceInfo.getNameArrayList().get(0).getValue();
+                    name = name.toLowerCase();
                     if (name.indexOf(filter) >= 0) {
                         listData.add(new ListMember(name, serviceInfo.getServiceKey()));
                     }
