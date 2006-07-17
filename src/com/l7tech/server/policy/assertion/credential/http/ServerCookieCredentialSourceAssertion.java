@@ -6,14 +6,13 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
@@ -21,8 +20,8 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -45,9 +44,9 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
             HttpCookie cookie = cookies[i];
             if (cookieName.equalsIgnoreCase(cookie.getCookieName())) {
                 String cookieValue = cookie.getCookieValue();
-                String login = "cookie-" + cookieName + "-" + HexUtils.encodeBase64(cookieValue.getBytes("UTF-8"), true);
+                //String login = "cookie-" + cookieName + "-" + HexUtils.encodeBase64(cookieValue.getBytes("UTF-8"), true);
                 logger.log(Level.FINE, "Found cookie with the name: {0}", cookieName);
-                return new LoginCredentials(login, cookieValue.toCharArray(), CredentialFormat.OPAQUETOKEN, getClass());
+                return new LoginCredentials(null, cookieValue.toCharArray(), CredentialFormat.OPAQUETOKEN, getClass());
             }
         }
 
