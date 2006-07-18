@@ -453,7 +453,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                     trusted.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(getFederatedCredentials());
                 }
             }
-            else {
+            else if(!ssg.isFederatedGateway()){ // the following is primarily for SAML SenderVouches
                 logger.info("PendingRequest: ensuring client certificate key is accessible");
                 ssg.getClientCertificatePrivateKey(getCredentialsForTrustedSsg());
             }
