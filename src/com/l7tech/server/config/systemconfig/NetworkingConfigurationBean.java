@@ -4,6 +4,8 @@ import com.l7tech.server.config.beans.BaseConfigurationBean;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -114,13 +116,28 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         public String[] getNameServers() {
             return nameservers;
         }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final NetworkConfig that = (NetworkConfig) o;
+
+            if (interfaceName != null ? !interfaceName.equals(that.interfaceName) : that.interfaceName != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return (interfaceName != null ? interfaceName.hashCode() : 0);
+        }
     }
 
     public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
         return new NetworkConfig(interfaceName, bootProto);
     }
 
-    private List<NetworkConfig> networkingConfigs;
+    private Set<NetworkConfig> networkingConfigs;
 
     public NetworkingConfigurationBean(String name, String description) {
         super(name, description);
@@ -128,7 +145,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        networkingConfigs = new ArrayList<NetworkConfig>();
+        networkingConfigs = new HashSet<NetworkConfig>();
     }
 
     public void reset() {
@@ -156,7 +173,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         return null;
     }
 
-    public List<NetworkConfig> getNetworkingConfigurations() {
+    public Set<NetworkConfig> getNetworkingConfigurations() {
         return networkingConfigs;
     }
 

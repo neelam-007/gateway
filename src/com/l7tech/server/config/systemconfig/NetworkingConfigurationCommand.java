@@ -4,6 +4,7 @@ import com.l7tech.server.config.commands.BaseConfigurationCommand;
 import com.l7tech.server.config.beans.ConfigurationBean;
 
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.io.*;
 
@@ -26,7 +27,7 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
 
-        List<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
+        Set<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
         File currentWorkingDir = new File(".");
         File configDir = new File(currentWorkingDir, "configfiles");
         if (!configDir.mkdir())
@@ -79,9 +80,5 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
                 hostnameWriter.close();
         }
         return success;
-    }
-
-    public String[] getActions() {
-        return configBean.explain();
     }
 }

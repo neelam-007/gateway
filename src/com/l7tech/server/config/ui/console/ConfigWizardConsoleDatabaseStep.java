@@ -174,28 +174,28 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private void doDBPasswordPrompts(String defaultDbPassword) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-            PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "]",
+            PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "] ",
         };
         databaseBean.setDbPassword(getData(prompts, defaultDbPassword));
     }
 
     private void doDBUsernamePrompts(String defaultDbUsername) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-            PROMPT_DB_USERNAME + "[" + defaultDbUsername + "]",
+            PROMPT_DB_USERNAME + "[" + defaultDbUsername + "] ",
         };
         databaseBean.setDbUsername(getData(prompts, defaultDbUsername));
     }
 
     private void doDBNamePrompt(String defaultDbName) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-                PROMPT_DB_NAME + "[" + defaultDbName + "]",
+                PROMPT_DB_NAME + "[" + defaultDbName + "] ",
         };
         databaseBean.setDbName(getData(prompts, defaultDbName).trim());
     }
 
     private void doDbHostnamePrompt(String defaultHostname) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-                PROMPT_DB_HOSTNAME + "[" + defaultHostname + "]",
+                PROMPT_DB_HOSTNAME + "[" + defaultHostname + "] ",
         };
         databaseBean.setDbHostname(getData(prompts, defaultHostname).trim());
     }
@@ -207,7 +207,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 HEADER_DB_CONN_TYPE,
                 PROMPT_MAKE_NEW_DB,
                 PROMPT_USE_EXISTING_DB,
-                "please make a selection: [" + defaultValue + "]",
+                "please make a selection: [" + defaultValue + "] ",
         };
 
         String input = null;
