@@ -399,6 +399,9 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="entityFinder"/>
+        </constructor-arg>
     </bean>
 
     <!-- admin context servant - - >

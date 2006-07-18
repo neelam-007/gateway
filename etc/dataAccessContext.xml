@@ -184,6 +184,7 @@
                 <idref bean="counterIDManager"/>          <!-- TODO non-transactional methods -->
                 <idref bean="countedHitsManager"/>        <!-- TODO is this real? -->
                 <idref bean="sampleMessageManager"/>
+                <idref bean="entityFinder"/>
 
                 <!-- Identity mapping stuff -->
                 <idref bean="attributeConfigManager"/>

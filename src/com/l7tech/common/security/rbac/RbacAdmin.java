@@ -4,10 +4,7 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -53,4 +50,6 @@ public interface RbacAdmin {
     void deleteRole(Role selectedRole) throws DeleteException, RemoteException;
 
     Collection<User> findAssignedUsers(Role role) throws FindException, RemoteException;
+
+    EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException;
 }

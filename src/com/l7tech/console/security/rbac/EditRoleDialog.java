@@ -194,9 +194,9 @@ public class EditRoleDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
         if (role.getOid() == Role.DEFAULT_OID) {
-            setTitle(resources.getString("editRole.newTitle"));
+            setTitle(resources.getString("editRoleDialog.newTitle"));
         } else {
-            setTitle(MessageFormat.format(resources.getString("editRole.existingTitle"), role.getName()));
+            setTitle(MessageFormat.format(resources.getString("editRoleDialog.existingTitle"), role.getName()));
             roleName.setText(role.getName());
         }
 
@@ -321,7 +321,7 @@ public class EditRoleDialog extends JDialog {
 
         JButton srcButton = (JButton) src;
         if (srcButton == addPermission) {
-            Permission p = showEditPermissionDialog(new Permission(role, null, null));
+            Permission p = showEditPermissionDialog(new Permission(role, null, EntityType.ANY));
             if (p != null) tableModel.add(p);
             return;
         }

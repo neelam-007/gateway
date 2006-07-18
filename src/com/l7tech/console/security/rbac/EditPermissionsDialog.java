@@ -3,6 +3,7 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -49,11 +50,14 @@ public class EditPermissionsDialog extends JDialog {
         else
             setTitle("Edit Permission");
 
+        enableDisable();
         pack();
     }
 
     void enableDisable() {
-        buttonOK.setEnabled(typeSelection.getSelectedItem() != null && operationSelection.getSelectedItem() != null);
+        EntityType etype = (EntityType)typeSelection.getSelectedItem();
+        buttonOK.setEnabled(etype != null && operationSelection.getSelectedItem() != null);
+        browseForScope.setEnabled(etype != EntityType.ANY);
     }
 
     private void setupButtonListeners() {
@@ -71,21 +75,19 @@ public class EditPermissionsDialog extends JDialog {
 
         typeSelection.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                EntityType etype = (EntityType)typeSelection.getSelectedItem();
-                browseForScope.setEnabled(etype != EntityType.ANY);
-                permission.setEntityType(etype);
-            }
-        });
-
-        operationSelection.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                permission.setOperation((OperationType)operationSelection.getSelectedItem());
+                enableDisable();
             }
         });
 
         browseForScope.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // TODO
+                ScopeDialog sd = new ScopeDialog(EditPermissionsDialog.this, permission, (EntityType)typeSelection.getSelectedItem());
+                sd.pack();
+                Utilities.centerOnScreen(sd);
+                sd.setVisible(true);
+                if (sd.getPermission() != null) {
+                    scopeField.setText(permission.getScope().toString());
+                }
             }
         });
     }

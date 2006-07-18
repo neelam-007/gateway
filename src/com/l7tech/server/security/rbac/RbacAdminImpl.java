@@ -10,6 +10,7 @@ import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.EntityFinder;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -20,10 +21,12 @@ import java.util.Collection;
 public class RbacAdminImpl implements RbacAdmin {
     private final RoleManager roleManager;
     private final LicenseManager licenseManager;
+    private final EntityFinder entityFinder;
 
-    public RbacAdminImpl(RoleManager roleManager, LicenseManager licenseManager) {
+    public RbacAdminImpl(RoleManager roleManager, LicenseManager licenseManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
         this.licenseManager = licenseManager;
+        this.entityFinder = entityFinder;
     }
 
     private void checkLicense() throws RemoteException {
@@ -82,5 +85,10 @@ public class RbacAdminImpl implements RbacAdmin {
     public Collection<User> findAssignedUsers(Role role) throws FindException, RemoteException {
         checkLicense();
         return roleManager.getAssignedUsers(role);
+    }
+
+    public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {
+        checkLicense();
+        return entityFinder.findAll(entityClass);
     }
 }

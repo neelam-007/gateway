@@ -19,6 +19,7 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -26,6 +27,7 @@ import java.util.*;
 /**
  * @author alex
  */
+@Transactional(rollbackFor = ObjectModelException.class)
 public class RoleManagerImpl
         extends HibernateEntityManager<Role, EntityHeader>
         implements RoleManager
@@ -48,6 +50,7 @@ public class RoleManagerImpl
         return "rbac_role";
     }
 
+    @Transactional(readOnly=true)
     public Collection<User> getAssignedUsers(Role role) throws FindException {
         Set<User> users = new HashSet<User>();
         Criteria assignmentsForRole = getSession().createCriteria(UserRoleAssignment.class);
@@ -65,6 +68,7 @@ public class RoleManagerImpl
         return users;
     }
 
+    @Transactional(readOnly=true)
     public Collection<UserRoleAssignment> getAssignments(User user) throws FindException {
         Set<UserRoleAssignment> assignments = new HashSet<UserRoleAssignment>();
         Criteria userAssignmentQuery = getSession().createCriteria(UserRoleAssignment.class);
@@ -77,6 +81,7 @@ public class RoleManagerImpl
         return assignments;
     }
 
+    @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(User user) throws FindException {
         Set<Role> roles = new HashSet<Role>();
 
@@ -108,6 +113,7 @@ public class RoleManagerImpl
         }
     }
 
+    @Transactional(readOnly=true)
     public boolean isPermittedOperation(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
         if (user == null || entity == null || operation == null) throw new NullPointerException();
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
@@ -127,6 +133,7 @@ public class RoleManagerImpl
         return false;
     }
 
+    @Transactional
     public void deleteAssignment(final User user, final Role role) {
         getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) throws HibernateException, SQLException {

@@ -726,4 +726,8 @@
             <ref bean="serverConfig"/>
         </property>
     </bean>
+
+    <bean id="entityFinder" class="com.l7tech.server.EntityFinder">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
 </beans>
