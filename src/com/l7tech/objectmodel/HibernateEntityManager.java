@@ -103,8 +103,8 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         try {
             s = getSession();
             old = s.getFlushMode();
-            Query q = s.createQuery(HQL_FIND_BY_OID);
             s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_BY_OID);
             q.setLong(0, oid);
             List results = q.list();
             if (results.size() == 0) return null;
