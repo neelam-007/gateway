@@ -48,22 +48,24 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         printText(STEP_INFO + getEolChar());
 
         try {
-
-            NetworkingConfigurationBean.NetworkConfig whichConfig = null;
-
-            whichConfig = doSelectInterfacePrompts();
-            whichConfig = doConfigurationPrompts(whichConfig);
-            saveConfig(whichConfig);
-
-            if (doRepeatConfiguration()) {
-                doUserInterview(true);
-            }
-
+            doNetConfigPrompts();
             doHostnamePrompt();
             storeInput();
 
         } catch (IOException e) {
             logger.severe("Exception caught: " + e.getMessage());
+        }
+    }
+
+    private void doNetConfigPrompts() throws IOException, WizardNavigationException {
+        NetworkingConfigurationBean.NetworkConfig whichConfig = null;
+
+        whichConfig = doSelectInterfacePrompts();
+        whichConfig = doConfigurationPrompts(whichConfig);
+        saveConfig(whichConfig);
+        if (doRepeatConfiguration()) {
+            printText(getEolChar());
+            doNetConfigPrompts();
         }
     }
 
