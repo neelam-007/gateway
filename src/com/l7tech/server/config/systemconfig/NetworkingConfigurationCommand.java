@@ -5,6 +5,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.io.*;
 
@@ -27,15 +28,15 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
 
-        Set<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
+        Map<String, NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
         File currentWorkingDir = new File(".");
         File configDir = new File(currentWorkingDir, "configfiles");
         if (!configDir.mkdir())
             logger.info("Created new directory for networking configuration: " + configDir.getAbsolutePath());
 
 
-        for (NetworkingConfigurationBean.NetworkConfig networkConfig : netConfigs) {
-
+        for (String key : netConfigs.keySet()) {
+            NetworkingConfigurationBean.NetworkConfig networkConfig = netConfigs.get(key);
             if (networkConfig != null) {
                 String interfaceName = networkConfig.getInterfaceName();
                 logger.info("Configuring \"" + interfaceName + "\" interface");

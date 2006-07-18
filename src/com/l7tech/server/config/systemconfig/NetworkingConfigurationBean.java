@@ -2,10 +2,7 @@ package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.BaseConfigurationBean;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -116,28 +113,13 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         public String[] getNameServers() {
             return nameservers;
         }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final NetworkConfig that = (NetworkConfig) o;
-
-            if (interfaceName != null ? !interfaceName.equals(that.interfaceName) : that.interfaceName != null) return false;
-
-            return true;
-        }
-
-        public int hashCode() {
-            return (interfaceName != null ? interfaceName.hashCode() : 0);
-        }
     }
 
     public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
         return new NetworkConfig(interfaceName, bootProto);
     }
 
-    private Set<NetworkConfig> networkingConfigs;
+    private Map<String, NetworkConfig> networkingConfigs;
 
     public NetworkingConfigurationBean(String name, String description) {
         super(name, description);
@@ -145,27 +127,30 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        networkingConfigs = new HashSet<NetworkConfig>();
+        networkingConfigs = new HashMap<String, NetworkConfig>();
     }
 
     public void reset() {
     }
 
     protected void populateExplanations() {
-        for (NetworkConfig networkConfig : networkingConfigs) {
-            explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
-            explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
-            if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
-                explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
-                explanations.add("\tNETMASK=" + networkConfig.getNetMask());
-                explanations.add("\tGATEWAY=" + networkConfig.getGateway());
-                if (networkConfig.getNameServers() != null) {
-                    for (String ns : networkConfig.getNameServers()) {
-                        explanations.add("\tNAMESERVER=" + ns);
+        for (String key: networkingConfigs.keySet()) {
+            NetworkConfig networkConfig = networkingConfigs.get(key);
+            if (networkConfig != null) {
+                explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
+                explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
+                if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
+                    explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
+                    explanations.add("\tNETMASK=" + networkConfig.getNetMask());
+                    explanations.add("\tGATEWAY=" + networkConfig.getGateway());
+                    if (networkConfig.getNameServers() != null) {
+                        for (String ns : networkConfig.getNameServers()) {
+                            explanations.add("\tNAMESERVER=" + ns);
+                        }
                     }
                 }
+                explanations.add("");
             }
-            explanations.add("");
         }
     }
 
@@ -173,12 +158,12 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         return null;
     }
 
-    public Set<NetworkConfig> getNetworkingConfigurations() {
+    public Map<String, NetworkConfig> getNetworkingConfigurations() {
         return networkingConfigs;
     }
 
     public void addNetworkingConfig(NetworkConfig netConfig) {
-        networkingConfigs.add(netConfig);
+        networkingConfigs.put(netConfig.getInterfaceName(), netConfig);
     }
 
     public String getHostname() {
