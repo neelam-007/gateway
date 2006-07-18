@@ -77,6 +77,7 @@ public final class TestDocuments {
     public static final String WSS2005JUL_RESPONSE = DIR + "wssInterop2005July_response.xml";
     public static final String WSSKEYSTORE_ALICE = DIR + "wssInterop/alice.pfx";
     public static final String WSSKEYSTORE_BOB   = DIR + "wssInterop/bob.pfx";
+    public static final String WSSKEYSTORE_WSSIP   = DIR + "wssInterop/wssip.pfx";
 
     private static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
     private static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
@@ -158,11 +159,15 @@ public final class TestDocuments {
     private static X509Certificate wssInteropBobCert = null;
     private static PrivateKey wssInteropBobKey = null;
     private static Certificate[] wssInteropBobChain = null;
+    private static X509Certificate wssInteropWssIpCert = null;
+    private static PrivateKey wssInteropWssIpKey = null;
     private static synchronized void initWssInteropCerts() throws Exception {
         if (wssInteropAliceCert != null &&
             wssInteropAliceKey != null &&
             wssInteropBobCert != null &&
-            wssInteropBobKey != null)
+            wssInteropBobKey != null &&
+            wssInteropWssIpCert != null &&
+            wssInteropWssIpKey != null)
             return;
 
         KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -177,10 +182,17 @@ public final class TestDocuments {
         wssInteropBobKey = (PrivateKey)ks.getKey(bobAlias, "password".toCharArray());
         wssInteropBobChain = ks.getCertificateChain(bobAlias);
 
+        ks.load(getInputStream(WSSKEYSTORE_WSSIP), "password".toCharArray());
+        final String wssIpAlias = ks.aliases().nextElement().toString();
+        wssInteropWssIpCert = (X509Certificate)ks.getCertificate(wssIpAlias);
+        wssInteropWssIpKey = (PrivateKey)ks.getKey(wssIpAlias, "password".toCharArray());
+
         if (wssInteropAliceCert == null ||
             wssInteropAliceKey == null ||
             wssInteropBobCert == null ||
-            wssInteropBobKey == null)
+            wssInteropBobKey == null ||
+            wssInteropWssIpCert == null ||
+            wssInteropWssIpKey == null)
             throw new IOException("Unable to find all keys and certs in the wss interop keystores");
     }
 
