@@ -494,7 +494,6 @@ public class LogPanel extends JPanel {
                     msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
                     msg += "User ID    : " + (sum.getUserId()!=null ? sum.getUserId() : "<No ID>") + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
-                    msg += "Entity name: " + arec.getName() + "\n";
 
                     if (sum.getRequestXml() != null) {
                         reqXmlVisible = true;
