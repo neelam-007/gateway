@@ -159,43 +159,45 @@ public final class SamlAssertionV2 extends SamlAssertion {
 
                 SubjectConfirmationDataType subjectConfirmationData = subjectConfirmations[0].getSubjectConfirmationData();
 
-                if (subjectConfirmationData != null &&
-                    ((Element)subjectConfirmationData.getDomNode()).getAttributeNS(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type")
-                            .equals("urn:KeyInfoConfirmationDataType")) {
+                if (confirmationMethod == HOLDER_OF_KEY) {
+                    if (subjectConfirmationData != null &&
+                        ((Element)subjectConfirmationData.getDomNode()).getAttributeNS(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type")
+                                .equals("urn:KeyInfoConfirmationDataType")) {
 
-                    if(logger.isLoggable(Level.FINE))
-                        logger.fine("Processing KeyInfo confirmation.");
+                        if(logger.isLoggable(Level.FINE))
+                            logger.fine("Processing KeyInfo confirmation.");
 
-                    KeyInfoConfirmationDataType keyInfoConfirmationData = (KeyInfoConfirmationDataType)
-                        subjectConfirmationData.changeType(KeyInfoConfirmationDataType.Factory.newInstance().schemaType());
+                        KeyInfoConfirmationDataType keyInfoConfirmationData = (KeyInfoConfirmationDataType)
+                            subjectConfirmationData.changeType(KeyInfoConfirmationDataType.Factory.newInstance().schemaType());
 
-                    KeyInfoType[] keyInfos = keyInfoConfirmationData.getKeyInfoArray();
+                        KeyInfoType[] keyInfos = keyInfoConfirmationData.getKeyInfoArray();
 
-                    if(logger.isLoggable(Level.FINE))
-                        logger.fine("Got " + keyInfos.length + " KeyInfos.");
+                        if(logger.isLoggable(Level.FINE))
+                            logger.fine("Got " + keyInfos.length + " KeyInfos.");
 
-                    for (int i = 0; i < keyInfos.length; i++) {
-                        KeyInfoType keyInfo = keyInfos[i];
+                        for (int i = 0; i < keyInfos.length; i++) {
+                            KeyInfoType keyInfo = keyInfos[i];
 
-                        if (subjectCertificate != null)
-                            break; //TODO determine which cert to use?
+                            if (subjectCertificate != null)
+                                break; //TODO determine which cert to use?
 
-                        X509DataType[] x509datas = keyInfo.getX509DataArray();
-                        if (x509datas != null && x509datas.length > 0) {
-                            X509DataType x509data = x509datas[0];
-                            subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
-                        } else {
-                            if(logger.isLoggable(Level.FINE))
-                                logger.fine("Looking for STR.");
+                            X509DataType[] x509datas = keyInfo.getX509DataArray();
+                            if (x509datas != null && x509datas.length > 0) {
+                                X509DataType x509data = x509datas[0];
+                                subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
+                            } else {
+                                if(logger.isLoggable(Level.FINE))
+                                    logger.fine("Looking for STR.");
 
-                            Element keyInfoEl = (Element)keyInfo.getDomNode();
-                            List strs = XmlUtil.findChildElementsByName(keyInfoEl, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
-                            if (keyInfoEl != null && !strs.isEmpty()) {
-                                try {
-                                    KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
-                                    subjectCertificate = kie.getCertificate();
-                                } catch (Exception e) {
-                                    logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
+                                Element keyInfoEl = (Element)keyInfo.getDomNode();
+                                List strs = XmlUtil.findChildElementsByName(keyInfoEl, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
+                                if (keyInfoEl != null && !strs.isEmpty()) {
+                                    try {
+                                        KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
+                                        subjectCertificate = kie.getCertificate();
+                                    } catch (Exception e) {
+                                        logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
+                                    }
                                 }
                             }
                         }

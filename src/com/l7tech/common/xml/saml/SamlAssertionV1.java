@@ -151,21 +151,23 @@ public final class SamlAssertionV1 extends SamlAssertion {
                     confirmationMethod = null;
                 }
 
-                KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
-                if (keyInfo != null) {
-                    X509DataType[] x509datas = keyInfo.getX509DataArray();
-                    if (x509datas != null && x509datas.length > 0) {
-                        X509DataType x509data = x509datas[0];
-                        subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
-                    } else {
-                        Element keyInfoEl = (Element)keyInfo.getDomNode();
-                        List strs = XmlUtil.findChildElementsByName(keyInfoEl, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
-                        if (keyInfoEl != null && !strs.isEmpty()) {
-                            try {
-                                KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
-                                subjectCertificate = kie.getCertificate();
-                            } catch (Exception e) {
-                                logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
+                if (confirmationMethod == HOLDER_OF_KEY) {
+                    KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
+                    if (keyInfo != null) {
+                        X509DataType[] x509datas = keyInfo.getX509DataArray();
+                        if (x509datas != null && x509datas.length > 0) {
+                            X509DataType x509data = x509datas[0];
+                            subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
+                        } else {
+                            Element keyInfoEl = (Element)keyInfo.getDomNode();
+                            List strs = XmlUtil.findChildElementsByName(keyInfoEl, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
+                            if (keyInfoEl != null && !strs.isEmpty()) {
+                                try {
+                                    KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
+                                    subjectCertificate = kie.getCertificate();
+                                } catch (Exception e) {
+                                    logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
+                                }
                             }
                         }
                     }
