@@ -152,7 +152,7 @@ public class RequestHandler extends AbstractHttpHandler {
             reply.initialize(exceptionToFault(e,
                                               e.getCode() == 404 ? "Client" : "Server",
                                               getOriginalUrl(httpRequest, httpRequest.getURI().toString())));
-            transmitResponse(e.getCode(), httpResponse, reply);
+            transmitResponse(e.getCode(), httpResponse, reply, false, null);
         } catch (Error e) {
             log.log(Level.SEVERE, e.getMessage(), e);
             throw e;
@@ -264,7 +264,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 status = respHttp.getStatus();
             if (respHttp != null)
                 status = respHttp.getStatus();
-            transmitResponse(status, httpResponse, context.getResponse());
+            transmitResponse(status, httpResponse, context.getResponse(), ssg.isHttpHeaderPassthrough(), ssg);
         } finally {
             if (context != null)
                 context.close();
@@ -319,14 +319,32 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param httpResponse    the interested client's HttpResponse
      * @param response the response we are to send them
+     * @param copyHeaders  true if headers in the response should be copied over
+     * @param ssg          ignored unless copyHeaders.  Otherwise, is consulted with shouldCopyHeader() for each header,
+     *                     to see if this specific header should be copied over.
      * @throws IOException if something went wrong
      */
-    private void transmitResponse(int status, final HttpResponse httpResponse, Message response) throws IOException {
+    private void transmitResponse(int status, final HttpResponse httpResponse, Message response, boolean copyHeaders, Ssg ssg) throws IOException {
         try {
             OutputStream os = httpResponse.getOutputStream();
 
             httpResponse.setStatus(status);
             httpResponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
+
+            if (copyHeaders) {
+                HttpHeadersKnob headerKnob = (HttpHeadersKnob)response.getKnob(HttpHeadersKnob.class);
+                if (headerKnob != null) {
+                    HttpHeader[] headers = headerKnob.getHeaders().toArray();
+                    for (int i = 0; i < headers.length; i++) {
+                        HttpHeader header = headers[i];
+                        String name = header.getName();
+                        if (ssg != null && !ssg.shouldCopyHeader(name))
+                            continue;
+                        httpResponse.addField(name, header.getFullValue());
+                    }
+                }
+            }
+
             final long contentLength = response.getMimeKnob().getContentLength();
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Resposne from Gateway was too large to be processed; maximum size is " + Integer.MAX_VALUE + " bytes");

@@ -29,9 +29,7 @@ import java.net.PasswordAuthentication;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,6 +72,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String kerberosName = null;
     private boolean enableKerberosCredentials = false;
     private boolean useSslByDefault = true;
+    private boolean httpHeaderPassthrough = false;
     private boolean savePasswordToDisk = false;
     private byte[] persistPassword = null;
     private boolean useOverrideIpAddresses = false;
@@ -87,6 +86,12 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private transient X509Certificate lastSeenPeerCertificate = null;
     private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
     private boolean genericService = false; // true if the server is not actually an SSG
+
+    private static Set headersToCopy = new TreeSet(String.CASE_INSENSITIVE_ORDER);
+    static {
+        headersToCopy.add("Cooke");
+        headersToCopy.add("Set-Cookie");
+    }
 
     /**
      * Copy all persistent (non-Runtime) settings from that Ssg into this Ssg (except Id), overwriting this Ssg's
@@ -542,6 +547,14 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         this.useSslByDefault = useSslByDefault;
     }
 
+    public boolean isHttpHeaderPassthrough() {
+        return httpHeaderPassthrough;
+    }
+
+    public void setHttpHeaderPassthrough(boolean httpHeaderPassthrough) {
+        this.httpHeaderPassthrough = httpHeaderPassthrough;
+    }
+
     public boolean isUseOverrideIpAddresses() {
         return useOverrideIpAddresses;
     }
@@ -770,5 +783,10 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     /** @return true if this service is not actually an SSG, but is just a generic URL to be posted to. */
     public boolean isGeneric() {
         return this.genericService;
+    }
+
+    /** @return true if the specified HTTP header should be copied through. */
+    public boolean shouldCopyHeader(String headerName) {
+        return headersToCopy.contains(headerName);
     }
 }

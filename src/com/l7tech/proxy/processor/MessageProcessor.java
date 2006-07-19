@@ -621,6 +621,25 @@ public class MessageProcessor {
             }
 
             params.addExtraHeader(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
+            if (ssg.isHttpHeaderPassthrough()) {
+                // Pass through all other headers from request to response, but without overwriting any Bridge header
+                HttpRequestKnob httpRequestKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+                if (httpRequestKnob != null) {
+                    String[] names = httpRequestKnob.getHeaderNames();
+                    for (int i = 0; i < names.length; i++) {
+                        String name = names[i];
+                        if (!ssg.shouldCopyHeader(name))
+                            continue;
+                        String[] values = httpRequestKnob.getHeaderValues(name);
+                        for (int j = 0; j < values.length; j++) {
+                            String value = values[j];
+                            params.addExtraHeader(new GenericHttpHeader(name, value));
+                        }
+                    }
+                }
+
+
+            }
 
             final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);

@@ -68,8 +68,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private SsgNetworkPanel networkPane;
 
     //   View for Bridge Policy pane
-    private JComponent bridgePolicyPane;
-    private JCheckBox cbUseSslByDefault;
+    private BridgePolicyPanel bridgePolicyPane;
 
     //   View for Service Policies pane
     private SsgPoliciesPanel policiesPane;
@@ -109,30 +108,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return new SsgPropertyDialog(ssg, bindPort);
     }
 
-    private JComponent getBridgePolicyPane() {
+    private BridgePolicyPanel getBridgePolicyPane() {
         if (bridgePolicyPane == null) {
-            int y = 0;
-            JPanel outerPane = new JPanel(new GridBagLayout());
-            bridgePolicyPane = new JScrollPane(outerPane);
-            bridgePolicyPane.setBorder(BorderFactory.createEmptyBorder());
-            JPanel pane = new JPanel(new GridBagLayout());
-            pane.setBorder(BorderFactory.createTitledBorder("  Client-Side Policy  "));
-            outerPane.add(pane,
-                          new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
-                                                 GridBagConstraints.NORTHWEST,
-                                                 GridBagConstraints.HORIZONTAL,
-                                                 new Insets(14, 5, 0, 5), 0, 0));
-            outerPane.add(Box.createGlue(),
-                          new GridBagConstraints(0, 99, 1, 1, 1.0, 1.0,
-                                                 GridBagConstraints.CENTER,
-                                                 GridBagConstraints.BOTH,
-                                                 new Insets(0, 0, 0, 0), 0, 0));
-            cbUseSslByDefault = new JCheckBox("Use SSL by Default");
-            pane.add(cbUseSslByDefault,
-                     new GridBagConstraints(0, y, 1, 1, 1.0, 0.0,
-                                            GridBagConstraints.WEST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(5, 15, 5, 0), 0, 0));
+            bridgePolicyPane = new BridgePolicyPanel();
         }
         return bridgePolicyPane;
     }
@@ -771,7 +749,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             getNetworkPane().setUseOverrideIpAddresses(ssg.isUseOverrideIpAddresses());
             getNetworkPane().setCustomIpAddresses(ssg.getOverrideIpAddresses());
             getNetworkPane().setFailoverStrategyName(ssg.getFailoverStrategyName());
-            cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
+            getBridgePolicyPane().setUseSslByDefault(ssg.isUseSslByDefault());
+            getBridgePolicyPane().setHeaderPassthrough(ssg.isHttpHeaderPassthrough());
             getNetworkPane().updateCustomPortsEnableState();
         }
         getPoliciesPane().setPolicyCache(ssg.getRuntime().getPolicyManager());
@@ -832,7 +811,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 }
 
                 // applicable to both trusted and federated SSG
-                ssg.setUseSslByDefault(!ssg.isGeneric() && cbUseSslByDefault.isSelected());
+                ssg.setUseSslByDefault(!ssg.isGeneric() && getBridgePolicyPane().isUseSslByDefault());
+                ssg.setHttpHeaderPassthrough(getBridgePolicyPane().isHeaderPassthrough());
                 ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
                 ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
                 ssg.setFailoverStrategyName(getNetworkPane().getFailoverStrategyName());
