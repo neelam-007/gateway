@@ -1,28 +1,22 @@
 package com.l7tech.proxy.gui.dialogs;
 
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.KeyEvent;
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.net.URL;
-import java.net.URISyntaxException;
-import java.net.URLConnection;
-import java.net.JarURLConnection;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.*;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Logger;
 
 /**
  * Policy import dialog.
@@ -34,6 +28,7 @@ import javax.swing.event.ChangeEvent;
  * @version $Revision$
  */
 public class SsgPolicyImportDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(SsgPolicyImportDialog.class.getName());
 
     //- PUBLIC
 
@@ -80,7 +75,7 @@ public class SsgPolicyImportDialog extends JDialog {
     /**
      * Check if the dialog wan cancelled.
      *
-     * @return
+     * @return true if the dialog was cancelled
      */
     public boolean isCancelled() {
         return cancelled;
@@ -151,7 +146,7 @@ public class SsgPolicyImportDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        ButtonGroup radioButtonGroup = new ButtonGroup();
+        final ButtonGroup radioButtonGroup = new ButtonGroup();
         radioButtonGroup.add(radioButtonImportFile);
         radioButtonGroup.add(radioButtonImportWsdl);
         radioButtonGroup.add(radioButtonImportSelected);
@@ -200,6 +195,31 @@ public class SsgPolicyImportDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                checkForBypass(radioButtonGroup);
+            }
+        });
+    }
+
+    /** Close the dialog immediatley if only one radio button is available. */
+    private void checkForBypass(ButtonGroup radioButtonGroup) {
+        Enumeration buttons = radioButtonGroup.getElements();
+        JRadioButton lastAvail = null;
+        int numAvail = 0;
+        while (buttons.hasMoreElements()) {
+            JRadioButton button = (JRadioButton)buttons.nextElement();
+            if (button.isVisible() && button.isEnabled()) {
+                numAvail++;
+                lastAvail = button;
+            }
+        }
+        if (numAvail == 1) {
+            // Only one option -- may as well take it immediately
+            lastAvail.setSelected(true);
+            onOK();
+        }
     }
 
     /**
@@ -236,6 +256,10 @@ public class SsgPolicyImportDialog extends JDialog {
         Set policyNames = new TreeSet();
 
         URL resourceUrl = getClass().getClassLoader().getResource(TEMPLATE_DIRECTORY);
+        if (resourceUrl == null) {
+            logger.warning("No template directory configured -- no Bridge policy templates available");
+            return new String[0];
+        }
         if ("file".equals(resourceUrl.getProtocol())) {
             try {
                 File templateDirectory = new File(resourceUrl.toURI());
