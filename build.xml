@@ -1630,6 +1630,15 @@
         </copy>
     </target>
 
+    <!-- ** test forms compilation target (skunkworks testing apps) -->
+    <target name="compile-test-forms" depends="compile-tests">
+        <javac2 srcdir="tests" destdir="${build.test.classes}" debug="on" target="1.4" optimize="on" source="1.4"
+                classpathref="project.test.classpath">
+            <include name="**/*.form"/>
+        </javac2>
+    </target>
+
+
     <target name="test-ssg">
         <parallel>
             <antcall target="start-tomcat"/>
