@@ -127,6 +127,7 @@ class SsgListPanel extends JPanel {
 
         final JScrollPane ssgListPane = new JScrollPane(ssgTable);
         ssgListPanel.add(ssgListPane, BorderLayout.CENTER);
+        updateEnableDisableState();
 
     }
 
