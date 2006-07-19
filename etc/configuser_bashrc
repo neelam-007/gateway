@@ -4,15 +4,14 @@ set -e
 SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
 CONFWIZARD="/ssg/configwizard/ssgconfig.sh -console"
 
-echo "Welcome to the SecureSpan Gateway"
-echo
-echo "This user account allows you to configure the appliance"
-echo
-
 isValid="n"
-while [ "$isValid" != y ]
+while [ "$isValid" != "y" ]
 do
-        echo "What would you like to do?"
+    clear
+    echo "Welcome to the SecureSpan Gateway"
+    echo
+    echo "This user account allows you to configure the appliance"
+    echo "What would you like to do?"
         echo "1) Configure networking on this SecureSpan Gateway appliance"
         echo "2) Configure the SecureSpan Gateway application on this appliance"
         echo "3) Logout (no reboot)"
@@ -21,10 +20,21 @@ do
         read choice
 
         case $choice in
-                1) clear; exec ${SYSWIZARD};;
-                2) clear; exec ${CONFWIZARD};;
-                3) exit;;
-                4) reboot;;
-                *) isValid="n"; echo "$choice is not a valid selection";;
+                1) 	clear;
+                    (${SYSWIZARD});
+                    echo "Press enter to continue";
+                    read;
+                    clear;;
+                2) 	clear;
+                    (${CONFWIZARD});
+                    echo "Press enter to continue";
+                    read;
+                    clear;;
+                3)  exit;;
+                4)  reboot;;
+                *)  isValid="n";
+                    echo "That is not a valid selection";
+                    echo "Press enter to continue";
+                    read;;
         esac
 done
