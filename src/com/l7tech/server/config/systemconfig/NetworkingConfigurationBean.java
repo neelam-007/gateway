@@ -1,10 +1,13 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.BaseConfigurationBean;
-
-import java.util.*;
-
 import org.apache.commons.lang.StringUtils;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -12,10 +15,152 @@ import org.apache.commons.lang.StringUtils;
  * Time: 2:27:59 PM
  */
 public class NetworkingConfigurationBean extends BaseConfigurationBean {
+
+    private static final Logger logger = Logger.getLogger(NetworkingConfigurationBean.class.getName());
+
     public static final String DYNAMIC_BOOT_PROTO = "dhcp";
     public static final String STATIC_BOOT_PROTO = "static";
 
     private String hostname;
+
+    private Map<String, NetworkConfig> availableNetworkInterfaces;
+    private Map<String, NetworkConfig> networkingConfigs;
+
+    public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
+        return new NetworkConfig(interfaceName, bootProto);
+    }
+
+    public NetworkingConfigurationBean(String name, String description) {
+        super(name, description);
+        init();
+    }
+
+    private void init() {
+        networkingConfigs = new HashMap<String, NetworkConfig>();
+    }
+
+    public void reset() {
+    }
+
+    protected void populateExplanations() {
+        for (String key: networkingConfigs.keySet()) {
+            NetworkConfig networkConfig = networkingConfigs.get(key);
+            if (networkConfig != null) {
+                explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
+                explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
+                if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
+                    explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
+                    explanations.add("\tNETMASK=" + networkConfig.getNetMask());
+                    explanations.add("\tGATEWAY=" + networkConfig.getGateway());
+                    if (networkConfig.getNameServers() != null) {
+                        for (String ns : networkConfig.getNameServers()) {
+                            explanations.add("\tNAMESERVER=" + ns);
+                        }
+                    }
+                }
+                explanations.add("");
+            }
+        }
+    }
+
+    public List<String> getManualSteps() {
+        return null;
+    }
+
+    public Map<String, NetworkConfig> getNetworkingConfigurations() {
+        return networkingConfigs;
+    }
+
+    public void addNetworkingConfig(NetworkConfig netConfig) {
+        networkingConfigs.put(netConfig.getInterfaceName(), netConfig);
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
+
+    public Map<String,NetworkConfig> getExistingNetworkInterfaces() {
+
+        if (availableNetworkInterfaces == null) {
+            logger.info("Determining existing interface information.");
+            availableNetworkInterfaces = new HashMap<String, NetworkingConfigurationBean.NetworkConfig>();
+
+            File parentDir = new File(osFunctions.getNetworkConfigurationDirectory());
+            File[] configFiles = parentDir.listFiles(new FilenameFilter() {
+                    public boolean accept(File file, String s) {
+                        return s.toLowerCase().startsWith("ifcfg-") && !s.toLowerCase().equals("ifcfg-lo");
+                    }
+            });
+
+            if (configFiles != null && configFiles.length != 0) {
+                for (File file : configFiles) {
+                    NetworkingConfigurationBean.NetworkConfig theConfig = parseConfigFile(file);
+                    if (theConfig != null) {
+                        availableNetworkInterfaces.put(theConfig.getInterfaceName(), theConfig);
+                        logger.info("found existing configuration for interface: " + theConfig.describe());
+                    }
+                }
+            }
+        }
+
+        availableNetworkInterfaces.putAll(networkingConfigs);
+        return availableNetworkInterfaces;
+    }
+
+    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(File file) {
+        NetworkingConfigurationBean.NetworkConfig theNetConfig = null;
+
+        String justFileName = file.getName();
+        int dashIndex = justFileName.indexOf("-");
+        if (dashIndex == -1) return null;
+
+        String interfaceNameFromFileName = justFileName.substring(dashIndex + 1);
+        BufferedReader reader = null;
+
+        try {
+            reader  = new BufferedReader(new FileReader(file));
+            String bootProto = null;
+            String interfaceName = null;
+            String ipAddress = null;
+            String netMask = null;
+            String gateway = null;
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                int equalsIndex = line.indexOf("=");
+                //if this is a name=value pair
+                if (equalsIndex != -1) {
+                    String key = line.substring(0, equalsIndex);
+                    String value = line.substring(equalsIndex + 1);
+                    if (key.equals("DEVICE")) interfaceName = value;
+                    else if (key.equals("BOOTPROTO")) bootProto = value;
+                    else if (key.equals("IPADDR")) ipAddress = value;
+                    else if (key.equals("NETMASK")) netMask = value;
+                    else if (key.equals("GATEWAY")) gateway = value;
+                }
+            }
+            //finished reading the file, now make the network config
+            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(interfaceName, bootProto);
+            if (StringUtils.isNotEmpty(ipAddress)) theNetConfig.setIpAddress(ipAddress);
+            if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
+            if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
+
+        } catch (FileNotFoundException e) {
+            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
+        } catch (IOException e) {
+            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
+        } finally {
+            if (reader != null) try {
+                reader.close();
+            } catch (IOException e) {}
+        }
+        return theNetConfig;
+    }
+
 
     public static class NetworkConfig {
         private String interfaceName;
@@ -113,65 +258,6 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         public String[] getNameServers() {
             return nameservers;
         }
-    }
-
-    public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
-        return new NetworkConfig(interfaceName, bootProto);
-    }
-
-    private Map<String, NetworkConfig> networkingConfigs;
-
-    public NetworkingConfigurationBean(String name, String description) {
-        super(name, description);
-        init();
-    }
-
-    private void init() {
-        networkingConfigs = new HashMap<String, NetworkConfig>();
-    }
-
-    public void reset() {
-    }
-
-    protected void populateExplanations() {
-        for (String key: networkingConfigs.keySet()) {
-            NetworkConfig networkConfig = networkingConfigs.get(key);
-            if (networkConfig != null) {
-                explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
-                explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
-                if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
-                    explanations.add("\tIPADDR=" + networkConfig.getIpAddress());
-                    explanations.add("\tNETMASK=" + networkConfig.getNetMask());
-                    explanations.add("\tGATEWAY=" + networkConfig.getGateway());
-                    if (networkConfig.getNameServers() != null) {
-                        for (String ns : networkConfig.getNameServers()) {
-                            explanations.add("\tNAMESERVER=" + ns);
-                        }
-                    }
-                }
-                explanations.add("");
-            }
-        }
-    }
-
-    public List<String> getManualSteps() {
-        return null;
-    }
-
-    public Map<String, NetworkConfig> getNetworkingConfigurations() {
-        return networkingConfigs;
-    }
-
-    public void addNetworkingConfig(NetworkConfig netConfig) {
-        networkingConfigs.put(netConfig.getInterfaceName(), netConfig);
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
     }
 
 }

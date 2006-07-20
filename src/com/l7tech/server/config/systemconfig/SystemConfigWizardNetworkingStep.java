@@ -28,7 +28,6 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private static final String TITLE = "Configure Network Interfaces";
 
     private NetworkingConfigurationBean netBean;
-    private List<NetworkingConfigurationBean.NetworkConfig> availableNetworkInterfaces;
 
     public SystemConfigWizardNetworkingStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -36,8 +35,6 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         configBean = new NetworkingConfigurationBean("Network Interface Configuration", "");
         configCommand = new NetworkingConfigurationCommand(configBean);
         netBean = (NetworkingConfigurationBean) configBean;
-
-        availableNetworkInterfaces = getInterfaceInfo();
     }
 
     public boolean validateStep() {
@@ -58,7 +55,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
     private void doNetConfigPrompts() throws IOException, WizardNavigationException {
-        NetworkingConfigurationBean.NetworkConfig whichConfig = null;
+        NetworkingConfigurationBean.NetworkConfig whichConfig;
 
         whichConfig = doSelectInterfacePrompts();
         whichConfig = doConfigurationPrompts(whichConfig);
@@ -164,7 +161,10 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         List<String> promptList = new ArrayList<String>();
 
         int x = 1;
-        for (NetworkingConfigurationBean.NetworkConfig networkConfig : availableNetworkInterfaces) {
+        Map<String, NetworkingConfigurationBean.NetworkConfig> existingConfigs = getInterfaces();
+
+        for (String key : existingConfigs.keySet()) {
+            NetworkingConfigurationBean.NetworkConfig networkConfig = existingConfigs.get(key);
             String indexStr = String.valueOf(x);
             String prompt = indexStr + ") " + networkConfig.describe();
 
@@ -228,18 +228,16 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (hasCurrentNameServers) {
             for (String s : currentNameServers) {
                 defaultNameserversLine += (isFirst?"":", ") + s;
+                if (isFirst)
+                    isFirst = false;
             }
         }
 
-        boolean isValid = false;
+        boolean isValid;
         String nameserversline;
         if (isYes(shouldConfigNameServers)) {
                 do {
-                    isValid = false;
-                    nameserversline = null;
-
-                    nameserversline =
-                        getData(
+                    nameserversline = getData(
                             new String[] {"Enter the nameservers to be associated with the \"" + interfaceName + "\" interface (comma separated): "},
                             defaultNameserversLine
                         );
@@ -269,8 +267,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (StringUtils.isNotEmpty(gateway)) prompt += " [" + gateway + "] ";
         prompt += ": ";
 
-        boolean isValid = false;
-        List<String> errors = new ArrayList<String>();
+        boolean isValid;
+        List<String> errors;
 
         do {
             gateway = getData(new String[] {prompt}, gateway);
@@ -293,8 +291,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (StringUtils.isNotEmpty(ipAddress)) prompt += " [" + ipAddress + "] ";
         prompt += ": ";
 
-        boolean isValid = false;
-        List<String> errors = new ArrayList<String>();
+        boolean isValid;
+        List<String> errors;
         String defaultAddress = StringUtils.isNotEmpty(ipAddress)?ipAddress:"";
 
         do {
@@ -316,8 +314,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         if (StringUtils.isNotEmpty(netMask)) prompt += " [" + netMask + "] ";
         prompt += ": ";
 
-        boolean isValid = false;
-        List<String> errors = new ArrayList<String>();
+        boolean isValid;
+        List<String> errors;
 
         String defaultNetMask = StringUtils.isNotEmpty(netMask)?netMask:"";
         do {
@@ -358,90 +356,15 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return bootProto;
     }
 
-    private List<NetworkingConfigurationBean.NetworkConfig> getInterfaceInfo() {
-        List<NetworkingConfigurationBean.NetworkConfig> interfaces = getExistingNetworkInterfaces();
+    private Map<String, NetworkingConfigurationBean.NetworkConfig> getInterfaces() {
+        Map<String, NetworkingConfigurationBean.NetworkConfig> interfaces = netBean.getExistingNetworkInterfaces();
 
         NetworkingConfigurationBean.NetworkConfig newInterface = NetworkingConfigurationBean.makeNetworkConfig(null, null);
         newInterface.isNew(true);
-        interfaces.add(newInterface);
+
+        interfaces.put(null, newInterface);
+
         return interfaces;
-    }
-
-    private List<NetworkingConfigurationBean.NetworkConfig> getExistingNetworkInterfaces() {
-
-        logger.info("Determining existing interface information.");
-        List<NetworkingConfigurationBean.NetworkConfig> configs = new ArrayList<NetworkingConfigurationBean.NetworkConfig>();
-
-        String pathName = osFunctions.getNetworkConfigurationDirectory();
-        File parentDir = new File(pathName);
-
-        File[] configFiles = parentDir.listFiles(new FilenameFilter() {
-                public boolean accept(File file, String s) {
-                    return s.toLowerCase().startsWith("ifcfg-") && !s.toLowerCase().equals("ifcfg-lo");
-                }
-        });
-
-        if (configFiles != null && configFiles.length != 0) {
-            for (File file : configFiles) {
-                NetworkingConfigurationBean.NetworkConfig theConfig = parseConfigFile(file);
-                if (theConfig != null) {
-                    configs.add(theConfig);
-                    logger.info("found existing configuration for interface: " + theConfig.describe());
-                }
-            }
-        }
-
-        return configs;
-    }
-
-    private NetworkingConfigurationBean.NetworkConfig parseConfigFile(File file) {
-        NetworkingConfigurationBean.NetworkConfig theNetConfig = null;
-
-        String justFileName = file.getName();
-        int dashIndex = justFileName.indexOf("-");
-        if (dashIndex == -1) return null;
-
-        String interfaceNameFromFileName = justFileName.substring(dashIndex + 1);
-        BufferedReader reader = null;
-
-        try {
-            reader  = new BufferedReader(new FileReader(file));
-            String bootProto = null;
-            String interfaceName = null;
-            String ipAddress = null;
-            String netMask = null;
-            String gateway = null;
-
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                int equalsIndex = line.indexOf("=");
-                //if this is a name=value pair
-                if (equalsIndex != -1) {
-                    String key = line.substring(0, equalsIndex);
-                    String value = line.substring(equalsIndex + 1);
-                    if (key.equals("DEVICE")) interfaceName = value;
-                    else if (key.equals("BOOTPROTO")) bootProto = value;
-                    else if (key.equals("IPADDR")) ipAddress = value;
-                    else if (key.equals("NETMASK")) netMask = value;
-                    else if (key.equals("GATEWAY")) gateway = value;
-                }
-            }
-            //finished reading the file, now make the network config
-            theNetConfig = NetworkingConfigurationBean.makeNetworkConfig(interfaceName, bootProto);
-            if (StringUtils.isNotEmpty(ipAddress)) theNetConfig.setIpAddress(ipAddress);
-            if (StringUtils.isNotEmpty(netMask)) theNetConfig.setNetMask(netMask);
-            if (StringUtils.isNotEmpty(gateway)) theNetConfig.setGateway(gateway);
-
-        } catch (FileNotFoundException e) {
-            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
-        } catch (IOException e) {
-            logger.severe("Error while reading configuration for " + interfaceNameFromFileName + ": " + e.getMessage());
-        } finally {
-            if (reader != null) try {
-                reader.close();
-            } catch (IOException e) {}
-        }
-        return theNetConfig;
     }
 
     public String getTitle() {
