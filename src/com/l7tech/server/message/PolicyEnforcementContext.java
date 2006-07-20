@@ -267,7 +267,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return cache;
     }
 
-    public Set getCookies() {
+    public Set<HttpCookie> getCookies() {
         return Collections.unmodifiableSet(cookies);
     }
 
@@ -357,7 +357,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
             return cachedOperation;
 
         operationAttempted = true;
-        PublishedService service = getService();
         if (service == null || service.getWsdlXml() == null || service.getWsdlXml().length() <= 0) {
             return null;
         }
