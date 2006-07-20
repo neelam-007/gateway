@@ -1,17 +1,17 @@
 package com.l7tech.proxy.cli;
 
-import java.io.PrintStream;
-import java.io.File;
-
-import com.l7tech.proxy.datamodel.SsgFinderImpl;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.security.kerberos.KerberosUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.proxy.datamodel.SsgFinderImpl;
+
+import java.io.File;
+import java.io.PrintStream;
 
 /**
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class KerberosCommand extends Command {
+class KerberosCommand extends Command {
 
     public KerberosCommand() {
         super("kerberos", "Configure Kerberos KDC and Realm");
