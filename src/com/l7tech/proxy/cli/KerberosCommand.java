@@ -15,6 +15,7 @@ class KerberosCommand extends Command {
 
     public KerberosCommand() {
         super("kerberos", "Configure Kerberos KDC and Realm");
+        setMinAbbrev(4);
         setHelpText("Use this command to manually configure Kerberos for use with all gateways.\n" +
                     "\n" +
                     "   Usage: kerberos <kdc-host> <realm>\n" +
