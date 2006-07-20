@@ -25,7 +25,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -33,8 +33,10 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.event.PreRoutingEvent;
+import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -87,11 +89,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         // remember if we need to resolve the url at runtime
         String tmp = httpRoutingAssertion.getProtectedServiceUrl();
         if (tmp != null) {
-            if (tmp.indexOf("${") > -1) {
-                urlUsesVariables = true;
-            } else {
-                urlUsesVariables = false;
-            }
+            urlUsesVariables = tmp.indexOf("${") > -1;
         } else {
             logger.info("this http routing assertion has null url");
             urlUsesVariables = false;
@@ -138,12 +136,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     }
 
     private boolean areValidUrlHostnames(String[] addrs) {
-        for (int i = 0; i < addrs.length; i++) {
-            String addr = addrs[i];
+        for (String addr : addrs) {
             try {
                 new URL("http", addr, 777, "/foo/bar");
             } catch (MalformedURLException e) {
-                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] { addr });
+                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[]{addr});
                 return false;
             }
         }
@@ -164,9 +161,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
+        URL u;
         try {
-            final URL u;
-
             PublishedService service = context.getService();
             context.routingStarted();
             try {
@@ -176,6 +172,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 return AssertionStatus.FAILED;
             }
 
+            applicationContext.publishEvent(new PreRoutingEvent(this, context, u));
             if (failoverStrategy == null)
                 return tryUrl(context, u);
 
@@ -273,9 +270,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             } else if (httpRoutingAssertion.isPassthroughHttpAuthentication()) {
                 String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
                 boolean passed = false;
-                for (int i = 0; i < authHeaders.length; i++) {
+                for (String authHeader : authHeaders) {
                     passed = true;
-                    routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, authHeaders[i]));
+                    routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, authHeader));
                 }
                 if (passed) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST);
@@ -386,6 +383,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
+        int status = -1;
         try {
             // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
             // todo: check if we need to support HTTP 1.1.
@@ -421,7 +419,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             long latencyTimerStart = System.currentTimeMillis();
             routedResponse = routedRequest.getResponse();
 
-            int status = routedResponse.getStatus();
+            status = routedResponse.getStatus();
 
             boolean readOk = readResponse(context, routedResponse, status);
             long latencyTimerEnd = System.currentTimeMillis();
@@ -500,6 +498,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     }
                 });
             }
+            applicationContext.publishEvent(new PostRoutingEvent(this, context, url, status));
         }
 
         return AssertionStatus.FAILED;
@@ -568,27 +567,25 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                                            PolicyEnforcementContext context,
                                            String targetDomain)
     {
-        List attached = new ArrayList();
-        Set contextCookies = context.getCookies();
+        List<HttpCookie> attached = new ArrayList<HttpCookie>();
+        Set<HttpCookie> contextCookies = context.getCookies();
 
-        for (Iterator iterator = contextCookies.iterator(); iterator.hasNext();) {
-            HttpCookie ssgc = (HttpCookie) iterator.next();
-
+        for (HttpCookie ssgc : contextCookies) {
             if (CookieUtils.isPassThroughCookie(ssgc)) {
                 if (ssgc.isNew()) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[]{ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
                 } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {ssgc.getCookieName()});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[]{ssgc.getCookieName()});
                 }
                 HttpCookie newCookie = new HttpCookie(
-                    ssgc.getCookieName(),
-                    ssgc.getCookieValue(),
-                    ssgc.getVersion(),
-                    "/",
-                    targetDomain,
-                    ssgc.getMaxAge(),
-                    ssgc.isSecure(),
-                    ssgc.getComment()
+                        ssgc.getCookieName(),
+                        ssgc.getCookieValue(),
+                        ssgc.getVersion(),
+                        "/",
+                        targetDomain,
+                        ssgc.getMaxAge(),
+                        ssgc.isSecure(),
+                        ssgc.getComment()
                 );
 
                 // attach and record
@@ -609,21 +606,19 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      */
     private void copyCookiesInbound(GenericHttpRequestParams routedRequestParams, GenericHttpResponse routedResponse, PolicyEnforcementContext context, Collection originalCookies) {
         List setCookieValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
-        List newCookies = new ArrayList();
+        List<HttpCookie> newCookies = new ArrayList<HttpCookie>();
         for (Iterator i = setCookieValues.iterator(); i.hasNext();) {
             String setCookieValue = (String)i.next();
             try {
                 newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
-            }
-            catch (HttpCookie.IllegalFormatException hcife) {
+            } catch (HttpCookie.IllegalFormatException hcife) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, new String[]{setCookieValue});
             }
         }
 
         newCookies.removeAll(originalCookies);
 
-        for (Iterator iterator = newCookies.iterator(); iterator.hasNext();) {
-            HttpCookie routedCookie = (HttpCookie) iterator.next();
+        for (HttpCookie routedCookie : newCookies) {
             HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(), routedCookie.getCookieValue(), routedCookie.getVersion(), null, null);
             context.addCookie(ssgResponseCookie);
         }
