@@ -9,27 +9,19 @@ package com.l7tech.server.event;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import org.springframework.context.ApplicationEvent;
 
 /**
- * @author alex
- * @version $Revision$
+ * Should be fired after policy execution concludes.
  */
-public class MessageProcessed extends ApplicationEvent {
+public class MessageProcessed extends MessageProcessingEvent {
     private final AssertionStatus status;
-    private final PolicyEnforcementContext context;
 
     public MessageProcessed(PolicyEnforcementContext context, AssertionStatus status, MessageProcessor messageProcessor) {
-        super(messageProcessor);
-        this.context = context;
+        super(messageProcessor, context);
         this.status = status;
     }
 
     public AssertionStatus getStatus() {
         return status;
-    }
-
-    public PolicyEnforcementContext getContext() {
-        return context;
     }
 }
