@@ -145,11 +145,4 @@
       </scrollpane>
     </children>
   </grid>
-  <buttonGroups>
-    <group name="buttonGroup">
-      <member id="b11b0"/>
-      <member id="7cc08"/>
-      <member id="d9e0d"/>
-    </group>
-  </buttonGroups>
 </form>
