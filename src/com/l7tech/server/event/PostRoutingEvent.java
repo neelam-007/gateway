@@ -10,21 +10,12 @@ import java.net.URL;
 /**
  * Should be fired after a response is received from the protected service.
  */
-public class PostRoutingEvent extends MessageProcessingEvent {
-    private final URL url;
+public class PostRoutingEvent extends RoutingEvent {
     private final int httpResponseStatus;
 
     public PostRoutingEvent(Object source, PolicyEnforcementContext context, URL url, int status) {
-        super(source, context);
-        this.url = url;
+        super(source, context, url);
         this.httpResponseStatus = status;
-    }
-
-    /**
-     * @return the URL of the protected service to which the message was routed.
-     */
-    public URL getUrl() {
-        return url;
     }
 
     /**
