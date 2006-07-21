@@ -105,12 +105,16 @@ public class ScopeDialog extends JDialog {
         setRadioText(specificRadioButton);
         setRadioText(attributeRadioButton);
 
+        ButtonGroup rbGroup = new ButtonGroup();
+        rbGroup.add(allRadioButton);
+        rbGroup.add(specificRadioButton);
+        rbGroup.add(attributeRadioButton);
+
         allRadioButton.addActionListener(radioListener);
         specificRadioButton.addActionListener(radioListener);
         attributeRadioButton.addActionListener(radioListener);
 
-        if (scope.size() == 0) {
-            allRadioButton.setSelected(true);
+        if (scope.size() == 0) {            allRadioButton.setSelected(true);
             attributeList.setModel(emptyListModel);
         } else {
             if (scope.get(0) instanceof ObjectIdentityPredicate) {
