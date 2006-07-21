@@ -16,6 +16,7 @@ import org.apache.harmony.security.asn1.ASN1Integer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.InvalidKeySpecException;
@@ -143,8 +144,31 @@ public class CertUtils {
         vc.onVerified();
     }
 
+    /** Decode the specified cert bytes, which may be either PEM or DER but which must be exactly 1 cert. */
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
+        // Detect PEM early, since the Sun cert parser is piss-poor unreliable at doing so on its own
+        if (looksLikePem(bytes)) try {
+            return decodeFromPEM(new String(bytes, "ISO-8859-1"));
+        } catch (IOException e) {
+            throw new CertificateException("Invalid PEM-format certificate", e);
+        }
+
         return (X509Certificate)getFactory().generateCertificate(new ByteArrayInputStream(bytes));
+    }
+
+    /**
+     * Examines the first couple hundred bytes of the specified byte array for a PEM start marker.
+     *
+     * @param bytes the bytes to examine for a PEM start marker.  Must not be null.
+     * @return true if bytes contains a PEM start marker within the first couple hundred bytes; otherwise false.
+     */
+    public static boolean looksLikePem(byte[] bytes) {
+        try {
+            String prefix = new String(bytes, 0, 200, "ISO-8859-1");
+            return prefix.indexOf(PEM_CERT_BEGIN_MARKER) >= 0;
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     public static boolean certsAreEqual(X509Certificate cert1, X509Certificate cert2) {
