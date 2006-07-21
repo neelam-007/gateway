@@ -17,7 +17,6 @@ import java.util.ResourceBundle;
 public class RoleManagementDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JPanel buttonPane;
     private JPanel informationPane;
 
     private JList roleList;
@@ -27,7 +26,6 @@ public class RoleManagementDialog extends JDialog {
 
     private DefaultComboBoxModel listModel;
     private JPanel mainPanel;
-    private JTextField filterText;
     private JTextPane propertiesPane;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
