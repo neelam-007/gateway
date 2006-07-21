@@ -58,7 +58,7 @@ public class SsgPolicyImportDialog extends JDialog {
      * @param parent Parent window, may be null
      */
     public SsgPolicyImportDialog(Dialog parent) {
-        super(parent, "", true);
+        super(parent, "Import Policy", true);
         init();
     }
 
