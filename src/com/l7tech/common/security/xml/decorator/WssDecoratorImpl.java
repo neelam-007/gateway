@@ -347,10 +347,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session, sct);
                 XencUtil.XmlEncKey encKey = null;
                 if (derivedKeyToken.derivedKey.length == 32) {
-                    // todo, fix problem below
-                    // but i get a java.security.InvalidKeyException: Illegal key size or default parameters @ XencUtil.encryptElement
-                    //encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, new AesKey(derivedKeyToken.derivedKey, 256));
-                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, new AesKey(derivedKeyToken.derivedKey, 256));
                 } else if (derivedKeyToken.derivedKey.length == 16) {
                     encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
                 } else {
