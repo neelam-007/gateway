@@ -26,8 +26,14 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
+import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
 
 /**
  * Default implementation of SsgKeyStoreManager for the stand-alone SecureSpan Bridge, saving the material to PKCS#12
@@ -170,6 +176,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             ssg.getRuntime().setPasswordCorrectForPrivateKey(false);
             ssg.getRuntime().keyStore(null);
             ssg.getRuntime().setCachedPrivateKey(null);
+            ssg.getRuntime().setPrivateKeyPasswordHash(null);
         }
     }
 
@@ -195,21 +202,29 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         synchronized (ssg) {
             if (!isClientCertAvailabile())
                 return null;
-            if (ssg.getRuntime().getCachedPrivateKey() != null)
+
+            if (ssg.getRuntime().getCachedPrivateKey() != null) {
+                if (passwordAuthentication != null &&
+                    passwordAuthentication.getPassword() != null &&
+                    ssg.getRuntime().getPrivateKeyPasswordHash() != null &&
+                    !Arrays.equals(HexUtils.getMd5Digest(toBytes(passwordAuthentication.getPassword())),
+                                   ssg.getRuntime().getPrivateKeyPasswordHash())) {
+                    throw new BadCredentialsException("Credentials do not match key!");
+                }
+
                 return ssg.getRuntime().getCachedPrivateKey();
+            }
         }
 
         synchronized (ssg) {
-            if (!isClientCertAvailabile())
-                return null;
-            if (ssg.getRuntime().getCachedPrivateKey() != null)
-                return ssg.getRuntime().getCachedPrivateKey();
             try {
                 PrivateKey gotKey = null;
+                PasswordAuthentication pw = null;
                 if (passwordAuthentication != null) {
                     try {
                         char[] password = passwordAuthentication.getPassword();
                         gotKey = (PrivateKey) getKeyStore(password).getKey(CLIENT_CERT_ALIAS, password);
+                        pw = passwordAuthentication;
                     } catch(KeyStoreException e) {
                         log.log(Level.WARNING, "Could not open key store.", e);
                     } catch (UnrecoverableKeyException e) {
@@ -217,7 +232,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
                     }
                 }
                 if (gotKey == null) {
-                    PasswordAuthentication pw;
                     pw = ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg,
                                                                                       CredentialManager.ReasonHint.PRIVATE_KEY,
                                                                                       false,
@@ -226,9 +240,19 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
                         log.finer("No credentials configured -- unable to access private key");
                         return null;
                     }
+
+                    if (!isClientCertAvailabile())
+                        return null;
+                    if (ssg.getRuntime().getCachedPrivateKey() != null)
+                        return ssg.getRuntime().getCachedPrivateKey();
+
                     gotKey = (PrivateKey) getKeyStore(pw.getPassword()).getKey(CLIENT_CERT_ALIAS, pw.getPassword());
                 }
                 ssg.getRuntime().setCachedPrivateKey(gotKey);
+                if (pw != null)
+                    ssg.getRuntime().setPrivateKeyPasswordHash(HexUtils.getMd5Digest(toBytes(pw.getPassword())));
+                else
+                    ssg.getRuntime().setPrivateKeyPasswordHash(null);
                 ssg.getRuntime().setPasswordCorrectForPrivateKey(true);
                 return gotKey;
             } catch (KeyStoreException e) {
@@ -432,6 +456,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             ssg.getRuntime().keyStore(null);
             ssg.getRuntime().trustStore(null);
             ssg.getRuntime().setCachedPrivateKey(null);
+            ssg.getRuntime().setPrivateKeyPasswordHash(null);
             ssg.getRuntime().setPasswordCorrectForPrivateKey(false);
             ssg.getRuntime().setHaveClientCert(null);
             ssg.getRuntime().setCachedClientCert(null);
@@ -457,7 +482,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
     }
 
     public void saveClientCertificate(PrivateKey privateKey, X509Certificate cert,
-                                             char[] privateKeyPassword)
+                                      char[] privateKeyPassword)
             throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException
     {
         if (ssg.isFederatedGateway())
@@ -480,6 +505,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             saveTrustStore();
             ssg.getRuntime().setHaveClientCert(Boolean.TRUE);
             ssg.getRuntime().setCachedPrivateKey(privateKey);
+            ssg.getRuntime().setPrivateKeyPasswordHash(HexUtils.getMd5Digest(toBytes(privateKeyPassword)));
             ssg.getRuntime().setCachedClientCert(cert);
         }
     }
@@ -615,5 +641,29 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         }
 
         saveClientCertificate((PrivateKey)key, (X509Certificate)chainToImport[0], ssgPassword);
+    }
+
+
+    /**
+     * Convert the characters to bytes using UTF-8 encoding.
+     *
+     * <p>This method avoids creation of a String object in case data is sensitive.</p>
+     *
+     * @param characters The text to encode
+     * @return the encoded bytes
+     */
+    private byte[] toBytes(char[] characters) {
+        CharsetEncoder encoder = Charset.defaultCharset().newEncoder();
+
+        try {
+            ByteBuffer result = encoder.encode(CharBuffer.wrap(characters));
+            byte[] resultBuffer = new byte[result.limit()];
+            result.get(resultBuffer);
+
+            return resultBuffer;
+        }
+        catch(CharacterCodingException cce) {
+            throw new RuntimeException("Error encoding password characters.", cce);
+        }
     }
 }

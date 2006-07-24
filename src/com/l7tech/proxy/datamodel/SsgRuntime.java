@@ -35,7 +35,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -70,6 +69,7 @@ public class SsgRuntime {
     private int numTimesLogonDialogCanceled = 0;
     private long credentialsUpdatedTimeMillis = 0;
     private PrivateKey privateKey = null; // cache of private key
+    private byte[] privateKeyPasswordHash = null; // cache of private key
     private boolean passwordWorkedForPrivateKey = false;
     private SSLContext sslContext = null;
     private X509TrustManager trustManager = null;
@@ -309,6 +309,16 @@ public class SsgRuntime {
         this.privateKey = privateKey;
     }
 
+    /** Transient cache of private key password hash  */
+    byte[] getPrivateKeyPasswordHash() {
+        return privateKeyPasswordHash;
+    }
+
+    /** Transient cache of private key password hash */
+    void setPrivateKeyPasswordHash(byte[] privateKeyPasswordHash) {
+        this.privateKeyPasswordHash = privateKeyPasswordHash;
+    }
+
     /** Transient check if this password worked to unlock the private key; used by SsgKeyStoreManager. */
     void setPasswordCorrectForPrivateKey(boolean worked) {
         this.passwordWorkedForPrivateKey = worked;
@@ -487,6 +497,7 @@ public class SsgRuntime {
             keyStore(null);
             trustStore(null);
             setCachedPrivateKey(null);
+            setPrivateKeyPasswordHash(null);
             setPasswordCorrectForPrivateKey(false);
             setHaveClientCert(null);
             setCachedClientCert(null);
