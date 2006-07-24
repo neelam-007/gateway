@@ -41,6 +41,7 @@ class SsgNoun extends Noun {
                 new PasswordProperty(),
                 new NounProperty(ssg, "chainCredentials", "ChainCredentialsFromClient", "Chain credentials from client (HTTP Basic)"),
                 new NounProperty(ssg, "savePassword", "SavePasswordToDisk", "Save the password in the configuration file"),
+                new NounProperty(ssg, "useKerberos", "EnableKerberosCredentials", "Use Kerberos Token Profile credentials"),
                 new NounProperty(ssg, "preferSsl", "UseSslByDefault", "Use SSL unless a policy says otherwise"),
                 new ServerCertProperty(this),
                 new ClientCertProperty(this),
