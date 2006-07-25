@@ -82,10 +82,12 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!-- 
     <filter-mapping>
         <filter-name>wsdlFilter</filter-name>
         <url-pattern>/xml/*</url-pattern>
     </filter-mapping>
+    -->
 
     <filter-mapping>
         <filter-name>namespace</filter-name>
