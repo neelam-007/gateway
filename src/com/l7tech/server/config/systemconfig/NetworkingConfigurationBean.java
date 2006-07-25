@@ -100,8 +100,13 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 for (File file : configFiles) {
                     NetworkingConfigurationBean.NetworkConfig theConfig = parseConfigFile(file);
                     if (theConfig != null) {
-                        availableNetworkInterfaces.put(theConfig.getInterfaceName(), theConfig);
-                        logger.info("found existing configuration for interface: " + theConfig.describe());
+                        //in case the file name is off, like it has some extra characters at the end of it, or has an extension
+                        //we are only interested in the configurations from files with the pattern:
+                        //  ifcfg-<interface>
+                        if (file.getName().endsWith(theConfig.getInterfaceName())) {
+                            availableNetworkInterfaces.put(theConfig.getInterfaceName(), theConfig);
+                            logger.info("found existing configuration for interface: " + theConfig.describe());
+                        }
                     }
                 }
             }
