@@ -3,10 +3,10 @@ Name: ssg
 Version: 3.6m3b
 Release: 1
 Group: Applications/Internet
-Copyright: Copyright Layer7 Technologies 2003-2005
+License: Copyright Layer7 Technologies 2003-2005
 URL: http://www.layer7tech.com
 Packager: Layer7 Technologies, <support@layer7tech.com> 
-Source0: /tmp/ssg.tar.gz
+Source0: ~/rpm/SOURCES/ssg.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
 provides: ssg
 
@@ -23,7 +23,7 @@ rm -fr %{buildroot}
 rm -fr %{buildroot}
 mkdir %{buildroot}
 cd %{buildroot}
-tar -xzf /tmp/ssg.tar.gz
+tar -xzf ~/rpm/SOURCES/ssg.tar.gz
 
 %build
 mkdir %{buildroot}/etc/
@@ -92,6 +92,16 @@ if [ `grep ^ssgconfig: /etc/passwd` ]; then
        #  echo "user ssgconfig already exists"
 else
   adduser -g gateway ssgconfig
+  echo "7layer" | passwd ssgconfig --stdin
+fi
+
+SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
+if [ -n "${SSGCONFIGENTRY}" ]; then
+    echo -n ""
+    #user already exists in the sudoers file
+else
+    #the ssgconfig user is allowed to reboot the system, even when not at the console
+    echo "ssgconfig  ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
 fi
 
 rebootparam=`grep kernel.panic /etc/sysctl.conf`
@@ -171,6 +181,12 @@ if [ "$1" = "0" ] ; then
             groupdel gateway
         else
             echo -n ""
+        fi
+
+        SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
+        if [ -n "${SSGCONFIGENTRY}" ]; then
+            #remove the sudoers entry for ssgconfig
+            perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
         fi
 
 	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`

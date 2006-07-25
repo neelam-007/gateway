@@ -31,7 +31,7 @@ do
                     read;
                     clear;;
                 3)  exit;;
-                4)  reboot;;
+                4)  sudo /sbin/reboot;;
                 *)  isValid="n";
                     echo "That is not a valid selection";
                     echo "Press enter to continue";
