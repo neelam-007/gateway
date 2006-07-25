@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public abstract class ServerIdentityAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
 
-    private final Auditor auditor;
+    protected final Auditor auditor;
     private final ApplicationContext applicationContext;
     protected IdentityAssertion identityAssertion;
 

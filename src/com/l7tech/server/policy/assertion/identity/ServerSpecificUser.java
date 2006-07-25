@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
@@ -38,8 +39,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
         // The login and the uid can't both be null
         if (requiredLogin == null && requiredUid == null) {
-            String msg = "This assertion is not configured properly. The login and uid can't both be null.";
-            logger.warning(msg);
+            auditor.logAndAudit(AssertionMessages.IDASS_NOLOGIN_NOOID);
             return AssertionStatus.SERVER_ERROR;
         }
 
@@ -50,15 +50,15 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
 
         // provider must always match
         if (requestProvider != requiredProvider) {
-            logger.fine("Authentication failed because providers id did not " +
-              "match (" + requestProvider + " instead of " + requiredProvider + ").");
+            auditor.logAndAudit(AssertionMessages.IDPROV_MISMATCH,
+                    new String[] {Long.toString(requestProvider), Long.toString(requiredProvider)});
             return AssertionStatus.AUTH_FAILED;
         }
 
         // uid only needs to match if it's set as part of the assertion
         if (requiredUid != null && !"".equals(requiredUid)) {
             if (!requiredUid.equals(requestUid)) {
-                logger.fine("Authentication failed because the uid does not match.");
+                auditor.logAndAudit(AssertionMessages.USERID_MISMATCH);
                 return AssertionStatus.AUTH_FAILED;
             }
         }
@@ -66,7 +66,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         // login only needs to match if it's set as part of the assertion
         if (requiredLogin != null && !"".equals(requiredLogin)) {
             if (!requiredLogin.equals(requestLogin)) {
-                logger.fine("Authentication failed because the login does not match.");
+                auditor.logAndAudit(AssertionMessages.LOGIN_MISMATCH);
                 return AssertionStatus.AUTH_FAILED;
             }
         }

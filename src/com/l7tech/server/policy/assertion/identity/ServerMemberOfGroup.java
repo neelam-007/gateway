@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Level;
@@ -55,8 +56,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
         try {
             Group targetGroup = getGroup(context);
             if (targetGroup == null) {
-                logger.severe("This assertion refers to a group that does not exist." +
-                                     "Policy might be corrupted");
+                auditor.logAndAudit(AssertionMessages.GROUP_NOTEXIST);
                 return AssertionStatus.UNAUTHORIZED;
             }
 
@@ -71,7 +71,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
                 }
 
                 authResult.setCachedGroupMembership(targetGroup, false);
-                logger.info("user not member of group");
+                auditor.logAndAudit(AssertionMessages.USER_NOT_IN_GROUP);
                 return AssertionStatus.UNAUTHORIZED;
             }
 
@@ -80,12 +80,10 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
                 logger.finest("Reusing cached group membership success");
                 return AssertionStatus.NONE;
             }
-
-            logger.finest("Reusing cached group membership failure");
+            auditor.logAndAudit(AssertionMessages.CACHED_GROUP_MEMBERSHIP_FAILURE);
             return AssertionStatus.UNAUTHORIZED;
         } catch (FindException fe) {
-            logger.log(Level.SEVERE, "Error finding group that this assertion refers to." +
-                                     "Policy might be corrupted", fe);
+            auditor.logAndAudit(AssertionMessages.GROUP_NOTEXIST);
             return AssertionStatus.UNAUTHORIZED;
         }
     }
