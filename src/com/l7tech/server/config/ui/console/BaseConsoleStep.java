@@ -191,4 +191,8 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
     protected boolean isYes(String answer) {
         return consoleWizardUtils.isYes(answer);
     }
+
+    protected String getVersionString() {
+        return "(Version " + getParentWizard().getCurrentVersion() + ")";
+    }
 }

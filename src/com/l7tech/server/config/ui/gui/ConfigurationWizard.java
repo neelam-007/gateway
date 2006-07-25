@@ -84,7 +84,7 @@ public class ConfigurationWizard extends Wizard {
      * @param panel
      */
     public void init(WizardStepPanel panel) {
-        setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
+        setTitle("SSG Configuration Wizard for " + osFunctions.getOSName() + " (Version " + getCurrentVersion() + ")");
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
         wizardInput = new HashSet<ConfigurationCommand>();

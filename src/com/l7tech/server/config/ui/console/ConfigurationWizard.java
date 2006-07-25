@@ -61,7 +61,6 @@ public class ConfigurationWizard {
         System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
         JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, LOGCONFIG_NAME);
         osFunctions = OSDetector.getOSSpecificFunctions();
-//        currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new HashSet<ConfigurationCommand>();
         manualSteps = new HashMap<String, List<String>>();

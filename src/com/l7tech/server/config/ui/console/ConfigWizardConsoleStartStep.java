@@ -24,7 +24,7 @@ public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
     }
 
     public String getTitle() {
-        return "Welcome to the SecureSpan Gateway Configuration Wizard";
+        return "Welcome to the SecureSpan Gateway Configuration Wizard " + getVersionString();
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
