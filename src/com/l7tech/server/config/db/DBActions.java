@@ -123,6 +123,72 @@ public class DBActions {
         }
     }
 
+    private class DBInformation {
+        private String hostname;
+        private String dbName;
+        private String username;
+        private String password;
+        private String privUsername;
+        private String privPassword;
+
+        public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
+            this.hostname = hostname;
+            this.dbName = dbName;
+            this.username = username;
+            this.password = password;
+            this.privUsername = privUsername;
+            this.privPassword = privPassword;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public String getDbName() {
+            return dbName;
+        }
+
+        public void setDbName(String dbName) {
+            this.dbName = dbName;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getPrivUsername() {
+            return privUsername;
+        }
+
+        public void setPrivUsername(String privUsername) {
+            this.privUsername = privUsername;
+        }
+
+        public String getPrivPassword() {
+            return privPassword;
+        }
+
+        public void setPrivPassword(String privPassword) {
+            this.privPassword = privPassword;
+        }
+    }
+
     //
     // CONSTRUCTOR
     //
@@ -135,45 +201,11 @@ public class DBActions {
     // PUBLIC METHODS
     //
 
-    public DBActionsResult checkExistingDb(String dbHostname, String dbName, String dbUsername, String dbPassword) {
-        DBActionsResult result = new DBActionsResult();
-        String connectionString = makeConnectionString(dbHostname, dbName);
-        Connection conn = null;
-
-        try {
-            conn = DriverManager.getConnection(connectionString, dbUsername, dbPassword);
-            result.setStatus(DB_SUCCESS);
-        } catch (SQLException e) {
-            String sqlState = e.getSQLState();
-            if (sqlState != null) {
-                if (ERROR_CODE_UNKNOWNDB.equals(sqlState)) {
-                    result.setStatus(DB_UNKNOWNDB_FAILURE);
-                } else if (ERROR_CODE_AUTH_FAILURE.equals(sqlState)) {
-                    result.setStatus(DB_AUTHORIZATION_FAILURE);
-                } else if ("08S01".equals(sqlState)) {
-                    result.setStatus(DB_UNKNOWNHOST_FAILURE);
-                } else {
-                    result.setStatus(DB_UNKNOWN_FAILURE);
-                }
-            }
-            logger.warning("Could not login to the database using " + dbUsername + ":" + dbPassword + "@" + dbHostname + "/" + dbName);
-            logger.warning(e.getMessage());
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
-        }
-        return result;
-    }
-
     public String checkDbVersion(String hostname, String dbName, String username, String password) {
         Connection conn = null;
         String dbVersion = null;
         try {
-            conn = DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
+            conn = getConnection(hostname, dbName, username, password);
             dbVersion = checkDbVersion(conn);
         } catch (SQLException e) {}
         return dbVersion;
@@ -186,109 +218,57 @@ public class DBActions {
         Connection conn = null;
         Statement stmt = null;
         try {
-            conn = DriverManager.getConnection(makeConnectionString(dbHostname, ADMIN_DB_NAME), privUsername, privPassword);
+            DBInformation dbInfo = new DBInformation(dbHostname, dbName, dbUsername, dbPassword, privUsername, privPassword);
+            conn = getConnection(dbHostname, ADMIN_DB_NAME, privUsername, privPassword);
             stmt = conn.createStatement();
-            boolean dbExists = testForExistingDb(stmt, dbName);
-            if (dbExists) {
-                if (!overwriteDb) {
+
+            if (testForExistingDb(stmt, dbName)) {
+                if (!overwriteDb)
                     result.setStatus(DB_ALREADY_EXISTS);
-                }
-                else {  //we should overwrite the db
-                    dropDatabase(stmt, dbName);
-                    makeDatabase(stmt, dbName, dbUsername, dbPassword, dbHostname, dbCreateScript, isWindows);
+                else {
+                    //we should overwrite the db
+                    dropDatabase(stmt, dbName, false);
+                    makeDatabase(stmt, dbInfo, dbCreateScript, isWindows);
                     result.setStatus(DB_SUCCESS);
                 }
             } else {
-                makeDatabase(stmt, dbName, dbUsername, dbPassword, dbHostname, dbCreateScript, isWindows);
+                makeDatabase(stmt, dbInfo, dbCreateScript, isWindows);
                 result.setStatus(DB_SUCCESS);
 
             }
         } catch (SQLException e) {
-            String sqlState = e.getSQLState();
-            if ("28000".equals(sqlState)) {
-                result.setStatus(DB_AUTHORIZATION_FAILURE);
-            }
-            else if ("08S01".equals(sqlState)) {
-                result.setStatus(DB_UNKNOWNHOST_FAILURE);
-            } else {
-                logger.warning("Could not create database. An exception occurred");
-                logger.warning(e.getMessage());
-                result.setStatus(DB_UNKNOWN_FAILURE);
-                result.setErrorMessage(e.getMessage());
-            }
-        } finally {
+            result.setStatus(determineErrorStatus(e.getSQLState()));
+            result.setErrorMessage(e.getMessage());
 
-                if (conn != null) {
-                    try {
-                        conn.close();
-                    } catch (SQLException e) {
-                    }
-                }
-                if (stmt != null) {
-                    try {
-                        stmt.close();
-                    } catch (SQLException e) {
-                    }
-                }
+            logger.warning("Could not create database. An exception occurred");
+            logger.warning(e.getMessage());
+        } finally {
+            if (conn != null)
+                try { conn.close(); } catch (SQLException e) {}
+
+            if (stmt != null)
+                try { stmt.close(); } catch (SQLException e) {}
         }
 
         return result;
     }
 
-    public void dropDatabase(Statement stmt, String dbName) throws SQLException {
-        stmt.executeUpdate(SQL_DROP_DB + dbName);
-        logger.warning("dropping database \"" + dbName + "\"");
-    }
-
-    public void dropDatabase(String dbName, String hostname, String username, String password) {
-        if (username == null) {
-            throw new IllegalArgumentException("Username cannot be null");
-        }
-
-        if (password == null) {
-            throw new IllegalArgumentException("Password cannot be null");
-        }
-
-        Connection conn = null;
-        Statement stmt = null;
-        try {
-            conn = DriverManager.getConnection(makeConnectionString(hostname, ADMIN_DB_NAME), username, password);
-            stmt = conn.createStatement();
-            dropDatabase(stmt, dbName);
-        } catch (SQLException e) {
-            logger.severe("Failure while dropping the database: " + e.getMessage());
-        } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
-        }
-    }
 
     public DBActionsResult upgradeDbSchema(String hostname, String username, String password, String databaseName, String oldVersion,
                                            String newVersion) throws IOException {
         DBActionsResult result = new DBActionsResult();
         File f = new File(osFunctions.getPathToDBCreateFile());
-        File parentDir = f.getParentFile();
 
-        Map upgradeMap = buildUpgradeMap(parentDir);
+        Map<String, String[]> upgradeMap = buildUpgradeMap(f.getParentFile());
 
         Connection conn = null;
         Statement stmt = null;
 
         try {
-            conn = DriverManager.getConnection(makeConnectionString(hostname, databaseName), username, password);
+            conn = getConnection(hostname, databaseName, username, password);
             stmt = conn.createStatement();
             while (!oldVersion.equals(newVersion)) {
-                String[] upgradeInfo = (String[]) upgradeMap.get(oldVersion);
+                String[] upgradeInfo = upgradeMap.get(oldVersion);
                 if (upgradeInfo == null) {
                     String msg = "no upgrade path from \"" + oldVersion + "\" to \"" + newVersion + "\"";
                     logger.warning(msg);
@@ -297,14 +277,13 @@ public class DBActions {
                 } else {
                     logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
 
-                    String upgradeScript = upgradeInfo[1];
-                    String[] statements = getCreateDbStatements(upgradeScript);
+                    String[] statements = getCreateDbStatementsFromFile(upgradeInfo[1]);
 
                     conn.setAutoCommit(false);
-                    for (int i = 0; i < statements.length; i++) {
-                        String statement = statements[i];
+                    for (String statement : statements) {
                         stmt.executeUpdate(statement);
                     }
+
                     conn.commit();
                     conn.setAutoCommit(true);
 
@@ -312,250 +291,35 @@ public class DBActions {
                 }
             }
         } catch (SQLException e) {
-            String sqlState = e.getSQLState();
+            result.setStatus(determineErrorStatus(e.getSQLState()));
             result.setErrorMessage(e.getMessage());
-            if (ERROR_CODE_AUTH_FAILURE.equals(sqlState)) {
-                result.setStatus(DB_AUTHORIZATION_FAILURE);
-            }
-            else if (ERROR_CODE_UNKNOWNDB.equals(sqlState)) {
-                result.setStatus(DB_UNKNOWNDB_FAILURE);
-            }
-            else {
-                result.setStatus(DB_UNKNOWN_FAILURE);
-            }
         } finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
+            if (stmt != null)
+                try { stmt.close(); } catch (SQLException e) {}
+
+            if (conn != null)
+                try { conn.close(); } catch (SQLException e) {}
         }
 
         return result;
     }
 
-
-    public DbVersionChecker[] getDbVersionCheckers() {
-        return dbCheckers;
-    }
-
-    public void setDbVersionCheckers(DbVersionChecker[] newCheckers) {
-        dbCheckers = newCheckers;
-    }
-
-    //
-    // PRIVATE METHODS
-    //
-    private void init() throws ClassNotFoundException {
-        Class.forName(JDBC_DRIVER_NAME);
-        ssgDbChecker = new CheckSSGDatabase();
-        osFunctions = OSDetector.getOSSpecificFunctions();
-        //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
-        Arrays.sort(dbCheckers, Collections.reverseOrder());
-    }
-
-    private Set<String> getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
-        Set<String> columns = null;
-        ResultSet rs = null;
-        rs = metadata.getColumns(null, "%", tableName, "%");
-        columns = new HashSet<String>();
-        while(rs.next()) {
-            String columnName = rs.getString("COLUMN_NAME");
-            columns.add(columnName.toLowerCase());
-        }
-        return columns;
-    }
-
-    //will return the version of the DB, or null if it cannot be determined
-    private String getDbVersion(Hashtable<String, Set> tableData) {
-        String version = null;
-        //make sure we're even dealing with something that smells like an SSG database
-        if (ssgDbChecker.doCheck(tableData)) {
-            //this is an SSG database, now determine the exact version
-            int dbCheckIndex = 0;
-            boolean versionFound = false;
-            do {
-                DbVersionChecker checker = dbCheckers[dbCheckIndex++];
-                if (versionFound = checker.doCheck(tableData)) {
-                     version = checker.getVersion();
-                }
-
-            } while(!versionFound && dbCheckIndex < dbCheckers.length);
-         }
-         return version;
-     }
-
-    //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
-    //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
-    private String checkDbVersion(Connection conn) throws SQLException {
-        Hashtable<String, Set> tableData = collectMetaInfo(conn);
-        //now we have a hashtable of tables and their columns
-        return getDbVersion(tableData);
-    }
-
-    private Hashtable<String, Set> collectMetaInfo(Connection conn) throws SQLException {
-        Hashtable<String, Set> tableData = new Hashtable<String, Set>();
-
-        DatabaseMetaData metadata = conn.getMetaData();
-        String[] tableTypes = {
-                "TABLE",
-        };
-
-        ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
-        while (tableNames.next()) {
-            String tableName = tableNames.getString("TABLE_NAME");
-            try {
-                Set<String> columns = getTableColumns(tableName, metadata);
-                if (columns != null) {
-                    tableData.put(tableName.toLowerCase(), columns);
-                }
-            } catch (SQLException ex) {
-            }
-        }
-        return tableData;
-    }
-
-    private void makeDatabase(Statement stmt, String dbName, String username, String password, String hostname, String dbCreateScript, boolean isWindows) throws SQLException, IOException {
-        stmt.getConnection().setAutoCommit(false); //start transaction
-        logger.info("creating database \"" + dbName +"\"");
-        stmt.executeUpdate(SQL_CREATE_DB + dbName);
-        stmt.execute(SQL_USE_DB + dbName);
-        String[] sqlArray = getCreateDbStatements(dbCreateScript);
-        if (sqlArray != null) {
-            logger.info("Creating schema for " + dbName + " database");
-            for (int i = 0; i < sqlArray.length; i++) {
-                String s = sqlArray[i];
-                stmt.executeUpdate(s);
-            }
-
-            logger.info("Creating user \"" + username + "\" and performing grants on " + dbName + " database");
-            String[] grantStmts = getGrantStatements(dbName, hostname, username, password, isWindows);
-            if (grantStmts != null) {
-                for (int j = 0; j < grantStmts.length; j++) {
-                    String grantStmt = grantStmts[j];
-                    stmt.executeUpdate(grantStmt);
-                }
-            }
-        }
-
-        stmt.getConnection().commit();     //finish transaction
-        stmt.getConnection().setAutoCommit(true);
-    }
-
-    private String[] getGrantStatements(String dbName, String hostname, String username, String password, boolean isWindows) {
-        List<String> list = new ArrayList<String>();
-        list.add(new String(SQL_GRANT_ALL + dbName + ".* to " + username + "@'%' identified by '" + password + "'"));
-        list.add(new String(SQL_GRANT_ALL + dbName + ".* to " + username + "@" + hostname + " identified by '" + password + "'"));
-
-        if (!isWindows && hostname.equals("localhost")) {
-            list.add(new String(SQL_GRANT_ALL + dbName + ".* to " + username + "@localhost.localdomain identified by '" + password + "'"));
-        }
-        list.add(new String("FLUSH PRIVILEGES"));
-        return list.toArray(new String[]{});
-    }
-
-    private String[] getCreateDbStatements(String dbCreateScript) throws IOException {
-        String []  stmts = null;
-        FileReader fileReader = null;
-        BufferedReader reader = null;
-        try {
-            StringBuffer sb = new StringBuffer();
-
-            fileReader = new FileReader(dbCreateScript);
-            reader = new BufferedReader(fileReader);
-            String temp = null;
-            while((temp = reader.readLine()) != null) {
-                if (!temp.startsWith("--") && !temp.equals("")) {
-                    sb.append(temp);
-                }
-            }
-            Pattern splitPattern = Pattern.compile(";");
-            stmts = splitPattern.split(sb.toString());
-        } finally{
-            if (reader != null) {
-                if (fileReader != null) {
-                    fileReader.close();
-                }
-
-                if (reader != null) {
-                    reader.close();
-                }
-            }
-        }
-        return stmts;
-    }
-
-
-
-    private boolean testForExistingDb(Statement stmt, String dbName) {
-        boolean dbExists = false;
-        try {
-            stmt.execute(SQL_USE_DB + dbName);
-            dbExists = true;       //if an exception was not thrown then the db must already exist.
-        } catch (SQLException e) {
-            String sqlState = e.getSQLState();
-            if ("42000".equals(sqlState)) {     //this means the db didn't exist. In this case, the exception is what we want.
-                dbExists = false;
-            }
-        }
-        return dbExists;
-    }
-
-    private String makeConnectionString(String hostname, String dbName) {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append(MYSQL_CONNECTION_PREFIX).append(hostname).append("/").append(dbName);
-        return buffer.toString();
-    }
-
-
-    private Map buildUpgradeMap(File parentDir) {
-        File[] upgradeScripts = parentDir.listFiles(new FilenameFilter() {
-                public boolean accept(File file, String s) {
-                    return s.toUpperCase().startsWith("UPGRADE") &&
-                            s.toUpperCase().endsWith("SQL");
-                }
-        });
-
-        Pattern upgradePattern = Pattern.compile(UPGRADE_SQL_PATTERN);
-        Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
-
-        for (int i = 0; i < upgradeScripts.length; i++) {
-            File upgradeScript = upgradeScripts[i];
-            String filename = upgradeScript.getName();
-            Matcher matcher = upgradePattern.matcher(filename);
-            if (matcher.matches()) {
-                String startVersion = matcher.group(1);
-                String destinationVersion = matcher.group(2);
-                upgradeMap.put(startVersion, new String[]{destinationVersion, upgradeScript.getAbsolutePath()});
-            }
-        }
-        return upgradeMap;
-    }
-
     public boolean doCreateDb(String pUsername, String pPassword, String hostname, String name, String username, String password, boolean overwriteDb, DBActionsListener ui) {
         //check if the root username is "" or null, or the password is null. Password is allowed to be "", if there isn't a password
-        if (StringUtils.isEmpty(pUsername) || pPassword == null
-                ) {
+        if (StringUtils.isEmpty(pUsername) || pPassword == null) {
             if (ui != null) {
                 String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
                 Map<String, String> creds = ui.getPrivelegedCredentials(
-                            "Please enter the credentials for the root database user (needed to create a database)",
-                            "Please enter the username for the root database user (needed to create a database): [" + defaultUserName + "] ",
-                            "Please enter the password for the root database user: ",
-                            defaultUserName);
+                    "Please enter the credentials for the root database user (needed to create a database)",
+                    "Please enter the username for the root database user (needed to create a database): [" + defaultUserName + "] ",
+                    "Please enter the password for the root database user: ",
+                    defaultUserName);
 
-                if (creds != null) {
+                if (creds == null) {
+                    return false;
+                } else {
                     pUsername = creds.get(USERNAME_KEY);
                     pPassword = creds.get(PASSWORD_KEY);
-                } else {
-                    return false;
                 }
             }
         }
@@ -563,20 +327,25 @@ public class DBActions {
         String errorMsg;
         boolean isOk = false;
 
-        String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
-        boolean isWindows = osFunctions.isWindows();
-
         DBActionsResult result = null;
         try {
             logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using privileged user \"" + pUsername + "\"");
 
-            result = createDb(pUsername, pPassword, hostname, name, username, password, dbCreateScriptFile, isWindows, overwriteDb);
+            result = createDb(pUsername,
+                    pPassword,
+                    hostname,
+                    name,
+                    username,
+                    password,
+                    osFunctions.getPathToDBCreateFile(),
+                    osFunctions.isWindows(),
+                    overwriteDb);
+
             int status = result.getStatus();
             if ( status == DBActions.DB_SUCCESS) {
                 isOk = true;
-                if (ui != null) {
+                if (ui != null)
                     ui.showSuccess("Database Successfully Created\n");
-                }
             } else {
                 switch (status) {
                     case DBActions.DB_UNKNOWNHOST_FAILURE:
@@ -616,7 +385,7 @@ public class DBActions {
                 }
             }
         } catch (IOException e) {
-            errorMsg = "Could not create the database because there was an error while reading the file \"" + dbCreateScriptFile + "\"." +
+            errorMsg = "Could not create the database because there was an error while reading the file \"" + osFunctions.getPathToDBCreateFile() + "\"." +
                     " The error was: " + e.getMessage();
             logger.warning(errorMsg);
             if (ui != null) ui.showErrorMessage(errorMsg);
@@ -630,9 +399,11 @@ public class DBActions {
         String errorMsg;
         boolean isOk = false;
 
-        DBActions.DBActionsResult status;
         logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password \"" + username + "/" + password + "\"");
-        status = checkExistingDb(hostname, dbName, username, password);
+
+        DBInformation dbInfo = new DBInformation(hostname, dbName, username, password, privUsername, privPassword);
+
+        DBActions.DBActionsResult status = checkExistingDb(dbInfo);
         if (status.getStatus() == DBActions.DB_SUCCESS) {
             logger.info(CONNECTION_SUCCESSFUL_MSG);
             logger.info("Now Checking database version");
@@ -670,9 +441,12 @@ public class DBActions {
                             }
                             if (creds == null) return false;
                             privUsername = creds.get(DBActions.USERNAME_KEY);
-                            privPassword = creds.get(DBActions.PASSWORD_KEY);
+                            dbInfo.setPrivUsername(privUsername);
 
-                            isOk = doDbUpgrade(hostname, dbName, currentVersion, dbVersion, privUsername, privPassword, ui);
+                            privPassword = creds.get(DBActions.PASSWORD_KEY);
+                            dbInfo.setPrivPassword(privPassword);
+
+                            isOk = doDbUpgrade(dbInfo, currentVersion, dbVersion, ui);
                             if (isOk && ui != null) ui.showSuccess("Database Successfully Upgraded\n");
                         } catch (IOException e) {
                             errorMsg = "There was an error while attempting to upgrade the database";
@@ -725,38 +499,370 @@ public class DBActions {
         return isOk;
     }
 
-    private boolean doDbUpgrade(String hostname, String dbName, String currentVersion, String dbVersion, String privUsername, String privPassword, DBActionsListener ui) throws IOException {
+
+//
+// PRIVATE METHODS
+//
+
+    private Connection getConnection(String hostname, String dbName, String username, String password) throws SQLException {
+        Connection conn;
+        conn = DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
+        return conn;
+    }
+
+    private void dropDatabase(Statement stmt, String dbName, boolean isInfo) throws SQLException {
+        stmt.executeUpdate(SQL_DROP_DB + dbName);
+
+        if (isInfo)
+            logger.info("dropping database \"" + dbName + "\"");
+        else
+            logger.warning("dropping database \"" + dbName + "\"");
+    }
+
+    private void dropDatabase(String dbName, String hostname, String username, String password, boolean isInfo) {
+        Connection conn = null;
+        Statement stmt = null;
+        try {
+            conn = getConnection(hostname, ADMIN_DB_NAME, username, password);
+            stmt = conn.createStatement();
+            dropDatabase(stmt, dbName, isInfo);
+        } catch (SQLException e) {
+            logger.severe("Failure while dropping the database: " + e.getMessage());
+        } finally {
+            if (stmt != null)
+                try { stmt.close(); } catch (SQLException e) {}
+
+            if (conn != null)
+                try { conn.close(); } catch (SQLException e) {}
+        }
+    }
+
+    private DBActionsResult checkExistingDb(DBInformation dbInfo) {
+
+        DBActionsResult result = new DBActionsResult();
+        String connectionString = makeConnectionString(dbInfo.getHostname(), dbInfo.getDbName());
+        Connection conn = null;
+
+        try {
+            conn = DriverManager.getConnection(connectionString, dbInfo.getUsername(), dbInfo.getPassword());
+            result.setStatus(DB_SUCCESS);
+        } catch (SQLException e) {
+            result.setStatus(determineErrorStatus(e.getSQLState()));
+            result.setErrorMessage(e.getMessage());
+
+            logger.warning("Could not login to the database using " + dbInfo.getUsername() + ":" + dbInfo.getPassword() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName());
+            logger.warning(e.getMessage());
+        } finally {
+            if (conn != null)
+                try { conn.close(); } catch (SQLException e) {}
+        }
+        return result;
+    }
+
+    private void init() throws ClassNotFoundException {
+        Class.forName(JDBC_DRIVER_NAME);
+        ssgDbChecker = new CheckSSGDatabase();
+        osFunctions = OSDetector.getOSSpecificFunctions();
+        //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
+        Arrays.sort(dbCheckers, Collections.reverseOrder());
+    }
+
+    private Set<String> getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
+        Set<String> columns = new HashSet<String>();
+        ResultSet rs = null;
+        rs = metadata.getColumns(null, "%", tableName, "%");
+        while(rs.next()) {
+            columns.add(rs.getString("COLUMN_NAME").toLowerCase());
+        }
+        return columns;
+    }
+
+    //will return the version of the DB, or null if it cannot be determined
+    private String getDbVersion(Hashtable<String, Set> tableData) {
+        String version = null;
+        //make sure we're even dealing with something that smells like an SSG database
+        if (ssgDbChecker.doCheck(tableData)) {
+            //this is an SSG database, now determine the exact version
+            int dbCheckIndex = 0;
+            boolean versionFound = false;
+            do {
+                DbVersionChecker checker = dbCheckers[dbCheckIndex++];
+                if (versionFound = checker.doCheck(tableData)) {
+                     version = checker.getVersion();
+                }
+
+            } while(!versionFound && dbCheckIndex < dbCheckers.length);
+         }
+         return version;
+     }
+
+    //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
+    //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
+    private String checkDbVersion(Connection conn) throws SQLException {
+        Hashtable<String, Set> tableData = collectMetaInfo(conn);
+        //now we have a hashtable of tables and their columns
+        return getDbVersion(tableData);
+    }
+
+    private Hashtable<String, Set> collectMetaInfo(Connection conn) throws SQLException {
+        Hashtable<String, Set> tableData = new Hashtable<String, Set>();
+
+        DatabaseMetaData metadata = conn.getMetaData();
+        String[] tableTypes = {
+                "TABLE",
+        };
+
+        ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
+        while (tableNames.next()) {
+            String tableName = tableNames.getString("TABLE_NAME");
+
+            Set<String> columns = getTableColumns(tableName, metadata);
+            if (columns != null)
+                tableData.put(tableName.toLowerCase(), columns);
+        }
+        return tableData;
+    }
+
+    private void makeDatabase(Statement stmt, DBInformation dbInfo, String dbCreateScript, boolean isWindows) throws SQLException, IOException {
+        stmt.getConnection().setAutoCommit(false); //start transaction
+        logger.info("creating database \"" + dbInfo.getDbName() +"\"");
+
+        createDatabase(dbInfo.getDbName(), stmt);
+
+        executeUpdates(getCreateDbStatementsFromFile(dbCreateScript),
+                stmt,
+                "Creating schema for " + dbInfo.getDbName() + " database");
+
+        executeUpdates(getGrantStatements(dbInfo, isWindows),
+                stmt,
+                "Creating user \"" + dbInfo.getUsername() + "\" and performing grants on " + dbInfo.getDbName() + " database");
+
+        stmt.getConnection().commit();     //finish transaction
+        stmt.getConnection().setAutoCommit(true);
+    }
+
+    private void createDatabase(String dbName, Statement stmt) throws SQLException {
+        stmt.executeUpdate(SQL_CREATE_DB + dbName);
+        stmt.execute(SQL_USE_DB + dbName);
+    }
+
+    private void executeUpdates(String[] sqlStatements, Statement stmt, String logMessage) throws SQLException {
+        if (sqlStatements != null) {
+            if (StringUtils.isNotEmpty(logMessage))
+                logger.info(logMessage);
+
+            for (String sqlStmt : sqlStatements) {
+                stmt.executeUpdate(sqlStmt);
+            }
+        }
+    }
+
+    private String[] getGrantStatements(DBInformation dbInfo, boolean isWindows) {
+        List<String> list = new ArrayList<String>();
+
+        list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@'%' identified by '" + dbInfo.getPassword() + "'"));
+        list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + dbInfo.getHostname() + " identified by '" + dbInfo.getPassword() + "'"));
+
+        if (!isWindows && dbInfo.getHostname().equals("localhost"))
+            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@localhost.localdomain identified by '" + dbInfo.getPassword() + "'"));
+
+        list.add(new String("FLUSH PRIVILEGES"));
+        return list.toArray(new String[0]);
+    }
+
+    private String[] getCreateDbStatementsFromFile(String dbCreateScript) throws IOException {
+        String []  stmts = null;
+        BufferedReader reader = null;
+        try {
+            StringBuffer sb = new StringBuffer();
+
+            reader = new BufferedReader(new FileReader(dbCreateScript));
+            String temp = null;
+            while((temp = reader.readLine()) != null) {
+                if (!temp.startsWith("--") && !temp.equals("")) {
+                    sb.append(temp);
+                }
+            }
+            Pattern splitPattern = Pattern.compile(";");
+            stmts = splitPattern.split(sb.toString());
+        } finally{
+            if (reader != null)
+                if (reader != null) reader.close();
+        }
+        return stmts;
+    }
+
+    private String[] getDbCreateStatementsFromDb(DBInformation dbInfo) throws SQLException {
+
+        Connection conn = null;
+        Statement showTablesStmt = null;
+        Statement getCreateTablesStmt = null;
+        List<String> list = new ArrayList<String>();
+        try {
+            conn = getConnection(dbInfo.getHostname(), dbInfo.getDbName(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
+            showTablesStmt = conn.createStatement();
+            getCreateTablesStmt = conn.createStatement();
+
+            ResultSet tablesList = showTablesStmt.executeQuery("show tables");
+
+            //turn off foreign key checks so that tables with constraints can be created before the constraints exists
+
+            list.add("SET FOREIGN_KEY_CHECKS = 0");
+            ResultSet createTables;
+            while (tablesList.next()) {
+                String tableName = tablesList.getString(1);
+                createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
+                while (createTables.next()) {
+                    String s = createTables.getString(2).replace("\n", "");
+                    list.add(s);
+                }
+            }
+        } finally {
+            if (conn != null) try { conn.close(); } catch (SQLException ex){}
+            if (showTablesStmt != null) try { showTablesStmt.close(); } catch (SQLException ex){}
+            if (getCreateTablesStmt != null) try { getCreateTablesStmt.close(); } catch (SQLException ex){}
+        }
+
+        return list.toArray(new String[0]);
+    }
+
+    private boolean testForExistingDb(Statement stmt, String dbName) {
+        boolean dbExists = false;
+        try {
+            stmt.execute(SQL_USE_DB + dbName);
+            dbExists = true;       //if an exception was not thrown then the db must already exist.
+        } catch (SQLException e) {
+            if ("42000".equals(e.getSQLState()))      //this means the db didn't exist. In this case, the exception is what we want.
+                dbExists = false;
+        }
+        return dbExists;
+    }
+
+    private String makeConnectionString(String hostname, String dbName) {
+        StringBuffer buffer = new StringBuffer();
+        buffer.append(MYSQL_CONNECTION_PREFIX).append(hostname).append("/").append(dbName);
+        return buffer.toString();
+    }
+
+
+    private Map<String, String[]> buildUpgradeMap(File parentDir) {
+        File[] upgradeScripts = parentDir.listFiles(new FilenameFilter() {
+                public boolean accept(File file, String s) {
+                    return s.toUpperCase().startsWith("UPGRADE") &&
+                            s.toUpperCase().endsWith("SQL");
+                }
+        });
+
+        Pattern upgradePattern = Pattern.compile(UPGRADE_SQL_PATTERN);
+        Map<String, String[]> upgradeMap = new HashMap<String, String[]>();
+
+        for (File upgradeScript : upgradeScripts) {
+            Matcher matcher = upgradePattern.matcher(upgradeScript.getName());
+            if (matcher.matches()) {
+                String startVersion = matcher.group(1);
+                String destinationVersion = matcher.group(2);
+                upgradeMap.put(startVersion, new String[]{destinationVersion, upgradeScript.getAbsolutePath()});
+            }
+        }
+        return upgradeMap;
+    }
+
+
+    private boolean doDbUpgrade(DBInformation dbInfo, String currentVersion, String dbVersion, DBActionsListener ui) throws IOException {
         boolean isOk = false;
 
-        logger.info("Attempting to upgrade the existing database \"" + dbName+ "\"");
-        DBActions.DBActionsResult upgradeResult = upgradeDbSchema(hostname, privUsername, privPassword, dbName, dbVersion, currentVersion);
-        String msg;
-        switch (upgradeResult.getStatus()) {
-            case DBActions.DB_SUCCESS:
-                logger.info("Database successfully upgraded");
-                isOk = true;
-                break;
-            case DBActions.DB_AUTHORIZATION_FAILURE:
-                msg = "login to the database with the supplied credentials failed, please try again";
-                logger.warning(msg);
-                if (ui != null) ui.showErrorMessage(msg);
-                isOk = false;
-                break;
-            case DBActions.DB_UNKNOWNHOST_FAILURE:
-                msg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
-                logger.warning(msg);
-                if (ui != null) ui.showErrorMessage(msg);
-                isOk = false;
-                break;
-            default:
-                msg = "Database upgrade process failed: " + upgradeResult.getErrorMessage();
-                if (ui != null) ui.showErrorMessage(msg);
-                logger.warning(msg);
-                isOk = false;
-                break;
+        DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(dbInfo, dbVersion, currentVersion);
+        if (testUpgradeResult.getStatus() != DB_SUCCESS) {
+            String msg = "The database was not upgraded due to the following reasons:\n\n" + testUpgradeResult.getErrorMessage() + "\n\n" +
+                    "No changes have been made to the database. Please correct the problem and try again.";
+            if (ui != null) ui.showErrorMessage(msg);
+            logger.warning(msg);
+            isOk = false;
+        } else {
+            logger.info("Attempting to upgrade the existing database \"" + dbInfo.getDbName()+ "\"");
+            DBActionsResult upgradeResult = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), dbInfo.getDbName(), dbVersion, currentVersion);
+            String msg;
+            switch (upgradeResult.getStatus()) {
+                case DBActions.DB_SUCCESS:
+                    logger.info("Database successfully upgraded");
+                    isOk = true;
+                    break;
+                case DBActions.DB_AUTHORIZATION_FAILURE:
+                    msg = "login to the database with the supplied credentials failed, please try again";
+                    logger.warning(msg);
+                    if (ui != null) ui.showErrorMessage(msg);
+                    isOk = false;
+                    break;
+                case DBActions.DB_UNKNOWNHOST_FAILURE:
+                    msg = "Could not connect to the host: \"" + dbInfo.getHostname() + "\". Please check the hostname and try again.";
+                    logger.warning(msg);
+                    if (ui != null) ui.showErrorMessage(msg);
+                    isOk = false;
+                    break;
+                default:
+                    msg = "Database upgrade process failed: " + upgradeResult.getErrorMessage();
+                    if (ui != null) ui.showErrorMessage(msg);
+                    logger.warning(msg);
+                    isOk = false;
+                    break;
 
+            }
         }
         return isOk;
+    }
+
+    private DBActionsResult testDbUpgrade(DBInformation dbInfo, String dbVersion, String currentVersion) throws IOException {
+        DBActionsResult result = new DBActionsResult();
+        String testDbName = dbInfo.getDbName() + "_testUpgrade";
+        try {
+            copyDatabase(dbInfo, testDbName);
+            DBActionsResult upgradeResult  = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), testDbName, dbVersion, currentVersion);
+            if (upgradeResult.getStatus() != DB_SUCCESS) {
+                result.setStatus(DB_CANNOT_UPGRADE);
+                result.setErrorMessage(upgradeResult.getErrorMessage());
+            }
+        } catch (SQLException e) {
+            result.setStatus(determineErrorStatus(e.getSQLState()));
+            result.setErrorMessage(e.getMessage());
+        } finally {
+            //get rid of the temp database
+            dropDatabase(testDbName, dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), true);
+        }
+
+        return result;
+    }
+
+    private int determineErrorStatus(String sqlState) {
+        if (StringUtils.equals(ERROR_CODE_UNKNOWNDB, sqlState))
+            return DB_UNKNOWNDB_FAILURE;
+        else if (StringUtils.equals(ERROR_CODE_AUTH_FAILURE, sqlState))
+            return DB_AUTHORIZATION_FAILURE;
+        else if (StringUtils.equals("08S01", sqlState))
+            return DB_UNKNOWNHOST_FAILURE;
+        else
+            return DB_UNKNOWN_FAILURE;
+    }
+
+    private void copyDatabase(DBInformation dbInfo, String testDbName) throws SQLException {
+        Connection conn = null;
+        Statement stmt = null;
+        try {
+            conn = getConnection(dbInfo.getHostname(), "", dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
+            conn.setAutoCommit(false);
+
+            stmt = conn.createStatement();
+
+            createDatabase(testDbName, stmt);
+            stmt.execute("use "+ testDbName);
+            executeUpdates(getDbCreateStatementsFromDb(dbInfo), stmt, "Creating a copy of " + dbInfo.getDbName() + " to test the upgrade process.");
+
+            conn.commit();
+            conn.setAutoCommit(true);
+        } finally {
+            if (conn != null) try {conn.close(); } catch (SQLException ex) {}
+            if (stmt != null) try {stmt.close(); } catch (SQLException ex) {}
+        }
+
     }
 
 
