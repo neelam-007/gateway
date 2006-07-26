@@ -1,6 +1,7 @@
 package com.l7tech.skunkworks.gclient;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -8,6 +9,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
@@ -24,9 +26,12 @@ import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.soap.SOAPException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.SSLSocket;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.PasswordCallback;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,14 +39,20 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.net.URI;
+import java.net.Socket;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
+import java.security.Principal;
 
 /**
  * Generic Client for SOAP.
@@ -56,7 +67,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        final JFrame frame = new JFrame("GClient v0.2");
+        final JFrame frame = new JFrame("GClient v0.3");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -64,7 +75,7 @@ public class GClient {
         buildControls();
 
         // listeners
-        buildListeners();
+        buildListeners(frame);
 
         // do menus
         buildMenus(frame);
@@ -103,6 +114,8 @@ public class GClient {
     private JPasswordField passwordField;
     private JTextField ntlmDomainField;
     private JTextField ntlmHostField;
+    private JButton certButton;
+    private JLabel clientCertLabel;
     private JCheckBox reformatRequestMessageCheckbox;
     private JCheckBox reformatResponseMessageCheckBox;
     private JCheckBox validateBeforeSendCheckBox;
@@ -122,6 +135,8 @@ public class GClient {
     private String rawResponse;
     private String formattedResponse;
     private SSLSocketFactory sslSocketFactory;
+    private X509Certificate clientCertificate;
+    private PrivateKey clientPrivateKey;
 
     private boolean formatRequest() {
         return reformatRequestMessageCheckbox.isSelected();
@@ -135,7 +150,7 @@ public class GClient {
         return validateBeforeSendCheckBox.isSelected();
     }
 
-    private void buildListeners() {
+    private void buildListeners(final JFrame frame) {
         serviceComboBox.addItemListener(new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
                 updateServiceSelection();
@@ -149,6 +164,11 @@ public class GClient {
         operationComboBox.addItemListener(new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
                 updateOperationSelection();
+            }
+        });
+        certButton.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent e) {
+                loadCert(frame);
             }
         });
         sendButton.addActionListener(new ActionListener(){
@@ -442,10 +462,63 @@ public class GClient {
         if (sslSocketFactory == null) {
             SSLContext sslContext = SSLContext.getInstance("SSL");
             X509TrustManager trustManager = new PermissiveX509TrustManager();
-            sslContext.init(null, new X509TrustManager[] {trustManager}, null);
+            KeyManager[] keyManagers = null;
+            if (clientPrivateKey != null) {
+                keyManagers = new KeyManager[] {
+                    getKeyManager(clientPrivateKey, clientCertificate)
+                };
+            }
+            sslContext.init(keyManagers, new X509TrustManager[] {trustManager}, null);
             sslSocketFactory = sslContext.getSocketFactory();
         }
         return sslSocketFactory;
+    }
+
+    private KeyManager getKeyManager(final PrivateKey privateKey, final X509Certificate certificate) {
+        return new X509KeyManager() {
+            public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+                return "alias";
+            }
+
+            public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
+                throw new RuntimeException("This key manager is for clients only.");
+            }
+
+            public X509Certificate[] getCertificateChain(String string) {
+                return new X509Certificate[]{certificate};
+            }
+
+            public String[] getClientAliases(String string, Principal[] principals) {
+                return new String[]{"alias"};
+            }
+
+            public PrivateKey getPrivateKey(String string) {
+                return privateKey;
+            }
+
+            public String[] getServerAliases(String string, Principal[] principals) {
+                throw new RuntimeException("This key manager is for clients only.");
+            }
+        };
+    }
+
+    /**
+     * Load a client certificate
+     */
+    private void loadCert(final JFrame frame) {
+        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, true, getCallbackHandler());
+        if (data != null) {
+            clientCertificate = data.getCertificate();
+            clientPrivateKey = data.getPrivateKey();
+            sslSocketFactory = null;
+            clientCertLabel.setText(CertUtils.extractCommonNameFromClientCertificate(clientCertificate));
+        }
+        else {
+            clientCertificate = null;
+            clientPrivateKey = null;
+            sslSocketFactory = null;
+            clientCertLabel.setText("");
+        }
     }
 
     /**
@@ -477,7 +550,7 @@ public class GClient {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
                     ser.setOutputStream(baos);
                     ser.serialize(requestDocument);
-                    requestBytes = baos.toByteArray();                    
+                    requestBytes = baos.toByteArray();
                 }
             }
             else {
@@ -495,7 +568,7 @@ public class GClient {
                 for(int i=0; i<requests; i++) {
                     String[] responseData = !isJms ?
                             doMessage(soapAction, targetUrl, requestBytes) :
-                            doJmsMessage(soapAction, targetUrl, requestBytes);
+                            doJmsMessage(targetUrl, requestBytes);
                     if(responseData!=null) {
                         statusLabel.setText(responseData[0]);
                         lengthLabel.setText(responseData[1]);
@@ -555,7 +628,7 @@ public class GClient {
         }
     }
 
-    private String[] doJmsMessage(String soapAction, String targetUrl, byte[] requestBytes) {
+    private String[] doJmsMessage(String targetUrl, byte[] requestBytes) {
         try {
             JmsClient client = new JmsClient(new URI(targetUrl));
             String response = client.getResponse(new String(requestBytes), true);
@@ -601,7 +674,7 @@ public class GClient {
             char[] password = passwordField.getPassword();
             String ntlmDomain = ntlmDomainField.getText();
             String ntlmHost = ntlmHostField.getText();
-            if (login != null && password != null) {
+            if (login != null && login.length() > 0 && password != null) {
                 if (ntlmDomain != null && ntlmDomain.trim().length() > 0) {
                     String host = ntlmHost;
                     if (host == null) host = InetAddress.getLocalHost().getHostName();
@@ -652,5 +725,39 @@ public class GClient {
         }
 
         return null;
+    }
+
+    /**
+     *
+     */
+    private CallbackHandler getCallbackHandler() {
+        return new CallbackHandler() {
+            public void handle(Callback[] callbacks) {
+                PasswordCallback passwordCallback = null;
+
+                for (int i = 0; i < callbacks.length; i++) {
+                    Callback callback = callbacks[i];
+                    if (callback instanceof PasswordCallback) {
+                        passwordCallback = (PasswordCallback) callback;
+                    }
+                }
+
+                if (passwordCallback != null) {
+                    final JPasswordField pwd = new JPasswordField(22);
+                    JOptionPane pane = new JOptionPane(pwd, JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+                    JDialog dialog = pane.createDialog(null, "Enter " + passwordCallback.getPrompt());
+                    dialog.addWindowFocusListener(new WindowAdapter(){
+                        public void windowGainedFocus(WindowEvent e) {
+                            pwd.requestFocusInWindow();
+                        }
+                    });
+                    dialog.setVisible(true);
+                    dialog.dispose();
+                    Object value = pane.getValue();
+                    if (value != null && ((Integer)value).intValue() == JOptionPane.OK_OPTION)
+                        passwordCallback.setPassword(pwd.getPassword());
+                }
+            }
+        };
     }
 }
