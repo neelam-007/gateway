@@ -51,22 +51,25 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        ResponseWssSecurityToken ass = (ResponseWssSecurityToken) node.asAssertion();
+        //ResponseWssSecurityToken ass = (ResponseWssSecurityToken) node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
-        ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, ass);
+        ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
-        ResponseWssSecurityToken newAss = (ResponseWssSecurityToken)dlg.getValue();
-        if (newAss == null) return;
-
-        JTree tree = TopComponents.getInstance().getPolicyTree();
-        if (tree != null) {
-            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-            model.assertionTreeNodeChanged((AssertionTreeNode)node);
-        } else {
-            log.log(Level.WARNING, "Unable to reach the palette tree.");
+        if (dlg.wasOKed()) {
+            ResponseWssSecurityToken newAss = (ResponseWssSecurityToken)dlg.getValue();
+            ResponseWssSecurityToken oldAss = (ResponseWssSecurityToken)node.asAssertion();
+            oldAss.copyFrom(newAss);
+            if (newAss == null) return;
+            JTree tree = TopComponents.getInstance().getPolicyTree();
+            if (tree != null) {
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged((AssertionTreeNode)node);
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
         }
     }
 

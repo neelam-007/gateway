@@ -14,6 +14,7 @@ import java.beans.PropertyChangeListener;
 
 public class OkCancelDialog extends JDialog {
     private Object value;
+    private boolean wasoked = false;
 
     private JButton cancelButton;
     private JButton okButton;
@@ -68,6 +69,7 @@ public class OkCancelDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                wasoked = true;
                 dispose();
             }
         });
@@ -102,5 +104,7 @@ public class OkCancelDialog extends JDialog {
         return value;
     }
 
-
+    public boolean wasOKed() {
+        return wasoked;
+    }
 }

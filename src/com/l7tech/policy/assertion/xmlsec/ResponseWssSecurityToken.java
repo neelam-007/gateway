@@ -48,4 +48,11 @@ public class ResponseWssSecurityToken extends Assertion implements ResponseWssCo
     public void setIncludePassword(boolean includePassword) {
         this.includePassword = includePassword;
     }
+
+    public void copyFrom(ResponseWssSecurityToken other) {
+        this.keyReference = other.keyReference;
+        this.tokenType = other.tokenType;
+        this.recipientContext = other.recipientContext;
+        this.includePassword = other.includePassword;
+    }
 }
