@@ -11,7 +11,7 @@ public class IdentityHeader extends EntityHeader {
 
     public IdentityHeader(long providerOid, String identityId, EntityType type, String name, String description) {
         super(identityId, type, name, description);
-        if (type != EntityType.USER && type != EntityType.GROUP) throw new IllegalArgumentException("EntityType must be USEr or GROUP");
+        if (type != EntityType.USER && type != EntityType.GROUP && type != EntityType.MAXED_OUT_SEARCH_RESULT) throw new IllegalArgumentException("EntityType must be USER or GROUP");
         this.providerOid = providerOid;
     }
 
