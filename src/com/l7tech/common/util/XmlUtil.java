@@ -318,7 +318,6 @@ public class XmlUtil {
      */
     public static void format(Element element, int initialIndent, int levelIndent) {
         Document document = element.getOwnerDocument();
-        NodeList children = element.getChildNodes();
 
         PaddingCharSequence pcs = new PaddingCharSequence(' ', initialIndent);
         if (element.hasChildNodes()) element.appendChild(document.createTextNode("\n"+pcs.toString()));
@@ -329,7 +328,7 @@ public class XmlUtil {
         while (currentNode != null) {
             if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
                 currentNode.getParentNode().insertBefore(document.createTextNode("\n"+pcs.toString()),currentNode);
-                if (currentNode.hasChildNodes()) currentNode.appendChild(document.createTextNode("\n"+pcs.toString()));
+                if (hasChildNodesOfType(currentNode, Node.ELEMENT_NODE)) currentNode.appendChild(document.createTextNode("\n"+pcs.toString()));
             }
             if (currentNode.hasChildNodes()) {
                 elementStack.push(currentNode);
@@ -673,6 +672,31 @@ public class XmlUtil {
         }
 
         return found;
+    }
+
+    /**
+     * Check if the given Node has any child Nodes of the specified type.
+     *
+     * <p>This will check only children, not all descendants.</p>
+     *
+     * @param parent   The parent node (may be null)
+     * @param nodeType The type of Node to check for
+     * @return True if the given node has a child Node of the given type
+     */
+    public static boolean hasChildNodesOfType(Node parent, short nodeType) {
+        boolean hasChildNodesOfType = false;
+
+        if (parent != null && parent.hasChildNodes()) {
+            Node child = parent.getFirstChild();
+            while (child != null && hasChildNodesOfType == false) {
+                if (child.getNodeType() == nodeType) {
+                    hasChildNodesOfType = true;
+                }
+                child = child.getNextSibling();
+            }
+        }
+
+        return hasChildNodesOfType;
     }
 
     /**

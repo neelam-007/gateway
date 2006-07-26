@@ -3,9 +3,12 @@ package com.l7tech.skunkworks.saml;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.security.cert.X509Certificate;
 import java.security.PrivateKey;
 import java.util.logging.Level;
+import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.io.IOException;
 import javax.swing.*;
@@ -17,6 +20,7 @@ import javax.security.auth.callback.PasswordCallback;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.GuiCertUtil;
@@ -104,6 +108,7 @@ public class SamlGenerator {
     private JTextField issuerTextField;
     private JTextField notBeforeTextField;
     private JTextField notOnOrAfterTextField;
+    private JTextField audienceRestrictionTextField;
     private JButton issuerCertButton;
     private JLabel issuerCertLabel;
     private JButton subjectCertButton;
@@ -122,6 +127,7 @@ public class SamlGenerator {
     private JTextField attributeNameTextField;
     private JTextField attributeNamespaceTextField;
     private JTextField attributeValueTextField;
+    private JCheckBox formatXMLCheckBox;
     private JButton generateButton;
 
     // components
@@ -137,7 +143,7 @@ public class SamlGenerator {
      *
      */
     private void initComponents() {
-        mainFrame = new JFrame("Saml Assertion Generator v0.1");
+        mainFrame = new JFrame("Saml Assertion Generator v0.2");
 
         mainFrame.setLayout(new BorderLayout());
         mainFrame.add(mainPanel);
@@ -214,8 +220,8 @@ public class SamlGenerator {
         }
 
         String authenticationMethod = (String) authenticationMethodComboBox.getSelectedItem();
-        if (subjectCertificate == null && requiresCertificate(authenticationMethod)) {
-            displayError("You must select a subject certificate (for selected auth method).");
+        if (subjectCertificate == null) {
+            displayError("You must select a subject certificate.");
             return;
         }
 
@@ -296,6 +302,29 @@ public class SamlGenerator {
                 if (notOnOrAfterTextField.getText().length() > 0) {
                     conditions.setAttribute("NotOnOrAfter", notOnOrAfterTextField.getText());
                 }
+                if (audienceRestrictionTextField.getText().length() > 0) {
+                    String namespace = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2 : SamlConstants.NS_SAML;
+                    String prefix = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2_PREFIX : SamlConstants.NS_SAML_PREFIX;
+                    Element restriction = XmlUtil.findOnlyOneChildElementByName(conditions, namespace, "AudienceRestrictionCondition");
+                    if (restriction == null) {
+                        restriction = XmlUtil.createAndAppendElementNS(conditions, "AudienceRestrictionCondition", namespace, prefix);
+                    }
+                    StringTokenizer audienceTok = new StringTokenizer(audienceRestrictionTextField.getText(), " ");
+                    while (audienceTok.hasMoreTokens()) {
+                        String audienceRestriction = audienceTok.nextToken();
+                        Element audience = XmlUtil.createAndAppendElementNS(restriction, "Audience", namespace, prefix);
+                        XmlUtil.setTextContent(audience, audienceRestriction);
+                    }
+                }
+            }
+            if (!ArrayUtils.contains(ALL_SUBJECT_CONFIRMATIONS, subjectConfirmation)) {
+                // then strip out any confirmation
+                String namespace = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2 : SamlConstants.NS_SAML;
+                NodeList confirmationEles = assertion.getDocumentElement().getElementsByTagNameNS(namespace, "SubjectConfirmation");
+                for (int c=0; c<confirmationEles.getLength(); c++) {
+                    Node confirmation = confirmationEles.item(c);
+                    confirmation.getParentNode().removeChild(confirmation);
+                }
             }
             //1.1 <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">
             //2.0 <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">
@@ -316,7 +345,7 @@ public class SamlGenerator {
                         nameIdEl.setAttribute("Format", (String)nameIdentifierFormatComboBox.getSelectedItem());
                     if (nameIdentifierTextField.getText().length() > 0)
                         XmlUtil.setTextContent(nameIdEl, nameIdentifierTextField.getText());
-                    if (nameQualifierTextField.getText().length() > 0 && samlOptions.getVersion()!=2)
+                    if (nameQualifierTextField.getText().length() > 0)
                         nameIdEl.setAttribute("NameQualifier", nameQualifierTextField.getText());
                 }
             }
@@ -338,6 +367,12 @@ public class SamlGenerator {
                         XmlUtil.setTextContent(authContextClassRefEl, authenticationMethod);
                     }
                 }
+            }
+
+            // Reformat
+            if (formatXMLCheckBox.isSelected()) {
+                XmlUtil.stripWhitespace(assertion.getDocumentElement());
+                XmlUtil.format(assertion,true);
             }
 
             // Sign
@@ -405,9 +440,18 @@ public class SamlGenerator {
                 }
 
                 if (passwordCallback != null) {
-                    JPasswordField pwd = new JPasswordField(22);
-                    int action = JOptionPane.showConfirmDialog(null, pwd, "Enter " + passwordCallback.getPrompt(), JOptionPane.OK_CANCEL_OPTION);
-                    if (action == JOptionPane.OK_OPTION)
+                    final JPasswordField pwd = new JPasswordField(22);
+                    JOptionPane pane = new JOptionPane(pwd, JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+                    JDialog dialog = pane.createDialog(null, "Enter " + passwordCallback.getPrompt());
+                    dialog.addWindowFocusListener(new WindowAdapter(){
+                        public void windowGainedFocus(WindowEvent e) {
+                            pwd.requestFocusInWindow();
+                        }
+                    });
+                    dialog.setVisible(true);
+                    dialog.dispose();
+                    Object value = pane.getValue();
+                    if (value != null && ((Integer)value).intValue() == JOptionPane.OK_OPTION)
                         passwordCallback.setPassword(pwd.getPassword());
                 }
             }

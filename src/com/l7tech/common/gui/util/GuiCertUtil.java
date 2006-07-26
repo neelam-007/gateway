@@ -192,6 +192,7 @@ public class GuiCertUtil {
                                                 Callback[] callbacks = new Callback[]{passwordCallback};
                                                 callbackHandler.handle(callbacks);
                                                 password = passwordCallback.getPassword();
+                                                passwordCallback.clearPassword();
                                             }
                                             else {
                                                 throw new CausedIOException("Invalid password for key entry.");
@@ -225,9 +226,18 @@ public class GuiCertUtil {
                             done = true;
                         }
                         catch(IOException ioe) {
-                            displayError(parent, "Error reading file", "Could not read certificate.");
-                            logger.log(Level.WARNING, "Error reading certificate data", ioe);
-                            continue;
+                            if (callbackHandler!=null &&
+                                    ioe instanceof CausedIOException &&
+                                    "Invalid password for key entry.".equals(ioe.getMessage())) {
+                                logger.log(Level.INFO, "No password supplied, open cancelled.");
+                                done = true;
+                                continue;
+                            }
+                            else {
+                                displayError(parent, "Error reading file", "Could not read certificate.");
+                                logger.log(Level.WARNING, "Error reading certificate data", ioe);
+                                continue;
+                            }
                         }
                         catch(CertificateException ce) {
                             displayError(parent, "Error decoding file", "Could not decode certificate.");
