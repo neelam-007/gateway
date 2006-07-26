@@ -3,20 +3,17 @@
     xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
     xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
     xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+    xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <soap:Header>
         <wsse:Security>
-            <wsse:SecurityTokenReference>
-                <wsse:Embedded>
-                    <wsse:BinarySecurityToken/>
-                    <wsse:BinarySecurityToken/> <!-- Embedded must contain only one token -->
-                </wsse:Embedded>
-            </wsse:SecurityTokenReference>
+            <wsu:Timestamp>
+                <wsu:Created>-2003-07-08T02:52:55.0000Z</wsu:Created>
+            </wsu:Timestamp>
         </wsse:Security>
     </soap:Header>
     <soap:Body>
         <tns:listProducts xmlns:tns="http://warehouse.acme.com/ws"/>
     </soap:Body>
 </soap:Envelope>
-

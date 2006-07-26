@@ -13,7 +13,7 @@
                 <ds:SignedInfo>
                     <ds:Reference>
                         <ds:Transforms>
-                            <ds:Transform Algorithm="http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-swa-profile-1.0#Attachment-Complete-Signature-Transform"/>
+                            <ds:Transform Algorithm="http://docs.oasis-open.org/wss/oasis-wss-SwAProfile-1.1#Attachment-Complete-Signature-Transform"/>
                         </ds:Transforms>
                     </ds:Reference>
                 </ds:SignedInfo>
