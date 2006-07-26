@@ -644,7 +644,7 @@ class PathValidator {
                a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
                a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
                a instanceof RequestWssSaml || a instanceof SwAAssertion ||
-               a instanceof RequestWssTimestamp || a instanceof ResponseWssTimestamp || a instanceof WssTimestamp ||
+               a instanceof RequestWssTimestamp || a instanceof ResponseWssTimestamp ||
                a instanceof RequestWssKerberos || a instanceof WsiBspAssertion;
     }
 

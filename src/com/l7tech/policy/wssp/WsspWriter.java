@@ -44,7 +44,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.WssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssTimestamp;
 
 /**
  * Converts a layer 7 policy into a WS-SecurityPolicy tree.
@@ -308,11 +308,11 @@ public class WsspWriter {
     private static final Collection SUPPORTED_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(new Object[]{
         SslAssertion.class,
         WssBasic.class,
-        WssTimestamp.class,
         RequestWssTimestamp.class,
         RequestWssX509Cert.class,
         RequestWssIntegrity.class,
         RequestWssConfidentiality.class,
+        ResponseWssTimestamp.class,
         ResponseWssIntegrity.class,
         ResponseWssConfidentiality.class,
     }));
@@ -588,7 +588,8 @@ public class WsspWriter {
 
         bindingPolicy.addTerm(buildAlgorithmSuite(algorithmSuite));
         bindingPolicy.addTerm(buildLayout());
-        if (containsInstanceOf(l7Assertions, WssTimestamp.class) || containsInstanceOf(l7Assertions, RequestWssTimestamp.class)) {
+        if (containsInstanceOf(l7Assertions, RequestWssTimestamp.class) ||
+            containsInstanceOf(l7Assertions, ResponseWssTimestamp.class)) {
             bindingPolicy.addTerm(buildTimestamp());
         }
 

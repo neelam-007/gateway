@@ -81,7 +81,6 @@ public class HideUnsupportedClientAssertions implements Filter {
         RequestWssReplayProtection.class,
         RequestWssSaml.class,
         RequestWssKerberos.class,
-        WssTimestamp.class,
         CookieCredentialSourceAssertion.class,
     };
 }

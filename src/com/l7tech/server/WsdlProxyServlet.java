@@ -364,15 +364,16 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      */
     private void addSecurityPolicy(Document wsdl, PublishedService svc, AuthenticationResult[] results) {
         try{
-            if (Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
+            if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
+                Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
                 Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
                 if (Assertion.contains(rootassertion, WsspAssertion.class)) {
                     // remove any existing policy
                     XmlUtil.stripNamespace(wsdl.getDocumentElement(), "http://schemas.xmlsoap.org/ws/2004/09/policy");
                     Assertion effectivePolicy = filterManager.applyAllFilters(null, rootassertion);
                     if (effectivePolicy != null) {
-                            if (logger.isLoggable(Level.FINE)) {
-                                logger.log(Level.FINE, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
+                            if (logger.isLoggable(Level.FINEST)) {
+                                logger.log(Level.FINEST, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
                             }
 
                             WsspWriter.decorate(wsdl, effectivePolicy);

@@ -62,7 +62,6 @@ public class WsspAssertionValidator implements AssertionValidator {
     private static final Collection SUPPORTED_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(new Object[]{
         SslAssertion.class,
         WssBasic.class,
-        WssTimestamp.class,
         RequestWssTimestamp.class,
         RequestWssX509Cert.class,
         RequestWssIntegrity.class,
@@ -92,6 +91,5 @@ public class WsspAssertionValidator implements AssertionValidator {
         RequestWssReplayProtection.class,
         RequestWssSaml.class,
         RequestWssKerberos.class,
-        WssTimestamp.class
     }));
 }

@@ -192,7 +192,6 @@ public class GatewayFeatureSets {
             fs(xmlsecAccel),
             ass(RequestWssReplayProtection.class),
             ass(RequestWssTimestamp.class),
-            ass(WssTimestamp.class),
             ass(ResponseWssSecurityToken.class));
 
         // Message Validation/Transform

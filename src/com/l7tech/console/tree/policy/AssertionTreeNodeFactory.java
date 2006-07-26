@@ -100,7 +100,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
         assertionMap.put(ResponseWssTimestamp.class, ResponseWssTimestampPolicyNode.class);
         assertionMap.put(RequestWssTimestamp.class, RequestWssTimestampPolicyNode.class);
-        assertionMap.put(WssTimestamp.class, WssTimestampPolicyNode.class);
         assertionMap.put(HardcodedResponseAssertion.class, HardcodedResponseTreeNode.class);
         assertionMap.put(ResponseWssSecurityToken.class, ResponseWssSecurityTokenPolicyNode.class);
         assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
