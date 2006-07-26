@@ -514,7 +514,7 @@
       -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz, package.systemconfigwiz"/>
+            depends="package.manager, package.gateway, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz, package.systemconfigwiz"/>
 
     <target name="bridge" description="Build and package the SSB" depends="package.installbridge"/>
     <target name="manager" description="Build and package the SSM" depends="package.installmanager"/>
@@ -525,7 +525,7 @@
       ** Please do not invoke below targets as main targets.
     -->
 
-    <target name="package.gateway" depends="compile">
+    <target name="package.gateway" depends="compile, package.manager">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
@@ -692,6 +692,10 @@
             </zipfileset>
 
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
+
+            <!-- Include the manager jars in the Gateway, for the applet admin mode.  TODO include only needed libs here! -->
+            <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssg/webadmin"/>
+            <zipfileset dir="${build.dir}/lib" includes="*.jar" prefix="ssg/webadmin/lib"/>
         </war>
 
         <jar jarfile="${build.dir}/l7valve.jar">
@@ -861,6 +865,11 @@
                 <exclude name="com/l7tech/spring/remoting/http/SecureRemoteInvocationExecutor*.class"/>
             </fileset>
         </jar>
+
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+            <fileset dir="${build.dir}" includes="Manager.jar"/>
+        </signjar>
+
     </target>
 
     <!-- Build LicenseGenerator package.  Always invoked by hand. -->

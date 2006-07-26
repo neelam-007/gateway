@@ -147,6 +147,8 @@ public class Main {
         UIManager.installLookAndFeel(addlf.getName(), addlf.getClass().getName());
 
         // ClearLookManager.setMode(ClearLookMode.DEBUG);
+        if (!SsmApplication.isSuppressAutoLookAndFeel())
+            return; // Will choose auto look-and-feel
 
         Preferences prefs = Preferences.getPreferences();
         String lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
@@ -195,7 +197,7 @@ public class Main {
     private void setInitialEnvironment() {
         // AWT event dispatching thread error handler
         System.setProperty("sun.awt.exception.handler", "com.l7tech.console.logging.AwtErrorHandler");
-     
+
         // Build information
         System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
         System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
@@ -244,7 +246,8 @@ public class Main {
         if (ctxName == null) {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
         }
-        return new ClassPathXmlApplicationContext(new String[]{ctxName});
+        String ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
+        return new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
     }
 
 

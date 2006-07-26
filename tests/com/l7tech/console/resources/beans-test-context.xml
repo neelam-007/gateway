@@ -2,7 +2,7 @@
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
-    <bean id="ssmApplication" class="com.l7tech.console.SsmApplication">
+    <bean id="ssmApplication" class="com.l7tech.console.SsmApplicationHeavy">
     </bean>
 
     <bean id="securityProvider" class="com.l7tech.console.security.SecurityProviderImpl">

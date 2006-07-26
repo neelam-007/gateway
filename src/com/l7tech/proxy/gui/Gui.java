@@ -9,7 +9,7 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.dialogs.AboutBox;
 import com.l7tech.proxy.gui.util.IconManager;
-import com.l7tech.proxy.util.JavaVersionChecker;
+import com.l7tech.common.util.JavaVersionChecker;
 import snoozesoft.systray4j.*;
 
 import javax.help.DefaultHelpBroker;

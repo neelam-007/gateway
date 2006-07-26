@@ -6,6 +6,7 @@ import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
 import java.awt.*;
@@ -289,6 +290,12 @@ public class PreferencesDialog extends JDialog {
 
         // equalize label sizes
         Utilities.equalizeLabelSizes(jLabels);
+
+        if (!SsmApplication.isSuppressAutoLookAndFeel()) {
+            lfLabel.setVisible(false);
+            lfComboBox.setEnabled(false);
+            lfComboBox.setVisible(false);
+        }
 
     }
 

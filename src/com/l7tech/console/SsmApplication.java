@@ -1,70 +1,36 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2005 Layer 7 Technologies Inc.
  *
- * $Id$
  */
+
 package com.l7tech.console;
 
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.PreferencesChangedEvent;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
+import com.l7tech.common.util.JavaVersionChecker;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
+import javax.swing.plaf.metal.MetalTheme;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author emil
- * @version Oct 1, 2004
+ * @author mike
  */
-public class SsmApplication
-  extends ApplicationObjectSupport implements ApplicationListener {
-    private final Logger log = Logger.getLogger(getClass().getName());
-    private static SsmApplication ssmApplication;
+public abstract class SsmApplication extends ApplicationObjectSupport {
+    private static final Logger logger = Logger.getLogger(SsmApplication.class.getName());
+    private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
+    private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
+    private static final boolean SUPPRESS_AUTO_LNF = Boolean.valueOf("com.l7tech.console.SuppressAutoLookAndFeel");
+
     private String resourcePath;
-    private MainWindow mainWindow;
-    private boolean running = false;
-
-    public SsmApplication() {
-        if (ssmApplication != null) {
-            throw new IllegalStateException("Already initalized");
-        }
-        ssmApplication = this;
-    }
-
-    public static SsmApplication getApplication() {
-        return ssmApplication;
-    }
-
-    public Object getBean(String beanName) {
-        return getApplicationContext().getBean(beanName);
-    }
+    protected MainWindow mainWindow;
+    private boolean autoLnfSet;
 
     public MainWindow getMainWindow() {
         return mainWindow;
     }
 
-    public synchronized void run() {
-        if (running) {
-            throw new IllegalStateException("SSM already running");
-        }
-        mainWindow = new MainWindow(this);
-        // Window listener
-        mainWindow.setVisible(true);
-        mainWindow.toFront();
-        running = true;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                mainWindow.activateLogonDialog();
-            }
-        });
-    }
+    abstract void run();
 
     public String getResourcePath() {
         return resourcePath;
@@ -74,56 +40,85 @@ public class SsmApplication
         this.resourcePath = resourcePath;
     }
 
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof PreferencesChangedEvent) {
-            final Preferences prefs = (Preferences)getApplicationContext().getBean("preferences");
-            log.finest("preferences have been updated");
-            setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
-            MainWindow mainWindow = getMainWindow();
-            if (mainWindow !=null) {
-                mainWindow.setInactivitiyTimeout(prefs.getInactivityTimeout());
-            }
-        }
+    abstract boolean isApplet();
+
+    /** @return true if a custom look and feel should be honored.  False to do normal automatic look-and-feel selection. */
+    public static boolean isSuppressAutoLookAndFeel() {
+        return SUPPRESS_AUTO_LNF;
+    }
+
+    private static interface LnfSetter {
+        void setLnf() throws Exception;
     }
 
     /**
-     * set the look and feel
-     *
-     * @param lookAndFeel a string specifying the name of the class that implements
-     *                    the look and feel
+     * Try to set the Kunststoff look and feel.
      */
-    private void setLookAndFeel
-      (String
-      lookAndFeel) {
+    private static LnfSetter kunststoffLnfSetter = new LnfSetter() {
+        public void setLnf() throws Exception {
+            final Class kunststoffClass = Class.forName( KUNSTSTOFF_CLASSNAME );
+            final Object kunststoffLnF = kunststoffClass.newInstance();
+            try {
+                final Class themeClass = Class.forName( KUNSTSTOFF_THEME_CLASSNAME );
+                final Object theme = themeClass.newInstance();
+                kunststoffClass.getMethod("setCurrentTheme", MetalTheme.class).invoke(kunststoffLnF, theme);
+            } catch ( Exception e ) {
+                // eat it, themes not make one great
+            }
+            UIManager.setLookAndFeel( (LookAndFeel) kunststoffLnF );
+        }
+    };
 
-        if (lookAndFeel == null) return;
-        boolean lfSet = true;
+    /**
+     * Try to set the Windows look and feel.
+     */
+    private static LnfSetter windowsLnfSetter = new LnfSetter() {
+        public void setLnf() throws Exception {
+            UIManager.LookAndFeelInfo[] feels = UIManager.getInstalledLookAndFeels();
+            for (UIManager.LookAndFeelInfo feel : feels) {
+                if (feel.getName().indexOf("Windows") >= 0) {
+                    UIManager.setLookAndFeel(feel.getClassName());
+                    break;
+                }
+            }
+        }
+    };
 
-        // if same look and feel quick exit
-        if (lookAndFeel.
-          equals(UIManager.getLookAndFeel().getClass().getName())) {
-            return;
+    /**
+     * Otherwise, system look and feel.
+     */
+    private static LnfSetter systemLnfSetter = new LnfSetter() {
+        public void setLnf() throws Exception {
+            UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
+        }
+    };
+
+    /**
+     * Automatically pick the best look and feel and enable it.
+     * This method currently uses Windows, then kunststoff, then system LnF on java 1.4.2 or higher;
+     * or kunststoff, windows, then system on earlier javas.
+     */
+    protected void setAutoLookAndFeel() {
+        if (autoLnfSet) return;
+        autoLnfSet = true;
+
+        boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast( new int[]{1, 4, 2} );
+        LnfSetter[] order = haveXpLnf ? new LnfSetter[]{windowsLnfSetter, kunststoffLnfSetter, systemLnfSetter}
+                            : new LnfSetter[]{kunststoffLnfSetter, windowsLnfSetter, systemLnfSetter};
+        for (LnfSetter anOrder : order) {
+            try {
+                anOrder.setLnf();
+            } catch (Exception e) {
+                continue;
+            }
+            break;
         }
 
         try {
-            Object lafObject =
-              Class.forName(lookAndFeel).newInstance();
-            UIManager.setLookAndFeel((LookAndFeel)lafObject);
-        } catch (Exception e) {
-            lfSet = false;
+            // incors.org Kunststoff faq says we need the following line if we ever want to use Java Web Start:
+            UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
+        } catch ( Exception e ) {
+            logger.log(Level.WARNING, "Unable to update look-and-feel classloader", e);
         }
-        // there was a problem setting l&f, try crossplatform one (best bet)
-        if (!lfSet) {
-            try {
-                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            } catch (Exception e) {
-                return;
-            }
-        }
-        // update panels with new l&f
-        MainWindow mainWindow = getMainWindow();
-        SwingUtilities.updateComponentTreeUI(mainWindow);
-        mainWindow.validate();
     }
-
 }

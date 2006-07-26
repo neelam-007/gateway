@@ -45,6 +45,11 @@ import java.util.logging.Logger;
 public class LogonDialog extends JDialog {
     private static final Logger log = Logger.getLogger(LogonDialog.class.getName());
 
+    /** Preconfigured credentials for applet. */
+    private static String preconfiguredGatewayHostname;
+    private static String preconfiguredUsername;
+    private static String preconfiguredPassword;
+
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authenticationCredentials = null;
 
@@ -521,6 +526,28 @@ public class LogonDialog extends JDialog {
     }
 
     /**
+     * Set a preconfigured Gateway hostname.  If one of these is specified, the Gateway drop-down will
+     * not be displayed on the logon form.  Used only by the Applet version of the Manager.
+     *
+     * @param gatewayHostname  the hostname to use, or null to display the drop-down.
+     */
+    public static void setPreconfiguredGatewayHostname(String gatewayHostname) {
+        preconfiguredGatewayHostname = gatewayHostname;
+    }
+
+    /**
+     * Set preconfigured credentials to use instead of popping up the logon dialog.  These will be cleared
+     * if there is a logon failure.  Used only by the Applet version of the manager.
+     *
+     * @param username
+     * @param password
+     */
+    public static void setPreconfiguredCredentials(String username, String password) {
+        preconfiguredUsername = username;
+        preconfiguredPassword = password;
+    }
+
+    /**
      * invoke logon dialog
      *
      * @param frame
@@ -555,6 +582,17 @@ public class LogonDialog extends JDialog {
      * Before displaying dialog, ensure that correct fields are selected.
      */
     public void setVisible(boolean visible) {
+        if (visible && preconfiguredGatewayHostname != null) {
+            serverComboBox.setSelectedItem(preconfiguredGatewayHostname);
+            serverComboBox.setEnabled(false);
+            if (preconfiguredUsername != null && preconfiguredPassword != null) {
+                userNameTextField.setText(preconfiguredUsername);
+                passwordField.setText(preconfiguredPassword);
+                doLogon();
+                return;
+            }
+        }
+
         if(visible) {
             if (rememberUser) {
                 passwordField.requestFocus();
@@ -653,6 +691,7 @@ public class LogonDialog extends JDialog {
      * @param e
      */
     private void handleLogonThrowable(Throwable e, String host) {
+        preconfiguredPassword = null;
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException)cause;

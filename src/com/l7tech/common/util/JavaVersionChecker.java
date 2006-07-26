@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.proxy.util;
+package com.l7tech.common.util;
 
 import java.util.StringTokenizer;
 import java.util.logging.Logger;

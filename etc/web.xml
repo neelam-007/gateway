@@ -72,6 +72,14 @@
         <filter-class>com.l7tech.server.transport.http.ConnectionIdFilter</filter-class>
     </filter>
 
+    <!-- TODO uncomment to test Manager applet -->
+    <!--
+    <filter>
+        <filter-name>managerAppletFilter</filter-name>
+        <filter-class>com.l7tech.server.admin.ManagerAppletFilter</filter-class>
+    </filter>
+    -->
+
     <filter-mapping>
         <filter-name>input-timeout</filter-name>
         <url-pattern>/*</url-pattern>
@@ -103,6 +111,19 @@
         <filter-name>adminFilter</filter-name>
         <url-pattern>/ssg/manager/*</url-pattern>
     </filter-mapping>
+
+    <!-- TODO uncomment to test Manager applet -->
+    <!--
+    <filter-mapping>
+        <filter-name>managerAppletFilter</filter-name>
+        <servlet-name>managerAppletServlet</servlet-name>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>managerAppletFilter</filter-name>
+        <url-pattern>/ssg/webadmin/*</url-pattern>
+    </filter-mapping>
+    -->
 
     <!--  Spring context loader listener that loads the spring beans -->
     <listener>
@@ -175,6 +196,14 @@
         <servlet-name>admin</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
+
+    <!-- TODO uncomment to test Manager applet -->
+    <!--
+    <servlet>
+        <servlet-name>managerApplet</servlet-name>
+        <servlet-class>com.l7tech.server.admin.ManagerAppletServlet</servlet-class>
+    </servlet>
+    -->
 
     <servlet-mapping>
         <servlet-name>admin</servlet-name>
@@ -250,6 +279,14 @@
         <servlet-name>TokenService</servlet-name>
         <url-pattern>/ssg/token</url-pattern>
     </servlet-mapping>
+
+    <!-- TODO uncomment to test Manager applet -->
+    <!--
+    <servlet-mapping>
+        <servlet-name>managerApplet</servlet-name>
+        <url-pattern>/ssg/webadmin</url-pattern>
+    </servlet-mapping>
+    -->
 
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
