@@ -64,6 +64,13 @@ public class RequestWssTimestamp extends Assertion implements SecurityHeaderAddr
         return super.toString() + " signatureRequired=" + signatureRequired;
     }
 
+    public void copyFrom(RequestWssTimestamp other) {
+        this.timeUnit = other.timeUnit;
+        this.maxExpiryMilliseconds = other.maxExpiryMilliseconds;
+        this.signatureRequired = other.signatureRequired;
+        this.recipientContext = other.recipientContext;
+    }
+
     private TimeUnit timeUnit = TimeUnit.MINUTES;
     private int maxExpiryMilliseconds;
     private boolean signatureRequired = true;

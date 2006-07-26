@@ -42,6 +42,14 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
 
     private boolean signatureRequired = true;
 
+    public void copyFrom(ResponseWssTimestamp other) {
+        this.expiryMillis = other.expiryMillis;
+        this.timeUnit = other.timeUnit;
+        this.keyReference = other.keyReference;
+        this.recipientContext = other.recipientContext;
+        this.signatureRequired = other.signatureRequired;
+    }
+
     /**
      * Should the response timestamp be signed (default true).
      *

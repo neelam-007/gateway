@@ -56,20 +56,22 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
     protected void performAction() {
         ResponseWssTimestamp ass = (ResponseWssTimestamp)node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
-        ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, ass);
+        ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, (ResponseWssTimestamp)(ass.clone()));
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
-        ResponseWssTimestamp newAss = (ResponseWssTimestamp)dlg.getValue();
-        if (newAss == null) return;
-
-        JTree tree = TopComponents.getInstance().getPolicyTree();
-        if (tree != null) {
-            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-            model.assertionTreeNodeChanged((AssertionTreeNode)node);
-        } else {
-            log.log(Level.WARNING, "Unable to reach the palette tree.");
+        if (dlg.wasOKed()) {
+            ResponseWssTimestamp newAss = (ResponseWssTimestamp)dlg.getValue();
+            if (newAss == null) return;
+            ass.copyFrom(newAss);
+            JTree tree = TopComponents.getInstance().getPolicyTree();
+            if (tree != null) {
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged((AssertionTreeNode)node);
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
         }
     }
 
