@@ -1,6 +1,7 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
@@ -21,6 +22,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.rmi.RemoteException;
+
+import org.apache.commons.lang.StringUtils;
 
 public class EditRoleDialog extends JDialog {
     private Role role;
@@ -202,6 +205,7 @@ public class EditRoleDialog extends JDialog {
 
         setupButtonListeners();
         setupActionListeners();
+        updateButtons();
         pack();
     }
 
@@ -237,7 +241,19 @@ public class EditRoleDialog extends JDialog {
         }
     }
 
+    private void updateButtons() {
+        buttonOK.setEnabled(StringUtils.isNotEmpty(roleName.getText()));
+    }
+
     private void setupActionListeners() {
+        RunOnChangeListener roleNameListener = new RunOnChangeListener(new Runnable() {
+            public void run() {
+                updateButtons();
+            }
+        });
+
+        roleName.getDocument().addDocumentListener(roleNameListener);
+
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
