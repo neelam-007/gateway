@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class ManagerAppletServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(ManagerAppletServlet.class.getName());
 
-    private static final String PAGE_OPEN = "<html><head><title>SecureSpan Gateway Administration</title></head>\n<body>";
+    private static final String PAGE_OPEN = "<html><head><title>TITLE</title></head>\n<body>";
     private static final String PAGE_CLOSE = "</body></html>";
 
     private static final String APPLET_OPEN =
@@ -62,20 +62,25 @@ public class ManagerAppletServlet extends HttpServlet {
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
         try {
+            String codebase = hreq.getScheme() + "://" + hreq.getServerName() + ":" + hreq.getServerPort() + "/ssg/webadmin/";
+
+            String pageOpen = PAGE_OPEN;
+            pageOpen = pageOpen.replaceAll("TITLE", hreq.getServerName());
+
             String appletOpen = APPLET_OPEN;
 
-            String codebase = hreq.getScheme() + "://" + hreq.getServerName() + ":" + hreq.getServerPort() + "/ssg/webadmin/";
             appletOpen = appletOpen.replaceAll("CODEBASE", codebase);
 
-            ps.println(PAGE_OPEN);
+            ps.println(pageOpen);
             ps.println(appletOpen);
-            emitParam(ps, "image", "loading.gif");
-            emitParam(ps, "progressbar", "true");
-            emitParam(ps, "boxmessage", "Loading SecureSpan Manager...");
-            emitParam(ps, "boxbgcolor", "darkred");
-            emitParam(ps, "boxfgcolor", "white");
-            emitParam(ps, "progresscolor", "black");
+            //emitParam(ps, "image", "loading.png");
+            //emitParam(ps, "progressbar", "true");
+            //emitParam(ps, "boxmessage", "Loading SecureSpan Manager...");
+            //emitParam(ps, "boxbgcolor", "darkred");
+            //emitParam(ps, "boxfgcolor", "white");
+            //emitParam(ps, "progresscolor", "black");
             emitParam(ps, "cache_option", "Plugin");
+            emitParam(ps, "hostname", hreq.getServerName());
             emitParam(ps, "username", login);
             emitParam(ps, "password", new String(pass));
             ps.println(APPLET_CLOSE);

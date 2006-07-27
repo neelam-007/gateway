@@ -7,8 +7,6 @@ package com.l7tech.console;
 
 import org.springframework.context.ApplicationEvent;
 
-import javax.swing.*;
-
 /**
  * Disables some SsmApplication features when running as Applet.
  */
@@ -23,16 +21,11 @@ public class SsmApplicationApplet extends SsmApplication {
     }
 
     public synchronized void run() {
-        if (running) {
-            throw new IllegalStateException("SSM already running");
-        }
+        // It's OK to call run() more than one time for an Applet, since it can get init() called multiple times
+        if (running) return;
+
         mainWindow = new MainWindow(this);
         running = true;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                mainWindow.activateLogonDialog();
-            }
-        });
     }
 
     boolean isApplet() {

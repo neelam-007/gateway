@@ -380,8 +380,10 @@ public class MainWindow extends JFrame {
 
             menu.add(getConnectMenuItem());
             menu.add(getDisconnectMenuItem());
-            menu.add(getMenuItemPreferences());
-            menu.add(getExitMenuItem());
+            if (!ssmApplication.isApplet()) {
+                menu.add(getMenuItemPreferences());
+                menu.add(getExitMenuItem());
+            }
             int mnemonic = menu.getText().toCharArray()[0];
             menu.setMnemonic(mnemonic);
 
@@ -1486,12 +1488,14 @@ public class MainWindow extends JFrame {
 
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
-        b = toolBarPane.add(getPreferencesAction());
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getPreferencesAction().getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
-        b.setFocusable(false);
+        if (!ssmApplication.isApplet()) {
+            b = toolBarPane.add(getPreferencesAction());
+            b.setFont(new Font("Dialog", 1, 10));
+            b.setText((String)getPreferencesAction().getValue(Action.NAME));
+            b.setMargin(new Insets(0, 0, 0, 0));
+            b.setHorizontalTextPosition(SwingConstants.RIGHT);
+            b.setFocusable(false);
+        }
 
         toolBarPane.add(Box.createHorizontalGlue());
 

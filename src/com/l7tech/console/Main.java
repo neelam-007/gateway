@@ -16,12 +16,10 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.security.auth.Subject;
 import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +51,7 @@ public class Main {
                 Logger log = Logger.getLogger(getClass().getName());
 
                 ensureNoSecurityManager();
-                installEventQueue();
+                SsmApplication.installEventQueue();
 
                 initializeUIPreferences();
 
@@ -83,53 +81,6 @@ public class Main {
                 }
             });
         }
-    }
-
-
-    /**
-     * install custom event queue as the default one does not pass the
-     * security info (Subject, AccessController.getJndiContext()...)
-     */
-    void installEventQueue() {
-        EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
-
-        // our event queue
-        eq.push(new EventQueue() {
-            final Subject current =
-              Subject.getSubject(AccessController.getContext());
-            EventPrivilegedAction privilegedAction = new EventPrivilegedAction();
-
-            protected void dispatchEvent(final AWTEvent event) {
-                privilegedAction.setEvent(event);
-                Subject.doAs(current, privilegedAction);
-            }
-
-            private void dispatchEventToSuper(final AWTEvent event) {
-                super.dispatchEvent(event);
-            }
-
-            /**
-             * the event holder, mainly exists so
-             */
-            class EventPrivilegedAction implements PrivilegedAction {
-                AWTEvent event;
-
-                void setEvent(AWTEvent event) {
-                    this.event = event;
-                }
-
-                /**
-                 * This method will be called by <code>AccessController.doPrivileged</code>
-                 * after enabling privileges.
-                 *
-                 * @see PrivilegedAction for more detials
-                 */
-                public Object run() {
-                    dispatchEventToSuper(event);
-                    return null;
-                }
-            }
-        });
     }
 
 

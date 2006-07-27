@@ -10,9 +10,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
+import javax.security.auth.Subject;
 import java.awt.*;
 import java.net.URL;
 import java.util.logging.Logger;
+import java.security.PrivilegedAction;
 
 /**
  * Entry point for applet-based version of SSM.
@@ -20,41 +22,82 @@ import java.util.logging.Logger;
 public class AppletMain extends JApplet {
     private static final Logger logger = Logger.getLogger(AppletMain.class.getName());
 
+    private static ApplicationContext applicationContext = null;
+    private static SsmApplication application = null;
+    private static Container appletPanel = null;
+    private static JMenuBar menuBar = null;
+
     public void init() {
         super.init();
-
-        if (System.getSecurityManager() != null) {
+        if (System.getSecurityManager() != null)
             System.setSecurityManager(null);
-        }
-
+        Subject.doAs(new Subject(), new PrivilegedAction() {
+            public Object run() {
+                SsmApplication.installEventQueue();
+                return null;
+            }
+        });
         configureCredentials();
+        getApplication().setAutoLookAndFeel();
+        getApplication().run();
+        setJMenuBar(getAppletMenuBar());
+        setContentPane(getAppletPanel());
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                getApplication().getMainWindow().disconnectFromGateway();
+                getApplication().getMainWindow().activateLogonDialog();
+            }
+        });
+        repaint();
+    }
 
-        ApplicationContext ctx = createApplicationContext();
-        SsmApplication app = (SsmApplication)ctx.getBean("ssmApplication");
-        app.run();
+    public void destroy() {
+        // Can't actually destroy anything, because it can't be destroyed completely (some singleton beans),
+        // and next call to init() would thus fail.
+    }
 
-        MainWindow mainWindow = app.getMainWindow();
+    private ApplicationContext getApplicationContext() {
+        if (applicationContext != null) return applicationContext;
+        applicationContext = createApplicationContext();
+        return applicationContext;
+    }
 
-        JMenuBar menuBar = mainWindow.getJMenuBar();
+    private SsmApplication getApplication() {
+        if (application != null) return application;
+        application = (SsmApplication)getApplicationContext().getBean("ssmApplication");
+        return application;
+    }
+
+    private Container getAppletPanel() {
+        if (appletPanel != null) return appletPanel;
+
+        // Get the main window, and steal it's content pane
+        MainWindow mainWindow = getApplication().getMainWindow();
+        menuBar = mainWindow.getJMenuBar();
         mainWindow.setJMenuBar(null);
         setJMenuBar(menuBar);
-
-        Container pane = mainWindow.getContentPane();
+        appletPanel = mainWindow.getContentPane();
         mainWindow.setContentPane(new JPanel());
+        return appletPanel;
+    }
 
-        setContentPane(pane);
-        repaint();
+    private JMenuBar getAppletMenuBar() {
+        getAppletPanel();
+        return menuBar;
     }
 
     private void configureCredentials() {
         String hostname = getParameter("hostname");
 
-        if (hostname != null && hostname.length() < 1) {
+        if (hostname == null || hostname.length() < 1) {
             URL codebase = getCodeBase();
             if (codebase != null) hostname = codebase.getHost();
         }
 
-        if (hostname != null && hostname.length() > 0) LogonDialog.setPreconfiguredGatewayHostname(hostname);
+        if (hostname != null && hostname.length() > 0) {
+            LogonDialog.setPreconfiguredGatewayHostname(hostname);
+            logger.info("Preconfigured server hostname: " + hostname);
+        }
 
         // TODO very important! do before tagging!
         // TODO very important! do before tagging!
@@ -68,6 +111,7 @@ public class AppletMain extends JApplet {
 
         if (username != null && username.length() > 0 && password != null && password.length() > 0) {
             LogonDialog.setPreconfiguredCredentials(username, password);
+            logger.info("Preconfigured server username and password; " + username);
         }
     }
 

@@ -10,8 +10,12 @@ import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
+import javax.security.auth.Subject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * @author mike
@@ -24,7 +28,6 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
 
     private String resourcePath;
     protected MainWindow mainWindow;
-    private boolean autoLnfSet;
 
     public MainWindow getMainWindow() {
         return mainWindow;
@@ -45,6 +48,52 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     /** @return true if a custom look and feel should be honored.  False to do normal automatic look-and-feel selection. */
     public static boolean isSuppressAutoLookAndFeel() {
         return SUPPRESS_AUTO_LNF;
+    }
+
+    /**
+     * install a custom event queue as the default one does not pass the
+     * security info (Subject, AccessController.getJndiContext()...)
+     */
+    public static void installEventQueue() {
+        EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
+
+        // our event queue
+        eq.push(new EventQueue() {
+            final Subject current =
+              Subject.getSubject(AccessController.getContext());
+            EventPrivilegedAction privilegedAction = new EventPrivilegedAction();
+
+            protected void dispatchEvent(final AWTEvent event) {
+                privilegedAction.setEvent(event);
+                Subject.doAs(current, privilegedAction);
+            }
+
+            private void dispatchEventToSuper(final AWTEvent event) {
+                super.dispatchEvent(event);
+            }
+
+            /**
+             * the event holder, mainly exists so
+             */
+            class EventPrivilegedAction implements PrivilegedAction {
+                AWTEvent event;
+
+                void setEvent(AWTEvent event) {
+                    this.event = event;
+                }
+
+                /**
+                 * This method will be called by <code>AccessController.doPrivileged</code>
+                 * after enabling privileges.
+                 *
+                 * @see PrivilegedAction for more detials
+                 */
+                public Object run() {
+                    dispatchEventToSuper(event);
+                    return null;
+                }
+            }
+        });
     }
 
     private static interface LnfSetter {
@@ -99,9 +148,6 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
      * or kunststoff, windows, then system on earlier javas.
      */
     protected void setAutoLookAndFeel() {
-        if (autoLnfSet) return;
-        autoLnfSet = true;
-
         boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast( new int[]{1, 4, 2} );
         LnfSetter[] order = haveXpLnf ? new LnfSetter[]{windowsLnfSetter, kunststoffLnfSetter, systemLnfSetter}
                             : new LnfSetter[]{kunststoffLnfSetter, windowsLnfSetter, systemLnfSetter};
