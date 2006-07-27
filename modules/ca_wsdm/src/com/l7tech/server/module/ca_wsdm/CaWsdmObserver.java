@@ -21,10 +21,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.*;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,16 +34,37 @@ import java.util.logging.Logger;
  * @author rmak
  */
 public class CaWsdmObserver implements ApplicationListener, InitializingBean, DisposableBean {
+
+    /** A map that automatically purges the eldest entries when a size limit is reached. */
+    private class CappedLinkedHashMap<K,V> extends LinkedHashMap<K,V> {
+        private final int _maxEntries;
+
+        public CappedLinkedHashMap(final int maxEntries) {
+            _maxEntries = maxEntries;
+        }
+
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+           return size() > _maxEntries;
+        }
+    }
+
     private static final Logger _logger = Logger.getLogger(CaWsdmObserver.class.getName());
 
     /** Path of the JSAM custom assertion properties file (relative to the SSG config folder). */
     private static final String CA_WSDM_PROPS_PATH = "CaWsdmObserver.properties";
+
+    /** Default maximum number of characters per message body to send to WSDM Manager. */
+    private static final int MESSAGE_BODY_LIMIT_DEFAULT = 5000;
 
     /** Default observer type (a.k.a. handler type); for display in WSDM Manager. */
     private static final int OBSERVER_TYPE_DEFAULT = 777;
 
     /** Determines whether to enable observer. */
     private boolean _enabled;
+
+    /** Maximum number of characters per message body to send to WSDM Manager.
+        The purpose is to limit excessive network usage. */
+    private int _messageBodyLimit;
 
     /** Determines whether to extract message body for sending to WSDM Manager.
         Note that the actual decision to send is within the ODK API. */
@@ -55,9 +73,11 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
     /** The helper object from ODK API. */
     private WsdmHandlerUtilSOAP _wsdmHandlerUtilSOAP;
 
-    /** Map to associate WsdmMessageContext objects to RequestId. */
+    /** Map to associate WsdmMessageContext objects to RequestId.
+        This is capped in case responses arrive too slow and requests
+        accumulates with too much memory use. */
     private Map<RequestId, WsdmMessageContext> _wsdmMessageContextMap =
-            Collections.synchronizedMap(new HashMap<RequestId, WsdmMessageContext>());
+            Collections.synchronizedMap(new CappedLinkedHashMap<RequestId, WsdmMessageContext>(1000));
 
     public void afterPropertiesSet() throws Exception {
         // Reads configuration properties from file.
@@ -74,7 +94,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             _logger.info("File \"" + propsPath + "\" not found. Not enabling Observer for CA Unicenter WSDM.");
             return;
         } catch (IOException e) {
-            _logger.log(Level.WARNING, "Cannot read \"" + propsPath + "\". Not enabling Observer for CA Unicenter WSDM.", e);
+            _logger.log(Level.SEVERE, "Cannot read \"" + propsPath + "\". Not enabling Observer for CA Unicenter WSDM.", e);
             return;
         } finally {
             if (fis != null) {
@@ -86,34 +106,55 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             }
         }
 
-        // Initializes the ODK API.
         final ObserverProperties observerProperties = new ObserverProperties(properties);
-        _enabled = observerProperties.getManagerSoapEndpoint() != null;
-        if (_enabled) {
-            _sendSoap = observerProperties.getSendSOAP();
+        if (observerProperties.getManagerSoapEndpoint() == null) {
+            _logger.severe("Missing property \"" + ObserverProperties.CONFIG_MANAGER_SOAP_ENDPOINT +
+                    "\" in \"" + propsPath + "\". Not enabling Observer for CA Unicenter WSDM.");
+            _enabled = false;
+            return;
+        } else {
+            _enabled = true;
+        }
 
-            // Determines what observer type to show in WSDM Manager.
-            int observerType;
-            final String s = properties.getProperty("com.l7tech.server.module.ca_wsdm.observerType");
-            if (s == null) {
-                observerType = OBSERVER_TYPE_DEFAULT;
-            } else {
-                try {
-                    observerType = Integer.parseInt(s);
-                } catch (NumberFormatException e) {
-                    observerType = OBSERVER_TYPE_DEFAULT;
-                }
-            }
-            if (_logger.isLoggable(Level.FINE)) {
-                _logger.fine("Setting observer type to " + observerType);
-            }
+        _sendSoap = observerProperties.getSendSOAP();
 
+        // Determines what observer type to show in WSDM Manager.
+        int observerType;
+        String s = properties.getProperty("com.l7tech.server.module.ca_wsdm.observerType");
+        if (s == null) {
+            observerType = OBSERVER_TYPE_DEFAULT;
+        } else {
             try {
-                _wsdmHandlerUtilSOAP = WsdmHandlerUtilSOAP.getWsdmHandlerUtilSOAP(observerProperties, observerType);
-            } catch (ManagerEndpointNotDefinedException e) {
-                _logger.log(Level.WARNING, "Invalid URL for CA Unicenter WSDM Manager. Not enabling Observer for CA Unicenter WSDM.", e);
-                return;
+                observerType = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                observerType = OBSERVER_TYPE_DEFAULT;
             }
+        }
+        if (_logger.isLoggable(Level.FINE)) {
+            _logger.fine("Setting observer type to " + observerType);
+        }
+
+        // Determines maximum number of characters per message body to send to WSDM Manager.
+        s = properties.getProperty("com.l7tech.server.module.ca_wsdm.messageBodyLimit");
+        if (s == null) {
+            _messageBodyLimit = MESSAGE_BODY_LIMIT_DEFAULT;
+        } else {
+            try {
+                _messageBodyLimit = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                _messageBodyLimit = MESSAGE_BODY_LIMIT_DEFAULT;
+            }
+        }
+        if (_logger.isLoggable(Level.FINE)) {
+            _logger.fine("Setting message body sending limit to " + _messageBodyLimit + " characters.");
+        }
+
+        // Initializes the ODK API.
+        try {
+            _wsdmHandlerUtilSOAP = WsdmHandlerUtilSOAP.getWsdmHandlerUtilSOAP(observerProperties, observerType);
+        } catch (ManagerEndpointNotDefinedException e) {
+            _logger.log(Level.SEVERE, "Invalid CA Unicenter WSDM Manager SOAP endpoint URL. Not enabling Observer for CA Unicenter WSDM.", e);
+            return;
         }
     }
 
@@ -162,8 +203,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             if (_sendSoap) {
                 // Extracts the message body.
                 final String charset = mimeKnob.getOuterContentType().getEncoding();
-//                final String charset = getCharsetFromContentType(contentType);
-                final String requestBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset);
+                final String requestBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset, _messageBodyLimit);
                 wsdmMessageContext.setRequestMessage(requestBody);
             }
 
@@ -176,11 +216,11 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
                 // Saves the WsdmMessageContext for the response.
                 _wsdmMessageContextMap.put(requestId, wsdmMessageContext);
                 if (_logger.isLoggable(Level.FINEST)) {
-                    _logger.finest("Request WsdmMessageContext saved. (operationType = " + operationType + ")");
+                    _logger.finest("Request WsdmMessageContext cached. (operationType = " + operationType + ")");
                 }
             } else {
                 if (_logger.isLoggable(Level.FINEST)) {
-                    _logger.finest("Request WsdmMessageContext not saved. (operationType = " + operationType + ")");
+                    _logger.finest("Request WsdmMessageContext not cached. (operationType = " + operationType + ")");
                 }
             }
         } catch (Exception e) {
@@ -225,8 +265,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
                     if (_sendSoap) {
                         // Extracts the message body.
                         final String charset = mimeKnob.getOuterContentType().getEncoding();
-//                        final String charset = getCharsetFromContentType(contentType);
-                        final String responseBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset);
+                        final String responseBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset, _messageBodyLimit);
                         wsdmMessageContext.setResponseMessage(responseBody);
                     }
 
@@ -242,43 +281,26 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
     }
 
     /**
-     * Basically return everything after ";charset=".
-     * If no charset specified, use the HTTP default (ASCII) character set.
-     */
-    private static String getCharsetFromContentType(String type) {
-        if (type == null) {
-            return null;
-        }
-        int semi = type.indexOf(";");
-        if (semi == -1) {
-            return null;
-        }
-        int charsetLocation = type.indexOf("charset=", semi);
-        if (charsetLocation == -1) {
-            return null;
-        }
-        String afterCharset = type.substring(charsetLocation + 8);
-        // The charset value in a Content-Type header is allowed to be quoted
-        // and charset values can't contain quotes.  Just convert any quote
-        // chars into spaces and let trim clean things up.
-        afterCharset = afterCharset.replace('"', ' ');
-        return afterCharset.trim();
-    }
-
-    /**
-     * Extracts the content of a given <code>InputStream</code>.
+     * Extracts the string content of a given <code>InputStream</code>.
      *
-     * @return stream content; <code>null</code> if failure
+     * @param s         the input stream
+     * @param charset   the name of a supported charset
+     * @param limit     the maximum number of characters to extract
+     *
+     * @return extracted string content; <code>null</code> if IO error
      */
-    private static String getStreamContent(final InputStream s, final String charset) {
+    private static String getStreamContent(final InputStream s, final String charset, final int limit) {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(s, charset));
             StringBuilder sb = new StringBuilder();
             final char[] buf = new char[1024];
-            int count = 0;
-            while ((count = reader.read(buf)) > 0) {
-                sb.append(buf, 0, count);
+            int charsRemaining = limit;
+            int charsRead = 0;
+            while (charsRemaining > 0 && (charsRead = reader.read(buf)) > 0) {
+                final int charsToAppend = charsRemaining < charsRead ? charsRemaining : charsRead;
+                sb.append(buf, 0, charsToAppend);
+                charsRemaining -= charsToAppend;
             }
             return sb.toString();
         } catch (IOException e) {

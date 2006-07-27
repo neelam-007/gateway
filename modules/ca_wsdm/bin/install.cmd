@@ -42,6 +42,13 @@ if not exist "%SSG_HOME%" (
     goto end
 )
 
+:: Edit WsdmSOMMA_Basic.properties.
+set SSG_HOME_ESC=%SSG_HOME:\=\\%
+if exist WsdmSOMMA_Basic.properties.EDIT del WsdmSOMMA_Basic.properties.EDIT
+for /F "tokens=1,* delims==" %%i in (ssg\tomcat\webapps\ROOT\WEB-INF\classes\WsdmSOMMA_Basic.properties) do if "%%i"=="log.file.path" (echo log.file.path=%SSG_HOME_ESC%\\logs\\CaWsdmObserver >> WsdmSOMMA_Basic.properties.EDIT) else (echo %%i=%%j >> WsdmSOMMA_Basic.properties.EDIT)
+move /Y WsdmSOMMA_Basic.properties.EDIT ssg\tomcat\webapps\ROOT\WEB-INF\classes\WsdmSOMMA_Basic.properties
+
+:: Copy files with forced overwrite.
 xcopy /F /Y ssg\tomcat\webapps\ROOT\WEB-INF\CaWsdmObserverContext.xml "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\"
 xcopy /F /Y ssg\tomcat\webapps\ROOT\WEB-INF\lib\axis-1.3.jar "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\lib\"
 xcopy /F /Y ssg\tomcat\webapps\ROOT\WEB-INF\lib\CaWsdmObserver.jar "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\lib\"
@@ -50,6 +57,7 @@ xcopy /F /Y ssg\tomcat\webapps\ROOT\WEB-INF\lib\ca_wsdm-3.50-handler_common.jar 
 xcopy /F /Y ssg\tomcat\webapps\ROOT\WEB-INF\lib\ca_wsdm-3.50-wsdm35mmi-axis-stubskel.jar "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\lib\"
 xcopy /F /Y ssg\tomcat\webapps\ROOT\WEB-INF\lib\tmxmltoolkit.jar "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\lib\"
 
+:: Copy files without forced overwrite.
 if exist "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\classes\WsdmSOMMA_Basic.properties" (
     echo The file "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\classes\WsdmSOMMA_Basic.properties" already exists. It will not be overwritten.
 ) else (
@@ -66,6 +74,7 @@ echo.
 echo Installation of Observer for CA Unicenter WSDM complete.
 echo You may need to review and update the configuration in:
 echo     "%SSG_HOME%\etc\conf\CaWsdmObserver.properties"
+echo     "%SSG_HOME%\tomcat\webapps\ROOT\WEB-INF\classes\WsdmSOMMA_Basic.properties"
 
 :end
 popd
