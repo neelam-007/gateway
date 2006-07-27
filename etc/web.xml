@@ -14,6 +14,7 @@
             /WEB-INF/webApplicationContext.xml
             /WEB-INF/adminContext.xml
             classpath:org/codehaus/xfire/spring/xfire.xml
+            /WEB-INF/CaWsdmObserverContext*.xml
         </param-value>
     </context-param>
 

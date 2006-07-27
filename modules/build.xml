@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ant build file for all modules. -->
+<project name="modules" default="package">
+
+    <description>
+    Builds all modules.
+    </description>
+
+    <target name="package" description="Creates the distributables.">
+        <ant dir="ca_wsdm" target="package" inheritAll="false"/>
+    </target>
+
+    <target name="clean" description="Deletes all generated files.">
+        <ant dir="ca_wsdm" target="clean" inheritAll="false"/>
+    </target>
+
+</project>

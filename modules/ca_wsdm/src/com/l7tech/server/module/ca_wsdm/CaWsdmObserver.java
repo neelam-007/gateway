@@ -1,0 +1,297 @@
+/**
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.module.ca_wsdm;
+
+import com.ca.wsdm.monitor.ManagerEndpointNotDefinedException;
+import com.ca.wsdm.monitor.ObserverProperties;
+import com.ca.wsdm.monitor.WsdmHandlerUtilSOAP;
+import com.ca.wsdm.monitor.WsdmMessageContext;
+import com.l7tech.common.RequestId;
+import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.server.event.PostRoutingEvent;
+import com.l7tech.server.event.PreRoutingEvent;
+import com.l7tech.server.event.RoutingEvent;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+
+import java.io.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * An Observer for CA Unicenter WSDM listens on routing events and feeds
+ * request/response info to the WSDM Manager through the Observer Development
+ * Kit (ODK) API.
+ *
+ * @author alex
+ * @author rmak
+ */
+public class CaWsdmObserver implements ApplicationListener, InitializingBean, DisposableBean {
+    private static final Logger _logger = Logger.getLogger(CaWsdmObserver.class.getName());
+
+    /** Path of the JSAM custom assertion properties file (relative to the SSG config folder). */
+    private static final String CA_WSDM_PROPS_PATH = "CaWsdmObserver.properties";
+
+    /** Default observer type (a.k.a. handler type); for display in WSDM Manager. */
+    private static final int OBSERVER_TYPE_DEFAULT = 777;
+
+    /** Determines whether to enable observer. */
+    private boolean _enabled;
+
+    /** Determines whether to extract message body for sending to WSDM Manager.
+        Note that the actual decision to send is within the ODK API. */
+    private boolean _sendSoap;
+
+    /** The helper object from ODK API. */
+    private WsdmHandlerUtilSOAP _wsdmHandlerUtilSOAP;
+
+    /** Map to associate WsdmMessageContext objects to RequestId. */
+    private Map<RequestId, WsdmMessageContext> _wsdmMessageContextMap =
+            Collections.synchronizedMap(new HashMap<RequestId, WsdmMessageContext>());
+
+    public void afterPropertiesSet() throws Exception {
+        // Reads configuration properties from file.
+        final String ssgConfigPath = System.getProperty("ssg.config.dir");
+        final String propsPath = ssgConfigPath + File.separator + CA_WSDM_PROPS_PATH;
+
+        Properties properties = new Properties();
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(propsPath);
+            properties.load(fis);
+            _logger.info("Loaded Observer for CA Unicenter WSDM properties from file \"" + propsPath + "\".");
+        } catch (FileNotFoundException e) {
+            _logger.info("File \"" + propsPath + "\" not found. Not enabling Observer for CA Unicenter WSDM.");
+            return;
+        } catch (IOException e) {
+            _logger.log(Level.WARNING, "Cannot read \"" + propsPath + "\". Not enabling Observer for CA Unicenter WSDM.", e);
+            return;
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    _logger.log(Level.WARNING, "Cannot close \"" + propsPath + "\" after reading.", e);
+                }
+            }
+        }
+
+        // Initializes the ODK API.
+        final ObserverProperties observerProperties = new ObserverProperties(properties);
+        _enabled = observerProperties.getManagerSoapEndpoint() != null;
+        if (_enabled) {
+            _sendSoap = observerProperties.getSendSOAP();
+
+            // Determines what observer type to show in WSDM Manager.
+            int observerType;
+            final String s = properties.getProperty("com.l7tech.server.module.ca_wsdm.observerType");
+            if (s == null) {
+                observerType = OBSERVER_TYPE_DEFAULT;
+            } else {
+                try {
+                    observerType = Integer.parseInt(s);
+                } catch (NumberFormatException e) {
+                    observerType = OBSERVER_TYPE_DEFAULT;
+                }
+            }
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Setting observer type to " + observerType);
+            }
+
+            try {
+                _wsdmHandlerUtilSOAP = WsdmHandlerUtilSOAP.getWsdmHandlerUtilSOAP(observerProperties, observerType);
+            } catch (ManagerEndpointNotDefinedException e) {
+                _logger.log(Level.WARNING, "Invalid URL for CA Unicenter WSDM Manager. Not enabling Observer for CA Unicenter WSDM.", e);
+                return;
+            }
+        }
+    }
+
+    public void destroy() throws Exception {
+        if (_enabled) {
+            // Shuts down the ODK API threads.
+            WsdmHandlerUtilSOAP.stop();
+        }
+    }
+
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (_enabled && event instanceof RoutingEvent) {
+            if (event instanceof PreRoutingEvent) {
+                final PreRoutingEvent preRoutingEvent = (PreRoutingEvent) event;
+                handlePreRoutingEvent(preRoutingEvent);
+            } else if (event instanceof PostRoutingEvent) {
+                final PostRoutingEvent postRoutingEvent = (PostRoutingEvent) event;
+                handlePostRoutingEvent(postRoutingEvent);
+            }
+        }
+    }
+
+    /** Spool request info to the WSDM Manager. */
+    private void handlePreRoutingEvent(PreRoutingEvent preRoutingEvent) {
+        final PolicyEnforcementContext context = preRoutingEvent.getContext();
+        final RequestId requestId = context.getRequestId();
+
+        try {
+            final String operationName = context.getOperation().getName();
+            final String operationNameSpace = context.getOperation().getInput().getMessage().getQName().getNamespaceURI();
+            final String requestorLocation = context.getRequest().getTcpKnob().getRemoteHost();
+            final String serviceUrl = preRoutingEvent.getUrl().toString();
+            final MimeKnob mimeKnob = context.getRequest().getMimeKnob();
+            final long requestSize = mimeKnob.getContentLength();
+
+            final WsdmMessageContext wsdmMessageContext = new WsdmMessageContext();
+            wsdmMessageContext.setObservationType(WsdmHandlerUtilSOAP.SERVER_OBSERVATION_TYPE);
+            wsdmMessageContext.setOperationName(operationName);
+            wsdmMessageContext.setOperationNameSpace(operationNameSpace);
+            wsdmMessageContext.setPortName(serviceUrl);
+            wsdmMessageContext.setRequestorLocation(requestorLocation);
+            wsdmMessageContext.setRequestSize(requestSize);
+
+            // We will perform the time consuming task of extracting the
+            // message body only if the ODK API may be sending it.
+            if (_sendSoap) {
+                // Extracts the message body.
+                final String charset = mimeKnob.getOuterContentType().getEncoding();
+//                final String charset = getCharsetFromContentType(contentType);
+                final String requestBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset);
+                wsdmMessageContext.setRequestMessage(requestBody);
+            }
+
+            final String operationType = _wsdmHandlerUtilSOAP.spoolRequest(wsdmMessageContext);
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Spooled request to CA Unicenter WSDM Manager.");
+            }
+
+            if (WsdmHandlerUtilSOAP.OPER_TYPE_REQUEST_RESPONSE.equals(operationType)) {
+                // Saves the WsdmMessageContext for the response.
+                _wsdmMessageContextMap.put(requestId, wsdmMessageContext);
+                if (_logger.isLoggable(Level.FINEST)) {
+                    _logger.finest("Request WsdmMessageContext saved. (operationType = " + operationType + ")");
+                }
+            } else {
+                if (_logger.isLoggable(Level.FINEST)) {
+                    _logger.finest("Request WsdmMessageContext not saved. (operationType = " + operationType + ")");
+                }
+            }
+        } catch (Exception e) {
+            _logger.log(Level.WARNING, "Failed to spool request to CA Unicenter WSDM Manager: " + e);
+        }
+    }
+
+    /** Spool request/fault info to the WSDM Manager. */
+    private void handlePostRoutingEvent(PostRoutingEvent postRoutingEvent) {
+        final PolicyEnforcementContext context = postRoutingEvent.getContext();
+        final RequestId requestId = context.getRequestId();
+
+        final WsdmMessageContext wsdmMessageContext = _wsdmMessageContextMap.remove(requestId);
+        if (wsdmMessageContext == null) {
+            _logger.warning("Missing WsdmMessageContext. Response not spooled to CA Unicenter WSDM Manager.");
+        } else {
+            if (postRoutingEvent.getHttpResponseStatus() >= HttpConstants.STATUS_ERROR_RANGE_START &&
+                postRoutingEvent.getHttpResponseStatus() < HttpConstants.STATUS_ERROR_RANGE_END) {
+                try {
+                    if (context.getResponse().getSoapKnob().isFault()) {
+                        SoapFaultDetail soapFault = context.getResponse().getSoapKnob().getFaultDetail();
+                        _wsdmHandlerUtilSOAP.spoolFault(wsdmMessageContext,
+                                                        soapFault.getFaultActor(),
+                                                        soapFault.getFaultCode(),
+                                                        soapFault.getFaultString(),
+                                                        soapFault.getFaultDetail() == null ? null : new String[]{soapFault.getFaultDetail().toString()});
+                        if (_logger.isLoggable(Level.FINE)) {
+                            _logger.fine("Spooled fault to CA Unicenter WSDM Manager.");
+                        }
+                    }
+                } catch (Exception e) {
+                    _logger.log(Level.WARNING, "Failed to spool fault to CA Unicenter WSDM Manager.", e);
+                }
+            } else {
+                try {
+                    final MimeKnob mimeKnob = context.getResponse().getMimeKnob();
+                    final long responseSize = mimeKnob.getContentLength();
+                    wsdmMessageContext.setResponseSize(responseSize);
+
+                    // We will perform the time consuming task of extracting the
+                    // message body only if the ODK API may be sending it.
+                    if (_sendSoap) {
+                        // Extracts the message body.
+                        final String charset = mimeKnob.getOuterContentType().getEncoding();
+//                        final String charset = getCharsetFromContentType(contentType);
+                        final String responseBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset);
+                        wsdmMessageContext.setResponseMessage(responseBody);
+                    }
+
+                    _wsdmHandlerUtilSOAP.spoolResponse(wsdmMessageContext);
+                    if (_logger.isLoggable(Level.FINE)) {
+                        _logger.fine("Spooled response to CA Unicenter WSDM Manager.");
+                    }
+                } catch (Exception e) {
+                    _logger.log(Level.WARNING, "Failed to spool response to CA Unicenter WSDM Manager:" + e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Basically return everything after ";charset=".
+     * If no charset specified, use the HTTP default (ASCII) character set.
+     */
+    private static String getCharsetFromContentType(String type) {
+        if (type == null) {
+            return null;
+        }
+        int semi = type.indexOf(";");
+        if (semi == -1) {
+            return null;
+        }
+        int charsetLocation = type.indexOf("charset=", semi);
+        if (charsetLocation == -1) {
+            return null;
+        }
+        String afterCharset = type.substring(charsetLocation + 8);
+        // The charset value in a Content-Type header is allowed to be quoted
+        // and charset values can't contain quotes.  Just convert any quote
+        // chars into spaces and let trim clean things up.
+        afterCharset = afterCharset.replace('"', ' ');
+        return afterCharset.trim();
+    }
+
+    /**
+     * Extracts the content of a given <code>InputStream</code>.
+     *
+     * @return stream content; <code>null</code> if failure
+     */
+    private static String getStreamContent(final InputStream s, final String charset) {
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(s, charset));
+            StringBuilder sb = new StringBuilder();
+            final char[] buf = new char[1024];
+            int count = 0;
+            while ((count = reader.read(buf)) > 0) {
+                sb.append(buf, 0, count);
+            }
+            return sb.toString();
+        } catch (IOException e) {
+            _logger.log(Level.WARNING, "Failed to extract message body.", e);
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    _logger.log(Level.WARNING, "Cannot close input stream after reading message body:" + e);
+                }
+            }
+        }
+    }
+}
