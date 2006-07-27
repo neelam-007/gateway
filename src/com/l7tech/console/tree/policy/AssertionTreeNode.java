@@ -179,7 +179,10 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                 } else if ((pm instanceof PolicyValidatorResult.Warning)) {
                     hasWarnings = true;
                 }
-                sb.append("<i>").append(pm.getMessage()).append("</i>");
+                String blahness = pm.getMessage();
+                blahness = blahness.replaceAll("\\{", "'{'");
+                blahness = blahness.replaceAll("\\}", "'}'");
+                sb.append("<i>").append(blahness).append("</i>");
             }
             sb.append("</strong></html>");
             String format = sb.toString();
