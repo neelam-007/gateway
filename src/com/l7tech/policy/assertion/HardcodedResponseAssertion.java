@@ -1,6 +1,5 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.variable.ExpandVariables;
 
@@ -12,7 +11,7 @@ import java.io.IOException;
  */
 public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables {
     private int responseStatus = 200;
-    private String responseContentType = ContentTypeHeader.XML_DEFAULT.getFullValue();
+    private String responseContentType = "text/xml; charset=UTF-8";
     private String base64ResponseBody = "";
 
     public HardcodedResponseAssertion() {
