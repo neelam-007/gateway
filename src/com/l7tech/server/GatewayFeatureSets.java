@@ -221,6 +221,14 @@ public class GatewayFeatureSets {
             ass(InverseHttpFormPost.class));
 
         // Message routing
+        GatewayFeatureSet routingIps =
+        fsr("set:Routing:IPS", "SecureSpan IPS message routing",
+            "HTTP and JMS routing",
+            fs(httpFront),
+            fs(httpBack),
+            fs(jmsFront),
+            fs(jmsBack));
+
         GatewayFeatureSet routingAccel =
         fsr("set:Routing:Accel", "SecureSpan Accelerator message routing",
             "HTTP and hardcoded responses.",
@@ -274,6 +282,7 @@ public class GatewayFeatureSets {
             ass(FaultLevel.class),
             ass(OversizedTextAssertion.class),
             ass(RequestSizeLimit.class),
+            ass(SqlAttackAssertion.class),
             ass(SchemaValidation.class)); // TODO Assertion for XTM Signature goes here, as soon as it exists
 
         GatewayFeatureSet threatAccel =
@@ -313,8 +322,12 @@ public class GatewayFeatureSets {
             "Threat protection features only.  (No routing assertions?  Not even hardcoded response?)",
             fs(core),
             fs(admin),
-            fs(httpFront),
-            fs(threatIps));
+            fs(routingIps),
+            fs(threatIps),
+            fs(availabilityAccel),
+            fs(validationAccel),
+            fs(auditAccel),
+            fs(policyAccel));
 
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
             "XML acceleration features with basic authentication",
