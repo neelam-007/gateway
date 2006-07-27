@@ -143,6 +143,8 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private Role showEditDialog(Role selectedRole) {
+        if (selectedRole == null) return null;
+
         EditRoleDialog dlg = new EditRoleDialog(selectedRole, this);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
