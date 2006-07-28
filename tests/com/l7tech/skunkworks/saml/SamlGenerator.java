@@ -143,7 +143,7 @@ public class SamlGenerator {
      *
      */
     private void initComponents() {
-        mainFrame = new JFrame("Saml Assertion Generator v0.2");
+        mainFrame = new JFrame("Saml Assertion Generator v0.3");
 
         mainFrame.setLayout(new BorderLayout());
         mainFrame.add(mainPanel);
@@ -305,9 +305,10 @@ public class SamlGenerator {
                 if (audienceRestrictionTextField.getText().length() > 0) {
                     String namespace = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2 : SamlConstants.NS_SAML;
                     String prefix = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2_PREFIX : SamlConstants.NS_SAML_PREFIX;
-                    Element restriction = XmlUtil.findOnlyOneChildElementByName(conditions, namespace, "AudienceRestrictionCondition");
+                    String audienceRestrictionElementName = samlOptions.getVersion()==2 ? "AudienceRestriction" : "AudienceRestrictionCondition";
+                    Element restriction = XmlUtil.findOnlyOneChildElementByName(conditions, namespace, audienceRestrictionElementName);
                     if (restriction == null) {
-                        restriction = XmlUtil.createAndAppendElementNS(conditions, "AudienceRestrictionCondition", namespace, prefix);
+                        restriction = XmlUtil.createAndAppendElementNS(conditions, audienceRestrictionElementName, namespace, prefix);
                     }
                     StringTokenizer audienceTok = new StringTokenizer(audienceRestrictionTextField.getText(), " ");
                     while (audienceTok.hasMoreTokens()) {
