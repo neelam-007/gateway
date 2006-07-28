@@ -7,7 +7,9 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 
 import javax.swing.*;
 import java.awt.*;
@@ -34,10 +36,19 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
     public EditWsFederationPassiveTokenRequestAction(AbstractTreeNode node) {
         super(node, WsFederationPassiveTokenRequest.class);
         Assertion assertion = node.asAssertion();
-        if (!(assertion instanceof WsFederationPassiveTokenRequest)) {
+        if (assertion instanceof WsFederationPassiveTokenRequest) {
+            isTokenRequest = true;
+            wsFedAssertion = (WsFederationPassiveTokenRequest) assertion;
+        }
+        else if (assertion instanceof WsFederationPassiveTokenExchange) {
+            isTokenRequest = false;
+            wsFedAssertion = new WsFederationPassiveTokenRequest();
+            wsFedAssertion.copyFrom((WsFederationPassiveTokenExchange)assertion);
+        }
+        else {
             throw new IllegalArgumentException();
         }
-        wsFedAssertion = (WsFederationPassiveTokenRequest) assertion;
+        parent = assertion.getParent();
     }
 
     /**
@@ -56,13 +67,37 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
     }
 
     protected void performAction() {
-        Frame parent = TopComponents.getInstance().getMainWindow();
+        Frame frame = TopComponents.getInstance().getMainWindow();
 
-        WsFederationPassiveTokenRequestPropertiesDialog dlg = new WsFederationPassiveTokenRequestPropertiesDialog(wsFedAssertion, parent, true);
+        WsFederationPassiveTokenRequestPropertiesDialog dlg =
+                new WsFederationPassiveTokenRequestPropertiesDialog(wsFedAssertion, isTokenRequest, frame, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         if (dlg.isAssertionChanged()) {
+
+            // handle switching of assertion type
+            if (!isTokenRequest || !dlg.isTokenRequest()) {
+                Assertion updatedAssertion = null;
+
+                if (!dlg.isTokenRequest()) {
+                    WsFederationPassiveTokenExchange wsFederationPassiveTokenExchange = new WsFederationPassiveTokenExchange();
+                    wsFederationPassiveTokenExchange.copyFrom(wsFedAssertion);
+                    updatedAssertion = wsFederationPassiveTokenExchange;
+                }
+                else {
+                    updatedAssertion = wsFedAssertion;
+                }
+
+                if (updatedAssertion != null) {
+                    Assertion oldAssertion = node.asAssertion();
+                    node.setUserObject(updatedAssertion);
+                    if (parent != null) {
+                        parent.replaceChild(oldAssertion, updatedAssertion);
+                    }
+                }
+            }
+
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
                 PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
@@ -75,6 +110,8 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
 
     //- PRIVATE
 
+    private final CompositeAssertion parent;
+    private final boolean isTokenRequest;
     private final WsFederationPassiveTokenRequest wsFedAssertion;
 
 }

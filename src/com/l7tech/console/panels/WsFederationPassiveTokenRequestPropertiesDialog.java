@@ -25,8 +25,8 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         return wsFedAssertion;
     }
 
-    public WsFederationPassiveTokenRequestPropertiesDialog(WsFederationPassiveTokenRequest assertion, Frame owner, boolean modal) throws HeadlessException {
-        super(owner, "Configure WS-Federation Token Request", modal);
+    public WsFederationPassiveTokenRequestPropertiesDialog(WsFederationPassiveTokenRequest assertion, boolean request, Frame owner, boolean modal) throws HeadlessException {
+        super(owner, "Configure WS-Federation Token Action", modal);
         this.wsFedAssertion = assertion;
 
         ipStsUrlTextField.setText(assertion.getIpStsUrl());
@@ -34,9 +34,20 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         timestampCheckBox.setSelected(assertion.isTimestamp());
         replyUrlTextField.setText(assertion.getReplyUrl());
         authenticationCheckBox.setSelected(assertion.isAuthenticate());
-        contextUrlTextField.setText(assertion.getContextUrl());
+        contextUrlTextField.setText(assertion.getContext());
 
         getContentPane().add(mainPanel);
+
+        actionComboBox.setModel(new DefaultComboBoxModel(new String[]{"Token Request", "Token Exchange"}));
+        actionComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateControls();
+                updateButtons();
+            }
+        });
+        if (!request) {
+            actionComboBox.setSelectedIndex(1);
+        }
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -69,7 +80,12 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         realmTextField.getDocument().addDocumentListener(rocl);
         replyUrlTextField.getDocument().addDocumentListener(rocl);
 
+        updateControls();
         updateButtons();
+    }
+
+    public boolean isTokenRequest() {
+        return actionComboBox.getSelectedIndex()==0;
     }
 
     public boolean isAssertionChanged() {
@@ -86,6 +102,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JPanel mainPanel;
+    private JComboBox actionComboBox;
     private JCheckBox timestampCheckBox;
     private JTextField realmTextField;
     private JTextField ipStsUrlTextField;
@@ -100,9 +117,22 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         boolean auth = authenticationCheckBox.isSelected();
         String realm = realmTextField.getText();
 
-        ok = validUrl(url, false) && validUrl(rurl, !auth) && validUrn(realm);
+        ok = validUrl(url, !isTokenRequest() && auth) && validUrl(rurl, !auth) && (!isTokenRequest() || validUrn(realm));
 
         okButton.setEnabled(ok);
+    }
+
+    private void updateControls() {
+        if (isTokenRequest()) {
+            // Configure for token request
+            realmTextField.setEnabled(true);
+            timestampCheckBox.setEnabled(true);
+        }
+        else {
+            // Configure for token exchange
+            realmTextField.setEnabled(false);
+            timestampCheckBox.setEnabled(false);
+        }
     }
 
     private boolean validUrl(String url, boolean allowEmpty) {

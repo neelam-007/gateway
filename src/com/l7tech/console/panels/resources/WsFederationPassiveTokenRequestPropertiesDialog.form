@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.WsFederationPassiveTokenRequestPropertiesDialog">
-  <grid id="ca29c" binding="mainPanel" row-count="14" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="ca29c" binding="mainPanel" row-count="16" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="78" y="29" width="495" height="365"/>
+      <xy x="78" y="29" width="495" height="398"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
@@ -11,11 +11,11 @@
     <children>
       <component id="cf295" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="22" width="70" height="15"/>
-          <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <xy x="20" y="75" width="114" height="15"/>
+          <grid row="3" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="IP/STS URL:"/>
+          <text value="Token Service URL:"/>
         </properties>
       </component>
       <vspacer id="11a69">
@@ -28,16 +28,16 @@
       </vspacer>
       <hspacer id="befc7">
         <constraints>
-          <xy x="0" y="50" width="20" height="11"/>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <xy x="0" y="103" width="20" height="11"/>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="16" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <hspacer id="e587a">
         <constraints>
-          <xy x="475" y="50" width="20" height="11"/>
-          <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <xy x="475" y="103" width="20" height="11"/>
+          <grid row="4" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="16" height="-1"/>
           </grid>
         </constraints>
@@ -45,8 +45,8 @@
       <grid id="b0757" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="320" width="455" height="25"/>
-          <grid row="12" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <xy x="20" y="353" width="455" height="25"/>
+          <grid row="14" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -81,33 +81,33 @@
       </grid>
       <vspacer id="9abda">
         <constraints>
-          <xy x="459" y="345" width="11" height="20"/>
-          <grid row="13" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+          <xy x="459" y="378" width="11" height="20"/>
+          <grid row="15" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="16"/>
           </grid>
         </constraints>
       </vspacer>
       <vspacer id="8a9c0">
         <constraints>
-          <xy x="459" y="300" width="11" height="20"/>
-          <grid row="11" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <xy x="459" y="333" width="11" height="20"/>
+          <grid row="13" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="8" height="8"/>
           </grid>
         </constraints>
       </vspacer>
       <component id="e770f" class="javax.swing.JCheckBox" binding="timestampCheckBox">
         <constraints>
-          <xy x="20" y="272" width="222" height="23"/>
-          <grid row="10" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+          <xy x="20" y="305" width="191" height="23"/>
+          <grid row="12" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Include freshness timestamp (wct)"/>
+          <text value="Include freshness timestamp"/>
         </properties>
       </component>
       <component id="c3edb" class="javax.swing.JTextField" binding="ipStsUrlTextField">
         <constraints>
-          <xy x="20" y="45" width="435" height="21"/>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <xy x="20" y="98" width="435" height="21"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
@@ -123,8 +123,8 @@
       </hspacer>
       <component id="7a0b9" class="javax.swing.JTextField" binding="contextUrlTextField">
         <constraints>
-          <xy x="20" y="246" width="435" height="21"/>
-          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <xy x="20" y="279" width="435" height="21"/>
+          <grid row="11" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
@@ -132,17 +132,17 @@
       </component>
       <component id="36586" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="223" width="116" height="15"/>
-          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <xy x="20" y="256" width="52" height="15"/>
+          <grid row="10" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Context URL (wctx):"/>
+          <text value="Context:"/>
         </properties>
       </component>
       <component id="cab4d" class="javax.swing.JCheckBox" binding="authenticationCheckBox">
         <constraints>
-          <xy x="20" y="193" width="168" height="23"/>
-          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+          <xy x="20" y="226" width="168" height="23"/>
+          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
           <text value="Authenticate with service"/>
@@ -150,26 +150,27 @@
       </component>
       <component id="cc95d" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="73" width="116" height="15"/>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <xy x="20" y="126" width="66" height="15"/>
+          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Reply URL (wreply):"/>
+          <inheritsPopupMenu value="true"/>
+          <text value="Reply URL:"/>
         </properties>
       </component>
       <component id="b08d7" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="144" width="102" height="15"/>
-          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <xy x="20" y="177" width="44" height="15"/>
+          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Realm (wtrealm):"/>
+          <text value="Realm:"/>
         </properties>
       </component>
       <component id="45472" class="javax.swing.JTextField" binding="replyUrlTextField">
         <constraints>
-          <xy x="20" y="96" width="435" height="21"/>
-          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <xy x="20" y="149" width="435" height="21"/>
+          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
@@ -177,10 +178,26 @@
       </component>
       <component id="24523" class="javax.swing.JTextField" binding="realmTextField">
         <constraints>
-          <xy x="20" y="167" width="435" height="21"/>
-          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <xy x="20" y="200" width="435" height="21"/>
+          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
             <preferred-size width="150" height="-1"/>
           </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="a1837" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="22" width="43" height="15"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Action:"/>
+        </properties>
+      </component>
+      <component id="95c08" class="javax.swing.JComboBox" binding="actionComboBox">
+        <constraints>
+          <xy x="20" y="45" width="435" height="23"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
         </constraints>
         <properties/>
       </component>

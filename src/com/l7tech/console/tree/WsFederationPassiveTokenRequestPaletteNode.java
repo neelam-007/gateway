@@ -17,7 +17,7 @@ public class WsFederationPassiveTokenRequestPaletteNode extends AbstractLeafPale
      *
      */
     public WsFederationPassiveTokenRequestPaletteNode() {
-        super("WS-Federation Passive Credential Request", "com/l7tech/console/resources/xmlWithCert16.gif");
+        super("WS-Federation Passive Credential", "com/l7tech/console/resources/xmlWithCert16.gif");
     }
 
     /**

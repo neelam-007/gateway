@@ -6,6 +6,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.WsFederationPassiveTokenRequestPropertiesDialog;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -31,13 +32,18 @@ public class AddWsFederationPassiveTokenRequestAdvice implements Advice {
         WsFederationPassiveTokenRequest assertion = (WsFederationPassiveTokenRequest) assertions[0];
         JFrame f = TopComponents.getInstance().getMainWindow();
 
-        WsFederationPassiveTokenRequestPropertiesDialog dlg = new WsFederationPassiveTokenRequestPropertiesDialog(assertion, f, true);
+        WsFederationPassiveTokenRequestPropertiesDialog dlg = new WsFederationPassiveTokenRequestPropertiesDialog(assertion, true, f, true);
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         // check that user oked this dialog
         if (dlg.isAssertionChanged()) {
+            if (!dlg.isTokenRequest()) {
+                WsFederationPassiveTokenExchange wsFederationPassiveTokenExchange = new WsFederationPassiveTokenExchange();
+                wsFederationPassiveTokenExchange.copyFrom(assertion);
+                pc.getNewChild().setUserObject(wsFederationPassiveTokenExchange);
+            }
             pc.proceed();
         }
     }

@@ -61,7 +61,7 @@ public class WsFederationPassiveTokenRequest extends Assertion {
         this.replyUrl = replyUrl;
     }
 
-    public String getContextUrl() {
+    public String getContext() {
         return contextUrl;
     }
 
@@ -75,6 +75,22 @@ public class WsFederationPassiveTokenRequest extends Assertion {
 
     public void setTimestamp(boolean timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public void copyFrom(WsFederationPassiveTokenRequest source) {
+        this.setIpStsUrl(source.getIpStsUrl());
+        this.setRealm(source.getRealm());
+        this.setAuthenticate(source.isAuthenticate());
+        this.setReplyUrl(source.getReplyUrl());
+        this.setContextUrl(source.getContext());
+        this.setTimestamp(source.isTimestamp());
+    }
+
+    public void copyFrom(WsFederationPassiveTokenExchange source) {
+        this.setIpStsUrl(source.getIpStsUrl());
+        this.setAuthenticate(source.isAuthenticate());
+        this.setReplyUrl(source.getReplyUrl());
+        this.setContextUrl(source.getContext());
     }
 
     //- PRIVATE

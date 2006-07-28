@@ -85,7 +85,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
         assertionMap.put(RequestWssSaml2.class, RequestWssSamlTreeNode.class);
         assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
-        assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenExchangeTreeNode.class);
+        assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(XpathCredentialSource.class, XpathCredentialSourceTreeNode.class);
         assertionMap.put(SamlBrowserArtifact.class, SamlBrowserArtifactTreeNode.class);

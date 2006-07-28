@@ -58,6 +58,20 @@ public class WsFederationPassiveTokenExchange extends Assertion {
         this.replyUrl = replyUrl;
     }
 
+    public void copyFrom(WsFederationPassiveTokenRequest source) {
+        this.setIpStsUrl(source.getIpStsUrl());
+        this.setAuthenticate(source.isAuthenticate());
+        this.setReplyUrl(source.getReplyUrl());
+        this.setContext(source.getContext());
+    }
+
+    public void copyFrom(WsFederationPassiveTokenExchange source) {
+        this.setIpStsUrl(source.getIpStsUrl());
+        this.setAuthenticate(source.isAuthenticate());
+        this.setReplyUrl(source.getReplyUrl());
+        this.setContext(source.getContext());
+    }
+
     //- PRIVATE
 
     private String ipStsUrl;

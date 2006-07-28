@@ -51,7 +51,6 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new RequestWssSamlNode(), index++);
         insert(new WsTrustCredentialExchangePaletteNode(), index++);
         insert(new WsFederationPassiveTokenRequestPaletteNode(), index++);
-        insert(new WsFederationPassiveTokenExchangePaletteNode(), index++);
         insert(new XpathCredentialSourcePaletteNode(), index++);
         insert(new SamlBrowserArtifactPaletteNode(), index++);
         insert(new KerberosPaletteNode(), index++);
