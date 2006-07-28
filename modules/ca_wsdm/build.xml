@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Ant build file for the Observer for CA Unicenter WSDM module. -->
-<project name="module.CaWsdmObserver" default="package">
+<project name="module.ca_wsdm" default="package">
 
     <description>
     Builds the Observer for CA Unicenter WSDM module.
@@ -39,7 +39,7 @@
 
     <target name="-jar" depends="-compile">
         <mkdir dir="build/ssg/tomcat/webapps/ROOT/WEB-INF/lib"/>
-        <jar destfile="build/ssg/tomcat/webapps/ROOT/WEB-INF/lib/CaWsdmObserver.jar"
+        <jar destfile="build/ssg/tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm_observer.jar"
              basedir="build/classes"/>
     </target>
 
@@ -49,7 +49,7 @@
         <property file="${UneasyRooster.dir}/build.version"/>
         <property name="build.version" value="${build.version.major}.${build.version.minor}"/>
 
-        <zip destfile="build/CaWsdmObserver-${build.version}.zip">
+        <zip destfile="build/ca_wsdm_observer-${build.version}.zip">
             <fileset dir="." includes="ssg/**/*"/>
             <fileset dir="build" includes="ssg/**/*"/>
             <fileset dir="bin" includes="install.*"/>
@@ -71,14 +71,14 @@
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/*.jar"/>
             </fileset>
             <fileset dir="build/ssg">
-                <include name="tomcat/webapps/ROOT/WEB-INF/lib/CaWsdmObserver.jar"/>
+                <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm_observer.jar"/>
             </fileset>
         </copy>
 
         <!-- Do not overwrite these if modified. -->
         <copy overwrite="false" todir="${ssg.home}" verbose="true">
             <fileset dir="ssg">
-                <include name="etc/conf/CaWsdmObserver.properties"/>
+                <include name="etc/conf/ca_wsdm_observer.properties"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/classes/WsdmSOMMA_Basic.properties"/>
             </fileset>
         </copy>
@@ -88,11 +88,11 @@
             description="Undeploys from SSG at ${ssg.home}. Deletes all deployed files. (For developer use)">
         <delete verbose="true">
             <fileset dir="${ssg.home}">
-                <include name="etc/conf/CaWsdmObserver.properties"/>
+                <include name="etc/conf/ca_wsdm_observer.properties"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/CaWsdmObserverContext.xml"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/classes/WsdmSOMMA_Basic.properties"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/axis-1.3.jar"/>
-                <include name="tomcat/webapps/ROOT/WEB-INF/lib/CaWsdmObserver.jar"/>
+                <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm_observer.jar"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm-3.50-core.jar"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm-3.50-handler_common.jar"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm-3.50-wsdm35mmi-axis-stubskel.jar"/>

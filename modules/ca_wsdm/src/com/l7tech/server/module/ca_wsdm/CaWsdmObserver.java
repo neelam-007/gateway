@@ -51,7 +51,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
     private static final Logger _logger = Logger.getLogger(CaWsdmObserver.class.getName());
 
     /** Path of the JSAM custom assertion properties file (relative to the SSG config folder). */
-    private static final String CA_WSDM_PROPS_PATH = "CaWsdmObserver.properties";
+    private static final String CA_WSDM_PROPS_PATH = "ca_wsdm_observer.properties";
 
     /** Default maximum number of characters per message body to send to WSDM Manager. */
     private static final int MESSAGE_BODY_LIMIT_DEFAULT = 5000;
@@ -131,7 +131,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             }
         }
         if (_logger.isLoggable(Level.FINE)) {
-            _logger.fine("Setting observer type to " + observerType);
+            _logger.fine("Setting Observer type to " + observerType);
         }
 
         // Determines maximum number of characters per message body to send to WSDM Manager.
