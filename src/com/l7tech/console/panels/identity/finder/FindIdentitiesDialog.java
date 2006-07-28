@@ -358,7 +358,13 @@ public class FindIdentitiesDialog extends JDialog {
         constraints.insets = new Insets(12, 12, 0, 0);
         gSearchPanel.add(typeLabel, constraints);
 
-        searchType = new JComboBox(new Vector(oTypes.keySet()));
+        if (options.getSearchType() != SearchType.ALL) {
+            searchType = new JComboBox(new Object[]{options.getSearchType().getName()});
+            searchType.setEditable(false);
+        }
+        else
+            searchType = new JComboBox(new Vector(oTypes.keySet()));
+
         searchType.setToolTipText(resources.getString("findType.tooltip"));
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
