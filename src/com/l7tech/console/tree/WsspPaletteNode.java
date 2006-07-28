@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.WsspAssertion;
 public class WsspPaletteNode extends AbstractLeafPaletteNode {
 
     public WsspPaletteNode() {
-        super("WS-SecurityPolicy Compliance", "com/l7tech/console/resources/policy16.gif");
+        super("WS-Security Policy Compliance", "com/l7tech/console/resources/policy16.gif");
     }
 
     public Assertion asAssertion() {

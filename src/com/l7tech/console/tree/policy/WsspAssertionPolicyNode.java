@@ -25,7 +25,7 @@ public class WsspAssertionPolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "WS-SecurityPolicy Compliance.";
+        return "WS-Security Policy Compliance";
     }
 
     /**
