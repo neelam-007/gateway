@@ -1,7 +1,7 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
@@ -13,17 +13,18 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
-import java.rmi.RemoteException;
-
-import org.apache.commons.lang.StringUtils;
 
 public class EditRoleDialog extends JDialog {
     private Role role;
@@ -66,7 +67,7 @@ public class EditRoleDialog extends JDialog {
         inititialize();
     }
 
-    private static final String[] COL_NAMES = new String[]{"Type", "Operation", "Applies To"};
+    private static final String[] COL_NAMES = new String[]{"Operation", "Applies To"};
 
     private class UserHolder {
         private final UserRoleAssignment userRoleAssignment;
@@ -135,21 +136,19 @@ public class EditRoleDialog extends JDialog {
         }
 
         public int getColumnCount() {
-            return 3;
+            return 2;
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
             Permission perm = permissions.get(rowIndex);
             switch(columnIndex) {
                 case 0:
-                    return perm.getEntityType().getName();
-                case 1:
                     if (perm.getOperation() == OperationType.OTHER) {
                         return perm.getOtherOperationName();
                     } else {
                         return perm.getOperation().getName();
                     }
-                case 2:
+                case 1:
                     switch(perm.getScope().size()) {
                         case 0:
                             StringBuilder sb = new StringBuilder("<Any");
@@ -191,7 +190,7 @@ public class EditRoleDialog extends JDialog {
         }
 
         this.tableModel = new PermissionTableModel();
-        this.permissionsTable.setModel(tableModel);
+        permissionsTable.setModel(tableModel);
         permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         setContentPane(contentPane);
@@ -205,8 +204,23 @@ public class EditRoleDialog extends JDialog {
 
         setupButtonListeners();
         setupActionListeners();
-        updateButtons();
+        updateButtonStates();
         pack();
+    }
+
+    private void enablePermissionEditDeleteButtons() {
+        boolean enabled = permissionsTable.getModel().getRowCount() != 0 &&
+                getSelectedPermission() != null;
+
+        editPermission.setEnabled(enabled);
+        removePermission.setEnabled(enabled);
+    }
+
+    private void enableAssignmentDeleteButton() {
+        boolean enabled = assignmentListModel.getSize() != 0 &&
+                userAssignmentList.getSelectedValue() != null;
+
+        removeAssignment.setEnabled(enabled);
     }
 
     private class AssignmentListModel extends AbstractListModel {
@@ -241,18 +255,42 @@ public class EditRoleDialog extends JDialog {
         }
     }
 
-    private void updateButtons() {
+    private void updateButtonStates() {
         buttonOK.setEnabled(StringUtils.isNotEmpty(roleName.getText()));
+        enablePermissionEditDeleteButtons();
+        enableAssignmentDeleteButton();
     }
 
     private void setupActionListeners() {
-        RunOnChangeListener roleNameListener = new RunOnChangeListener(new Runnable() {
-            public void run() {
-                updateButtons();
+        ListSelectionListener listListener = new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                updateButtonStates();
+            }
+        };
+
+        roleName.getDocument().addDocumentListener(
+                new RunOnChangeListener(new Runnable() {
+                    public void run() {
+                        updateButtonStates();
+                    }
+                })
+        );
+
+        permissionsTable.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() >= 2)
+                    showEditPermissionDialog(getSelectedPermission());
             }
         });
+        permissionsTable.getSelectionModel().addListSelectionListener(listListener);
 
-        roleName.getDocument().addDocumentListener(roleNameListener);
+        userAssignmentList.setModel(assignmentListModel);
+        userAssignmentList.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1)
+                    updateButtonStates();
+            }
+        });
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -266,6 +304,24 @@ public class EditRoleDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+    }
+
+    private void setupButtonListeners() {
+        buttonOK.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onOK();
+            }
+        });
+
+        buttonCancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
+
+        addPermission.addActionListener(permissionsListener);
+        editPermission.addActionListener(permissionsListener);
+        removePermission.addActionListener(permissionsListener);
 
         addAssignment.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -293,8 +349,6 @@ public class EditRoleDialog extends JDialog {
             }
         });
 
-        userAssignmentList.setModel(assignmentListModel);
-
         removeAssignment.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Utilities.doWithConfirmation(
@@ -306,28 +360,11 @@ public class EditRoleDialog extends JDialog {
                             UserHolder u = (UserHolder)o;
                             assignmentListModel.remove(u);
                         }
+                        updateButtonStates();
                     }
                 });
             }
         });
-    }
-
-    private void setupButtonListeners() {
-        buttonOK.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onOK();
-            }
-        });
-
-        buttonCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        });
-
-        addPermission.addActionListener(permissionsListener);
-        editPermission.addActionListener(permissionsListener);
-        removePermission.addActionListener(permissionsListener);
     }
 
     private void doPermissionAction(ActionEvent e) {

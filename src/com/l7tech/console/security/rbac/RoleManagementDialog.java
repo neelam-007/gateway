@@ -1,7 +1,6 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.console.util.Registry;
@@ -25,7 +24,6 @@ public class RoleManagementDialog extends JDialog {
     private JButton editRole;
     private JButton removeRole;
 
-    private DefaultComboBoxModel listModel;
     private JPanel mainPanel;
     private JTextPane propertiesPane;
 
@@ -49,14 +47,6 @@ public class RoleManagementDialog extends JDialog {
         initialize();
     }
 
-    private void enableEditRemoveButtons() {
-        boolean enabled = roleList.getModel().getSize() != 0 &&
-                roleList.getSelectedValue() != null;
-
-        removeRole.setEnabled(enabled);
-        editRole.setEnabled(enabled);
-    }
-
     private void initialize() {
         populateList();
         setupButtonListeners();
@@ -65,21 +55,6 @@ public class RoleManagementDialog extends JDialog {
 
 
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        roleList.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 1)
-                    enableEditRemoveButtons();
-                else if (e.getClickCount() >= 2)
-                    showEditDialog(getSelectedRole());
-            }
-        });
-
-        roleList.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                enableEditRemoveButtons();
-            }
-        });
-
         add(mainPanel);
 
         setModal(true);
@@ -102,6 +77,47 @@ public class RoleManagementDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        roleList.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1)
+                    enableEditRemoveButtons();
+                else if (e.getClickCount() >= 2)
+                    showEditDialog(getSelectedRole());
+            }
+        });
+
+        roleList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                enableEditRemoveButtons();
+            }
+        });
+    }
+
+    private void setupButtonListeners() {
+        editRole.addActionListener(roleActionListener);
+        addRole.addActionListener(roleActionListener);
+        removeRole.addActionListener(roleActionListener);
+
+        buttonOK.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onOK();
+            }
+        });
+
+        buttonCancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
+    }
+
+    private void enableEditRemoveButtons() {
+        boolean enabled = roleList.getModel().getSize() != 0 &&
+                roleList.getSelectedValue() != null;
+
+        removeRole.setEnabled(enabled);
+        editRole.setEnabled(enabled);
     }
 
     private void doUpdateRoleAction(ActionEvent e) {
@@ -137,24 +153,6 @@ public class RoleManagementDialog extends JDialog {
         }
     }
 
-    private void setupButtonListeners() {
-        editRole.addActionListener(roleActionListener);
-        addRole.addActionListener(roleActionListener);
-        removeRole.addActionListener(roleActionListener);
-
-        buttonOK.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onOK();
-            }
-        });
-
-        buttonCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        });
-    }
-
     private Role getSelectedRole() {
         return (Role)roleList.getSelectedValue();
     }
@@ -177,8 +175,7 @@ public class RoleManagementDialog extends JDialog {
     private void populateList() {
         try {
             Role[] roles = rbacAdmin.findAllRoles().toArray(new Role[0]);
-            listModel = new DefaultComboBoxModel(roles);
-            roleList.setModel(listModel);
+            roleList.setModel(new DefaultComboBoxModel(roles));
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get initial list of Roles", e);
         }
