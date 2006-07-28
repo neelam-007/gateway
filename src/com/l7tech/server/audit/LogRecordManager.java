@@ -7,9 +7,7 @@ import java.util.HashMap;
 import java.util.logging.LogRecord;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.net.MalformedURLException;
 
 import javax.security.auth.Subject;
@@ -71,7 +69,8 @@ public class LogRecordManager {
                 // This is a not too safe check of whether the client is another node or the
                 // SSM. If the client is another node we refuse to forward the request (since
                 // that node should not have asked us for another nodes logs ...)
-                if(SslRMIServerSocketFactory.getContext().isRemoteClientCertAuthenticated()) {
+                if(SslRMIServerSocketFactory.getContext() != null &&
+                   SslRMIServerSocketFactory.getContext().isRemoteClientCertAuthenticated()) {
                     throw new FindException("Cannot get logs for node '"+nodeId+"'.");
                 }
                 long startTime = logger.isLoggable(Level.FINEST) ? System.currentTimeMillis() : 0;
