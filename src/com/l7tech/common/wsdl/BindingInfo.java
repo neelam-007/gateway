@@ -20,7 +20,7 @@ public class BindingInfo implements Cloneable, Serializable {
 
     public BindingInfo(String bindingName, Map bindingOperations) {
         this.bindingName = bindingName;
-        this.bindingOperations = bindingOperations;
+        this.bindingOperations.putAll(bindingOperations);
     }
 
     /** @return the Binding name.  Never null. */
