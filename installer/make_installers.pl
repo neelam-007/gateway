@@ -155,7 +155,7 @@ sub docopy {
         my $platform = `uname` =~ /cygwin/i ? 'cygwin' : 'noncygwin';
         my ($src, $dst) = @_;
 
-	if ($platform eq 'noncygwin') {
+	if (($ENV{MAKE_INST_OPT} =~ /\-norsync\b/i) || $platform eq 'noncygwin') {
         	print "Copying $src -> $dst\n";
         	copy($src, $dst) or die "Unable to copy $src to $dst: $!";
 	} else {
