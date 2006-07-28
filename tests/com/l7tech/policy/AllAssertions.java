@@ -131,6 +131,7 @@ public class AllAssertions {
         new EchoRoutingAssertion(),
         new WsspAssertion(),
         new CookieCredentialSourceAssertion(),
+        new XpathCredentialSource(),
     };
 
 

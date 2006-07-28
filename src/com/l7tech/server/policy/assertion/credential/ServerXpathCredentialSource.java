@@ -42,11 +42,16 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
         XpathExpression loginExpr = null;
         try {
             loginExpr = assertion.getXpathExpression();
-            loginXpath = new DOMXPath(loginExpr.getExpression());
-            for (Iterator i = loginExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
-                String prefix = (String) i.next();
-                String uri = (String)loginExpr.getNamespaces().get(prefix);
-                loginXpath.addNamespace(prefix, uri);
+            if (loginExpr == null) {
+                logger.warning("Login XPath is null; assertion is non-functional");
+                loginXpath = null;
+            } else {
+                loginXpath = new DOMXPath(loginExpr.getExpression());
+                for (Iterator i = loginExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
+                    String prefix = (String) i.next();
+                    String uri = (String)loginExpr.getNamespaces().get(prefix);
+                    loginXpath.addNamespace(prefix, uri);
+                }
             }
         } catch (JaxenException e) {
             throw new RuntimeException("Invalid login xpath expression '" + loginExpr + "'", e);
@@ -55,11 +60,16 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
         XpathExpression passwordExpr = null;
         try {
             passwordExpr = assertion.getPasswordExpression();
-            passwordXpath = new DOMXPath(passwordExpr.getExpression());
-            for (Iterator i = passwordExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
-                String prefix = (String) i.next();
-                String uri = (String)passwordExpr.getNamespaces().get(prefix);
-                passwordXpath.addNamespace(prefix, uri);
+            if (passwordExpr == null) {
+                logger.warning("Password XPath is null; assertion is non-functional");
+                passwordXpath = null;
+            } else {
+                passwordXpath = new DOMXPath(passwordExpr.getExpression());
+                for (Iterator i = passwordExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
+                    String prefix = (String) i.next();
+                    String uri = (String)passwordExpr.getNamespaces().get(prefix);
+                    passwordXpath.addNamespace(prefix, uri);
+                }
             }
         } catch (JaxenException e) {
             throw new RuntimeException("Invalid password xpath expression '" + passwordExpr + "'", e);
@@ -137,6 +147,12 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
     {
         String value = null;
         Node foundNode = null;
+
+        if (xpath == null) {
+            auditor.logAndAudit(notFoundMsg);
+            return null;
+        }
+
         List result = xpath.selectNodes(requestDoc);
         if (result == null || result.size() == 0) {
             auditor.logAndAudit(notFoundMsg);
