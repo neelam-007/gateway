@@ -117,5 +117,7 @@ public class Advices {
         advicesMap.put(Operation.class, new Class[]{AddWSDLOperationAssertionAdvice.class});
         advicesMap.put(SetVariableAssertion.class, new Class[]{SetVariableAssertionAdvice.class});
         advicesMap.put(CookieCredentialSourceAssertion.class, new Class[]{AddCookieCredentialSourceAssertionAdvice.class});
+        advicesMap.put(WsiBspAssertion.class, new Class[]{AddWsiBspAssertionAdvice.class});
+        advicesMap.put(WsiSamlAssertion.class, new Class[]{AddWsiSamlAssertionAdvice.class});
     }
 }
