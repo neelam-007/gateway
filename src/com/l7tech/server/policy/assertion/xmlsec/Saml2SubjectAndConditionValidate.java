@@ -56,20 +56,28 @@ class Saml2SubjectAndConditionValidate {
         }
 
         // name formats are the same for v1 and v2 so no mapping required
-        String[] nameFormats = requestWssSaml.getNameFormats();
-        String presentedNameFormat = nameIdentifierType.getFormat();
         boolean nameFormatMatch = false;
-        for (int i = 0; i < nameFormats.length; i++) {
-            String nameFormat = nameFormats[i];
-            if (nameFormat.equals(presentedNameFormat)) {
-                nameFormatMatch = true;
-                logger.fine("Matched Name Format " + nameFormat);
-                break;
-            } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
-                nameFormatMatch = true;
-                logger.fine("Matched Name Format " + nameFormat);
-                break;
+        String[] nameFormats = requestWssSaml.getNameFormats();
+        String presentedNameFormat = null;
+        if (nameIdentifierType != null) {
+            presentedNameFormat = nameIdentifierType.getFormat();
+            if (nameFormats != null) {
+                for (int i = 0; i < nameFormats.length; i++) {
+                    String nameFormat = nameFormats[i];
+                    if (nameFormat.equals(presentedNameFormat)) {
+                        nameFormatMatch = true;
+                        logger.fine("Matched Name Format " + nameFormat);
+                        break;
+                    } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
+                        nameFormatMatch = true;
+                        logger.fine("Matched Name Format " + nameFormat);
+                        break;
+                    }
+                }
             }
+        }
+        if (presentedNameFormat == null) {
+            presentedNameFormat = "";
         }
         if (!nameFormatMatch) {
             Object result = newError("Name Format does not match presented/required {0}/{1}",

@@ -10,7 +10,6 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
@@ -393,22 +392,27 @@ public class SamlAssertionValidate {
             }
         }
         String[] nameFormats = filterNameFormats(requestWssSaml.getNameFormats());
-        String presentedNameFormat = nameIdentifierType.getFormat();
         boolean nameFormatMatch = false;
-        for (int i = 0; i < nameFormats.length; i++) {
-            String nameFormat = nameFormats[i];
-            if (nameFormat.equals(presentedNameFormat)) {
-                nameFormatMatch = true;
-                logger.fine("Matched Name Format " + nameFormat);
-                break;
-            } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)
-                    && (null == presentedNameFormat ||
-                        "".equals(presentedNameFormat) ||
-                        ArrayUtils.contains(SamlConstants.ALL_NAMEIDENTIFIERS, presentedNameFormat))) {
-                nameFormatMatch = true;
-                logger.fine("Matched Name Format " + nameFormat);
-                break;
+        String presentedNameFormat = null;
+        if (nameIdentifierType != null) {
+            presentedNameFormat = nameIdentifierType.getFormat();
+            if (presentedNameFormat != null) {
+                for (int i = 0; i < nameFormats.length; i++) {
+                    String nameFormat = nameFormats[i];
+                    if (nameFormat.equals(presentedNameFormat)) {
+                        nameFormatMatch = true;
+                        logger.fine("Matched Name Format " + nameFormat);
+                        break;
+            } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
+                        nameFormatMatch = true;
+                        logger.fine("Matched Name Format " + nameFormat);
+                        break;
+                    }
+                }
             }
+        }
+        if (presentedNameFormat == null) {
+            presentedNameFormat = "";
         }
         if (!nameFormatMatch) {
             Error result = new Error("Name Format does not match presented/required {0}/{1}",
