@@ -4,6 +4,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.Assertion;
@@ -132,7 +134,10 @@ public class CustomAssertionReference extends ExternalReference {
                 }
             }
         } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Cannot get remote assertions", e);
+            if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
+            } else
+                logger.log(Level.WARNING, "Cannot get remote assertions", e);
         }
         logger.warning("the custom assertion " + customAssertionName + " does not seem to exist on this system.");
         return false;

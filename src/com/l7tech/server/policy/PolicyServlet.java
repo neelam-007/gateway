@@ -412,7 +412,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 checkInfos.add(new CertificateCheckInfo(Long.toString(Long.MAX_VALUE), SecureSpanConstants.NOPASS, null));
             }
         } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Custom assertions error", e);
+            if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
+            } else
+                logger.log(Level.WARNING, "Custom assertions error", e);
         }
 
         return checkInfos;

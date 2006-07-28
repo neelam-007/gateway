@@ -4,6 +4,8 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.console.util.Registry;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.LicenseException;
 
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -41,7 +43,10 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
                 insert(new CustomAccessControlNode(a), index++);
             }
         } catch (RemoteException e1) {
-            logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
+            if (ExceptionUtils.causedBy(e1, LicenseException.class)) {
+                logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
+            } else
+                logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
         }
     }
 }

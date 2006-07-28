@@ -4,6 +4,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.LicenseException;
 
 import java.rmi.RemoteException;
 import java.util.Iterator;
@@ -63,7 +65,10 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
                 insert(new CustomAccessControlNode(a), index++);
             }
         } catch (RemoteException e1) {
-            log.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
+            if (ExceptionUtils.causedBy(e1, LicenseException.class)) {
+                log.log(Level.INFO, "Custom assertions unavailable or unlicensed");
+            } else
+                log.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
         }
 
     }
