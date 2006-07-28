@@ -1,6 +1,7 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.console.util.Registry;
@@ -48,26 +49,42 @@ public class RoleManagementDialog extends JDialog {
         initialize();
     }
 
+    private void enableEditRemoveButtons() {
+        boolean enabled = roleList.getModel().getSize() != 0 &&
+                roleList.getSelectedValue() != null;
+
+        removeRole.setEnabled(enabled);
+        editRole.setEnabled(enabled);
+    }
+
     private void initialize() {
         populateList();
         setupButtonListeners();
         setupActionListeners();
 
+
+
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         roleList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() >= 2)
+                if (e.getClickCount() == 1)
+                    enableEditRemoveButtons();
+                else if (e.getClickCount() >= 2)
                     showEditDialog(getSelectedRole());
             }
         });
+
         roleList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
+                enableEditRemoveButtons();
             }
         });
+
         add(mainPanel);
 
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
+        enableEditRemoveButtons();
 
         pack();
     }
