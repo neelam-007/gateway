@@ -96,6 +96,7 @@
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm-3.50-core.jar"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm-3.50-handler_common.jar"/>
                 <include name="tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm-3.50-wsdm35mmi-axis-stubskel.jar"/>
+                <include name="tomcat/webapps/ROOT/WEB-INF/lib/tmxmltoolkit.jar"/>
             </fileset>
         </delete>
     </target>
