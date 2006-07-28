@@ -1,23 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Ant build file for CA Unicenter WSDM observer module. -->
+<!-- Ant build file for the Observer for CA Unicenter WSDM module. -->
 <project name="module.CaWsdmObserver" default="package">
 
     <description>
-    Builds the CA Unicenter WSDM observer module.
+    Builds the Observer for CA Unicenter WSDM module.
     </description>
 
     <property name="UneasyRooster.dir" location="../.."/>
-
-    <!-- Extra Ant task definitions -->
-    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
-        <classpath>
-            <pathelement location="${UneasyRooster.dir}/lib/ant-contrib.jar"/>
-        </classpath>
-    </taskdef>
-
-    <!-- Gets the build version number. -->
-    <property file="${UneasyRooster.dir}/build.version"/>
-
+    <import file="${UneasyRooster.dir}/tools/ant/common.xml"/>
     <property name="build.classes" location="build/classes"/>
 
     <path id="compile.classpath">
@@ -32,23 +22,14 @@
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
 
-    <target name="-init">
-        <!-- OS-dependent stuff -->
-        <if>
-            <os family="unix"/>
-            <then>
-                <property name="ssg.home" value="/ssg"/>
-            </then>
-            <elseif>
-                <os family="windows"/>
-                <then>
-                    <property name="ssg.home" value="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
-                </then>
-            </elseif>
-        </if>
-    </target>
-
     <target name="-compile">
+        <fail message="UneasyRooster does not seem to have been built yet.">
+            <condition>
+                <not>
+                    <available file="${UneasyRooster.dir}/build/classes"/>
+                </not>
+            </condition>
+        </fail>
         <mkdir dir="${build.classes}"/>
         <javac srcdir="src"
                destdir="${build.classes}"
@@ -64,27 +45,25 @@
 
     <target name="package" depends="-jar"
             description="Creates the distributable ZIP file.">
-        <zip destfile="build/CaWsdmObserver-${build.version.major}.${build.version.minor}.zip">
+        <!-- Compose the version number; if not already assigned. -->
+        <property file="${UneasyRooster.dir}/build.version"/>
+        <property name="build.version" value="${build.version.major}.${build.version.minor}"/>
+
+        <zip destfile="build/CaWsdmObserver-${build.version}.zip">
             <fileset dir="." includes="ssg/**/*"/>
             <fileset dir="build" includes="ssg/**/*"/>
             <fileset dir="bin" includes="install.*"/>
         </zip>
     </target>
 
-    <!-- Tests if the SSG home folder exists. -->
-    <target name="-ssg.home.testexist" depends="-init">
-        <if>
-            <not>
-                <available file="${ssg.home}" property="ssg.home.exists"/>
-            </not>
-            <then>
-                <fail message="SSG home folder not found: ${ssg.home}"/>
-            </then>
-        </if>
+    <target name="OFFICIAL-package"
+            description="Creates the distributable ZIP file after prompting for a version number.">
+        <input message="Enter a version number:" addproperty="build.version"/>
+        <antcall target="package"/>
     </target>
 
-    <target name="deploy" depends="-jar,-ssg.home.testexist"
-            description="Deploys to SSG at ${ssg.home}.">
+    <target name="deploy" depends="-jar,-common.test.ssg.home"
+            description="Deploys to SSG at ${ssg.home}. (For developer use)">
         <echo>Deploying to ${ssg.home}.</echo>
         <copy overwrite="true" todir="${ssg.home}" verbose="true">
             <fileset dir="ssg">
@@ -105,8 +84,8 @@
         </copy>
     </target>
 
-    <target name="undeploy" depends="-ssg.home.testexist"
-            description="Undeploys from SSG at ${ssg.home}. (Deletes all deployed files.)">
+    <target name="undeploy" depends="-common.test.ssg.home"
+            description="Undeploys from SSG at ${ssg.home}. Deletes all deployed files. (For developer use)">
         <delete verbose="true">
             <fileset dir="${ssg.home}">
                 <include name="etc/conf/CaWsdmObserver.properties"/>

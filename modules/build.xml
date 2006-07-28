@@ -6,6 +6,14 @@
     Builds all modules.
     </description>
 
+    <target name="OFFICIAL-package"
+            description="Creates the distributables after prompting for a version number.">
+        <input message="Enter a version number:" addproperty="build.version"/>
+        <ant dir="ca_wsdm" target="package" inheritAll="false">
+            <property name="build.version" value="${build.version}"/>
+        </ant>
+    </target>
+
     <target name="package" description="Creates the distributables.">
         <ant dir="ca_wsdm" target="package" inheritAll="false"/>
     </target>
