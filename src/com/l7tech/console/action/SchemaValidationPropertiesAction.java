@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 public class SchemaValidationPropertiesAction extends SecureAction {
 
     public SchemaValidationPropertiesAction(SchemaValidationTreeNode node, PublishedService service) {
-        super(true, SchemaValidation.class);
+        super(null, SchemaValidation.class);
         this.node = node;
         this.service = service;
     }

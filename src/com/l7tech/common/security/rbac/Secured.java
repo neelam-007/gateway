@@ -9,29 +9,25 @@ import static java.lang.annotation.ElementType.TYPE;
 import java.lang.annotation.Retention;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Target;
+import java.lang.annotation.Inherited;
 
 /**
  * Documents the permission that the current subject must hold in order to invoke the annotated method,
  * or any method on the annotated class.
- *
- * 
+ * <p/>
+ * If {@link #types} is specified on a class annotation, it is inherited if unspecified in that class's
+ * method annotations.  Conversely, a {@link # types} specified in a method annotation overrides any specified
+ * in a class annotation.
  */
 @Documented
 @Retention(value = RUNTIME)
+@Inherited
 @Target({TYPE, METHOD})
 public @interface Secured {
     /**
-     * The type of Entity that the operation operates on.
+     * The type of Entity that the annotated method or class operates on.
      */
-    EntityType type();
+    EntityType[] types() default EntityType.ANY;
 
-    /**
-     * The set of operations that the decorated method may attempt to perform
-     */
-    OperationType[] operations();
-
-    /**
-     *
-     */
-    String[] otherOperationNames() default {};
+    MethodStereotype stereotype() default MethodStereotype.NONE;
 }

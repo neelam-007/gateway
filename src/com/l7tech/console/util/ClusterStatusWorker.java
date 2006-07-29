@@ -189,7 +189,7 @@ public class ClusterStatusWorker extends SwingWorker {
 
                     ServiceUsage su = new ServiceUsage();
                     su.setServiceid(header.getOid());
-                    su.setServiceName(header.getName());
+                    su.setName(header.getName());
 
                     // add the stats to the list
                     statsList.put(new Long(su.getServiceid()), su);

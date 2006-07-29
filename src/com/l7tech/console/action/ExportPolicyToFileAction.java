@@ -1,19 +1,19 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.policy.exporter.PolicyExporter;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.policy.exporter.PolicyExporter;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -36,11 +36,11 @@ public class ExportPolicyToFileAction extends SecureAction {
     protected File lastSavedFile;
 
     public ExportPolicyToFileAction() {
-        super(true);
+        super(null);
     }
 
     public ExportPolicyToFileAction(AssertionTreeNode node) {
-        super(true);
+        super(null);
         if (node == null) {
             throw new IllegalArgumentException();
         }

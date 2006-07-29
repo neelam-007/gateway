@@ -12,10 +12,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.SystemMessages;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.admin.ClusterPropertyEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.policy.AssertionLicense;
@@ -303,15 +300,16 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         // It was valid.  Save to db so the other cluster nodes can bask in its glory
         Exception oops;
         try {
-            clusterPropertyManager.setProperty(LICENSE_PROPERTY_NAME, newLicenseXml);
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(LICENSE_PROPERTY_NAME);
+            if (property == null) {
+                property = new ClusterProperty(LICENSE_PROPERTY_NAME, newLicenseXml);
+                clusterPropertyManager.save(property);
+            } else {
+                property.setValue(newLicenseXml);
+                clusterPropertyManager.update(property);
+            }
             return;
-        } catch (UpdateException e) {
-            // Fallthrough and roll back to old license
-            oops = e;
-        } catch (SaveException e) {
-            // Fallthrough and roll back to old license
-            oops = e;
-        } catch (DeleteException e) {
+        } catch (ObjectModelException e) {
             // Fallthrough and roll back to old license
             oops = e;
         }

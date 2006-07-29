@@ -105,7 +105,7 @@ public class IdProvConfManagerServer
         }
     }
 
-    public Collection findAllIdentityProviders() throws FindException {
+    public Collection<IdentityProvider> findAllIdentityProviders() throws FindException {
         return identityProviderFactory.findAllIdentityProviders(this);
     }
 

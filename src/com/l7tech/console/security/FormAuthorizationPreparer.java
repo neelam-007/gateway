@@ -6,6 +6,7 @@
 package com.l7tech.console.security;
 
 import com.l7tech.common.Authorizer;
+import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.console.util.FormPreparer;
 
 import javax.security.auth.Subject;
@@ -26,42 +27,40 @@ public class FormAuthorizationPreparer extends FormPreparer {
      * Create the form preparer with the security provider and the edit roles
      *
      * @param provider         the security provider that will perform the authorization
-     * @param editGrantedRoles the roles that have permission
      */
-    public FormAuthorizationPreparer(Authorizer provider, String[] editGrantedRoles) {
-        super(new GrantToRolePreparer(editGrantedRoles, provider));
+    public FormAuthorizationPreparer(Authorizer provider, AttemptedOperation attemptedOperation) {
+        super(new GrantToRolePreparer(attemptedOperation, provider));
     }
 
     /**
      * <code>GrantToRolePreparer</code> grants component action for a given role
      */
     public static class GrantToRolePreparer implements ComponentPreparer {
-        private final String[] editGrantedRoles;
+        private final AttemptedOperation attemptedOperation;
         private final Authorizer authorizer;
 
-        public GrantToRolePreparer(String[] editGrantedRole, Authorizer authorizer) {
-            this.editGrantedRoles = editGrantedRole;
+        public GrantToRolePreparer(AttemptedOperation attemptedOperation, Authorizer authorizer) {
+            this.attemptedOperation = attemptedOperation;
             this.authorizer = authorizer;
         }
 
         public void prepare(Component c) {}
 
         public void prepare(JTextComponent c) {
-            c.setEditable(c.isEditable() && isInRole());
+            c.setEditable(c.isEditable() && hasPermission());
         }
 
         public void prepare(AbstractButton c) {
-            c.setEnabled(c.isEnabled() && isInRole());
+            c.setEnabled(c.isEnabled() && hasPermission());
         }
 
         public void prepare(JComboBox c) {
-            c.setEnabled(c.isEnabled() && isInRole());
+            c.setEnabled(c.isEnabled() && hasPermission());
         }
 
-        protected boolean isInRole() {
+        protected boolean hasPermission() {
             Subject subject = Subject.getSubject(AccessController.getContext());
-            if (subject == null) return false;
-            return authorizer.isSubjectInRole(subject, editGrantedRoles);
+            return subject != null && authorizer.hasPermission(subject, attemptedOperation);
         }
     }
 }

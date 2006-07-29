@@ -1,6 +1,11 @@
 package com.l7tech.common.transport.jms;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.MethodStereotype;
+import static com.l7tech.common.security.rbac.EntityType.*;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -11,6 +16,7 @@ import java.rmi.RemoteException;
  * @author alex
  * @version $Revision$
  */
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface JmsAdmin {
     /**
      * Holds a tuple of ({@link JmsConnection}, {@link JmsEndpoint}).
@@ -42,6 +48,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the providers from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
     JmsProvider[] getProviderList() throws RemoteException, FindException;
 
     /**
@@ -51,6 +58,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the connections from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
     JmsConnection[] findAllConnections() throws RemoteException, FindException;
 
     /**
@@ -61,6 +69,8 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the endpoints and/or connections from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
+    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES)
     JmsTuple[] findAllTuples() throws RemoteException, FindException;
 
     /**
@@ -71,6 +81,8 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the connection from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
+    @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
     JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException;
 
     /**
@@ -81,6 +93,8 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the endpoint from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
+    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
     JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException;
 
     /**
@@ -93,6 +107,7 @@ public interface JmsAdmin {
      * @throws UpdateException if a database problem prevented the endpoint from being updated
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SET_PROPERTY_BY_OID)
     void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException;
 
     /**
@@ -103,6 +118,7 @@ public interface JmsAdmin {
      * @throws SaveException   if a database problem prevented the specified JmsConnection from being saved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.SAVE_OR_UPDATE)
     long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException;
 
     /**
@@ -113,6 +129,7 @@ public interface JmsAdmin {
      * @throws SaveException   if a database problem prevented the specified JmsEndpoint from being saved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SAVE_OR_UPDATE)
     long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException;
 
     /**
@@ -123,6 +140,7 @@ public interface JmsAdmin {
      * @throws DeleteException if a database problem prevented the specified JmsEndpoint from being deleted
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.DELETE_BY_OID)
     void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException;
 
     /**
@@ -133,6 +151,7 @@ public interface JmsAdmin {
      * @throws DeleteException if a database problem prevented the specified JmsConnection from being deleted
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.DELETE_BY_OID)
     void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException;
 
     /**
@@ -145,6 +164,8 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the endpoints from being retrieved
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
+    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITIES)
     JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException;
 
     /**
@@ -156,6 +177,7 @@ public interface JmsAdmin {
      * @throws JmsTestException if the test fails
      * @throws RemoteException  if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
     void testConnection(JmsConnection connection) throws RemoteException, JmsTestException;
 
     /**
@@ -168,5 +190,6 @@ public interface JmsAdmin {
      * @throws FindException   if the connection pointed to by the endpoint cannot be loaded
      * @throws RemoteException
      */
+    @Transactional(readOnly=true)
     void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws RemoteException, JmsTestException, FindException;
 }

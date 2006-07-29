@@ -1,5 +1,7 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -7,9 +9,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectPermission;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.security.auth.Subject;
@@ -116,9 +116,8 @@ public class EditServicePolicyAction extends NodeAction {
                 }
                 public boolean hasWriteAccess() {
                     try {
-                        ObjectPermission op = new ObjectPermission(serviceNode.getPublishedService(), ObjectPermission.WRITE);
                         Subject s = Subject.getSubject(AccessController.getContext());
-                        return Registry.getDefault().getSecurityProvider().hasPermission(s, op);
+                        return Registry.getDefault().getSecurityProvider().hasPermission(s, new AttemptedUpdate(EntityType.SERVICE, serviceNode.getPublishedService()));
                     } catch (Exception e) {
                         log.log(Level.WARNING, "Error performing permisison check", e);
                         throw new RuntimeException(e);
@@ -138,13 +137,4 @@ public class EditServicePolicyAction extends NodeAction {
         }
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

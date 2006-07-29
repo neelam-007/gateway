@@ -19,6 +19,7 @@ import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.cluster.ClusterProperty;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import net.sf.nachocalendar.CalendarFactory;
@@ -599,7 +600,8 @@ public class LogPanel extends JPanel {
         if (output == null) {
             Registry reg = Registry.getDefault();
             try {
-                output = reg.getClusterStatusAdmin().getProperty(Messages.OVERRIDE_PREFIX + id);
+                ClusterProperty prop = reg.getClusterStatusAdmin().findPropertyByName(Messages.OVERRIDE_PREFIX + id);
+                if (prop != null) output = prop.getValue();
             } catch (RemoteException e) {
                 logger.log(Level.WARNING, "cannot get property", e);
             } catch (FindException e) {

@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class XslTransformationPropertiesAction extends SecureAction {
 
     public XslTransformationPropertiesAction(XslTransformationTreeNode node) {
-        super(true, XslTransformation.class);
+        super(null, XslTransformation.class);
         this.node = node;
     }
 

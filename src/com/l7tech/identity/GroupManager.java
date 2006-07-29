@@ -10,7 +10,7 @@ import java.util.Set;
  */
 public interface GroupManager {
     Group findByPrimaryKey( String identifier ) throws FindException;
-    Group findByName( String name ) throws FindException;
+    Group findByUniqueName( String name ) throws FindException;
     void delete( Group group ) throws DeleteException, ObjectNotFoundException;
     void delete( String identifier ) throws DeleteException, ObjectNotFoundException;
     void deleteAll( long ipoid ) throws DeleteException, ObjectNotFoundException;
@@ -19,7 +19,7 @@ public interface GroupManager {
     void update( Group group ) throws UpdateException, ObjectNotFoundException;
     String save( Group group, Set<IdentityHeader> userHeaders ) throws SaveException;
     void update( Group group, Set<IdentityHeader> userHeaders ) throws UpdateException, ObjectNotFoundException;
-    Collection search(String searchString) throws FindException;
+    Collection<IdentityHeader> search(String searchString) throws FindException;
     Class getImpClass();
 
     /**

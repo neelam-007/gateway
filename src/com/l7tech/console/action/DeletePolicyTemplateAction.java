@@ -25,7 +25,7 @@ public class DeletePolicyTemplateAction extends SecureAction {
      * @param en the node to deleteEntity
      */
     public DeletePolicyTemplateAction(PolicyTemplateNode en) {
-        super(true);
+        super(null);
         node = en;
     }
 

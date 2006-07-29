@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 
 /**
  * The <code>HomeAction</code> displays the dds the new user.
@@ -15,7 +14,7 @@ public class HomeAction extends SecureAction {
     private WorkSpacePanel wpanel;
 
     public HomeAction() {
-        super(false);
+        super(null);
         wpanel = TopComponents.getInstance().getCurrentWorkspace();
     }
 
@@ -55,13 +54,4 @@ public class HomeAction extends SecureAction {
         }
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

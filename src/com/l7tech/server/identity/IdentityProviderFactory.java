@@ -43,8 +43,8 @@ public class IdentityProviderFactory
     private AbstractBeanFactory abstractBeanFactory;
     private ApplicationContext springContext;
 
-    public Collection findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
-        List providers = new ArrayList();
+    public Collection<IdentityProvider> findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
+        List<IdentityProvider> providers = new ArrayList<IdentityProvider>();
         Iterator i = manager.findAllHeaders().iterator();
         EntityHeader header;
         while (i.hasNext()) {
@@ -62,7 +62,7 @@ public class IdentityProviderFactory
     public synchronized void dropProvider(IdentityProviderConfig config) {
         if (providers == null) return;
         Long key = new Long(config.getOid());
-        IdentityProvider existingProvider = (IdentityProvider)providers.get(key);
+        IdentityProvider existingProvider = providers.get(key);
         if (existingProvider != null) {
             providers.remove(key);
         }
@@ -82,7 +82,7 @@ public class IdentityProviderFactory
         IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)springContext.getBean("identityProviderConfigManager");
         Long oid = new Long(identityProviderOid);
 
-        IdentityProvider cachedProvider = (IdentityProvider)providers.get(oid);
+        IdentityProvider cachedProvider = providers.get(oid);
         if (cachedProvider != null && identityProviderOid != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
             Integer dbVersion = configManager.getVersion(identityProviderOid);
             if (dbVersion == null) {
@@ -156,8 +156,8 @@ public class IdentityProviderFactory
         String classname = config.type().getClassname();
         try {
             Class providerClass = Class.forName(classname);
-            Constructor ctor = providerClass.getConstructor(new Class[]{IdentityProviderConfig.class});
-            return (IdentityProvider)ctor.newInstance(new Object[]{config});
+            Constructor ctor = providerClass.getConstructor(IdentityProviderConfig.class);
+            return (IdentityProvider)ctor.newInstance(config);
         } catch (Exception e) {
             throw new InvalidIdProviderCfgException(e);
         }
@@ -175,8 +175,8 @@ public class IdentityProviderFactory
     public final Object createManagerInstance(Class managerClass, IdentityProvider identityProvider)
       throws InvalidIdProviderCfgException {
         try {
-            Constructor ctor = managerClass.getConstructor(new Class[]{IdentityProvider.class});
-            return ctor.newInstance(new Object[]{identityProvider});
+            Constructor ctor = managerClass.getConstructor(IdentityProvider.class);
+            return ctor.newInstance(identityProvider);
         } catch (Exception e) {
             throw new InvalidIdProviderCfgException(e);
         }
@@ -283,7 +283,7 @@ public class IdentityProviderFactory
     }
 
     // note these need to be singletons so that they can be invalidates in case of deletion
-    private static Map providers = new HashMap();
+    private static Map<Long, IdentityProvider> providers = new HashMap<Long, IdentityProvider>();
 
     public static final int MAX_AGE = 60 * 1000;
 

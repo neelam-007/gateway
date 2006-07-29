@@ -18,6 +18,8 @@ import com.l7tech.server.identity.PersistentUserManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,6 +29,7 @@ import java.util.List;
  * @author alex
  * @version $Revision$
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class FederatedUserManager extends PersistentUserManager {
     public FederatedUserManager(IdentityProvider identityProvider) {
         super(identityProvider);
@@ -38,11 +41,13 @@ public class FederatedUserManager extends PersistentUserManager {
     protected FederatedUserManager() {
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader( User user ) {
         FederatedUser imp = (FederatedUser)cast(user);
         return new IdentityHeader(imp.getProviderId(), imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public User headerToUser(IdentityHeader header) {
         FederatedUser fu = new FederatedUser();
         fu.setOid(header.getOid());
@@ -63,6 +68,7 @@ public class FederatedUserManager extends PersistentUserManager {
         return "fed_user";
     }
 
+    @Transactional(readOnly=true)
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
             List results = getHibernateTemplate().find(FIND_BY_DN,
@@ -80,6 +86,7 @@ public class FederatedUserManager extends PersistentUserManager {
         }
     }
 
+    @Transactional(readOnly=true)
     public FederatedUser findByEmail(String email) throws FindException {
         try {
             List results = getHibernateTemplate().find(FIND_BY_EMAIL, new Object[] { new Long(getProviderOid()), email } );

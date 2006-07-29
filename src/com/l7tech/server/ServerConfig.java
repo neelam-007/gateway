@@ -226,7 +226,7 @@ public class ServerConfig extends ApplicationObjectSupport {
      *
      * @return The Map of declared property names to descriptions.
      */
-    public Map getClusterPropertyNames() {
+    public Map<String, String> getClusterPropertyNames() {
         return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_DESC);
     }
 
@@ -259,12 +259,10 @@ public class ServerConfig extends ApplicationObjectSupport {
         return name;
     }
 
-    private Map getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
-        Map keyValueToMappedValue = new TreeMap();
+    private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
+        Map<String, String> keyValueToMappedValue = new TreeMap<String, String>();
         if(keySuffix!=null) {
-            Set propEntries = _properties.entrySet();
-            for (Iterator iterator = propEntries.iterator(); iterator.hasNext();) {
-                Map.Entry propEntry = (Map.Entry) iterator.next();
+            for (Map.Entry propEntry : _properties.entrySet()) {
                 String propKey = (String) propEntry.getKey();
                 String propVal = (String) propEntry.getValue();
 
@@ -368,8 +366,7 @@ public class ServerConfig extends ApplicationObjectSupport {
                 op.load(propStream);
 
                 Set opKeys = op.keySet();
-                for (Iterator i = opKeys.iterator(); i.hasNext();) {
-                    Object s = i.next();
+                for (Object s : opKeys) {
                     _properties.put(s, op.get(s));
                     logger.log(Level.FINE, "Overriding serverconfig property: " + s);
                 }

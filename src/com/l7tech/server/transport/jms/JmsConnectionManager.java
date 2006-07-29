@@ -10,7 +10,6 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.*;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +23,10 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsConnectionManager extends HibernateEntityManager implements InitializingBean {
+public class JmsConnectionManager
+        extends HibernateEntityManager<JmsConnection, EntityHeader>
+        implements InitializingBean
+{
     private static final Logger logger = Logger.getLogger(JmsConnectionManager.class.getName());
     
     private List _allProviders = null;
@@ -44,26 +46,13 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
         return _allProviders;
     }
 
-    public JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
-        return (JmsConnection)findByPrimaryKey(JmsConnection.class, oid);
-    }
-
-    public long save(final JmsConnection conn) throws SaveException {
-        _logger.info("Saving JmsConnection " + conn);
-        try {
-            return ((Long)getHibernateTemplate().save(conn)).longValue();
-        } catch (DataAccessException e) {
-            throw new SaveException(e.toString(), e);
-        }
-    }
-
     public void update(final JmsConnection conn) throws VersionException, UpdateException {
         _logger.info("Updating JmsConnection " + conn);
 
         JmsConnection original;
         // check for original connection
         try {
-            original = findConnectionByPrimaryKey(conn.getOid());
+            original = findByPrimaryKey(conn.getOid());
         } catch (FindException e) {
             throw new UpdateException("could not get original connection", e);
         }
@@ -91,7 +80,7 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
      * @throws DeleteException if the connection, or one of its dependent endpoints, cannot be deleted.
      * @throws FindException   if the connection, or one of its dependent endpoints, cannot be found.
      */
-    public void delete(final JmsConnection connection) throws DeleteException, FindException {
+    public void delete(final JmsConnection connection) throws DeleteException {
         _logger.info("Deleting JmsConnection " + connection);
 
         try {
@@ -100,8 +89,8 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
             for (EntityHeader endpoint : endpoints)
                 jmsEndpointManager.delete(endpoint.getOid());
 
-            getHibernateTemplate().delete(connection);
-        } catch (DataAccessException e) {
+            super.delete(connection);
+        } catch (Exception e) {
             throw new DeleteException(e.toString(), e);
         }
     }

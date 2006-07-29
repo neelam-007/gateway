@@ -10,6 +10,7 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
 import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -19,6 +20,7 @@ import org.hibernate.criterion.Restrictions;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -64,25 +66,19 @@ public abstract class PersistentUserManager
         }
     }
 
-    public User findByLogin(String login) throws FindException {
+    public User findByLogin(final String login) throws FindException {
         try {
-            Criteria findByLogin = getSession().createCriteria(getImpClass());
-            findByLogin.add(Restrictions.eq("login", login));
-            addFindAllCriteria(findByLogin);
-            List users = findByLogin.list();
-            switch (users.size()) {
-                case 0:
-                    return null;
-                case 1:
-                    PersistentUser u = (PersistentUser)users.get(0);
-                    u.setProviderId(identityProvider.getConfig().getOid());
-                    return u;
-                default:
-                    String err = "Found more than one user with the login " + login;
-                    logger.log(Level.SEVERE, err);
-                    throw new FindException(err);
-            }
-        } catch (HibernateException e) {
+            PersistentUser puser = (PersistentUser) getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Criteria findByLogin = session.createCriteria(getImpClass());
+                    findByLogin.add(Restrictions.eq("login", login));
+                    addFindAllCriteria(findByLogin);
+                    return findByLogin.uniqueResult();
+                }
+            });
+            puser.setProviderId(identityProvider.getConfig().getOid());
+            return puser;
+        } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
             throw new FindException(e.toString(), e);
         }
@@ -97,24 +93,28 @@ public abstract class PersistentUserManager
      *          thrown if an SQL error is encountered
      * @see com.l7tech.server.identity.PersistentGroupManager
      */
-    public Collection<IdentityHeader> search(String searchString) throws FindException {
+    public Collection<IdentityHeader> search(final String searchString) throws FindException {
         // replace wildcards to match stuff understood by mysql
         // replace * with % and ? with _
         // note. is this portable?
-        searchString = searchString.replace('*', '%');
-        searchString = searchString.replace('?', '_');
         try {
-            Criteria search = getSession().createCriteria(getImpClass());
-            search.add(Restrictions.ilike(getNameFieldname(), searchString));
-            addFindAllCriteria(search);
-            List entities = search.list();
-            List<IdentityHeader> headers = new ArrayList<IdentityHeader>();
-            for (Object entity : entities) {
-                PersistentUser user = (PersistentUser) entity;
-                headers.add(userToHeader(user));
-            }
-            return Collections.unmodifiableList(headers);
-        } catch (HibernateException e) {
+            //noinspection unchecked
+            return (Collection<IdentityHeader>)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Criteria search = session.createCriteria(getImpClass());
+                    String s = searchString.replace('*', '%').replace('?', '_');
+                    search.add(Restrictions.ilike(getNameFieldname(), s));
+                    addFindAllCriteria(search);
+                    List entities = search.list();
+                    List<IdentityHeader> headers = new ArrayList<IdentityHeader>();
+                    for (Object entity : entities) {
+                        PersistentUser user = (PersistentUser) entity;
+                        headers.add(userToHeader(user));
+                    }
+                    return Collections.unmodifiableList(headers);
+                }
+            });
+        } catch (Exception e) {
             final String msg = "Error while searching for " + getInterfaceClass().getName() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
@@ -139,14 +139,13 @@ public abstract class PersistentUserManager
 
             preDelete(originalUser);
 
-            Session s = getSession();
             PersistentGroupManager groupManager = (PersistentGroupManager)identityProvider.getGroupManager();
             Set<IdentityHeader> groupHeaders = groupManager.getGroupHeaders(userImp);
             for (EntityHeader groupHeader : groupHeaders) {
                 Group group = groupManager.findByPrimaryKey(groupHeader.getStrId());
-                groupManager.deleteMembership(s, group, user);
+                groupManager.deleteMembership(group, user);
             }
-            s.delete(userImp);
+            getHibernateTemplate().delete(userImp);
             revokeCert(userImp);
         } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, null, e);
@@ -166,27 +165,37 @@ public abstract class PersistentUserManager
      * @throws DeleteException
      * @throws ObjectNotFoundException
      */
-    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAll(final long ipoid) throws DeleteException, ObjectNotFoundException {
         try {
-            Query q = getSession().createQuery(HQL_DELETE_BY_PROVIDEROID);
-            q.setLong(0, ipoid);
-            for (Iterator i = q.iterate(); i.hasNext();) {
-                getSession().delete(i.next());
-            }
-        } catch (HibernateException e) {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_DELETE_BY_PROVIDEROID);
+                    q.setLong(0, ipoid);
+                    for (Iterator i = q.iterate(); i.hasNext();) {
+                        session.delete(i.next());
+                    }
+                    return null;
+                }
+            });
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }
     }
 
-    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
+    public void delete(final String identifier) throws DeleteException, ObjectNotFoundException {
         try {
-            Query q = getSession().createQuery(HQL_DELETE);
-            q.setString(0, identifier);
-            for (Iterator i = q.iterate(); i.hasNext();) {
-                getSession().delete(i.next());
-            }
-        } catch (HibernateException e) {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_DELETE);
+                    q.setString(0, identifier);
+                    for (Iterator i = q.iterate(); i.hasNext();) {
+                        session.delete(i.next());
+                    }
+                    return null;
+                }
+            });
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }

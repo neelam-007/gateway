@@ -13,17 +13,20 @@ import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
-import com.l7tech.identity.*;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SoapFaultManager;
+import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.beans.BeansException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -37,7 +40,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -146,7 +148,7 @@ public class TokenServiceServlet extends HttpServlet {
             }
 
             // get response document
-            Document output = null;
+            Document output;
             try {
                 output = context.getResponse().getXmlKnob().getDocumentReadOnly();
             } catch (SAXException e) {
@@ -160,20 +162,16 @@ public class TokenServiceServlet extends HttpServlet {
             try {
                 outputRequestSecurityTokenResponse(output, res);
                 logger.finest("Sent back SecurityToken:" + XmlUtil.nodeToFormattedString(output));
-                return;
             } catch (IOException e) {
                 String msg = "Error printing result. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
                 sendExceptionFault(context, e, res);
-                return;
             }
         } catch (Throwable e) {
             String msg = "UNHANDLED EXCEPTION: " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
             sendExceptionFault(context, e, res);
-            return;
-        }
-        finally {
+        } finally {
             try {
                 //note that the system audit record is already written at this point
                 //this just ensures that we log a warning if any details are left in
@@ -192,13 +190,12 @@ public class TokenServiceServlet extends HttpServlet {
                 IdentityProviderConfigManager idpcm =
                   (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
                 User authenticatedUser = null;
-                Collection providers = null;
+                Collection<IdentityProvider> providers;
                 try {
                     // go through providers and try to authenticate the cert
                     IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
                     providers = ipf.findAllIdentityProviders(idpcm);
-                    for (Iterator iterator = providers.iterator(); iterator.hasNext();) {
-                        IdentityProvider provider = (IdentityProvider) iterator.next();
+                    for (IdentityProvider provider : providers) {
                         try {
                             AuthenticationResult authResult = provider.authenticate(creds);
                             if (authResult != null) {
@@ -251,7 +248,7 @@ public class TokenServiceServlet extends HttpServlet {
 
     private void returnFault(PolicyEnforcementContext context, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml = null;
+        String faultXml;
         try {
             responseStream = hresp.getOutputStream();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
@@ -267,7 +264,7 @@ public class TokenServiceServlet extends HttpServlet {
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml = null;
+        String faultXml;
         try {
             responseStream = hresp.getOutputStream();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);

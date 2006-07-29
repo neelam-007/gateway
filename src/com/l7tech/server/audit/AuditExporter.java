@@ -13,12 +13,14 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,6 +36,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * Simple utility to export signed audit records.
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditExporter extends HibernateDaoSupport {
     private static final String SQL = "select * from audit_main left ou" +
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
@@ -55,14 +58,17 @@ public class AuditExporter extends HibernateDaoSupport {
         return badCharPattern.matcher(raw).replaceAll("\\\\$1");
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public synchronized long getHighestTime() {
         return highestTime;
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public synchronized long getNumExportedSoFar() {
         return numExportedSoFar;
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public synchronized long getApproxNumToExport() {
         return approxNumToExport;
     }
@@ -85,10 +91,12 @@ public class AuditExporter extends HibernateDaoSupport {
      * @param rawOut the OutputStream to which the colon-delimited dump will be written.
      * @return the time in milliseconds of the most-recent audit record exported.
      */
+    @Transactional(readOnly=true)
     private ExportedInfo exportAllAudits(OutputStream rawOut) throws SQLException, IOException, HibernateException, InterruptedException {
         Connection conn = null;
         Statement st = null;
         ResultSet rs = null;
+        Session session = null;
         try {
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
             MessageDigest md5 = MessageDigest.getInstance("MD5");
@@ -96,7 +104,7 @@ public class AuditExporter extends HibernateDaoSupport {
             DigestOutputStream md5Out = new DigestOutputStream(sha1Out, md5);
             PrintStream out = new PrintStream(md5Out, false, "UTF-8");
 
-            Session session = getSession();
+            session = getSession();
             conn = session.connection();
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 
@@ -200,6 +208,7 @@ public class AuditExporter extends HibernateDaoSupport {
             try {
                 if (st !=null) st.close();
             }catch(SQLException e) {}
+            releaseSession(session);
         }
     }
 
@@ -233,6 +242,7 @@ public class AuditExporter extends HibernateDaoSupport {
      * Export all audit events from the database to the specified OutputStream as a Zip file, including a signature.
      * @param fileOut OutputStream to which the Zip file will be written.
      */
+    @Transactional(readOnly=true)
     public void exportAuditsAsZipFile(OutputStream fileOut,
                                              X509Certificate signingCert,
                                              PrivateKey signingKey)

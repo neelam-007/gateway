@@ -1,21 +1,17 @@
 package com.l7tech.server;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.TimerTask;
-import java.util.Iterator;
-import java.util.Timer;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.DisposableBean;
-
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Component that tracks Entity versions and publishes invalidation events.
@@ -40,17 +36,15 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @throws IllegalStateException if the managers are already set
      * @throws ClassCastException if the list contains a non-HibernateEntityManager
      */
-    public void setEntityManagers(List managers) {
+    public void setEntityManagers(List<HibernateEntityManager> managers) {
         if(btt!=null) throw new IllegalStateException("manager already set");
         if(managers!=null && !managers.isEmpty()) {
-            List tasks = new ArrayList();
-            for (Iterator iterator = managers.iterator(); iterator.hasNext();) {
-                HibernateEntityManager manager = (HibernateEntityManager) iterator.next();
+            List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
+            for (HibernateEntityManager manager : managers) {
                 try {
                     tasks.add(new EntityInvalidationVersionCheck(manager));
-                }
-                catch(Exception e) {
-                    logger.warning("Could not create invalidator for manager of '"+manager.getImpClass()+"'");
+                } catch (Exception e) {
+                    logger.warning("Could not create invalidator for manager of '" + manager.getImpClass() + "'");
                 }
             }
             btt = new BigTimerTask(tasks);
@@ -132,9 +126,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * Run a collection of TimerTasks as one task.
      */
     private class BigTimerTask extends TimerTask {
-        private final List tasks;
+        private final List<? extends TimerTask> tasks;
 
-        private BigTimerTask(List subTimerTasks) {
+        private BigTimerTask(List<? extends TimerTask> subTimerTasks) {
             this.tasks = subTimerTasks;
         }
 
@@ -142,16 +136,15 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
             if(logger.isLoggable(Level.FINE)) logger.fine("Running entity invalidation.");
 
             long startTime = System.currentTimeMillis();
-            for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
-                if (timer==null) {
+            for (TimerTask task : tasks) {
+                if (timer == null) {
                     logger.info("Version check task exiting due to shutdown.");
                     break; //check if cancelled
                 }
-                TimerTask task = (TimerTask) iterator.next();
+
                 try {
                     task.run();
-                }
-                catch(Exception e) {
+                } catch (Exception e) {
                     logger.log(Level.WARNING, "Error running version check task", e);
                 }
             }
@@ -169,15 +162,15 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     private class EntityInvalidationVersionCheck extends PeriodicVersionCheck {
 
         private final Class entityType;
-        private List invalidationList;
+        private List<Long> invalidationList;
 
-        private EntityInvalidationVersionCheck(HibernateEntityManager manager) throws Exception {
+        private EntityInvalidationVersionCheck(EntityManager manager) throws Exception {
             super(manager);
             entityType = manager.getInterfaceClass();
         }
 
         public void run() {
-            invalidationList = new ArrayList();
+            invalidationList = new ArrayList<Long>();
             super.run();
             performInvalidation(entityType, invalidationList);
             invalidationList = null;

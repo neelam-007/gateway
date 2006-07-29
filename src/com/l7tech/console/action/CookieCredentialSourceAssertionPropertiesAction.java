@@ -25,7 +25,7 @@ public class CookieCredentialSourceAssertionPropertiesAction extends SecureActio
     private CookieCredentialSourceAssertionTreeNode subject;
 
     public CookieCredentialSourceAssertionPropertiesAction(CookieCredentialSourceAssertionTreeNode subject) {
-        super(true, CookieCredentialSourceAssertion.class);
+        super(null);
         this.subject = subject;
     }
 

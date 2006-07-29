@@ -85,7 +85,7 @@ public class LdapGroupManager implements GroupManager {
     /**
      * does equivalent of LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, name);
      */
-    public Group findByName(String name) throws FindException {
+    public Group findByUniqueName(String name) throws FindException {
         Collection res = identityProvider.search(new EntityType[]{EntityType.GROUP}, name);
         switch (res.size()) {
             case 0:
@@ -548,7 +548,7 @@ public class LdapGroupManager implements GroupManager {
                                             }
                                             if (subgroup == null) {
                                                 try {
-                                                    subgroup = (LdapGroup)findByName(memberhint);
+                                                    subgroup = (LdapGroup) findByUniqueName(memberhint);
                                                 } catch (FindException e) {
                                                     // nothing on purpose
                                                     logger.finest("seems like " + memberhint +

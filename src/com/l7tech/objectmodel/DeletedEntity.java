@@ -70,6 +70,6 @@ public class DeletedEntity implements NamedEntity, Serializable {
     private static final long serialVersionUID = 5741062976640065826L;
 
     private final Class entityClass;
-    private String uniqueId;
+    protected String uniqueId;
     private long oid;
 }

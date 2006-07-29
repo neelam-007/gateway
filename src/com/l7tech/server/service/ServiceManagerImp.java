@@ -17,14 +17,12 @@ import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.*;
 
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -34,12 +32,14 @@ import java.util.logging.Logger;
 /**
  * Manages PublishedService instances.
  */
+@Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class ServiceManagerImp
         extends HibernateEntityManager<PublishedService, EntityHeader>
-        implements ServiceManager, ApplicationContextAware
+        implements ServiceManager
 {
     private ServiceCache serviceCache;
 
+    @Transactional(propagation=SUPPORTS)
     public void setVisitorClassnames(String visitorClassnames) {
         String[] names = visitorClassnames.split(",\\s*");
         for (String name : names) {
@@ -51,9 +51,7 @@ public class ServiceManagerImp
         }
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-    }
-
+    @Transactional(propagation=SUPPORTS)
     public String resolveWsdlTarget(String url) throws RemoteException {
         throw new UnsupportedOperationException();
     }
@@ -134,12 +132,7 @@ public class ServiceManagerImp
         }
 
         // update
-        try {
-            original.copyFrom(service);
-        } catch (IOException e) {
-            throw new UpdateException("could not copy published service", e);
-        }
-        getHibernateTemplate().update(original);
+        getHibernateTemplate().merge(service);
         logger.info("Updated service " + service.getName() + "  #" + service.getOid());
 
         // update cache after commit
@@ -187,6 +180,7 @@ public class ServiceManagerImp
         });
     }
 
+    @Transactional(propagation=SUPPORTS)
     public ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException {
         try {
             return serviceCache.getServerPolicy(serviceOid);
@@ -195,10 +189,12 @@ public class ServiceManagerImp
         }
     }
 
+    @Transactional(propagation=SUPPORTS)
     public PublishedService resolve(Message req) throws ServiceResolutionException {
         return serviceCache.resolve(req);
     }
 
+    @Transactional(propagation=SUPPORTS)
     public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
         try {
             return serviceCache.getServiceStatistics(serviceOid);
@@ -207,6 +203,7 @@ public class ServiceManagerImp
         }
     }
 
+    @Transactional(propagation=SUPPORTS)
     public Collection<ServiceStatistics> getAllServiceStatistics() throws FindException {
         try {
             return serviceCache.getAllServiceStatistics();
@@ -216,22 +213,27 @@ public class ServiceManagerImp
     }
 
 
+    @Transactional(propagation=SUPPORTS)
     public Class getImpClass() {
         return PublishedService.class;
     }
 
+    @Transactional(propagation=SUPPORTS)
     public Class getInterfaceClass() {
         return PublishedService.class;
     }
 
+    @Transactional(propagation=SUPPORTS)
     public String getTableName() {
         return "published_service";
     }
 
+    @Transactional(propagation=SUPPORTS)
     public EntityType getEntityType() {
         return EntityType.SERVICE;
     }
 
+    @Transactional(propagation=SUPPORTS)
     public void setServiceCache(ServiceCache serviceCache) {
         this.serviceCache = serviceCache;
     }
@@ -241,12 +243,9 @@ public class ServiceManagerImp
      *
      * @param resolutionManager
      */
+    @Transactional(propagation=SUPPORTS)
     public void setResolutionManager(ResolutionManager resolutionManager) {
         this.resolutionManager = resolutionManager;
-    }
-
-    public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
     }
 
     protected void initDao() throws Exception {
@@ -262,6 +261,7 @@ public class ServiceManagerImp
      * this should be called within the boot process to initiate the service cache which in turn will
      * create server side policies
      */
+    @Transactional(propagation=SUPPORTS)
     public void initiateServiceCache() {
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             protected void doInTransactionWithoutResult(TransactionStatus status) {
@@ -307,6 +307,5 @@ public class ServiceManagerImp
     }
 
     private ResolutionManager resolutionManager;
-    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
 }

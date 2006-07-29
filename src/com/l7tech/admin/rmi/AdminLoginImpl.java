@@ -4,21 +4,24 @@
 package com.l7tech.admin.rmi;
 
 import com.l7tech.admin.AdminContext;
+import com.l7tech.admin.AdminContextBean;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
-import com.l7tech.admin.AdminContextBean;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
-import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.spring.remoting.RemoteUtils;
-
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -30,10 +33,7 @@ import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,6 +50,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
     private final List adminGroups = Arrays.asList(new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
+    private RoleManager roleManager;
     private X509Certificate serverCertificate;
 
     public AdminLoginResult login(String username, String password)
@@ -67,12 +68,21 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             }
             User user = authResult.getUser();
 
-            String[] roles = getUserRoles(user);
-            if (!containsAdminAccessRole(roles)) {
-                throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
+            boolean ok = false;
+            // TODO is holding any CRUD permission sufficient?
+            Collection<Role> roles = roleManager.getAssignedRoles(user);
+            for (Role role : roles) {
+                for (Permission perm : role.getPermissions()) {
+                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.OTHER) {
+                        ok = true;
+                    }
+                }
             }
 
-            logger.info("User '" + user.getLogin() + "' with role '" + getHighestRole(roles) + "' logged in from IP '" +
+            if (!ok) throw new AccessControlException(user.getName() +
+                    " does not have privilege to access administrative services");
+
+            logger.info("User '" + user.getLogin() + "' with roles '" + roles + "' logged in from IP '" +
                     RemoteUtils.getClientHost() + "'.");
 
             AdminContext adminContext = new AdminContextBean(
@@ -81,11 +91,11 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
                         BuildInfo.getProductVersion());
 
 
-            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, getHighestRoleName(roles)));
+            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, roles.toString()));
 
             String cookie = sessionManager.createSession(user);
 
-            return new AdminLoginResult(adminContext, cookie);
+            return new AdminLoginResult(user, adminContext, cookie);
         } catch (ServerNotActiveException snae) {
             logger.log(Level.FINE, "Authentication failed", snae);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(snae);
@@ -99,6 +109,10 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
         }
+    }
+
+    public void setRoleManager(RoleManager roleManager) {
+        this.roleManager = roleManager;
     }
 
     public void setAdminSessionManager(AdminSessionManager sessionManager) {
@@ -178,31 +192,6 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
     public void setServerCertificate(X509Certificate serverCertificate) {
         this.serverCertificate = serverCertificate;
     }
-
-    private String getHighestRole(String[] roles) {
-        List aRoles = Arrays.asList(roles);
-        if (aRoles.contains(Group.ADMIN_GROUP_NAME)) {
-            return "Gateway Administrator";
-        }
-        if (aRoles.contains(Group.OPERATOR_GROUP_NAME)) {
-            return "Gateway Operator";
-        }
-
-        return "Unknown administrative role";
-    }
-
-    private String getHighestRoleName(String[] roles) {
-        List aRoles = Arrays.asList(roles);
-        if (aRoles.contains(Group.ADMIN_GROUP_NAME)) {
-            return Group.ADMIN_GROUP_NAME;
-        }
-        if (aRoles.contains(Group.OPERATOR_GROUP_NAME)) {
-            return Group.OPERATOR_GROUP_NAME;
-        }
-
-        return null;
-    }
-
 
     public void afterPropertiesSet() throws Exception {
         checkidentityProviderConfigManager();

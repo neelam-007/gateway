@@ -6,7 +6,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.admin.AccessManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.TrustedCert;
@@ -33,7 +32,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class TrustedCertAdminImpl implements TrustedCertAdmin {
-    private final AccessManager accessManager;
     private final X509Certificate rootCertificate;
     private final X509Certificate sslCertificate;
     private final LicenseManager licenseManager;
@@ -41,16 +39,11 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
                                 X509Certificate rootCertificate,
                                 X509Certificate sslCertificate,
-                                AccessManager accessManager,
                                 LicenseManager licenseManager)
     {
         this.trustedCertManager = trustedCertManager;
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("trusted cert manager is required");
-        }
-        this.accessManager = accessManager;
-        if (accessManager == null) {
-            throw new IllegalArgumentException("Access Manager is required");
         }
         this.rootCertificate = rootCertificate;
         if (rootCertificate == null) {
@@ -89,7 +82,6 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     }
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
-        accessManager.enforceAdminRole();
         checkLicense();
         long oid;
         if (cert.getOid() == Entity.DEFAULT_OID) {
@@ -114,7 +106,6 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     }
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
-        accessManager.enforceAdminRole();
         checkLicense();
         getManager().delete(oid);
     }

@@ -4,11 +4,13 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,12 +30,12 @@ public class AddOneOrMoreAssertionAction extends SecureAction {
     /**
      * @param n the assertion tree node must be composite
      */
-    public AddOneOrMoreAssertionAction(AssertionTreeNode n) {
+    public AddOneOrMoreAssertionAction(AssertionTreeNode n) throws RemoteException, FindException {
         this(n, 0);
     }
 
     public AddOneOrMoreAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
-        super(true, OneOrMoreAssertion.class);
+        super(null, OneOrMoreAssertion.class);
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }

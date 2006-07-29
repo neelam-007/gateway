@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.CertManagerWindow;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -24,7 +23,7 @@ public class ManageCertificatesAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageCertificatesAction() {
-        super(true, LIC_AUTH_ASSERTIONS);
+        super(null, LIC_AUTH_ASSERTIONS);
     }
 
     /**
@@ -70,13 +69,4 @@ public class ManageCertificatesAction extends SecureAction {
 
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementation requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

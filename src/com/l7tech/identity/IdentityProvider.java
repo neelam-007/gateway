@@ -4,6 +4,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
 
@@ -48,9 +49,9 @@ public interface IdentityProvider {
      * searches for users and groups whose name match the pattern described in searchString
      * pattern may include wildcard such as * character
      */
-    Collection search(EntityType[] types, String searchString) throws FindException;
+    Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException;
 
-    Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException;
+    Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException;
 
     String getAuthRealm();
 

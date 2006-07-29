@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.identity.PersistentGroupManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.logging.Logger;
@@ -21,6 +23,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class InternalGroupManager extends PersistentGroupManager {
     public InternalGroupManager(IdentityProvider identityProvider) {
         super(identityProvider);
@@ -67,6 +70,7 @@ public class InternalGroupManager extends PersistentGroupManager {
         }
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public PersistentGroup cast(Group group) {
         InternalGroup imp;
         if ( group instanceof GroupBean ) {

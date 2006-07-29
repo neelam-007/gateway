@@ -55,6 +55,18 @@ public interface EntityManager<ET extends Entity, HT extends EntityHeader> {
      */
     public ET getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto;
 
+    ET findEntity(long l) throws FindException;
+
+    Class getImpClass();
+
+    Class getInterfaceClass();
+
+    EntityType getEntityType();
+
+    String getTableName();
+
+    ET findByUniqueName(String name) throws FindException;
+
     /** Holds information about a cached Entity. */
     static class CacheInfo<ET extends Entity> {
         ET entity;

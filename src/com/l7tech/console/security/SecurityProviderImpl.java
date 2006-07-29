@@ -19,6 +19,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.spring.remoting.http.SecureHttpClient;
@@ -36,11 +37,13 @@ import org.springframework.remoting.RemoteAccessException;
 import sun.security.x509.X500Name;
 
 import javax.security.auth.login.LoginException;
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
+import java.security.AccessController;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -109,6 +112,14 @@ public class SecurityProviderImpl extends SecurityProvider
 
 
             AdminLoginResult result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+            // Update the principal with the actual internal user
+            User user = result.getUser();
+
+            synchronized (SecurityProvider.class) {
+                Subject subject = Subject.getSubject(AccessController.getContext());
+                subject.getPrincipals().clear();
+                subject.getPrincipals().add(user);
+            }
 
             SecureHttpInvokerRequestExecutor secureInvoker =
                     (SecureHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");

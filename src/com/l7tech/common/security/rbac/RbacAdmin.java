@@ -5,6 +5,9 @@ package com.l7tech.common.security.rbac;
 
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import static com.l7tech.common.security.rbac.MethodStereotype.*;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -12,44 +15,55 @@ import java.util.Collection;
 /**
  * @author alex
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Secured(types=EntityType.RBAC_ROLE)
 public interface RbacAdmin {
 
     /**
      * Finds a collection of EntityHeaders for all {@link Role}s known to the SSG.
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
     Collection<Role> findAllRoles() throws FindException, RemoteException;
 
     /**
      * Returns the single Role with the specified OID, or null if no Role with the given OID exists.
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
     Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException;
 
     /**
      * The collection of Roles granted to the specified User.
      * @return the collection of Roles granted to the specified User.  Never null, may be empty.
-     * @param includeGroups <code>true</code> to include roles granted to groups of which the specified User is a member, <code>false</code> otherwise.
      */
-    Collection<Role> findRolesForUser(User user, boolean includeGroups) throws FindException, RemoteException;
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    Collection<Role> findRolesForUser(User user) throws FindException, RemoteException;
 
     /**
      * Saves the specified Role.
      * @return the OID of the role that was saved
      */
+    @Secured(stereotype=SAVE_OR_UPDATE)
     long saveRole(Role role) throws SaveException, RemoteException;
 
     /**
      * Grants the specified Role to the specified User.
      */
+    @Secured(stereotype=UPDATE)
     void addUserToRole(User user, Role role) throws UpdateException, RemoteException;
 
     /**
      * Drops the specified User from the specified Role.
      */
+    @Secured(stereotype=UPDATE)
     void removeUserFromRole(User user, Role role) throws UpdateException, RemoteException;
 
+    @Secured(stereotype=DELETE_ENTITY)
     void deleteRole(Role selectedRole) throws DeleteException, RemoteException;
 
-    Collection<User> findAssignedUsers(Role role) throws FindException, RemoteException;
-
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
     EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException;
 }

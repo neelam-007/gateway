@@ -1,13 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.Authorizer;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.GuiCertUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
@@ -91,9 +91,13 @@ public class CertPropertiesWindow extends JDialog {
             throw new IllegalStateException("Could not instantiate authorization provider");
         }
         final Subject subject = Subject.getSubject(AccessController.getContext());
-        editable = editable && authorizer.isSubjectInRole(subject, new String[]{Group.ADMIN_GROUP_NAME});
-
-
+        AttemptedOperation ao;
+        if (tc.getOid() == TrustedCert.DEFAULT_OID) {
+            ao = new AttemptedCreate(EntityType.TRUSTED_CERT);
+        } else {
+            ao = new AttemptedUpdate(EntityType.TRUSTED_CERT, tc);
+        }
+        editable = editable && authorizer.hasPermission(subject, ao);
         trustedCert = tc;
         initialize(editable, options);
         pack();
@@ -134,7 +138,7 @@ public class CertPropertiesWindow extends JDialog {
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
 
-                TrustedCert tc = null;
+                TrustedCert tc;
 
                 // create a new trusted cert
                 try {

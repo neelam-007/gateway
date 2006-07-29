@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.GatewayAuditWindow;
-import com.l7tech.identity.Group;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -19,7 +18,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayAuditWindow gatewayAuditWindow;
 
     public ViewGatewayAuditsAction() {
-        super(true);
+        super(null);
     }
 
     /**
@@ -54,16 +53,6 @@ public class ViewGatewayAuditsAction extends SecureAction {
         gaw.setVisible(true);
         gaw.setState(Frame.NORMAL);
         gaw.toFront();
-    }
-
-     /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
     }
 
 

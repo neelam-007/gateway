@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class ThroughputQuotaPropertiesAction extends SecureAction {
 
     public ThroughputQuotaPropertiesAction(ThroughputQuotaTreeNode subject) {
-        super(true, ThroughputQuota.class);
+        super(null, ThroughputQuota.class);
         this.subject = subject;
     }
 

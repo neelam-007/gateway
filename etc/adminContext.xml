@@ -88,16 +88,8 @@
 
     <!-- server side admin authorizer -->
     <bean id="authorizer" class="com.l7tech.server.identity.internal.InternalIdentityProviderAuthorizer">
-        <property name="identityProviderConfigManager">
-            <ref bean="identityProviderConfigManager"/>
-        </property>
-    </bean>
-
-    <!-- server side admin access manager -->
-    <bean id="accessManager" class="com.l7tech.admin.AccessManager">
-        <constructor-arg>
-            <ref bean="authorizer"/>
-        </constructor-arg>
+        <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
+        <property name="roleManager" ref="roleManager"/>
     </bean>
 
     <bean id="rmiRegistryInit" class="com.l7tech.spring.remoting.rmi.RmiRegistryInitializer">
@@ -219,25 +211,15 @@
 
     <!-- admin login servant -->
     <bean id="adminLogin" class="com.l7tech.admin.rmi.AdminLoginImpl">
-        <property name="identityProviderConfigManager">
-            <ref bean="identityProviderConfigManager"/>
-        </property>
-        <property name="identityProviderFactory">
-            <ref bean='identityProviderFactory'/>
-        </property>
-        <property name="serverCertificate">
-            <ref bean="sslKeystoreCertificate"/>
-        </property>
-        <property name="adminSessionManager">
-            <ref bean="adminSessionManager"/>
-        </property>
+        <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
+        <property name="identityProviderFactory" ref='identityProviderFactory'/>
+        <property name="serverCertificate" ref ="sslKeystoreCertificate"/>
+        <property name="adminSessionManager" ref="adminSessionManager"/>
+        <property name="roleManager" ref="roleManager"/>
     </bean>
 
     <!-- identity admin servant -->
     <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
-        <constructor-arg>
-            <ref bean="accessManager"/>
-        </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
@@ -257,9 +239,6 @@
 
     <!-- audit admin servant -->
     <bean id="auditAdmin" class="com.l7tech.server.audit.AuditAdminImpl">
-        <constructor-arg>
-            <ref bean="accessManager"/>
-        </constructor-arg>
         <property name="auditRecordManager">
             <ref bean="auditRecordManager"/>
         </property>
@@ -276,9 +255,6 @@
 
     <!-- service admin servant -->
     <bean id="serviceAdmin" class="com.l7tech.server.service.ServiceAdminImpl">
-        <constructor-arg>
-            <ref bean="accessManager"/>
-        </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
@@ -308,9 +284,6 @@
     <!-- schema admin servant -->
     <bean id="schemaAdmin" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
         <constructor-arg>
-            <ref bean="accessManager"/>
-        </constructor-arg>
-        <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
         <property name="schemaEntryManager">
@@ -320,9 +293,6 @@
 
     <!-- jms admin servant -->
     <bean id="jmsAdmin" class="com.l7tech.server.transport.jms.JmsAdminImpl">
-        <constructor-arg>
-            <ref bean="accessManager"/>
-        </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
@@ -344,9 +314,6 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="sslKeystoreCertificate"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="accessManager"/>
         </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>
@@ -376,9 +343,6 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="clusterPropertyManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="accessManager"/>
         </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>

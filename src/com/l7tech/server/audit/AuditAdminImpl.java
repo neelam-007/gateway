@@ -4,17 +4,16 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.admin.AccessManager;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.util.Background;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -42,7 +41,6 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
     private static Map downloadContexts = Collections.synchronizedMap(new HashMap());
 
-    private final AccessManager accessManager;
     private AuditRecordManager auditRecordManager;
     private LogRecordManager logRecordManager;
     private ApplicationContext applicationContext;
@@ -65,10 +63,6 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
 
     static {
         Background.scheduleRepeated(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
-    }
-
-    public AuditAdminImpl(AccessManager accessManager) {
-        this.accessManager = accessManager;
     }
 
     public void setAuditRecordManager(AuditRecordManager auditRecordManager) {
@@ -96,7 +90,6 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     }
 
     public void deleteOldAuditRecords() throws RemoteException, DeleteException {
-        accessManager.enforceAdminRole();
         auditRecordManager.deleteOldAuditRecords();
     }
 
@@ -241,7 +234,6 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     }
 
     public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
-        accessManager.enforceAdminRole();
         try {
             final DownloadContext downloadContext;
             downloadContext = new DownloadContext(0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());

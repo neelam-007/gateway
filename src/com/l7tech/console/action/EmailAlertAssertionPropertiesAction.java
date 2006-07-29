@@ -16,7 +16,7 @@ import java.util.logging.Level;
  */
 public class EmailAlertAssertionPropertiesAction extends SecureAction {
     public EmailAlertAssertionPropertiesAction(EmailAlertAssertionTreeNode subject) {
-        super(true, EmailAlertAssertion.class);
+        super(null, EmailAlertAssertion.class);
         this.subject = subject;
     }
 

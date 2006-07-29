@@ -25,7 +25,7 @@ import java.util.logging.Level;
  */
 public class TimeRangePropertiesAction extends SecureAction {
     public TimeRangePropertiesAction(TimeRangeTreeNode subject) {
-        super(true, TimeRange.class);
+        super(null, TimeRange.class);
         this.subject = subject;
     }
 

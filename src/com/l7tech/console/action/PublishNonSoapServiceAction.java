@@ -1,23 +1,23 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.PublishNonSoapServiceWizard;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.panels.PublishNonSoapServiceWizard;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
 
 /**
@@ -31,7 +31,7 @@ import java.util.logging.Level;
  */
 public class PublishNonSoapServiceAction extends SecureAction {
     public PublishNonSoapServiceAction() {
-        super(true, SchemaValidation.class);
+        super(null, SchemaValidation.class);
     }
 
     public String getName() {

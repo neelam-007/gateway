@@ -17,7 +17,7 @@ import com.l7tech.common.gui.util.Utilities;
  */
 public class ManageClusterPropertiesAction extends SecureAction {
     public ManageClusterPropertiesAction() {
-        super(true);
+        super(null);
     }
 
     public String getName() {

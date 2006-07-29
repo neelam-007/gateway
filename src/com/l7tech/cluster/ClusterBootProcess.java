@@ -73,7 +73,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
                 }
 
                 if (multicastAddress == null) {
-                    multicastAddress = ClusterInfoManager.generateMulticastAddress();
+                    multicastAddress = ClusterInfoManagerImpl.generateMulticastAddress();
                     myInfo.setMulticastAddress(multicastAddress);
                     clusterInfoManager.updateSelfStatus(myInfo);
                 }

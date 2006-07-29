@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.ClusterStatusWindow;
-import com.l7tech.identity.Group;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -21,7 +20,7 @@ public class ViewClusterStatusAction extends SecureAction {
     private ClusterStatusWindow clusterStatusWindow;
 
     public ViewClusterStatusAction() {
-        super(true);
+        super(null);
     }
 
     /**
@@ -56,16 +55,6 @@ public class ViewClusterStatusAction extends SecureAction {
         csw.setVisible(true);
         csw.setState(Frame.NORMAL);
         csw.toFront();
-    }
-
-     /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
     }
 
 

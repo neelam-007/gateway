@@ -30,7 +30,7 @@ public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
-        super(true, LIC_AUTH_ASSERTIONS);
+        super(null);
     }
 
     /**

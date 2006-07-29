@@ -3,11 +3,12 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.User;
-import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.security.rbac.UserRoleAssignment;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 
@@ -25,7 +26,10 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
 
     void assignUser(Role role, User user) throws UpdateException;
 
-    boolean isPermittedOperation(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException;
+    boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException;
 
     void deleteAssignment(User user, Role role) throws UpdateException;
+
+    @Transactional(readOnly=true)
+    boolean isPermittedForAllEntities(User user, com.l7tech.common.security.rbac.EntityType type, OperationType operation) throws FindException;
 }

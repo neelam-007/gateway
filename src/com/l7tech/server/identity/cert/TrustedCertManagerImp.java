@@ -15,8 +15,9 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -33,12 +34,14 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedCertManagerImp
         extends HibernateEntityManager<TrustedCert, EntityHeader>
         implements TrustedCertManager
 {
     private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());
-    
+
+    @Transactional(readOnly=true)
     public TrustedCert findBySubjectDn(String dn) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
@@ -59,6 +62,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Transactional(readOnly=true)
     public List findByThumbprint(String thumbprint) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
@@ -77,6 +81,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Transactional(readOnly=true)
     public List findBySki(String ski) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
@@ -141,6 +146,7 @@ public class TrustedCertManagerImp
      * @param serverCertChain the certificate chain
      * @throws CertificateException
      */
+    @Transactional(readOnly=true)
     public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
         String subjectDn = serverCertChain[0].getSubjectDN().getName();
         String issuerDn = serverCertChain[0].getIssuerDN().getName();
@@ -208,6 +214,7 @@ public class TrustedCertManagerImp
         return EntityType.TRUSTED_CERT;
     }
 
+    @Transactional(readOnly=true)
     public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException {
         Sync read = cacheLock.readLock();
         Sync write = cacheLock.writeLock();
@@ -240,6 +247,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Transactional(readOnly=true)
     public TrustedCert getCachedCertByOid(long o, int maxAge) throws FindException, IOException, CertificateException {
         try {
             return getCachedEntity(o, maxAge);
@@ -278,10 +286,6 @@ public class TrustedCertManagerImp
         logger.log(e.getSeverity(), msg);
     }
 
-    public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
     protected void initDao() throws Exception {
         if (transactionManager == null) {
             throw new IllegalArgumentException("Transaction Manager is required");
@@ -309,5 +313,4 @@ public class TrustedCertManagerImp
 
     private Map<String, Long> dnToOid = new HashMap<String, Long>();
     private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
-    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
 }

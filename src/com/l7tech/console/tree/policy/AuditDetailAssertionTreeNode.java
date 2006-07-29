@@ -68,7 +68,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new SecureAction(true, AuditAssertion.class) {
+        return new SecureAction(null, AuditAssertion.class) {
             public String getName() {
                 return "Audit Detail Properties";
             }

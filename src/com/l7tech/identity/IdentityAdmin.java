@@ -1,11 +1,14 @@
 package com.l7tech.identity;
 
+import static com.l7tech.common.security.rbac.EntityType.*;
+import static com.l7tech.common.security.rbac.MethodStereotype.*;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.Subject;
 import java.rmi.RemoteException;
-import java.security.AccessControlException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Set;
@@ -18,12 +21,15 @@ import java.util.Set;
  * @see EntityHeader
  * @see Entity
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Secured
 public interface IdentityAdmin {
     /**
      * Retrieve the server admin protocol version string.
      *
      * @return the server admin protocol version string, ie "20040603".  Never null
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     String echoVersion() throws RemoteException;
 
     /**
@@ -35,6 +41,8 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=FIND_HEADERS)
     EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException;
 
     /**
@@ -48,6 +56,8 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=FIND_BY_PRIMARY_KEY)
     IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws RemoteException, FindException;
 
     /**
@@ -58,6 +68,7 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     LdapIdentityProviderConfig[] getLdapTemplates() throws RemoteException, FindException;
 
     /**
@@ -71,6 +82,7 @@ public interface IdentityAdmin {
      * @throws UpdateException if the requested information could not be updated
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype= SAVE_OR_UPDATE)
     long saveIdentityProviderConfig(IdentityProviderConfig cfg)
       throws RemoteException, SaveException, UpdateException;
 
@@ -82,6 +94,7 @@ public interface IdentityAdmin {
      * @throws DeleteException if the requested object ID did not exist
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=DELETE_BY_OID)
     void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException;
 
     /**
@@ -94,6 +107,8 @@ public interface IdentityAdmin {
      * @throws FindException if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=USER, stereotype=FIND_HEADERS)
     EntityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException;
 
     /**
@@ -114,6 +129,8 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types={USER, GROUP}, stereotype=FIND_HEADERS)
     EntityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
       throws RemoteException, FindException;
 
@@ -126,6 +143,8 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=USER, stereotype=FIND_BY_PRIMARY_KEY)
     User findUserByID(long idProvCfgId, String userId)
       throws RemoteException, FindException;
 
@@ -138,6 +157,8 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=USER, stereotype= FIND_ENTITY_BY_ATTRIBUTE)
     User findUserByLogin(long idProvCfgId, String login)
       throws RemoteException, FindException;
 
@@ -151,6 +172,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=USER, stereotype= DELETE_BY_OID)
     void deleteUser(long idProvCfgId, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -177,6 +199,7 @@ public interface IdentityAdmin {
      *                                  unique identifier exists in the specified identity provider.
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=USER, stereotype= SAVE_OR_UPDATE)
     String saveUser(long idProvCfgId, User user, Set groupHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
@@ -190,6 +213,8 @@ public interface IdentityAdmin {
      * @throws FindException if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=GROUP, stereotype= FIND_HEADERS)
     EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
 
     /**
@@ -202,6 +227,8 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=GROUP, stereotype= FIND_BY_PRIMARY_KEY)
     Group findGroupByID(long idProvCfgId, String groupId)
       throws RemoteException, FindException;
 
@@ -215,6 +242,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=GROUP, stereotype= DELETE_BY_OID)
     void deleteGroup(long idProvCfgId, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -241,6 +269,7 @@ public interface IdentityAdmin {
      *                                  unique identifier exists in the specified identity provider.
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=GROUP, stereotype= SAVE_OR_UPDATE)
     String saveGroup(long idProvCfgId, Group group, Set userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
@@ -256,6 +285,8 @@ public interface IdentityAdmin {
      * @throws FindException if the requested information could not be accessed
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=USER, stereotype=GET_PROPERTY_OF_ENTITY)
     String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException;
 
     /**
@@ -272,6 +303,7 @@ public interface IdentityAdmin {
      * @throws UpdateException if there was a problem updating the database
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=USER, stereotype=SET_PROPERTY_OF_ENTITY)
     void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException;
 
     /**
@@ -287,6 +319,7 @@ public interface IdentityAdmin {
      * @throws UpdateException if there was a problem updating the database
      * @throws RemoteException on remote communication error
      */
+    @Secured(types=USER, stereotype=SET_PROPERTY_OF_ENTITY)
     void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException;
 
     /**
@@ -313,6 +346,8 @@ public interface IdentityAdmin {
      * @throws FindException if the specified information could not be accessed
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=USER, stereotype=GET_PROPERTY_BY_OID)
     Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException;
 
     /**
@@ -325,18 +360,8 @@ public interface IdentityAdmin {
      * @throws FindException if the specified information could not be accessed
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=GROUP, stereotype=GET_PROPERTY_BY_OID)
     Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
 
-    /**
-     * Determine the roles for the given subject.
-     *
-     * @param subject the subject whose roles to get
-     * @return the <code>Set</code> of roles (groups) of which the subject is a member
-     * @throws AccessControlException if the current subject is not allowed to perform the operation.
-     *                                The invocation tests whether the current subject  (the subject carrying out the operaton)
-     *                                has privileges to perform the operation. The operators are not allowed to perform this operation
-     *                                except for themselves.
-     * @throws RemoteException on remote communication error
-     */
-    Set getRoles(Subject subject) throws RemoteException, AccessControlException;
 }

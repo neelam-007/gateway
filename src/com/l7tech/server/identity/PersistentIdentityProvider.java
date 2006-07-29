@@ -13,6 +13,7 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
@@ -33,22 +34,22 @@ public abstract class PersistentIdentityProvider implements IdentityProvider, In
      * todo: (once we dont use hibernate?) replace this by one union sql query and have the results sorted
      * instead of sorting in collection.
      */
-    public Collection search(EntityType[] types, String searchString) throws FindException {
+    public Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
         if (types == null || types.length < 1) throw new IllegalArgumentException("must pass at least one type");
         boolean wantUsers = false;
         boolean wantGroups = false;
-        for (int i = 0; i < types.length; i++) {
-            if (types[i] == EntityType.USER) wantUsers = true;
-            else if (types[i] == EntityType.GROUP) wantGroups = true;
+        for (EntityType type : types) {
+            if (type == EntityType.USER) wantUsers = true;
+            else if (type == EntityType.GROUP) wantGroups = true;
         }
         if (!wantUsers && !wantGroups) throw new IllegalArgumentException("types must contain users and or groups");
-        Collection searchResults = new TreeSet(new EntityHeaderComparator());
+        Collection<IdentityHeader> searchResults = new TreeSet<IdentityHeader>(new EntityHeaderComparator());
         if (wantUsers) searchResults.addAll(getUserManager().search(searchString));
         if (wantGroups) searchResults.addAll(getGroupManager().search(searchString));
         return searchResults;
     }
 
-    public Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+    public Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
         throw new UnsupportedOperationException();
     }
 

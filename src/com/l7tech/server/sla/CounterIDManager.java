@@ -12,6 +12,8 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SaveException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,6 +27,7 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class CounterIDManager extends HibernateDaoSupport {
     /**
      * key: string [countername+providerid+userid]
@@ -62,6 +65,7 @@ public class CounterIDManager extends HibernateDaoSupport {
         }
     }
 
+    @Transactional(readOnly=true)
     public String[] getDistinctCounterNames() throws FindException {
         String query = "SELECT DISTINCT " + TABLE_NAME + ".counterName FROM " +
                        TABLE_NAME + " in class " + CounterIDRecord.class.getName();

@@ -1,10 +1,14 @@
 package com.l7tech.service;
 
-import java.io.Serializable;
+import com.l7tech.objectmodel.imp.EntityImp;
+
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A statistical bin for collecting service metrics. Conceptually, a bin has
@@ -23,7 +27,7 @@ import java.util.logging.Level;
  *
  * @author rmak
  */
-public class MetricsBin implements Serializable, Comparable {
+public class MetricsBin extends EntityImp implements Comparable {
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is fine resolution */
     public static final int RES_FINE = 0;
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is hourly resolution */

@@ -20,7 +20,7 @@ public class ShowDashboardAction extends SecureAction {
     private DashboardWindow dashboardWindow;
 
     public ShowDashboardAction() {
-        super(true);
+        super(null);
     }
 
     public String getName() {

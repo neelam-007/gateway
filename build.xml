@@ -680,6 +680,7 @@
             <zipfileset dir="${src.root}/etc" includes="webApplicationContext.xml" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/etc" includes="dataAccessContext.xml" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/etc" includes="adminContext.xml" prefix="WEB-INF"/>
+            <zipfileset dir="${src.root}/etc" includes="rbacEnforcementContext.xml" prefix="WEB-INF"/>
 
             <!-- AdminWS stuff -->
             <zipfileset dir="${src.root}/etc/admin/ws/xfire" prefix="WEB-INF">
@@ -1512,6 +1513,7 @@
             <exclude name="com/l7tech/common/Authorizer.java"/>
             <exclude name="com/l7tech/common/http/cache/**/*.java"/>
 	        <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
+            <exclude name="com/l7tech/common/security/kerberos/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
             <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>

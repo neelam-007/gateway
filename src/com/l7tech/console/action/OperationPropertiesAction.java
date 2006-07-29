@@ -29,7 +29,7 @@ public class OperationPropertiesAction extends SecureAction {
     private final OperationTreeNode subject;
 
     public OperationPropertiesAction(OperationTreeNode subject) {
-        super(true, Operation.class);
+        super(null, Operation.class);
         this.subject = subject;
     }
 

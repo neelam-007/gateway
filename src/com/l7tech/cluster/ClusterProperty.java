@@ -6,11 +6,7 @@
  */
 package com.l7tech.cluster;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.ServerConfig;
 
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
@@ -22,7 +18,14 @@ public class ClusterProperty extends NamedEntityImp {
     private static final long serialVersionUID = -5971674585207716765L;
 
     private String value;
-    private String description;
+    private transient String description;
+
+    public ClusterProperty() { }
+
+    public ClusterProperty(String name, String value) {
+        this._name = name;
+        this.value = value;
+    }
 
     public String getValue() {
         return value;
@@ -33,15 +36,11 @@ public class ClusterProperty extends NamedEntityImp {
     }
 
     public String getDescription() {
-        if(description==null) {
-            ServerConfig sc = ServerConfig.getInstance();
-            String serverPropName = sc.getNameFromClusterName(getName());
-            if(serverPropName!=null) {
-                description = sc.getPropertyDescription(serverPropName);
-            }
-            if(description==null) description = "";
-        }
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     /** @return true if this property should be hidden in the cluster property GUI. */
@@ -67,8 +66,4 @@ public class ClusterProperty extends NamedEntityImp {
         return result;
     }
 
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        getDescription();
-        out.defaultWriteObject();
-    }
 }

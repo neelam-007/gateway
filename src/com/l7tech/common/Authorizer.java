@@ -5,12 +5,11 @@
  */
 package com.l7tech.common;
 
-import com.l7tech.identity.Group;
-import com.l7tech.objectmodel.ObjectPermission;
+import com.l7tech.common.security.rbac.*;
+import com.l7tech.objectmodel.Entity;
 
 import javax.security.auth.Subject;
-import java.security.Permission;
-import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -24,47 +23,41 @@ import java.util.logging.Logger;
 public abstract class Authorizer {
     private static final Logger logger = Logger.getLogger(Authorizer.class.getName());
 
+    public boolean hasPermission(Subject subject, AttemptedOperation attempted) {
+        Collection<Role> roles = getUserRoles(subject);
+        if (roles == null || roles.isEmpty()) return false;
 
-    /**
-     * Determines whether an subject belongs to the specified Role (group).
-     *
-     * @param subject the subject to test
-     * @param roles   the string array of role names
-     * @return true if the subject, belongs to one of the the specified roles,
-     *         false, otherwise.
-     */
-    public boolean isSubjectInRole(Subject subject, String[] roles) {
-        Set principalGroups = getUserRoles(subject);
-        for (int i = 0; i < roles.length; i++) {
-            String role = roles[i];
-            if (principalGroups.contains(role)) {
-                return true;
+        for (Role role : roles) {
+            perms: for (com.l7tech.common.security.rbac.Permission perm : role.getPermissions()) {
+                if (perm.getEntityType() != EntityType.ANY && perm.getEntityType() != attempted.getType()) continue perms;
+                if (perm.getOperation() != attempted.getOperation()) continue perms;
+
+                if (attempted instanceof AttemptedEntityOperation) {
+                    AttemptedEntityOperation aeo = (AttemptedEntityOperation) attempted;
+                    Entity ent = aeo.getEntity();
+                    if (perm.matches(ent)) return true;
+                } else if (attempted instanceof AttemptedCreate) {
+                    // CREATE doesn't support any scope yet, only a type
+                    return true;
+                } else if (attempted instanceof AttemptedRead) {
+                    // Permission grants read access to anything with matching type
+                    if (perm.getScope() == null || perm.getScope().size() == 0) return true;
+
+                    AttemptedRead read = (AttemptedRead) attempted;
+                    if (read.getOid() != Entity.DEFAULT_OID) {
+                        if (perm.getScope().size() == 1) {
+                            ScopePredicate pred = perm.getScope().iterator().next();
+                            if (pred instanceof ObjectIdentityPredicate) {
+                                ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
+                                if (oip.getTargetEntityOid() == read.getOid()) {
+                                    // Permission is granted to read this object
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        }
-        return false;
-
-    }
-
-    /**
-     * Test whether a given subject has a permission. Only the <code>ObjectPermission</code>
-     * are supported currently
-     *
-     * @param subject    the subject to test
-     * @param permission the permission to test - <code>ObjectPermission</code> containing the
-     *                   target object and the desired action
-     * @return true if the target object allows access described by permission, false otherwise
-     */
-    public boolean hasPermission(Subject subject, Permission permission) {
-        if (!(permission instanceof ObjectPermission)) {
-            logger.warning("Unknown permission " + permission.getClass());
-            return false;
-        }
-        // simple admin/operator group check for now, may grwo into acl
-        ObjectPermission ep = (ObjectPermission)permission;
-        if (ep.getMask() == ObjectPermission.READ) {
-            return isSubjectInRole(subject, new String[]{Group.OPERATOR_GROUP_NAME, Group.ADMIN_GROUP_NAME});
-        } else if ((ep.getMask() & ObjectPermission.ALL) > ObjectPermission.READ) {
-            return isSubjectInRole(subject, new String[]{Group.ADMIN_GROUP_NAME});
         }
         return false;
     }
@@ -76,5 +69,5 @@ public abstract class Authorizer {
      * @return the set of user roles for the given subject
      * @throws RuntimeException on error retrieving user roles
      */
-    public abstract Set getUserRoles(Subject subject) throws RuntimeException;
+    public abstract Collection<Role> getUserRoles(Subject subject) throws RuntimeException;
 }

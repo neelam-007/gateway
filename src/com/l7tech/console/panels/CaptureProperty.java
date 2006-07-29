@@ -6,6 +6,8 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.cluster.ClusterProperty;
+
 import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -27,18 +29,16 @@ public class CaptureProperty extends JDialog {
     private JButton okButton;
 
     private String description;
-    private String initialKey;
-    private String initialValue;
+    private final ClusterProperty property;
     private String title;
     private boolean oked = false;
     private Map propertyNamesToDescriptions;
 
-    public CaptureProperty(JDialog parent, String title, String description, String initialKey, String initialValue, Map suggestedValues) {
+    public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Map suggestedValues) {
         super(parent, true);
         this.title = title;
         this.description = description;
-        this.initialKey = initialKey;
-        this.initialValue = initialValue;
+        this.property = property;
         this.propertyNamesToDescriptions = suggestedValues;
         initialize();
     }
@@ -47,8 +47,8 @@ public class CaptureProperty extends JDialog {
         setContentPane(mainPanel);
         setTitle(title);
         descField.setText(description);
-        if(initialKey!=null) {
-            keyComboBox.setModel(new DefaultComboBoxModel(new String[]{initialKey}));
+        if(property.getName() != null) {
+            keyComboBox.setModel(new DefaultComboBoxModel(new String[]{property.getName()}));
             keyComboBox.setSelectedIndex(0);
             keyComboBox.setEnabled(false);
             keyComboBox.setEditable(false);
@@ -73,7 +73,7 @@ public class CaptureProperty extends JDialog {
                 itemListener.itemStateChanged(null); // init desc
             }
         }
-        valueField.setText(initialValue);
+        valueField.setText(property.getValue());
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -87,6 +87,8 @@ public class CaptureProperty extends JDialog {
                                                   "Invalid Property Key or Value",
                                                   JOptionPane.ERROR_MESSAGE);
                 } else {
+                    property.setName(newKey());
+                    property.setValue(newValue());
                     oked = true;
                     dispose();
                 }
@@ -96,6 +98,10 @@ public class CaptureProperty extends JDialog {
 
     public boolean wasOked() {
         return oked;
+    }
+
+    public ClusterProperty getProperty() {
+        return property;
     }
 
     public String newKey() {

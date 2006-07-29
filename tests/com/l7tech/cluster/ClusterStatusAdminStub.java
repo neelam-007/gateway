@@ -6,8 +6,8 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.service.MetricsBin;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.service.MetricsBin;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
@@ -120,11 +120,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         throw new UnsupportedOperationException();        
     }
 
-    public String getProperty(String key) throws RemoteException, FindException {
+    public ClusterProperty findPropertyByName(String key) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
+    public long saveProperty(ClusterProperty clusterProperty) throws RemoteException, SaveException, UpdateException, DeleteException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException, RemoteException {
         throw new UnsupportedOperationException();
     }
 

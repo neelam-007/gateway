@@ -1,12 +1,12 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.LicenseListener;
-import com.l7tech.identity.Group;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -33,27 +33,24 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
             Arrays.<Class<? extends Assertion>>asList(SpecificUser.class, MemberOfGroup.class);
 
     private final Set<String> assertionLicenseClassnames = new HashSet<String>();
-    private final boolean requiresAdmin;
+    private final AttemptedOperation attemptedOperation;
 
     /**
      * Create a SecureAction which may only be enabled if the user meets the admin requirement,
      * and which does not depend on any licensing feature to be enabled.
-     *
-     * @param requireAdmin  if true, action will be disabled unless current user is in Admin role
      */
-    protected SecureAction(boolean requireAdmin) {
-        this.requiresAdmin = requireAdmin;
+    protected SecureAction(AttemptedOperation attemptedOperation) {
+        this.attemptedOperation = attemptedOperation;
     }
 
     /**
      * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
      * and if the specified assertion license is enabled (if specified).
      *
-     * @param requireAdmin  if true, action will be disabled unless current user is in Admin role
      * @param requiredAssertionLicense  if non-null, action will be disabled unless the specified assertion is licensed
      */
-    protected SecureAction(boolean requireAdmin, Class<? extends Assertion> requiredAssertionLicense) {
-        this(requireAdmin);
+    protected SecureAction(AttemptedOperation attemptedOperation, Class<? extends Assertion> requiredAssertionLicense) {
+        this(attemptedOperation);
         if (requiredAssertionLicense != null)
             assertionLicenseClassnames.add(requiredAssertionLicense.getName());
         initLicenseListener();
@@ -63,11 +60,10 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
      * and if at least one of the specified assertion licenses is enabled.
      *
-     * @param requireAdmin
      * @param allowedAssertionLicenses
      */
-    protected SecureAction(boolean requireAdmin, Collection<Class<? extends Assertion>> allowedAssertionLicenses) {
-        this.requiresAdmin = requireAdmin;
+    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class<? extends Assertion>> allowedAssertionLicenses) {
+        this.attemptedOperation = attemptedOperation;
         if (allowedAssertionLicenses != null)
             for (Class<? extends Assertion> clazz : allowedAssertionLicenses)
                 assertionLicenseClassnames.add(clazz.getName());
@@ -87,7 +83,8 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      * @return true if the current subject is authorized, false otheriwse
      */
     public final boolean isAuthorized() {
-        return isInRole(requiredRoles());
+        if (attemptedOperation == null) return true;
+        return canAttemptOperation(attemptedOperation);
     }
 
     /**
@@ -105,22 +102,8 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
         return false;
     }
 
-    /**
-     * Determines whether the current subject belongs to the specified Role (group).
-     *
-     * @param roles the string array of role names
-     * @return true if the subject, belongs to one of the the specified roles,
-     *         false, otherwise.
-     */
-    public final boolean isInRole(String[] roles) {
-        if (!requiresAdmin)
-            return true;
-
-        final Subject subject = Subject.getSubject(AccessController.getContext());
-        if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
-            return false;
-        }
-        return getSecurityProvider().isSubjectInRole(subject, roles);
+    public final boolean canAttemptOperation(AttemptedOperation ao) {
+        return getSecurityProvider().hasPermission(Subject.getSubject(AccessController.getContext()), ao);
     }
 
     /**
@@ -175,17 +158,6 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     protected final SecurityProvider getSecurityProvider() {
         return Registry.getDefault().getSecurityProvider();
     }
-
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoin requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME};
-    }
-
 
     public void onLogon(LogonEvent e) {
         setEnabled(isAuthorized());

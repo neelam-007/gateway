@@ -6,13 +6,16 @@ import com.l7tech.objectmodel.UpdateException;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.FlushMode;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * Hibernate abstraction of the service_usage table.
@@ -26,6 +29,7 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ServiceUsageManager extends HibernateDaoSupport {
     private final String HQL_DELETE_BY_MAC =
             "from " + TABLE_NAME +
@@ -44,14 +48,25 @@ public class ServiceUsageManager extends HibernateDaoSupport {
      * retrieves all service usage recorded in database
      * @return a collection filled with ServiceUsage objects
      */
-    public Collection getAll() throws FindException {
+    @Transactional(readOnly=true)
+    public Collection<ServiceUsage> getAll() throws FindException {
+        Session session = null;
+        FlushMode old = null;
         try {
-            Session session = getSession();
-            return session.createQuery(HQL_FIND_ALL).list();
+            session = getSession();
+            old = session.getFlushMode();
+            session.setFlushMode(FlushMode.NEVER);
+            List list = session.createQuery(HQL_FIND_ALL).list();
+            Set<ServiceUsage> results = new HashSet<ServiceUsage>();
+            results.addAll(list);
+            return results;
         } catch (HibernateException e) {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
+        } finally {
+            if (session != null && old != null) session.setFlushMode(old);
+            releaseSession(session);
         }
     }
 
@@ -60,14 +75,23 @@ public class ServiceUsageManager extends HibernateDaoSupport {
      * @return
      * @throws FindException
      */
+    @Transactional(readOnly=true)
     public ServiceUsage[] findByServiceOid(long serviceOid) throws FindException {
+        Session s = null;
+        FlushMode old = null;
         try {
-            Query q = getSession().createQuery(HQL_FIND_BY_SERVICE);
+            s = getSession();
+            old = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_BY_SERVICE);
             q.setLong(0, serviceOid);
             List results = q.list();
             return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
         } catch (HibernateException e) {
             throw new FindException("Couldn't retrieve ServiceUsage", e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
+            releaseSession(s);
         }
     }
 
@@ -76,14 +100,7 @@ public class ServiceUsageManager extends HibernateDaoSupport {
      */
     public void record(ServiceUsage data) throws UpdateException {
         try {
-            Session session = getSession();
-            session.save(data);
-            //session.saveOrUpdate(data);
-            /*if (isAlreadyInDB(data)) {
-                session.update(data);
-            } else {
-                session.save(data);
-            }*/
+            getHibernateTemplate().save(data);
         } catch (HibernateException e) {
             String msg = "could not record this service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -94,14 +111,18 @@ public class ServiceUsageManager extends HibernateDaoSupport {
     /**
      * clears the table of existing entries for this server
      */
-    public void clear(String nodeid) throws DeleteException {
+    public void clear(final String nodeid) throws DeleteException {
         try {
-            Session session = getSession();
-            Query q = session.createQuery(HQL_DELETE_BY_MAC);
-            q.setString(0, nodeid);
-            for (Iterator i = q.iterate(); i.hasNext();) {
-                session.delete(i.next());
-            }
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_DELETE_BY_MAC);
+                    q.setString(0, nodeid);
+                    for (Iterator i = q.iterate(); i.hasNext();) {
+                        session.delete(i.next());
+                    }
+                    return null;
+                }
+            });
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, "error clearing table", e);
         }

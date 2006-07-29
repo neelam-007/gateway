@@ -1,7 +1,10 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.util.Collection;
 
@@ -13,8 +16,9 @@ public interface IdentityProviderConfigManager extends EntityManager<IdentityPro
     long INTERNALPROVIDER_SPECIAL_OID = -2;
 
     void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
-    void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
-    Collection findAllIdentityProviders() throws FindException;
+
+    Collection<IdentityProvider> findAllIdentityProviders() throws FindException;
+
     LdapIdentityProviderConfig[] getLdapTemplates() throws FindException;
 
     /**

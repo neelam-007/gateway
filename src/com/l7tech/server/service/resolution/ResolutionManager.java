@@ -5,6 +5,9 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.PublishedService;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Query;
@@ -12,6 +15,7 @@ import org.hibernate.Query;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * The ResolutionManager (actually its corresponding table) enforces the uniqueness of resolution
@@ -25,6 +29,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Nov 25, 2003<br/>
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ResolutionManager extends HibernateDaoSupport {
     private static final String HQL_FIND_BY_SERVICE_OID =
             "FROM sr IN CLASS " + ResolutionParameters.class.getName() +
@@ -65,8 +70,6 @@ public class ResolutionManager extends HibernateDaoSupport {
             throw new UpdateException(msg, e);
         }
 
-        Session session = getSession();
-
         // delete the resolution parameters that are no longer part of the new ones
         try {
             for (Iterator i = existingParameters.iterator(); i.hasNext();) {
@@ -76,7 +79,7 @@ public class ResolutionManager extends HibernateDaoSupport {
                     delete = false;
                 }
                 if (delete) {
-                    session.delete(maybeTodelete);
+                    getHibernateTemplate().delete(maybeTodelete);
                 }
             }
         } catch (HibernateException e) {
@@ -94,7 +97,7 @@ public class ResolutionManager extends HibernateDaoSupport {
                     add = false;
                 }
                 if (add) {
-                    session.save(maybeToAdd);
+                    getHibernateTemplate().save(maybeToAdd);
                 }
             }
             logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
@@ -108,19 +111,22 @@ public class ResolutionManager extends HibernateDaoSupport {
      *
      * @param serviceOid id of the service for which recorded resolution parameters will be recorded
      */
-    public void deleteResolutionParameters(long serviceOid) throws DeleteException {
-        Session session;
+    public void deleteResolutionParameters(final long serviceOid) throws DeleteException {
         try {
-            session = getSession();
-            Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
-            q.setLong(0, serviceOid);
-            int deleted = 0;
-            for (Iterator i = q.iterate(); i.hasNext();) {
-                session.delete(i.next());
-                deleted++;
-            }
-            logger.finest("deleted " + deleted + " resolution parameters.");
-        } catch (HibernateException e) {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
+                    q.setLong(0, serviceOid);
+                    int deleted = 0;
+                    for (Iterator i = q.iterate(); i.hasNext();) {
+                        session.delete(i.next());
+                        deleted++;
+                    }
+                    logger.finest("deleted " + deleted + " resolution parameters.");
+                    return null;
+                }
+            });
+        } catch (Exception e) {
             String msg = "error deleting resolution parameters with query " + HQL_FIND_BY_SERVICE_OID;
             logger.log(Level.WARNING, msg, e);
             throw new DeleteException(msg, e);
@@ -161,19 +167,19 @@ public class ResolutionManager extends HibernateDaoSupport {
         return listOfParameters;
     }
 
-    private Collection existingResolutionParameters(long serviceid) {
-
-        List hibResults;
+    private Collection existingResolutionParameters(final long serviceid) {
         try {
-            Query q = getSession().createQuery(HQL_FIND_BY_SERVICE_OID);
-            q.setLong(0, serviceid);
-            hibResults = q.list();
-        } catch (HibernateException e) {
-            hibResults = Collections.EMPTY_LIST;
+            return getHibernateTemplate().executeFind(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
+                    q.setLong(0, serviceid);
+                    return q.list();
+                }
+            });
+        } catch (Exception e) {
             logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
+            return Collections.emptyList();
         }
-
-        return hibResults;
     }
 
     /**
@@ -200,8 +206,7 @@ public class ResolutionManager extends HibernateDaoSupport {
       throws HibernateException, DuplicateObjectException {
 
         Set duplicates = new HashSet();
-        Query q = getSession().createQuery(HQL_FIND_ALL);
-        List results = q.list();
+        List results = getHibernateTemplate().find(HQL_FIND_ALL);
         for (Iterator ir = results.iterator(); ir.hasNext();) {
             ResolutionParameters rp = (ResolutionParameters)ir.next();
             for (Iterator ip = parameters.iterator(); ip.hasNext();) {

@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
+import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.ServiceNode;
@@ -13,7 +14,6 @@ import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -853,21 +853,25 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     }
                 };
             } else {
-                saveAction = new SavePolicyAction() {
-                    protected void performAction() {
-                        // fla, bugzilla 1094. all saves are now preceeded by a validation action
-                        if (!validating) {
-                            try {
-                                validating = true;
-                                String xml = fullValidate();
-                                this.node = rootAssertion;
-                                super.performAction(xml);
-                            } finally {
-                                validating = false;
+                try {
+                    saveAction = new SavePolicyAction() {
+                        protected void performAction() {
+                            // fla, bugzilla 1094. all saves are now preceeded by a validation action
+                            if (!validating) {
+                                try {
+                                    validating = true;
+                                    String xml = fullValidate();
+                                    this.node = rootAssertion;
+                                    super.performAction(xml);
+                                } finally {
+                                    validating = false;
+                                }
                             }
                         }
-                    }
-                };
+                    };
+                } catch (Exception e) {
+                    throw new RuntimeException("Couldn't get current PublishedService", e);
+                }
             }
         }
         return saveAction;
@@ -886,7 +890,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public Action getUDDIImportAction() {
-        return new SecureAction(true, SecureAction.LIC_AUTH_ASSERTIONS) {
+        return new SecureAction(null, SecureAction.LIC_AUTH_ASSERTIONS) {
 
             public String getName() {
                 return "Import From UDDI";

@@ -97,6 +97,9 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     public void setVisitorClassnames(String visitorClasses) {
     }
 
+    public void initiateServiceCache() {
+    }
+
     /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
@@ -200,7 +203,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
         Collection<EntityHeader> list = new ArrayList<EntityHeader>();
         int index = 0;
         int count = 0;
@@ -239,7 +242,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection findAll(int offset, int windowSize) throws FindException {
+    public Collection<PublishedService> findAll(int offset, int windowSize) throws FindException {
         Collection<PublishedService> list = new ArrayList<PublishedService>();
         int index = 0;
         int count = 0;
@@ -272,6 +275,35 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     public PublishedService getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
         return findByPrimaryKey(o);
     }
+
+    public PublishedService findByUniqueName(String name) throws FindException {
+        for (Map.Entry<Long, PublishedService> entry : services.entrySet()) {
+            PublishedService ps = entry.getValue();
+            if (ps != null && ps.getName().equals(name)) return ps;
+        }
+        return null;
+    }
+
+    public PublishedService findEntity(long l) throws FindException {
+        return findByPrimaryKey(l);
+    }
+
+    public Class getImpClass() {
+        return PublishedService.class;
+    }
+
+    public Class getInterfaceClass() {
+        return PublishedService.class;
+    }
+
+    public EntityType getEntityType() {
+        return EntityType.SERVICE;
+    }
+
+    public String getTableName() {
+        return "published_service";
+    }
+
 
     private EntityHeader fromService(PublishedService s) {
         return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);

@@ -4,10 +4,16 @@
 
 package com.l7tech.common.audit;
 
+import static com.l7tech.common.security.rbac.EntityType.AUDIT_RECORD;
+import static com.l7tech.common.security.rbac.MethodStereotype.*;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.GenericLogAdmin;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -20,6 +26,8 @@ import java.util.logging.Level;
  * Note that the API does not permit the modification of audit records in any way,
  * and only permits their deletion using a process that generates a permanent audit record.
  */
+@Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
+@Secured(types=AUDIT_RECORD)
 public interface AuditAdmin extends GenericLogAdmin {
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
@@ -28,6 +36,8 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws FindException if there was a problem retrieving Audit records from the database
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
     AuditRecord findByPrimaryKey(long oid) throws FindException, RemoteException;
 
     /**
@@ -36,6 +46,8 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws FindException if there was a problem retrieving Audit records from the database
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
     Collection find(AuditSearchCriteria criteria) throws FindException, RemoteException;
 
     /**
@@ -43,6 +55,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return the level currently applicable. Never null.
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(propagation=SUPPORTS)
     Level serverMessageAuditThreshold() throws RemoteException;
 
     /**
@@ -50,6 +63,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return the level currently applicable. Never null.
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(propagation=SUPPORTS)
     Level serverDetailAuditThreshold() throws RemoteException;
 
     /**
@@ -60,6 +74,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      *
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Secured(stereotype=DELETE_MULTI)
     void deleteOldAuditRecords() throws RemoteException, DeleteException;
 
     /**
@@ -68,6 +83,8 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return a OpaqueId for passing to downloadNextChunk().  never null.
      * @throws RemoteException if there is a problem preparing the download context.
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
     OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException;
 
     /** Represents a chunk of audits being downloaded. */
@@ -89,6 +106,8 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return the next {@link DownloadChunk}, or null if the last chunk has already been sent.
      * @throws RemoteException if there is a problem preparing the chunk.
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
     DownloadChunk downloadNextChunk(OpaqueId context) throws RemoteException;
 
     /**
@@ -96,5 +115,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return the minimum number of hours old that an AuditRecord must be before it can be purged.
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
+    @Transactional(propagation=SUPPORTS)
     int serverMinimumPurgeAge() throws RemoteException;
 }

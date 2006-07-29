@@ -15,7 +15,7 @@ import com.l7tech.common.gui.util.Utilities;
  */
 public class ManageClusterLicensesAction extends SecureAction {
     public ManageClusterLicensesAction() {
-        super(true);
+        super(null);
     }
 
     public String getName() {

@@ -15,7 +15,6 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -42,7 +41,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
         else {
             String groupName = _data.getGroupName();
             if ( groupName != null) {
-                return gman.findByName(groupName);
+                return gman.findByUniqueName(groupName);
             }
         }
         return null;

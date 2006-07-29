@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
@@ -9,7 +10,10 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.CertificateCheckInfo;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -21,21 +25,20 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.PolicyServiceEvent;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.cluster.ClusterPropertyManager;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -44,7 +47,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 
 
@@ -143,20 +148,20 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
                 }
                 catch (IllegalStateException ise) { // throw by policy getter on policy not found
-                    sendExceptionFault(context, ise, servletResponse, servletRequest);
+                    sendExceptionFault(context, ise, servletResponse);
                 }
 
                 if (context.getPolicyResult() != AssertionStatus.NONE) {
                     returnFault(context, servletResponse);
                 } else {
-                    Document responseDoc = null;
+                    Document responseDoc;
                     try {
                         responseDoc = response.getXmlKnob().getDocumentReadOnly();
                     } catch (SAXException e) {
-                        sendExceptionFault(context, e, servletResponse, servletRequest);
+                        sendExceptionFault(context, e, servletResponse);
                         return;
                     }  catch (IllegalStateException e) {
-                        sendExceptionFault(context, e, servletResponse, servletRequest);
+                        sendExceptionFault(context, e, servletResponse);
                         return;
                     }
                     outputPolicyDoc(servletResponse, responseDoc);
@@ -178,7 +183,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
-            sendExceptionFault(context, e, servletResponse, servletRequest);
+            sendExceptionFault(context, e, servletResponse);
         }
     }
 
@@ -259,11 +264,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         boolean isFullDoc = false;
         if (fullDoc != null && fullDoc.length() > 0) {
-            if ("yes".equals(fullDoc) || "Yes".equals(fullDoc) || "YES".equals(fullDoc)) {
-                isFullDoc = true;
-            } else {
-                isFullDoc = Boolean.parseBoolean(fullDoc);
-            }
+            isFullDoc = "yes".equals(fullDoc) || "Yes".equals(fullDoc) || "YES".equals(fullDoc) || Boolean.parseBoolean(fullDoc);
             logger.finest("Passed value for " + SecureSpanConstants.HttpQueryParameters.PARAM_FULLDOC + " was " + fullDoc);
             if (isFullDoc)
                 logger.finest("Will passthrough and return full policy document");
@@ -275,7 +276,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         // pass over to the service
         PolicyService service = getPolicyService();
-        Document response = null;
+        Document response;
         try {
             switch (results.length) {
                 case 0:
@@ -351,9 +352,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {
-            Collection checks = findCheckInfos(username, pemEncodedServerCertificate, nonce);
-            for (Iterator i = checks.iterator(); i.hasNext();) {
-                CertificateCheckInfo info = (CertificateCheckInfo)i.next();
+            Collection<CertificateCheckInfo> checks = findCheckInfos(username, pemEncodedServerCertificate, nonce);
+            for (CertificateCheckInfo info : checks) {
                 if (info != null) {
                     HttpHeader header = info.asHttpHeader();
                     response.addHeader(header.getName(), header.getFullValue());
@@ -385,13 +385,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * @throws com.l7tech.objectmodel.FindException
      *          if the ID Provider list could not be determined.
      */
-    private Collection findCheckInfos(String username, byte[] certBytes, String nonce) throws FindException {
-        ArrayList checkInfos = new ArrayList();
+    private Collection<CertificateCheckInfo> findCheckInfos(String username, byte[] certBytes, String nonce) throws FindException {
+        ArrayList<CertificateCheckInfo> checkInfos = new ArrayList<CertificateCheckInfo>();
         final String trimmedUsername = username.trim();
 
-        Collection idps = providerConfigManager.findAllIdentityProviders();
-        for (Iterator i = idps.iterator(); i.hasNext();) {
-            IdentityProvider provider = (IdentityProvider)i.next();
+        Collection<IdentityProvider> idps = providerConfigManager.findAllIdentityProviders();
+        for (IdentityProvider provider : idps) {
             try {
                 User user = provider.getUserManager().findByLogin(trimmedUsername);
                 if (user != null) {
@@ -457,7 +456,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private void returnFault(PolicyEnforcementContext context, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml = null;
+        String faultXml;
         try {
             responseStream = hresp.getOutputStream();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
@@ -484,9 +483,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     }
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
-                                    HttpServletResponse hresp, HttpServletRequest hreq) throws IOException {
+                                    HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml = null;
+        String faultXml;
         try {
             responseStream = hresp.getOutputStream();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);

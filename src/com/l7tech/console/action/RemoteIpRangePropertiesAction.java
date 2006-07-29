@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class RemoteIpRangePropertiesAction extends SecureAction {
 
     public RemoteIpRangePropertiesAction(RemoteIpRangeTreeNode subject) {
-        super(true, RemoteIpRange.class);
+        super(null, RemoteIpRange.class);
         this.subject = subject;
     }
 

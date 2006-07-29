@@ -18,7 +18,7 @@ public class MappingAssertionPropertiesAction extends SecureAction {
     private MappingAssertionPolicyNode subject;
 
     public MappingAssertionPropertiesAction(MappingAssertionPolicyNode subject) {
-        super(true, MappingAssertion.class);
+        super(null, MappingAssertion.class);
         this.subject = subject;
     }
     public String getName() {

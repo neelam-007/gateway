@@ -16,7 +16,7 @@ import java.util.logging.Level;
  */
 public class SnmpTrapAssertionPropertiesAction extends SecureAction {
     public SnmpTrapAssertionPropertiesAction(SnmpTrapAssertionTreeNode subject) {
-        super(true, SnmpTrapAssertion.class);
+        super(null, SnmpTrapAssertion.class);
         this.subject = subject;
     }
 

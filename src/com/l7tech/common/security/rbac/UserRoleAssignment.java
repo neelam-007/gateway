@@ -16,6 +16,7 @@ public class UserRoleAssignment extends EntityImp {
     private Role role;
 
     public UserRoleAssignment(Role role, long providerId, String userId) {
+        if (role == null) throw new NullPointerException();
         this.role = role;
         this.providerId = providerId;
         this.userId = userId;

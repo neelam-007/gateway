@@ -1,7 +1,7 @@
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;

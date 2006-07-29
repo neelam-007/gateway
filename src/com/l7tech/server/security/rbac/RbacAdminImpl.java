@@ -9,8 +9,8 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.GatewayFeatureSets;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -47,8 +47,8 @@ public class RbacAdminImpl implements RbacAdmin {
         return roleManager.findByPrimaryKey(oid);
     }
 
-    public Collection<Role> findRolesForUser(User user, boolean includeGroups) throws FindException, RemoteException {
-        checkLicense();
+    public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
+        // No license check--needed for SSM login
         return roleManager.getAssignedRoles(user);
     }
 
@@ -80,11 +80,6 @@ public class RbacAdminImpl implements RbacAdmin {
     public void removeUserFromRole(User user, Role role) throws UpdateException, RemoteException {
         checkLicense();
         roleManager.deleteAssignment(user, role);
-    }
-
-    public Collection<User> findAssignedUsers(Role role) throws FindException, RemoteException {
-        checkLicense();
-        return roleManager.getAssignedUsers(role);
     }
 
     public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {

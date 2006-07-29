@@ -11,7 +11,7 @@ package com.l7tech.console.action;
  */
 public class ExplainAssertionAction extends SecureAction {
     protected ExplainAssertionAction() {
-        super(true);
+        super(null);
     }
 
     /**

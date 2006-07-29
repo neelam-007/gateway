@@ -1,11 +1,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 
@@ -31,11 +31,11 @@ public class ImportPolicyFromFileAction extends SecureAction {
     protected PublishedService pubService;
 
     public ImportPolicyFromFileAction() {
-        super(true);
+        super(null);
     }
 
     public ImportPolicyFromFileAction(PublishedService svc) {
-        super(true);
+        super(null);
         if (svc == null) {
             throw new IllegalArgumentException();
         }

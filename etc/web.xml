@@ -13,6 +13,7 @@
             /WEB-INF/dataAccessContext.xml
             /WEB-INF/webApplicationContext.xml
             /WEB-INF/adminContext.xml
+            /WEB-INF/rbacEnforcementContext.xml
             classpath:org/codehaus/xfire/spring/xfire.xml
             /WEB-INF/CaWsdmObserverContext*.xml
         </param-value>

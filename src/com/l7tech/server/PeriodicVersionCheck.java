@@ -1,8 +1,8 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.HibernateEntityManager;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -29,9 +29,9 @@ public abstract class PeriodicVersionCheck extends TimerTask {
      * @param manager
      * @throws FindException
      */
-    public PeriodicVersionCheck(HibernateEntityManager manager) throws FindException {
-        _manager = manager;
-        _cachedVersionMap = manager.findVersionMap();
+    public PeriodicVersionCheck(EntityManager manager) throws FindException {
+        this.manager = manager;
+        cachedVersionMap = manager.findVersionMap();
     }
 
     /**
@@ -39,11 +39,11 @@ public abstract class PeriodicVersionCheck extends TimerTask {
      */
     public synchronized void run() {
 
-        Map dbversions = null;
+        Map<Long, Integer> dbversions;
 
         // get db versions
         try {
-            dbversions = _manager.findVersionMap();
+            dbversions = manager.findVersionMap();
         } catch (FindException e) {
             logger.log(Level.SEVERE, "error getting versions. " +
               "this version check is stopping prematurely", e);
@@ -51,22 +51,20 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         }
 
         // actual check logic
-        List updatesAndAdditions = new ArrayList();
-        List deletions = new ArrayList();
+        List<Long> updatesAndAdditions = new ArrayList<Long>();
+        List<Long> deletions = new ArrayList<Long>();
 
         // 1. check that all that is in db is present in cache and that version is same
-        for (Iterator i = dbversions.keySet().iterator(); i.hasNext();) {
-            Long oid = (Long)i.next();
-
+        for (Long oid : dbversions.keySet()) {
             // is it already in cache?
-            Integer cachedVersion = (Integer)_cachedVersionMap.get(oid);
+            Integer cachedVersion = cachedVersionMap.get(oid);
 
             if (cachedVersion == null) {
                 logger.fine("Entity " + oid + " is new.");
                 updatesAndAdditions.add(oid);
             } else {
                 // check actual version
-                Integer dbversion = (Integer)dbversions.get(oid);
+                Integer dbversion = dbversions.get(oid);
 
                 if (!dbversion.equals(cachedVersion)) {
                     updatesAndAdditions.add(oid);
@@ -76,8 +74,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         }
 
         // 2. check for things in cache not in db (deletions)
-        for (Iterator i = _cachedVersionMap.keySet().iterator(); i.hasNext();) {
-            Long oid = (Long)i.next();
+        for (Long oid : cachedVersionMap.keySet()) {
             if (dbversions.get(oid) == null) {
                 deletions.add(oid);
                 logger.fine("Entity " + oid + " has been deleted.");
@@ -88,49 +85,47 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
             // nothing to do. we're done
         } else {
-            for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
-                Long updatedOid = (Long)i.next();
-                Integer newVersion = (Integer)dbversions.get(updatedOid);
+            for (Long updatedOid : updatesAndAdditions) {
+                Integer newVersion = dbversions.get(updatedOid);
                 if (checkAddOrUpdate(updatedOid, newVersion)) {
-                    Entity updatedEntity = null;
+                    Entity updatedEntity;
                     try {
-                        updatedEntity = _manager.findEntity(updatedOid.longValue());
+                        updatedEntity = manager.findEntity(updatedOid.longValue());
                     } catch (FindException e) {
                         updatedEntity = null;
                         logger.log(Level.WARNING, "Entity that was updated or created " +
-                          "cannot be retrieved", e);
+                                "cannot be retrieved", e);
                     }
                     if (updatedEntity != null) {
                         addOrUpdate(updatedEntity);
                     } // otherwise, next version check shall delete this service from cache
                 }
             }
-            for (Iterator i = deletions.iterator(); i.hasNext();) {
-                Long key = (Long)i.next();
+            for (Long key : deletions) {
                 remove(key);
             }
         }
     }
 
     public void markObjectAsStale(Long oid) {
-        _cachedVersionMap.remove(oid);
+        cachedVersionMap.remove(oid);
     }
 
     private void remove(Long oid) {
-        _cachedVersionMap.remove(oid);
+        cachedVersionMap.remove(oid);
         onDelete(oid.longValue());
     }
 
     private boolean checkAddOrUpdate(Long oid, Integer version) {
         boolean loadEntity = preSave(oid.longValue(), version.intValue());
         if(!loadEntity) {
-            _cachedVersionMap.put(oid, version); // If not loading then update now
+            cachedVersionMap.put(oid, version); // If not loading then update now
         }
         return loadEntity;
     }
 
     private void addOrUpdate(Entity updatedEntity) {
-        _cachedVersionMap.put(new Long(updatedEntity.getOid()), new Integer(updatedEntity.getVersion()));
+        cachedVersionMap.put(new Long(updatedEntity.getOid()), new Integer(updatedEntity.getVersion()));
         onSave(updatedEntity);
     }
 
@@ -174,7 +169,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private HibernateEntityManager _manager;
-    private Map _cachedVersionMap;
+    private EntityManager manager;
+    private Map<Long, Integer> cachedVersionMap;
     private static final long DEFAULT_FREQUENCY = 4 * 1000;
 }

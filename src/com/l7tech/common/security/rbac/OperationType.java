@@ -9,7 +9,7 @@ package com.l7tech.common.security.rbac;
 public enum OperationType {
     CREATE("Create"),
     READ("Read"),
-    WRITE("Write"),
+    UPDATE("Write"),
     DELETE("Delete"),
     OTHER("<other>"),
     ;

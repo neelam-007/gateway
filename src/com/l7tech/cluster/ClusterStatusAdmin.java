@@ -2,11 +2,16 @@ package com.l7tech.cluster;
 
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.MethodStereotype;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.MetricsBin;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -16,6 +21,8 @@ import java.util.Map;
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
  */
+@Secured
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface ClusterStatusAdmin {
     /**
      * Get status for all nodes part of the cluster.
@@ -23,6 +30,8 @@ public interface ClusterStatusAdmin {
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
     ClusterNodeInfo[] getClusterStatus() throws RemoteException, FindException;
 
     /**
@@ -31,6 +40,8 @@ public interface ClusterStatusAdmin {
      * @throws RemoteException on remote communication error
      * @throws FindException if there was a server-side problem accessing the requested information
      */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.SERVICE_USAGE, stereotype=MethodStereotype.FIND_ENTITIES)
     ServiceUsage[] getServiceUsage() throws RemoteException, FindException;
 
     /**
@@ -42,6 +53,7 @@ public interface ClusterStatusAdmin {
      * @throws RemoteException on remote communication error
      * @throws UpdateException if there was a server-side problem updating the requested node
      */
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException;
 
     /**
@@ -56,6 +68,7 @@ public interface ClusterStatusAdmin {
      * @throws RemoteException on remote communication error
      * @throws DeleteException if there was a server-side problem deleting the requested node
      */
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.DELETE_BY_UNIQUE_ATTRIBUTE)
     void removeStaleNode(String nodeid) throws RemoteException, DeleteException;
 
     /**
@@ -64,6 +77,7 @@ public interface ClusterStatusAdmin {
      * @return java.util.Date  The current system time
      * @throws RemoteException on remote communication error
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     java.util.Date getCurrentClusterSystemTime() throws RemoteException;
 
     /**
@@ -78,7 +92,9 @@ public interface ClusterStatusAdmin {
      * get cluster wide properties
      * @return a list containing ClusterProperty objects (never null)
      */
-    Collection getAllProperties() throws RemoteException, FindException;
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITIES)
+    Collection<ClusterProperty> getAllProperties() throws RemoteException, FindException;
 
     /**
      * Get a map of all known cluster wide properties.
@@ -87,18 +103,26 @@ public interface ClusterStatusAdmin {
      *
      * @return a Map of names / descriptions
      */
+    @Transactional(readOnly=true)
     Map getKnownProperties() throws RemoteException;
 
     /**
      * get cluster wide property
      * @return may return null if the property is not set. will return the property value otherwise
      */
-    String getProperty(String key) throws RemoteException, FindException;
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
+    ClusterProperty findPropertyByName(String name) throws RemoteException, FindException;
 
     /**
      * set new value for the cluster-wide property. value set to null will delete the property from the table
+     * @param clusterProperty
      */
-    void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException;
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
+    long saveProperty(ClusterProperty clusterProperty) throws RemoteException, SaveException, UpdateException, DeleteException;
+
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.DELETE_ENTITY)
+    void deleteProperty(ClusterProperty clusterProperty) throws DeleteException, RemoteException;
 
     /**
      * Get the currently-installed License from the LicenseManager, if it possesses a valid license.
@@ -133,6 +157,7 @@ public interface ClusterStatusAdmin {
      * @throws InvalidLicenseException if the specified license XML was not valid.  The exception message explains the problem.
      * @throws UpdateException if the license was valid, but was not installed because of a database problem.
      */
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
     void installNewLicense(String newLicenseXml) throws RemoteException, UpdateException, InvalidLicenseException;
 
     /**
@@ -147,6 +172,8 @@ public interface ClusterStatusAdmin {
      * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} to find metrics for; null = any.
      * @return a List of {@link com.l7tech.service.MetricsBin} instances.
      */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
     List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart,
                          Integer resolution, Long serviceOid) throws RemoteException, FindException;
 
@@ -163,6 +190,8 @@ public interface ClusterStatusAdmin {
      * @return a {@link MetricsBin} summarizing the bins that fit the given
      *         criteria
      */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
     MetricsBin getLastestMetricsSummary(final String clusterNodeId,
                                         final Long serviceOid,
                                         final int resolution,
@@ -176,6 +205,7 @@ public interface ClusterStatusAdmin {
      * @param capability the capability to interrogate.  Must not be null.
      * @return a string describing the support for the requested capability, or null if the capability is not supported.
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     String getHardwareCapability(String capability);
 
     public static final String CAPABILITY_HWXPATH = "hardwareXpath";

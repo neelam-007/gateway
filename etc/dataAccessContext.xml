@@ -52,200 +52,106 @@
         </property>
     </bean>
 
-    <!--
-    The audit events hibernate interceptor
-    -->
+    <!-- The audit events hibernate interceptor -->
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
-    <!--
-    Transaction Interceptor set up to do PROPAGATION_REQUIRED on all methods
-    -->
-    <bean id="matchAllWithPropRequired" class="org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource">
-     <property name="transactionAttribute">
-         <value>PROPAGATION_REQUIRED, -Throwable, +com.l7tech.identity.AuthenticationException</value>
-     </property>
-    </bean>
-
-    <bean id="matchAllTxInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
-        <property name="transactionManager">
-            <ref local="transactionManager"/>
-        </property>
-        <property name="transactionAttributeSource">
-            <ref local="matchAllWithPropRequired"/>
-        </property>
-    </bean>
-
-    <!--
-    BeanNameAutoProxyCreator handles all beans methods to use PROPAGATION_REQUIRED
-    The beans listed do not require class proxiying and use JDK dynmic proxying.
-    -->
-    <bean id="autoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+    <!-- Transaction interception for beans that implement an interface -->
+    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="proxyTargetClass" value="false"/>
         <property name="interceptorNames">
             <list>
-                <idref local="matchAllTxInterceptor"/>
+                <idref bean="annotationTransactionInterceptor"/>
             </list>
         </property>
         <property name="beanNames">
             <list>
                 <idref bean="identityProviderConfigManager"/>
-                <!--
-                  Removed here for performance reasons because some methods can be non-transactional (see below)
-                  <idref bean="serviceManager"/>
-                -->
+                <idref bean="serviceManager"/>
                 <idref bean="trustedCertManager"/>
                 <idref bean="clientCertManager"/>
                 <idref bean="auditRecordManager"/>
                 <idref bean="statusUpdateManager"/>
-                <idref bean="roleManager"/>
-                <idref bean="rbacAdmin"/>
+                <idref bean="sampleMessageManager"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Transaction and RBAC interception for admin beans -->
+    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="proxyTargetClass" value="false"/>
+        <property name="interceptorNames">
+            <list>
+                <idref bean="annotationTransactionInterceptor"/>
+                <idref bean="rbacAdvisor"/>
+            </list>
+        </property>
+        <property name="beanNames">
+            <list>
                 <idref bean="serviceAdmin"/>
-                <idref bean="trustedCertAdmin"/>
                 <idref bean="auditAdmin"/>
                 <idref bean="identityAdmin"/>
                 <idref bean="jmsAdmin"/>
+                <idref bean="rbacAdmin"/>
+                <idref bean="schemaAdmin"/>
+                <idref bean="trustedCertAdmin"/>
+                <idref bean="kerberosAdmin"/>
                 <idref bean="clusterStatusAdmin"/>
             </list>
         </property>
     </bean>
 
-    <!--
-    Transactional wrapper for service manager, not all methods are transactional
-    -->
-    <bean id="serviceManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-        <property name="transactionManager">
-            <ref bean="transactionManager"/>
-        </property>
-        <property name="target">
-            <ref bean="serviceManagerTarget"/>
-        </property>
-        <property name="transactionAttributes">
-            <props>
-                <!-- These methods only deal with cached data, so we can improve performance by avoiding transactions -->
-                <prop key="getServerPolicy">PROPAGATION_SUPPORTS</prop>
-                <prop key="resolve">PROPAGATION_SUPPORTS</prop>
-                <prop key="getServiceStatistics">PROPAGATION_SUPPORTS</prop>
-                <prop key="getAllServiceStatistics">PROPAGATION_SUPPORTS</prop>
-                <!-- All other methods can be transactional -->
-                <prop key="*">PROPAGATION_REQUIRED,-Throwable</prop>
-            </props>
-        </property>
-    </bean>
 
-    <!--
-    Transactional wrapper for service metrics manager, not all methods are transactional
-    -->
-    <bean id="serviceMetricsManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-        <property name="transactionManager">
-            <ref bean="transactionManager"/>
-        </property>
-        <property name="target">
-            <ref bean="serviceMetricsManagerTarget"/>
-        </property>
-        <property name="proxyTargetClass">
-            <value>true</value>
-        </property>
-        <property name="transactionAttributes">
-            <props>
-                <!-- This method must be transactional -->
-                <prop key="findBins">PROPAGATION_REQUIRED,-Throwable</prop>
-
-                <!-- Everything else doesn't require transactions -->
-                <prop key="*">PROPAGATION_SUPPORTS</prop>
-            </props>
-        </property>
-    </bean>
-
-    <!--
-    BeanNameAutoProxyCreator with proxyTargetClass option handles all beans methods to use PROPAGATION_REQUIRED
-    -->
-    <bean id="autoProxyCreatorProxyTargetClass" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-        <property name="proxyTargetClass">
-            <value>true</value>
-        </property>
+    <!-- Transaction interception for beans that don't implement an interface -->
+    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="proxyTargetClass" value="true"/>
         <property name="interceptorNames">
             <list>
-                <idref local="matchAllTxInterceptor"/>
+                <idref bean="annotationTransactionInterceptor"/>
             </list>
         </property>
         <property name="beanNames">
             <list>
-                <idref bean="internalIdentityProvider"/>  <!-- TODO non-transactional methods -->
-                <idref bean="internalUserManager"/>       <!-- TODO non-transactional methods -->
-                <idref bean="internalGroupManager"/>      <!-- TODO non-transactional methods -->
-                <idref bean="federatedIdentityProvider"/> <!-- TODO non-transactional methods -->
-                <idref bean="federatedUserManager"/>      <!-- TODO non-transactional methods -->
-                <idref bean="federatedGroupManager"/>     <!-- TODO non-transactional methods -->
+                <idref bean="internalIdentityProvider"/>
+                <idref bean="internalUserManager"/>
+                <idref bean="internalGroupManager"/>
+
+                <idref bean="federatedIdentityProvider"/>
+                <idref bean="federatedUserManager"/>
+                <idref bean="federatedGroupManager"/>
+
                 <idref bean="resolutionManager"/>
-                <idref bean="clusterInfoManager"/>        <!-- TODO non-transactional methods -->
+                <idref bean="clusterInfoManager"/>
                 <idref bean="serviceUsageManager"/>
                 <idref bean="jmsEndpointManager"/>
                 <idref bean="jmsConnectionManager"/>
                 <idref bean="auditExporter"/>
-                <idref bean="counterIDManager"/>          <!-- TODO non-transactional methods -->
-                <idref bean="countedHitsManager"/>        <!-- TODO is this real? -->
-                <idref bean="sampleMessageManager"/>
+                <idref bean="counterIDManager"/>
                 <idref bean="entityFinder"/>
-
-                <!-- Identity mapping stuff -->
                 <idref bean="attributeConfigManager"/>
                 <idref bean="identityMappingManager"/>
                 <idref bean="securityTokenMappingManager"/>
+
+                <!--
+                The following are here, even though they both implement interfaces, because they're
+                passed as constructor-args to entityInvalidator, where they get downcast to
+                HibernateEntityManager.
+                -->
+                <idref bean="roleManager"/>
+                <idref bean="schemaEntryManager"/>
+
             </list>
         </property>
     </bean>
 
-    <!--
-    Transactional wrapper for SchemaEntry manager, not all methods are transactional
-    -->
-    <bean id="schemaEntryManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-        <property name="transactionManager">
-            <ref bean="transactionManager"/>
-        </property>
-        <property name="target">
-            <ref bean="schemaEntryManagerTarget"/>
-        </property>
-        <property name="proxyTargetClass">
-            <value>true</value>
-        </property>
-        <property name="transactionAttributes">
-            <props>
-                <!-- This method must be transactional -->
-                <prop key="delete">PROPAGATION_REQUIRED,-Throwable</prop>
-                <prop key="findByName">PROPAGATION_REQUIRED,-Throwable</prop>
-                <prop key="findByTNS">PROPAGATION_REQUIRED,-Throwable</prop>
-                <prop key="update">PROPAGATION_REQUIRED,-Throwable</prop>
-                <prop key="save">PROPAGATION_REQUIRED,-Throwable</prop>
-
-                <!-- Everything else doesn't require transactions -->
-                <prop key="*">PROPAGATION_SUPPORTS</prop>
-            </props>
-        </property>
+    <bean class="org.springframework.transaction.interceptor.TransactionAttributeSourceAdvisor">
+        <property name="transactionInterceptor" ref="annotationTransactionInterceptor"/>
     </bean>
 
-    <!--
-    Transactional wrapper for ClusterProperty manager, not all methods are transactional
-    -->
-    <bean id="clusterPropertyManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-        <property name="transactionManager">
-            <ref bean="transactionManager"/>
-        </property>
-        <property name="target">
-            <ref bean="clusterPropertyManagerTarget"/>
-        </property>
-        <property name="proxyTargetClass">
-            <value>true</value>
-        </property>
-        <property name="transactionAttributes">
-            <props>
-                <!-- These methods use caches, and don't require transactions -->
-                <prop key="getCachedEntityByName">PROPAGATION_SUPPORTS</prop>
-                <prop key="getCachedEntity">PROPAGATION_SUPPORTS</prop>
-
-                <!-- Everything else must be transactional -->
-                <prop key="*">PROPAGATION_REQUIRED,-Throwable</prop>
-            </props>
+    <bean id="annotationTransactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="transactionAttributeSource">
+            <bean class="org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"/>
         </property>
     </bean>
-
 
 </beans>

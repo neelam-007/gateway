@@ -22,7 +22,7 @@ public class TestIdentityProvider implements IdentityProvider {
     public static long PROVIDER_ID = 9898;
     public static int PROVIDER_VERSION = 1;
 
-    private static Map usernameMap = Collections.synchronizedMap(new HashMap());
+    private static Map<String, MyUser> usernameMap = Collections.synchronizedMap(new HashMap<String, MyUser>());
 
     public static IdentityProviderConfig TEST_IDENTITY_PROVIDER_CONFIG =
       new IdentityProviderConfig(new IdentityProviderType(9898, "TestIdentityProvider", TestIdentityProvider.class.getName()));
@@ -43,67 +43,22 @@ public class TestIdentityProvider implements IdentityProvider {
         this.config = config;
     }
 
-
-    private static class TestEntityManager implements EntityManager {
-        public Entity findByPrimaryKey(long oid) throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public long save(Entity entity) throws SaveException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Collection findAllHeaders() throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Collection findAll() throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Collection findAll(int offset, int windowSize) throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Integer getVersion(long oid) throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Map findVersionMap() throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public void delete(Entity entity) throws DeleteException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-    }
-
     private static class MyUser {
         private char[] password;
         private UserBean user;
-        private String username;
 
-        private MyUser(UserBean user, String username, char[] password) {
+        private MyUser(UserBean user, char[] password) {
             this.user = user;
-            this.username = username;
             this.password = password;
         }
     }
 
     public static void addUser(UserBean user, String username, char[] password) {
-        usernameMap.put(username, new MyUser(user, username, password));
+        usernameMap.put(username, new MyUser(user, password));
     }
 
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
-        MyUser mu = (MyUser)usernameMap.get(pc.getLogin());
+        MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
         if (Arrays.equals(mu.password, pc.getCredentials())) {
             return new AuthenticationResult(mu.user);
@@ -123,12 +78,12 @@ public class TestIdentityProvider implements IdentityProvider {
         return groupman;
     }
 
-    public Collection search(EntityType[] types, String searchString) throws FindException {
-        return Collections.EMPTY_LIST;
+    public Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
+        return Collections.emptyList();
     }
 
-    public Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
-        throw new UnsupportedOperationException();
+    public Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+        return Collections.emptyList();
     }
 
     public String getAuthRealm() {
@@ -136,20 +91,18 @@ public class TestIdentityProvider implements IdentityProvider {
     }
 
     public void test() throws InvalidIdProviderCfgException {
-        return;
     }
 
     public void preSaveClientCert(User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
-        return;
     }
 
-    private class TestGroupManager extends TestEntityManager implements GroupManager {
+    private class TestGroupManager implements GroupManager {
         public Group findByPrimaryKey(String identifier) throws FindException {
-            return null;
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Group findByName(String name) throws FindException {
-            return null;
+        public Group findByUniqueName(String name) throws FindException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
         public void delete(Group group) throws DeleteException, ObjectNotFoundException {
@@ -176,11 +129,11 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public String save(Group group, Set userHeaders) throws SaveException {
+        public String save(Group group, Set<IdentityHeader> userHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
+        public void update(Group group, Set<IdentityHeader> userHeaders) throws UpdateException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -196,19 +149,19 @@ public class TestIdentityProvider implements IdentityProvider {
             return false;
         }
 
-        public void addUsers(Group group, Set users) throws FindException, UpdateException {
+        public void addUsers(Group group, Set<User> users) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void removeUsers(Group group, Set users) throws FindException, UpdateException {
+        public void removeUsers(Group group, Set<User> users) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void addUser(User user, Set groups) throws FindException, UpdateException {
+        public void addUser(User user, Set<Group> groups) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void removeUser(User user, Set groups) throws FindException, UpdateException {
+        public void removeUser(User user, Set<Group> groups) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -220,47 +173,55 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Set getGroupHeaders(User user) throws FindException {
-            return Collections.EMPTY_SET;
+        public Set<IdentityHeader> getGroupHeaders(User user) throws FindException {
+            return Collections.emptySet();
         }
 
-        public Set getGroupHeaders(String userId) throws FindException {
-            return Collections.EMPTY_SET;
+        public Set<IdentityHeader> getGroupHeaders(String userId) throws FindException {
+            return Collections.emptySet();
         }
 
-        public void setGroupHeaders(User user, Set groupHeaders) throws FindException, UpdateException {
+        public void setGroupHeaders(User user, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
+        public void setGroupHeaders(String userId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Set getUserHeaders(Group group) throws FindException {
-            return Collections.EMPTY_SET;
+        public Set<IdentityHeader> getUserHeaders(Group group) throws FindException {
+            return Collections.emptySet();
         }
 
-        public Set getUserHeaders(String groupId) throws FindException {
-            return Collections.EMPTY_SET;
+        public Set<IdentityHeader> getUserHeaders(String groupId) throws FindException {
+            return Collections.emptySet();
         }
 
-        public void setUserHeaders(Group group, Set groupHeaders) throws FindException, UpdateException {
+        public void setUserHeaders(Group group, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void setUserHeaders(String groupId, Set groupHeaders) throws FindException, UpdateException {
+        public void setUserHeaders(String groupId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        public Collection<IdentityHeader> findAllHeaders() throws FindException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        public Collection findAll() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
     }
 
-    private static class TestUserManager extends TestEntityManager implements UserManager {
+    private static class TestUserManager implements UserManager {
         public User findByPrimaryKey(String identifier) throws FindException {
-            MyUser mu = (MyUser)usernameMap.get(identifier);
+            MyUser mu = usernameMap.get(identifier);
             return mu == null ? null : mu.user;
         }
 
         public User findByLogin(String login) throws FindException {
-            MyUser mu = (MyUser)usernameMap.get(login);
+            MyUser mu = usernameMap.get(login);
             return mu == null ? null : mu.user;
         }
 
@@ -284,15 +245,15 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public String save(User user, Set groupHeaders) throws SaveException {
+        public String save(User user, Set<IdentityHeader> groupHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void update(User user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
+        public void update(User user, Set<IdentityHeader> groupHeaders) throws UpdateException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Collection search(String searchString) throws FindException {
+        public Collection<IdentityHeader> search(String searchString) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -306,6 +267,10 @@ public class TestIdentityProvider implements IdentityProvider {
 
         public Class getImpClass() {
             return getClass();
+        }
+
+        public Collection<IdentityHeader> findAllHeaders() throws FindException {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
     }
 }

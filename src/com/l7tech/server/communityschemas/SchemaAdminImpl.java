@@ -6,7 +6,6 @@
  */
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.admin.AccessManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.xml.schema.SchemaAdmin;
@@ -26,13 +25,11 @@ import java.util.Collection;
  * @author flascelles@layer7-tech.com
  */
 public class SchemaAdminImpl implements SchemaAdmin {
-    private final AccessManager accessManager;
     private final LicenseManager licenseManager;
     private SchemaEntryManager schemaEntryManager;
     //private final Logger logger = Logger.getLogger(SchemaAdminImpl.class.getName());
 
-    public SchemaAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
-        this.accessManager = accessManager;
+    public SchemaAdminImpl(LicenseManager licenseManager) {
         this.licenseManager = licenseManager;
     }
 
@@ -48,29 +45,27 @@ public class SchemaAdminImpl implements SchemaAdmin {
         this.schemaEntryManager = schemaEntryManager;
     }
 
-    public Collection findAllSchemas() throws RemoteException, FindException {
+    public Collection<SchemaEntry> findAllSchemas() throws RemoteException, FindException {
         checkLicense();
         return schemaEntryManager.findAll();
     }
 
     public void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException {
-        accessManager.enforceAdminRole();
         checkLicense();
         schemaEntryManager.delete(existingSchema);
     }
 
-    public Collection findByName(String schemaName) throws RemoteException, FindException {
+    public Collection<SchemaEntry> findByName(String schemaName) throws RemoteException, FindException {
         checkLicense();
         return schemaEntryManager.findByName(schemaName);
     }
 
-    public Collection findByTNS(String tns) throws RemoteException, FindException {
+    public Collection<SchemaEntry> findByTNS(String tns) throws RemoteException, FindException {
         checkLicense();
         return schemaEntryManager.findByTNS(tns);
     }
 
     public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException {
-        accessManager.enforceAdminRole();
         checkLicense();
         if (entry.getOid() != -1) {
             schemaEntryManager.update(entry);

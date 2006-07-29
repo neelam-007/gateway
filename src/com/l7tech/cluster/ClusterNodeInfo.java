@@ -1,6 +1,6 @@
 package com.l7tech.cluster;
 
-import java.io.Serializable;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * Bean representation of a row in the cluster_info table.
@@ -15,7 +15,7 @@ import java.io.Serializable;
  * $Id$
  * 
  */
-public class ClusterNodeInfo implements Serializable {
+public class ClusterNodeInfo extends NamedEntityImp {
 
     /**
      * mac address of the node that uniquely identifies this node in the cluster
@@ -119,20 +119,6 @@ public class ClusterNodeInfo implements Serializable {
     }
 
     /**
-     * name of the node (set at config time)
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * name of the node (set at config time)
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * A multicast address for use in the DistributedMessageIdManager.
      */
     public String getMulticastAddress() {
@@ -147,7 +133,7 @@ public class ClusterNodeInfo implements Serializable {
     }
 
     public String toString() {
-        return name + " [" + address + "]";
+        return _name + " [" + address + "]";
     }
 
     public boolean equals(Object o) {
@@ -160,7 +146,7 @@ public class ClusterNodeInfo implements Serializable {
         if (mac != null ? !mac.equals(that.mac) : that.mac != null) return false;
         if (multicastAddress != null ? !multicastAddress.equals(that.multicastAddress) : that.multicastAddress != null)
             return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
 
         return true;
     }
@@ -169,7 +155,7 @@ public class ClusterNodeInfo implements Serializable {
         int result;
         result = (mac != null ? mac.hashCode() : 0);
         result = 29 * result + (address != null ? address.hashCode() : 0);
-        result = 29 * result + (name != null ? name.hashCode() : 0);
+        result = 29 * result + (_name != null ? _name.hashCode() : 0);
         result = 29 * result + (multicastAddress != null ? multicastAddress.hashCode() : 0);
         return result;
     }
@@ -178,7 +164,6 @@ public class ClusterNodeInfo implements Serializable {
     
     private String mac;
     private String address;
-    private String name;
     private String multicastAddress;
     private boolean isMaster;
     private long boottime;

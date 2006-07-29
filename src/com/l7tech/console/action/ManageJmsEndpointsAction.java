@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.JmsQueuesWindow;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 
 import java.util.logging.Logger;
@@ -22,7 +21,7 @@ public class ManageJmsEndpointsAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageJmsEndpointsAction() {
-        super(true, JmsRoutingAssertion.class);
+        super(null, JmsRoutingAssertion.class);
     }
 
     /**
@@ -60,13 +59,4 @@ public class ManageJmsEndpointsAction extends SecureAction {
     }
 
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementation requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

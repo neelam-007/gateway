@@ -6,19 +6,22 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
+import org.hibernate.Session;
+import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,11 +37,13 @@ import java.util.logging.Logger;
  * Date: Oct 23, 2003<br/>
  * $Id$
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
     private X509Certificate rootCertificate = null;
     protected byte[] rootCertSki = null;
     protected String rootCertSubjectName = null;
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public void setRootCertificate(X509Certificate rootCertificate) {
         if (rootCertificate == null) throw new IllegalArgumentException("Root certificate must not be null");
         this.rootCertificate = rootCertificate;
@@ -46,6 +51,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         this.rootCertSki = CertUtils.getSKIBytesFromCert(rootCertificate);
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public boolean isCertPossiblyStale(X509Certificate userCert) {
         if (rootCertificate == null) throw new IllegalStateException("No root certificate set");
         if (rootCertSki == null || rootCertSubjectName == null) throw new IllegalStateException("Missing stuff");
@@ -64,6 +70,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         return false;
     }
 
+    @Transactional(readOnly=true)
     public boolean userCanGenCert(User user, Certificate existingCert) {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("userCanGenCert for " + getName(user));
@@ -145,13 +152,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
 
         // record new data
         try {
-            Session session = getSession();
             if (newentry) {
-                Object res = session.save(userData);
+                Object res = getHibernateTemplate().save(userData);
                 logger.finest("saving cert entry " + res);
             } else {
                 logger.finest("updating cert entry");
-                session.update(userData);
+                getHibernateTemplate().update(userData);
             }
         } catch (HibernateException e) {
             String msg = "Hibernate exception recording cert";
@@ -160,6 +166,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         }
     }
 
+    @Transactional(readOnly=true)
     public Certificate getUserCert(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("getUserCert for " + getName(user));
@@ -203,8 +210,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             currentdata.setCertBase64(null);
             currentdata.setResetCounter(0);
             try {
-                Session session = getSession();
-                session.delete(currentdata);
+                getHibernateTemplate().delete(currentdata);
             } catch (HibernateException e) {
                 String msg = "Hibernate exception revoking cert";
                 logger.log(Level.WARNING, msg, e);
@@ -222,9 +228,8 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (currentdata != null) {
             currentdata.setResetCounter(10);
             try {
-                Session session = getSession();
                 // update existing data
-                session.update(currentdata);
+                getHibernateTemplate().update(currentdata);
             } catch (HibernateException e) {
                 String msg = "Hibernate exception updating cert info";
                 logger.log(Level.WARNING, msg, e);
@@ -238,10 +243,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         }
     }
 
+    @Transactional(readOnly=true)
     public List findByThumbprint(String thumbprint) throws FindException {
         return simpleQuery("thumbprintSha1", thumbprint);
     }
 
+    @Transactional(readOnly=true)
     public List findBySki(String ski) throws FindException {
         return simpleQuery("ski", ski);
     }
@@ -270,36 +277,28 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
      * retrieves the table data for a specific user
      * @return the data in the table or null if no data exist for this user
      */
-    private CertEntryRow getFromTable(User user) {
-        List hibResults;
+    private CertEntryRow getFromTable(final User user) {
         try {
-            Query q = getSession().createQuery(FIND_BY_USER_ID);
-            q.setLong(0, user.getProviderId());
-            q.setString(1, user.getUniqueIdentifier());
-            hibResults = q.list();
-            if (hibResults.size() == 0 && user.getLogin() != null && user.getLogin().length() > 0) {
-                // Try searching by login if userId fails
-                q = getSession().createQuery(FIND_BY_LOGIN);
-                q.setLong(0, user.getProviderId());
-                q.setString(1, user.getLogin());
-                hibResults = q.list();
-            }
-        } catch (HibernateException e) {
-            hibResults = Collections.EMPTY_LIST;
+            return (CertEntryRow)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(FIND_BY_USER_ID);
+                    q.setLong(0, user.getProviderId());
+                    q.setString(1, user.getUniqueIdentifier());
+                    CertEntryRow row = (CertEntryRow)q.uniqueResult();
+                    if (row != null) return row;
+                    if (user.getLogin() != null && user.getLogin().length() > 0) {
+                        // Try searching by login if userId fails
+                        q = session.createQuery(FIND_BY_LOGIN);
+                        q.setLong(0, user.getProviderId());
+                        q.setString(1, user.getLogin());
+                        return q.uniqueResult();
+                    }
+                    return null;
+                }
+            });
+        } catch (Exception e) {
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + getName(user), e);
-        } /*finally {
-            context.close();
-        }*/
-
-        switch (hibResults.size()) {
-            case 0:
-                return null;
-            case 1:
-                return (CertEntryRow)hibResults.get(0);
-            default:
-                logger.warning("this should not happen. more than one entry found" +
-                                          "for user: " + getName(user));
-                return null;
+            return null;
         }
     }
 

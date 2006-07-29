@@ -10,10 +10,8 @@ import java.util.Comparator;
  * User: flascell<br/>
  * Date: Jul 21, 2003<br/>
  */
-public class EntityHeaderComparator implements Comparator {
-    public int compare(Object o1, Object o2) {
-        EntityHeader h1 = (EntityHeader)o1;
-        EntityHeader h2 = (EntityHeader)o2;
+public class EntityHeaderComparator implements Comparator<EntityHeader> {
+    public int compare(EntityHeader h1, EntityHeader h2) {
         if (h1.getName() == null && h2.getName() == null) {
             return h1.getType().getVal() - h2.getType().getVal();
         }

@@ -1,14 +1,19 @@
 package com.l7tech.cluster;
 
-import com.l7tech.admin.AccessManager;
-import com.l7tech.common.*;
+import com.l7tech.common.InvalidLicenseException;
+import com.l7tech.common.License;
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsBin;
@@ -37,14 +42,12 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
                                  ServiceUsageManager serviceUsageManager,
                                  ClusterPropertyManager clusterPropertyManager,
-                                 AccessManager accessManager,
                                  LicenseManager licenseManager,
                                  ServiceMetricsManager metricsManager,
                                  ServerConfig serverConfig)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
-        this.accessManager = accessManager;
         this.clusterPropertyManager = clusterPropertyManager;
         this.licenseManager = (GatewayLicenseManager)licenseManager;
         this.serviceMetricsManager = metricsManager;
@@ -56,8 +59,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
             throw new IllegalArgumentException("Service Usage manager is required");
         if (clusterPropertyManager == null)
             throw new IllegalArgumentException("Cluster Property manager is required");
-        if (accessManager == null)
-            throw new IllegalArgumentException("Access manager is required");
         if (licenseManager == null)
             throw new IllegalArgumentException("License manager is required");
         if (metricsManager == null)
@@ -108,7 +109,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      * @param newName the new name of the node (must not be null)
      */
     public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
-        accessManager.enforceAdminRole();
         checkLicense();
         clusterInfoManager.renameNode(nodeid, newName);
     }
@@ -123,7 +123,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      * @param nodeid the mac of the stale node to remove
      */
     public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
-        accessManager.enforceAdminRole();
         checkLicense();
         logger.info("removing stale node: " + nodeid);
         clusterInfoManager.deleteNode(nodeid);
@@ -154,23 +153,35 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return clusterInfoManager.getSelfNodeInf().getName();
     }
 
-    public Collection getAllProperties() throws RemoteException, FindException {
+    public Collection<ClusterProperty> getAllProperties() throws RemoteException, FindException {
         return clusterPropertyManager.findAll();
     }
 
-    public Map getKnownProperties() throws RemoteException {
+    public Map<String, String> getKnownProperties() throws RemoteException {
         return serverConfig.getClusterPropertyNames();
     }
 
-    public String getProperty(String key) throws RemoteException, FindException {
-        return clusterPropertyManager.getProperty(key);
+    public ClusterProperty findPropertyByName(String key) throws RemoteException, FindException {
+        return clusterPropertyManager.findByUniqueName(key);
     }
 
-    public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
-        accessManager.enforceAdminRole();
-        if (!("license".equals(key)))
+    public long saveProperty(ClusterProperty clusterProperty) throws RemoteException, SaveException, UpdateException, DeleteException {
+        if (!("license".equals(clusterProperty.getName())))
             checkLicense();
-        clusterPropertyManager.setProperty(key, value);
+        long oid = clusterProperty.getOid();
+        if (oid == ClusterProperty.DEFAULT_OID) {
+            return clusterPropertyManager.save(clusterProperty);
+        } else {
+            clusterPropertyManager.update(clusterProperty);
+            return oid;
+        }
+    }
+
+    @Secured(types = EntityType.CLUSTER_PROPERTY, stereotype = MethodStereotype.DELETE_ENTITY)
+    public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException, RemoteException {
+        if ("license".equals(clusterProperty.getName()))
+            throw new DeleteException("Can't delete license");
+        clusterPropertyManager.delete(clusterProperty);
     }
 
     public License getCurrentLicense() throws RemoteException, InvalidLicenseException {
@@ -178,7 +189,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     }
 
     public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException, UpdateException {
-        accessManager.enforceAdminRole();
         licenseManager.installNewLicense(newLicenseXml);
     }
 
@@ -200,7 +210,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;
-    private final AccessManager accessManager;
     private final GatewayLicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
     private final ServerConfig serverConfig;

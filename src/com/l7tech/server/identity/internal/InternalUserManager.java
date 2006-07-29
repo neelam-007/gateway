@@ -4,6 +4,8 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManager;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.logging.Logger;
@@ -18,6 +20,7 @@ import java.util.logging.Logger;
  *
  * @version $Revision$
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class InternalUserManager extends PersistentUserManager {
 
     public InternalUserManager(IdentityProvider identityProvider) {
@@ -34,11 +37,13 @@ public class InternalUserManager extends PersistentUserManager {
         return "internal_user";
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(User user) {
         InternalUser imp = (InternalUser)cast(user);
         return new IdentityHeader(imp.getProviderId(), imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public User headerToUser(IdentityHeader header) {
         InternalUser iu = new InternalUser();
         iu.setProviderId(getProviderOid());

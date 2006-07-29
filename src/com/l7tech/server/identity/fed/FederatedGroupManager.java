@@ -17,6 +17,8 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.logging.Logger;
@@ -32,6 +34,7 @@ import java.util.regex.PatternSyntaxException;
  * @author alex
  * @version $Revision$
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class FederatedGroupManager extends PersistentGroupManager {
     private FederatedIdentityProvider federatedProvider;
     private FederatedIdentityProviderConfig providerConfig;
@@ -54,6 +57,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     protected FederatedGroupManager() {
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public GroupMembership newMembership(Group group, User user) {
         FederatedGroup fgroup = (FederatedGroup)cast(group);
         return new FederatedGroupMembership(providerConfig.getOid(), fgroup.getOid(), Long.parseLong(user.getUniqueIdentifier()));
@@ -72,9 +76,10 @@ public class FederatedGroupManager extends PersistentGroupManager {
         allHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
     }
 
-    public Group findByPrimaryKey( String oid ) throws FindException {
+    @Transactional(readOnly=true)
+    public PersistentGroup findByPrimaryKey( String oid ) throws FindException {
         try {
-            Group g = super.findByPrimaryKey(oid);
+            PersistentGroup g = super.findByPrimaryKey(oid);
             if ( g == null ) {
                 g = (PersistentGroup)findByPrimaryKey(VirtualGroup.class, Long.parseLong(oid));
                 if (g != null) {
@@ -87,6 +92,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
         }
     }
 
+    @Transactional(readOnly=true)
     public boolean isMember( User user, Group genericGroup ) throws FindException {
         PersistentGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
@@ -140,6 +146,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
         crit.add(Restrictions.eq("thisGroupProviderOid", new Long(group.getProviderId())));
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
     public PersistentGroup cast(Group group) {
         FederatedGroup imp;
         if ( group instanceof GroupBean ) {

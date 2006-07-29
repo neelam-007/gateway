@@ -1,6 +1,5 @@
 package com.l7tech.server.service;
 
-import com.l7tech.admin.AccessManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.uddi.UddiAgentException;
@@ -30,11 +29,17 @@ import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,22 +52,18 @@ import java.util.logging.Logger;
  * Date: Jun 6, 2003
  */
 public class ServiceAdminImpl implements ServiceAdmin {
-    public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
-
     private SSLContext sslContext;
 
-    private final AccessManager accessManager;
-    private final AssertionLicense licenseManager;
-    private final RegistryPublicationManager registryPublicationManager;
-    private final UddiAgentFactory uddiAgentFactory;
-    private final ServiceManager serviceManager;
-    private final PolicyValidator policyValidator;
-    private final SampleMessageManager sampleMessageManager;
-    private final CounterIDManager counterIDManager;
-    private final SslClientTrustManager trustManager;
+    private AssertionLicense licenseManager;
+    private RegistryPublicationManager registryPublicationManager;
+    private UddiAgentFactory uddiAgentFactory;
+    private ServiceManager serviceManager;
+    private PolicyValidator policyValidator;
+    private SampleMessageManager sampleMessageManager;
+    private CounterIDManager counterIDManager;
+    private SslClientTrustManager trustManager;
 
-    public ServiceAdminImpl(AccessManager accessManager,
-                            AssertionLicense licenseManager,
+    public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
                             UddiAgentFactory uddiAgentFactory,
                             ServiceManager serviceManager,
@@ -70,7 +71,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
                             SampleMessageManager sampleMessageManager,
                             CounterIDManager counterIDManager,
                             SslClientTrustManager trustManager) {
-        this.accessManager = accessManager;
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
@@ -80,6 +80,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
         this.counterIDManager = counterIDManager;
         this.trustManager = trustManager;
     }
+
+    protected ServiceAdminImpl() { }
 
     private void checkLicense() throws RemoteException {
         try {
@@ -204,29 +206,28 @@ public class ServiceAdminImpl implements ServiceAdmin {
      *
      */
     public long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
-            accessManager.enforceAdminRole();
-            checkLicense();
-            long oid;
+            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException
+    {
+        checkLicense();
+        long oid;
 
-            if (service.getOid() > 0) {
-                // UPDATING EXISTING SERVICE
-                oid = service.getOid();
-                logger.fine("Updating PublishedService: " + oid);
-                serviceManager.update(service);
-            } else {
-                // SAVING NEW SERVICE
-                logger.fine("Saving new PublishedService");
-                oid = serviceManager.save(service);
-            }
-            return oid;
+        if (service.getOid() > 0) {
+            // UPDATING EXISTING SERVICE
+            oid = service.getOid();
+            logger.fine("Updating PublishedService: " + oid);
+            serviceManager.update(service);
+        } else {
+            // SAVING NEW SERVICE
+            logger.fine("Saving new PublishedService");
+            oid = serviceManager.save(service);
+        }
+        return oid;
     }
 
     public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
         PublishedService service;
         try {
             long oid = toLong(serviceID);
-            accessManager.enforceAdminRole();
             checkLicense();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
@@ -318,7 +319,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException {
-        accessManager.enforceAdminRole();
         checkLicense();
         long oid = sm.getOid();
         if (sm.getOid() == Entity.DEFAULT_OID) {
@@ -334,7 +334,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public void deleteSampleMessage(SampleMessage message) throws DeleteException, RemoteException {
-        accessManager.enforceAdminRole();
         checkLicense();
         sampleMessageManager.delete(message);
     }

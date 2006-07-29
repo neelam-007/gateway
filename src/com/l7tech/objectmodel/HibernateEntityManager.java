@@ -12,20 +12,31 @@ import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * @author alex
  */
+@Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public abstract class HibernateEntityManager<ET extends Entity, EHT extends EntityHeader>
         extends HibernateDaoSupport
         implements EntityManager<ET, EHT>
 {
     public static final String EMPTY_STRING = "";
     public static final String F_OID = "oid";
+    public static final String F_NAME = "name";
     public static final String F_VERSION = "version";
 
     private final String HQL_FIND_ALL_OIDS_AND_VERSIONS =
@@ -51,6 +62,9 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
             " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_OID + " = ?";
 
+    protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
+
+    @Transactional(readOnly=true)
     public ET findByPrimaryKey(long oid) throws FindException {
         return findEntity(oid);
     }
@@ -64,7 +78,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
 
             return ((Long)key);
         } catch (Exception e) {
-            throw new SaveException("Couldn't save entity", e);
+            throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }
     }
 
@@ -75,50 +89,51 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
      * @return The version, or null if the entity does not exist.
      * @throws FindException
      */
-    public Integer getVersion(long oid) throws FindException {
-        Session s = null;
-        FlushMode old = null;
+    @Transactional(readOnly=true)
+    public Integer getVersion(final long oid) throws FindException {
         try {
-            s = getSession();
-            old = s.getFlushMode();
-            s.setFlushMode(FlushMode.NEVER);
-            Query q = s.createQuery(HQL_FIND_VERSION_BY_OID);
-            q.setLong(0, oid);
-            List results = q.list();
-            if (results.size() == 0) return null;
-            if (results.size() > 1) throw new FindException("Multiple results found");
-            Object result = results.get(0);
-            if (!(result instanceof Integer)) throw new FindException("Found " + result.getClass().getName() + " when looking for Integer!");
-            return (Integer)result;
+            return (Integer)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode old = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.NEVER);
+                        Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
+                        q.setLong(0, oid);
+                        return (Integer)q.uniqueResult();
+                    } finally {
+                        session.setFlushMode(old);
+                    }
+                }
+            });
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
-        } finally {
-            if (s != null && old != null) s.setFlushMode(old);
         }
     }
 
-    public ET findEntity(long oid) throws FindException {
-        Session s = null;
-        FlushMode old = null;
+    @Transactional(readOnly=true)
+    public ET findEntity(final long oid) throws FindException {
         try {
-            s = getSession();
-            old = s.getFlushMode();
-            s.setFlushMode(FlushMode.NEVER);
-            Query q = s.createQuery(HQL_FIND_BY_OID);
-            q.setLong(0, oid);
-            List results = q.list();
-            if (results.size() == 0) return null;
-            if (results.size() > 1) throw new FindException("Multiple results found!");
-            Object result = results.get(0);
-            if (!(result instanceof Entity)) throw new FindException("Found " + result.getClass().getName() + " when looking for Entity!");
-            return (ET)results.get(0);
+            //noinspection unchecked
+            return (ET)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode old = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.NEVER);
+                        Query q = session.createQuery(HQL_FIND_BY_OID);
+                        q.setLong(0, oid);
+                        //noinspection unchecked
+                        return (ET)q.uniqueResult();
+                    } finally {
+                        session.setFlushMode(old);
+                    }
+                }
+            });
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
-        } finally {
-            if (s != null && old != null) s.setFlushMode(old);
         }
     }
 
+    @Transactional(readOnly=true)
     public Map<Long,Integer> findVersionMap() throws FindException {
         Map<Long, Integer> result = new HashMap<Long, Integer>();
         if (!Entity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
@@ -145,21 +160,18 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
             throw new FindException(e.toString(), e);
         } finally {
             if (s != null && old != null) s.setFlushMode(old);
+            releaseSession(s);
         }
 
         return result;
     }
 
-    public abstract Class getImpClass();
-
-    public abstract Class getInterfaceClass();
-
+    @Transactional(propagation=SUPPORTS)
     public EntityType getEntityType() {
         return EntityType.UNDEFINED;
     }
 
-    public abstract String getTableName();
-
+    @Transactional(readOnly=true)
     public Collection<EHT> findAllHeaders() throws FindException {
         Collection<ET> entities = findAll();
         List<EHT> headers = new ArrayList<EHT>();
@@ -169,6 +181,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
             if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
             if (name == null) name = "";
             final long id = entity.getOid();
+            //noinspection unchecked
             headers.add((EHT) newHeader(id, name));
         }
         return Collections.unmodifiableList(headers);
@@ -193,21 +206,34 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
+    @Transactional(readOnly=true)
     public Collection<ET> findAll() throws FindException {
         try {
-            Session s = getSession();
-            Criteria allHeadersCriteria = s.createCriteria(getImpClass());
-            addFindAllCriteria(allHeadersCriteria);
-            return allHeadersCriteria.list();
+            //noinspection unchecked
+            return getHibernateTemplate().executeFind(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode old = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.NEVER);
+                        Criteria allHeadersCriteria = session.createCriteria(getImpClass());
+                        addFindAllCriteria(allHeadersCriteria);
+                        return allHeadersCriteria.list();
+                    } finally {
+                        session.setFlushMode(old);
+                    }
+                }
+            });
         } catch (HibernateException e) {
             throw new FindException(e.toString(), e);
         }
     }
 
+    @Transactional(readOnly=true)
     public Collection<ET> findAll(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
 
+    @Transactional(propagation=SUPPORTS)
     public String getAllQuery() {
         String alias = getTableName();
         return "from " + alias + " in class " + getImpClass().getName();
@@ -226,7 +252,8 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         }
     }
 
-    public boolean isCacheCurrent(long objectid, int maxAge) throws FindException {
+    @Transactional(propagation=SUPPORTS)
+    public boolean isCacheCurrent(long objectid, int maxAge) {
         Sync read = cacheLock.readLock();
         CacheInfo cacheInfo;
         try {
@@ -247,48 +274,67 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
 
     }
 
-    public NamedEntity getCachedEntityByName(String name, int maxAge) throws FindException {
+    @SuppressWarnings({"unchecked"})
+    @Transactional(propagation=SUPPORTS)
+    public ET getCachedEntityByName(final String name, int maxAge) throws FindException {
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
         Sync read = cacheLock.readLock();
-        Session session = null;
-        FlushMode old = null;
         try {
             read.acquire();
             CacheInfo cinfo = cacheInfoByName.get(name);
             read.release(); read = null;
 
-            NamedEntity ne;
-            if (cinfo == null) {
-                session = getSession();
-                old = session.getFlushMode();
-                session.setFlushMode(FlushMode.NEVER);
-                Criteria findByName = session.createCriteria(getInterfaceClass());
-                findByName.add(Restrictions.eq("name", name));
-                List entities = findByName.list();
+            if (cinfo != null) return freshen(cinfo, maxAge);
 
-                if (entities.size() > 1) {
-                    throw new FindException("Found multiple entities with name '" + name + "'");
-                } else if (entities.size() == 0) {
-                    return null;
+            return (ET) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                public Object doInTransaction(TransactionStatus transactionStatus) {
+                    try {
+                        ET ent = findByUniqueName(name);
+                        return ent == null ? null : checkAndCache(ent);
+                    } catch (Exception e) {
+//                        transactionStatus.setRollbackOnly();
+                        throw new RuntimeException(e);
+                    }
                 }
-                ne = (NamedEntity)entities.get(0);
+            });
 
-                return (NamedEntity)checkAndCache((ET) ne);
-            } else {
-                return (NamedEntity)freshen(cinfo, maxAge);
-            }
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
             Thread.currentThread().interrupt();
             return null;
-        } catch (HibernateException e) {
-            throw new FindException("Couldn't find entity by name", e);
+        } catch (RuntimeException e) {
+            throw new FindException(ExceptionUtils.getMessage(e), e);
         } catch (CacheVeto e) {
             throw new FindException("Couldn't cache entity", e);
         } finally {
             if (read != null) read.release();
-            if (session != null && old != null) session.setFlushMode(old);
+        }
+    }
+
+    @Transactional(readOnly=true)
+    public ET findByUniqueName(final String name) throws FindException {
+        if (name == null) throw new NullPointerException();
+        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+
+        try {
+            //noinspection unchecked
+            return (ET)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode old = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.NEVER);
+                        Criteria crit = session.createCriteria(getImpClass());
+                        crit.add(Restrictions.eq(F_NAME, name));
+                        //noinspection unchecked
+                        return (ET)crit.uniqueResult();
+                    } finally {
+                        session.setFlushMode(old);
+                    }
+                }
+            });
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't find unique entity", e);
         }
     }
 
@@ -305,11 +351,12 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
      * @throws FindException
      * @throws CacheVeto
      */
-    public ET getCachedEntity(long objectid, int maxAge) throws FindException, CacheVeto {
+    @Transactional(propagation=SUPPORTS, readOnly=true)
+    public ET getCachedEntity(final long objectid, int maxAge) throws FindException, CacheVeto {
         ET entity;
 
         Sync read = cacheLock.readLock();
-        CacheInfo cacheInfo;
+        CacheInfo<ET> cacheInfo;
         try {
             read.acquire();
             cacheInfo = cacheInfoByOid.get(objectid);
@@ -317,7 +364,18 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
 
             if (cacheInfo == null) {
                 // Might be new, or might be first run
-                entity = findEntity(objectid);
+                //noinspection unchecked
+                entity = (ET)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                    public Object doInTransaction(TransactionStatus transactionStatus) {
+                        try {
+                            return findEntity(objectid);
+                        } catch (FindException e) {
+//                            transactionStatus.setRollbackOnly();
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+
                 if (entity == null) return null; // Doesn't exist
 
                 // New
@@ -345,7 +403,8 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
                 return null;
             } else if (currentVersion.intValue() != cacheInfo.version) {
                 // Updated
-                return checkAndCache(findEntity(cacheInfo.entity.getOid()));
+                ET thing = findEntity(cacheInfo.entity.getOid());
+                return thing == null ? null : checkAndCache(thing);
             }
         }
 
@@ -397,15 +456,16 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         Sync write = cacheLock.writeLock();
         try {
             read.acquire();
-            CacheInfo info = cacheInfoByOid.get(oid);
+            CacheInfo<ET> info = cacheInfoByOid.get(oid);
             read.release(); read = null;
 
             if (info == null) {
-                info = new CacheInfo();
+                info = new CacheInfo<ET>();
 
                 write.acquire();
                 cacheInfoByOid.put(oid, info);
                 if (thing instanceof NamedEntity) {
+                    //noinspection unchecked
                     cacheInfoByName.put(((NamedEntity)thing).getName(), info);
                 }
                 write.release(); write = null;
@@ -438,22 +498,27 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
      * @return the object instance or <code>null</code> if no instance has been found
      * @throws FindException if there was an data access error
      */
-    protected Object findByPrimaryKey(Class impClass, long oid) throws FindException {
-        Session s = null;
-        FlushMode beforeMode = null;
+    protected ET findByPrimaryKey(final Class impClass, final long oid) throws FindException {
         try {
-            s = getSession();
-            beforeMode = s.getFlushMode();
-            s.setFlushMode(FlushMode.NEVER);
-            return s.load(impClass, Long.valueOf(oid));
+            //noinspection unchecked
+            return (ET) getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode old = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.NEVER);
+                        //noinspection unchecked
+                        return (ET)session.load(impClass, Long.valueOf(oid));
+                    } finally {
+                        session.setFlushMode(old);
+                    }
+                }
+            });
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class) ||
                 ExceptionUtils.causedBy(e, ObjectDeletedException.class)) {
                 return null;
             }
             throw new FindException("Data access error ", e);
-        } finally {
-            if (s != null && beforeMode != null) s.setFlushMode(beforeMode);
         }
     }
 
@@ -464,20 +529,24 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
      * @param oid
      * @throws DeleteException
      */
-    protected boolean delete(Class entityClass, long oid) throws DeleteException {
+    protected boolean delete(Class entityClass, final long oid) throws DeleteException {
         try {
-            Query q = getSession().createQuery(HQL_DELETE_BY_OID);
-            q.setLong(0,oid);
-            List todelete = q.list();
-            if (todelete.size() == 0) {
-                return false;
-            } else if (todelete.size() == 1) {
-                getHibernateTemplate().delete(todelete.get(0));
-                return true;
-            } else {
-                throw new DeleteException("More than one entity found with oid = " + oid);
-            }
-        } catch (DataAccessException he) {
+            return (Boolean)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_DELETE_BY_OID);
+                    q.setLong(0, oid);
+                    List todelete = q.list();
+                    if (todelete.size() == 0) {
+                        return false;
+                    } else if (todelete.size() == 1) {
+                        session.delete(todelete.get(0));
+                        return true;
+                    } else {
+                        throw new RuntimeException("More than one entity found with oid = " + oid);
+                    }
+                }
+            });
+        } catch (Exception he) {
             throw new DeleteException(he.toString(), he);
         }
     }
@@ -485,6 +554,10 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private ReadWriteLock cacheLock = new ReentrantWriterPreferenceReadWriteLock();
-    private Map<Long, CacheInfo> cacheInfoByOid = new HashMap<Long, CacheInfo>();
+    private Map<Long, CacheInfo<ET>> cacheInfoByOid = new HashMap<Long, CacheInfo<ET>>();
     private Map<String, CacheInfo> cacheInfoByName = new HashMap<String, CacheInfo>();
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 }

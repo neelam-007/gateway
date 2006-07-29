@@ -1,8 +1,7 @@
 package com.l7tech.cluster;
 
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.service.ServiceStatistics;
-
-import java.io.Serializable;
 
 /**
  * Bean representation of a row in the service_usage table.
@@ -16,7 +15,7 @@ import java.io.Serializable;
  * $Id$<br/>
  *
  */
-public class ServiceUsage implements Serializable {
+public class ServiceUsage extends NamedEntityImp {
 
     /**
      * Util method to go from ServiceStatistics to ServiceUsage
@@ -105,21 +104,6 @@ public class ServiceUsage implements Serializable {
     }
 
     /**
-     * Get the service name
-     * @return
-     */
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    /**
-     * Set the service name
-     * @param name
-     */
-    public void setServiceName(String name) {
-        serviceName = name;
-    }
-    /**
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public boolean equals(Object obj) {
@@ -148,5 +132,4 @@ public class ServiceUsage implements Serializable {
     private long requests;
     private long authorized;
     private long completed;
-    private String serviceName;
 }

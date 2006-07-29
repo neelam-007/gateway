@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
+import com.l7tech.server.identity.IdentityProviderFactory;
 
 import java.util.Iterator;
 import java.util.logging.Logger;

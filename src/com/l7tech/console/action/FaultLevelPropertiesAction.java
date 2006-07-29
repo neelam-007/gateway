@@ -26,7 +26,7 @@ public class FaultLevelPropertiesAction extends SecureAction {
     private FaultLevelTreeNode subject;
 
     public FaultLevelPropertiesAction(FaultLevelTreeNode subject) {
-        super(true, FaultLevel.class);
+        super(null, FaultLevel.class);
         this.subject = subject;
     }
 

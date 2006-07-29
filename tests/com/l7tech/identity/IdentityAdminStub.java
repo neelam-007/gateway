@@ -13,9 +13,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.service.PublishedService;
 
-import javax.security.auth.Subject;
 import java.rmi.RemoteException;
-import java.security.AccessControlException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.*;
@@ -204,25 +202,6 @@ public class IdentityAdminStub implements IdentityAdmin {
             }
         }
         return results;
-    }
-
-    /**
-     * Determine the roles for the given subject.
-     *
-     * @param subject the subject for which to get roles for
-     * @return the <code>Set</code> of roles (groups) the subject is memeber of
-     * @throws java.rmi.RemoteException on remote invocation error
-     * @throws java.security.AccessControlException
-     *                                  if the current subject is not allowed to perform the operation.
-     *                                  The invocation tests whether the current subject  (the subject carrying out the operaton)
-     *                                  has privileges to perform the operation. The operators are not allowed to perform this operation
-     *                                  except for themselves.
-     */
-    public Set getRoles(Subject subject) throws RemoteException, AccessControlException {
-        Set roles = new HashSet();
-        roles.add(Group.ADMIN_GROUP_NAME);
-        roles.add(Group.OPERATOR_GROUP_NAME);
-        return roles;
     }
 
 

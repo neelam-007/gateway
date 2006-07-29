@@ -2,7 +2,6 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.KerberosDialog;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 
 import java.rmi.RemoteException;
@@ -21,7 +20,7 @@ public class ManageKerberosAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageKerberosAction() {
-        super(true, RequestWssKerberos.class);
+        super(null, RequestWssKerberos.class);
     }
 
     /**
@@ -60,13 +59,4 @@ public class ManageKerberosAction extends SecureAction {
         }
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementation requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

@@ -26,7 +26,7 @@ public class AuditAssertionPropertiesAction extends SecureAction {
     private AuditAssertionTreeNode subject;
 
     public AuditAssertionPropertiesAction(AuditAssertionTreeNode subject) {
-        super(true, AuditAssertion.class);
+        super(null, AuditAssertion.class);
         this.subject = subject;
     }
     public String getName() {

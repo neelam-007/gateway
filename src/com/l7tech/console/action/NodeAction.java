@@ -54,7 +54,7 @@ public abstract class NodeAction extends SecureAction {
      *                                   or null or empty to allow action regardless of licensing
      */
     public NodeAction(AbstractTreeNode node, JTree tree, Collection<Class<? extends Assertion>> permittedAssertionLicenses) {
-        super(true, permittedAssertionLicenses);
+        super(null, permittedAssertionLicenses);
         this.node = node;
         this.tree = tree;
     }

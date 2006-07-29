@@ -7,6 +7,7 @@ import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.security.rbac.UserRoleAssignment;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -20,6 +21,7 @@ import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -27,16 +29,18 @@ import java.util.*;
 /**
  * @author alex
  */
-@Transactional(rollbackFor = ObjectModelException.class)
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
 public class RoleManagerImpl
         extends HibernateEntityManager<Role, EntityHeader>
         implements RoleManager
 {
-    private final IdentityProviderFactory identityProviderFactory;
+    private IdentityProviderFactory identityProviderFactory;
 
     public RoleManagerImpl(IdentityProviderFactory ipf) {
         this.identityProviderFactory = ipf;
     }
+
+    protected RoleManagerImpl() { }
 
     public Class getImpClass() {
         return Role.class;
@@ -51,11 +55,15 @@ public class RoleManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public Collection<User> getAssignedUsers(Role role) throws FindException {
+    public Collection<User> getAssignedUsers(final Role role) throws FindException {
         Set<User> users = new HashSet<User>();
-        Criteria assignmentsForRole = getSession().createCriteria(UserRoleAssignment.class);
-        assignmentsForRole.add(Restrictions.eq("role", role));
-        List assignments = assignmentsForRole.list();
+        List assignments = (List) getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                Criteria assignmentsForRole = session.createCriteria(UserRoleAssignment.class);
+                assignmentsForRole.add(Restrictions.eq("role", role));
+                return assignmentsForRole.list();
+            }
+        });
         if (assignments.isEmpty()) return users;
 
         for (Iterator i = assignments.iterator(); i.hasNext();) {
@@ -69,39 +77,48 @@ public class RoleManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public Collection<UserRoleAssignment> getAssignments(User user) throws FindException {
-        Set<UserRoleAssignment> assignments = new HashSet<UserRoleAssignment>();
-        Criteria userAssignmentQuery = getSession().createCriteria(UserRoleAssignment.class);
-        userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
-        userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
-        List directUserAssignments = userAssignmentQuery.list();
-        for (Object assignment : directUserAssignments) {
-            assignments.add((UserRoleAssignment) assignment);
-        }
-        return assignments;
+    public Collection<UserRoleAssignment> getAssignments(final User user) throws FindException {
+        //noinspection unchecked
+        return (Collection<UserRoleAssignment>) getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                Set<UserRoleAssignment> assignments = new HashSet<UserRoleAssignment>();
+                Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
+                userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
+                userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
+                List directUserAssignments = userAssignmentQuery.list();
+                for (Object assignment : directUserAssignments) {
+                    assignments.add((UserRoleAssignment) assignment);
+                }
+                return assignments;
+            }
+        });
     }
 
     @Transactional(readOnly=true)
-    public Collection<Role> getAssignedRoles(User user) throws FindException {
-        Set<Role> roles = new HashSet<Role>();
+    public Collection<Role> getAssignedRoles(final User user) throws FindException {
+        //noinspection unchecked
+        return (Collection<Role>) getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                Set<Role> roles = new HashSet<Role>();
+                Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
+                userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
+                userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
+                List uras = userAssignmentQuery.list();
+                for (Iterator i = uras.iterator(); i.hasNext();) {
+                    UserRoleAssignment ura = (UserRoleAssignment) i.next();
+                    roles.add(ura.getRole());
+                }
 
-        Criteria userAssignmentQuery = getSession().createCriteria(UserRoleAssignment.class);
-        userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
-        userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
-        List uras = userAssignmentQuery.list();
-        for (Iterator i = uras.iterator(); i.hasNext();) {
-            UserRoleAssignment ura = (UserRoleAssignment) i.next();
-            roles.add(ura.getRole());
-        }
-
-        return roles;
+                return roles;
+            }
+        });
     }
 
     public void update(Role role) throws UpdateException {
         try {
             getHibernateTemplate().saveOrUpdate(role);
-        } catch (DataAccessException e) {
-            throw new UpdateException(ExceptionUtils.getMessage(e), e);
+        } catch (Exception e) {
+            throw new UpdateException("Couldn't save Role", e);
         }
     }
 
@@ -114,7 +131,21 @@ public class RoleManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public boolean isPermittedOperation(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
+    public boolean isPermittedForAllEntities(User user, com.l7tech.common.security.rbac.EntityType type, OperationType operation) throws FindException {
+        if (user == null || type == null) throw new NullPointerException();
+        for (Role role : getAssignedRoles(user)) {
+            for (Permission perm : role.getPermissions()) {
+                if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
+                if (perm.getOperation() != operation) continue; // This permission is for a different operation
+                com.l7tech.common.security.rbac.EntityType ptype = perm.getEntityType();
+                if (ptype == ANY || ptype == type) return true;
+            }
+        }
+        return false;
+    }
+
+    @Transactional(readOnly=true)
+    public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
         if (user == null || entity == null || operation == null) throw new NullPointerException();
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
 
@@ -133,7 +164,6 @@ public class RoleManagerImpl
         return false;
     }
 
-    @Transactional
     public void deleteAssignment(final User user, final Role role) {
         getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) throws HibernateException, SQLException {

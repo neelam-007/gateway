@@ -10,9 +10,13 @@ import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -20,12 +24,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * Manages the processing and accumulation of service metrics for one SSG node.
  *
  * @author rmak
  */
+
+@Transactional(propagation=Propagation.SUPPORTS)
 public class ServiceMetricsManager extends HibernateDaoSupport
         implements InitializingBean, DisposableBean {
 
@@ -159,7 +166,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                         protected void doInTransactionWithoutResult(TransactionStatus status) {
                             try {
-                                getSession().save(head);
+                                getHibernateTemplate().save(head);
                             } catch (Exception e) {
                                 throw new RuntimeException("Error saving MetricsBin", e);
                             }
@@ -191,10 +198,14 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             try {
                 Integer num = (Integer)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
                     public Object doInTransaction(TransactionStatus status) {
-                        Query query = getSession().createQuery(HQL_DELETE);
-                        query.setLong(0, oldestSurvivor);
-                        query.setInteger(1, resolution);
-                        return new Integer(query.executeUpdate());
+                        return getHibernateTemplate().execute(new HibernateCallback() {
+                            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                                Query query = session.createQuery(HQL_DELETE);
+                                query.setLong(0, oldestSurvivor);
+                                query.setInteger(1, resolution);
+                                return new Integer(query.executeUpdate());
+                            }
+                        });
                     }
                 });
                 if (logger.isLoggable(Level.FINE)) {
@@ -328,37 +339,43 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
     }
 
-    public List findBins(String nodeId, Long minPeriodStart,
-                         Long maxPeriodStart, Integer resolution,
-                         Long serviceOid)
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
+    public List findBins(final String nodeId, final Long minPeriodStart,
+                         final Long maxPeriodStart, final Integer resolution,
+                         final Long serviceOid)
             throws FindException
     {
-        final Session session = getSession();
-        Criteria crit = session.createCriteria(MetricsBin.class);
-
-        if (minPeriodStart != null)
-            crit.add(Restrictions.ge("periodStart", minPeriodStart));
-
-        if (maxPeriodStart != null)
-            crit.add(Restrictions.le("periodStart", maxPeriodStart));
-
-        if (nodeId != null)
-            crit.add(Restrictions.eq("clusterNodeId", nodeId));
-
-        if (serviceOid != null)
-            crit.add(Restrictions.eq("serviceOid", serviceOid));
-
-        if (resolution != null)
-            crit.add(Restrictions.eq("resolution", resolution));
-
-        FlushMode old = session.getFlushMode();
         try {
-            session.setFlushMode(FlushMode.NEVER);
-            return crit.list();
-        } catch (HibernateException e) {
+            return getHibernateTemplate().executeFind(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    FlushMode old = session.getFlushMode();
+                    try {
+                        session.setFlushMode(FlushMode.NEVER);
+                        Criteria crit = session.createCriteria(MetricsBin.class);
+
+                        if (minPeriodStart != null)
+                            crit.add(Restrictions.ge("periodStart", minPeriodStart));
+
+                        if (maxPeriodStart != null)
+                            crit.add(Restrictions.le("periodStart", maxPeriodStart));
+
+                        if (nodeId != null)
+                            crit.add(Restrictions.eq("clusterNodeId", nodeId));
+
+                        if (serviceOid != null)
+                            crit.add(Restrictions.eq("serviceOid", serviceOid));
+
+                        if (resolution != null)
+                            crit.add(Restrictions.eq("resolution", resolution));
+
+                        return crit.list();
+                    } finally {
+                        session.setFlushMode(old);
+                    }
+                }
+            });
+        } catch (DataAccessException e) {
             throw new FindException("Couldn't find MetricsBins", e);
-        } finally {
-            if (session != null && old != null) session.setFlushMode(old);
         }
     }
 
@@ -390,18 +407,22 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 duration, resolution, clusterNodeId,
                 serviceOid == null ? -1 : serviceOid.longValue());
 
-        final Criteria criteria = getSession().createCriteria(MetricsBin.class);
-        criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
-        if (clusterNodeId != null) {
-            criteria.add(Restrictions.eq("clusterNodeId", clusterNodeId));
-        }
-        if (serviceOid != null) {
-            criteria.add(Restrictions.eq("serviceOid", serviceOid));
-        }
-        criteria.add(Restrictions.ge("periodStart", new Long(summaryPeriodStart)));
-        criteria.add(Restrictions.lt("periodStart", new Long(summaryPeriodEnd)));
-
-        final List bins = criteria.list();
+        List bins = getHibernateTemplate().executeFind(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                final Criteria criteria = session.createCriteria(MetricsBin.class);
+                criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
+                if (clusterNodeId != null) {
+                    criteria.add(Restrictions.eq("clusterNodeId", clusterNodeId));
+                }
+                if (serviceOid != null) {
+                    criteria.add(Restrictions.eq("serviceOid", serviceOid));
+                }
+                criteria.add(Restrictions.ge("periodStart", new Long(summaryPeriodStart)));
+                criteria.add(Restrictions.lt("periodStart", new Long(summaryPeriodEnd)));
+                return criteria.list();
+            }
+        });
+        
         if (bins.size() != 0) {
             MetricsBin.combine(bins, summaryBin);
         }

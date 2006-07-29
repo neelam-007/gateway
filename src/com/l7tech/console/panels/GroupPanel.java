@@ -1,6 +1,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import static com.l7tech.common.security.rbac.EntityType.GROUP;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
@@ -83,7 +87,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(GROUP));
     }
 
     public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
@@ -531,32 +535,33 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     class OkAction extends SecureAction {
         protected OkAction() {
-            super(true);
+            super(null);
         }
 
         /**
          * Actually perform the action.
          */
         protected void performAction() {
-            if (config.isWritable() && isInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
-                // Apply changes if possible
-                if (!collectAndSaveChanges()) {
-                    // Error - just return
-                    return;
+            if (group instanceof PersistentGroup) {
+                PersistentGroup pgroup = (PersistentGroup) group;
+                AttemptedOperation ao;
+                if (PersistentGroup.DEFAULT_OID == pgroup.getOid()) {
+                    ao = new AttemptedCreate(GROUP);
+                } else {
+                    ao = new AttemptedUpdate(GROUP, pgroup);
+                }
+
+                if (config.isWritable() && canAttemptOperation(ao)) {
+                    // Apply changes if possible
+                    if (!collectAndSaveChanges()) {
+                        // Error - just return
+                        return;
+                    }
                 }
             }
             Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
             dlg.setVisible(false);
             dlg.dispose();
-        }
-
-        /**
-         * Return the required roles for this action, one of the roles.
-         *
-         * @return the list of roles that are allowed to carry out the action
-         */
-        protected String[] requiredRoles() {
-            return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
         }
 
         /**

@@ -6,16 +6,14 @@
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.Authorizer;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.security.auth.Subject;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -32,7 +30,7 @@ public class InternalIdentityProviderAuthorizer extends Authorizer implements In
 
     private IdentityProvider identityProvider;
     private UserManager userManager;
-    private GroupManager groupManager;
+    private RoleManager roleManager;
 
     /**
      * Determine the roles (groups) for hte given subject
@@ -41,26 +39,20 @@ public class InternalIdentityProviderAuthorizer extends Authorizer implements In
      * @return the set of user roles for the given subject
      * @throws RuntimeException if
      */
-    public Set getUserRoles(Subject subject) throws RuntimeException {
-        Set principals = subject.getPrincipals(User.class);
+    public Collection<Role> getUserRoles(Subject subject) throws RuntimeException {
+        Set<User> principals = subject.getPrincipals(User.class);
         if (principals.isEmpty()) {
             logger.fine("No principal set, returning empty set");
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
         try {
-            Set principalGroups = new HashSet();
-            for (Iterator iterator = principals.iterator(); iterator.hasNext();) {
-                User user = (User)iterator.next();
+            for (User user : principals) {
                 User dbUser = userManager.findByLogin(user.getLogin());
                 if (dbUser != null) {
-                    Set groups = groupManager.getGroupHeaders(dbUser);
-                    for (Iterator iterator1 = groups.iterator(); iterator1.hasNext();) {
-                        EntityHeader group = (EntityHeader)iterator1.next();
-                        principalGroups.add(group.getName());
-                    }
+                    return roleManager.getAssignedRoles(dbUser);
                 }
             }
-            return principalGroups;
+            return Collections.emptySet();
         } catch (FindException e) {
             throw new RuntimeException("Error accessing user roles", e);
         }
@@ -68,6 +60,10 @@ public class InternalIdentityProviderAuthorizer extends Authorizer implements In
 
     public void setIdentityProviderConfigManager(IdentityProviderConfigManager identityProviderConfigManager) {
         this.identityProviderConfigManager = identityProviderConfigManager;
+    }
+
+    public void setRoleManager(RoleManager roleManager) {
+        this.roleManager = roleManager;
     }
 
     public void afterPropertiesSet() throws Exception {
@@ -86,6 +82,5 @@ public class InternalIdentityProviderAuthorizer extends Authorizer implements In
             throw new IllegalStateException("Could not find the internal identity provider");
         }
         userManager = identityProvider.getUserManager();
-        groupManager = identityProvider.getGroupManager();
     }
 }

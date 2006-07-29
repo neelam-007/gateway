@@ -66,7 +66,6 @@ CREATE TABLE internal_group (
 -- Dumping data for table 'internal_group'
 --
 
-
 INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','SecureSpan Manager users with full administrative rights in the SecureSpan Gateway.');
 INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager users with partial read-only rights in the SecureSpan Gateway.');
 
@@ -661,5 +660,16 @@ CREATE TABLE rbac_predicate_oid (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
+-- Create Administrator role
+INSERT INTO rbac_role VALUES (-3,0,'Administrator');
+
+-- Assign Administrator role to existing admin user
+INSERT INTO rbac_assignment VALUES (-4, -2, -3, 3);
+
+-- Grant all CRUD permissions to admin role (no predicates required, null scope = ALL)
+INSERT INTO rbac_permission VALUES (-5, 0, -3, 'CREATE', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-6, 0, -3, 'READ',   null, 'ANY');
+INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
 
 SET FOREIGN_KEY_CHECKS = 1;

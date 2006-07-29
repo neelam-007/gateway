@@ -1,24 +1,20 @@
 package com.l7tech.spring.remoting.rmi;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.Collection;
-import java.security.Principal;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-import javax.security.auth.Subject;
-
+import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationExecutor;
 
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
-import com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory;
-import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.cluster.ClusterNodeInfo;
-import com.l7tech.objectmodel.FindException;
+import javax.security.auth.Subject;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Cluster invoker.

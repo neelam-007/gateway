@@ -44,7 +44,7 @@ public class TestCreateStuff {
             Set<Permission> adminPerms = adminRole.getPermissions();
             adminPerms.add(new Permission(adminRole, OperationType.CREATE, EntityType.ANY));
             adminPerms.add(new Permission(adminRole, OperationType.READ, EntityType.ANY));
-            adminPerms.add(new Permission(adminRole, OperationType.WRITE, EntityType.ANY));
+            adminPerms.add(new Permission(adminRole, OperationType.UPDATE, EntityType.ANY));
             adminPerms.add(new Permission(adminRole, OperationType.DELETE, EntityType.ANY));
             s.save(adminRole);
         }

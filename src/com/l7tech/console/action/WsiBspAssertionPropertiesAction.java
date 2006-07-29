@@ -24,7 +24,7 @@ public class WsiBspAssertionPropertiesAction extends SecureAction {
     //- PUBLIC
 
     public WsiBspAssertionPropertiesAction(WsiBspAssertionPolicyNode node) {
-        super(true, WsiBspAssertion.class);
+        super(null, WsiBspAssertion.class);
         this.node = node;
     }
 

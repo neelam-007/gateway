@@ -29,7 +29,7 @@ public class TestMulticastAddress extends TestCase {
     public void testAddressGeneration() throws Exception {
         boolean[] found = new boolean[256];
         for ( int i = 0; i < 10000; i++ ) {
-            String addr = ClusterInfoManager.generateMulticastAddress();
+            String addr = ClusterInfoManagerImpl.generateMulticastAddress();
             InetAddress ia = InetAddress.getByName(addr.toString());
             found[(ia.getAddress()[3] & 0xff)] = true;
         }

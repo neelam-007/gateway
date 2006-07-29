@@ -33,7 +33,7 @@ public class ImportCertificateAction extends SecureAction {
     static Logger log = Logger.getLogger(ImportCertificateAction.class.getName());
 
     protected ImportCertificateAction() {
-        super(true, LIC_AUTH_ASSERTIONS);
+        super(null, LIC_AUTH_ASSERTIONS);
     }
 
     /**

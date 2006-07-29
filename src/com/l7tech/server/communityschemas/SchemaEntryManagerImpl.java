@@ -10,10 +10,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
 /**
  * @author mike
  */
+@Transactional(propagation=Propagation.SUPPORTS)
 public class SchemaEntryManagerImpl
         extends HibernateEntityManager<SchemaEntry, EntityHeader>
         implements SchemaEntryManager, ApplicationListener
@@ -35,14 +37,9 @@ public class SchemaEntryManagerImpl
 
     private final Map<Long, String> systemIdsByOid = new HashMap<Long, String>();
     private SchemaManager schemaManager;
-    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
     public void setSchemaManager(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
-    }
-
-    public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
     }
 
     protected void initDao() throws Exception {
@@ -110,6 +107,7 @@ public class SchemaEntryManagerImpl
      * Find a schema from it's name (name column in community schema table)
      */
     @SuppressWarnings({"unchecked"})
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = ?";
@@ -126,6 +124,7 @@ public class SchemaEntryManagerImpl
      * Find a schema from it's target namespace (tns column in community schema table)
      */
     @SuppressWarnings({"unchecked"})
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
         String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = ?";
@@ -138,6 +137,7 @@ public class SchemaEntryManagerImpl
         return output;
     }
 
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public long save(SchemaEntry newSchema) throws SaveException {
         if (newSchema.getOid() != SchemaEntry.DEFAULT_OID) {
             invalidateCompiledSchema(newSchema.getOid());
@@ -155,6 +155,7 @@ public class SchemaEntryManagerImpl
         return res;
     }
 
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void update(SchemaEntry existingSchema) throws UpdateException {
         if (existingSchema.getOid() != SchemaEntry.DEFAULT_OID) {
             invalidateCompiledSchema(existingSchema.getOid());
@@ -171,7 +172,7 @@ public class SchemaEntryManagerImpl
             fromDb.setSchema(existingSchema.getSchema());
 
             // Commit
-            getSession().update(fromDb);
+            getHibernateTemplate().update(fromDb);
 
             try {
                 compileAndCache(fromDb.getOid(), fromDb);
@@ -185,6 +186,7 @@ public class SchemaEntryManagerImpl
         }
     }
 
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void delete(SchemaEntry existingSchema) throws DeleteException {
         try {
             super.delete(existingSchema);

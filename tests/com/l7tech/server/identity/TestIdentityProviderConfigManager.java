@@ -2,12 +2,8 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,8 +14,10 @@ import java.util.Map;
  * @author emil
  * @version 14-Dec-2004
  */
-public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
-  implements IdentityProviderConfigManager, InitializingBean {
+public class TestIdentityProviderConfigManager
+        extends EntityManagerStub<IdentityProviderConfig>
+        implements IdentityProviderConfigManager, InitializingBean
+{
     private IdentityProviderFactory identityProviderFactory;
     private IdentityProvider idprovider;
 
@@ -32,14 +30,7 @@ public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
         return idprovider.getConfig();
     }
 
-    public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
-    }
-
-    public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
     }
 
     public Collection findAllIdentityProviders() throws FindException {
@@ -59,22 +50,10 @@ public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
     public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
     }
 
-    public Collection findAllHeaders() throws FindException {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
     public Collection findAll() throws FindException {
         Collection output = new ArrayList();
         output.add(idprovider.getConfig());
         return output;
-    }
-
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new UnsupportedOperationException("not implemented");
     }
 
     public Integer getVersion(long oid) throws FindException {
@@ -89,8 +68,20 @@ public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
         return versionMap;
     }
 
-    public IdentityProviderConfig getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
-        throw new UnsupportedOperationException("not implemented");
+    public Class getImpClass() {
+        return IdentityProviderConfig.class;
+    }
+
+    public Class getInterfaceClass() {
+        return IdentityProviderConfig.class;
+    }
+
+    public EntityType getEntityType() {
+        return EntityType.ID_PROVIDER_CONFIG;
+    }
+
+    public String getTableName() {
+        return "identity_provider";
     }
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {

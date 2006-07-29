@@ -13,6 +13,8 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.FileNotFoundException;
 import java.util.Collection;
@@ -26,6 +28,7 @@ import java.util.logging.Logger;
  * @author emil
  * @version Jan 3, 2005
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class StatusUpdateManagerImpl extends HibernateDaoSupport implements StatusUpdateManager {
     private final Logger logger = Logger.getLogger(StatusUpdateManagerImpl.class.getName());
 

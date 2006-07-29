@@ -1,19 +1,7 @@
 package com.l7tech.common.security.kerberos;
 
-import java.util.List;
-import java.util.Map;
 import java.rmi.RemoteException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.io.IOException;
-
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.security.TrustedCertAdmin;
+import java.util.Map;
 
 /**
  * Remote interface to check Kerberos configuration.

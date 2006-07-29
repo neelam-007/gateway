@@ -260,7 +260,7 @@ public class StatisticsPanel extends JPanel {
             updateStatCache(stats.getServiceid(), completedCount);
             long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceid());
 
-            StatisticsRecord statsRec = new StatisticsRecord(stats.getServiceName(),
+            StatisticsRecord statsRec = new StatisticsRecord(stats.getName(),
                     stats.getRequests(),
                     stats.getAuthorized(),
                     completedCount,

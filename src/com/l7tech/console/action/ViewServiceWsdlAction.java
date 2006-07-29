@@ -9,7 +9,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 
@@ -178,13 +177,4 @@ public class ViewServiceWsdlAction extends NodeAction {
         }
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

@@ -1,18 +1,13 @@
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.*;
 
 /**
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public interface ClusterPropertyManager extends EntityManager {
-    public NamedEntity getCachedEntityByName(String name, int maxAge) throws FindException;
+public interface ClusterPropertyManager extends EntityManager<ClusterProperty, EntityHeader> {
+    ClusterProperty getCachedEntityByName(String name, int maxAge) throws FindException;
     String getProperty(String key) throws FindException;
-    void setProperty(String key, String value) throws SaveException, UpdateException, DeleteException;
+    void update(ClusterProperty clusterProperty) throws UpdateException;
 }

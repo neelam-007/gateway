@@ -18,7 +18,7 @@ public class AddAssertionAction extends SecureAction {
     protected AssertionTreeNode assertionNode;
 
     protected AddAssertionAction() {
-        super(true);
+        super(null);
     }
 
     /**

@@ -19,19 +19,11 @@ public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry> imple
         return Collections.emptySet();
     }
 
-    public void delete(SchemaEntry existingSchema) throws DeleteException {
-        return;
-    }
-
     public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
         return Collections.emptySet();
     }
 
     public void update(SchemaEntry entry) throws UpdateException {
-        return;
-    }
-
-    public long save(SchemaEntry entry) throws SaveException {
-        return 0;
+        throw new UnsupportedOperationException();
     }
 }

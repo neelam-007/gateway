@@ -38,12 +38,12 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
     private ApplicationContext applicationContext;
     private final ServerConfig serverConfig;
     private final LicenseManager licenseManager;
-    private final JmsConnectionManager _connectionManager;
-    private final JmsEndpointManager _endpointManager;
+    private final JmsConnectionManager connectionManager;
+    private final JmsEndpointManager endpointManager;
 
-    private Set _activeReceivers = new HashSet();
+    private Set<JmsReceiver> activeReceivers = new HashSet<JmsReceiver>();
 
-    private final Logger _logger = Logger.getLogger(getClass().getName());
+    private static final Logger logger = Logger.getLogger(JmsBootProcess.class.getName());
     private boolean started = false;
     private ConnectionVersionChecker connectionChecker;
     private PeriodicVersionCheck endpointChecker;
@@ -51,13 +51,13 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
 
     public JmsBootProcess(ServerConfig serverConfig,
                           LicenseManager licenseManager,
-                          JmsConnectionManager _connectionManager,
-                          JmsEndpointManager _endpointManager)
+                          JmsConnectionManager connectionManager,
+                          JmsEndpointManager endpointManager)
     {
         this.serverConfig = serverConfig;
         this.licenseManager = licenseManager;
-        this._connectionManager = _connectionManager;
-        this._endpointManager = _endpointManager;
+        this.connectionManager = connectionManager;
+        this.endpointManager = endpointManager;
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -84,7 +84,7 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
                         try {
                             start();
                         } catch (LifecycleException e) {
-                            _logger.log(Level.SEVERE,
+                            logger.log(Level.SEVERE,
                                         "Unable to start JMS message input subsystem: " + ExceptionUtils.getMessage(e),
                                         e);
                         }
@@ -111,12 +111,12 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
         }
 
         protected void onDelete( long removedOid ) {
-            _logger.info( "Endpoint " + removedOid + " deleted!" );
+            logger.info( "Endpoint " + removedOid + " deleted!" );
             endpointDeleted( removedOid );
         }
 
         protected void onSave( Entity updatedEntity ) {
-            _logger.info( "Endpoint " + updatedEntity.getOid() + " created or updated!" );
+            logger.info( "Endpoint " + updatedEntity.getOid() + " created or updated!" );
             endpointUpdated( (JmsEndpoint)updatedEntity );
         }
     }
@@ -130,12 +130,12 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
         }
 
         protected void onDelete( long removedOid ) {
-            _logger.info( "Connection " + removedOid + " deleted!" );
+            logger.info( "Connection " + removedOid + " deleted!" );
             connectionDeleted( removedOid );
         }
 
         protected void onSave( Entity updatedEntity ) {
-            _logger.info( "Connection " + updatedEntity.getOid() + " created or updated!" );
+            logger.info( "Connection " + updatedEntity.getOid() + " created or updated!" );
             connectionUpdated( (JmsConnection)updatedEntity );
         }
     }
@@ -158,40 +158,37 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
 
         try {
             // Start up receivers for initial configuration
-            Collection connections = _connectionManager.findAll();
-            List staleEndpoints = new ArrayList();
-            for ( Iterator i = connections.iterator(); i.hasNext(); ) {
-                JmsConnection connection = (JmsConnection) i.next();
-                JmsEndpoint[] endpoints = _endpointManager.findEndpointsForConnection( connection.getOid() );
+            Collection<JmsConnection> connections = connectionManager.findAll();
+            List<Long> staleEndpoints = new ArrayList<Long>();
+            for (JmsConnection connection : connections) {
+                JmsEndpoint[] endpoints = endpointManager.findEndpointsForConnection(connection.getOid());
 
-                for ( int j = 0; j < endpoints.length; j++ ) {
-                    JmsEndpoint endpoint = endpoints[j];
-                    if ( !endpoint.isMessageSource() ) continue;
-                    JmsReceiver receiver = makeReceiver( connection, endpoint );
+                for (JmsEndpoint endpoint : endpoints) {
+                    if (!endpoint.isMessageSource()) continue;
+                    JmsReceiver receiver = new JmsReceiver(connection, endpoint, endpoint.getReplyType());
 
                     try {
                         receiver.setApplicationContext(applicationContext);
                         receiver.setServerConfig(serverConfig);
                         receiver.start();
-                        _activeReceivers.add( receiver );
-                    } catch ( LifecycleException e ) {
-                        _logger.log( Level.WARNING, "Couldn't start receiver for endpoint " + endpoint
-                                                    + ".  Will retry periodically", e );
-                        staleEndpoints.add( new Long( endpoint.getOid() ) );
+                        activeReceivers.add(receiver);
+                    } catch (LifecycleException e) {
+                        logger.log(Level.WARNING, "Couldn't start receiver for endpoint " + endpoint
+                                + ".  Will retry periodically", e);
+                        staleEndpoints.add(new Long(endpoint.getOid()));
                     }
                 }
             }
 
-            connectionChecker = new ConnectionVersionChecker( _connectionManager );
-            endpointChecker = new EndpointVersionChecker( _endpointManager );
+            connectionChecker = new ConnectionVersionChecker(connectionManager);
+            endpointChecker = new EndpointVersionChecker(endpointManager);
 
-            for ( Iterator i = staleEndpoints.iterator(); i.hasNext(); ) {
-                Long oid = (Long) i.next();
-                endpointChecker.markObjectAsStale( oid );
+            for (Long oid : staleEndpoints) {
+                endpointChecker.markObjectAsStale(oid);
             }
         } catch ( FindException e ) {
             String msg = "Couldn't start JMS subsystem!  JMS functionality will be disabled.";
-            _logger.log( Level.SEVERE, msg, e );
+            logger.log( Level.SEVERE, msg, e );
             throw new LifecycleException( msg, e );
         }
 
@@ -211,9 +208,8 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
     private void stop() {
         connectionChecker.cancel();
         endpointChecker.cancel();
-        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
-            JmsReceiver receiver = (JmsReceiver)i.next();
-            _logger.info("Stopping and closing JMS receiver '" + receiver.toString() + "'");
+        for (JmsReceiver receiver : activeReceivers) {
+            logger.info("Stopping and closing JMS receiver '" + receiver.toString() + "'");
             stopAndClose(receiver);
         }
     }
@@ -226,7 +222,7 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
             component.stop();
             component.close();
         } catch (LifecycleException e) {
-            _logger.warning("Exception while stopping or closing " + component);
+            logger.warning("Exception while stopping or closing " + component);
         }
     }
 
@@ -234,7 +230,7 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
      * Handles the event fired by the deletion of a JmsConnection.
      */
     private synchronized void connectionDeleted( long deletedConnectionOid ) {
-        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
+        for (Iterator i = activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             if (receiver.getConnection().getOid() == deletedConnectionOid ) {
                 stopAndClose(receiver);
@@ -253,14 +249,13 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
             // Stop and remove any existing receivers for this connection
             connectionDeleted( updatedOid );
 
-            EntityHeader[] endpoints = _endpointManager.findEndpointHeadersForConnection( updatedOid );
-            for ( int i = 0; i < endpoints.length; i++ ) {
-                EntityHeader header = endpoints[i];
-                JmsEndpoint endpoint = _endpointManager.findByPrimaryKey( header.getOid() );
-                endpointUpdated( endpoint );
+            EntityHeader[] endpoints = endpointManager.findEndpointHeadersForConnection( updatedOid );
+            for (EntityHeader header : endpoints) {
+                JmsEndpoint endpoint = endpointManager.findByPrimaryKey(header.getOid());
+                endpointUpdated(endpoint);
             }
         } catch ( FindException e ) {
-            _logger.log( Level.SEVERE, "Caught exception finding endpoints for a connection!", e );
+            logger.log( Level.SEVERE, "Caught exception finding endpoints for a connection!", e );
         }
     }
 
@@ -270,7 +265,7 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
      * @param deletedEndpointOid the OID of the endpoint that has been deleted.
      */
     private synchronized void endpointDeleted( long deletedEndpointOid ) {
-        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
+        for (Iterator i = activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             JmsEndpoint existingEndpoint = receiver.getInboundRequestEndpoint();
             if (existingEndpoint.getOid() == deletedEndpointOid ) {
@@ -295,14 +290,14 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
         if (updatedEndpoint.isMessageSource()) {
             JmsReceiver receiver = null;
             try {
-                JmsConnection connection = _connectionManager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
-                receiver = makeReceiver( connection, updatedEndpoint);
+                JmsConnection connection = connectionManager.findByPrimaryKey( updatedEndpoint.getConnectionOid() );
+                receiver = new JmsReceiver(connection, updatedEndpoint, updatedEndpoint.getReplyType());
                 receiver.setApplicationContext(applicationContext);
                 receiver.setServerConfig(serverConfig);
                 receiver.start();
-                _activeReceivers.add(receiver);
+                activeReceivers.add(receiver);
             } catch (LifecycleException e) {
-                _logger.warning("Exception while initializing receiver " + receiver +
+                logger.warning("Exception while initializing receiver " + receiver +
                                 "; will try again later: " + e.toString());
                 try {
                     Thread.sleep(500);
@@ -312,16 +307,9 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
                 if (endpointChecker != null)
                     endpointChecker.markObjectAsStale( new Long(updatedEndpoint.getOid()));
             } catch ( FindException e ) {
-                _logger.log( Level.SEVERE, "Couldn't find connection for endpoint " + updatedEndpoint, e );
+                logger.log( Level.SEVERE, "Couldn't find connection for endpoint " + updatedEndpoint, e );
             }
         }
     }
 
-    private JmsReceiver makeReceiver( JmsConnection connection, JmsEndpoint endpoint) {
-        JmsReceiver receiver = new JmsReceiver(
-                connection,
-                endpoint,
-                endpoint.getReplyType());
-        return receiver;
-    }
 }

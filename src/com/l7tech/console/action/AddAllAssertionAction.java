@@ -39,7 +39,7 @@ public class AddAllAssertionAction extends SecureAction {
      * @param insertPosition the insert position
      */
     public AddAllAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
-        super(false, AllAssertion.class);
+        super(null, AllAssertion.class);
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }

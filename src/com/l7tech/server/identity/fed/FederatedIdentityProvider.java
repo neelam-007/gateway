@@ -15,8 +15,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.server.identity.PersistentIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.PersistentIdentityProvider;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -36,6 +38,7 @@ import java.util.logging.Logger;
  * @see FederatedIdentityProviderConfig
  * @author alex
  */
+@Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
     public FederatedIdentityProvider(IdentityProviderConfig config) {
@@ -61,13 +64,15 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         return groupManager;
     }
 
-    public Set getValidTrustedCertOids() {
+    @Transactional(propagation=Propagation.SUPPORTS)
+    public Set<Long> getValidTrustedCertOids() {
         return Collections.unmodifiableSet(validTrustedCertOids);
     }
 
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
-            User user = null;
+            User user;
             try {
                 user = x509Handler.authorize(pc);
             } catch (Exception e) {
@@ -102,7 +107,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
                                                  "'doesn't match cert's Subject DN '" + clientCertDn + "'");
         if (validTrustedCertOids.isEmpty()) {
-            X509Certificate caCert = null;
+            X509Certificate caCert;
             try {
                 caCert = keystore.getRootCert();
                 if (clientCertChain.length > 1) {
@@ -117,7 +122,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             }
         } else {
             String caDn = clientCertChain[0].getIssuerDN().getName();
-            TrustedCert caTrust = null;
+            TrustedCert caTrust;
             X509Certificate trustedCaCert = null;
             try {
                 caTrust = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
@@ -141,6 +146,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             }
 
             try {
+                assert trustedCaCert != null;
                 CertUtils.cachedVerify(clientCertChain[0], trustedCaCert.getPublicKey());
             } catch (GeneralSecurityException e ) {
                 final String msg = "Couldn't verify that client cert was signed by trusted CA";
@@ -175,22 +181,22 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         }
 
         long[] certOids = providerConfig.getTrustedCertOids();
-        for ( int i = 0; i < certOids.length; i++ ) {
-            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOids[i];
+        for (long certOid : certOids) {
+            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOid;
             try {
-                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOids[i], MAX_CACHE_AGE);
+                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOid, MAX_CACHE_AGE);
                 if (trust == null) {
                     logger.log(Level.WARNING, msg + ", which no longer exists");
                     continue;
                 }
-                Long oid = new Long(certOids[i]);
+                Long oid = new Long(certOid);
                 validTrustedCertOids.add(oid);
-            } catch ( FindException e ) {
-                logger.log( Level.SEVERE, msg + ", which could not be found", e );
-            } catch ( IOException e ) {
-                logger.log( Level.WARNING, msg + ", which could not be parsed", e );
-            } catch ( CertificateException e ) {
-                logger.log( Level.WARNING, msg + ", which is not valid", e );
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, msg + ", which could not be found", e);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, msg + ", which could not be parsed", e);
+            } catch (CertificateException e) {
+                logger.log(Level.WARNING, msg + ", which is not valid", e);
             }
         }
 
@@ -206,7 +212,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     private FederatedGroupManager groupManager;
     private TrustedCertManager trustedCertManager;
 
-    private final Set validTrustedCertOids = new HashSet();
+    private final Set<Long> validTrustedCertOids = new HashSet<Long>();
 
     private static final Logger logger = Logger.getLogger(FederatedIdentityProvider.class.getName());
     private static final int MAX_CACHE_AGE = 5000;

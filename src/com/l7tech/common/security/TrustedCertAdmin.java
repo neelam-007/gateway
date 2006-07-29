@@ -6,7 +6,12 @@
 
 package com.l7tech.common.security;
 
+import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
+import static com.l7tech.common.security.rbac.MethodStereotype.*;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -17,14 +22,17 @@ import java.util.List;
 /**
  * Remote interface to get/save/delete certs trusted by the gateway.
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Secured(types=TRUSTED_CERT)
 public interface TrustedCertAdmin  {
-
     /**
      * Retrieves all {@link TrustedCert}s from the database.
      * @return a {@link List} of {@link TrustedCert}s
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
     public List findAllCerts() throws FindException, RemoteException;
 
     /**
@@ -34,6 +42,8 @@ public interface TrustedCertAdmin  {
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
     public TrustedCert findCertByPrimaryKey(long oid) throws FindException, RemoteException;
 
     /**
@@ -43,6 +53,8 @@ public interface TrustedCertAdmin  {
      * @throws FindException
      * @throws RemoteException on remote communication error
      */
+    @Transactional(readOnly=true)
+    @Secured(stereotype= FIND_ENTITY_BY_ATTRIBUTE)
     public TrustedCert findCertBySubjectDn(String dn) throws FindException, RemoteException;
 
     /**
@@ -54,6 +66,7 @@ public interface TrustedCertAdmin  {
      * @throws VersionException if the updated cert was not up-to-date (updating an old version)
      * @throws RemoteException on remote communication error
      */
+    @Secured(stereotype=SAVE_OR_UPDATE)
     public long saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException;
 
     /**
@@ -63,6 +76,7 @@ public interface TrustedCertAdmin  {
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted
      * @throws RemoteException on remote communication error
      */
+    @Secured(stereotype=DELETE_BY_OID)
     public void deleteCert(long oid) throws FindException, DeleteException, RemoteException;
 
     public static class HostnameMismatchException extends Exception {
@@ -80,6 +94,7 @@ public interface TrustedCertAdmin  {
      * @throws IllegalArgumentException if the URL does not start with "https://"
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     public X509Certificate[] retrieveCertFromUrl(String url) throws RemoteException, IOException, HostnameMismatchException;
 
     /**
@@ -91,6 +106,7 @@ public interface TrustedCertAdmin  {
      * @throws IOException if the certificate cannot be retrieved for whatever reason.
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws RemoteException, IOException, HostnameMismatchException;
 
     /**
@@ -100,6 +116,7 @@ public interface TrustedCertAdmin  {
      * @throws CertificateException if the certificate cannot be retrieved
      * @throws RemoteException on remote communication error
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException;
 
     /**
@@ -109,5 +126,6 @@ public interface TrustedCertAdmin  {
      * @throws CertificateException if the certificate cannot be retrieved
      * @throws RemoteException on remote communication error
      */
+    @Transactional(propagation=Propagation.SUPPORTS)
     public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException;
 }

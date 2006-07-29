@@ -1,26 +1,19 @@
 package com.l7tech.spring.remoting.http;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import java.security.Principal;
-
-import javax.servlet.ServletException;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.FilterChain;
-import javax.servlet.Filter;
-import javax.servlet.http.HttpServletRequest;
-import javax.security.auth.Subject;
-
-import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.context.ApplicationContext;
-
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.spring.remoting.RemoteUtils;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import javax.security.auth.Subject;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.security.Principal;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -32,7 +25,8 @@ import com.l7tech.spring.remoting.RemoteUtils;
  * <p>This filter does not enforce any security, that is done by the
  * {@link SecureRemoteInvocationExecutor} (for is authenticated checking) and
  * at various points in the code by
- * {@link com.l7tech.admin.AccessManager#enforceAdminRole}.</p>
+ * {@link com.l7tech.server.security.rbac.SecuredMethodInterceptor}.
+ * </p>
  *
  * @author Steve Jones, $Author$
  * @version $Revision$

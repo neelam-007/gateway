@@ -7,6 +7,8 @@ import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 
@@ -42,14 +44,6 @@ public interface ServiceManager extends EntityManager<PublishedService, EntityHe
     void update(PublishedService service) throws UpdateException, VersionException;
 
     /**
-     * deletes the service
-     *
-     * @param service
-     * @throws DeleteException
-     */
-    void delete(PublishedService service) throws DeleteException;
-
-    /**
      * returns the parsed server-side policy for a specific PublishedService
      */
     ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException;
@@ -70,4 +64,7 @@ public interface ServiceManager extends EntityManager<PublishedService, EntityHe
     Collection<ServiceStatistics> getAllServiceStatistics() throws FindException;
 
     void setVisitorClassnames(String visitorClasses);
+
+    @Transactional(propagation= Propagation.SUPPORTS)
+    void initiateServiceCache();
 }

@@ -2,6 +2,10 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import static com.l7tech.common.security.rbac.EntityType.USER;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -9,10 +13,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeader;
@@ -22,6 +23,7 @@ import net.sf.nachocalendar.components.DateField;
 import net.sf.nachocalendar.components.DefaultDayRenderer;
 import net.sf.nachocalendar.components.DefaultHeaderRenderer;
 
+import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -31,6 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.security.AccessController;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.NoSuchElementException;
@@ -725,32 +728,33 @@ public class GenericUserPanel extends UserPanel {
 
     class OkAction extends SecureAction {
         protected OkAction() {
-            super(true);
+            super(null);
         }
 
         /**
          * Actually perform the action.
          */
         protected void performAction() {
-            if (config.isWritable() && isInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
-                // Apply changes if possible
-                if (!collectAndSaveChanges()) {
-                    // Error - just return
-                    return;
+            if (user instanceof PersistentUser) {
+                PersistentUser puser = (PersistentUser) user;
+                Subject subject = Subject.getSubject(AccessController.getContext());
+                AttemptedOperation ao;
+                if (puser.getOid() == PersistentUser.DEFAULT_OID) {
+                    ao = new AttemptedCreate(USER);
+                } else {
+                    ao = new AttemptedUpdate(USER, puser);
+                }
+                if (config.isWritable() && Registry.getDefault().getSecurityProvider().hasPermission(subject, ao)) {
+                    // Apply changes if possible
+                    if (!collectAndSaveChanges()) {
+                        // Error - just return
+                        return;
+                    }
                 }
             }
             Window dlg = SwingUtilities.windowForComponent(GenericUserPanel.this);
             dlg.setVisible(false);
             dlg.dispose();
-        }
-
-        /**
-         * Return the required roles for this action, one of the roles.
-         *
-         * @return the list of roles that are allowed to carry out the action
-         */
-        protected String[] requiredRoles() {
-            return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
         }
 
         /**

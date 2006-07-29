@@ -5,25 +5,26 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.LicenseListener;
-import com.l7tech.identity.Group;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 
+import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
-import javax.security.auth.Subject;
-import java.util.ArrayList;
-import java.util.List;
 import java.awt.*;
 import java.security.AccessController;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author mike
@@ -82,22 +83,15 @@ public class HomePagePanel extends JPanel {
     }
 
     private boolean isAdmin() {
-        return (isInRole(new String[]{Group.ADMIN_GROUP_NAME}));
-    }
-
-    /**
-     * Determines whether the current subject belongs to the specified Role (group).
-     *
-     * @param roles the string array of role names
-     * @return true if the subject, belongs to one of the the specified roles,
-     *         false, otherwise.
-     */
-    public final boolean isInRole(String[] roles) {
         final Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
             return false;
         }
-        return Registry.getDefault().getSecurityProvider().isSubjectInRole(subject, roles);
+        Collection<Role> roles = Registry.getDefault().getSecurityProvider().getUserRoles(subject);
+        for (Role role : roles) {
+            if (!role.getPermissions().isEmpty()) return true;
+        }
+        return false;
     }
 
     private Component getToolbar() {

@@ -352,7 +352,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
                         new String[] {String.valueOf(data.getEndpointOid()), data.getEndpointName()});
             } else {
-                routedRequestConnection = mgr.findConnectionByPrimaryKey( endpoint.getConnectionOid() );
+                routedRequestConnection = mgr.findByPrimaryKey( endpoint.getConnectionOid() );
             }
         }
         return routedRequestConnection;

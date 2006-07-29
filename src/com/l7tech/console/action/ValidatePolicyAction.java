@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.identity.Group;
 
 
 /**
@@ -14,11 +13,11 @@ public class ValidatePolicyAction extends SecureAction {
     protected AssertionTreeNode rootNode;
 
     public ValidatePolicyAction() {
-        super(true);
+        super(null);
     }
 
     public ValidatePolicyAction(AssertionTreeNode node) {
-        super(true);
+        super(null);
         this.rootNode = node;
     }
 
@@ -53,13 +52,4 @@ public class ValidatePolicyAction extends SecureAction {
     protected void performAction() {
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

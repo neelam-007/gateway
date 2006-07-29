@@ -3,8 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -28,7 +28,7 @@ public class EnableServiceAction extends SecureAction {
      * @param en the node to deleteEntity
      */
     public EnableServiceAction(ServiceNode en) {
-        super(true);
+        super(null);
         node = en;
     }
 

@@ -1,7 +1,6 @@
 package com.l7tech.console.poleditor;
 
 import com.l7tech.console.action.SecureAction;
-import com.l7tech.identity.Group;
 
 
 /**
@@ -14,7 +13,7 @@ import com.l7tech.identity.Group;
 public class PolicyIdentityViewAction extends SecureAction {
 
     public PolicyIdentityViewAction() {
-        super(true);
+        super(null);
     }
 
     /**
@@ -48,13 +47,4 @@ public class PolicyIdentityViewAction extends SecureAction {
     protected void performAction() {
     }
 
-    /**
-     * Return the required roles for this action, one of the roles. The base
-     * implementatoinm requires the strongest admin role.
-     *
-     * @return the list of roles that are allowed to carry out the action
-     */
-    protected String[] requiredRoles() {
-        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
 }

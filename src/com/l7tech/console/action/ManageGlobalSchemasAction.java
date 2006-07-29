@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
  */
 public class ManageGlobalSchemasAction extends SecureAction {
     public ManageGlobalSchemasAction() {
-        super(true, SchemaValidation.class);
+        super(null, SchemaValidation.class);
     }
 
     public String getName() {

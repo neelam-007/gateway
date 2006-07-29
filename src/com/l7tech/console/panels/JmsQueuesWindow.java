@@ -7,6 +7,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
@@ -14,7 +16,6 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -64,8 +65,7 @@ public class JmsQueuesWindow extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
-
+        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.JMS_ENDPOINT));
 
         Container p = that.getContentPane();
         p.setLayout(new GridBagLayout());

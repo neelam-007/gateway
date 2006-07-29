@@ -5,6 +5,7 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
@@ -12,8 +13,7 @@ import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
 import org.xml.sax.SAXException;
 
@@ -155,18 +155,13 @@ public class LicenseDialog extends JDialog {
 
                         try {
                             // Go behind the license manager's back and forcibly install the invalid license
-                            admin.setProperty("license", licenseXml);
+                            ClusterProperty licProp = admin.findPropertyByName("license");
+                            if (licProp == null) licProp = new ClusterProperty("license", licenseXml);
+                            admin.saveProperty(licProp);
                             // Fallthrough and update the license panel
-                        } catch (SaveException e2) {
+                        } catch (ObjectModelException e2) {
                             JOptionPane.showMessageDialog(LicenseDialog.this,
                                                           "Unable to forcibly install this license file: " +
-                                                                  ExceptionUtils.getMessage(e2),
-                                                          "Unable to install license file",
-                                                          JOptionPane.ERROR_MESSAGE);
-                            return;
-                        } catch (DeleteException e2) {
-                            JOptionPane.showMessageDialog(LicenseDialog.this,
-                                                          "Unable to forcibly this license file: " +
                                                                   ExceptionUtils.getMessage(e2),
                                                           "Unable to install license file",
                                                           JOptionPane.ERROR_MESSAGE);

@@ -19,6 +19,8 @@ import java.util.Set;
  * @author alex
  */
 public class Role extends NamedEntityImp {
+    public static final int ADMIN_ROLE_OID = -3;
+
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<UserRoleAssignment> userAssignments = new HashSet<UserRoleAssignment>();
 

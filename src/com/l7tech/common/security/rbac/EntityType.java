@@ -9,6 +9,7 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.SecurityTokenMapping;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
+import com.l7tech.service.MetricsBin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.security.TrustedCert;
@@ -18,8 +19,11 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.common.audit.AdminAuditRecord;
+import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.cluster.ServiceUsage;
 
 /**
  * @author alex
@@ -43,13 +47,17 @@ public enum EntityType {
     MAP_TOKEN("Security Token Attribute Mapping", SecurityTokenMapping.class),
 
     CLUSTER_PROPERTY("Cluster Property", ClusterProperty.class),
+    CLUSTER_INFO("Cluster Node Information", ClusterNodeInfo.class),
+    SERVICE_USAGE("Service Usage Record", ServiceUsage.class),
     SCHEMA_ENTRY("Schema Entry", SchemaEntry.class),
+    METRICS_BIN("Service Metrics Bin", MetricsBin.class),
 
     RBAC_ROLE("RBAC Role", Role.class),
     RBAC_PERMISSION("RBAC Permission", Permission.class),
     RBAC_PREDICATE("RBAC Scope Predicate", ScopePredicate.class),
     RBAC_ASSIGNMENT("RBAC User Assignment", UserRoleAssignment.class),
 
+    AUDIT_RECORD("Audit Record", AuditRecord.class),
     AUDIT_MESSAGE("Message Audit Record", MessageSummaryAuditRecord.class),
     AUDIT_ADMIN("Admin Audit Record", AdminAuditRecord.class),
     AUDIT_SYSTEM("System Audit Record", SystemAuditRecord.class),
@@ -74,4 +82,5 @@ public enum EntityType {
     public String toString() {
         return name;
     }
+
 }

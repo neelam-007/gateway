@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
@@ -13,7 +15,6 @@ import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
@@ -67,7 +68,8 @@ public class CertManagerWindow extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+
+        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(TRUSTED_CERT));
 
         initialize();
         loadTrustedCerts();

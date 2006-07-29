@@ -9,9 +9,9 @@ package com.l7tech.server.audit;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
@@ -21,6 +21,8 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -39,6 +41,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditRecordManagerImpl
         extends HibernateEntityManager<AuditRecord, EntityHeader>
         implements AuditRecordManager, ApplicationContextAware
@@ -51,13 +54,17 @@ public class AuditRecordManagerImpl
         this.applicationContext = applicationContext;
     }
 
+    @Transactional(readOnly=true)
     public Collection find(AuditSearchCriteria criteria) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
+        Session session = null;
         try {
             Class findClass = criteria.recordClass;
             if (findClass == null) findClass = getInterfaceClass();
 
-            Criteria query = getSession().createCriteria(findClass);
+            session = getSession();
+
+            Criteria query = session.createCriteria(findClass);
             int maxRecords = criteria.maxRecords;
             if (maxRecords <= 0) maxRecords = 4096;
             query.setMaxResults(maxRecords);
@@ -97,6 +104,8 @@ public class AuditRecordManagerImpl
             return query.list();
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
+        } finally {
+            releaseSession(session);
         }
     }
 
@@ -115,8 +124,9 @@ public class AuditRecordManagerImpl
         long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
 
         PreparedStatement deleteStmt = null;
+        Session s = null;
         try {
-            Session s = getSession();
+            s = getSession();
             deleteStmt = s.connection().prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ?");
             deleteStmt.setString(1, Level.SEVERE.getName());
             deleteStmt.setLong(2, maxTime);
@@ -128,6 +138,7 @@ public class AuditRecordManagerImpl
             throw new DeleteException("Couldn't delete audit records", e);
         } finally {
             if (deleteStmt != null) try { deleteStmt.close(); } catch (SQLException e) { }
+            releaseSession(s);
         }
     }
 

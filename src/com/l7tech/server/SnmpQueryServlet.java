@@ -10,7 +10,7 @@ import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.cluster.ServiceUsageManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.ServiceAdmin;
+import com.l7tech.server.service.ServiceManager;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -21,6 +21,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,8 +32,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * A servlet that answers REST queries of the form GET /ssg/management/-n/.1.3.6.1.4.1.17304.7.1.1.1 with SNMP answers
@@ -169,7 +169,7 @@ public class SnmpQueryServlet extends HttpServlet {
                 send(response, addr, "integer", su.getServiceid());
                 return;
             case 2:
-                send(response, addr, "string", su.getServiceName());
+                send(response, addr, "string", su.getName());
                 return;
             case 3:
                 send(response, addr, "counter", su.getRequests());
@@ -212,26 +212,26 @@ public class SnmpQueryServlet extends HttpServlet {
         }
 
         ServiceUsageManager statsManager = (ServiceUsageManager)applicationContext.getBean("serviceUsageManager");
-        Map statsByOid = new HashMap();
+        Map<Long, ServiceUsage> statsByOid = new HashMap<Long, ServiceUsage>();
         Collection collection = statsManager.getAll();
         for (Iterator i = collection.iterator(); i.hasNext();) {
             ServiceUsage serviceUsage = (ServiceUsage)i.next();
             statsByOid.put(new Long(serviceUsage.getServiceid()), serviceUsage);
         }
 
-        ServiceAdmin serviceAdmin = (ServiceAdmin)applicationContext.getBean("serviceAdmin");
-        EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
+        ServiceManager serviceManager = (ServiceManager) applicationContext.getBean("serviceManager");
+        EntityHeader[] headers = serviceManager.findAllHeaders().toArray(new EntityHeader[0]);
         ServiceUsage[] fullTable = new ServiceUsage[headers.length];
         for (int i = 0; i < headers.length; i++) {
             EntityHeader header = headers[i];
-            ServiceUsage su = (ServiceUsage)statsByOid.get(new Long(header.getOid()));
+            ServiceUsage su = statsByOid.get(new Long(header.getOid()));
             if (su != null) {
                 fullTable[i] = su;
             } else {
                 fullTable[i] = new ServiceUsage();
                 fullTable[i].setServiceid(header.getOid());
             }
-            fullTable[i].setServiceName(header.getName());
+            fullTable[i].setName(header.getName());
         }
 
         serviceTable = fullTable;

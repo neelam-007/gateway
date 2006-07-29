@@ -4,8 +4,12 @@
 
 package com.l7tech.service;
 
+import com.l7tech.common.security.rbac.MethodStereotype;
+import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -26,6 +30,8 @@ public interface ServiceAdminPublic {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    @Transactional(readOnly=true)
     EntityHeader[] findAllPublishedServices() throws RemoteException, FindException;
 
     /**
@@ -36,6 +42,8 @@ public interface ServiceAdminPublic {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
+    @Secured(stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
+    @Transactional(readOnly=true)
     PublishedService findServiceByID(String oid) throws RemoteException, FindException;
 
     /**
@@ -51,5 +59,6 @@ public interface ServiceAdminPublic {
      * @throws IOException thrown on I/O error accessing the WSDL url
      * @throws MalformedURLException thrown on malformed WSDL url
      */
+    @Transactional(propagation=SUPPORTS)
     String resolveWsdlTarget(String url) throws RemoteException, IOException, MalformedURLException;
 }

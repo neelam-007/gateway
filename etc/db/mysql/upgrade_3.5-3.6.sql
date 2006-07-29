@@ -84,7 +84,6 @@ alter table internal_user_group add index (subgroup_id);
 ------------------------------------
 alter table counters modify column userid varchar(128) NOT NULL;
 
-
 ---------------------
 -- RBAC DATA MODEL --
 ---------------------
@@ -107,7 +106,7 @@ CREATE TABLE rbac_role (
 --
 
 DROP TABLE IF EXISTS rbac_assignment;
-CREATE TABLE rbac_assign_user (
+CREATE TABLE rbac_assignment (
   objectid bigint(20) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   role_oid bigint(20) NOT NULL,
@@ -135,7 +134,7 @@ CREATE TABLE rbac_permission (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table rbac_predicate
+-- Table structure for table rbac_predicate (none necessary for Administrator)
 --
 
 DROP TABLE IF EXISTS rbac_predicate;
@@ -148,7 +147,7 @@ CREATE TABLE rbac_predicate (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table rbac_predicate_attribute
+-- Table structure for table rbac_predicate_attribute (none necessary for Administrator)
 --
 
 DROP TABLE IF EXISTS rbac_predicate_attribute;
@@ -161,7 +160,7 @@ CREATE TABLE rbac_predicate_attribute (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table rbac_predicate_oid
+-- Table structure for table rbac_predicate_oid (none necessary for Administrator)
 --
 
 DROP TABLE IF EXISTS rbac_predicate_oid;
@@ -171,3 +170,16 @@ CREATE TABLE rbac_predicate_oid (
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
+
+-- Create new Administrator role
+INSERT INTO rbac_role VALUES (-3,0,'Administrator');
+
+-- Assign Administrator role to existing admin user
+INSERT INTO rbac_assignment VALUES (-4, -2, -3, 3);
+
+-- Grant all CRUD permissions to admin role
+INSERT INTO rbac_permission VALUES (-5, 0, -3, 'CREATE', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-6, 0, -3, 'READ',   null, 'ANY');
+INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
+

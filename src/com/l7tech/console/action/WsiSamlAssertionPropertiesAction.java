@@ -24,7 +24,7 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
     //- PUBLIC
 
     public WsiSamlAssertionPropertiesAction(WsiSamlAssertionPolicyNode node) {
-        super(true, WsiSamlAssertion.class);
+        super(null, WsiSamlAssertion.class);
         this.node = node;
     }
 

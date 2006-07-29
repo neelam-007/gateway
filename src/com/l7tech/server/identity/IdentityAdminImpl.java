@@ -1,6 +1,5 @@
 package com.l7tech.server.identity;
 
-import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
@@ -11,19 +10,16 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
-import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.SecureRandom;
 import java.security.Principal;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,11 +36,9 @@ import java.util.logging.Logger;
 public class IdentityAdminImpl implements IdentityAdmin {
     private ClientCertManager clientCertManager;
 
-    private final AccessManager accessManager;
     private final LicenseManager licenseManager;
 
-    public IdentityAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
-        this.accessManager = accessManager;
+    public IdentityAdminImpl(LicenseManager licenseManager) {
         this.licenseManager = licenseManager;
     }
 
@@ -87,7 +81,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws RemoteException, SaveException, UpdateException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
@@ -162,10 +155,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
@@ -188,8 +179,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException, FindException {
             checkLicense();
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
-            Collection res = userManager.findAllHeaders();
-            return (EntityHeader[])res.toArray(new EntityHeader[]{});
+            Collection<IdentityHeader> res = userManager.findAllHeaders();
+            return res.toArray(new EntityHeader[]{});
     }
 
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
@@ -203,7 +194,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
                     types[i] = EntityType.fromValue(types[i].getVal());
                 }
             }
-            Collection searchResults = provider.search(types, pattern);
+            Collection<IdentityHeader> searchResults = provider.search(types, pattern);
             if (searchResults == null) return new EntityHeader[0];
             return (EntityHeader[])searchResults.toArray(new EntityHeader[]{});
     }
@@ -230,7 +221,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public void deleteUser(long cfgid, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
@@ -249,7 +239,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
@@ -291,7 +280,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public void deleteGroup(long cfgid, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
@@ -306,7 +294,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
@@ -340,7 +327,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             // revoke the cert in internal CA
             clientCertManager.revokeUserCert(user);
@@ -374,10 +360,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
-            accessManager.enforceAdminRole();
-            checkLicense();
-            // revoke the cert in internal CA
-            clientCertManager.recordNewUserCert(user, cert, false);
+        checkLicense();
+        // revoke the cert in internal CA
+        clientCertManager.recordNewUserCert(user, cert, false);
     }
 
     private static SecureRandom secureRandom = null;
@@ -422,41 +407,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         return ldapTemplateManager.getTemplates();
-    }
-
-    /**
-     * Determine the roles for the given subject.
-     *
-     * @param subject the subject for which to get roles for
-     * @return the <code>Set</code> of roles (groups) the subject is memeber of
-     * @throws java.rmi.RemoteException on remote invocation error
-     * @throws java.security.AccessControlException
-     *                                  if the current subject is not allowed to perform the operation.
-     *                                  The invocation tests whether the current subject  (the subject carrying out the operaton)
-     *                                  has privileges to perform the operation. The operators are not allowed to perform this operation
-     *                                  except for themselves.
-     */
-    public Set getRoles(Subject subject) throws RemoteException, AccessControlException {
-        if (subject == null) {
-            throw new IllegalArgumentException();
-        }
-
-        final Subject currentSubject = Subject.getSubject(AccessController.getContext());
-        if (currentSubject == null) {
-            return Collections.EMPTY_SET;
-        }
-        if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.ADMIN_GROUP_NAME})) {  //admin can ask everything
-            return authorizer.getUserRoles(subject);
-        } else if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.OPERATOR_GROUP_NAME})) { // operator only self
-            if (isSameUser(currentSubject, subject)) {
-                return authorizer.getUserRoles(subject);
-            } else {
-                logger.log(Level.INFO, "Access denied for " + currentSubject.getPrincipals() + " accessing roles for " + subject.getPrincipals() + ".");
-                throw new AccessControlException("Access denied, accessing subject " + subject);
-            }
-        }
-
-        throw new AccessControlException("Access denied, accessing subject " + subject);
     }
 
     public void setIdentityProviderConfigManager(IdentityProviderConfigManager icf) {

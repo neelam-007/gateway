@@ -40,8 +40,12 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
-<!--
+
+    <!--
         Internal Identity Provider
 
         The factory method with support with construction arguments. The bean must be instantiated
@@ -56,11 +60,11 @@
         <property name="keystore">
             <ref local='keystore'/>
         </property>
-
         <property name="certificateAuthenticator">
             <ref bean="certificateAuthenticator"/>
         </property>
     </bean>
+
     <!-- Internal UserManager -->
     <bean id="internalUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
           class="com.l7tech.server.identity.internal.InternalUserManager" singleton="false">
@@ -70,12 +74,18 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
     <!-- Internal GroupManager -->
     <bean id="internalGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
           class="com.l7tech.server.identity.internal.InternalGroupManager" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
     <!-- Federated Identity Provider -->
@@ -100,12 +110,18 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
 
     <bean id="federatedGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
           class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
     <!-- LDAP Identity Provider -->
@@ -129,7 +145,7 @@
     <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
           class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false"></bean>
     <!-- server side Cluster Info manager -->
-    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManager">
+    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -175,7 +191,7 @@
         </property>
     </bean>
     <!-- server side service manager -->
-    <bean id="serviceManagerTarget" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar">
+    <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar">
         <property name="serviceCache">
             <ref bean='serviceCache'/>
         </property>
@@ -209,6 +225,9 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
@@ -224,11 +243,17 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
     <!-- jms connection manager -->
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
 
@@ -307,6 +332,9 @@
         </property>
         <property name="serverConfig">
             <ref bean="serverConfig"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
     <!-- server side audit exporter -->
@@ -511,7 +539,6 @@
         <constructor-arg>
             <ref bean="serviceUsageManager"/>
         </constructor-arg>
-
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -593,7 +620,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="schemaEntryManagerTarget" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
+    <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -614,9 +641,12 @@
         </property>
     </bean>
 
-    <bean id="clusterPropertyManagerTarget" class="com.l7tech.cluster.ClusterPropertyManagerImpl">
+    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
 
@@ -645,17 +675,26 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
 
     <bean id="attributeConfigManager" class="com.l7tech.server.identity.mapping.AttributeConfigManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
     </bean>
 
     <bean id="securityTokenMappingManager" class="com.l7tech.server.identity.mapping.SecurityTokenMappingManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
 
@@ -672,7 +711,7 @@
         </property>
     </bean>
 
-    <bean id="serviceMetricsManagerTarget"
+    <bean id="serviceMetricsManager"
           class="com.l7tech.server.service.ServiceMetricsManager"
           singleton="true"
           depends-on="ssgBoot"> <!-- To ensure system.properties file is processed first -->
@@ -694,6 +733,7 @@
         <property name="entityManagers">
             <list>
                 <ref bean="schemaEntryManager"/>
+                <ref bean="roleManager"/>
             </list>
         </property>
     </bean>
@@ -716,6 +756,9 @@
         </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
         </property>
     </bean>
 

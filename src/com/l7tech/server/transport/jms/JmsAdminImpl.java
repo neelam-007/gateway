@@ -6,7 +6,6 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.admin.AccessManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.transport.jms.*;
@@ -31,12 +30,9 @@ import java.util.logging.Logger;
 public class JmsAdminImpl implements JmsAdmin {
     private JmsConnectionManager jmsConnectionManager;
     private JmsEndpointManager jmsEndpointManager;
-    private final AccessManager accessManager;
     private LicenseManager licenseManager;
 
-
-    public JmsAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
-        this.accessManager = accessManager;
+    public JmsAdminImpl(LicenseManager licenseManager) {
         this.licenseManager = licenseManager;
     }
 
@@ -74,9 +70,6 @@ public class JmsAdminImpl implements JmsAdmin {
         return (JmsConnection[])results.toArray(new JmsConnection[0]);
     }
 
-    /**
-     * Must be called in a transaction!
-     */
     public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
         checkLicense();
         JmsTuple tuple;
@@ -104,7 +97,7 @@ public class JmsAdminImpl implements JmsAdmin {
      */
     public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
         checkLicense();
-        return jmsConnectionManager.findConnectionByPrimaryKey(oid);
+        return jmsConnectionManager.findByPrimaryKey(oid);
     }
 
     public JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
@@ -114,26 +107,13 @@ public class JmsAdminImpl implements JmsAdmin {
 
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
         checkLicense();
-        accessManager.enforceAdminRole();
         JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
         if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
         endpoint.setMessageSource(isMessageSource);
     }
 
-    public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
-        checkLicense();
-        Collection endpoints = jmsEndpointManager.findMessageSourceEndpoints();
-        List list = new ArrayList();
-        for (Iterator i = endpoints.iterator(); i.hasNext();) {
-            JmsEndpoint endpoint = (JmsEndpoint)i.next();
-            list.add(endpoint.toEntityHeader());
-        }
-        return (EntityHeader[])list.toArray(new EntityHeader[0]);
-    }
-
     public long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
 
             long oid = connection.getOid();
@@ -260,7 +240,6 @@ public class JmsAdminImpl implements JmsAdmin {
 
     public long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
         try {
-            accessManager.enforceAdminRole();
             checkLicense();
             long oid = endpoint.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
@@ -277,13 +256,11 @@ public class JmsAdminImpl implements JmsAdmin {
 
     public void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException {
         checkLicense();
-        accessManager.enforceAdminRole();
         jmsEndpointManager.delete(endpointOid);
     }
 
     public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
         checkLicense();
-        accessManager.enforceAdminRole();
         jmsConnectionManager.delete(connectionOid);
     }
 

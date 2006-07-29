@@ -5,21 +5,21 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.util.Service;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.Service;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.server.event.system.*;
-import com.l7tech.server.service.ServiceManagerImp;
-import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -27,6 +27,9 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.dao.DataAccessException;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.TransformerFactory;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -56,7 +59,7 @@ public class BootProcess
      * Constructor for bean usage via subclassing.
      */
     public BootProcess() {
-        _components = new ArrayList();
+        _components = new ArrayList<ServerComponentLifecycle>();
     }
 
     private void deleteOldAttachments(File attachmentDir) {
@@ -67,8 +70,7 @@ public class BootProcess
             }
         });
 
-        for (int i = 0; i < goners.length; i++) {
-            File goner = goners[i];
+        for (File goner : goners) {
             String filename = goner.toString();
             auditor.logAndAudit(BootMessages.DELETING_ATTACHMENT, new String[]{filename});
             goner.delete();
@@ -89,8 +91,7 @@ public class BootProcess
         logger.info("Starting server");
 
         logger.info("Starting server components...");
-        for (Iterator i = _components.iterator(); i.hasNext();) {
-            ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+        for (ServerComponentLifecycle component : _components) {
             logger.info("Starting component " + component);
             component.start();
         }
@@ -104,12 +105,11 @@ public class BootProcess
 
         logger.info("Stopping server components");
 
-        List stnenopmoc = new ArrayList();
+        List<ServerComponentLifecycle> stnenopmoc = new ArrayList<ServerComponentLifecycle>();
         stnenopmoc.addAll(_components);
         Collections.reverse(stnenopmoc);
 
-        for (Iterator i = stnenopmoc.iterator(); i.hasNext();) {
-            ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+        for (ServerComponentLifecycle component : stnenopmoc) {
             logger.info("Stopping component " + component);
             component.stop();
         }
@@ -123,12 +123,11 @@ public class BootProcess
 
         logger.info("Closing server components");
 
-        List stnenopmoc = new ArrayList();
+        List<ServerComponentLifecycle> stnenopmoc = new ArrayList<ServerComponentLifecycle>();
         stnenopmoc.addAll(_components);
         Collections.reverse(stnenopmoc);
 
-        for (Iterator i = stnenopmoc.iterator(); i.hasNext();) {
-            ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+        for (ServerComponentLifecycle component : stnenopmoc) {
             logger.info("Closing component " + component);
             component.close();
         }
@@ -206,13 +205,12 @@ public class BootProcess
         String classnameString = serverConfig.getPropertyCached(ServerConfig.PARAM_SERVERCOMPONENTS);
         String[] componentClassnames = classnameString.split("\\s.*?");
 
-        for (int i = 0; i < componentClassnames.length; i++) {
+        for (String classname : componentClassnames) {
             ServerComponentLifecycle component = null;
-            String classname = componentClassnames[i];
             logger.info("Initializing server component '" + classname + "'");
             try {
                 Class clazz = Class.forName(classname);
-                component = (ServerComponentLifecycle)clazz.newInstance();
+                component = (ServerComponentLifecycle) clazz.newInstance();
             } catch (ClassNotFoundException cnfe) {
                 auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, cnfe);
             } catch (InstantiationException e) {
@@ -224,7 +222,7 @@ public class BootProcess
             if (component != null) {
                 try {
                     if (component instanceof ApplicationContextAware) {
-                        ((ApplicationContextAware)component).setApplicationContext(applicationContext);
+                        ((ApplicationContextAware) component).setApplicationContext(applicationContext);
                     }
                     component.setServerConfig(serverConfig);
                     _components.add(component);
@@ -237,7 +235,7 @@ public class BootProcess
         applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
 
         // initialize service cache after all this
-        ServiceManagerImp serviceManager = (ServiceManagerImp)applicationContext.getBean("serviceManagerTarget");
+        ServiceManager serviceManager = (ServiceManager)applicationContext.getBean("serviceManager");
         logger.info("initializing the service cache");
         serviceManager.initiateServiceCache();
 
@@ -283,9 +281,9 @@ public class BootProcess
 
             if (is != null) props.load(is);
 
-            for (Iterator i = props.keySet().iterator(); i.hasNext();) {
-                String name = (String)i.next();
-                String value = (String)props.get(name);
+            for (Object o : props.keySet()) {
+                String name = (String) o;
+                String value = (String) props.get(name);
                 logger.info("Setting system property " + name + "=" + value);
                 System.setProperty(name, value);
             }
@@ -308,11 +306,11 @@ public class BootProcess
      */
     private void logConfiguredFactories() {
         // providers we are interested in
-        Class[] factoryKeys = {
-                javax.xml.parsers.DocumentBuilderFactory.class,
-                javax.xml.parsers.SAXParserFactory.class,
-                javax.xml.transform.TransformerFactory.class,
-                };
+        Class[] factoryClasses = {
+            DocumentBuilderFactory.class,
+            SAXParserFactory.class,
+            TransformerFactory.class,
+        };
 
         // load JAXP properties if any
         Properties jaxpProps = new Properties();
@@ -323,58 +321,55 @@ public class BootProcess
         try {
             in = new FileInputStream(file);
             jaxpProps.load(in);
-        }
-        catch (IOException e) {
-        }
-        finally {
+        } catch (IOException e) {
+        } finally {
             ResourceUtils.closeQuietly(in);
         }
 
         // initialize to default
-        Map providers = new HashMap();
-        for (int i = 0; i < factoryKeys.length; i++) {
-            String factoryKey = factoryKeys[i].getName();
+        Map<String, String> providers = new HashMap<String, String>();
+        for (Class factoryClass : factoryClasses) {
+            String factoryKey = factoryClass.getName();
             providers.put(factoryKey, "DEFAULT");
         }
 
         // next check for Services API
-        for (int i = 0; i < factoryKeys.length; i++) {
-            Class factoryClass = factoryKeys[i];
+        for (Class factoryClass : factoryClasses) {
             String factoryKey = factoryClass.getName();
             Iterator names = Service.providerClassNames(factoryClass);
             if (names.hasNext()) {
-                providers.put(factoryKey, ((String) names.next()) + " - [Services API]");
+                providers.put(factoryKey, names.next() + " - [Services API]");
             }
         }
 
         // then for jaxp.properties
-        for (int i = 0; i < factoryKeys.length; i++) {
-            String factoryKey = factoryKeys[i].getName();
+        for (Class factoryClass : factoryClasses) {
+            String factoryKey = factoryClass.getName();
             String value = jaxpProps.getProperty(factoryKey);
-            if(value!=null) {
+            if (value != null) {
                 providers.put(factoryKey, value + " - [jaxp.properties]");
             }
         }
 
         // finally check system properties
-        for (int i = 0; i < factoryKeys.length; i++) {
-            String factoryKey = factoryKeys[i].getName();
+        for (Class factoryClass : factoryClasses) {
+            String factoryKey = factoryClass.getName();
             String value = System.getProperty(factoryKey);
-            if(value!=null) {
+            if (value != null) {
                 providers.put(factoryKey, value + " - [System property]");
             }
         }
 
         // loggit
-        for (int i = 0; i < factoryKeys.length; i++) {
-            String factoryKey = factoryKeys[i].getName();
-            logger.config("Provider for '"+factoryKey+"' is '"+providers.get(factoryKey)+"'.");
+        for (Class factoryClass : factoryClasses) {
+            String factoryKey = factoryClass.getName();
+            logger.config("Provider for '" + factoryKey + "' is '" + providers.get(factoryKey) + "'.");
         }
     }
 
     public static final String LOCALHOST_IP = "127.0.0.1";
 
-    private List _components;
+    private List<ServerComponentLifecycle> _components;
     private ServerConfig serverConfig;
     private Auditor auditor;
     private String ipAddress;

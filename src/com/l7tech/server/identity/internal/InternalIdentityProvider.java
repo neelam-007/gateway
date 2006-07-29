@@ -6,6 +6,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -17,6 +18,8 @@ import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -31,6 +34,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
+@Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class InternalIdentityProvider extends PersistentIdentityProvider implements ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(InternalIdentityProvider.class.getName());
     public static final String ENCODING = "UTF-8";
@@ -59,10 +63,11 @@ public class InternalIdentityProvider extends PersistentIdentityProvider impleme
         return groupManager;
     }
 
-    public Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+    public Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate( LoginCredentials pc )
             throws AuthenticationException
     {
@@ -137,7 +142,6 @@ public class InternalIdentityProvider extends PersistentIdentityProvider impleme
 
     public IdentityProviderConfig getConfig() {
         return config;
-
     }
 
     // TODO: Make this customizable

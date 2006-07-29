@@ -10,10 +10,10 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
+import com.l7tech.common.security.rbac.AttributePredicate;
+import com.l7tech.common.security.rbac.ObjectIdentityPredicate;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.ScopePredicate;
-import com.l7tech.common.security.rbac.ObjectIdentityPredicate;
-import com.l7tech.common.security.rbac.AttributePredicate;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.Entity;
@@ -24,12 +24,13 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.service.resolution.ResolutionParameters;
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.hibernate.Interceptor;
+import com.l7tech.service.MetricsBin;
 import org.hibernate.CallbackException;
 import org.hibernate.EntityMode;
+import org.hibernate.Interceptor;
 import org.hibernate.Transaction;
 import org.hibernate.type.Type;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -58,7 +59,9 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(SystemAuditRecord.class.getName());
         ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());
         ignoredClassNames.add(AuditDetail.class.getName());
-        
+        ignoredClassNames.add(MetricsBin.class.getName());
+        ignoredClassNames.add(ClusterNodeInfo.class.getName());
+
         ignoredClassNames.add(Permission.class.getName());
         ignoredClassNames.add(ScopePredicate.class.getName());
         ignoredClassNames.add(ObjectIdentityPredicate.class.getName());
