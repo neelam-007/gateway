@@ -1,7 +1,6 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -24,23 +23,17 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     //- PUBLIC
 
     /**
-     * Creates an uninitialized checker.
-     */
-    public EntityVersionChecker() {
-    }
-
-    /**
      * Set the list of managers whose entities should be checked.
      *
      * @param managers the List of HibernateEntityManagers
      * @throws IllegalStateException if the managers are already set
      * @throws ClassCastException if the list contains a non-HibernateEntityManager
      */
-    public void setEntityManagers(List<HibernateEntityManager> managers) {
+    public void setEntityManagers(List<EntityManager> managers) {
         if(btt!=null) throw new IllegalStateException("manager already set");
         if(managers!=null && !managers.isEmpty()) {
             List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
-            for (HibernateEntityManager manager : managers) {
+            for (EntityManager manager : managers) {
                 try {
                     tasks.add(new EntityInvalidationVersionCheck(manager));
                 } catch (Exception e) {
@@ -157,10 +150,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     }
 
     /**
-     * Version check task for an HibernateEntityManager
+     * Version check task for an EntityManager
      */
     private class EntityInvalidationVersionCheck extends PeriodicVersionCheck {
-
         private final Class entityType;
         private List<Long> invalidationList;
 

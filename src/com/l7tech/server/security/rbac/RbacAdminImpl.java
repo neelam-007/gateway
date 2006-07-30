@@ -9,8 +9,8 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.EntityFinder;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.EntityFinder;
 
 import java.rmi.RemoteException;
 import java.util.Collection;

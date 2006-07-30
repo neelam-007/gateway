@@ -111,15 +111,15 @@ public class LdapIdentityProviderTest {
     }
 
     private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
-        LdapIdentityProvider spock = new LdapIdentityProvider(getConfigForSpockWithBadSearchBase());
+        LdapIdentityProvider spock = new LdapIdentityProviderImpl(getConfigForSpockWithBadSearchBase());
         return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws Exception {
-        LdapIdentityProvider spock = new LdapIdentityProvider(getConfigForSpock());
-        LdapUserManager usman = new LdapUserManager(spock);
+        LdapIdentityProviderImpl spock = new LdapIdentityProviderImpl(getConfigForSpock());
+        LdapUserManagerImpl usman = new LdapUserManagerImpl(spock);
         spock.setUserManager(usman);
-        LdapGroupManager grpman = new LdapGroupManager(spock);
+        LdapGroupManager grpman = new LdapGroupManagerImpl(spock);
         spock.setGroupManager(grpman);
         spock.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
         spock.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
@@ -129,10 +129,10 @@ public class LdapIdentityProviderTest {
     }
 
     private LdapIdentityProvider getBonesProvider() throws Exception {
-        LdapIdentityProvider bones = new LdapIdentityProvider(getConfigForBones());
-        LdapUserManager usman = new LdapUserManager(bones);
+        LdapIdentityProviderImpl bones = new LdapIdentityProviderImpl(getConfigForBones());
+        LdapUserManagerImpl usman = new LdapUserManagerImpl(bones);
         bones.setUserManager(usman);
-        LdapGroupManager grpman = new LdapGroupManager(bones);
+        LdapGroupManager grpman = new LdapGroupManagerImpl(bones);
         bones.setGroupManager(grpman);
         bones.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
         bones.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
@@ -142,16 +142,16 @@ public class LdapIdentityProviderTest {
     }
 
     private LdapIdentityProvider getTimTamProvider() throws IOException {
-        LdapIdentityProvider timtam = new LdapIdentityProvider(getConfigForTimTam());
+        LdapIdentityProvider timtam = new LdapIdentityProviderImpl(getConfigForTimTam());
         return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws Exception {
-        LdapIdentityProvider msad = new LdapIdentityProvider(getConfigForMSAD());
+        LdapIdentityProviderImpl msad = new LdapIdentityProviderImpl(getConfigForMSAD());
 
-        LdapUserManager usman = new LdapUserManager(msad);
+        LdapUserManagerImpl usman = new LdapUserManagerImpl(msad);
         msad.setUserManager(usman);
-        LdapGroupManager grpman = new LdapGroupManager(msad);
+        LdapGroupManager grpman = new LdapGroupManagerImpl(msad);
         msad.setGroupManager(grpman);
         msad.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
         msad.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
@@ -160,12 +160,12 @@ public class LdapIdentityProviderTest {
     }
 
     private LdapIdentityProvider getOracleProvider() throws IOException {
-        LdapIdentityProvider orcl = new LdapIdentityProvider(getConfigForOracle());
+        LdapIdentityProvider orcl = new LdapIdentityProviderImpl(getConfigForOracle());
         return orcl;
     }
 
     private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
-        LdapIdentityProvider orcl = new LdapIdentityProvider(getModifiedConfigForOracle());
+        LdapIdentityProvider orcl = new LdapIdentityProviderImpl(getModifiedConfigForOracle());
         return orcl;
     }
 

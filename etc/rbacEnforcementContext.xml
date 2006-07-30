@@ -8,12 +8,7 @@
     </bean>
 
     <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
-        <constructor-arg>
-            <ref local="rbacPointcut"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="rbacAdvice"/>
-        </constructor-arg>
-        <property name="order" value="1"/>
+        <property name="pointcut" ref="rbacPointcut"/>
+        <property name="advice" ref="rbacAdvice"/>
     </bean>
 </beans>

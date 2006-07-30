@@ -1,19 +1,16 @@
+/**
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.identity.mapping;
 
-import com.l7tech.identity.mapping.IdentityMapping;
-import com.l7tech.objectmodel.HibernateEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.identity.mapping.IdentityMapping;
 
-public class IdentityMappingManager extends HibernateEntityManager<IdentityMapping, EntityHeader> {
-    public Class getImpClass() {
-        return IdentityMapping.class;
-    }
-
-    public Class getInterfaceClass() {
-        return IdentityMapping.class;
-    }
-
-    public String getTableName() {
-        return "identity_mappings";
-    }
+/**
+ * @author alex
+ */
+public interface IdentityMappingManager
+        extends EntityManager<IdentityMapping, EntityHeader>
+{
 }

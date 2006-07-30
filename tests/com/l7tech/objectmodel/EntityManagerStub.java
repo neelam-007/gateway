@@ -18,6 +18,10 @@ public abstract class EntityManagerStub<ET extends Entity> implements EntityMana
         throw new UnsupportedOperationException();
     }
 
+    public void delete(long oid) throws DeleteException, FindException {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
      *

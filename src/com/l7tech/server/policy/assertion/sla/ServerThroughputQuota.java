@@ -17,8 +17,8 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.sla.CounterManager;
+import com.l7tech.server.sla.CounterIDManager;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;

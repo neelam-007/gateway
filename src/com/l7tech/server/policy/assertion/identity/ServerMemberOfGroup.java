@@ -41,7 +41,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
         else {
             String groupName = _data.getGroupName();
             if ( groupName != null) {
-                return gman.findByUniqueName(groupName);
+                return gman.findByName(groupName);
             }
         }
         return null;

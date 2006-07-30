@@ -13,9 +13,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
-import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -80,8 +80,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
         this.counterIDManager = counterIDManager;
         this.trustManager = trustManager;
     }
-
-    protected ServiceAdminImpl() { }
 
     private void checkLicense() throws RemoteException {
         try {

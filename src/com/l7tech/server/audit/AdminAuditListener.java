@@ -10,7 +10,6 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityChangeSet;
@@ -18,18 +17,17 @@ import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
 import com.l7tech.spring.remoting.RemoteUtils;
-
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.Subject;
+import java.rmi.server.ServerNotActiveException;
 import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.server.ServerNotActiveException;
 
 /**
  * @author alex
@@ -212,7 +210,6 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         } else if (genericEvent instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)genericEvent;
             User admin = (User)le.getSource();
-            String role = le.getRole();
             String ip = null;
             try {
                 ip = RemoteUtils.getClientHost();
@@ -220,7 +217,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }
             return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
-                                        Group.OPERATOR_GROUP_NAME.equals(role) ? "Operator logged in" : "Administrator logged in",
+                                        "User logged in",
                                         admin.getProviderId(), admin.getLogin(), admin.getUniqueIdentifier(), ip);
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());

@@ -71,7 +71,9 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             boolean ok = false;
             // TODO is holding any CRUD permission sufficient?
             Collection<Role> roles = roleManager.getAssignedRoles(user);
+            Set<Permission> perms = new HashSet<Permission>();
             for (Role role : roles) {
+                perms.addAll(role.getPermissions());
                 for (Permission perm : role.getPermissions()) {
                     if (perm.getEntityType() != null && perm.getOperation() != OperationType.OTHER) {
                         ok = true;
@@ -82,7 +84,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             if (!ok) throw new AccessControlException(user.getName() +
                     " does not have privilege to access administrative services");
 
-            logger.info("User '" + user.getLogin() + "' with roles '" + roles + "' logged in from IP '" +
+            logger.info("User '" + user.getLogin() + "' logged in from IP '" +
                     RemoteUtils.getClientHost() + "'.");
 
             AdminContext adminContext = new AdminContextBean(
@@ -91,11 +93,11 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
                         BuildInfo.getProductVersion());
 
 
-            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, roles.toString()));
+            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, perms));
 
             String cookie = sessionManager.createSession(user);
 
-            return new AdminLoginResult(user, adminContext, cookie);
+            return new AdminLoginResult(user, perms, adminContext, cookie);
         } catch (ServerNotActiveException snae) {
             logger.log(Level.FINE, "Authentication failed", snae);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(snae);

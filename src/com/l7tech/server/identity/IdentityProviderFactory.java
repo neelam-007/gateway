@@ -9,15 +9,9 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.identity.fed.FederatedGroupManager;
-import com.l7tech.server.identity.fed.FederatedIdentityProvider;
-import com.l7tech.server.identity.fed.FederatedUserManager;
-import com.l7tech.server.identity.internal.InternalGroupManager;
-import com.l7tech.server.identity.internal.InternalIdentityProvider;
-import com.l7tech.server.identity.internal.InternalUserManager;
-import com.l7tech.server.identity.ldap.LdapGroupManager;
-import com.l7tech.server.identity.ldap.LdapIdentityProvider;
-import com.l7tech.server.identity.ldap.LdapUserManager;
+import com.l7tech.server.identity.fed.*;
+import com.l7tech.server.identity.internal.*;
+import com.l7tech.server.identity.ldap.*;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -175,8 +169,17 @@ public class IdentityProviderFactory
     public final Object createManagerInstance(Class managerClass, IdentityProvider identityProvider)
       throws InvalidIdProviderCfgException {
         try {
-            Constructor ctor = managerClass.getConstructor(IdentityProvider.class);
-            return ctor.newInstance(identityProvider);
+            Class[] idpIntfs = identityProvider.getClass().getInterfaces();
+            for (Constructor ctor : managerClass.getConstructors()) {
+                if (ctor.getParameterTypes().length == 1) {
+                    for (Class intf : idpIntfs) {
+                        if (ctor.getParameterTypes()[0] == intf) {
+                            return ctor.newInstance(identityProvider);
+                        }
+                    }
+                }
+            }
+            throw new IllegalArgumentException("Can't find constructor for " + identityProvider.getClass() + " in " + managerClass);
         } catch (Exception e) {
             throw new InvalidIdProviderCfgException(e);
         }
@@ -245,23 +248,22 @@ public class IdentityProviderFactory
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         if (INTERNAL_PROVIDER_BEAN_NAME.equals(beanName)) {
             final InternalIdentityProvider internalIdentityProvider = ((InternalIdentityProvider)bean);
-            UserManager um = (UserManager)abstractBeanFactory.getBean("internalUserManager", new Object[]{InternalUserManager.class, bean});
+            InternalUserManager um = (InternalUserManager) abstractBeanFactory.getBean("internalUserManager", new Object[]{InternalUserManagerImpl.class, bean});
             internalIdentityProvider.setUserManager(um);
-
-            GroupManager gm = (GroupManager)abstractBeanFactory.getBean("internalGroupManager", new Object[]{InternalGroupManager.class, bean});
+            InternalGroupManager gm = (InternalGroupManager) abstractBeanFactory.getBean("internalGroupManager", new Object[]{InternalGroupManagerImpl.class, bean});
             internalIdentityProvider.setGroupManager(gm);
         } else if (FEDERATED_PROVIDER_BEAN_NAME.equals(beanName)) {
             final FederatedIdentityProvider federatedIdentityProvider = ((FederatedIdentityProvider)bean);
-            UserManager um = (UserManager)abstractBeanFactory.getBean("federatedUserManager", new Object[]{FederatedUserManager.class, bean});
-            federatedIdentityProvider.setUserManager((FederatedUserManager)um);
-            GroupManager gm = (GroupManager)abstractBeanFactory.getBean("federatedGroupManager", new Object[]{FederatedGroupManager.class, bean});
-            federatedIdentityProvider.setGroupManager((FederatedGroupManager)gm);
+            FederatedUserManager um = (FederatedUserManager) abstractBeanFactory.getBean("federatedUserManager", new Object[]{FederatedUserManagerImpl.class, bean});
+            federatedIdentityProvider.setUserManager(um);
+            FederatedGroupManager gm = (FederatedGroupManager) abstractBeanFactory.getBean("federatedGroupManager", new Object[]{FederatedGroupManagerImpl.class, bean});
+            federatedIdentityProvider.setGroupManager(gm);
         } else if (LDAP_PROVIDER_BEAN_NAME.equals(beanName)) {
             final LdapIdentityProvider ldapIdentityProvider = ((LdapIdentityProvider)bean);
-            UserManager um = (UserManager)abstractBeanFactory.getBean("ldapUserManager", new Object[]{LdapUserManager.class, bean});
-            ldapIdentityProvider.setUserManager((LdapUserManager)um);
-            GroupManager gm = (GroupManager)abstractBeanFactory.getBean("ldapGroupManager", new Object[]{LdapGroupManager.class, bean});
-            ldapIdentityProvider.setGroupManager((LdapGroupManager)gm);
+            LdapUserManager um = (LdapUserManager) abstractBeanFactory.getBean("ldapUserManager", new Object[]{LdapUserManagerImpl.class, bean});
+            ldapIdentityProvider.setUserManager(um);
+            LdapGroupManager gm = (LdapGroupManager) abstractBeanFactory.getBean("ldapGroupManager", new Object[]{LdapGroupManagerImpl.class, bean});
+            ldapIdentityProvider.setGroupManager(gm);
         }
         return bean;
     }

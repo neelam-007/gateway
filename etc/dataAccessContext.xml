@@ -55,28 +55,7 @@
     <!-- The audit events hibernate interceptor -->
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
-    <!-- Transaction interception for beans that implement an interface -->
-    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-        <property name="proxyTargetClass" value="false"/>
-        <property name="interceptorNames">
-            <list>
-                <idref bean="annotationTransactionInterceptor"/>
-            </list>
-        </property>
-        <property name="beanNames">
-            <list>
-                <idref bean="identityProviderConfigManager"/>
-                <idref bean="serviceManager"/>
-                <idref bean="trustedCertManager"/>
-                <idref bean="clientCertManager"/>
-                <idref bean="auditRecordManager"/>
-                <idref bean="statusUpdateManager"/>
-                <idref bean="sampleMessageManager"/>
-            </list>
-        </property>
-    </bean>
-
-    <!-- Transaction and RBAC interception for admin beans -->
+    <!-- Declarative transaction and RBAC interception -->
     <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
         <property name="proxyTargetClass" value="false"/>
         <property name="interceptorNames">
@@ -87,6 +66,7 @@
         </property>
         <property name="beanNames">
             <list>
+                <!-- Admin API -->
                 <idref bean="serviceAdmin"/>
                 <idref bean="auditAdmin"/>
                 <idref bean="identityAdmin"/>
@@ -96,29 +76,23 @@
                 <idref bean="trustedCertAdmin"/>
                 <idref bean="kerberosAdmin"/>
                 <idref bean="clusterStatusAdmin"/>
-            </list>
-        </property>
-    </bean>
 
-
-    <!-- Transaction interception for beans that don't implement an interface -->
-    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-        <property name="proxyTargetClass" value="true"/>
-        <property name="interceptorNames">
-            <list>
-                <idref bean="annotationTransactionInterceptor"/>
-            </list>
-        </property>
-        <property name="beanNames">
-            <list>
+                <!-- IDPs -->
                 <idref bean="internalIdentityProvider"/>
+                <idref bean="federatedIdentityProvider"/>
                 <idref bean="internalUserManager"/>
                 <idref bean="internalGroupManager"/>
-
-                <idref bean="federatedIdentityProvider"/>
                 <idref bean="federatedUserManager"/>
                 <idref bean="federatedGroupManager"/>
 
+                <!-- Entity managers -->
+                <idref bean="identityProviderConfigManager"/>
+                <idref bean="serviceManager"/>
+                <idref bean="trustedCertManager"/>
+                <idref bean="clientCertManager"/>
+                <idref bean="auditRecordManager"/>
+                <idref bean="statusUpdateManager"/>
+                <idref bean="sampleMessageManager"/>
                 <idref bean="resolutionManager"/>
                 <idref bean="clusterInfoManager"/>
                 <idref bean="serviceUsageManager"/>
@@ -130,15 +104,8 @@
                 <idref bean="attributeConfigManager"/>
                 <idref bean="identityMappingManager"/>
                 <idref bean="securityTokenMappingManager"/>
-
-                <!--
-                The following are here, even though they both implement interfaces, because they're
-                passed as constructor-args to entityInvalidator, where they get downcast to
-                HibernateEntityManager.
-                -->
                 <idref bean="roleManager"/>
                 <idref bean="schemaEntryManager"/>
-
             </list>
         </property>
     </bean>

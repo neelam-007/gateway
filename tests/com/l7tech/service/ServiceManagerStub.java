@@ -284,6 +284,10 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         return null;
     }
 
+    public void delete(long oid) throws DeleteException, FindException {
+        services.remove(oid);
+    }
+
     public PublishedService findEntity(long l) throws FindException {
         return findByPrimaryKey(l);
     }

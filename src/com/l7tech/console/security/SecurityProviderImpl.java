@@ -151,7 +151,7 @@ public class SecurityProviderImpl extends SecurityProvider
                             (RbacAdmin) applicationContext.getBean("rbacAdmin"),
                             "", "");
 
-            LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON);
+            LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON, result.getPermissions());
             applicationContext.publishEvent(le);
         }
         catch(RemoteAccessException e) {

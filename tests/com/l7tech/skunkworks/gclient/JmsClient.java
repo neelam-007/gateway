@@ -1,39 +1,24 @@
 package com.l7tech.skunkworks.gclient;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.logging.Logger;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URI;
-import javax.jms.Destination;
-import javax.jms.MessageProducer;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.Message;
-import javax.jms.TemporaryQueue;
-import javax.jms.QueueSession;
-import javax.jms.Queue;
-import javax.jms.TopicSession;
-import javax.jms.TextMessage;
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.naming.NamingException;
-import javax.naming.Context;
-
+import com.l7tech.common.http.ParameterizedString;
+import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.transport.jms.JmsReplyType;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.http.ParameterizedString;
+
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * JMS client code "borrowed" from the ServerJmsRoutingAssertion.

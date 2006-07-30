@@ -37,7 +37,7 @@ public class AuditExporterTest extends TestCase {
         String quo1 = "foo\\:bar\\\nbaz, blat boof\\: here is some unicode\\: \\\uf0a8\\\uf0ad\\\udead\\\ubeef\\\n\\\t\\\tlast line";
         String raw2 = ":::blat,blaz&&uqi\\ajqhwo:foompa:geblart\\:smoof backspace this: \b\b\b\b\ndone\n\t \t\n";
         String quo2 = "\\:\\:\\:blat,blaz&&uqi\\\\ajqhwo\\:foompa\\:geblart\\\\\\:smoof backspace this\\: \\\b\\\b\\\b\\\b\\\ndone\\\n\\\t \\\t\\\n";
-        String quotedCombined = AuditExporter.quoteMeta(raw1) + ":" + AuditExporter.quoteMeta(raw2) + "\n";
+        String quotedCombined = AuditExporterImpl.quoteMeta(raw1) + ":" + AuditExporterImpl.quoteMeta(raw2) + "\n";
         String expectedQuotedCombined = quo1 + ":" + quo2 + "\n";
         assertEquals(quotedCombined, expectedQuotedCombined);
     }
@@ -46,7 +46,7 @@ public class AuditExporterTest extends TestCase {
         FileOutputStream fileOut = null;
         try {
             fileOut = new FileOutputStream("AuditExporterTest.zip");
-            new AuditExporter().exportAuditsAsZipFile(fileOut,
+            new AuditExporterImpl().exportAuditsAsZipFile(fileOut,
                                                       TestDocuments.getDotNetServerCertificate(),
                                                       TestDocuments.getDotNetServerPrivateKey());
         } finally {

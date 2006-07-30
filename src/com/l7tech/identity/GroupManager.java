@@ -8,19 +8,19 @@ import java.util.Set;
 /**
  * @author alex
  */
-public interface GroupManager {
-    Group findByPrimaryKey( String identifier ) throws FindException;
-    Group findByUniqueName( String name ) throws FindException;
-    void delete( Group group ) throws DeleteException, ObjectNotFoundException;
-    void delete( String identifier ) throws DeleteException, ObjectNotFoundException;
+public interface GroupManager<UT extends User, GT extends Group> {
+    GT findByPrimaryKey( String identifier ) throws FindException;
+    void delete(GT group) throws DeleteException, ObjectNotFoundException;
+    void delete(String identifier) throws DeleteException, ObjectNotFoundException;
     void deleteAll( long ipoid ) throws DeleteException, ObjectNotFoundException;
     void deleteAllVirtual( long ipoid ) throws DeleteException, ObjectNotFoundException;
-    String save( Group group ) throws SaveException;
-    void update( Group group ) throws UpdateException, ObjectNotFoundException;
-    String save( Group group, Set<IdentityHeader> userHeaders ) throws SaveException;
-    void update( Group group, Set<IdentityHeader> userHeaders ) throws UpdateException, ObjectNotFoundException;
+    String saveGroup(GT group) throws SaveException;
+    void update(GT group) throws UpdateException, ObjectNotFoundException;
+    String save(GT group, Set<IdentityHeader> userHeaders ) throws SaveException;
+    void update(GT group, Set<IdentityHeader> userHeaders ) throws UpdateException, ObjectNotFoundException;
     Collection<IdentityHeader> search(String searchString) throws FindException;
     Class getImpClass();
+    GT reify(GroupBean bean);
 
     /**
      * Test whether a given User is a member of the specified Group.
@@ -29,7 +29,7 @@ public interface GroupManager {
      * @return
      * @throws FindException
      */
-    boolean isMember( User user, Group group ) throws FindException;
+    boolean isMember(UT user, GT group) throws FindException;
 
     /**
      * Add a setInstance of Users to a single Group.  If the set is null or empty, nothing is done.
@@ -38,7 +38,7 @@ public interface GroupManager {
      * @throws FindException
      * @throws UpdateException
      */
-    void addUsers( Group group, Set<User> users ) throws FindException, UpdateException;
+    void addUsers(GT group, Set<UT> users) throws FindException, UpdateException;
 
     /**
      * Remove a setInstance of Users from a single Group.  If the set is null or empty, nothing is done.
@@ -47,7 +47,7 @@ public interface GroupManager {
      * @throws FindException
      * @throws UpdateException
      */
-    void removeUsers( Group group, Set<User> users ) throws FindException, UpdateException;
+    void removeUsers(GT group, Set<UT> users ) throws FindException, UpdateException;
 
     /**
      * Add a single User to a Set of Groups.  If the set is null or empty, nothing will be done.
@@ -56,7 +56,7 @@ public interface GroupManager {
      * @throws FindException
      * @throws UpdateException
      */
-    void addUser( User user, Set<Group> groups ) throws FindException, UpdateException;
+    void addUser(UT user, Set<GT> groups ) throws FindException, UpdateException;
 
     /**
      * Remove a single User from a Set of Groups.  If the set is null or empty, nothing will be done.
@@ -65,7 +65,7 @@ public interface GroupManager {
      * @throws FindException
      * @throws UpdateException
      */
-    void removeUser( User user, Set<Group> groups ) throws FindException, UpdateException;
+    void removeUser(UT user, Set<GT> groups) throws FindException, UpdateException;
 
     /**
      * Add a single User to a single Group.
@@ -74,7 +74,7 @@ public interface GroupManager {
      * @throws FindException
      * @throws UpdateException
      */
-    void addUser( User user, Group group ) throws FindException, UpdateException;
+    void addUser(UT user, GT group) throws FindException, UpdateException;
 
     /**
      * Remove a single User from a single Group.
@@ -83,7 +83,7 @@ public interface GroupManager {
      * @throws FindException
      * @throws UpdateException
      */
-    void removeUser( User user, Group group ) throws FindException, UpdateException;
+    void removeUser(UT user, GT group ) throws FindException, UpdateException;
 
     /**
      * Retrieve the Set of Groups to which a particular User belongs.
@@ -91,12 +91,12 @@ public interface GroupManager {
      * @return
      * @throws FindException
      */
-    Set<IdentityHeader> getGroupHeaders( User user ) throws FindException;
+    Set<IdentityHeader> getGroupHeaders(UT user) throws FindException;
 
-    Set<IdentityHeader> getGroupHeaders( String userId ) throws FindException;
+    Set<IdentityHeader> getGroupHeaders(String userId) throws FindException;
 
-    void setGroupHeaders( User user, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
-    void setGroupHeaders( String userId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setGroupHeaders(UT user, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setGroupHeaders(String userId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
 
     /**
      * Retrieve the Set of Users belonging to a particular Group.
@@ -104,13 +104,15 @@ public interface GroupManager {
      * @return
      * @throws FindException
      */
-    Set<IdentityHeader> getUserHeaders( Group group ) throws FindException;
-    Set<IdentityHeader> getUserHeaders( String groupId ) throws FindException;
+    Set<IdentityHeader> getUserHeaders(GT group ) throws FindException;
+    Set<IdentityHeader> getUserHeaders(String groupId) throws FindException;
 
-    void setUserHeaders( Group group, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
-    void setUserHeaders( String groupId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setUserHeaders(GT group, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
+    void setUserHeaders(String groupId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
 
     Collection<IdentityHeader> findAllHeaders() throws FindException;
 
     Collection findAll() throws FindException;
+
+    Group findByName(String groupName) throws FindException;
 }

@@ -3,8 +3,8 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;

@@ -53,7 +53,7 @@
         See IdentityProviderFactory implementation.
     -->
     <bean id="internalIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.server.identity.internal.InternalIdentityProvider" singleton="false">
+          class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>
@@ -67,7 +67,7 @@
 
     <!-- Internal UserManager -->
     <bean id="internalUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.internal.InternalUserManager" singleton="false">
+          class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false">
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
@@ -80,7 +80,7 @@
     </bean>
     <!-- Internal GroupManager -->
     <bean id="internalGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.internal.InternalGroupManager" singleton="false">
+          class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -90,7 +90,7 @@
     </bean>
     <!-- Federated Identity Provider -->
     <bean id="federatedIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.server.identity.fed.FederatedIdentityProvider" singleton="false">
+          class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" singleton="false">
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
@@ -103,7 +103,7 @@
     </bean>
 
     <bean id="federatedUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.fed.FederatedUserManager" singleton="false">
+          class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" singleton="false">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>
@@ -116,7 +116,7 @@
     </bean>
 
     <bean id="federatedGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
+          class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -126,7 +126,7 @@
     </bean>
     <!-- LDAP Identity Provider -->
     <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.server.identity.ldap.LdapIdentityProvider" singleton="false">
+          class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" singleton="false">
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
@@ -140,10 +140,10 @@
 
     <!-- LDAP UserManager -->
     <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false"></bean>
+          class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" singleton="false"></bean>
     <!-- LDAP GroupManager -->
     <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false"></bean>
+          class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"></bean>
     <!-- server side Cluster Info manager -->
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl">
         <property name="sessionFactory">
@@ -154,7 +154,7 @@
         </property>
     </bean>
     <!-- server side Service Usage  manager -->
-    <bean id="serviceUsageManager" class="com.l7tech.cluster.ServiceUsageManager">
+    <bean id="serviceUsageManager" class="com.l7tech.cluster.ServiceUsageManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -206,7 +206,7 @@
         </property>
     </bean>
     <!-- server side resolution manager -->
-    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ResolutionManager">
+    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -236,7 +236,7 @@
         </property>
     </bean>
     <!-- jms connection manager -->
-    <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManager">
+    <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerImpl">
         <property name="jmsEndpointManager">
             <ref bean="jmsEndpointManager"/>
         </property>
@@ -248,7 +248,7 @@
         </property>
     </bean>
     <!-- jms connection manager -->
-    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManager">
+    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -338,7 +338,7 @@
         </property>
     </bean>
     <!-- server side audit exporter -->
-    <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporter" singleton="false">
+    <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -606,7 +606,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="counterIDManager" class="com.l7tech.server.sla.CounterIDManager">
+    <bean id="counterIDManager" class="com.l7tech.server.sla.CounterIDManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -671,7 +671,7 @@
     </bean>
 
     <!-- Identity mapping stuff -->
-    <bean id="identityMappingManager" class="com.l7tech.server.identity.mapping.IdentityMappingManager">
+    <bean id="identityMappingManager" class="com.l7tech.server.identity.mapping.IdentityMappingManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -680,7 +680,7 @@
         </property>
     </bean>
 
-    <bean id="attributeConfigManager" class="com.l7tech.server.identity.mapping.AttributeConfigManager">
+    <bean id="attributeConfigManager" class="com.l7tech.server.identity.mapping.AttributeConfigManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -689,7 +689,7 @@
         </property>
     </bean>
 
-    <bean id="securityTokenMappingManager" class="com.l7tech.server.identity.mapping.SecurityTokenMappingManager">
+    <bean id="securityTokenMappingManager" class="com.l7tech.server.identity.mapping.SecurityTokenMappingManagerImpl">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -770,7 +770,8 @@
         </property>
     </bean>
 
-    <bean id="entityFinder" class="com.l7tech.server.EntityFinder">
+    <bean id="entityFinder" class="com.l7tech.server.EntityFinderImpl">
+        <constructor-arg ref="identityProviderFactory"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 </beans>

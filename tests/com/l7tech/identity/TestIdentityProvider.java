@@ -96,12 +96,18 @@ public class TestIdentityProvider implements IdentityProvider {
     public void preSaveClientCert(User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
     }
 
-    private class TestGroupManager implements GroupManager {
+    public void setUserManager(UserManager userManager) {
+    }
+
+    public void setGroupManager(GroupManager groupManager) {
+    }
+
+    private class TestGroupManager implements GroupManager<User, Group> {
         public Group findByPrimaryKey(String identifier) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Group findByUniqueName(String name) throws FindException {
+        public Group findByName(String name) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -121,7 +127,7 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public String save(Group group) throws SaveException {
+        public String saveGroup(Group group) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -137,12 +143,16 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Collection search(String searchString) throws FindException {
+        public Collection<IdentityHeader> search(String searchString) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
         public Class getImpClass() {
             return getClass();
+        }
+
+        public Group reify(GroupBean bean) {
+            return bean;
         }
 
         public boolean isMember(User user, Group group) throws FindException {
@@ -214,7 +224,7 @@ public class TestIdentityProvider implements IdentityProvider {
         }
     }
 
-    private static class TestUserManager implements UserManager {
+    private static class TestUserManager implements UserManager<User> {
         public User findByPrimaryKey(String identifier) throws FindException {
             MyUser mu = usernameMap.get(identifier);
             return mu == null ? null : mu.user;
@@ -225,7 +235,7 @@ public class TestIdentityProvider implements IdentityProvider {
             return mu == null ? null : mu.user;
         }
 
-        public void delete(User user) throws DeleteException, ObjectNotFoundException {
+        public void delete(User user) throws DeleteException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -237,7 +247,7 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public String save(User user) throws SaveException {
+        public String saveUser(User user) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -247,6 +257,10 @@ public class TestIdentityProvider implements IdentityProvider {
 
         public String save(User user, Set<IdentityHeader> groupHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        public User reify(UserBean bean) {
+            return bean;
         }
 
         public void update(User user, Set<IdentityHeader> groupHeaders) throws UpdateException, ObjectNotFoundException {

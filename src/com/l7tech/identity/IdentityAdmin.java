@@ -242,7 +242,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=GROUP, stereotype= DELETE_BY_OID)
+    @Secured(types=GROUP, stereotype=DELETE_BY_OID)
     void deleteGroup(long idProvCfgId, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 

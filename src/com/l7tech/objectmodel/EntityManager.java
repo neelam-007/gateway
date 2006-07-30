@@ -67,6 +67,8 @@ public interface EntityManager<ET extends Entity, HT extends EntityHeader> {
 
     ET findByUniqueName(String name) throws FindException;
 
+    void delete(long oid) throws DeleteException, FindException;
+
     /** Holds information about a cached Entity. */
     static class CacheInfo<ET extends Entity> {
         ET entity;

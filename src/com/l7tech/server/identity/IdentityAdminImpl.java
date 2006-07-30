@@ -243,6 +243,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
+            if (user instanceof UserBean) user = userManager.reify((UserBean) user);
             user.getUserBean().setProviderId(identityProviderConfigId);
 
             String id = user.getUniqueIdentifier();
@@ -298,6 +299,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
+            if (group instanceof GroupBean) group = groupManager.reify((GroupBean) group);
             group.getGroupBean().setProviderId(identityProviderConfigId);
 
             String id = group.getUniqueIdentifier();

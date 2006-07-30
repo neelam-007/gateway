@@ -6,6 +6,8 @@ import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
@@ -21,11 +23,13 @@ import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.*;
+import com.l7tech.identity.User;
 
 import javax.help.DefaultHelpBroker;
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
+import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
@@ -49,6 +53,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
+import java.security.AccessController;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -228,10 +233,24 @@ public class MainWindow extends JFrame {
      * notification on this event type (connection event).
      */
     private void fireConnected() {
-        LogonEvent event = new LogonEvent(this, LogonEvent.LOGON);
-        EventListener[] listeners = listenerList.getListeners(LogonListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((LogonListener)listeners[i]).onLogon(event);
+        Subject sub = Subject.getSubject(AccessController.getContext());
+        if (sub == null) throw new IllegalStateException("Logon apparently worked, but no Subject is present");
+        Set<User> users = sub.getPrincipals(User.class);
+        if (users == null || users.isEmpty() || users.size() > 1) throw new IllegalStateException("Logon apparently worked, but Subject has no User");
+        User u = users.iterator().next();
+        Set<Permission> perms = new HashSet<Permission>();
+        try {
+            Collection<Role> roles = Registry.getDefault().getRbacAdmin().findRolesForUser(u);
+            for (Role role : roles) {
+                perms.addAll(role.getPermissions());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get permissions for logged on user");
+        }
+        LogonEvent event = new LogonEvent(this, LogonEvent.LOGON, perms);
+        LogonListener[] listeners = listenerList.getListeners(LogonListener.class);
+        for (LogonListener listener : listeners) {
+            listener.onLogon(event);
         }
         disconnected = false;
     }

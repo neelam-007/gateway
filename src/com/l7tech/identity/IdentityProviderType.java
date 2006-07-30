@@ -18,15 +18,15 @@ public class IdentityProviderType implements Serializable {
     private static int id = 1;
     public static final IdentityProviderType INTERNAL =
             new IdentityProviderType( id++, "internal",
-                                      "com.l7tech.server.identity.internal.InternalIdentityProvider");
+                                      "com.l7tech.server.identity.internal.InternalIdentityProviderImpl");
 
     public static final IdentityProviderType LDAP =
             new IdentityProviderType( id++, "LDAP",
-                                      "com.l7tech.server.identity.ldap.LdapIdentityProvider");
+                                      "com.l7tech.server.identity.ldap.LdapIdentityProviderImpl");
 
     public static final IdentityProviderType FEDERATED =
             new IdentityProviderType( id++, "Federated",
-                                      "com.l7tech.server.identity.fed.FederatedIdentityProvider");
+                                      "com.l7tech.server.identity.fed.FederatedIdentityProviderImpl");
 
     public static IdentityProviderType fromVal(int val) {
         switch (val) {

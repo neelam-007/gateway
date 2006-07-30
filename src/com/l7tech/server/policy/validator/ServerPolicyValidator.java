@@ -348,7 +348,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     Group g = null;
                     final String gid = mog.getGroupId();
                     if (gid == null) {
-                        g = prov.getGroupManager().findByUniqueName(mog.getGroupName());
+                        g = prov.getGroupManager().findByName(mog.getGroupName());
                     } else {
                         g = prov.getGroupManager().findByPrimaryKey(gid);
                     }

@@ -18,7 +18,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
-import com.l7tech.server.identity.mapping.AttributeConfigManager;
+import com.l7tech.server.identity.mapping.AttributeConfigManagerImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -38,7 +38,7 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
     private transient IdentityMapping[] identityRetrieveMappings;
     private transient SecurityTokenMapping[] tokenMappings;
 
-    private final AttributeConfigManager attributeConfigManager;
+    private final AttributeConfigManagerImpl attributeConfigManager;
     private static final int MAX_AGE = 30000;
 
     public ServerMappingAssertion(MappingAssertion assertion, ApplicationContext springContext) {
@@ -46,7 +46,7 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
 
-        attributeConfigManager = (AttributeConfigManager)springContext.getBean("attributeConfigManager");
+        attributeConfigManager = (AttributeConfigManagerImpl)springContext.getBean("attributeConfigManager");
 
 //        try {
             refreshData();

@@ -9,11 +9,11 @@ import java.util.Set;
  * An interface for the user management component of {@link IdentityProvider}s.
  * @author alex
  */
-public interface UserManager {
+public interface UserManager<UT extends User> {
     /**
      * Retrieves the {@link User} with the specified unique ID.
      */
-    User findByPrimaryKey( String identifier ) throws FindException;
+    UT findByPrimaryKey( String identifier ) throws FindException;
 
     /**
      * Retrieves the {@link User} with the specified login.
@@ -22,12 +22,12 @@ public interface UserManager {
      * but this isn't always guaranteed.  This constraint is enforced in the {@link com.l7tech.server.identity.internal.InternalIdentityProvider}
      * but not in others.
      */
-    User findByLogin( String login ) throws FindException;
+    UT findByLogin( String login ) throws FindException;
 
     /**
      * Deletes the specified user.
      */
-    void delete( User user ) throws DeleteException, ObjectNotFoundException;
+    void delete(UT user) throws DeleteException;
 
     /**
      * Deletes the user with the specified primary key.
@@ -44,17 +44,19 @@ public interface UserManager {
      * Saves a new user.
      * @return the unique identifier of the user
      */
-    String save( User user ) throws SaveException;
+    String saveUser(UT user ) throws SaveException;
 
     /**
      * Updates an existing user.
      */
-    void update( User user ) throws UpdateException, ObjectNotFoundException;
+    void update(UT user) throws UpdateException, ObjectNotFoundException;
 
     /**
      * Saves a new user and replaces its group memberships based on a {@link Set} of {@link IdentityHeader}s pointing to {@link Group}s.
      */
-    String save( User user, Set<IdentityHeader> groupHeaders ) throws SaveException;
+    String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException;
+
+    UT reify(UserBean bean);
 
     /**
      * Updates an existing user and replaces its group memberships based on a {@link Set} of {@link IdentityHeader}s pointing to {@link Group}s.
@@ -63,7 +65,7 @@ public interface UserManager {
      * @throws UpdateException
      * @throws ObjectNotFoundException
      */
-    void update( User user, Set<IdentityHeader> groupHeaders ) throws UpdateException, ObjectNotFoundException;
+    void update(UT user, Set<IdentityHeader> groupHeaders ) throws UpdateException, ObjectNotFoundException;
 
     /**
      * Finds users whose name or login matches the specified pattern.
@@ -73,12 +75,12 @@ public interface UserManager {
     /**
      * Creates an {@link IdentityHeader} pointing to the specified {@link User}.
      */
-    IdentityHeader userToHeader(User user);
+    IdentityHeader userToHeader(UT user);
 
     /**
      * Creates a fake {@link User} containing any relevant fields from the provided {@link IdentityHeader}.
      */
-    User headerToUser(IdentityHeader header);
+    UT headerToUser(IdentityHeader header);
 
     /**
      * @return the {@link Class} that entities managed by this manager belong to.

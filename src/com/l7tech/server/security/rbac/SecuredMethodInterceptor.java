@@ -135,7 +135,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 checkAfter = CheckAfterType.RETURN;
                 break;
             case DELETE_ENTITY:
-                if (checkTypes.length != 1) throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but has multiple types");
+                if (checkTypes.length != 1) throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_ENTITY, but has multiple types");
                 if (args.length == 1 && args[0] instanceof Entity) {
                     checkEntity = (Entity) args[0];
                     checkOperation = DELETE;
@@ -150,7 +150,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     checkEntity = new DeletedEntity(checkTypes[0].getEntityClass(), (Long)args[0]);
                     break;
                 } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies FIND_BY_PRIMARY_KEY, but args not (long)");
+                    throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but args not (long)");
                 }
             case GET_PROPERTY_BY_OID:
                 if (args.length >= 2 && types.contains(USER) || types.contains(GROUP)) {

@@ -14,7 +14,8 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public interface IdentityProvider {
+public interface IdentityProvider<UT extends User, GT extends Group, UMT extends UserManager<UT>, GMT extends GroupManager<UT, GT>>
+{
     /**
      * Called by {@link com.l7tech.server.policy.assertion.identity.ServerIdentityAssertion} to try to
      * identify a {@link User} based on a {@link LoginCredentials} that was previously attached to the
@@ -38,12 +39,12 @@ public interface IdentityProvider {
     /**
      * @return the {@link UserManager} for this IdentityProvider. Currently should never be null, but might be in future.
      */
-    UserManager getUserManager();
+    UMT getUserManager();
 
     /**
      * @return the {@link GroupManager} for this IdentityProvider. Currently should never be null, but might be in future.
      */
-    GroupManager getGroupManager();
+    GMT getGroupManager();
 
     /**
      * searches for users and groups whose name match the pattern described in searchString
@@ -64,5 +65,9 @@ public interface IdentityProvider {
      * @param certChain the client certificate chain
      * @throws ClientCertManager.VetoSave if the provider wants to prevent the cert from being saved
      */
-    void preSaveClientCert(User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave;
+    void preSaveClientCert(UT user, X509Certificate[] certChain) throws ClientCertManager.VetoSave;
+
+    void setUserManager(UMT userManager);
+
+    void setGroupManager(GMT groupManager);
 }

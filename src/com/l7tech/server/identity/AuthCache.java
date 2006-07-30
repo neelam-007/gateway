@@ -3,13 +3,13 @@
  */
 package com.l7tech.server.identity;
 
+import com.l7tech.common.util.WhirlycacheFactory;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
-import com.whirlycott.cache.*;
+import com.whirlycott.cache.Cache;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

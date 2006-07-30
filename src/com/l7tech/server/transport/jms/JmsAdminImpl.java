@@ -46,7 +46,7 @@ public class JmsAdminImpl implements JmsAdmin {
 
     public JmsProvider[] getProviderList() throws RemoteException, FindException {
         checkLicense();
-        return (JmsProvider[])jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
+        return jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
     }
 
     /**

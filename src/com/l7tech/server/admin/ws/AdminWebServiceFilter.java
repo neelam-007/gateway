@@ -102,8 +102,8 @@ public class AdminWebServiceFilter implements Filter {
         try {
             IdentityProvider iip = ipf.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
             final GroupManager groupManager = iip.getGroupManager();
-            adminGroup = groupManager.findByUniqueName(Group.ADMIN_GROUP_NAME);
-            operatorGroup = groupManager.findByUniqueName(Group.OPERATOR_GROUP_NAME);
+            adminGroup = groupManager.findByName(Group.ADMIN_GROUP_NAME);
+            operatorGroup = groupManager.findByName(Group.OPERATOR_GROUP_NAME);
         } catch (FindException e) {
             throw new ServletException(ERR_PREFIX + "Internal Identity Provider or admin groups", e);
         }
