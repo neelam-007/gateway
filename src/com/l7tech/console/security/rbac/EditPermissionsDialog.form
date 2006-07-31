@@ -66,25 +66,16 @@
         <children>
           <component id="bc3ec" class="javax.swing.JLabel">
             <constraints>
-              <xy x="6" y="26" width="32" height="16"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <xy x="6" y="55" width="32" height="16"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Type"/>
             </properties>
           </component>
-          <component id="e17cd" class="javax.swing.JLabel">
-            <constraints>
-              <xy x="6" y="55" width="60" height="16"/>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
-            </constraints>
-            <properties>
-              <text value="Operation"/>
-            </properties>
-          </component>
           <component id="3b963" class="javax.swing.JLabel" binding="scopeLabel">
             <constraints>
-              <xy x="6" y="85" width="64" height="16"/>
+              <xy x="6" y="105" width="64" height="16"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -92,13 +83,6 @@
             </properties>
           </component>
           <component id="6428f" class="javax.swing.JComboBox" binding="typeSelection">
-            <constraints>
-              <xy x="80" y="22" width="290" height="24"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="f02c6" class="javax.swing.JComboBox" binding="operationSelection">
             <constraints>
               <xy x="80" y="51" width="290" height="24"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
@@ -108,7 +92,7 @@
           <grid id="cc27d" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="80" y="80" width="290" height="27"/>
+              <xy x="80" y="100" width="290" height="27"/>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -139,10 +123,26 @@
           </grid>
           <vspacer id="83331">
             <constraints>
-              <xy x="219" y="107" width="11" height="132"/>
+              <xy x="219" y="127" width="11" height="112"/>
               <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
+          <component id="e17cd" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="6" y="26" width="60" height="16"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Operation"/>
+            </properties>
+          </component>
+          <component id="f02c6" class="javax.swing.JComboBox" binding="operationSelection">
+            <constraints>
+              <xy x="80" y="22" width="290" height="24"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
+            </constraints>
+            <properties/>
+          </component>
         </children>
       </grid>
       <hspacer id="9d2cc">

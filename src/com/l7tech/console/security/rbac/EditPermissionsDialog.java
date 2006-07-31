@@ -1,14 +1,13 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Set;
 
 public class EditPermissionsDialog extends JDialog {
     private JPanel contentPane;
@@ -95,6 +94,15 @@ public class EditPermissionsDialog extends JDialog {
                 Utilities.centerOnScreen(sd);
                 sd.setVisible(true);
                 EntityHeader header = sd.getSpecificEntity();
+                Set<ScopePredicate> scopes = sd.getPermission().getScope();
+                if (scopes.size() == 1) {
+                    ScopePredicate pred = scopes.iterator().next();
+                    if (pred instanceof ObjectIdentityPredicate) {
+                        ObjectIdentityPredicate objectIdentityPredicate = (ObjectIdentityPredicate) pred;
+                        objectIdentityPredicate.setHeader(header);
+                    }
+                }
+                
                 if (header != null) {
                     scopeField.setText(sd.getSpecificEntity().toString());
                 } else

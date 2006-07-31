@@ -104,16 +104,22 @@ public class EditRoleDialog extends JDialog {
                         return perm.getOperation().getName();
                     }
                 case 1:
+                    StringBuilder sb = new StringBuilder();
+                    EntityType etype = perm.getEntityType();
                     switch(perm.getScope().size()) {
                         case 0:
-                            StringBuilder sb = new StringBuilder();
                             sb.append("<Any");
-                            if (perm.getEntityType() != EntityType.ANY)
-                                sb.append(" " + perm.getEntityType().getName());
+                            if (etype == EntityType.ANY)
+                                sb.append(" Object");
+                            else {
+                                sb.append(" ").append(etype.getName());
+                            }
                             sb.append(">");
                             return sb.toString();
                         case 1:
-                            return perm.getScope().iterator().next().toString();
+                            sb.append(etype.getName()).append(" ").append(
+                                    perm.getScope().iterator().next().toString());
+                            return sb.toString();
                         default:
                             return "<Complex Scope>";
                     }

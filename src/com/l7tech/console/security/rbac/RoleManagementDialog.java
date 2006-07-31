@@ -3,7 +3,6 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -11,11 +10,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.rmi.RemoteException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 public class RoleManagementDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
@@ -33,7 +33,6 @@ public class RoleManagementDialog extends JDialog {
     private JTextArea propertiesPane;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
-    private final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
     private final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
 
     private final ActionListener roleActionListener = new ActionListener() {
@@ -57,6 +56,7 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void initialize() {
+        propertiesPane.setEditable(false);
         propertiesPane.setLineWrap(false);
         populateList();
         setupButtonListeners();
@@ -113,53 +113,79 @@ public class RoleManagementDialog extends JDialog {
         String message = null;
         if (role != null) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Role Name: " + role.getName() + "\n\n");
+            sb.append("Role Name:\n").append("   ").append(role.getName()).append("\n\n");
             sb.append("Permissions:\n");
-            Set<Permission> permissions = role.getPermissions();
-            if (permissions == null || permissions.isEmpty()) {
-                sb.append("   NONE \n");
-            } else {
-                for (Permission permission : permissions) {
-                    sb.append("    " + permission.getOperation() + " ");
-                    switch(permission.getScope().size()) {
-                        case 0:
-                            sb.append("<Any");
-                            if (permission.getEntityType() == EntityType.ANY)
-                               sb.append(" Object");
-                            else
-                                sb.append(" " + permission.getEntityType().getName());
-
-                            sb.append(">");
-                            break;
-                        case 1:
-                            sb.append(permission.getScope().iterator().next().toString());
-                            break;
-                        default:
-                            sb.append("<Complex Scope>");
-                    }
-                    sb.append("\n");
-                }
+            for (String s : getPermissionList(role)) {
+                sb.append(s).append("\n");
             }
             sb.append("\n");
 
             sb.append("Assignments:\n");
+            for (String u : getAssignmentList(role)) {
+                sb.append(u).append("\n");
+            }
+
+            message = sb.toString();
+        }
+        propertiesPane.setText(message);
+    }
+
+    private java.util.List<String> getPermissionList(Role role) {
+        java.util.List<String> list = new ArrayList<String>();
+        if (role != null) {
+            Set<Permission> permissions = role.getPermissions();
+            if (permissions == null || permissions.isEmpty()) {
+                list.add("   NONE \n");
+            } else {
+                for (Permission permission : permissions) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("    ").append(permission.getOperation()).append(" ");
+                    EntityType etype = permission.getEntityType();
+                    switch(permission.getScope().size()) {
+                        case 0:
+                            sb.append("<Any");
+                            if (etype == EntityType.ANY)
+                                sb.append(" Object");
+                            else {
+                                sb.append(" ").append(etype.getName());
+                            }
+                            sb.append(">");
+                            break;
+                        case 1:
+                            sb.append(etype.getName()).append(" ").append(
+                                    permission.getScope().iterator().next().toString());
+                            break;
+                        default:
+                            sb.append("<Complex Scope>");
+                    }
+                    list.add(sb.toString());
+                }
+            }
+        }
+        return list;
+    }
+
+    private java.util.List<String> getAssignmentList(Role role) throws RemoteException {
+        java.util.List<String> list = new ArrayList<String>();
+        if (role != null) {
             Set<UserRoleAssignment> users = role.getUserAssignments();
             if (users == null || users.isEmpty()) {
-                sb.append("   NONE\n");
+                list.add("   NONE\n");
             } else {
                 for (UserRoleAssignment ura : users) {
                     try {
                         UserHolder holder = new UserHolder(ura);
-                        sb.append("   " + holder + "\n");
+                        list.add("   " + holder);
                     } catch (FindException e) {
                         logger.warning("Could not find a user with id=" + ura.getUserId());
                     }
                 }
             }
-            message = sb.toString();
         }
-        propertiesPane.setText(message);
+
+        return list;
     }
+
     private void setupButtonListeners() {
         editRole.addActionListener(roleActionListener);
         addRole.addActionListener(roleActionListener);
@@ -256,13 +282,5 @@ public class RoleManagementDialog extends JDialog {
 
     private void onCancel() {
         dispose();
-    }
-
-    public static void main(String[] args) {
-        JFrame parent = new JFrame("Testing");
-        RoleManagementDialog dialog = new RoleManagementDialog(parent);
-        dialog.pack();
-        dialog.setVisible(true);
-        System.exit(0);
     }
 }

@@ -31,17 +31,10 @@ public class ScopeDialog extends JDialog {
     private JPanel specificPanel;
     private JTextField specificText;
 
-    private JRadioButton attributeRadioButton;
-    private JButton addAttributeButton;
-    private JButton editAttributeButton;
-    private JButton removeAttributeButton;
-    private JList attributeList;
-
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
     private final List<ScopePredicate> scope = new ArrayList<ScopePredicate>();
     private Permission permission;
-    private AttributeListModel attributeListModel;
     private ListModel emptyListModel = new DefaultListModel();
     private RadioListener radioListener;
     private EntityHeader specificEntity;
@@ -63,68 +56,33 @@ public class ScopeDialog extends JDialog {
         initialize();
     }
 
-    private class AttributeListModel extends AbstractListModel {
-        public int getSize() {
-            return scope.size();
-        }
-
-        public Object getElementAt(int index) {
-            return scope.get(index);
-        }
-
-        void add(AttributePredicate pred) {
-            for (ScopePredicate predicate : scope) {
-                if (!(predicate instanceof AttributePredicate)) throw new RuntimeException("Can't add an AttributePredicate to a scope that already contains something else");
-            }
-            scope.add(pred);
-            fireContentsChanged(attributeList, 0, scope.size());
-        }
-
-        void remove(AttributePredicate pred) {
-            scope.remove(pred);
-            fireContentsChanged(attributeList, 0, scope.size());
-        }
-    }
-
     private class RadioListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            if (attributeRadioButton.isSelected()) {
-                attributeList.setModel(attributeListModel);
-            } else {
-                attributeList.setModel(emptyListModel);
-            }
             enableDisable();
         }
     }
 
     private void initialize() {
         setModal(true);
-        attributeListModel = new AttributeListModel();
         radioListener = new RadioListener();
 
         setRadioText(allRadioButton);
         setRadioText(specificRadioButton);
-        setRadioText(attributeRadioButton);
 
         ButtonGroup rbGroup = new ButtonGroup();
         rbGroup.add(allRadioButton);
         rbGroup.add(specificRadioButton);
-        rbGroup.add(attributeRadioButton);
 
         allRadioButton.addActionListener(radioListener);
         specificRadioButton.addActionListener(radioListener);
-        attributeRadioButton.addActionListener(radioListener);
 
-        if (scope.size() == 0) {            allRadioButton.setSelected(true);
-            attributeList.setModel(emptyListModel);
+        if (scope.size() == 0) {
+            allRadioButton.setSelected(true);
         } else {
             if (scope.get(0) instanceof ObjectIdentityPredicate) {
                 if (scope.size() > 1) throw new RuntimeException("Found an ObjectIdentityPredicate in a scope with size > 1");
                 specificRadioButton.setSelected(true);
                 specificText.setText(getSpecificLabel());
-                attributeList.setModel(emptyListModel);
-            } else {
-                attributeList.setModel(attributeListModel);
             }
         }
 
@@ -175,11 +133,6 @@ public class ScopeDialog extends JDialog {
         specificFindButton.setEnabled(specificRadioButton.isSelected());
         specificText.setText(specificRadioButton.isSelected() ? getSpecificLabel() : "");
         specificText.setEnabled(specificRadioButton.isSelected());
-
-        attributeList.setEnabled(attributeRadioButton.isSelected());
-        addAttributeButton.setEnabled(attributeRadioButton.isSelected());
-        removeAttributeButton.setEnabled(attributeRadioButton.isSelected());
-        editAttributeButton.setEnabled(attributeRadioButton.isSelected());
     }
 
     void ok() {
