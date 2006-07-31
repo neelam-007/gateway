@@ -91,7 +91,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             properties.load(fis);
             _logger.info("Loaded Observer for CA Unicenter WSDM properties from file \"" + propsPath + "\".");
         } catch (FileNotFoundException e) {
-            _logger.info("File \"" + propsPath + "\" not found. Not enabling Observer for CA Unicenter WSDM.");
+            _logger.severe("File \"" + propsPath + "\" not found. Not enabling Observer for CA Unicenter WSDM.");
             return;
         } catch (IOException e) {
             _logger.log(Level.SEVERE, "Cannot read \"" + propsPath + "\". Not enabling Observer for CA Unicenter WSDM.", e);
