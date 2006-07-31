@@ -60,7 +60,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         if (beanSecured == null) {
             for (Class intf : target.getClass().getInterfaces()) {
                 //noinspection unchecked
-                beanSecured = (Secured)intf.getAnnotation(Secured.class);
+                beanSecured = (Secured)intf.getAnnotation((Class) Secured.class);
                 if (beanSecured == null) break;
             }
         }
@@ -215,14 +215,14 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         switch(check.after) {
             case COLLECTION:
             case ENTITY:
-                logger.log(Level.WARNING, "Not yet implemented: invoking {0}; should check {1} after invocation", new Object[] { mname, check.after.name() });
+                logger.log(Level.INFO, "Not yet implemented: invoking {0}; should check {1} after invocation", new Object[] { mname, check.after.name() });
                 return rv;
             default:
                 String ename;
                 Level level;
                 if (check.entity == null) {
                     ename = "<unknown>";
-                    level = Level.WARNING;
+                    level = Level.INFO;
                 } else {
                     ename = check.entity instanceof NamedEntity ? ((NamedEntity) check.entity).getName() : check.entity.getClass().getSimpleName() + " #" + check.entity.getOid();
                     level = Level.FINE;
