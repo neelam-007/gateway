@@ -8,6 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -62,7 +63,8 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         try {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
-            throw new RemoteException(e.getMessage());
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 

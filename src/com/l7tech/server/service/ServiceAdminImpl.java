@@ -5,6 +5,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
@@ -85,7 +86,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
         try {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
-            throw new RemoteException(e.getMessage());
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 

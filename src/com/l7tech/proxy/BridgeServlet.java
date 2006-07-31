@@ -8,6 +8,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -45,7 +46,8 @@ public class BridgeServlet extends HttpServlet {
         try {
             licenseManager.requireFeature(FEATURE);
         } catch (LicenseException e) {
-            throw new ServletException(e);
+            // New exception to conceal original stack trace from LicenseManager
+            throw new ServletException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
 
 
@@ -79,6 +81,8 @@ public class BridgeServlet extends HttpServlet {
         } catch (SecureSpanBridge.SendException e) {
             error(servletRequest, servletResponse, "Unable to forward request to server", e);
         } catch (LicenseException e) {
+            // New exception to conceal original stack trace from LicenseManager
+            e = new LicenseException(e.getMessage());
             error(servletRequest, servletResponse, "Bridge service not enabled by license", e);
         }
     }

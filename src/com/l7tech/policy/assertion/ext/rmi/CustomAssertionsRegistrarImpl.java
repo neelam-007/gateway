@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.ext.rmi;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
@@ -34,7 +35,8 @@ public class CustomAssertionsRegistrarImpl
         try {
             licenseManager.requireFeature("service:Admin");
         } catch (LicenseException e) {
-            throw new RemoteException(e.getMessage());
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 

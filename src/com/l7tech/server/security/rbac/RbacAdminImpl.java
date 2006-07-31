@@ -6,14 +6,14 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.GatewayFeatureSets;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -36,7 +36,8 @@ public class RbacAdminImpl implements RbacAdmin {
         try {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
-            throw new RemoteException(e.getMessage());
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 

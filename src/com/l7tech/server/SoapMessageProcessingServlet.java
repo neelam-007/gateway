@@ -95,7 +95,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         try {
             licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
         } catch (LicenseException e) {
-            throw new ServletException(e);
+            // New exception to conceal original stack trace from LicenseManager
+            throw new ServletException(new LicenseException(e.getMessage()));
         }
         this.service(hrequest, hresponse);
     }

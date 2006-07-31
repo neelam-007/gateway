@@ -4,6 +4,7 @@ import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.MethodStereotype;
@@ -71,7 +72,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         try {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
         } catch (LicenseException e) {
-            throw new RemoteException(e.getMessage());
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
         }
     }
 
