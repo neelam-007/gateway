@@ -168,13 +168,22 @@ public class ExceptionUtils {
             if (isInstanceOfAny(current, remove)) {
                 // The we need to remove this throwable. We need to reconstruct all parent
                 // Throwables and textualize either this one or the first non-constructable parent.
-                result = rebuildThrowable(processedThrowables, substituteStackAsText);
+                if (processedThrowables.isEmpty()) {
+                    result = textReplace(current, substituteStackAsText);
+                } else {
+                    result = rebuildThrowable(processedThrowables, substituteStackAsText);
+
+                }
                 break;
             }
             else {
                 processedThrowables.add(current);
                 current = current.getCause();
             }
+        }
+
+        if (result == null && throwable != null) {
+            logger.warning("Replacement exception is null!");
         }
 
         return result;
@@ -252,14 +261,14 @@ public class ExceptionUtils {
             if (!added) {
                 // end of the line
                 if (substituteStackAsText) {
-                    constructed = addCause(constructed, textReplace(parent));
+                    constructed = addCause(constructed, textReplace(parent, substituteStackAsText));
                 }
                 break;
             }
 
             if (!parentIter.hasNext() && parent.getCause()!=null && substituteStackAsText) {
                 // make the cause of the current exception the textualized child
-                constructed = addCause(constructed, textReplace(parent.getCause()));
+                constructed = addCause(constructed, textReplace(parent.getCause(), substituteStackAsText));
             }
         }
 
@@ -274,21 +283,17 @@ public class ExceptionUtils {
      * @return The cause or the target with the cause added.
      */
     private static Throwable addCause(Throwable target, Throwable cause) {
-        if (target == null) {
-            return cause;
-        }
-        else {
-            Throwable addTo = target;
-            while (addTo != null) {
-                Throwable current = addTo;
-                addTo = addTo.getCause();
-                if (addTo==null) {
-                    current.initCause(cause);
-                }
+        Throwable addTo = target;
+        while (addTo != null) {
+            Throwable current = addTo;
+            addTo = addTo.getCause();
+            if (addTo==null) {
+                current.initCause(cause);
+                return target;
             }
-
-            return target;
         }
+
+        return cause;
     }
 
     /**
@@ -298,12 +303,14 @@ public class ExceptionUtils {
      * @param throwable The throwable to be replaced
      * @return An Exception with a message that is the stacktrace / message for the original throwable.
      */
-    private static Throwable textReplace(Throwable throwable) {
+    private static Throwable textReplace(Throwable throwable, boolean stackAsText) {
         StringWriter exceptionWriter = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(exceptionWriter));
+        if (stackAsText)
+            throwable.printStackTrace(new PrintWriter(exceptionWriter));
         return new Exception("Replaced exception of type '"+throwable.getClass().getName()+"', with message '"+
-                throwable.getMessage()+"', original stack was:\n" +
-                exceptionWriter.getBuffer().toString());
+                throwable.getMessage()+"'"  +
+                (stackAsText ? ", original stack was:\n" +
+                exceptionWriter.getBuffer().toString() : ""));
     }
 
     /**

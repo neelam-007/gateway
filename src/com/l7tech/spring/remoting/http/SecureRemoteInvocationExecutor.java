@@ -11,6 +11,13 @@ import javax.security.auth.Subject;
 
 import org.springframework.remoting.support.RemoteInvocationExecutor;
 import org.springframework.remoting.support.RemoteInvocation;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.InvalidResultSetAccessException;
+import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
+import org.springframework.jdbc.LobRetrievalFailureException;
+import org.springframework.jdbc.SQLWarningException;
+import org.springframework.jdbc.UncategorizedSQLException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.hibernate.HibernateException;
 
 import com.l7tech.server.admin.AdminSessionManager;
@@ -83,7 +90,17 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
     private static InvocationTargetException replaceIfNotSupported(InvocationTargetException ite)  {
         InvocationTargetException exception = ite;
         Throwable cause = ite.getCause();
-        Throwable replacement = ExceptionUtils.filter(cause, new Class[]{HibernateException.class}, sendStackToClient);
+        Throwable replacement = ExceptionUtils.filter(cause,
+                new Class[]{HibernateException.class,
+                            BadSqlGrammarException.class,
+                            CannotGetJdbcConnectionException.class,
+                            InvalidResultSetAccessException.class,
+                            JdbcUpdateAffectedIncorrectNumberOfRowsException.class,
+                            LobRetrievalFailureException.class,
+                            SQLWarningException.class,
+                            UncategorizedSQLException.class,
+                },
+                sendStackToClient);
 
         if (cause != replacement) {
             exception = new InvocationTargetException(replacement, ite.getMessage());
