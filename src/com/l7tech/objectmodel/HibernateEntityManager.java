@@ -8,6 +8,8 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.OperationType;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -30,6 +32,7 @@ import java.sql.SQLException;
  * @author alex
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
+@Secured
 public abstract class HibernateEntityManager<ET extends Entity, EHT extends EntityHeader>
         extends HibernateDaoSupport
         implements EntityManager<ET, EHT>
@@ -65,10 +68,12 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
     @Transactional(readOnly=true)
+    @Secured(operation=OperationType.READ)
     public ET findByPrimaryKey(long oid) throws FindException {
         return findEntity(oid);
     }
 
+    @Secured(operation=OperationType.CREATE)
     public long save(ET entity) throws SaveException {
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity });
         try {
@@ -111,6 +116,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     }
 
     @Transactional(readOnly=true)
+    @Secured(operation=OperationType.READ)
     public ET findEntity(final long oid) throws FindException {
         try {
             //noinspection unchecked
@@ -207,6 +213,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     }
 
     @Transactional(readOnly=true)
+    @Secured(operation=OperationType.READ)
     public Collection<ET> findAll() throws FindException {
         try {
             //noinspection unchecked
@@ -229,6 +236,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     }
 
     @Transactional(readOnly=true)
+    @Secured(operation=OperationType.READ)
     public Collection<ET> findAll(int offset, int windowSize) throws FindException {
         throw new UnsupportedOperationException("Not yet implemented!");
     }
@@ -239,11 +247,13 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         return "from " + alias + " in class " + getImpClass().getName();
     }
 
+    @Secured(operation=OperationType.DELETE)
     public void delete(long oid) throws DeleteException, FindException {
         //getHibernateTemplate().d
         delete(getImpClass(), oid);
     }
 
+    @Secured(operation=OperationType.DELETE)
     public void delete(ET et) throws DeleteException {
         try {
             getHibernateTemplate().delete(et);
@@ -276,6 +286,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
 
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=SUPPORTS)
+    @Secured(operation=OperationType.READ)
     public ET getCachedEntityByName(final String name, int maxAge) throws FindException {
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
@@ -313,6 +324,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     }
 
     @Transactional(readOnly=true)
+    @Secured(operation=OperationType.READ)
     public ET findByUniqueName(final String name) throws FindException {
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
@@ -352,6 +364,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
      * @throws CacheVeto
      */
     @Transactional(propagation=SUPPORTS, readOnly=true)
+    @Secured(operation=OperationType.READ)
     public ET getCachedEntity(final long objectid, int maxAge) throws FindException, CacheVeto {
         ET entity;
 

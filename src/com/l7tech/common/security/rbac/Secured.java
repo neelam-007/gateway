@@ -30,4 +30,10 @@ public @interface Secured {
     EntityType[] types() default EntityType.ANY;
 
     MethodStereotype stereotype() default MethodStereotype.NONE;
+
+    OperationType operation() default OperationType.NONE;
+
+    String otherOperationName() default "";
+
+    int relevantArg() default -1;
 }

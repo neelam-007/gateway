@@ -82,7 +82,7 @@ public interface IdentityAdmin {
      * @throws UpdateException if the requested information could not be updated
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=ID_PROVIDER_CONFIG, stereotype= SAVE_OR_UPDATE)
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=SAVE_OR_UPDATE)
     long saveIdentityProviderConfig(IdentityProviderConfig cfg)
       throws RemoteException, SaveException, UpdateException;
 
@@ -144,7 +144,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(types=USER, stereotype=FIND_BY_PRIMARY_KEY, relevantArg=1)
     User findUserByID(long idProvCfgId, String userId)
       throws RemoteException, FindException;
 
@@ -158,7 +158,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype= FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(types=USER, stereotype=FIND_ENTITY_BY_ATTRIBUTE)
     User findUserByLogin(long idProvCfgId, String login)
       throws RemoteException, FindException;
 
@@ -172,7 +172,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=USER, stereotype= DELETE_BY_OID)
+    @Secured(types=USER, stereotype=DELETE_BY_OID, relevantArg=1)
     void deleteUser(long idProvCfgId, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -199,7 +199,7 @@ public interface IdentityAdmin {
      *                                  unique identifier exists in the specified identity provider.
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=USER, stereotype= SAVE_OR_UPDATE)
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
     String saveUser(long idProvCfgId, User user, Set groupHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
@@ -214,7 +214,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype= FIND_HEADERS)
+    @Secured(types=GROUP, stereotype=FIND_HEADERS)
     EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
 
     /**
@@ -228,7 +228,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype= FIND_BY_PRIMARY_KEY)
+    @Secured(types=GROUP, stereotype=FIND_BY_PRIMARY_KEY, relevantArg=1)
     Group findGroupByID(long idProvCfgId, String groupId)
       throws RemoteException, FindException;
 
@@ -242,7 +242,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=GROUP, stereotype=DELETE_BY_OID)
+    @Secured(types=GROUP, stereotype=DELETE_BY_OID, relevantArg=1)
     void deleteGroup(long idProvCfgId, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -269,7 +269,7 @@ public interface IdentityAdmin {
      *                                  unique identifier exists in the specified identity provider.
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=GROUP, stereotype= SAVE_OR_UPDATE)
+    @Secured(types=GROUP, stereotype=SAVE_OR_UPDATE, relevantArg=1)
     String saveGroup(long idProvCfgId, Group group, Set userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
@@ -347,7 +347,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype=GET_PROPERTY_BY_OID)
+    @Secured(types=USER, stereotype=GET_PROPERTY_BY_OID, relevantArg=1)
     Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException;
 
     /**
@@ -361,7 +361,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype=GET_PROPERTY_BY_OID)
+    @Secured(types=GROUP, stereotype=GET_PROPERTY_BY_OID, relevantArg=1)
     Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
 
 }

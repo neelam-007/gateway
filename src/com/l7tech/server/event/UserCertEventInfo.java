@@ -9,7 +9,7 @@ package com.l7tech.server.event;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.DeletedEntity;
+import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.NamedEntity;
@@ -29,7 +29,7 @@ public class UserCertEventInfo {
             IdentityProvider provider = ipf.getProvider(cer.getProvider());
             u = (PersistentUser)provider.getUserManager().findByPrimaryKey(cer.getUserId());
 
-            if (u == null) u = new DeletedEntity(User.class, cer.getUserId());
+            if (u == null) u = new AnonymousEntityReference(User.class, cer.getUserId());
             this.user = u;
 
             String note = verb;

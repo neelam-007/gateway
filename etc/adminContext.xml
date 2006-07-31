@@ -265,7 +265,7 @@
             <ref bean="uddiAgentFactory"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="serviceManager"/>
+            <ref bean="securedServiceManager"/>
         </constructor-arg>
         <constructor-arg>
             <ref bean="policyValidator"/>

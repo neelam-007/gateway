@@ -55,7 +55,7 @@
     <!-- The audit events hibernate interceptor -->
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
-    <!-- Declarative transaction and RBAC interception -->
+    <!-- Transaction and RBAC interception -->
     <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
         <property name="proxyTargetClass" value="false"/>
         <property name="interceptorNames">
@@ -76,7 +76,44 @@
                 <idref bean="trustedCertAdmin"/>
                 <idref bean="kerberosAdmin"/>
                 <idref bean="clusterStatusAdmin"/>
+            </list>
+        </property>
+    </bean>
 
+    <!-- Transaction interception only -->
+    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="proxyTargetClass" value="true"/>
+        <property name="interceptorNames">
+            <list>
+                <idref bean="annotationTransactionInterceptor"/>
+            </list>
+        </property>
+        <property name="beanNames">
+            <list>
+                <idref bean="serviceManager"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="securedServiceManager" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="target" ref="serviceManager"/>
+        <property name="interceptorNames">
+            <list>
+                <idref bean="rbacAdvisor"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Transaction interception only -->
+    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="proxyTargetClass" value="false"/>
+        <property name="interceptorNames">
+            <list>
+                <idref bean="annotationTransactionInterceptor"/>
+            </list>
+        </property>
+        <property name="beanNames">
+            <list>
                 <!-- IDPs -->
                 <idref bean="internalIdentityProvider"/>
                 <idref bean="federatedIdentityProvider"/>
@@ -87,7 +124,6 @@
 
                 <!-- Entity managers -->
                 <idref bean="identityProviderConfigManager"/>
-                <idref bean="serviceManager"/>
                 <idref bean="trustedCertManager"/>
                 <idref bean="clientCertManager"/>
                 <idref bean="auditRecordManager"/>
@@ -109,6 +145,7 @@
             </list>
         </property>
     </bean>
+
 
     <bean class="org.springframework.transaction.interceptor.TransactionAttributeSourceAdvisor">
         <property name="transactionInterceptor" ref="annotationTransactionInterceptor"/>

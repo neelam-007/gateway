@@ -30,6 +30,8 @@ public class InternalUserManagerImpl
         super(identityProvider);
     }
 
+    protected InternalUserManagerImpl() {}
+
     public String getTableName() {
         return "internal_user";
     }

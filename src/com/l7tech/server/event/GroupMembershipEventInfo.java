@@ -12,7 +12,7 @@ import com.l7tech.identity.fed.FederatedGroupMembership;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.DeletedEntity;
+import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.NamedEntity;
@@ -47,8 +47,8 @@ public class GroupMembershipEventInfo {
                 u = (PersistentUser)provider.getUserManager().findByPrimaryKey(gm.getMemberUserId());
             }
 
-            if (g == null) g = new DeletedEntity(groupClass, gm.getThisGroupId());
-            if (u == null) u = new DeletedEntity(userClass, gm.getMemberUserId());
+            if (g == null) g = new AnonymousEntityReference(groupClass, gm.getThisGroupId());
+            if (u == null) u = new AnonymousEntityReference(userClass, gm.getMemberUserId());
             this.group = g;
             String name = u.getName();
             if (name == null && u instanceof User) {

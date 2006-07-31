@@ -4,7 +4,7 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.DeletedEntity;
+import com.l7tech.objectmodel.AnonymousEntityReference;
 
 /**
  * @author alex
@@ -18,7 +18,7 @@ public class AttemptedDelete extends AttemptedEntityOperation {
     }
 
     public AttemptedDelete(EntityType type, long oid) {
-        super(type, new DeletedEntity(type.getEntityClass(), oid));
+        super(type, new AnonymousEntityReference(type.getEntityClass(), oid));
         this.oid = oid;
     }
 

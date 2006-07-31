@@ -15,10 +15,10 @@ import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * Abstract manager functionality for {@link PersistentGroup} instances
@@ -50,22 +50,22 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
           " where membership.memberUserId = ? " +
           "and membership.thisGroupId = ?";
 
-    /**
-     * Can't be defined statically; it needs information from the identity provider
-     */
-    private static String HQL_GETMEMBERS;
-    private PersistentUserManager<UT> userManager;
+    private String getMembersQuery;
 
     protected PersistentGroupManagerImpl(PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
         this.identityProvider = identityProvider;
-        this.userManager = identityProvider.getUserManager();
+    }
 
-        StringBuffer queryString = new StringBuffer("select usr from usr in class ");
-        queryString.append(userManager.getImpClass().getName()).append(", ");
-        queryString.append("membership in class ").append(getMembershipClass().getName());
-        queryString.append(" where membership.memberUserId = usr.oid ");
-        queryString.append("and membership.thisGroupId = ?");
-        HQL_GETMEMBERS = queryString.toString();
+    private synchronized String getMemberQueryString() {
+        if (getMembersQuery == null) {
+            StringBuilder queryString = new StringBuilder("select usr from usr in class ");
+            queryString.append(identityProvider.getUserManager().getImpClass().getName()).append(", ");
+            queryString.append("membership in class ").append(getMembershipClass().getName());
+            queryString.append(" where membership.memberUserId = usr.oid ");
+            queryString.append("and membership.thisGroupId = ?");
+            getMembersQuery = queryString.toString();
+        }
+        return getMembersQuery;
     }
 
     /**
@@ -157,7 +157,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             preDelete(pgroup);
             Set<IdentityHeader> userHeaders = getUserHeaders(pgroup);
             for (Object userHeader : userHeaders) {
-                UT u = userManager.headerToUser((IdentityHeader) userHeader);
+                UT u = identityProvider.getUserManager().headerToUser((IdentityHeader) userHeader);
                 deleteMembership(pgroup, u);
             }
             getHibernateTemplate().delete(group);
@@ -418,7 +418,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     protected abstract void addMembershipCriteria(Criteria crit, Group group, Identity identity);
 
     public void addUser(UT user, Set<GT> groups) throws FindException, UpdateException {
-        UT puser = userManager.cast(user);
+        UT puser = identityProvider.getUserManager().cast(user);
         try {
             for (GT group : groups) {
                 getHibernateTemplate().save(newMembership(group, puser));
@@ -429,7 +429,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public void removeUser(UT user, Set<GT> groups) throws FindException, UpdateException {
-        UT puser = userManager.cast(user);
+        UT puser = identityProvider.getUserManager().cast(user);
         try {
             for (GT group : groups) {
                 deleteMembership(group, puser);
@@ -440,7 +440,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public void addUser(UT user, GT group) throws FindException, UpdateException {
-        UT userImp = userManager.cast(user);
+        UT userImp = identityProvider.getUserManager().cast(user);
         GT groupImp = cast(group);
         try {
             getHibernateTemplate().save(newMembership(groupImp, userImp));
@@ -450,7 +450,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public void removeUser(UT user, GT group) throws FindException, UpdateException {
-        UT userImp = userManager.cast(user);
+        UT userImp = identityProvider.getUserManager().cast(user);
         GT groupImp = cast(group);
         try {
             deleteMembership(groupImp, userImp);
@@ -483,7 +483,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             Set<String> existingGids = headersToIds(doGetGroupHeaders(userId));
 
             GroupMembership gm;
-            UT thisUser = userManager.findByPrimaryKey(userId);
+            UT thisUser = identityProvider.getUserManager().findByPrimaryKey(userId);
 
             // Check for new memberships
             for (String newGid : newGids) {
@@ -532,11 +532,12 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         return (Set<IdentityHeader>)getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
-                Query query = session.createQuery(HQL_GETMEMBERS);
+                Query query = session.createQuery(getMemberQueryString());
                 query.setString(0, groupId);
                 for (Iterator i = query.iterate(); i.hasNext();) {
+                    //noinspection unchecked
                     UT user = (UT) i.next();
-                    headers.add(userManager.userToHeader(user));
+                    headers.add(identityProvider.getUserManager().userToHeader(user));
                 }
                 return headers;
             }
@@ -551,6 +552,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 Query query = session.createQuery(HQL_GETGROUPS);
                 query.setString(0, userId);
                 for (Iterator i = query.iterate(); i.hasNext();) {
+                    //noinspection unchecked
                     GT group = (GT) i.next();
                     headers.add(new IdentityHeader(group.getProviderId(), group.getUniqueIdentifier(), EntityType.GROUP, group.getName(), null));
                 }
@@ -586,9 +588,10 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             }
 
             // Check for new memberships
+            final UMT uman = identityProvider.getUserManager();
             for (String newUid : newUids) {
                 if (!existingUids.contains(newUid)) {
-                    UT newUser = userManager.findByPrimaryKey(newUid);
+                    UT newUser = uman.findByPrimaryKey(newUid);
                     getHibernateTemplate().save(newMembership(thisGroup, newUser));
                 }
             }
@@ -596,7 +599,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             // Check for removed memberships
             for (String existingUid : existingUids) {
                 if (!newUids.contains(existingUid)) {
-                    UT oldUser = userManager.findByPrimaryKey(existingUid);
+                    UT oldUser = uman.findByPrimaryKey(existingUid);
                     deleteMembership(thisGroup, oldUser);
                 }
             }

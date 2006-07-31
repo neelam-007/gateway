@@ -12,8 +12,8 @@ import java.io.Serializable;
  * @author alex
  * @version $Revision$
  */
-public class DeletedEntity implements NamedEntity, Serializable {
-    public DeletedEntity(Class entityClass, String uniqueId) {
+public class AnonymousEntityReference implements NamedEntity, Serializable {
+    public AnonymousEntityReference(Class entityClass, String uniqueId) {
         this.entityClass = entityClass;
         this.uniqueId = uniqueId;
         try {
@@ -22,7 +22,7 @@ public class DeletedEntity implements NamedEntity, Serializable {
         }
     }
 
-    public DeletedEntity(Class entityClass, long oid) {
+    public AnonymousEntityReference(Class entityClass, long oid) {
         this.entityClass = entityClass;
         this.oid = oid;
         this.uniqueId = Long.toString(oid);
@@ -45,7 +45,11 @@ public class DeletedEntity implements NamedEntity, Serializable {
     }
 
     public String getName() {
-        return "<deleted " + entityClass.getName() + ">";
+        return entityClass.getSimpleName() + " #" + oid;
+    }
+
+    public String toString() {
+        return getName();
     }
 
     public int getVersion() {

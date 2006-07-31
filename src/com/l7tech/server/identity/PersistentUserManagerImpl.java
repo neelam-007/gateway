@@ -9,6 +9,8 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.OperationType;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.hibernate.Criteria;
@@ -40,17 +42,16 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             "FROM user IN CLASS " + getImpClass().getName() +
                     " WHERE user.oid = ?";
 
-    protected final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
-    private final GMT groupManager;
+    protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
     protected ClientCertManager clientCertManager;
 
     public PersistentUserManagerImpl(PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
         this.identityProvider = identityProvider;
-        this.groupManager = identityProvider.getGroupManager();
     }
 
+    protected PersistentUserManagerImpl() { }
 
-
+    @Secured(operation=OperationType.READ)
     public UT findByPrimaryKey(String oid) throws FindException {
         try {
             if (oid == null) {
@@ -67,6 +68,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
+    @Secured(operation=OperationType.READ)
     public UT findByLogin(final String login) throws FindException {
         try {
             //noinspection unchecked
@@ -131,6 +133,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     /**
      * Must be called in a transaction!
      */
+    @Secured(operation=OperationType.DELETE)
     public void delete(UT user) throws DeleteException {
         UT userImp = cast(user);
         try {
@@ -142,10 +145,11 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
             preDelete(originalUser);
 
-            Set<IdentityHeader> groupHeaders = groupManager.getGroupHeaders(userImp);
+            final GMT gman = identityProvider.getGroupManager();
+            Set<IdentityHeader> groupHeaders = gman.getGroupHeaders(userImp);
             for (EntityHeader groupHeader : groupHeaders) {
-                GT group = groupManager.findByPrimaryKey(groupHeader.getStrId());
-                groupManager.deleteMembership(group, user);
+                GT group = gman.findByPrimaryKey(groupHeader.getStrId());
+                gman.deleteMembership(group, user);
             }
             getHibernateTemplate().delete(userImp);
             revokeCert(userImp);
@@ -167,6 +171,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      * @throws DeleteException
      * @throws ObjectNotFoundException
      */
+    @Secured(operation=OperationType.DELETE)
     public void deleteAll(final long ipoid) throws DeleteException, ObjectNotFoundException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
@@ -185,6 +190,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
+    @Secured(operation=OperationType.DELETE)
     public void delete(final String identifier) throws DeleteException, ObjectNotFoundException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
@@ -203,15 +209,18 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
+    @Secured(operation=OperationType.CREATE)
     public long save(UT entity) throws SaveException {
         String id = save(entity, null);
         return Long.parseLong(id);
     }
 
+    @Secured(operation=OperationType.CREATE)
     public String saveUser(UT user) throws SaveException {
         return save(user, null);
     }
 
+    @Secured(operation=OperationType.CREATE)
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
 
@@ -239,6 +248,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
+    @Secured(operation=OperationType.UPDATE)
     public void update(UT user) throws UpdateException, ObjectNotFoundException {
         update(user, null);
     }
@@ -249,6 +259,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @param user existing user
      */
+    @Secured(operation=OperationType.UPDATE)
     public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException, ObjectNotFoundException {
         UT imp = cast(user);
 

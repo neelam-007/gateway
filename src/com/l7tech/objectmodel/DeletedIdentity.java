@@ -6,10 +6,10 @@ package com.l7tech.objectmodel;
 import com.l7tech.identity.Identity;
 
 /**
- * A {@link DeletedEntity} with a {@link #providerId}.
+ * A {@link AnonymousEntityReference} with a {@link #providerId}.
  * @author alex
  */
-public class DeletedIdentity extends DeletedEntity implements Identity {
+public class DeletedIdentity extends AnonymousEntityReference implements Identity {
     private final long providerId;
 
     public DeletedIdentity(Class entityClass, long providerOid, String identityId) {

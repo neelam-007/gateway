@@ -12,6 +12,7 @@ public enum OperationType {
     UPDATE("Write"),
     DELETE("Delete"),
     OTHER("<other>"),
+    NONE("<none>"),
     ;
 
     private OperationType(String name) {

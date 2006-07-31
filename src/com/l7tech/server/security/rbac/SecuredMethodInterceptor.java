@@ -4,13 +4,9 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.common.security.rbac.*;
-import static com.l7tech.common.security.rbac.EntityType.GROUP;
-import static com.l7tech.common.security.rbac.EntityType.USER;
 import static com.l7tech.common.security.rbac.OperationType.*;
-import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.DeletedEntity;
+import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -22,9 +18,7 @@ import org.springframework.context.ApplicationListener;
 import javax.security.auth.Subject;
 import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +32,21 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
     public SecuredMethodInterceptor(RoleManager roleManager) {
         this.roleManager = roleManager;
+    }
+
+    private static class CheckInfo {
+        private CheckInfo(String mname) {
+            this.mname = mname;
+        }
+
+        private final String mname;
+        private CheckBefore before = CheckBefore.NONE;
+        private CheckAfter after = CheckAfter.NONE;
+        private OperationType operation = OperationType.NONE;
+        private String otherOperationName = null;
+        private long oid = Entity.DEFAULT_OID;
+        private Entity entity = null;
+
     }
 
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
@@ -69,160 +78,243 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         EntityType[] checkTypes = methodSecured.types();
         if (checkTypes == null) checkTypes = beanSecured.types();
         if (checkTypes == null) throw new IllegalStateException("Secured method " + mname + " does not specify an entity type");
-        EnumSet types = EnumSet.copyOf(Arrays.asList(checkTypes));
 
-        Entity checkEntity = null;
-        long checkOid = Entity.DEFAULT_OID;
-        OperationType checkOperation;
-        CheckAfterType checkAfter = CheckAfterType.NONE;
+        CheckInfo check = new CheckInfo(mname);
 
-        switch(methodSecured.stereotype()) {
-            case SAVE_OR_UPDATE:
-                if (args.length == 1 && args[0] instanceof Entity) {
-                    checkEntity = (Entity) args[0];
-                    checkOperation = createOrWrite(checkEntity);
-                    break;
-                } else if (args.length >= 2 && args[0] instanceof Long &&
-                        args[1] instanceof PersistentUser &&
-                        checkTypes.length == 1 && checkTypes[0] == USER)
-                {
-                    checkEntity = (PersistentUser)args[1];
-                    checkOperation = createOrWrite(checkEntity);
-                    break;
-                } else if (args.length >= 2 && args[0] instanceof Long &&
-                        args[1] instanceof PersistentGroup &&
-                        checkTypes.length == 1 && checkTypes[0] == GROUP)
-                {
-                    checkEntity = (PersistentGroup)args[1];
-                    checkOperation = createOrWrite(checkEntity);
-                    break;
-                } else {
-                    // TODO this is incredibly ugly
-                    for (EntityType type : checkTypes) {
-                        if (!roleManager.isPermittedForAllEntities(user, type, UPDATE)) {
-                            throw new PermissionDeniedException(UPDATE, type);
-                        }
-                        if (!roleManager.isPermittedForAllEntities(user, type, CREATE)) {
-                            throw new PermissionDeniedException(CREATE, type);
-                        }
-                    }
-                    return methodInvocation.proceed();
-                }
-            case FIND_ENTITIES:
-                checkOperation = READ;
-                if (Collection.class.isAssignableFrom(method.getReturnType())) {
-                    checkAfter = CheckAfterType.COLLECTION;
-                }
+        switch(methodSecured.operation()) {
+            case CREATE:
+            case UPDATE:
+                getEntityArgOrThrow(check, methodSecured, args);
+                check.operation = methodSecured.operation();
                 break;
-            case FIND_HEADERS:
-                // Anyone can list currently
-                checkOperation = READ;
+            case READ:
+                getOidArgOrThrow(check, methodSecured, args);
+                check.operation = READ;
                 break;
-            case FIND_BY_PRIMARY_KEY:
-                if (args.length == 2 && (types.contains(USER) || types.contains(GROUP))) {
-                    checkOperation = READ;
-                    checkAfter = CheckAfterType.RETURN;
-                    break;
-                } else if (args.length == 1 && (args[0] instanceof Long || args[0] instanceof CharSequence)) {
-                    checkOperation = READ;
-                    checkAfter = CheckAfterType.RETURN;
-                    break;
-                } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies FIND_BY_PRIMARY_KEY, but args are not suitable");
+            case DELETE:
+                if (!getEntityArg(check, methodSecured, args)) {
+                    getOidArgOrThrow(check, methodSecured, args);
                 }
-            case FIND_ENTITY_BY_ATTRIBUTE:
-                checkOperation = READ;
-                checkAfter = CheckAfterType.RETURN;
+                check.operation = DELETE;
                 break;
-            case DELETE_ENTITY:
-                if (checkTypes.length != 1) throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_ENTITY, but has multiple types");
-                if (args.length == 1 && args[0] instanceof Entity) {
-                    checkEntity = (Entity) args[0];
-                    checkOperation = DELETE;
-                    break;
-                } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_ENTITY, but args not (Entity)");
-                }
-            case DELETE_BY_OID:
-                if (checkTypes.length != 1) throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but has multiple types");
-                if (args.length == 1 && args[0] instanceof Long) {
-                    checkOperation = DELETE;
-                    checkEntity = new DeletedEntity(checkTypes[0].getEntityClass(), (Long)args[0]);
-                    break;
-                } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but args not (long)");
-                }
-            case GET_PROPERTY_BY_OID:
-                if (args.length >= 2 && types.contains(USER) || types.contains(GROUP)) {
-                    if (args[0] instanceof Long && args[1] instanceof String) {
-                        checkOperation = READ;
-                        checkOid = (Long)args[0];
-                        break;
-                    } else {
-                        throw new IllegalStateException("Security declaration for method " + mname + " specifies GET_PROPERTY_BY_OID and has types=(USER|GROUP), but args do not start with (long, String)");
-                    }
-                } else if (args.length == 1 && args[0] instanceof Long) {
-                    checkOperation = READ;
-                    checkOid = (Long)args[0];
-                    break;
-                } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies GET_PROPERTY_BY_OID but args not (long)");
-                }
-            case GET_PROPERTY_OF_ENTITY:
-                if (args[0] instanceof Entity) {
-                    checkEntity = (Entity) args[0];
-                } else if (args.length > 1 && args[1] instanceof Entity) {
-                    checkEntity = (Entity) args[1];
-                } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies GET_PROPERTY_OF_ENTITY but args do not contain an Entity");
+            case OTHER:
+                if (methodSecured.otherOperationName() == null || methodSecured.otherOperationName().length() == 0)
+                    throw new IllegalStateException("Security declaration for method " +
+                            mname + " specifies " + methodSecured.operation() +
+                            ", but does not specify otherOperationName");
+
+                if (!getEntityArg(check, methodSecured, args)) {
+                    getOidArgOrThrow(check, methodSecured, args);
                 }
 
-                checkOperation = READ;
-                break;
-            case SET_PROPERTY_OF_ENTITY:
-                if (args[0] instanceof Entity) {
-                    checkEntity = (Entity) args[0];
-                } else if (args.length > 1 && args[1] instanceof Entity) {
-                    checkEntity = (Entity) args[1];
-                } else {
-                    throw new IllegalStateException("Security declaration for method " + mname + " specifies SET_PROPERTY_OF_ENTITY but args do not contain an Entity");
-                }
-                checkOperation = UPDATE;
+                check.operation = OTHER;
+                check.otherOperationName = methodSecured.otherOperationName();
                 break;
             default:
-                throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + methodSecured.stereotype().name());
+                switch(methodSecured.stereotype()) {
+                    case SAVE_OR_UPDATE:
+                        if (getEntityArg(check, methodSecured, args)) {
+                            check.operation = createOrWrite(check.entity);
+                            break;
+                        } else {
+                            // TODO this is incredibly ugly
+                            for (EntityType type : checkTypes) {
+                                if (!roleManager.isPermittedForAllEntities(user, type, UPDATE)) {
+                                    throw new PermissionDeniedException(UPDATE, type);
+                                }
+                                if (!roleManager.isPermittedForAllEntities(user, type, CREATE)) {
+                                    throw new PermissionDeniedException(CREATE, type);
+                                }
+                            }
+                            return methodInvocation.proceed();
+                        }
+                    case FIND_ENTITIES:
+                        check.operation = READ;
+                        if (Collection.class.isAssignableFrom(method.getReturnType())) {
+                            check.after = CheckAfter.COLLECTION;
+                        } else {
+                            // Unsupported return value type; must be able to read all
+                            check.before = CheckBefore.ALL;
+                        }
+                        break;
+                    case FIND_HEADERS:
+                        // Anyone can list currently
+                        check.operation = READ;
+                        break;
+                    case FIND_BY_PRIMARY_KEY:
+                        getOidArgOrThrow(check, methodSecured, args);
+                        check.operation = READ;
+                        check.after = CheckAfter.ENTITY;
+                        break;
+                    case FIND_ENTITY_BY_ATTRIBUTE:
+                        check.operation = READ;
+                        check.after = CheckAfter.ENTITY;
+                        break;
+                    case DELETE_ENTITY:
+                        getEntityArgOrThrow(check, methodSecured, args);
+                        check.operation = DELETE;
+                        check.before = CheckBefore.ENTITY;
+                        break;
+                    case DELETE_BY_OID:
+                        if (checkTypes.length != 1) throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but has multiple types");
+                        getOidArgOrThrow(check, methodSecured, args);
+                        check.operation = DELETE;
+                        check.before = CheckBefore.OID;
+                        break;
+                    case GET_PROPERTY_BY_OID:
+                        getOidArgOrThrow(check, methodSecured, args);
+                        check.operation = READ;
+                        check.before = CheckBefore.OID;
+                        break;
+                    case SET_PROPERTY_BY_OID:
+                        getOidArgOrThrow(check, methodSecured, args);
+                        check.operation = UPDATE;
+                        check.before = CheckBefore.OID;
+                    case GET_PROPERTY_OF_ENTITY:
+                        getEntityArgOrThrow(check, methodSecured, args);
+                        check.operation = READ;
+                        check.before = CheckBefore.ENTITY;
+                        break;
+                    case SET_PROPERTY_OF_ENTITY:
+                        getEntityArgOrThrow(check, methodSecured, args);
+                        check.operation = UPDATE;
+                        check.before = CheckBefore.ENTITY;
+                    default:
+                        throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + methodSecured.stereotype().name());
+                }
         }
 
-        if (checkEntity != null && !roleManager.isPermittedForEntity(user, checkEntity, checkOperation, null)) {
-            throw new PermissionDeniedException(checkOperation, checkEntity);
+        if (check.operation == null) throw new NullPointerException("check.operation");
+
+        switch(check.before) {
+            case ENTITY:
+                if (check.entity == null) throw new NullPointerException("check.entity");
+                if (!roleManager.isPermittedForEntity(user, check.entity, check.operation, null)) {
+                    throw new PermissionDeniedException(check.operation, check.entity);
+                }
+                break;
+            case OID:
+                if (check.oid == Entity.DEFAULT_OID) throw new NullPointerException("check.oid");
+                if (checkTypes.length > 1) throw new IllegalStateException("Security declaration for method " + mname + " needs to check OID, but multiple EntityTypes specified");
+                final AnonymousEntityReference entity = new AnonymousEntityReference(checkTypes[0].getEntityClass(), check.oid);
+                if (!roleManager.isPermittedForEntity(user, entity, check.operation, check.otherOperationName)) {
+                    throw new PermissionDeniedException(check.operation, entity);
+                }
+                break;
+            case ALL:
+                for (EntityType checkType : checkTypes) {
+                    if (!roleManager.isPermittedForAllEntities(user, checkType, check.operation)) {
+                        throw new PermissionDeniedException(check.operation, checkType);
+                    }
+                }
+                break;
         }
 
         Object rv = methodInvocation.proceed();
-        if (checkAfter != CheckAfterType.NONE) {
-            logger.log(Level.WARNING, "Not yet implemented: invoking {0}; should check {1} after invocation", new Object[] { mname, checkAfter.name() });
-            return rv;
-        } else {
-            String ename;
-            Level level;
-            if (checkEntity == null) {
-                ename = "<unknown>";
-                level = Level.WARNING;
-            } else {
-                ename = checkEntity instanceof NamedEntity ? ((NamedEntity) checkEntity).getName() : checkEntity.getClass().getSimpleName() + " #" + checkEntity.getOid();
-                level = Level.FINE;
-            }
-            logger.log(level, "Permitted {0} on {1} for {2}", new Object[]{checkOperation.name(), ename, mname});
-            return rv;
+
+        switch(check.after) {
+            case COLLECTION:
+            case ENTITY:
+                logger.log(Level.WARNING, "Not yet implemented: invoking {0}; should check {1} after invocation", new Object[] { mname, check.after.name() });
+                return rv;
+            default:
+                String ename;
+                Level level;
+                if (check.entity == null) {
+                    ename = "<unknown>";
+                    level = Level.WARNING;
+                } else {
+                    ename = check.entity instanceof NamedEntity ? ((NamedEntity) check.entity).getName() : check.entity.getClass().getSimpleName() + " #" + check.entity.getOid();
+                    level = Level.FINE;
+                }
+                logger.log(level, "Permitted {0} on {1} for {2}", new Object[]{check.operation.name(), ename, mname});
+                return rv;
+        }
+    }
+
+    private void getEntityArgOrThrow(CheckInfo info, Secured methodSecured, Object[] args) {
+        if (!getEntityArg(info, methodSecured, args))
+            throw new IllegalStateException("Security declaration for method " +
+                    info.mname + " specifies " + methodSecured.stereotype() +
+                    ", but can't find Entity argument");
+
+    }
+
+    private boolean getEntityArg(CheckInfo info, Secured methodSecured, Object[] args) {
+        Object arg = getSingleOrRelevantArg(methodSecured, args);
+        if (arg == null) return false;
+
+        if (arg instanceof Entity) {
+            info.entity = (Entity)arg;
+            return true;
         }
 
+        return false;
+    }
+
+    private void getOidArgOrThrow(CheckInfo info, Secured methodSecured, Object[] args) {
+        if (!getOidArg(info, methodSecured, args))
+            throw new IllegalStateException("Security declaration for method " +
+                    info.mname + " specifies " + methodSecured.stereotype() +
+                    ", but can't find long or String argument");
+    }
+
+    private boolean getOidArg(CheckInfo info, Secured methodSecured, Object[] args) {
+        Object arg = getSingleOrRelevantArg(methodSecured, args);
+        if (arg == null) return false;
+
+        if (arg instanceof Long) {
+            info.oid = (Long)arg;
+            return true;
+        } else if (arg instanceof String) {
+            info.oid = Long.valueOf((String)arg);
+            return true;
+        }
+
+        return false;
+    }
+
+    private Object getSingleOrRelevantArg(Secured methodSecured, Object[] args) {
+        int relevant = methodSecured.relevantArg();
+        if (args.length == 1) {
+            return args[0];
+        } else if (args.length > 1 && relevant >= 0 && relevant < args.length) {
+            return args[relevant];
+        } else {
+            return null;
+        }
     }
 
     private OperationType createOrWrite(Entity checkEntity) {
         return checkEntity.getOid() == Entity.DEFAULT_OID ? CREATE : UPDATE;
     }
 
-    private static enum CheckAfterType {
-        NONE, RETURN, COLLECTION
+    private static enum CheckBefore {
+        /** Nothing to check before invocation */
+        NONE,
+
+        /** Check permission to execute operation against entity with specified OID */
+        OID,
+
+        /** Check permission to execute operation against specified Entity */
+        ENTITY,
+
+        /** Check permission to execute operation against all entities of type */
+        ALL
+    }
+
+    private static enum CheckAfter {
+        /** Nothing to check after invocation */
+        NONE,
+
+        /** Return value must be Entity; check permission to execute operation against it */
+        ENTITY,
+
+        /**
+         * Return value is a Collection&lt;Entity&gt;; check permission to execute operation
+         * against all entities in collection
+         */
+        COLLECTION
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
