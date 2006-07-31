@@ -1,10 +1,10 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -13,8 +13,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 public class RoleManagementDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
+
     private JButton buttonOK;
     private JButton buttonCancel;
     private JPanel informationPane;
@@ -25,7 +30,7 @@ public class RoleManagementDialog extends JDialog {
     private JButton removeRole;
 
     private JPanel mainPanel;
-    private JTextPane propertiesPane;
+    private JTextArea propertiesPane;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
     private final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
@@ -33,7 +38,11 @@ public class RoleManagementDialog extends JDialog {
 
     private final ActionListener roleActionListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            doUpdateRoleAction(e);
+            try {
+                doUpdateRoleAction(e);
+            } catch (RemoteException e1) {
+                throw new RuntimeException(e1);
+            }
         }
     };
 
@@ -48,11 +57,10 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void initialize() {
+        propertiesPane.setLineWrap(false);
         populateList();
         setupButtonListeners();
         setupActionListeners();
-
-
 
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(mainPanel);
@@ -80,11 +88,17 @@ public class RoleManagementDialog extends JDialog {
 
         roleList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 1)
-                    enableEditRemoveButtons();
-                else if (e.getClickCount() >= 2)
-                    showEditDialog(getSelectedRole());
-            }
+                try {
+                    if (e.getClickCount() == 1)
+                        enableEditRemoveButtons();
+                    else if (e.getClickCount() >= 2)
+                        showEditDialog(getSelectedRole());
+
+                    updatePropertiesSummary();
+                } catch (RemoteException re) {
+                    throw new RuntimeException(re);
+                }
+             }
         });
 
         roleList.addListSelectionListener(new ListSelectionListener() {
@@ -94,6 +108,58 @@ public class RoleManagementDialog extends JDialog {
         });
     }
 
+    private void updatePropertiesSummary() throws RemoteException {
+        Role role = getSelectedRole();
+        String message = null;
+        if (role != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Role Name: " + role.getName() + "\n\n");
+            sb.append("Permissions:\n");
+            Set<Permission> permissions = role.getPermissions();
+            if (permissions == null || permissions.isEmpty()) {
+                sb.append("   NONE \n");
+            } else {
+                for (Permission permission : permissions) {
+                    sb.append("    " + permission.getOperation() + " ");
+                    switch(permission.getScope().size()) {
+                        case 0:
+                            sb.append("<Any");
+                            if (permission.getEntityType() == EntityType.ANY)
+                               sb.append(" Object");
+                            else
+                                sb.append(" " + permission.getEntityType().getName());
+
+                            sb.append(">");
+                            break;
+                        case 1:
+                            sb.append(permission.getScope().iterator().next().toString());
+                            break;
+                        default:
+                            sb.append("<Complex Scope>");
+                    }
+                    sb.append("\n");
+                }
+            }
+            sb.append("\n");
+
+            sb.append("Assignments:\n");
+            Set<UserRoleAssignment> users = role.getUserAssignments();
+            if (users == null || users.isEmpty()) {
+                sb.append("   NONE\n");
+            } else {
+                for (UserRoleAssignment ura : users) {
+                    try {
+                        UserHolder holder = new UserHolder(ura);
+                        sb.append("   " + holder + "\n");
+                    } catch (FindException e) {
+                        logger.warning("Could not find a user with id=" + ura.getUserId());
+                    }
+                }
+            }
+            message = sb.toString();
+        }
+        propertiesPane.setText(message);
+    }
     private void setupButtonListeners() {
         editRole.addActionListener(roleActionListener);
         addRole.addActionListener(roleActionListener);
@@ -120,7 +186,7 @@ public class RoleManagementDialog extends JDialog {
         editRole.setEnabled(enabled);
     }
 
-    private void doUpdateRoleAction(ActionEvent e) {
+    private void doUpdateRoleAction(ActionEvent e) throws RemoteException {
         Object source = e.getSource();
         if (source == null || !(source instanceof JButton)) {
             return;
@@ -130,9 +196,11 @@ public class RoleManagementDialog extends JDialog {
         if (srcButton == addRole) {
             Role newRole = showEditDialog(new Role());
             if (newRole != null) populateList();
+            updatePropertiesSummary();
         } else if (srcButton == editRole) {
             Role r = showEditDialog(getSelectedRole());
             if (r != null) populateList();
+            updatePropertiesSummary();
         } else if (srcButton == removeRole) {
             final Role selectedRole = getSelectedRole();
             if (selectedRole == null) return;
@@ -150,6 +218,7 @@ public class RoleManagementDialog extends JDialog {
                         }
                     }
                 });
+            updatePropertiesSummary();
         }
     }
 

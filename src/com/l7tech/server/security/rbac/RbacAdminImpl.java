@@ -5,8 +5,7 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
@@ -14,11 +13,15 @@ import com.l7tech.server.EntityFinder;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  */
 public class RbacAdminImpl implements RbacAdmin {
+    private static final Logger logger = Logger.getLogger(RbacAdminImpl.class.getName());
+
     private final RoleManager roleManager;
     private final LicenseManager licenseManager;
     private final EntityFinder entityFinder;
@@ -39,17 +42,44 @@ public class RbacAdminImpl implements RbacAdmin {
 
     public Collection<Role> findAllRoles() throws FindException, RemoteException {
         checkLicense();
-        return roleManager.findAll();
+        final Collection<Role> roles = roleManager.findAll();
+        for (Role role : roles) {
+            attachHeaders(role);
+        }
+        return roles;
     }
 
     public Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException {
         checkLicense();
-        return roleManager.findByPrimaryKey(oid);
+        return attachHeaders(roleManager.findByPrimaryKey(oid));
     }
 
     public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
         // No license check--needed for SSM login
-        return roleManager.getAssignedRoles(user);
+        final Collection<Role> assignedRoles = roleManager.getAssignedRoles(user);
+        for (Role role : assignedRoles) {
+            attachHeaders(role);
+        }
+        return assignedRoles;
+    }
+
+    private Role attachHeaders(Role theRole) {
+        for (Permission permission : theRole.getPermissions()) {
+            for (ScopePredicate scopePredicate : permission.getScope()) {
+                if (scopePredicate instanceof ObjectIdentityPredicate) {
+                    ObjectIdentityPredicate oip = (ObjectIdentityPredicate) scopePredicate;
+                    final long oid = oip.getTargetEntityOid();
+                    try {
+                        oip.setHeader(entityFinder.findHeader(permission.getEntityType(), oid));
+                    } catch (FindException e) {
+                        logger.severe("Couldn't look up EntityHeader for " +
+                                e.getClass().getSimpleName() +
+                                " #" + oid);
+                    }
+                }
+            }
+        }
+        return theRole;
     }
 
     public long saveRole(Role role) throws SaveException, RemoteException {

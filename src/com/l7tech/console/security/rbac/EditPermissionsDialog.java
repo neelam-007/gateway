@@ -1,13 +1,14 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
-import java.awt.event.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class EditPermissionsDialog extends JDialog {
     private JPanel contentPane;
@@ -22,6 +23,7 @@ public class EditPermissionsDialog extends JDialog {
     private JButton browseForScope;
 
     private Permission permission;
+    private JLabel scopeLabel;
 
     public EditPermissionsDialog(Permission permission, Dialog parent) {
         super(parent);
@@ -50,14 +52,21 @@ public class EditPermissionsDialog extends JDialog {
         else
             setTitle("Edit Permission");
 
-        enableDisable();
         pack();
+        enableDisable();
     }
 
     void enableDisable() {
         EntityType etype = (EntityType)typeSelection.getSelectedItem();
         buttonOK.setEnabled(etype != null && operationSelection.getSelectedItem() != null);
-        browseForScope.setEnabled(etype != EntityType.ANY);
+
+        boolean scopeEnabled = etype == EntityType.SERVICE;
+        scopeLabel.setVisible(scopeEnabled);
+        scopeField.setVisible(scopeEnabled);
+        browseForScope.setVisible(scopeEnabled);
+
+        if (scopeEnabled)
+            browseForScope.setEnabled(etype != EntityType.ANY);
     }
 
     private void setupButtonListeners() {
@@ -85,11 +94,32 @@ public class EditPermissionsDialog extends JDialog {
                 sd.pack();
                 Utilities.centerOnScreen(sd);
                 sd.setVisible(true);
-                if (sd.getPermission() != null) {
-                    scopeField.setText(permission.getScope().toString());
-                }
+                EntityHeader header = sd.getSpecificEntity();
+                if (header != null) {
+                    scopeField.setText(sd.getSpecificEntity().toString());
+                } else
+                    scopeField.setText(getScopeString(sd.getPermission()));
             }
         });
+    }
+
+    private String getScopeString(Permission perm) {
+        String theScope = "";
+        if (perm != null) {
+            switch(perm.getScope().size()) {
+                case 0:
+                    if (perm.getEntityType() == EntityType.ANY)
+                        theScope = "<Any Object>";
+                        theScope += ">";
+                        break;
+                case 1:
+                    theScope += perm.getScope().iterator().next().toString();
+                    break;
+                default:
+                    theScope += "<Complex Scope>";
+            }
+        }
+        return theScope;
     }
 
     private void setupActionListeners() {

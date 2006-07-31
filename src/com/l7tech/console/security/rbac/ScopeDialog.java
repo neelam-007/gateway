@@ -98,6 +98,7 @@ public class ScopeDialog extends JDialog {
     }
 
     private void initialize() {
+        setModal(true);
         attributeListModel = new AttributeListModel();
         radioListener = new RadioListener();
 
@@ -146,6 +147,7 @@ public class ScopeDialog extends JDialog {
                 Utilities.centerOnScreen(fed);
                 fed.setVisible(true);
                 EntityHeader header = fed.getSelectedEntityHeader();
+                specificEntity = header;
                 if (header != null) {
                     scope.clear();
                     scope.add(new ObjectIdentityPredicate(permission, header.getOid()));
@@ -166,8 +168,7 @@ public class ScopeDialog extends JDialog {
     private String getSpecificLabel() {
         if (scope.size() != 1  || !(scope.get(0) instanceof ObjectIdentityPredicate)) return "";
         ObjectIdentityPredicate oidp = (ObjectIdentityPredicate) scope.get(0);
-        // TODO lookup name
-        return entityType.getName() + " #" + oidp.getTargetEntityOid();
+        return oidp.toString();
     }
 
     private void enableDisable() {
@@ -194,5 +195,9 @@ public class ScopeDialog extends JDialog {
 
     public Permission getPermission() {
         return permission;
+    }
+
+    public EntityHeader getSpecificEntity() {
+        return specificEntity;
     }
 }

@@ -12,17 +12,16 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.ProjectionList;
 import org.hibernate.criterion.Projections;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.sql.SQLException;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
@@ -37,7 +36,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
         try {
             return (EntityHeader[])getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                public Object doInHibernate(Session session) throws HibernateException {
                     FlushMode old = session.getFlushMode();
                     try {
                         session.setFlushMode(FlushMode.NEVER);
@@ -99,7 +98,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         try {
             //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                public Object doInHibernate(Session session) throws HibernateException {
                     FlushMode old = session.getFlushMode();
                     try {
                         session.setFlushMode(FlushMode.NEVER);
@@ -115,5 +114,17 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         } catch (HibernateException e) {
             throw new FindException("Couldn't find entity ", e);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public EntityHeader findHeader(com.l7tech.common.security.rbac.EntityType etype, long oid) throws FindException {
+        Entity e = find(etype.getEntityClass(), oid);
+        com.l7tech.objectmodel.EntityType oldType = etype.getOldEntityType();
+        String name = null;
+        if (e instanceof NamedEntity) {
+            NamedEntity ne = (NamedEntity) e;
+            name = ne.getName();
+        }
+        return new EntityHeader(Long.toString(e.getOid()), oldType, name, null);
     }
 }
