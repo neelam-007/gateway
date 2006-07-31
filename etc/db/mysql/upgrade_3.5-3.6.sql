@@ -5,6 +5,11 @@
 ---
 
 --
+-- Disable FK while manipulating tables
+--
+SET FOREIGN_KEY_CHECKS=0;
+
+--
 -- 
 --
 ALTER TABLE published_service ADD COLUMN http_methods mediumtext;
@@ -183,3 +188,7 @@ INSERT INTO rbac_permission VALUES (-6, 0, -3, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
 
+--
+-- Reenable FK at very end of script
+--
+SET FOREIGN_KEY_CHECKS=1;
