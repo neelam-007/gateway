@@ -50,9 +50,16 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                         List arrays = crit.list();
                         List<EntityHeader> headers = new ArrayList<EntityHeader>();
                         for (Iterator i = arrays.iterator(); i.hasNext();) {
-                            Object[] array = (Object[])i.next();
-                            Long oid = (Long)array[0];
-                            String name = names ? (String)array[1] : null;
+                            Long oid;
+                            String name;
+                            if (names) {
+                                Object[] array = (Object[])i.next();
+                                oid = (Long)array[0];
+                                name = (String)array[1];
+                            } else {
+                                oid = (Long)i.next();
+                                name = null;
+                            }
                             headers.add(new EntityHeader(oid.toString(), EntityType.UNDEFINED, name, null));
                         }
                         if (arrays.size() >= 100) headers.add(new EntityHeader("-1", EntityType.MAXED_OUT_SEARCH_RESULT, "Too many results", null));
