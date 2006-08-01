@@ -18,9 +18,7 @@ import org.springframework.jdbc.LobRetrievalFailureException;
 import org.springframework.jdbc.SQLWarningException;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.hibernate.HibernateException;
 
-import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.identity.User;
 import com.l7tech.common.util.ExceptionUtils;
@@ -84,15 +82,13 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
     private static final String DEFAULT_INCLUDE_STACK = Boolean.FALSE.toString();
     private static final Logger logger = Logger.getLogger(SecureRemoteInvocationExecutor.class.getName());
 
-    private AdminSessionManager sessionManager;
     private static final boolean sendStackToClient = Boolean.valueOf(System.getProperty(SYS_PROP_INCLUDE_STACK_FOR_CLIENT, DEFAULT_INCLUDE_STACK));
 
     private static InvocationTargetException replaceIfNotSupported(InvocationTargetException ite)  {
         InvocationTargetException exception = ite;
         Throwable cause = ite.getCause();
         Throwable replacement = ExceptionUtils.filter(cause,
-                new Class[]{HibernateException.class,
-                            BadSqlGrammarException.class,
+                new Class[]{BadSqlGrammarException.class,
                             CannotGetJdbcConnectionException.class,
                             InvalidResultSetAccessException.class,
                             JdbcUpdateAffectedIncorrectNumberOfRowsException.class,
