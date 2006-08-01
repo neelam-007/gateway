@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
  * @author mike
  */
 public class NewSsgDialog extends JDialog {
+    private static final String PROP_GENERIC_ENABLE = "com.l7tech.proxy.gui.dialogs.enableGenericWebService";
     private JPanel rootPanel;
     private JRadioButton radioTokenOther;
     private JRadioButton radioTokenTrustedGateway;
@@ -27,6 +28,7 @@ public class NewSsgDialog extends JDialog {
     private JRadioButton radioTokenFederatedPassive;
     private JRadioButton radioTrustedGateway;
     private JRadioButton radioRawUrl;
+    private JLabel genericWebServiceLabel;
     private JLabel imageLabel;
     private JPanel imagePanel;
     private JComboBox trustedSsgComboBox;
@@ -129,6 +131,12 @@ public class NewSsgDialog extends JDialog {
         radioTokenTrustedGateway.addActionListener(radioChanged);
         radioTokenFederatedPassive.addActionListener(radioChanged);
         radioRawUrl.addActionListener(radioChanged);
+
+        if(!Boolean.getBoolean(PROP_GENERIC_ENABLE)) {
+            radioRawUrl.setVisible(false);
+            genericWebServiceLabel.setVisible(false);
+        }
+
         checkButtonState();
     }
 
