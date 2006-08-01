@@ -7,6 +7,7 @@
 package com.l7tech.server.sla;
 
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -203,8 +204,8 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
     }
 
     public long getCounterValue(final long counterId, final int fieldOfInterest) {
-        Object result = getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) {
+        Object result = getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) {
                 try {
                     String fieldstr = null;
                     switch (fieldOfInterest) {

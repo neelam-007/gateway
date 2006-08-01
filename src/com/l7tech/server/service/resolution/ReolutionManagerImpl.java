@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.PublishedService;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -169,8 +170,8 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
 
     private Collection existingResolutionParameters(final long serviceid) {
         try {
-            return getHibernateTemplate().executeFind(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
                     q.setLong(0, serviceid);
                     return q.list();
