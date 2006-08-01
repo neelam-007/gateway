@@ -47,7 +47,7 @@ public class CustomAssertionClassLoader extends ClassLoader {
             if (registry != null) {
                 CustomAssertionsRegistrar customAssertionsRegistrar = null;
                 try {
-                    registry.getCustomAssertionsRegistrar();
+                    customAssertionsRegistrar = registry.getCustomAssertionsRegistrar();
                 }
                 catch(IllegalStateException ise) {
                     throw new ClassNotFoundException(name, ise);            
