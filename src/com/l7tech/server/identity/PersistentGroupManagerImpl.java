@@ -7,10 +7,9 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Query;
-import org.hibernate.Session;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -108,8 +107,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     public Collection<IdentityHeader> search(final String searchString) throws FindException {
         try {
             //noinspection unchecked
-            return (Collection<IdentityHeader>) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (Collection<IdentityHeader>) getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria searchCriteria = session.createCriteria(getImpClass());
                     // replace wildcards to match stuff understood by mysql
                     // replace * with % and ? with _
@@ -334,8 +333,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     public boolean isMember(final UT user, final GT group) throws FindException {
         if (!checkProvider(user)) return false;
         try {
-            return (Boolean)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (Boolean)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query query = session.createQuery(HQL_ISMEMBER);
                     query.setString(0, user.getUniqueIdentifier());
                     query.setString(1, group.getUniqueIdentifier());
@@ -529,8 +528,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     private Set<IdentityHeader> doGetUserHeaders(final String groupId) throws HibernateException {
         //noinspection unchecked
-        return (Set<IdentityHeader>)getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+        return (Set<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
                 Query query = session.createQuery(getMemberQueryString());
                 query.setString(0, groupId);
@@ -546,8 +545,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     private Set<IdentityHeader> doGetGroupHeaders(final String userId) throws HibernateException {
         //noinspection unchecked
-        return (Set<IdentityHeader>)getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+        return (Set<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
                 Query query = session.createQuery(HQL_GETGROUPS);
                 query.setString(0, userId);

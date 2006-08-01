@@ -14,6 +14,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -57,8 +58,8 @@ public class RoleManagerImpl
     @Transactional(readOnly=true)
     public Collection<User> getAssignedUsers(final Role role) throws FindException {
         Set<User> users = new HashSet<User>();
-        List assignments = (List) getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+        List assignments = (List) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria assignmentsForRole = session.createCriteria(UserRoleAssignment.class);
                 assignmentsForRole.add(Restrictions.eq("role", role));
                 return assignmentsForRole.list();
@@ -79,8 +80,8 @@ public class RoleManagerImpl
     @Transactional(readOnly=true)
     public Collection<UserRoleAssignment> getAssignments(final User user) throws FindException {
         //noinspection unchecked
-        return (Collection<UserRoleAssignment>) getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+        return (Collection<UserRoleAssignment>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<UserRoleAssignment> assignments = new HashSet<UserRoleAssignment>();
                 Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
@@ -97,8 +98,8 @@ public class RoleManagerImpl
     @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
         //noinspection unchecked
-        return (Collection<Role>) getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+        return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<Role> roles = new HashSet<Role>();
                 Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
                 userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));

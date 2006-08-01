@@ -10,6 +10,7 @@ import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -97,17 +98,11 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     @Transactional(readOnly=true)
     public Integer getVersion(final long oid) throws FindException {
         try {
-            return (Integer)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
-                        q.setLong(0, oid);
-                        return (Integer)q.uniqueResult();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (Integer)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
+                    q.setLong(0, oid);
+                    return (Integer)q.uniqueResult();
                 }
             });
         } catch (Exception e) {
@@ -120,18 +115,12 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     public ET findEntity(final long oid) throws FindException {
         try {
             //noinspection unchecked
-            return (ET)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Query q = session.createQuery(HQL_FIND_BY_OID);
-                        q.setLong(0, oid);
-                        //noinspection unchecked
-                        return (ET)q.uniqueResult();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_FIND_BY_OID);
+                    q.setLong(0, oid);
+                    //noinspection unchecked
+                    return (ET)q.uniqueResult();
                 }
             });
         } catch (Exception e) {
@@ -217,17 +206,11 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     public Collection<ET> findAll() throws FindException {
         try {
             //noinspection unchecked
-            return getHibernateTemplate().executeFind(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Criteria allHeadersCriteria = session.createCriteria(getImpClass());
-                        addFindAllCriteria(allHeadersCriteria);
-                        return allHeadersCriteria.list();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria allHeadersCriteria = session.createCriteria(getImpClass());
+                    addFindAllCriteria(allHeadersCriteria);
+                    return allHeadersCriteria.list();
                 }
             });
         } catch (HibernateException e) {
@@ -331,18 +314,12 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
 
         try {
             //noinspection unchecked
-            return (ET)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Criteria crit = session.createCriteria(getImpClass());
-                        crit.add(Restrictions.eq(F_NAME, name));
-                        //noinspection unchecked
-                        return (ET)crit.uniqueResult();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(getImpClass());
+                    crit.add(Restrictions.eq(F_NAME, name));
+                    //noinspection unchecked
+                    return (ET)crit.uniqueResult();
                 }
             });
         } catch (HibernateException e) {
@@ -514,16 +491,10 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     protected ET findByPrimaryKey(final Class impClass, final long oid) throws FindException {
         try {
             //noinspection unchecked
-            return (ET) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        //noinspection unchecked
-                        return (ET)session.load(impClass, Long.valueOf(oid));
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (ET) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    //noinspection unchecked
+                    return (ET)session.load(impClass, Long.valueOf(oid));
                 }
             });
         } catch (Exception e) {

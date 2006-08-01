@@ -9,14 +9,13 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.Query;
+import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 
 import java.util.*;
@@ -72,8 +71,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     public UT findByLogin(final String login) throws FindException {
         try {
             //noinspection unchecked
-            UT puser = (UT)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            UT puser = (UT)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria findByLogin = session.createCriteria(getImpClass());
                     findByLogin.add(Restrictions.eq("login", login));
                     addFindAllCriteria(findByLogin);
@@ -103,8 +102,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         // note. is this portable?
         try {
             //noinspection unchecked
-            return (Collection<IdentityHeader>)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (Collection<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria search = session.createCriteria(getImpClass());
                     String s = searchString.replace('*', '%').replace('?', '_');
                     search.add(Restrictions.ilike(getNameFieldname(), s));

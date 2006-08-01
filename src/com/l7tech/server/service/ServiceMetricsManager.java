@@ -5,6 +5,7 @@ import com.l7tech.common.util.Background;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
@@ -346,32 +347,26 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             throws FindException
     {
         try {
-            return getHibernateTemplate().executeFind(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Criteria crit = session.createCriteria(MetricsBin.class);
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(MetricsBin.class);
 
-                        if (minPeriodStart != null)
-                            crit.add(Restrictions.ge("periodStart", minPeriodStart));
+                    if (minPeriodStart != null)
+                        crit.add(Restrictions.ge("periodStart", minPeriodStart));
 
-                        if (maxPeriodStart != null)
-                            crit.add(Restrictions.le("periodStart", maxPeriodStart));
+                    if (maxPeriodStart != null)
+                        crit.add(Restrictions.le("periodStart", maxPeriodStart));
 
-                        if (nodeId != null)
-                            crit.add(Restrictions.eq("clusterNodeId", nodeId));
+                    if (nodeId != null)
+                        crit.add(Restrictions.eq("clusterNodeId", nodeId));
 
-                        if (serviceOid != null)
-                            crit.add(Restrictions.eq("serviceOid", serviceOid));
+                    if (serviceOid != null)
+                        crit.add(Restrictions.eq("serviceOid", serviceOid));
 
-                        if (resolution != null)
-                            crit.add(Restrictions.eq("resolution", resolution));
+                    if (resolution != null)
+                        crit.add(Restrictions.eq("resolution", resolution));
 
-                        return crit.list();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+                    return crit.list();
                 }
             });
         } catch (DataAccessException e) {
@@ -407,8 +402,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 duration, resolution, clusterNodeId,
                 serviceOid == null ? -1 : serviceOid.longValue());
 
-        List bins = getHibernateTemplate().executeFind(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+        List bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 final Criteria criteria = session.createCriteria(MetricsBin.class);
                 criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
                 if (clusterNodeId != null) {

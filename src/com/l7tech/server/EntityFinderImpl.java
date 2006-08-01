@@ -6,14 +6,13 @@ package com.l7tech.server;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
-import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.ProjectionList;
 import org.hibernate.criterion.Projections;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,37 +34,32 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     public EntityHeader[] findAll(final Class<? extends Entity> entityClass) throws FindException {
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
         try {
-            return (EntityHeader[])getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Criteria crit = session.createCriteria(entityClass);
-                        ProjectionList pl = Projections.projectionList();
-                        pl.add(Projections.property("oid"));
-                        if (names) pl.add(Projections.property("name"));
-                        crit.setProjection(pl);
-                        crit.setMaxResults(100);
-                        List arrays = crit.list();
-                        List<EntityHeader> headers = new ArrayList<EntityHeader>();
-                        for (Iterator i = arrays.iterator(); i.hasNext();) {
-                            Long oid;
-                            String name;
-                            if (names) {
-                                Object[] array = (Object[])i.next();
-                                oid = (Long)array[0];
-                                name = (String)array[1];
-                            } else {
-                                oid = (Long)i.next();
-                                name = null;
-                            }
-                            headers.add(new EntityHeader(oid.toString(), EntityType.UNDEFINED, name, null));
+            return (EntityHeader[])getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException {
+                    Criteria crit = session.createCriteria(entityClass);
+                    ProjectionList pl = Projections.projectionList();
+                    pl.add(Projections.property("oid"));
+                    if (names) pl.add(Projections.property("name"));
+                    crit.setProjection(pl);
+                    crit.setMaxResults(100);
+                    List arrays = crit.list();
+                    List<EntityHeader> headers = new ArrayList<EntityHeader>();
+                    for (Iterator i = arrays.iterator(); i.hasNext();) {
+                        Long oid;
+                        String name;
+                        if (names) {
+                            Object[] array = (Object[]) i.next();
+                            oid = (Long) array[0];
+                            name = (String) array[1];
+                        } else {
+                            oid = (Long) i.next();
+                            name = null;
                         }
-                        if (arrays.size() >= 100) headers.add(new EntityHeader("-1", EntityType.MAXED_OUT_SEARCH_RESULT, "Too many results", null));
-                        return headers.toArray(new EntityHeader[0]);
-                    } finally {
-                        session.setFlushMode(old);
+                        headers.add(new EntityHeader(oid.toString(), EntityType.UNDEFINED, name, null));
                     }
+                    if (arrays.size() >= 100)
+                        headers.add(new EntityHeader("-1", EntityType.MAXED_OUT_SEARCH_RESULT, "Too many results", null));
+                    return headers.toArray(new EntityHeader[0]);
                 }
             });
         } catch (DataAccessResourceFailureException e) {
@@ -97,16 +91,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     public <ET> ET find(final Class<ET> clazz, final Serializable pk) throws FindException {
         try {
             //noinspection unchecked
-            return (ET)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        //noinspection unchecked
-                        return (ET)session.load(clazz, pk);
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException {
+                    //noinspection unchecked
+                    return (ET)session.load(clazz, pk);
                 }
             });
         } catch (org.hibernate.ObjectNotFoundException e) {

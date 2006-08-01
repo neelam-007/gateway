@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -83,18 +84,12 @@ public class ClusterPropertyManagerImpl
     @Transactional(readOnly=true)
     private ClusterProperty findByKey(final String key) throws FindException {
         try {
-            return (ClusterProperty)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (ClusterProperty)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Query q = session.createQuery(HQL_FIND_BY_NAME);
-                        q.setString(0, key);
-                        return describe((ClusterProperty)q.uniqueResult());
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+                    Query q = session.createQuery(HQL_FIND_BY_NAME);
+                    q.setString(0, key);
+                    return describe((ClusterProperty)q.uniqueResult());
                 }
             });
         } catch (HibernateException e) {

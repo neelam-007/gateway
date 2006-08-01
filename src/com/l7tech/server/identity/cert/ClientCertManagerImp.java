@@ -6,11 +6,11 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -253,19 +253,23 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         return simpleQuery("ski", ski);
     }
 
-    private List simpleQuery(String fieldname, String value) throws FindException {
-        StringBuffer hql = new StringBuffer("FROM ");
+    private List simpleQuery(String fieldname, final String value) throws FindException {
+        final StringBuffer hql = new StringBuffer("FROM ");
         hql.append("cc").append(" IN CLASS ").append(CertEntryRow.class.getName());
         hql.append(" WHERE ").append("cc").append(".").append(fieldname).append(" ");
 
         try {
-            if (value == null) {
-                hql.append("is null");
-                return getHibernateTemplate().find(hql.toString());
-            }
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    if (value == null) {
+                        hql.append("is null");
+                        return session.createQuery(hql.toString()).list();
+                    }
 
-            hql.append(" = ?");
-            return getHibernateTemplate().find(hql.toString(), value.trim());
+                    hql.append(" = ?");
+                    return session.createQuery(hql.toString()).setString(0, value.trim()).list();
+                }
+            });
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
@@ -279,8 +283,8 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
      */
     private CertEntryRow getFromTable(final User user) {
         try {
-            return (CertEntryRow)getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (CertEntryRow)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(FIND_BY_USER_ID);
                     q.setLong(0, user.getProviderId());
                     q.setString(1, user.getUniqueIdentifier());

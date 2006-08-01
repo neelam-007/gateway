@@ -8,6 +8,10 @@ package com.l7tech.server.communityschemas;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.TransactionStatus;
@@ -18,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -108,10 +113,15 @@ public class SchemaEntryManagerImpl
      */
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
-    public Collection<SchemaEntry> findByName(String schemaName) throws FindException {
-        String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
+    public Collection<SchemaEntry> findByName(final String schemaName) throws FindException {
+        final String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = ?";
-        Collection output = getHibernateTemplate().find(queryname, schemaName);
+        Collection output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Query q = session.createQuery(queryname);
+                q.setString(0, schemaName);
+                return q.list();
+            }});
 
         if (SOAP_SCHEMA_NAME.equals(schemaName) && !containsSoapEnv(output)) {
             output = addSoapEnv(output);
@@ -125,10 +135,15 @@ public class SchemaEntryManagerImpl
      */
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
-    public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
-        String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
+    public Collection<SchemaEntry> findByTNS(final String tns) throws FindException {
+        final String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = ?";
-        Collection output = getHibernateTemplate().find(querytns, tns);
+        Collection output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Query q = session.createQuery(querytns);
+                q.setString(0, tns);
+                return q.list();
+            }});
 
         if (SOAP_SCHEMA_TNS.equals(tns) && !containsSoapEnv(output)) {
             output = addSoapEnv(output);

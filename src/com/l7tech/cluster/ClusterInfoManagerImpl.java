@@ -5,12 +5,12 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.orm.hibernate3.HibernateCallback;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -19,12 +19,12 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.sql.SQLException;
 
 /**
  * Hibernate layer over the cluster_info table.
@@ -182,15 +182,9 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     public Collection retrieveClusterStatus() throws FindException {
         // get all objects from that table
         try {
-            return (List) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        return session.createQuery(HQL_FIND_ALL).list();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (List) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    return session.createQuery(HQL_FIND_ALL).list();
                 }
             });
         } catch (Exception e) {
@@ -308,17 +302,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
     private ClusterNodeInfo getNodeStatusFromDB(final String mac) {
         try {
-            return (ClusterNodeInfo) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    FlushMode old = session.getFlushMode();
-                    try {
-                        session.setFlushMode(FlushMode.NEVER);
-                        Query q = session.createQuery(HQL_FIND_BY_MAC);
-                        q.setString(0, mac);
-                        return (ClusterNodeInfo)q.uniqueResult();
-                    } finally {
-                        session.setFlushMode(old);
-                    }
+            return (ClusterNodeInfo) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_FIND_BY_MAC);
+                    q.setString(0, mac);
+                    return (ClusterNodeInfo)q.uniqueResult();
                 }
             });
         }  catch (Exception e) {

@@ -1,19 +1,19 @@
 package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.service.SampleMessage;
+import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
-import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Manages persistent instances of {@link SampleMessage}.
@@ -29,8 +29,8 @@ public class SampleMessageManagerImp
     @Transactional(readOnly=true)
     public EntityHeader[] findHeaders(final long serviceOid, final String operationName) throws FindException {
         try {
-            return (EntityHeader[]) getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            return (EntityHeader[]) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(SampleMessage.class);
 
                     if (serviceOid == -1) {

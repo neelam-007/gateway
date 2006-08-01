@@ -14,10 +14,13 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -42,12 +45,17 @@ public class TrustedCertManagerImp
     private static final Logger logger = Logger.getLogger(TrustedCertManagerImp.class.getName());
 
     @Transactional(readOnly=true)
-    public TrustedCert findBySubjectDn(String dn) throws FindException {
-        StringBuffer hql = new StringBuffer("FROM ");
+    public TrustedCert findBySubjectDn(final String dn) throws FindException {
+        final StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
         hql.append(" WHERE ").append(getTableName()).append(".subjectDn = ?");
         try {
-            List found = getHibernateTemplate().find(hql.toString(), dn);
+            List found = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException {
+                    return session.createQuery(hql.toString()).setString(0, dn).list();
+                }
+            });
+
             switch (found.size()) {
                 case 0:
                     return null;
