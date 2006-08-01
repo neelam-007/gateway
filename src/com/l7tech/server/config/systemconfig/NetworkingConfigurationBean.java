@@ -103,7 +103,8 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                         //in case the file name is off, like it has some extra characters at the end of it, or has an extension
                         //we are only interested in the configurations from files with the pattern:
                         //  ifcfg-<interface>
-                        if (file.getName().endsWith(theConfig.getInterfaceName())) {
+                        String ifName = theConfig.getInterfaceName();
+                        if (ifName != null && file.getName().endsWith(ifName)) {
                             availableNetworkInterfaces.put(theConfig.getInterfaceName(), theConfig);
                             logger.info("found existing configuration for interface: " + theConfig.describe());
                         }
