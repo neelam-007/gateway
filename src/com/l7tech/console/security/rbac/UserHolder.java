@@ -18,29 +18,35 @@ import java.util.HashMap;
  */
 class UserHolder {
 
-    private final static IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
-    private final static Map<Long, String> idpNames = new HashMap<Long, String>();
+    private static IdentityAdmin identityAdmin;
+    private static Map<Long, String> idpNames;
 
     private final UserRoleAssignment userRoleAssignment;
     private final User user;
     private final String provName;
 
-    static {
-        EntityHeader[] hs = new EntityHeader[0];
-        try {
-            hs = identityAdmin.findAllIdentityProviderConfig();
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
+    private void initIdpMap() {
+        if (identityAdmin == null) {
+            identityAdmin = Registry.getDefault().getIdentityAdmin();
+            idpNames = new HashMap<Long, String>();
 
-        for (EntityHeader h : hs) {
-            idpNames.put(h.getOid(), h.getName());
+            EntityHeader[] hs = new EntityHeader[0];
+            try {
+                hs = identityAdmin.findAllIdentityProviderConfig();
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            } catch (FindException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (EntityHeader h : hs) {
+                idpNames.put(h.getOid(), h.getName());
+            }
         }
     }
 
     public UserHolder(UserRoleAssignment ura) throws RemoteException, FindException {
+        initIdpMap();
         this.userRoleAssignment = ura;
         this.user = identityAdmin.findUserByID(ura.getProviderId(), ura.getUserId());
         String name = idpNames.get(user.getProviderId());
