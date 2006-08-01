@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.Iterator;
 
 import com.l7tech.common.wsdl.BindingInfo;
-import com.l7tech.common.wsdl.BindingOperationInfo;
-import com.l7tech.common.wsdl.MimePartInfo;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>

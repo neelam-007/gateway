@@ -25,7 +25,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Logger;
 
 
 /**
@@ -35,7 +34,6 @@ import java.util.logging.Logger;
  */
 public class RequestSwAAssertionDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
-    private static final Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
 
     private JButton cancelButton;
     private JButton okButton;
@@ -225,7 +223,10 @@ public class RequestSwAAssertionDialog extends JDialog {
             populateExtraMimePartsData(((BindingOperationInfo) getBindingOperationsTableModel().getDataSet()[0]).getExtraMultipart().values());
         }
 
-        selectedOperationForBinding = 0;
+        if (binding.getBindingOperations().isEmpty())
+            selectedOperationForBinding = -1;
+        else
+            selectedOperationForBinding = 0;
     }
 
     private void populateMimePartsData(Collection mimeParts) {
@@ -411,38 +412,6 @@ public class RequestSwAAssertionDialog extends JDialog {
 
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
             BindingOperationInfo p = (BindingOperationInfo)value;
-            setText(p.getName());
-            setToolTipText(null);
-            return this;
-        }
-    };
-
-    private final TableCellRenderer inputParametersTableRenderer = new DefaultTableCellRenderer() {
-        /*
-         * This is the only method defined by ListCellRenderer.  We just
-         * reconfigure the Jlabel each time we're called.
-         */
-        public Component
-                getTableCellRendererComponent(JTable table,
-                                              Object value,
-                                              boolean iss,
-                                              boolean hasFocus,
-                                              int row, int column) {
-            if (!table.isEnabled()) {
-                this.setEnabled(false);
-            } else {
-                this.setEnabled(true);
-                if (iss) {
-                    this.setBackground(table.getSelectionBackground());
-                    this.setForeground(table.getSelectionForeground());
-                } else {
-                    this.setBackground(table.getBackground());
-                    this.setForeground(table.getForeground());
-                }
-            }
-
-            this.setFont(new Font("Dialog", Font.PLAIN, 12));
-            MimePartInfo p = (MimePartInfo)value;
             setText(p.getName());
             setToolTipText(null);
             return this;
