@@ -7,12 +7,9 @@ import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
@@ -26,12 +23,13 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class AddXslTransformationAssertionAdvice implements Advice {
+public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAssertionAdvice {
     public void proceed(PolicyChange pc) throws PolicyException {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof XslTransformation)) {
             throw new IllegalArgumentException();
         }
+        super.proceed(pc);
         XslTransformation assertion = (XslTransformation)assertions[0];
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
@@ -48,41 +46,14 @@ public class AddXslTransformationAssertionAdvice implements Advice {
         }
     }
 
-    private boolean isInsertPostRouting(PolicyChange pc) {
-        Assertion ass = pc.getParent().asAssertion();
-        if (ass instanceof AllAssertion) {
-            AllAssertion parent = (AllAssertion)ass;
-            Iterator i = parent.children();
-            int pos = 0;
-            while (i.hasNext()) {
-                Assertion child = (Assertion)i.next();
-                if (pos < pc.getChildLocation()) {
-                    if (child instanceof RoutingAssertion) {
-                        return true;
-                    }
-                }
-                pos++;
-            }
-        }
-        Assertion previous = ass;
-        ass = ass.getParent();
-        while (ass != null) {
-            if (ass instanceof AllAssertion) {
-                AllAssertion parent = (AllAssertion)ass;
-                Iterator i = parent.children();
-                while (i.hasNext()) {
-                    Assertion child = (Assertion)i.next();
-                    System.out.println(child.getClass().getName());
-                    if (child instanceof RoutingAssertion) {
-                        return true;
-                    }
-                    if (child == previous) break;
-                }
-            }
-            previous = ass;
-            ass = ass.getParent();
-        }
-        return false;
+    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) throws PolicyException {
+        XslTransformation xslTransformation = (XslTransformation)assertion;
+        xslTransformation.setDirection(XslTransformation.APPLY_TO_RESPONSE);
+    }
+
+    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) throws PolicyException {
+        XslTransformation xslTransformation = (XslTransformation)assertion;
+        xslTransformation.setDirection(XslTransformation.APPLY_TO_REQUEST);
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
