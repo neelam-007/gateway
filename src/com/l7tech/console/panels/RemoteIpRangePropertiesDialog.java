@@ -67,6 +67,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private void initialize() {
+        setModal(true);
         initResources();
         setContentPane(mainPanel);
         Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});

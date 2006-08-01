@@ -72,6 +72,8 @@ public class TimeRangePropertiesDialog extends JDialog {
      */
     private void initialize() {
 
+        setModal(true);
+
         // load corresponding resource file
         initResources();
 

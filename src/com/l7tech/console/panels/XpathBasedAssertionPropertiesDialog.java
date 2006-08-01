@@ -409,7 +409,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         initializeEncryptionConfig();
         initializeResponseSignatureConfig();
-
+        setModal(true);
         namespaceButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 java.util.List requiredNS = new ArrayList(requiredNamespaces.values());
