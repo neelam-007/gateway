@@ -6,6 +6,7 @@
 package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
@@ -66,6 +67,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(ScopePredicate.class.getName());
         ignoredClassNames.add(ObjectIdentityPredicate.class.getName());
         ignoredClassNames.add(AttributePredicate.class.getName());
+        ignoredClassNames.add(ServiceUsage.class.getName());
     }
 
     private final Set ignoredClassNames;
