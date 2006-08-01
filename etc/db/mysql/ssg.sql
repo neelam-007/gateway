@@ -441,7 +441,7 @@ DROP TABLE IF EXISTS audit_detail_params;
 CREATE TABLE audit_detail_params (
   audit_detail_oid bigint(20) NOT NULL,
   position integer NOT NULL,
-  value varchar(255) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
   PRIMARY KEY (audit_detail_oid, position),
   FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
 ) Type=InnoDB;

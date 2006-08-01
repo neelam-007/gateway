@@ -189,6 +189,11 @@ INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
 
 --
+-- Allow for longer audit detail parameters
+--
+alter table audit_detail_params modify column value MEDIUMTEXT NOT NULL;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;
