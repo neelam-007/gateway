@@ -41,8 +41,6 @@ import java.util.regex.Pattern;
  * Server side implementation of JMS routing assertion.
  */
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
-    private JmsRoutingAssertion data;
-    private final Auditor auditor;
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext ctx) {
         super(data, ctx);
@@ -63,6 +61,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             Session jmsSession = null;
             Message jmsOutboundRequest = null;
             int oopses = 0;
+
+            // DELETE CURRENT SECURITY HEADER IF NECESSARY
+            handleProcessedSecurityHeader(context,
+                                          data.getCurrentSecurityHeaderHandling(),
+                                          data.getXmlSecurityActorToPromote());
 
             while (true) {
                 try {
@@ -372,6 +375,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         return bag;
     }
 
+    private final JmsRoutingAssertion data;
+    private final Auditor auditor;
+
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;
 
@@ -379,8 +385,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private Destination routedRequestDestination;
     private Destination endpointResponseDestination;
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    public static final int BUFFER_SIZE = 8192;
+    private static final Logger logger = Logger.getLogger(ServerJmsRoutingAssertion.class.getName());
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000;
 }
