@@ -7,7 +7,14 @@
     </description>
 
     <property name="UneasyRooster.dir" location="../.."/>
-    <import file="${UneasyRooster.dir}/tools/ant/common.xml"/>
+
+    <!-- Extra Ant tasks definitions -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="${UneasyRooster.dir}/lib/ant-contrib.jar"/>
+        </classpath>
+    </taskdef>
+
     <property name="build.classes" location="build/classes"/>
 
     <path id="compile.classpath">
@@ -22,14 +29,44 @@
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
 
+    <!-- Initializes the ssg.home property. -->
+    <target name="-common.init.ssg.home">
+        <if>
+            <os family="unix"/>
+            <then>
+                <property name="ssg.home" value="/ssg"/>
+            </then>
+            <elseif>
+                <os family="windows"/>
+                <then>
+                    <property name="ssg.home" value="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
+                </then>
+            </elseif>
+        </if>
+    </target>
+
+    <!-- Tests if the SSG home folder exists. 
+         Side effect: Initializes the ssg.home property. -->
+    <target name="-common.test.ssg.home" depends="-common.init.ssg.home">
+        <if>
+            <not>
+                <available file="${ssg.home}"/>
+            </not>
+            <then>
+                <fail message="SSG home folder not found: ${ssg.home}"/>
+            </then>
+        </if>
+    </target>
+
     <target name="-compile">
-        <fail message="UneasyRooster does not seem to have been built yet.">
-            <condition>
-                <not>
-                    <available file="${UneasyRooster.dir}/build/classes"/>
-                </not>
-            </condition>
-        </fail>
+        <if>
+            <not>
+                <available file="${UneasyRooster.dir}/build/classes"/>
+            </not>
+            <then>
+                <fail message="UneasyRooster does not seem to have been built yet."/>
+            </then>
+        </if>
         <mkdir dir="${build.classes}"/>
         <javac srcdir="src"
                destdir="${build.classes}"
