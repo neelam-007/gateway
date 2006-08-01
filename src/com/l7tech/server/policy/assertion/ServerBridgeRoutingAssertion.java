@@ -170,8 +170,10 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 try {
+                    final HttpRequestKnob httpRequestKnob = (HttpRequestKnob) context.getRequest().getKnob(HttpRequestKnob.class);
+
                     // TODO support non-SOAP messaging with SSB api
-                    String soapAction = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SoapUtil.SOAPACTION);
+                    String soapAction = "\"\"";
                     String[] uris = context.getRequest().getSoapKnob().getPayloadNamespaceUris();
                     // TODO decide what to do if there are multiple payload namespace URIs 
                     String nsUri = uris == null || uris.length < 1 ? null : uris[0];
@@ -180,10 +182,9 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     if (context.getRequest().getMimeKnob().isMultipart())
                         auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_NO_ATTACHMENTS);
 
-                    final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-
                     URL origUrl = DEFAULT_ORIG_URL;
                     if(httpRequestKnob != null) {
+                        soapAction = httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
                         try {
                             origUrl = new URL(httpRequestKnob.getRequestUrl());
                         } catch (MalformedURLException e) {
@@ -201,14 +202,16 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh);
                     messageProcessor.processMessage(pac);
 
-                    final HttpResponseKnob hrk = bridgeResponse.getHttpResponseKnob();
+                    final HttpResponseKnob hrk = (HttpResponseKnob) bridgeResponse.getKnob(HttpResponseKnob.class);
                     int status = hrk == null ? HttpConstants.STATUS_SERVER_ERROR : hrk.getStatus();
                     if (status == HttpConstants.STATUS_OK)
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
-                    context.getResponse().getHttpResponseKnob().setStatus(status);
+                    HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
+                    if (httpResponseKnob != null)                    
+                        httpResponseKnob.setStatus(status);
 
                     context.setRoutingStatus(RoutingStatus.ROUTED);
 

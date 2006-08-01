@@ -71,7 +71,7 @@ class JmsRequestHandler {
             ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
             if ( jmsRequest instanceof TextMessage ) {
                 requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
-                jmsResponse = bag.getSession().createBytesMessage();
+                jmsResponse = bag.getSession().createTextMessage();
 
             } else if ( jmsRequest instanceof BytesMessage ) {
                 requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
@@ -183,10 +183,7 @@ class JmsRequestHandler {
                         baos.close();
                     }
 
-                    JmsKnob requestJmsKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
-                    if (requestJmsKnob == null)
-                        throw new JmsRuntimeException("Request wasn't a JMS message");
-                    if (requestJmsKnob.isBytesMessage()) {
+                    if (jmsResponse instanceof BytesMessage) {
                         BytesMessage bresp = (BytesMessage)jmsResponse;
                         bresp.writeBytes(responseBytes);
                     } else if ( jmsResponse instanceof TextMessage ) {

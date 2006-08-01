@@ -267,7 +267,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
             if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                 doAttachSamlSenderVouches(context);
-            } else if (httpRoutingAssertion.isPassthroughHttpAuthentication()) {
+            } else if (httpRoutingAssertion.isPassthroughHttpAuthentication() && httpRequestKnob != null) {
                 String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
                 boolean passed = false;
                 for (String authHeader : authHeaders) {
@@ -403,7 +403,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 routedRequestParams.getPasswordAuthentication() == null) {
                 routedRequestParams.setContentLength(new Long(contentLength));
             }
-            else if (httpRoutingAssertion.isPassthroughHttpAuthentication()){
+            else if (httpRoutingAssertion.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
 
