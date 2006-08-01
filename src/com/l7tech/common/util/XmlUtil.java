@@ -59,7 +59,7 @@ public class XmlUtil {
             return new LSInputImpl(); // resolve to nothing, causes error
         }
     };
-    
+
     /** This is the namespace that the special namespace prefix "xmlns" logically belongs to. */
     public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
     public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
@@ -619,7 +619,7 @@ public class XmlUtil {
 
         return sibling;
     }
-    
+
     /**
      * Returns a list of all child {@link Element}s of a parent {@link Element}
      * with the specified name that are in the specified namespace.
@@ -1126,8 +1126,60 @@ public class XmlUtil {
 
             String tns = schemaDocument.getDocumentElement().getAttribute("targetNamespace");
 
-            if (tns.length() == 0)
+            if (tns.length() == 0) {
                 tns = null;
+            }
+            else {
+                // find imported namespaces
+                Set importedNamespaces = new HashSet();
+                NodeList importElements = schemaDocument.getElementsByTagNameNS(XMLConstants.W3C_XML_SCHEMA_NS_URI, "import");
+                for (int n=0; n<importElements.getLength(); n++) {
+                    Element importElement = (Element) importElements.item(n);
+                    if (importElement.hasAttribute("namespace")) {
+                        importedNamespaces.add(importElement.getAttribute("namespace"));
+                    }
+                }
+                // add import for default ns and tns
+                importedNamespaces.add(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+                importedNamespaces.add(tns);
+
+                // ensure that all "type" attributes are using valid (declared) prefixes and are imported
+                NodeList elementElements = schemaDocument.getElementsByTagNameNS(XMLConstants.W3C_XML_SCHEMA_NS_URI, "element");
+                for (int n=0; n<elementElements.getLength(); n++) {
+                    Element eleElement = (Element) elementElements.item(n);
+
+                    String [][] qnameAttributes = new String[][] {
+                            {"type", null, null},
+                            {"ref", null, null},
+                            {"substitutionGroup", null, null},
+                    };
+
+                    boolean doCheck = false;
+                    for (int i=0; i<qnameAttributes.length; i++) {
+                        if (eleElement.hasAttribute(qnameAttributes[i][0])) {
+                            doCheck = true;
+                            qnameAttributes[i][1] = eleElement.getAttribute(qnameAttributes[i][0]);
+                            qnameAttributes[i][2] = getNamespacePrefix(qnameAttributes[i][1]);
+                        }
+                    }
+                    if (!doCheck) continue;
+
+                    Map namespaces = XmlUtil.getNamespaceMap(eleElement);
+                    for (int i=0; i<qnameAttributes.length; i++) {
+                        if (qnameAttributes[i][1] == null) continue;
+
+                        String namespace = (String) namespaces.get(qnameAttributes[i][2]);
+
+                        if (namespace == null) {
+                            throw new BadSchemaException("Undeclared namespace prefix '"+qnameAttributes[i][2]+"' for "+qnameAttributes[i][0]+" '"+qnameAttributes[i][1]+"'.");
+                        }
+
+                        if (!importedNamespaces.contains(namespace)) {
+                            throw new BadSchemaException("Unimported namespace prefix '"+qnameAttributes[i][2]+"' for "+qnameAttributes[i][0]+" '"+qnameAttributes[i][1]+"'.");
+                        }
+                    }
+                }
+            }
 
             return tns;
         }
@@ -1137,6 +1189,25 @@ public class XmlUtil {
         catch(IOException ioe) {
             throw new BadSchemaException(ioe);
         }
+    }
+
+    /**
+     * Get the prefix for the given name "prefix:local"
+     *
+     * @param prefixAndLocal The prefixed name
+     * @return The prefix or null
+     */
+    public static String getNamespacePrefix(String prefixAndLocal) {
+        String prefix = null;
+
+        if (prefixAndLocal != null) {
+            int index = prefixAndLocal.indexOf(':');
+            if (index > -1) {
+                prefix = prefixAndLocal.substring(0,index);
+            }
+        }
+
+        return prefix;
     }
 
     /**
