@@ -89,7 +89,10 @@
         <zip destfile="build/ca_wsdm_observer-${build.version}.zip">
             <fileset dir="." includes="ssg/**/*"/>
             <fileset dir="build" includes="ssg/**/*"/>
-            <fileset dir="bin" includes="install.*"/>
+            <fileset dir="bin" includes="install.cmd"/>
+            <zipfileset dir="bin" filemode="755">
+                <include name="install.sh"/>
+            </zipfileset>
         </zip>
     </target>
 
