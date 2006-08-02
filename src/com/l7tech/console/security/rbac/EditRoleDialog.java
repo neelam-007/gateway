@@ -180,7 +180,7 @@ public class EditRoleDialog extends JDialog {
 
     private void enableAssignmentDeleteButton() {
         boolean enabled = assignmentListModel.getSize() != 0 &&
-                userAssignmentList.getSelectedValue() != null;
+                userAssignmentList.getSelectedIndex() < userAssignmentList.getModel().getSize();
 
         removeAssignment.setEnabled(enabled);
     }
