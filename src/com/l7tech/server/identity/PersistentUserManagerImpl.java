@@ -79,7 +79,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                     return findByLogin.uniqueResult();
                 }
             });
-            puser.setProviderId(identityProvider.getConfig().getOid());
+            if (puser != null)
+                puser.setProviderId(identityProvider.getConfig().getOid());
             return puser;
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
