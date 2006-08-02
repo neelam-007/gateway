@@ -15,6 +15,12 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 public abstract class PersistentUser extends NamedEntityImp implements User {
     public PersistentUser(UserBean bean) {
         this.bean = bean;
+        String uid = bean.getUniqueIdentifier();
+        if (uid == null) {
+            this._oid = DEFAULT_OID;
+        } else {
+            this._oid = Long.valueOf(uid);
+        }
     }
 
     public PersistentUser() {

@@ -88,6 +88,7 @@ public class Permission extends EntityImp {
     }
 
     public void setOperation(OperationType operation) {
+        if (operation == OperationType.NONE) throw new IllegalArgumentException("operation must not be " + OperationType.NONE.name());
         this.operation = operation;
     }
 

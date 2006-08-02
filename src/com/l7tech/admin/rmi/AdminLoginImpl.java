@@ -75,7 +75,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             for (Role role : roles) {
                 perms.addAll(role.getPermissions());
                 for (Permission perm : role.getPermissions()) {
-                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.OTHER) {
+                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
                         ok = true;
                     }
                 }

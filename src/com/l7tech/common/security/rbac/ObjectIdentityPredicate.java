@@ -6,8 +6,6 @@ package com.l7tech.common.security.rbac;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 
-import java.util.Set;
-
 /**
  * Matches any {@link Entity} that is of the expected type and has a matching {@link Entity#getOid()}.
  */

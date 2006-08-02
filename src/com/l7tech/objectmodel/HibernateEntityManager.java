@@ -7,15 +7,14 @@ package com.l7tech.objectmodel;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
-import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
@@ -23,11 +22,12 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.dao.DataAccessException;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * @author alex
@@ -237,9 +237,21 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     }
 
     @Secured(operation=OperationType.DELETE)
-    public void delete(ET et) throws DeleteException {
+    public void delete(final ET et) throws DeleteException {
         try {
-            getHibernateTemplate().delete(et);
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    //noinspection unchecked
+                    ET entity = (ET)session.get(et.getClass(), et.getOid());
+                    if (entity == null) {
+                        session.delete(et);
+                    } else {
+                        // Avoid NonUniqueObjectException if an older version of this is still in the Session
+                        session.delete(entity);
+                    }
+                    return null;
+                }
+            });
         } catch (DataAccessException e) {
             throw new DeleteException("Couldn't delete entity", e);
         }

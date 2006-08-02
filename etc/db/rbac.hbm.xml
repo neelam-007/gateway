@@ -11,13 +11,13 @@
 
         <property name="name" type="string" length="128" unique="true" not-null="true"/>
 
-        <set name="permissions" inverse="true" cascade="all,delete-orphan" lazy="false">
-            <key column="role_oid"/>
+        <set name="permissions" inverse="true" cascade="all-delete-orphan" lazy="false">
+            <key column="role_oid" not-null="true"/>
             <one-to-many class="Permission"/>
         </set>
 
-        <set name="userAssignments" inverse="true" cascade="all,delete-orphan" lazy="false">
-            <key column="role_oid"/>
+        <set name="userAssignments" inverse="true" cascade="all-delete-orphan" lazy="false">
+            <key column="role_oid" not-null="true"/>
             <one-to-many class="UserRoleAssignment"/>
         </set>
     </class>
@@ -32,8 +32,8 @@
         <property name="operationTypeName" column="operation_type" length="16" not-null="true"/>
         <property name="otherOperationName" column="other_operation" type="string" not-null="false"/>
         <property name="entityTypeName" column="entity_type" type="string" not-null="true"/>
-        <set name="scope" inverse="true" cascade="all,delete-orphan" lazy="false">
-            <key column="permission_oid"/>
+        <set name="scope" inverse="true" cascade="all-delete-orphan" lazy="false">
+            <key column="permission_oid" not-null="true"/>
             <one-to-many class="ScopePredicate"/>
         </set>
     </class>

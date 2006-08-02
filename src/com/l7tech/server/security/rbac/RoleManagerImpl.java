@@ -154,7 +154,7 @@ public class RoleManagerImpl
         for (Role role : assignedRoles) {
             for (Permission perm : role.getPermissions()) {
                 if (perm.matches(entity) && perm.getOperation() == operation) {
-                    if (operation != OperationType.OTHER) {
+                    if (operation != OperationType.OTHER && operation != OperationType.NONE) {
                         return true;
                     } else {
                         if (otherOperationName.equals(perm.getOtherOperationName())) return true;
