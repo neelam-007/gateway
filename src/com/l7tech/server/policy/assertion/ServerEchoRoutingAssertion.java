@@ -6,16 +6,23 @@ import com.l7tech.policy.assertion.EchoRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
- * Assertion that echoes the request into the response
+ * Assertion that echoes the request into the response.
+ *
  * @author emil
  * @version 21-Mar-2005
  */
 public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
+
+    //- PUBLIC
+
     public ServerEchoRoutingAssertion(EchoRoutingAssertion ea, ApplicationContext applicationContext) {
         super(ea, applicationContext);
     }
@@ -31,6 +38,16 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message request = context.getRequest();
         final Message response = context.getResponse();
+
+        // DELETE CURRENT SECURITY HEADER IF NECESSARY
+        try {
+            handleProcessedSecurityHeader(context,
+                                          data.getCurrentSecurityHeaderHandling(),
+                                          data.getXmlSecurityActorToPromote());
+        }
+        catch(SAXException se) {
+            logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+        }
 
         // See if we have a real response -- if not, we'll cheat and just copy request to response
         final HttpResponseKnob respHttp = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
@@ -50,11 +67,16 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
             request.takeOwnershipOfKnobsFrom(oldResponse);
             if (reqHttp != null && request.getKnob(HttpRequestKnob.class) == null) request.attachHttpRequestKnob(reqHttp);
         }
-
-        // No real response.  Just point the response at the request knobs and have done.
-        copyRequestToResponse(response, request, respHttp);
+        else {
+            // No real response.  Just point the response at the request knobs and have done.
+            copyRequestToResponse(response, request, respHttp);
+        }
         return AssertionStatus.NONE;
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(ServerEchoRoutingAssertion.class.getName());
 
     private void copyRequestToResponse(Message response, Message request, HttpResponseKnob respHttp) {
         response.takeOwnershipOfKnobsFrom(request);

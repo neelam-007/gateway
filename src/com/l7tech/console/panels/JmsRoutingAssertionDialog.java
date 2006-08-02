@@ -86,7 +86,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(LogonDialog.class.getName());
+    private static final Logger logger = Logger.getLogger(JmsRoutingAssertionDialog.class.getName());
 
     // model, etc
     private JmsRoutingAssertion assertion;

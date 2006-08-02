@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -118,5 +117,6 @@ public class Advices {
         advicesMap.put(CookieCredentialSourceAssertion.class, new Class[]{AddCookieCredentialSourceAssertionAdvice.class});
         advicesMap.put(WsiBspAssertion.class, new Class[]{AddWsiBspAssertionAdvice.class});
         advicesMap.put(WsiSamlAssertion.class, new Class[]{AddWsiSamlAssertionAdvice.class});
+        advicesMap.put(EchoRoutingAssertion.class, new Class[]{AddEchoRoutingAssertionAdvice.class});
     }
 }
