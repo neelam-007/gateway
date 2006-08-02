@@ -22,12 +22,6 @@ alter table audit_main add column user_name varchar(255);
 alter table audit_main add column user_id varchar(255);
 alter table audit_main add column provider_oid bigint(20) not null default -1;
 
--- add old columns in case this is a re-run of the script
-alter table audit_message add column user_name    varchar(255);
-alter table audit_message add column user_id      varchar(255);
-alter table audit_message add column provider_oid bigint(20);
-alter table audit_admin   add column admin_login  varchar(255);
-
 -- migrate any existing data (with check for already migrated info)
 update audit_main,audit_message set audit_main.user_name=audit_message.user_name, audit_main.user_id=audit_message.user_id, audit_main.provider_oid=audit_message.provider_oid where audit_main.objectid=audit_message.objectid and audit_main.user_name is null and audit_main.user_id is null;
 update audit_main,audit_admin   set audit_main.user_name=audit_admin.admin_login, audit_main.user_id=(select objectid from internal_user where login=audit_admin.admin_login) where audit_main.objectid=audit_admin.objectid and audit_main.user_name is null and audit_main.user_id is null;
@@ -44,10 +38,6 @@ alter table audit_admin drop column admin_login;
 -- add temp columns for creation of compressed data
 alter table audit_message add column request_zipxml mediumblob;
 alter table audit_message add column response_zipxml mediumblob;
-
--- add old columns in case this is a re-run of the script
-alter table audit_message add column request_xml  mediumtext;
-alter table audit_message add column response_xml mediumtext;
 
 -- migrate data
 update audit_message set request_zipxml = COMPRESS(request_xml) where request_xml is not null;
