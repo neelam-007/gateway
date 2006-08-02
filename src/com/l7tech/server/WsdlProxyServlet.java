@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -10,6 +11,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.WsspAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -69,7 +71,8 @@ import java.util.logging.Level;
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     public static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
     private ServerConfig serverConfig;
-    private FilterManager filterManager;
+    private FilterManager wsspFilterManager;
+    private FilterManager clientPolicyFilterManager;
     SoapActionResolver sactionResolver = new SoapActionResolver();
     UrnResolver nsResolver = new UrnResolver();
 
@@ -80,8 +83,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        serverConfig = (ServerConfig)appcontext.getBean("serverConfig");
-        filterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager");
+        serverConfig = (ServerConfig)appcontext.getBean("serverConfig", ServerConfig.class);
+        clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
+        wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
     }
 
     protected String getFeature() {
@@ -341,8 +345,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     /**
-     * TODO what about other bindings?
-     * TODO what about other namespaces (http://schemas.xmlsoap.org/wsdl/soap12/)
+     *
      */
     private void substituteSoapAddressURL(Document wsdl, URL newURL) {
         // get http://schemas.xmlsoap.org/wsdl/ 'port' element
@@ -356,21 +359,28 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 Element address = (Element) iterator.next();
                 address.setAttribute("location", newURL.toString());
             }
+
+            // and for soap12 (this is better than just leaving the protected service url in there)
+            List addressesToRemove = XmlUtil.findChildElementsByName(portel, "http://schemas.xmlsoap.org/wsdl/soap12/", "address");
+            for (Iterator iterator = addressesToRemove.iterator(); iterator.hasNext();) {
+                Element address = (Element) iterator.next();
+                address.setAttribute("location", newURL.toString());
+            }
         }
     }
 
     /**
      *
      */
-    private void addSecurityPolicy(Document wsdl, PublishedService svc, AuthenticationResult[] results) {
+    private void addSecurityPolicy(Document wsdl, PublishedService svc) {
         try{
             if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
                 Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
                 Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
                 if (Assertion.contains(rootassertion, WsspAssertion.class)) {
                     // remove any existing policy
-                    XmlUtil.stripNamespace(wsdl.getDocumentElement(), "http://schemas.xmlsoap.org/ws/2004/09/policy");
-                    Assertion effectivePolicy = filterManager.applyAllFilters(null, rootassertion);
+                    XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapUtil.WSP_NAMESPACE2);
+                    Assertion effectivePolicy = wsspFilterManager.applyAllFilters(null, rootassertion);
                     if (effectivePolicy != null) {
                             if (logger.isLoggable(Level.FINEST)) {
                                 logger.log(Level.FINEST, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
@@ -403,30 +413,59 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "cannot parse wsdl", e);
         }
 
-        // TODO figure out if current user's effective policy requires SSl
-        // For now, we'll just scan the policy for any SSL assertion
-        boolean useSsl = svc.getPolicyXml().contains("SslAssertion");
-
         // change url of the wsdl
         // direct to http by default. choose http port based on port used for this request.
         int port = req.getServerPort();
-        if (port == 8443 || port == 8080)
-            port = useSsl ? 8443 : 8080;
-        else if (port == 443 || port == 80) port = useSsl ? 443 : 80;
-        else useSsl = false; // don't try to change the protocol if we don't recognize the port
-        String proto = useSsl ? "https" : "http";
+        String proto = req.isSecure() ? "https" : "http";
+
+        if (("http".equals(proto) && (port==80 || port==8080)) ||
+            ("https".equals(proto) && (port==443 || port==8443))) {
+            // then see if we should switch protocols for the endpoint
+            User user = null;
+            if (results != null && results.length == 1) {
+                user = results[0].getUser();
+            }
+
+            if (results != null && results.length > 1) {
+                logger.warning("Cannot determine if HTTPS is required for effective policy (multiple users).");
+            }
+
+            try {
+                Assertion rootAssertion = WspReader.parsePermissively(svc.getPolicyXml());
+                Assertion effectivePolicy = clientPolicyFilterManager.applyAllFilters(user, rootAssertion);
+                SslAssertion sslAssertion = (SslAssertion) getFirstChild(effectivePolicy, SslAssertion.class);
+                if ("http".equals(proto) && sslAssertion != null && sslAssertion.getOption()==SslAssertion.REQUIRED) {
+                    port = port==80 ? 443 : 8443;
+                    proto = "https";
+                }
+                else if("https".equals(proto) && sslAssertion != null && sslAssertion.getOption()==SslAssertion.FORBIDDEN) {
+                    port = port==443 ? 80 : 8080;
+                    proto = "http";
+                }
+            }
+            catch(Exception e) {
+                logger.log(Level.WARNING, "Could not determine if HTTP/HTTPS is required for endpoint.", e);
+            }
+        }
+
+        String portStr = "";
+        if (!("https".equals(proto) && port == 443) &&
+            !("http".equals(proto) && port == 80)) {
+            portStr = ":" + port;
+        }
+
         URL ssgurl;
         String routinguri = svc.getRoutingUri();
         if (routinguri == null || routinguri.length() < 1) {
-            ssgurl = new URL(proto + "://" + req.getServerName() + ":" +
-                             port + SecureSpanConstants.SERVICE_FILE +
+            ssgurl = new URL(proto + "://" + req.getServerName() +
+                             portStr + SecureSpanConstants.SERVICE_FILE +
                              Long.toString(svc.getOid()));
         } else {
-            ssgurl = new URL(proto + "://" + req.getServerName() + ":" +
-                             port + routinguri);
+            ssgurl = new URL(proto + "://" + req.getServerName() +
+                             portStr + routinguri);
         }
         substituteSoapAddressURL(wsdlDoc, ssgurl);
-        addSecurityPolicy(wsdlDoc, svc, results);
+        addSecurityPolicy(wsdlDoc, svc);
 
         // output the wsdl
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
@@ -614,5 +653,33 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         res.setStatus(status);
         res.getOutputStream().print(msg);
         res.getOutputStream().close();
+    }
+
+    /**
+     * Get the first descendant assertion of the given type.
+     *
+     * @param in The assertion to check
+     * @param assertionClass The type to find
+     * @return the given assertion or one of its descendants of the given type or null if no such descendant exists
+     */
+    private static Assertion getFirstChild(Assertion in, Class assertionClass) {
+        Assertion assertion = null;
+
+        if (assertionClass.isInstance(in)) {
+            assertion = in;
+        }
+        else  if (in instanceof CompositeAssertion) {
+            CompositeAssertion comp = (CompositeAssertion) in;
+            List kids = comp.getChildren();
+            for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
+                Assertion current = (Assertion) iterator.next();
+                assertion = getFirstChild(current, assertionClass);
+                if(assertion != null) {
+                    break;
+                }
+            }
+        }
+
+        return assertion;
     }
 }
