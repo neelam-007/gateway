@@ -20,6 +20,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import javax.wsdl.BindingOperation;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -184,7 +185,12 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
 
         try {
             final String operationName = context.getOperation().getName();
-            final String operationNameSpace = context.getOperation().getInput().getMessage().getQName().getNamespaceURI();
+            String operationNameSpace = null;
+            for (BindingOperation bindingOperation : (Collection<BindingOperation>)context.getService().parsedWsdl().getBindingOperations()) {
+                if (bindingOperation.getOperation().getName().equals(operationName)) {
+                    operationNameSpace = context.getService().parsedWsdl().getBindingInputNS(bindingOperation);
+                }
+            }
             final String requestorLocation = context.getRequest().getTcpKnob().getRemoteHost();
             final String serviceUrl = preRoutingEvent.getUrl().toString();
             final MimeKnob mimeKnob = context.getRequest().getMimeKnob();
@@ -209,7 +215,12 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
 
             final String operationType = _wsdmHandlerUtilSOAP.spoolRequest(wsdmMessageContext);
             if (_logger.isLoggable(Level.FINE)) {
-                _logger.fine("Spooled request to CA Unicenter WSDM Manager.");
+                _logger.fine("Spooled request to CA Unicenter WSDM Manager." +
+                        " (operationName=" + operationName +
+                        ", operationNameSpace=" + operationNameSpace +
+                        ", serviceUrl=" + serviceUrl +
+                        ", requestorLocation=" + requestorLocation +
+                        ", requestSize=" + requestSize + ")");
             }
 
             if (WsdmHandlerUtilSOAP.OPER_TYPE_REQUEST_RESPONSE.equals(operationType)) {
@@ -248,7 +259,11 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
                                                         soapFault.getFaultString(),
                                                         soapFault.getFaultDetail() == null ? null : new String[]{soapFault.getFaultDetail().toString()});
                         if (_logger.isLoggable(Level.FINE)) {
-                            _logger.fine("Spooled fault to CA Unicenter WSDM Manager.");
+                            _logger.fine("Spooled fault to CA Unicenter WSDM Manager." +
+                                    " (actor=" + soapFault.getFaultActor() +
+                                    ", code=" + soapFault.getFaultCode() +
+                                    ", string=" + soapFault.getFaultString() +
+                                    ", detail=" + soapFault.getFaultDetail() + ")");
                         }
                     }
                 } catch (Exception e) {
@@ -271,7 +286,7 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
 
                     _wsdmHandlerUtilSOAP.spoolResponse(wsdmMessageContext);
                     if (_logger.isLoggable(Level.FINE)) {
-                        _logger.fine("Spooled response to CA Unicenter WSDM Manager.");
+                        _logger.fine("Spooled response to CA Unicenter WSDM Manager. (responseSize=" + responseSize + ")");
                     }
                 } catch (Exception e) {
                     _logger.log(Level.WARNING, "Failed to spool response to CA Unicenter WSDM Manager:" + e);
