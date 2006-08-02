@@ -55,9 +55,9 @@ public class XslTransformationSpecifyPanel extends JPanel {
     public static final String XSL_IDENTITY_TRANSFORM = "<?xml version=\"1.0\"?>\n" +
            "<xsl:stylesheet version=\"1.0\" xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>\n" +
            "  <!-- Identity transform -->\n" +
-           "  <xsl:template match=\"@*|*|processing-instruction()|comment()\" mode=\"recursive-copy\">\n" +
+           "  <xsl:template match=\"@*|*|processing-instruction()|comment()\">\n" +
            "    <xsl:copy>\n" +
-           "      <xsl:apply-templates select=\"*|@*|text()|processing-instruction()|comment()\" mode=\"recursive-copy\"/>\n" +
+           "      <xsl:apply-templates select=\"*|@*|text()|processing-instruction()|comment()\"/>\n" +
            "    </xsl:copy>\n" +
            "  </xsl:template>\n" +
            "</xsl:stylesheet>";

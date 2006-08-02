@@ -17,14 +17,16 @@ import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.Result;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Schema;
@@ -57,6 +59,17 @@ public class XmlUtil {
             String msg = "Document referred to an external entity with system id '" + systemId + "' of type '" + type + "'";
             logger.warning( msg );
             return new LSInputImpl(); // resolve to nothing, causes error
+        }
+    };
+
+    /**
+     * Error handler without the console output.
+     */
+    private static final ErrorHandler QUIET_ERROR_HANDLER = new ErrorHandler() {
+        public void warning(SAXParseException exception) {}
+        public void error(SAXParseException exception) {}
+        public void fatalError(SAXParseException exception) throws SAXException {
+            throw exception;
         }
     };
 
@@ -96,6 +109,7 @@ public class XmlUtil {
             try {
                 DocumentBuilder builder = dbf.newDocumentBuilder();
                 builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
+                builder.setErrorHandler(QUIET_ERROR_HANDLER);
                 return builder;
             } catch (ParserConfigurationException e) {
                 throw new RuntimeException(e); // can't happen
@@ -108,6 +122,7 @@ public class XmlUtil {
             try {
                 DocumentBuilder builder = dbfAllowingDoctype.newDocumentBuilder();
                 builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
+                builder.setErrorHandler(QUIET_ERROR_HANDLER);
                 return builder;
             } catch (ParserConfigurationException e) {
                 throw new RuntimeException(e); // can't happen
@@ -1423,8 +1438,8 @@ public class XmlUtil {
         }
     }
 
-    public static Document softXSLTransform(Document source, Transformer transformer, Map params) throws TransformerException {
-        final DOMResult outputTarget = new DOMResult();
+    public static void softXSLTransform(Document source, Result result, Transformer transformer, Map params) throws TransformerException {
+        final Result outputTarget = result;
         if (params != null && !params.isEmpty()) {
             for (Iterator i = params.keySet().iterator(); i.hasNext();) {
                 String name = (String) i.next();
@@ -1435,14 +1450,6 @@ public class XmlUtil {
             }
         }
         transformer.transform(new DOMSource(source), outputTarget);
-        final Node node = outputTarget.getNode();
-        if (node instanceof Document) {
-            return (Document)node;
-        } else if (node != null) {
-            return node.getOwnerDocument();
-        } else {
-            return null;
-        }
     }
 
     /**

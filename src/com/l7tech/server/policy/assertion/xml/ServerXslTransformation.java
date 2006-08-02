@@ -50,6 +50,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -413,7 +414,7 @@ public class ServerXslTransformation
             assert tmc != null;
             assert tarariStylesheet != null;
 
-            BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream();
+            BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
             try {
                 tarariStylesheet.transform(tmc, os, t.vars);
                 output.setBytes(os.toByteArray());
@@ -427,17 +428,21 @@ public class ServerXslTransformation
         private AssertionStatus transformDom(TransformInput t, TransformOutput output)
                 throws PolicyAssertionException, SAXException, IOException {
             final Document doctotransform = t.asDocument();
-            final Document outDoc;
+            final BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
+            final StreamResult sr = new StreamResult(os);
 
             try {
-                outDoc = XmlUtil.softXSLTransform(doctotransform, softwareStylesheet.newTransformer(), t.vars);
+                XmlUtil.softXSLTransform(doctotransform, sr, softwareStylesheet.newTransformer(), t.vars);
+                output.setBytes(os.toByteArray());
+                logger.finest("software xsl transformation completed");
             } catch (TransformerException e) {
                 String msg = "error transforming document";
                 t.getAuditor().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
                 throw new PolicyAssertionException(t.getAssertion(), msg, e);
+            } finally {
+                os.close();
             }
-            output.setDocument(outDoc);
-            logger.finest("software xsl transformation completed");
+
             return AssertionStatus.NONE;
         }
     }

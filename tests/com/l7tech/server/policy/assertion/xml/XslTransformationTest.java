@@ -18,6 +18,7 @@ import org.w3c.dom.Document;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,7 +67,9 @@ public class XslTransformationTest extends TestCase {
         StreamSource xsltsource = new StreamSource(new StringReader(xslt));
         Transformer transformer = transfoctory.newTemplates(xsltsource).newTransformer();
         Document srcdoc = XmlUtil.stringToDocument(src);
-        return XmlUtil.softXSLTransform(srcdoc, transformer, Collections.EMPTY_MAP);
+        DOMResult result = new DOMResult();
+        XmlUtil.softXSLTransform(srcdoc, result, transformer, Collections.EMPTY_MAP);
+        return (Document) result.getNode();
     }
 
     public void testServerAssertion() throws Exception {
