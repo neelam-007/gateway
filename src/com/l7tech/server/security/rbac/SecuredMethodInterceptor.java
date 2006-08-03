@@ -178,6 +178,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         break;
                     case SET_PROPERTY_OF_ENTITY:
                         checkEntityBefore(check, methodSecured, args, UPDATE);
+                        break;
                     default:
                         throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + methodSecured.stereotype().name());
                 }
