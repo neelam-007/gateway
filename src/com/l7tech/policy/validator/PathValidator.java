@@ -367,11 +367,11 @@ class PathValidator {
                 String actor = assertionToActor(a);
                 String msg;
                 if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
-                    msg = "This assertion should be preceeded by an WSS Signature assertion, " +
+                    msg = "This assertion should be preceeded by a WSS Signature assertion, " +
                           "a Secure Conversation assertion, a SAML Security assertion, " +
                           "an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.";
                 } else {
-                    msg = "This assertion should be preceeded by an WSS Signature assertion," +
+                    msg = "This assertion should be preceeded by a WSS Signature assertion," +
                           "an Encrypted UsernameToken assertion, a WSS Kerberos assertion, or a " +
                           "SAML Security assertion (for actor " + actor + ").";
                 }
@@ -402,7 +402,7 @@ class PathValidator {
             if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
                     !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by an WSS Signature assertion, " +
+                  "This assertion should be preceeded by a WSS Signature assertion, " +
                   "a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
         }
