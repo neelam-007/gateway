@@ -35,7 +35,7 @@ public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAsse
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        dlg.setSize(600, 800);
+        dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         // make sure a xslt was entered
