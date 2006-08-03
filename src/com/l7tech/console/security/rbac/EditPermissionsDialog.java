@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class EditPermissionsDialog extends JDialog {
     private JPanel contentPane;
@@ -35,7 +36,12 @@ public class EditPermissionsDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        typeSelection.setModel(new DefaultComboBoxModel(EntityType.values()));
+        Set<EntityType> types = new TreeSet<EntityType>(EntityType.NAME_COMPARATOR);
+        for (EntityType type : EntityType.values()) {
+            if (type.isDisplayedInGui()) types.add(type);
+        }
+        
+        typeSelection.setModel(new DefaultComboBoxModel(types.toArray(new EntityType[0])));
         EntityType etype = permission.getEntityType();
         if (etype != null) typeSelection.setSelectedItem(etype);
 

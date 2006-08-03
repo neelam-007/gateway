@@ -28,44 +28,47 @@ import com.l7tech.service.MetricsBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 
+import java.util.Comparator;
+
 /**
  * @author alex
  */
 public enum EntityType {
-    ANY("<any>", Entity.class, UNDEFINED),
+    ANY("<any>", Entity.class, UNDEFINED, true),
 
-    ID_PROVIDER_CONFIG("Identity Provider", IdentityProviderConfig.class, com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG),
-    USER("User", PersistentUser.class, com.l7tech.objectmodel.EntityType.USER),
-    GROUP("Group", PersistentGroup.class, com.l7tech.objectmodel.EntityType.GROUP),
-    SERVICE("Published Service", PublishedService.class, com.l7tech.objectmodel.EntityType.SERVICE),
-    JMS_CONNECTION("JMS Connection", JmsConnection.class, com.l7tech.objectmodel.EntityType.JMS_CONNECTION),
-    JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT),
-    TRUSTED_CERT("Trusted Certificate", TrustedCert.class, com.l7tech.objectmodel.EntityType.TRUSTED_CERT),
-    ALERT_TRIGGER("Alert Event", AlertEvent.class, com.l7tech.objectmodel.EntityType.ALERT_TRIGGER),
-    ALERT_ACTION("Alert Notification", Notification.class, com.l7tech.objectmodel.EntityType.ALERT_ACTION),
-    SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE),
+    ID_PROVIDER_CONFIG("Identity Provider", IdentityProviderConfig.class, com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG, true),
+    USER("User", PersistentUser.class, com.l7tech.objectmodel.EntityType.USER, true),
+    GROUP("Group", PersistentGroup.class, com.l7tech.objectmodel.EntityType.GROUP, true),
+    SERVICE("Published Service", PublishedService.class, com.l7tech.objectmodel.EntityType.SERVICE, true),
+    JMS_CONNECTION("JMS Connection", JmsConnection.class, com.l7tech.objectmodel.EntityType.JMS_CONNECTION, false),
+    JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT, true),
+    TRUSTED_CERT("Trusted Certificate", TrustedCert.class, com.l7tech.objectmodel.EntityType.TRUSTED_CERT, true),
+    ALERT_TRIGGER("Alert Event", AlertEvent.class, com.l7tech.objectmodel.EntityType.ALERT_TRIGGER, false),
+    ALERT_ACTION("Alert Notification", Notification.class, com.l7tech.objectmodel.EntityType.ALERT_ACTION, false),
+    SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE, true),
 
-    MAP_ATTRIBUTE("Attribute Configuration", AttributeConfig.class, UNDEFINED),
-    MAP_IDENTITY("Identity Provider Attribute Mapping", IdentityMapping.class, UNDEFINED),
-    MAP_TOKEN("Security Token Attribute Mapping", SecurityTokenMapping.class, UNDEFINED),
+    MAP_ATTRIBUTE("Attribute Configuration", AttributeConfig.class, UNDEFINED, false),
+    MAP_IDENTITY("Identity Provider Attribute Mapping", IdentityMapping.class, UNDEFINED, false),
+    MAP_TOKEN("Security Token Attribute Mapping", SecurityTokenMapping.class, UNDEFINED, false),
 
-    CLUSTER_PROPERTY("Cluster Property", ClusterProperty.class, UNDEFINED),
-    CLUSTER_INFO("Cluster Node Information", ClusterNodeInfo.class, UNDEFINED),
-    SERVICE_USAGE("Service Usage Record", ServiceUsage.class, UNDEFINED),
-    SCHEMA_ENTRY("Schema Entry", SchemaEntry.class, UNDEFINED),
-    METRICS_BIN("Service Metrics Bin", MetricsBin.class, UNDEFINED),
+    CLUSTER_PROPERTY("Cluster Property", ClusterProperty.class, UNDEFINED, true),
+    CLUSTER_INFO("Cluster Node Information", ClusterNodeInfo.class, UNDEFINED, true),
+    SERVICE_USAGE("Service Usage Record", ServiceUsage.class, UNDEFINED, true),
+    SCHEMA_ENTRY("Schema Entry", SchemaEntry.class, UNDEFINED, true),
+    METRICS_BIN("Service Metrics Bin", MetricsBin.class, UNDEFINED, true),
 
-    RBAC_ROLE("RBAC Role", Role.class, com.l7tech.objectmodel.EntityType.RBAC_ROLE),
+    RBAC_ROLE("Access Control Role", Role.class, com.l7tech.objectmodel.EntityType.RBAC_ROLE, true),
 
-    AUDIT_RECORD("Audit Record", AuditRecord.class, UNDEFINED),
-    AUDIT_MESSAGE("Message Audit Record", MessageSummaryAuditRecord.class, UNDEFINED),
-    AUDIT_ADMIN("Admin Audit Record", AdminAuditRecord.class, UNDEFINED),
-    AUDIT_SYSTEM("System Audit Record", SystemAuditRecord.class, UNDEFINED),
+    AUDIT_RECORD("Audit Record <any type>", AuditRecord.class, UNDEFINED, true),
+    AUDIT_MESSAGE("Audit Record (Message)", MessageSummaryAuditRecord.class, UNDEFINED, true),
+    AUDIT_ADMIN("Audit Record (Admin)", AdminAuditRecord.class, UNDEFINED, true),
+    AUDIT_SYSTEM("Audit Record (System)", SystemAuditRecord.class, UNDEFINED, true),
     ;
 
     private final String name;
     private final Class<? extends Entity> entityClass;
     private final com.l7tech.objectmodel.EntityType oldEntityType;
+    private final boolean displayedInGui;
 
     public Class<? extends Entity> getEntityClass() {
         return entityClass;
@@ -75,10 +78,15 @@ public enum EntityType {
         return name;
     }
 
-    private EntityType(String name, Class<? extends Entity> entityClass, com.l7tech.objectmodel.EntityType oldEntityType) {
+    private EntityType(String name, Class<? extends Entity> entityClass, com.l7tech.objectmodel.EntityType oldEntityType, boolean displayInGui) {
         this.name = name;
         this.entityClass = entityClass;
         this.oldEntityType = oldEntityType;
+        this.displayedInGui = displayInGui;
+    }
+
+    public boolean isDisplayedInGui() {
+        return displayedInGui;
     }
 
     public com.l7tech.objectmodel.EntityType getOldEntityType() {
@@ -89,4 +97,11 @@ public enum EntityType {
         return name;
     }
 
+    public static final NameComparator NAME_COMPARATOR = new NameComparator();
+
+    private static class NameComparator implements Comparator<EntityType> {
+        public int compare(EntityType o1, EntityType o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    }
 }
