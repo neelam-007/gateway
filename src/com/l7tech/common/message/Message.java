@@ -37,7 +37,6 @@ public final class Message {
     private XmlKnob xmlKnob;
     private SoapKnob soapKnob;
 
-
     /**
      * Create a Message with no facets.
      */
@@ -128,33 +127,6 @@ public final class Message {
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen, the content type is set to xml
         }
-    }
-
-    /**
-     * Initialize, or re-initialize, a Message using the specified Message as a source.  <b>Note:</b>This does not do
-     * a deep copy of the source Message's facets -- it just takes them and uses them for this Message.
-     * <p>
-     * All existing facets of this Message will be removed; unlike other initialize() methods, no existing facets will
-     * be preserved.
-     *
-     * @param msg a Message whose facets should be taken by this Message.  Must not be null.
-     */
-    public void takeOwnershipOfKnobsFrom(Message msg)
-    {
-        // Close any existing knobs of ours
-        if (rootFacet != null)
-            close();
-
-        rootFacet = msg.rootFacet;
-        invalidateCachedKnobs();
-
-        // Prevent the original message from closing the knobs that now belong to us
-        msg.onKnobsGobbled();
-    }
-
-    /** Another Message has just taken ownership of our knobs, so we shouldn't close them. */
-    private void onKnobsGobbled() {
-        rootFacet = null;
     }
 
     public void setEnableOriginalDocument() {
