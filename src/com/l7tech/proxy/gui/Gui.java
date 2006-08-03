@@ -42,6 +42,7 @@ public class Gui {
     private boolean started = false;
 
     private JFrame frame;
+    private Window helpWindow;
     private MessageViewer messageViewer;
 
     private static final String SYSTRAY_TOOLTIP = "SecureSpan Bridge";
@@ -559,38 +560,61 @@ public class Gui {
      * This procedure adds the JavaHelp to PMC application.
      */
     public void showHelpTopics(ActionEvent e) {
-        final HelpSet hs;
-        URL url = null;
-        final HelpBroker javaHelpBroker;
-        String helpsetName = "SSB Help";
-
-        try {
-            // Find the helpSet URL file.
-            ClassLoader cl = getClass().getClassLoader();
-            url = cl.getResource(HELP_PATH);
-            hs = new HelpSet(cl, url);
-            javaHelpBroker = hs.createHelpBroker();
-            Object source = e.getSource();
-
-            if (source instanceof Window) {
-                ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
+        Window window = helpWindow;
+        if (window != null) {
+            if(window instanceof Frame) {
+                ((Frame)window).setState(Frame.NORMAL);
             }
-            javaHelpBroker.setDisplayed(true);
+            window.toFront();
+        } else {
+            final HelpSet hs;
+            URL url = null;
+            final HelpBroker javaHelpBroker;
+            String helpsetName = "SSB Help";
 
-        } catch (MissingResourceException ex) {
-            //Make sure the URL exists.
-            if (url == null) {
+            try {
+                // Find the helpSet URL file.
+                ClassLoader cl = getClass().getClassLoader();
+                url = cl.getResource(HELP_PATH);
+                hs = new HelpSet(cl, url);
+                javaHelpBroker = hs.createHelpBroker();
+                Object source = e.getSource();
+
+                if (source instanceof Window) {
+                    ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
+                }
+                javaHelpBroker.setDisplayed(true);
+
+                // Have to set the icon after setDisplayed (else window is null)
+                window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
+                if(window instanceof Frame) {
+                    ((Frame)window).setIconImage(frame.getIconImage());
+                }
+
+                window.addWindowListener(new WindowAdapter() {
+                    public void windowClosed(final WindowEvent e) {
+                        helpWindow = null;
+                    }
+                    public void windowClosing(final WindowEvent e) {
+                        helpWindow = null;
+                    }
+                });
+                helpWindow = window;
+            } catch (MissingResourceException ex) {
+                //Make sure the URL exists.
+                if (url == null) {
+                    JOptionPane.showMessageDialog(frame,
+                      "Help URL is missing",
+                      "Bad HelpSet Path ",
+                      JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (HelpSetException hex) {
                 JOptionPane.showMessageDialog(frame,
-                  "Help URL is missing",
-                  "Bad HelpSet Path ",
+                  helpsetName + " is not available",
+                  "Warning",
                   JOptionPane.WARNING_MESSAGE);
+                log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
             }
-        } catch (HelpSetException hex) {
-            JOptionPane.showMessageDialog(frame,
-              helpsetName + " is not available",
-              "Warning",
-              JOptionPane.WARNING_MESSAGE);
-            log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
         }
     }
 }
