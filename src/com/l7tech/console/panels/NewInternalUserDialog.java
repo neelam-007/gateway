@@ -46,7 +46,6 @@ public class NewInternalUserDialog extends JDialog {
     private JPasswordField passwordField = null;
     private JPasswordField passwordConfirmField = null;
     private JCheckBox additionalPropertiesCheckBox = null;
-    private JFrame parent;
 
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
@@ -54,7 +53,7 @@ public class NewInternalUserDialog extends JDialog {
     /* the user instance */
     private UserBean user = new UserBean();
 
-    private int MIN_PASSWORD_LENGTH = 6;
+    private int MIN_PASSWORD_LENGTH = 1;
     private EventListenerList listenerList = new EventListenerList();
     private boolean UserIdFieldFilled = false;
     private boolean passwordFieldFilled = false;
@@ -67,7 +66,6 @@ public class NewInternalUserDialog extends JDialog {
      */
     public NewInternalUserDialog(JFrame parent) {
         super(parent, true);
-        this.parent = parent;
         initResources();
         initComponents();
         pack();
