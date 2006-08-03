@@ -476,7 +476,7 @@ public class LogPanel extends JPanel {
                 String respXmlDisplayed = "";
                 if (arec instanceof AdminAuditRecord) {
                     AdminAuditRecord aarec = (AdminAuditRecord)arec;
-                    msg += "Event Type : Administrator Action" + "\n";
+                    msg += "Event Type : Manager Action" + "\n";
                     msg += "Admin user : " + aarec.getUserName() + "\n";
                     msg += "Admin IP   : " + arec.getIpAddress() + "\n";
                     msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
