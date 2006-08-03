@@ -173,7 +173,7 @@ public class MainWindow extends JFrame {
     private JMenuItem validateMenuItem;
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
-    private JMenuItem newPolicyMenuItem;
+//    private JMenuItem newPolicyMenuItem;
     private JMenuItem saveMenuItem;
     private boolean disconnected = false;
     private String ssgURL;
@@ -389,7 +389,7 @@ public class MainWindow extends JFrame {
             JMenu menu = new JMenu();
             //fileMenu.setFocusable(false);
             menu.setText(resapplication.getString("File"));
-            menu.add(getNewPolicyMenuItem());
+            //menu.add(getNewPolicyMenuItem());
             menu.add(getSaveMenuItem());
             menu.add(getExportMenuItem());
             menu.add(getImportMenuItem());
@@ -471,17 +471,17 @@ public class MainWindow extends JFrame {
         return importPolicyAction;
     }
 
-    private JMenuItem getNewPolicyMenuItem() {
-        if (newPolicyMenuItem == null) {
-            newPolicyMenuItem = new JMenuItem(getNewAction());
-            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/New16.gif"));
-            newPolicyMenuItem.setIcon(icon);
-            int mnemonic = newPolicyMenuItem.getText().toCharArray()[0];
-            newPolicyMenuItem.setMnemonic(mnemonic);
-            newPolicyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-        }
-        return newPolicyMenuItem;
-    }
+//    private JMenuItem getNewPolicyMenuItem() {
+//        if (newPolicyMenuItem == null) {
+//            newPolicyMenuItem = new JMenuItem(getNewAction());
+//            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/New16.gif"));
+//            newPolicyMenuItem.setIcon(icon);
+//            int mnemonic = newPolicyMenuItem.getText().toCharArray()[0];
+//            newPolicyMenuItem.setMnemonic(mnemonic);
+//            newPolicyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+//        }
+//        return newPolicyMenuItem;
+//    }
 
     private JMenuItem getSaveMenuItem() {
         if (saveMenuItem == null) {
@@ -1748,7 +1748,7 @@ public class MainWindow extends JFrame {
      * @param event ActionEvent
      * @see ActionEvent for details
      */
-    private void exitMenuEventHandler(ActionEvent event) {
+    private void exitMenuEventHandler() {
         if (isConnected()) {
             try {
                 getWorkSpacePanel().clearWorkspace(); // vetoable
@@ -1774,18 +1774,18 @@ public class MainWindow extends JFrame {
     /**
      * Save the window position preference.  Called when the app is closed.
      */
-    private void saveWindowPosition() {
-        Point curWindowLocation = getLocation();
-        Dimension curWindowSize = getSize();
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            prefs.setLastWindowLocation(curWindowLocation);
-            prefs.setLastWindowSize(curWindowSize);
-            prefs.store();
-        } catch (IOException e) {
-            log.log(Level.WARNING, "unable to save window position prefs: ", e);
-        }
-    }
+//    private void saveWindowPosition() {
+//        Point curWindowLocation = getLocation();
+//        Dimension curWindowSize = getSize();
+//        try {
+//            Preferences prefs = Preferences.getPreferences();
+//            prefs.setLastWindowLocation(curWindowLocation);
+//            prefs.setLastWindowSize(curWindowSize);
+//            prefs.store();
+//        } catch (IOException e) {
+//            log.log(Level.WARNING, "unable to save window position prefs: ", e);
+//        }
+//    }
 
     /**
      * Initializes listeners for the form
@@ -1797,7 +1797,7 @@ public class MainWindow extends JFrame {
         getExitMenuItem().
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                  exitMenuEventHandler(e);
+                  exitMenuEventHandler();
               }
           });
 
@@ -1840,7 +1840,7 @@ public class MainWindow extends JFrame {
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 // exit routine, do not remove
-                MainWindow.this.exitMenuEventHandler(null);
+                MainWindow.this.exitMenuEventHandler();
             }
         });
         setName("MainWindow");
