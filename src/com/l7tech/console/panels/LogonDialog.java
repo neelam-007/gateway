@@ -728,7 +728,7 @@ public class LogonDialog extends JDialog {
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
-            log.log(Level.WARNING, "Cound not connect, authentication error.");
+            log.log(Level.WARNING, "Could not connect, authentication error.");
             showInvalidCredentialsMessage();
         }
         else if (cause instanceof MalformedURLException) {
