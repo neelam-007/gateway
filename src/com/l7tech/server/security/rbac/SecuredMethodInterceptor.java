@@ -8,18 +8,19 @@ import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.collections.iterators.ArrayIterator;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.Subject;
 import java.lang.reflect.Method;
 import java.security.AccessController;
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
     public SecuredMethodInterceptor(RoleManager roleManager) {
         this.roleManager = roleManager;
+        logger.log(Level.INFO, this.getClass().getSimpleName() + " initialized");
     }
 
     private static class CheckInfo {
@@ -48,12 +50,26 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         private Entity entity = null;
     }
 
+    List<Entity> filter(Iterator iter, User user, CheckInfo check) throws FindException {
+        List<Entity> newlist = new ArrayList<Entity>();
+        while (iter.hasNext()) {
+            Entity entity = (Entity)iter.next();
+            if (roleManager.isPermittedForEntity(user, entity, check.operation, check.otherOperationName)) {
+                newlist.add(entity);
+            } else {
+                logger.info("Omitting " + entity.getClass().getSimpleName() + " #" + entity.getOid() + " from return value of " + check.mname);
+            }
+        }
+        return newlist;
+    }
+
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
         Object target = methodInvocation.getThis();
         Object[] args = methodInvocation.getArguments();
         Method method = methodInvocation.getMethod();
 
         String mname = target.getClass().getName() + "." + method.getName();
+        logger.log(Level.FINE, "Intercepted invocation of {0}", mname);
 
         Secured beanSecured = target.getClass().getAnnotation(Secured.class);
         if (beanSecured == null) {
@@ -217,8 +233,15 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
         switch(check.after) {
             case COLLECTION:
-                logger.log(Level.INFO, "Not yet implemented: invoking {0}; should check {1} after invocation", new Object[] { mname, check.after.name() });
-                return rv;
+                if (rv instanceof Entity[]) {
+                    Entity[] array = (Entity[]) rv;
+                    return filter(new ArrayIterator(array), user, check);
+                } else if (rv instanceof Collection) {
+                    Collection coll = (Collection) rv;
+                    return filter(coll.iterator(), user, check);
+                } else {
+                    throw new IllegalStateException("Return value of " + mname + " was not Entity[] or Collection<Entity>");
+                }
             case ENTITY:
                 if (rv instanceof Entity) {
                     Entity entity = (Entity) rv;
@@ -255,6 +278,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
     private void checkOidBefore(CheckInfo check, Secured methodSecured, Object[] args, OperationType operation) {
         getOidArgOrThrow(check, methodSecured, args);
+        logger.log(Level.FINER, "Will check OID before invocation");
         check.before = CheckBefore.OID;
         check.operation = operation;
         check.after = CheckAfter.NONE;
@@ -262,6 +286,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
     private void checkEntityBefore(CheckInfo check, Secured methodSecured, Object[] args, OperationType operation) {
         getEntityArgOrThrow(check, methodSecured, args);
+        logger.log(Level.FINER, "Will check entity before invocation");
         check.before = CheckBefore.ENTITY;
         check.operation = operation;
         check.after = CheckAfter.NONE;

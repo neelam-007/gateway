@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Propagation;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -35,6 +37,7 @@ public class RoleManagerImpl
         extends HibernateEntityManager<Role, EntityHeader>
         implements RoleManager
 {
+    private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
     private IdentityProviderFactory identityProviderFactory;
 
     public RoleManagerImpl(IdentityProviderFactory ipf) {
@@ -134,6 +137,7 @@ public class RoleManagerImpl
     @Transactional(readOnly=true)
     public boolean isPermittedForAllEntities(User user, com.l7tech.common.security.rbac.EntityType type, OperationType operation) throws FindException {
         if (user == null || type == null) throw new NullPointerException();
+        logger.log(Level.FINE, "Checking for permission to {0} any {1}", new Object[] { operation.getName(), type.getName()});
         for (Role role : getAssignedRoles(user)) {
             for (Permission perm : role.getPermissions()) {
                 if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
@@ -149,6 +153,7 @@ public class RoleManagerImpl
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
         if (user == null || entity == null || operation == null) throw new NullPointerException();
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
+        logger.log(Level.FINE, "Checking for permission to {0} {1} #{2}", new Object[] { operation.getName(), entity.getClass().getSimpleName(), entity.getOid()});
 
         Collection<Role> assignedRoles = getAssignedRoles(user);
         for (Role role : assignedRoles) {

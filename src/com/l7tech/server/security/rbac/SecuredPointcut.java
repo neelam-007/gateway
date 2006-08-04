@@ -10,6 +10,7 @@ import com.l7tech.common.security.rbac.Secured;
 
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Provides a {@link ClassFilter} and {@link MethodMatcher} for detecting use of the {@link Secured}
@@ -40,10 +41,17 @@ public class SecuredPointcut implements Pointcut {
     private static class SecuredClassFilter implements ClassFilter {
         @SuppressWarnings({"unchecked"})
         public boolean matches(Class clazz) {
-            if (clazz.getAnnotation(Secured.class) != null) return true;
-            for (Class intf : clazz.getInterfaces()) {
-                if (intf.getAnnotation(Secured.class) != null) return true;
+            if (clazz.getAnnotation(Secured.class) != null) {
+                logger.log(Level.FINE, "Security declaration found in class {0}", clazz.getName());
+                return true;
             }
+            for (Class intf : clazz.getInterfaces()) {
+                if (intf.getAnnotation(Secured.class) != null) {
+                    logger.log(Level.FINE, "Security declaration found in interface {0}", intf.getName());
+                    return true;
+                }
+            }
+            logger.log(Level.INFO, "No security declaration found for class {0}", clazz.getName());
             return false;
         }
     }
@@ -54,7 +62,12 @@ public class SecuredPointcut implements Pointcut {
      */
     private static class SecuredMethodMatcher implements MethodMatcher {
         public boolean matches(Method method, Class targetClass) {
-            return method.getAnnotation(Secured.class) != null;
+            if (method.getAnnotation(Secured.class) != null) {
+                logger.log(Level.FINE, "Security declaration found in method {0}.{1}", new Object[] { method.getDeclaringClass().getSimpleName(), method.getName() });                return true;
+            } else {
+                logger.log(Level.FINE, "No security declaration found for method {0}.{1}", new Object[] { method.getDeclaringClass().getSimpleName(), method.getName() });
+                return false;
+            }
         }
 
         public boolean isRuntime() {
