@@ -40,8 +40,11 @@ public class CommonsHttpClient implements GenericHttpClient {
     private final Object identity;
     private final boolean isBindingManager;
 
+    public static final int DEFAULT_CONNECT_TIMEOUT = 30000;
+    public static final int DEFAULT_READ_TIMEOUT = 60000;
+
     public CommonsHttpClient(HttpConnectionManager cman) {
-        this(cman, 0, 0, null); // no timeouts
+        this(cman, -1, -1, null); // default timeouts
     }
 
     public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout) {
@@ -50,8 +53,8 @@ public class CommonsHttpClient implements GenericHttpClient {
 
     public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout, Object identity) {
         this.cman = cman;
-        this.connectionTimeout = connectTimeout;
-        this.timeout = timeout;
+        this.connectionTimeout = connectTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
+        this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
         this.identity = identity;
         this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
     }
