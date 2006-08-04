@@ -145,7 +145,6 @@ public class Permission extends EntityImp {
         if (otherOperationName != null ? !otherOperationName.equals(that.otherOperationName) : that.otherOperationName != null)
             return false;
         if (role != null ? !role.equals(that.role) : that.role != null) return false;
-        if (scope != null ? !scope.equals(that.scope) : that.scope != null) return false;
 
         return true;
     }
@@ -156,7 +155,6 @@ public class Permission extends EntityImp {
         result = 31 * result + (operation != null ? operation.hashCode() : 0);
         result = 31 * result + (otherOperationName != null ? otherOperationName.hashCode() : 0);
         result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
-        result = 31 * result + (scope != null ? scope.hashCode() : 0);
         result = 31 * result + (attribute != null ? attribute.hashCode() : 0);
         return result;
     }
