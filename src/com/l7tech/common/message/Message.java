@@ -260,6 +260,11 @@ public final class Message {
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public boolean isSoap() throws IOException, SAXException {
+        HttpRequestKnob hrk = (HttpRequestKnob) getKnob(HttpRequestKnob.class);
+        if (hrk != null && !"post".equalsIgnoreCase(hrk.getMethod())) {
+            return false;
+        }
+        
         if (getKnob(SoapKnob.class) != null)
             return true;
         if (!isXml())
