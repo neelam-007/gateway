@@ -258,7 +258,7 @@ public class ServerSchemaValidation
         } catch (SAXException e) {
             logger.log(Level.INFO, "validation failed", e);
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"The document to validate was not well-formed XML"});
+                    new String[]{e.getMessage()});
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } finally {
             if (ps != null) ps.close();

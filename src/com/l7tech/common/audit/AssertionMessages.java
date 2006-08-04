@@ -210,7 +210,7 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.WARNING, true, true, "Response not well-formed XML; cannot validate schema");
     public static final M SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating response document");
     public static final M SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.WARNING, true, false, "Request not well-formed XML; cannot validate schema");
-    public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.WARNING, true, true, "Assertion failure: {0}");
+    public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.WARNING, true, true, "Schema validation failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");
     public static final M SCHEMA_VALIDATION_EMPTY_BODY                      = m(5606, Level.FINE, "Empty body. Nothing to validate");
     public static final M SCHEMA_VALIDATION_NO_ACCEL                        = m(5607, Level.INFO, "Schema can not be hardware-accelerated");
