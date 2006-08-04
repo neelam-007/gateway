@@ -120,7 +120,7 @@ public class RoleManagerImpl
 
     public void update(Role role) throws UpdateException {
         try {
-            getHibernateTemplate().saveOrUpdate(role);
+            getHibernateTemplate().merge(role);
         } catch (Exception e) {
             throw new UpdateException("Couldn't save Role", e);
         }
