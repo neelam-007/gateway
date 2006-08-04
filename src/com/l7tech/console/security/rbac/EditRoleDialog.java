@@ -14,6 +14,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -206,10 +207,17 @@ public class EditRoleDialog extends JDialog {
             fireContentsChanged(userAssignmentList, 0, assignments.size());
         }
 
-        public synchronized void add(UserRoleAssignment ura) throws RemoteException, FindException {
-            assignments.add(ura);
-            holders.add(new UserHolder(ura));
-            fireContentsChanged(userAssignmentList, 0, assignments.size());
+        public synchronized void add(UserRoleAssignment ura) throws RemoteException, FindException, DuplicateObjectException {
+            try {
+                UserHolder holder = new UserHolder(ura);
+                if (assignments.contains(ura) || holders.contains(holder)) {
+                    throw new DuplicateObjectException("The user \"" + holder.getUser().getName() + "\" is already assigned to this role");
+                }
+                assignments.add(ura);
+                holders.add(holder);
+            } finally {
+                fireContentsChanged(userAssignmentList, 0, assignments.size());
+            }
         }
 
         public synchronized Object getElementAt(int index) {
@@ -304,6 +312,8 @@ public class EditRoleDialog extends JDialog {
                     try {
                         User user = identityAdmin.findUserByID(providerId, header.getStrId());
                         assignmentListModel.add(new UserRoleAssignment(role, user.getProviderId(), user.getUniqueIdentifier()));
+                    } catch (DuplicateObjectException dup) {
+                        JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(), dup.getMessage(), "Could not add assignment", JOptionPane.ERROR_MESSAGE);
                     } catch (Exception e1) {
                         throw new RuntimeException("Couldn't find User", e1);
                     }
