@@ -16,7 +16,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,14 +30,9 @@ public class RegexDialog extends JDialog {
     private JButton cancelButton;
     private JButton okButton;
     private SquigglyTextArea regexTextArea;
-    private JScrollPane regexTextAreaScrollPane;
-    private JPanel testPanel;
     private JTextArea replaceTextArea;
-    private JScrollPane replaceTextAreaScrollPane;
     private JTextArea testInputTextArea;
-    private JScrollPane testInputTextAreaScrollPane;
     private JButton testButton;
-    private JScrollPane testResultTextPaneScrollPane;
     private Regex regexAssertion;
     private BeanEditSupport beanEditSupport = new BeanEditSupport(this);
     private Pattern pattern = null;
@@ -48,11 +42,8 @@ public class RegexDialog extends JDialog {
     private JRadioButton matchAndReplaceRadioButton;
     private JTextPane testResultTextPane;
     private JLabel replacementTextAreaLabel;
-    private JLabel testInputTextAreaLabel;
-    private JLabel testResultTextAreaLabel;
     private JRadioButton proceedIfNoMatchRadioButton;
-    private JLabel assertionResultLabel;
-    private JFormattedTextField mimePartTextField;
+    private JSpinner mimePartSpinner;
     private JFormattedTextField encodingField;
 
     public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
@@ -118,7 +109,7 @@ public class RegexDialog extends JDialog {
                 regexAssertion.setReplace(matchAndReplaceRadioButton.isSelected());
                 regexAssertion.setProceedIfPatternMatches(!proceedIfNoMatchRadioButton.isSelected());
 
-                Object val = mimePartTextField.getValue();
+                Object val = mimePartSpinner.getValue();
                 regexAssertion.setMimePart(val != null ? ((Integer)val).intValue() : 0);
 
                 String enc = encodingField.getText();
@@ -245,19 +236,15 @@ public class RegexDialog extends JDialog {
             }
         });
 
-        Integer mimePartIndex = new Integer(regexAssertion.getMimePart());
-        NumberFormat fmt = NumberFormat.getNumberInstance();
-        fmt.setMaximumIntegerDigits(2);
-        fmt.setMaximumFractionDigits(0);
-        fmt.setMinimumFractionDigits(0);
-        fmt.setMinimumIntegerDigits(1);
-        fmt.setGroupingUsed(false);
-        NumberFormatter defaultFormat = new NumberFormatter(fmt);
-        defaultFormat.setAllowsInvalid(true);
-        defaultFormat.setValueClass(Integer.class);
-        DefaultFormatterFactory fmtFactory = new DefaultFormatterFactory(defaultFormat);
-        mimePartTextField.setFormatterFactory(fmtFactory);
-        mimePartTextField.setValue(mimePartIndex);
+        Integer mimePartIndex = null;
+        try {
+            mimePartIndex = new Integer(regexAssertion.getMimePart());
+        }
+        catch(NumberFormatException nfe) {
+            mimePartIndex = new Integer(0);
+        }
+        mimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
+        mimePartSpinner.setValue(mimePartIndex);
     }
 
     private boolean shouldEnableTestButton() {
