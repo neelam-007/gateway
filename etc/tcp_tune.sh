@@ -18,6 +18,8 @@ start() {
 	echo "1024 65530" > /proc/sys/net/ipv4/ip_local_port_range
 	echo "Setting Low latency TCP"
 	echo 1 > /proc/sys/net/ipv4/tcp_low_latency
+	echo "Turning off timestamps"
+	echo 0 > /proc/sys/net/ipv4/tcp_timestamps
 	echo "Lowering keepalive time"
 	echo 1200 > /proc/sys/net/ipv4/tcp_keepalive_time
 	echo 5 > /proc/sys/net/ipv4/tcp_keepalive_intvl
