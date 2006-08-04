@@ -31,7 +31,8 @@ public class MessageProcessingMessages extends Messages {
     public static final M EVENT_MANAGER_EXCEPTION     = m(3018, Level.WARNING, "EventManager threw exception logging message processing result");
     public static final M WSS_PROCESSING_COMPLETE     = m(3019, Level.FINEST, "WSS processing of request complete.");
     public static final M LICENSE_NOT_ENABLED         = m(3020, Level.WARNING, "Message processor not enabled by license: {0}");
-    public static final M METHOD_NOT_ALLOWED          = m(3021, Level.WARNING, "HTTP method {0} not allowed for service {1}.");
+    public static final M METHOD_NOT_ALLOWED          = m(3021, Level.WARNING, "HTTP method {0} not allowed for service {1}");
     public static final M REQUEST_INVALID_XML_FORMAT_WITH_DETAIL  = m(3022, Level.WARNING, "Request XML is not well-formed [{0}]");
     public static final M MULTIPART_NOT_ALLOWED       = m(3023, Level.WARNING, "Service does not accept multipart data.");
+    public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.WARNING, "HTTP method {0} not allowed");
 }
