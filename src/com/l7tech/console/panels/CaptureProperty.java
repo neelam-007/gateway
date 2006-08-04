@@ -7,6 +7,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.policy.variable.ExpandVariables;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
@@ -87,6 +88,16 @@ public class CaptureProperty extends JDialog {
                                                   "Invalid Property Key or Value",
                                                   JOptionPane.ERROR_MESSAGE);
                 } else {
+                    String tmp = newValue();
+                    ExpandVariables.getReferencedNames(tmp);
+                    String[] res = ExpandVariables.getReferencedNames(tmp);
+                    if (res != null && res.length > 0) {
+                        JOptionPane.showMessageDialog(CaptureProperty.this,
+                                                  "Property value cannot contain context variables",
+                                                  "Invalid Property Value",
+                                                  JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                     property.setName(newKey());
                     property.setValue(newValue());
                     oked = true;
