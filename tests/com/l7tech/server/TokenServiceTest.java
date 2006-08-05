@@ -188,7 +188,9 @@ public class TokenServiceTest extends TestCase {
     }
 
     private HttpServletRequest getFakeServletRequest() {
-        return new MockHttpServletRequest();
+        MockHttpServletRequest mhsr = new MockHttpServletRequest();
+        mhsr.setMethod("POST");
+        return mhsr;
     }
 
     public void testCreateFimRst() throws Exception {

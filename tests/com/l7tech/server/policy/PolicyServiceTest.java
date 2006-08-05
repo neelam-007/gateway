@@ -97,6 +97,7 @@ public class PolicyServiceTest extends TestCase {
         Message response = new Message();
 
         final MockHttpServletRequest hrequest = new MockHttpServletRequest();
+        hrequest.setMethod("POST");
         final MockHttpServletResponse hresponse = new MockHttpServletResponse();
         final HttpServletRequestKnob httpRequestKnob = new HttpServletRequestKnob(hrequest);
         final HttpServletResponseKnob httpResponseKnob = new HttpServletResponseKnob(hresponse);
