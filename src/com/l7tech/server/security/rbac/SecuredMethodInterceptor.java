@@ -75,7 +75,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         if (beanSecured == null) {
             for (Class intf : target.getClass().getInterfaces()) {
                 //noinspection unchecked
-                beanSecured = (Secured)intf.getAnnotation((Class) Secured.class);
+                beanSecured = (Secured)intf.getAnnotation(Secured.class);
                 if (beanSecured == null) break;
             }
         }
@@ -168,9 +168,23 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         check.after = CheckAfter.NONE;
                         break;
                     case FIND_BY_PRIMARY_KEY:
-                        checkOidBefore(check, methodSecured, args, READ);
-                        check.after = CheckAfter.ENTITY;
-                        break;
+                        OidArgResult result = getOidArg(check, methodSecured, args);
+                        check.operation = READ;
+                        switch(result) {
+                            case FOUND:
+                                logger.log(Level.FINER, "Will check OID before invocation");
+                                check.before = CheckBefore.OID;
+                                check.after = CheckAfter.NONE;
+                                break;
+                            case INVALID:
+                                check.before = CheckBefore.NONE;
+                                check.after = CheckAfter.ENTITY;
+                                logger.log(Level.FINER, "Will check Entity after invocation");
+                                break;
+                            case NOT_FOUND:
+                                throwNoOid(check, methodSecured);
+                                break;
+                        }
                     case FIND_ENTITY_BY_ATTRIBUTE:
                         check.before = CheckBefore.NONE;
                         check.operation = READ;
@@ -313,25 +327,40 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     }
 
     private void getOidArgOrThrow(CheckInfo info, Secured methodSecured, Object[] args) {
-        if (!getOidArg(info, methodSecured, args))
-            throw new IllegalStateException("Security declaration for method " +
-                    info.mname + " specifies " + methodSecured.stereotype() +
-                    ", but can't find long or String argument");
+        if (getOidArg(info, methodSecured, args) != OidArgResult.FOUND)
+            throwNoOid(info, methodSecured);
     }
 
-    private boolean getOidArg(CheckInfo info, Secured methodSecured, Object[] args) {
+    private void throwNoOid(CheckInfo info, Secured methodSecured) {
+        throw new IllegalStateException("Security declaration for method " +
+                info.mname + " specifies " + methodSecured.stereotype() +
+                ", but can't find long or String argument");
+    }
+
+    private OidArgResult getOidArg(CheckInfo info, Secured methodSecured, Object[] args) {
         Object arg = getSingleOrRelevantArg(methodSecured, args);
-        if (arg == null) return false;
+        if (arg == null) return OidArgResult.NOT_FOUND;
 
         if (arg instanceof Long) {
             info.oid = (Long)arg;
-            return true;
+            return OidArgResult.FOUND;
         } else if (arg instanceof String) {
-            info.oid = Long.valueOf((String)arg);
-            return true;
+            try {
+                info.oid = Long.valueOf((String)arg);
+            } catch (NumberFormatException e) {
+                logger.fine("Argument is not a valid long; must check entity after invocation");
+                return OidArgResult.INVALID;
+            }
+            return OidArgResult.FOUND;
         }
 
-        return false;
+        return OidArgResult.NOT_FOUND;
+    }
+
+    private static enum OidArgResult {
+        FOUND,
+        NOT_FOUND,
+        INVALID
     }
 
     private Object getSingleOrRelevantArg(Secured methodSecured, Object[] args) {
