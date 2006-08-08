@@ -201,6 +201,17 @@ public class Actions {
         return true;
     }
 
+    static boolean deleteAssertions(AssertionTreeNode[] nodes) {
+        // Make sure
+        if (nodes == null || (JOptionPane.showConfirmDialog(getMainWindow(),
+                                           "Are you sure you want to delete " +nodes.length+ " assertions?", "Delete Assertions",
+                                           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
+            return false;
+        }
+
+        return true;
+    }
+
     public static boolean deletePolicyTemplate(PolicyTemplateNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),

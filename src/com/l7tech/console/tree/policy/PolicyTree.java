@@ -66,7 +66,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     public PolicyTree(PolicyTreeModel newModel) {
         super(newModel);
         initialize();
-        getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        setSelectionModel(getTreeSelectionModel());
     }
 
     /**
@@ -124,17 +124,52 @@ public class PolicyTree extends JTree implements DragSourceListener,
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
-            AbstractTreeNode node =
-              (AbstractTreeNode)path.getLastPathComponent();
+            AssertionTreeNode node =
+              (AssertionTreeNode)path.getLastPathComponent();
             if (node == null) return;
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
-                if (!node.canDelete()) return;
-                if (node instanceof AssertionTreeNode)
-                    new DeleteAssertionAction((AssertionTreeNode)node).actionPerformed(null);
+                AssertionTreeNode[] nodes = toAssertionTreeNodeArray(tree.getSelectionPaths());
+                if (nodes.length < 2) nodes = null;
+                if (canDelete(node, nodes)){
+                    new DeleteAssertionAction(node, nodes).actionPerformed(null);
+                }
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 // default properties
             }
+        }
+
+        private AssertionTreeNode[] toAssertionTreeNodeArray(TreePath[] paths) {
+            java.util.List assertionTreeNodes = new ArrayList();
+
+            if (paths != null) {
+                for (int p=0; p<paths.length; p++) {
+                    TreePath path = paths[p];
+                    assertionTreeNodes.add((AssertionTreeNode)path.getLastPathComponent());
+                }
+            }
+
+            return (AssertionTreeNode[]) assertionTreeNodes.toArray(new AssertionTreeNode[assertionTreeNodes.size()]);
+        }
+
+        private boolean canDelete(AssertionTreeNode node, AssertionTreeNode[] nodes) {
+            boolean delete = false;
+
+            if (nodes == null) {
+                delete = node.canDelete();
+            } else if (nodes != null && nodes.length > 0){
+                boolean allDelete = true;
+                for (int n=0; n<nodes.length; n++) {
+                    AssertionTreeNode current = nodes[n];
+                    if (current == null || !current.canDelete()) {
+                        allDelete = false;
+                        break;
+                    }
+                }
+                delete = allDelete;
+            }
+
+            return delete;
         }
     }
 
@@ -953,5 +988,96 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     public boolean canRefresh() {
         return policyEditorPanel != null && policyEditorPanel.getServiceNode() != null;
+    }
+
+    private TreeSelectionModel getTreeSelectionModel() {
+        return new DefaultTreeSelectionModel(){
+            public void addSelectionPath(TreePath path) {
+                TreePath currentPath = getSelectionPath();
+                if (isUserOrGroupPath(currentPath) &&
+                    isUserOrGroupPath(path) &&
+                    sameFolder(currentPath, path)) {
+                    super.addSelectionPaths(asArray(path));
+                } else {
+                    super.setSelectionPaths(asArray(path));
+                }
+            }
+            public void addSelectionPaths(TreePath[] paths) {
+                TreePath currentPath = getSelectionPath();
+                boolean canAddPaths = isUserOrGroupPath(currentPath);
+                if (canAddPaths && paths != null) {
+                    for (int p=0; p<paths.length; p++) {
+                        TreePath path = paths[p];
+                        if (!isUserOrGroupPath(path) ||
+                            !sameFolder(currentPath, path)) {
+                            canAddPaths = false;
+                            break;
+                        }
+                    }
+                }
+                if (canAddPaths || paths == null) {
+                    super.addSelectionPaths(paths);
+                }
+                else {
+                    super.setSelectionPaths(asArray(paths[paths.length-1]));
+                }
+            }
+            public void setSelectionPaths(TreePath[] paths) {
+                TreePath currentPath = getSelectionPath();
+                boolean canSetPaths = currentPath==null || isUserOrGroupPath(currentPath);
+                if (canSetPaths && paths != null) {
+                    for (int p=0; p<paths.length; p++) {
+                        TreePath path = paths[p];
+                        if (!isUserOrGroupPath(path) ||
+                            !(sameFolder(currentPath, path) || currentPath==null)) {
+                            canSetPaths = false;
+                            break;
+                        }
+                    }
+                }
+                if (canSetPaths || paths == null) {
+                    super.setSelectionPaths(paths);
+                }
+                else {
+                    super.setSelectionPaths(asArray(paths[paths.length-1]));
+                }
+            }
+            private TreePath[] asArray(TreePath path) {
+                TreePath[] paths = null;
+
+                if (path != null) {
+                    paths = new TreePath[]{path};
+                }
+
+                return paths;
+            }
+            private boolean isUserOrGroupPath(TreePath path) {
+                boolean isUserOrGroup = false;
+
+                if (path != null) {
+                    if (path.getLastPathComponent() instanceof SpecificUserAssertionTreeNode ||
+                        path.getLastPathComponent() instanceof MemberOfGroupAssertionTreeNode) {
+                        isUserOrGroup = true;
+                    }
+                }
+
+                return isUserOrGroup;
+            }
+            private boolean sameFolder(TreePath path1, TreePath path2) {
+                boolean same = false;
+
+                if (path1 != null && path2 != null) {
+                    TreePath parent1 = path1.getParentPath();
+                    TreePath parent2 = path2.getParentPath();
+                    if (path1.getPathCount() == path2.getPathCount() &&
+                        parent1 != null && parent2 != null &&
+                        parent1.equals(parent2)) {
+                        same = true;
+                    }
+                }
+
+                return same;
+            }
+        };
     }
 }

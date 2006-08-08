@@ -24,6 +24,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 /**
  * The policy toolbar with toolbar actions and listeners.
@@ -40,9 +41,12 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     private DeleteAssertionAction deleteAssertionAction;
 
     private AbstractTreeNode lastPaletteNode;
+    private AssertionTreeNode[] lastAssertionNodes;
     private AssertionTreeNode lastAssertionNode;
     private AssertionTreeNode rootAssertionNode;
+    private TreePath[] paths;
     private JTree assertionPalette;
+    private JTree assertionTree;
 
     public PolicyToolBar() {
         initialize();
@@ -74,6 +78,9 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         tree.getModel().addTreeModelListener(policyTreeModelListener);
         rootAssertionNode = (AssertionTreeNode)tree.getModel().getRoot();
         lastAssertionNode = rootAssertionNode;
+        lastAssertionNodes = new AssertionTreeNode[]{rootAssertionNode};
+        paths = null;
+        assertionTree = tree;
         updateActions();
     }
 
@@ -90,6 +97,8 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             model.removeTreeModelListener(policyTreeModelListener);
         }
         lastAssertionNode = null;
+        lastAssertionNodes = null;
+        paths = null;
         disableAll();
     }
 
@@ -151,7 +160,17 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
              */
             protected void performAction() {
                 node = lastAssertionNode;
+                nodes = lastAssertionNodes;
+                final TreePath[] treePaths = paths;
                 super.performAction();
+                final JTree tree = assertionTree;
+                if (treePaths != null && tree!=null) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            tree.setSelectionPaths(treePaths);
+                        }
+                    });
+                }
             }
         };
         return assertionMoveUpAction;
@@ -166,7 +185,17 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
              */
             protected void performAction() {
                 node = lastAssertionNode;
+                nodes = lastAssertionNodes;
+                final TreePath[] treePaths = paths;
                 super.performAction();
+                final JTree tree = assertionTree;
+                if (treePaths != null && tree!=null) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            tree.setSelectionPaths(treePaths);
+                        }
+                    });
+                }
             }
         };
         return assertionMoveDownAction;
@@ -202,6 +231,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
              */
             protected void performAction() {
                 this.node = lastAssertionNode;
+                this.nodes = lastAssertionNodes;
                 super.performAction();
                 this.node = null;
                 updateActions();
@@ -218,9 +248,9 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             return;
         }
         if (validPolicyAssertionNode) {
-            getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
-            getAssertionMoveDownAction().setEnabled(lastAssertionNode.canMoveDown());
-            getAssertionMoveUpAction().setEnabled(lastAssertionNode.canMoveUp());
+            getDeleteAssertionAction().setEnabled(canDelete(lastAssertionNode, lastAssertionNodes));
+            getAssertionMoveDownAction().setEnabled(canMoveDown(lastAssertionNode, lastAssertionNodes));
+            getAssertionMoveUpAction().setEnabled(canMoveUp(lastAssertionNode, lastAssertionNodes));
         }
         if (validPNode) {
             validPNode = validPNode && (lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode));
@@ -278,8 +308,12 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
               TreePath path = e.getNewLeadSelectionPath();
               if (path == null) {
                   lastAssertionNode = rootAssertionNode;
+                  lastAssertionNodes = new AssertionTreeNode[]{rootAssertionNode};
+                  paths = null;
               } else {
                   lastAssertionNode = (AssertionTreeNode)path.getLastPathComponent();
+                  paths = ((JTree)e.getSource()).getSelectionPaths();
+                  lastAssertionNodes = toAssertionTreeNodeArray(paths);
               }
               updateActions();
           }
@@ -307,9 +341,24 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
           public void treeStructureChanged(TreeModelEvent e) {
               lastAssertionNode = null;
+              lastAssertionNodes = null;
+              paths = null;
               updateActions();
           }
       };
+
+    private AssertionTreeNode[] toAssertionTreeNodeArray(TreePath[] paths) {
+        java.util.List assertionTreeNodes = new ArrayList();
+
+        if (paths != null) {
+            for (int p=0; p<paths.length; p++) {
+                TreePath path = paths[p];
+                assertionTreeNodes.add((AssertionTreeNode)path.getLastPathComponent());
+            }
+        }
+
+        return (AssertionTreeNode[]) assertionTreeNodes.toArray(new AssertionTreeNode[assertionTreeNodes.size()]);
+    }
 
     /**
      * Invoked on connection event
@@ -329,12 +378,69 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         Runnable r = new Runnable() {
             public void run() {
                 log.fine("Policy Toolbar disconnect - disabling actions");
-                assertionMoveUpAction.setEnabled(false);
-                assertionMoveDownAction.setEnabled(false);
-                addAssertionAction.setEnabled(false);
-                deleteAssertionAction.setEnabled(false);
+                disableAll();
             }
         };
         SwingUtilities.invokeLater(r);
+    }
+
+    private boolean canDelete(AssertionTreeNode node, AssertionTreeNode[] nodes) {
+        boolean delete = false;
+
+        if (nodes == null) {
+            delete = node.canDelete();
+        } else if (nodes != null && nodes.length > 0){
+            boolean allDelete = true;
+            for (int n=0; n<nodes.length; n++) {
+                AssertionTreeNode current = nodes[n];
+                if (current == null || !current.canDelete()) {
+                    allDelete = false;
+                    break;
+                }
+            }
+            delete = allDelete;
+        }
+
+        return delete;
+    }
+
+    private boolean canMoveUp(AssertionTreeNode node, AssertionTreeNode[] nodes) {
+        boolean move = false;
+
+        if (nodes == null) {
+            move = node.canMoveUp();
+        } else if (nodes != null && nodes.length > 0){
+            boolean allMove = true;
+            for (int n=0; n<nodes.length; n++) {
+                AssertionTreeNode current = nodes[n];
+                if (current == null || !current.canMoveUp()) {
+                    allMove = false;
+                    break;
+                }
+            }
+            move = allMove;
+        }
+
+        return move;
+    }
+
+    private boolean canMoveDown(AssertionTreeNode node, AssertionTreeNode[] nodes) {
+        boolean move = false;
+
+        if (nodes == null) {
+            move = node.canMoveDown();
+        } else if (nodes != null && nodes.length > 0){
+            boolean allMove = true;
+            for (int n=0; n<nodes.length; n++) {
+                AssertionTreeNode current = nodes[n];
+                if (current == null || !current.canMoveDown()) {
+                    allMove = false;
+                    break;
+                }
+            }
+            move = allMove;
+        }
+
+        return move;
     }
 }

@@ -1,5 +1,12 @@
 package com.l7tech.console.action;
 
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
+import java.util.Arrays;
+
+import javax.swing.tree.TreeNode;
+
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 
 
@@ -12,6 +19,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
  */
 public class AssertionMoveUpAction extends SecureAction {
     protected AssertionTreeNode node;
+    protected AssertionTreeNode[] nodes;
 
     public AssertionMoveUpAction(AssertionTreeNode node) {
         super(null);
@@ -42,11 +50,29 @@ public class AssertionMoveUpAction extends SecureAction {
 
     /** Actually perform the action.
      * This is the method which should be called programmatically.
-
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        node.swap((AssertionTreeNode)node.getPreviousSibling());
+        if (node != null && nodes == null) {
+            node.swap((AssertionTreeNode)node.getPreviousSibling());
+        } else if (nodes != null) {
+            Set onTheMove = new HashSet(Arrays.asList(nodes));
+            Set processed = new HashSet();
+            for (int n=0; n<nodes.length; n++) {
+                AssertionTreeNode current = nodes[n];
+                TreeNode parent = current.getParent();
+                if (!processed.contains(parent)) {
+                    processed.add(parent);
+                    for (int c=1; c<parent.getChildCount(); c++) {
+                        TreeNode ctn = parent.getChildAt(c);
+                        if (onTheMove.contains(ctn)) {
+                            AssertionTreeNode moving = (AssertionTreeNode) ctn;
+                            moving.swap((AssertionTreeNode)moving.getPreviousSibling());
+                        }
+                    }
+                }
+            }
+        }
     }
 }
