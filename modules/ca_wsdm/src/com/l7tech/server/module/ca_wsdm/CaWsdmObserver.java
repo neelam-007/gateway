@@ -8,9 +8,11 @@ import com.ca.wsdm.monitor.ObserverProperties;
 import com.ca.wsdm.monitor.WsdmHandlerUtilSOAP;
 import com.ca.wsdm.monitor.WsdmMessageContext;
 import com.l7tech.common.RequestId;
-import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.SoapKnob;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.RoutingEvent;
@@ -20,7 +22,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import javax.wsdl.BindingOperation;
+import javax.wsdl.Operation;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -74,11 +76,11 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
     /** The helper object from ODK API. */
     private WsdmHandlerUtilSOAP _wsdmHandlerUtilSOAP;
 
-    /** Map to associate WsdmMessageContext objects to RequestId.
-        This is capped in case responses arrive too slow and requests
-        accumulates with too much memory use. */
+    /** Map to store WsdmMessageContext objects for correlating response to
+        request. The map is capped in case responses arrive too slow and
+        requests accumulate and use too much memory. */
     private Map<RequestId, WsdmMessageContext> _wsdmMessageContextMap =
-            Collections.synchronizedMap(new CappedLinkedHashMap<RequestId, WsdmMessageContext>(1000));
+            Collections.synchronizedMap(new CappedLinkedHashMap<RequestId, WsdmMessageContext>(5000));
 
     public void afterPropertiesSet() throws Exception {
         // Reads configuration properties from file.
@@ -180,20 +182,37 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
 
     /** Spool request info to the WSDM Manager. */
     private void handlePreRoutingEvent(PreRoutingEvent preRoutingEvent) {
-        final PolicyEnforcementContext context = preRoutingEvent.getContext();
-        final RequestId requestId = context.getRequestId();
-
         try {
-            final String operationName = context.getOperation().getName();
-            String operationNameSpace = null;
-            for (BindingOperation bindingOperation : (Collection<BindingOperation>)context.getService().parsedWsdl().getBindingOperations()) {
-                if (bindingOperation.getOperation().getName().equals(operationName)) {
-                    operationNameSpace = context.getService().parsedWsdl().getBindingInputNS(bindingOperation);
+            final PolicyEnforcementContext context = preRoutingEvent.getContext();
+            final Message request = context.getRequest();
+            if (! request.isSoap()) {
+                if (_logger.isLoggable(Level.FINE)) {
+                    _logger.fine("Non-SOAP request ignored.");
                 }
+                return;
             }
-            final String requestorLocation = context.getRequest().getTcpKnob().getRemoteHost();
+
+            // Determines operation name.
+            final Operation operation = context.getOperation();
+            if (operation == null) {
+                _logger.warning("Cannot determine operation in request. Probably no matching published service.");
+                return;
+            }
+            final String operationName = context.getOperation().getName();
+
+            // Determine operation namespace.
+            String[] namespaces = request.getSoapKnob().getPayloadNamespaceUris();
+            if (namespaces == null || namespaces.length == 0) {
+                _logger.warning("No namespace found in request.");
+                return;
+            } else if (namespaces.length > 1) {
+                _logger.warning("Using the first of multiple namespace URIs in request: " + Arrays.toString(namespaces));
+            }
+            final String operationNameSpace = namespaces[0];
+
+            final String requestorLocation = request.getTcpKnob().getRemoteHost();
             final String serviceUrl = preRoutingEvent.getUrl().toString();
-            final MimeKnob mimeKnob = context.getRequest().getMimeKnob();
+            final MimeKnob mimeKnob = request.getMimeKnob();
             final long requestSize = mimeKnob.getContentLength();
 
             final WsdmMessageContext wsdmMessageContext = new WsdmMessageContext();
@@ -224,10 +243,12 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
             }
 
             if (WsdmHandlerUtilSOAP.OPER_TYPE_REQUEST_RESPONSE.equals(operationType)) {
-                // Saves the WsdmMessageContext for the response.
+                // Saves the WsdmMessageContext for spooling the response; using request ID as correlation.
+                final RequestId requestId = context.getRequestId();
                 _wsdmMessageContextMap.put(requestId, wsdmMessageContext);
                 if (_logger.isLoggable(Level.FINEST)) {
-                    _logger.finest("Request WsdmMessageContext cached. (operationType = " + operationType + ")");
+                    _logger.finest("Request WsdmMessageContext cached. (operationType=" +
+                            operationType + ", map size=" + _wsdmMessageContextMap.size() + ")");
                 }
             } else {
                 if (_logger.isLoggable(Level.FINEST)) {
@@ -241,57 +262,69 @@ public class CaWsdmObserver implements ApplicationListener, InitializingBean, Di
 
     /** Spool request/fault info to the WSDM Manager. */
     private void handlePostRoutingEvent(PostRoutingEvent postRoutingEvent) {
-        final PolicyEnforcementContext context = postRoutingEvent.getContext();
-        final RequestId requestId = context.getRequestId();
-
-        final WsdmMessageContext wsdmMessageContext = _wsdmMessageContextMap.remove(requestId);
-        if (wsdmMessageContext == null) {
-            _logger.warning("Missing WsdmMessageContext. Response not spooled to CA Unicenter WSDM Manager.");
-        } else {
-            if (postRoutingEvent.getHttpResponseStatus() >= HttpConstants.STATUS_ERROR_RANGE_START &&
-                postRoutingEvent.getHttpResponseStatus() < HttpConstants.STATUS_ERROR_RANGE_END) {
-                try {
-                    if (context.getResponse().getSoapKnob().isFault()) {
-                        SoapFaultDetail soapFault = context.getResponse().getSoapKnob().getFaultDetail();
-                        _wsdmHandlerUtilSOAP.spoolFault(wsdmMessageContext,
-                                                        soapFault.getFaultActor(),
-                                                        soapFault.getFaultCode(),
-                                                        soapFault.getFaultString(),
-                                                        soapFault.getFaultDetail() == null ? null : new String[]{soapFault.getFaultDetail().toString()});
-                        if (_logger.isLoggable(Level.FINE)) {
-                            _logger.fine("Spooled fault to CA Unicenter WSDM Manager." +
-                                    " (actor=" + soapFault.getFaultActor() +
-                                    ", code=" + soapFault.getFaultCode() +
-                                    ", string=" + soapFault.getFaultString() +
-                                    ", detail=" + soapFault.getFaultDetail() + ")");
-                        }
-                    }
-                } catch (Exception e) {
-                    _logger.log(Level.WARNING, "Failed to spool fault to CA Unicenter WSDM Manager.", e);
+        try {
+            final PolicyEnforcementContext context = postRoutingEvent.getContext();
+            final Message response = context.getResponse();
+            if (! response.isSoap()) {
+                if (_logger.isLoggable(Level.FINE)) {
+                    _logger.fine("Non-SOAP response ignored.");
                 }
+                return;
+            }
+
+            final RequestId requestId = context.getRequestId();
+            final WsdmMessageContext wsdmMessageContext = _wsdmMessageContextMap.remove(requestId);
+            if (wsdmMessageContext == null) {
+                _logger.warning("Missing WsdmMessageContext. Response not spooled to CA Unicenter WSDM Manager.");
             } else {
-                try {
-                    final MimeKnob mimeKnob = context.getResponse().getMimeKnob();
-                    final long responseSize = mimeKnob.getContentLength();
-                    wsdmMessageContext.setResponseSize(responseSize);
-
-                    // We will perform the time consuming task of extracting the
-                    // message body only if the ODK API may be sending it.
-                    if (_sendSoap) {
-                        // Extracts the message body.
-                        final String charset = mimeKnob.getOuterContentType().getEncoding();
-                        final String responseBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset, _messageBodyLimit);
-                        wsdmMessageContext.setResponseMessage(responseBody);
+                if (postRoutingEvent.getHttpResponseStatus() >= HttpConstants.STATUS_ERROR_RANGE_START &&
+                    postRoutingEvent.getHttpResponseStatus() < HttpConstants.STATUS_ERROR_RANGE_END) {
+                    try {
+                        final SoapKnob soapKnob = response.getSoapKnob();
+                        if (soapKnob.isFault()) {
+                            SoapFaultDetail soapFault = soapKnob.getFaultDetail();
+                            _wsdmHandlerUtilSOAP.spoolFault(wsdmMessageContext,
+                                                            soapFault.getFaultActor(),
+                                                            soapFault.getFaultCode(),
+                                                            soapFault.getFaultString(),
+                                                            soapFault.getFaultDetail() == null ? null : new String[]{soapFault.getFaultDetail().toString()});
+                            if (_logger.isLoggable(Level.FINE)) {
+                                _logger.fine("Spooled fault to CA Unicenter WSDM Manager." +
+                                        " (actor=" + soapFault.getFaultActor() +
+                                        ", code=" + soapFault.getFaultCode() +
+                                        ", string=" + soapFault.getFaultString() +
+                                        ", detail=" + soapFault.getFaultDetail() + ")");
+                            }
+                        }
+                    } catch (Exception e) {
+                        _logger.log(Level.WARNING, "Failed to spool fault to CA Unicenter WSDM Manager.", e);
                     }
+                } else {
+                    try {
+                        final MimeKnob mimeKnob = context.getResponse().getMimeKnob();
+                        final long responseSize = mimeKnob.getContentLength();
+                        wsdmMessageContext.setResponseSize(responseSize);
 
-                    _wsdmHandlerUtilSOAP.spoolResponse(wsdmMessageContext);
-                    if (_logger.isLoggable(Level.FINE)) {
-                        _logger.fine("Spooled response to CA Unicenter WSDM Manager. (responseSize=" + responseSize + ")");
+                        // We will perform the time consuming task of extracting the
+                        // message body only if the ODK API may be sending it.
+                        if (_sendSoap) {
+                            // Extracts the message body.
+                            final String charset = mimeKnob.getOuterContentType().getEncoding();
+                            final String responseBody = getStreamContent(mimeKnob.getEntireMessageBodyAsInputStream(), charset, _messageBodyLimit);
+                            wsdmMessageContext.setResponseMessage(responseBody);
+                        }
+
+                        _wsdmHandlerUtilSOAP.spoolResponse(wsdmMessageContext);
+                        if (_logger.isLoggable(Level.FINE)) {
+                            _logger.fine("Spooled response to CA Unicenter WSDM Manager. (responseSize=" + responseSize + ")");
+                        }
+                    } catch (Exception e) {
+                        _logger.log(Level.WARNING, "Failed to spool response to CA Unicenter WSDM Manager:" + e);
                     }
-                } catch (Exception e) {
-                    _logger.log(Level.WARNING, "Failed to spool response to CA Unicenter WSDM Manager:" + e);
                 }
             }
+        } catch (Exception e) {
+            _logger.log(Level.WARNING, "Failed to spool response to CA Unicenter WSDM Manager: " + e);
         }
     }
 
