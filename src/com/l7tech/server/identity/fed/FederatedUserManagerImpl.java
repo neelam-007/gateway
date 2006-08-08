@@ -13,6 +13,8 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
@@ -110,6 +112,22 @@ public class FederatedUserManagerImpl
             imp = (FederatedUser)user;
         }
         return imp;
+    }
+
+    protected void preSave(FederatedUser user) throws SaveException {
+        // check to see if an existing user with same name exists
+        if (user != null && user.getName() != null && user.getName().length() > 0) {
+            FederatedUser existingDude;
+            try {
+                existingDude = this.findByUniqueName(user.getName());
+            } catch (FindException e) {
+                existingDude = null;
+            }
+            if (existingDude != null) {
+                throw new DuplicateObjectException("Cannot save this user. Existing user with name \'"
+                  + user.getName() + "\' present.");
+            }
+        }
     }
 
     protected String getNameFieldname() {
