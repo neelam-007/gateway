@@ -1210,10 +1210,10 @@ public class XmlUtil {
      * Get the prefix for the given name "prefix:local"
      *
      * @param prefixAndLocal The prefixed name
-     * @return The prefix or null
+     * @return The prefix or an empty string
      */
     public static String getNamespacePrefix(String prefixAndLocal) {
-        String prefix = null;
+        String prefix = "";
 
         if (prefixAndLocal != null) {
             int index = prefixAndLocal.indexOf(':');
