@@ -8,6 +8,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.common.audit.AssertionMessages;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
@@ -82,22 +83,7 @@ public class CaptureProperty extends JDialog {
         });
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (newKey() == null || newKey().length() < 1 || newValue() == null || newValue().length() < 1) {
-                    JOptionPane.showMessageDialog(CaptureProperty.this,
-                                                  "Key and Value cannot be empty",
-                                                  "Invalid Property Key or Value",
-                                                  JOptionPane.ERROR_MESSAGE);
-                } else {
-                    String tmp = newValue();
-                    ExpandVariables.getReferencedNames(tmp);
-                    String[] res = ExpandVariables.getReferencedNames(tmp);
-                    if (res != null && res.length > 0) {
-                        JOptionPane.showMessageDialog(CaptureProperty.this,
-                                                  "Property value cannot contain context variables",
-                                                  "Invalid Property Value",
-                                                  JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
+                if (validateUserInput(newKey(), newValue())) {
                     property.setName(newKey());
                     property.setValue(newValue());
                     oked = true;
@@ -105,6 +91,45 @@ public class CaptureProperty extends JDialog {
                 }
             }
         });
+    }
+
+    private boolean validateUserInput(String key, String value) {
+        // check for empty value or key
+        if (key == null || key.length() < 1 || value == null || value.length() < 1) {
+            JOptionPane.showMessageDialog(CaptureProperty.this,
+                                          "Key and Value cannot be empty",
+                                          "Invalid Property Key or Value",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // check for properties that have been assigned context variables but that dont support it
+        if (hasContextVariables(value) && !keySupportsContextVars(key)) {
+                JOptionPane.showMessageDialog(CaptureProperty.this,
+                                          "Property value for " + key + " cannot contain context variables",
+                                          "Invalid Property Value",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        // add your validations here
+        return true;
+    }
+
+    private boolean keySupportsContextVars(String key) {
+        if (key.startsWith(AssertionMessages.OVERRIDE_PREFIX)) {
+            return false;
+        }
+
+        // add here the patterns of other cluster properties that dont support context variables
+
+        return true;
+    }
+
+    private boolean hasContextVariables(String s) {
+        ExpandVariables.getReferencedNames(s);
+        String[] res = ExpandVariables.getReferencedNames(s);
+        return res != null && res.length > 0;
     }
 
     public boolean wasOked() {
