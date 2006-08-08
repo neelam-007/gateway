@@ -29,6 +29,22 @@ if [ ! -d "${SSG_HOME}" ]; then
     exit 1
 fi
 
+# Edit ssglog.properties.
+SSG_LOG_PROPS_FILE="${SSG_HOME}/etc/conf/ssglog.properties"
+if [ ! -f "${SSG_LOG_PROPS_FILE}" ]; then
+    echo '!! File not found: '"${SSG_LOG_PROPS_FILE}"
+    exit 1
+fi
+grep -q '[[:space:]]*LOCAL_REQUEST_LOG.level[[:space:]]*=[[:space:]]*OFF[[:space:]]*' "${SSG_LOG_PROPS_FILE}"
+if [ $? -eq 1 ]; then
+    cat << EOF >> "${SSG_LOG_PROPS_FILE}"
+
+# Suppresses harmless empty SEVERE logs from CA Unicenter WSDM ODK.
+LOCAL_REQUEST_LOG.level=OFF
+
+EOF
+fi
+
 # Edit WsdmSOMMA_Basic.properties.
 if [ -e WsdmSOMMA_Basic.properties.EDIT ]; then rm WsdmSOMMA_Basic.properties.EDIT; fi
 sed "s|^log.file.path=.*|log.file.path=${SSG_HOME}/logs/ca_wsdm_observer|" ssg/tomcat/webapps/ROOT/WEB-INF/classes/WsdmSOMMA_Basic.properties > WsdmSOMMA_Basic.properties.EDIT
