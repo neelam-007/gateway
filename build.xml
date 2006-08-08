@@ -459,11 +459,12 @@
                  additionalparam="-linksource"
                 -->
             <header><![CDATA[<b>Layer 7 Technologies Inc.<b><br><font size='-1'>UneasyRooster</font>]]></header>
-            <bottom><![CDATA[<i>Copyright &#169; 2005 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
+            <bottom><![CDATA[<i>Copyright &#169; 2006 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
             <link href="http://static.springframework.org/spring/docs/1.1.5/api"/>
             <link href="http://jakarta.apache.org/commons/httpclient/2.0/apidocs"/>
+            <link href="http://ws.apache.org/commons/policy/apidocs"/>
             <link href="http://www.bouncycastle.org/docs/docs1.5"/>
             <link href="http://jaxen.codehaus.org/apidocs"/>
             <link href="http://www.dom4j.org/apidocs"/>
@@ -514,7 +515,7 @@
       -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz, package.systemconfigwiz"/>
+            depends="package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz, package.systemconfigwiz, package.modules"/>
 
     <target name="bridge" description="Build and package the SSB" depends="package.installbridge"/>
     <target name="manager" description="Build and package the SSM" depends="package.installmanager"/>
@@ -1110,6 +1111,23 @@
                 <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
             </fileset>
         </javadoc>
+    </target>
+
+    <!-- Builds all the modules. -->
+    <target name="package.modules" unless="ssg.only" depends="compile">
+        <!-- Passes down the version number if set (by OFFICIAL-build);
+             otherwise let the modules build files determine it themselves. -->
+        <if>
+            <isset property="build.version"/>
+            <then>
+                <ant dir="modules" target="package" inheritAll="false">
+                    <property name="build.version" value="${build.version}"/>
+                </ant>
+            </then>
+            <else>
+                <ant dir="modules" target="package" inheritAll="false"/>
+            </else>
+        </if>
     </target>
 
     <!--

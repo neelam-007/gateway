@@ -6,10 +6,25 @@
     Builds all modules.
     </description>
 
+    <!-- Extra Ant tasks definitions -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="../lib/ant-contrib.jar"/>
+        </classpath>
+    </taskdef>
+
     <target name="OFFICIAL-package"
             description="Creates the distributables after prompting for a version number.">
-        <input message="Enter a version number:" addproperty="build.version"/>
-        <ant dir="ca_wsdm" target="package" inheritAll="false">
+        <!-- Prompt for version number if not already supplied by a calling build file. -->
+        <if>
+            <not>
+                <isset property="build.version"/>
+            </not>
+            <then>
+                <input message="Enter a version number:" addproperty="build.version"/>
+            </then>
+        </if>
+        <ant dir="ca_wsdm" target="OFFICIAL-package" inheritAll="false">
             <property name="build.version" value="${build.version}"/>
         </ant>
     </target>

@@ -98,7 +98,15 @@
 
     <target name="OFFICIAL-package"
             description="Creates the distributable ZIP file after prompting for a version number.">
-        <input message="Enter a version number:" addproperty="build.version"/>
+        <!-- Prompt for version number if not already supplied by a calling build file. -->
+        <if>
+            <not>
+                <isset property="build.version"/>
+            </not>
+            <then>
+                <input message="Enter a version number:" addproperty="build.version"/>
+            </then>
+        </if>
         <antcall target="package"/>
     </target>
 
