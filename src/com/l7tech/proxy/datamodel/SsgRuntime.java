@@ -662,7 +662,7 @@ public class SsgRuntime {
                 // Make it use the right SSL
                 client = new SslPeerHttpClient(client,
                                                ssg,
-                                               ClientProxySecureProtocolSocketFactory.getInstance());
+                                               new SslPeerLazyDelegateSocketFactory(ssg));
 
                 // Add failover if so configured.
                 // Failover must be added last so requests can be downcast to FailoverHttpRequest in MP,

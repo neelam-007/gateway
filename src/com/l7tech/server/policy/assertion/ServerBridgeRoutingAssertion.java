@@ -436,7 +436,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         connectionManager.setMaxConnectionsPerHost(hmax);
         connectionManager.setMaxTotalConnections(tmax);
         connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
-        GenericHttpClient client = new CommonsHttpClient(connectionManager);
+        GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout());
 
         // Attach SSL support
         client = new SslPeerHttpClient(client,
