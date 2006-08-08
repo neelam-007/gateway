@@ -35,7 +35,8 @@ public class KeystoreUtils {
     public static final String ROOT_STOREPASSWD = "rootcakspasswd";
     public static final String SSL_KSTORE_NAME = "sslkstorename";
     public static final String SSL_KSTORE_PASSWD = "sslkspasswd";
-    public static final String TOMCATALIAS = "tomcat";
+    public static final String SSL_ALIAS = "sslkeyalias";
+    public static final String SSL_ALIAS_DEFAULT = "tomcat";
     public static final String KSTORE_TYPE = "keystoretype";
 
     public static final String PS = System.getProperty("file.separator");
@@ -152,9 +153,10 @@ public class KeystoreUtils {
     public PrivateKey getSSLPrivateKey() throws KeyStoreException {
         KeyStore keystore = getSSLKeyStore();
         String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
+        String alias = getProps().getProperty(SSL_ALIAS, SSL_ALIAS_DEFAULT);
         PrivateKey output = null;
         try {
-            output = (PrivateKey)keystore.getKey(TOMCATALIAS, sslkeystorepassword.toCharArray());
+            output = (PrivateKey)keystore.getKey(alias, sslkeystorepassword.toCharArray());
         } catch (KeyStoreException e) {
             logger.log(Level.SEVERE, "error getting key", e);
             throw new KeyStoreException(e.getMessage());
