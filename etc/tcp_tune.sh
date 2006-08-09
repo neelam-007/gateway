@@ -30,7 +30,7 @@ start() {
 	echo "Turning On Selective Acknowledgement"
 	echo 1 > /proc/sys/net/ipv4/tcp_sack
 	echo "Increasing SYN packet Backlog"
-	echo 4096 > /proc/sys/net/ipv4/tcp_max_syn_backlog
+	echo 8192 > /proc/sys/net/ipv4/tcp_max_syn_backlog
 	echo "Setting higher tcp memory limits"
 	echo 8388608 > /proc/sys/net/core/wmem_max
 	echo 8388608 > /proc/sys/net/core/rmem_max
