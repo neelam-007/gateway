@@ -143,7 +143,7 @@ public class SamlGenerator {
      *
      */
     private void initComponents() {
-        mainFrame = new JFrame("Saml Assertion Generator v0.3");
+        mainFrame = new JFrame("Saml Assertion Generator v0.4");
 
         mainFrame.setLayout(new BorderLayout());
         mainFrame.add(mainPanel);
@@ -256,133 +256,142 @@ public class SamlGenerator {
             }
 
             SubjectStatement subjectStatement = null;
+            boolean signonly = false;
             if (!SELECTION_NONE.equals(authenticationMethod)) {
-                subjectStatement = subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, subjectThumbprintCheckBox.isSelected());
+                subjectStatement =
+                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, subjectThumbprintCheckBox.isSelected());
             }
             else if (attributeNameTextField.getText().length() > 0) {
                 String attribute = attributeNameTextField.getText();
                 String attributeNs = attributeNamespaceTextField.getText();
                 if (attributeNs.length() == 0) attributeNs = null;
                 String attributeValue = attributeValueTextField.getText();
-                subjectStatement = subjectStatement = SubjectStatement.createAttributeStatement(credentials, confirmationMethod, attribute, attributeNs, attributeValue, subjectThumbprintCheckBox.isSelected());
+                subjectStatement =
+                    SubjectStatement.createAttributeStatement(credentials, confirmationMethod, attribute, attributeNs, attributeValue, subjectThumbprintCheckBox.isSelected());
             }
             else if (resourceTextField.getText().length() > 0) {
                 String resource = resourceTextField.getText();
                 String action = actionTextField.getText();
                 String actionNamespace = actionNamespaceTextField.getText();
                 if (actionNamespace.length() == 0) actionNamespace = null;
-                subjectStatement = subjectStatement =
-                        SubjectStatement.createAuthorizationStatement(credentials, confirmationMethod, resource, action, actionNamespace, subjectThumbprintCheckBox.isSelected());
+                subjectStatement =
+                    SubjectStatement.createAuthorizationStatement(credentials, confirmationMethod, resource, action, actionNamespace, subjectThumbprintCheckBox.isSelected());
+            }
+            else if (inputMessageTextArea.getText().length() > 0 && signMessageCheckBox.isSelected()) {
+                signonly = true;
             }
 
-            if (subjectStatement == null) {
+            if (subjectStatement == null && !signonly) {
                 displayError("You must enter some statement information (authn, authz or attribute).");
                 return;
             }
 
-            Document assertion = samlGenerator.createAssertion(subjectStatement, samlOptions);
+            Document assertion = null;
+            if (!signonly) {
+                assertion = samlGenerator.createAssertion(subjectStatement, samlOptions);
 
-            // Tweak as necessary
-            if (issuerTextField.getText().length() > 0) {
-                if (samlOptions.getVersion()!=2) {
-                    assertion.getDocumentElement().setAttribute("Issuer", issuerTextField.getText());
-                }
-                else {
-                    Element issuer = XmlUtil.findFirstChildElementByName(assertion.getDocumentElement(), SAML_NAMESPACES, "Issuer");
-                    if (issuer != null) {
-                        XmlUtil.setTextContent(issuer, issuerTextField.getText());
+                // Tweak as necessary
+                if (issuerTextField.getText().length() > 0) {
+                    if (samlOptions.getVersion()!=2) {
+                        assertion.getDocumentElement().setAttribute("Issuer", issuerTextField.getText());
+                    }
+                    else {
+                        Element issuer = XmlUtil.findFirstChildElementByName(assertion.getDocumentElement(), SAML_NAMESPACES, "Issuer");
+                        if (issuer != null) {
+                            XmlUtil.setTextContent(issuer, issuerTextField.getText());
+                        }
                     }
                 }
-            }
-            Element conditions = XmlUtil.findFirstChildElementByName(assertion.getDocumentElement(), SAML_NAMESPACES, "Conditions");
-            if (conditions != null) {
-                if (notBeforeTextField.getText().length() > 0) {
-                    conditions.setAttribute("NotBefore", notBeforeTextField.getText());
+                Element conditions = XmlUtil.findFirstChildElementByName(assertion.getDocumentElement(), SAML_NAMESPACES, "Conditions");
+                if (conditions != null) {
+                    if (notBeforeTextField.getText().length() > 0) {
+                        conditions.setAttribute("NotBefore", notBeforeTextField.getText());
+                    }
+                    if (notOnOrAfterTextField.getText().length() > 0) {
+                        conditions.setAttribute("NotOnOrAfter", notOnOrAfterTextField.getText());
+                    }
+                    if (audienceRestrictionTextField.getText().length() > 0) {
+                        String namespace = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2 : SamlConstants.NS_SAML;
+                        String prefix = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2_PREFIX : SamlConstants.NS_SAML_PREFIX;
+                        String audienceRestrictionElementName = samlOptions.getVersion()==2 ? "AudienceRestriction" : "AudienceRestrictionCondition";
+                        Element restriction = XmlUtil.findOnlyOneChildElementByName(conditions, namespace, audienceRestrictionElementName);
+                        if (restriction == null) {
+                            restriction = XmlUtil.createAndAppendElementNS(conditions, audienceRestrictionElementName, namespace, prefix);
+                        }
+                        StringTokenizer audienceTok = new StringTokenizer(audienceRestrictionTextField.getText(), " ");
+                        while (audienceTok.hasMoreTokens()) {
+                            String audienceRestriction = audienceTok.nextToken();
+                            Element audience = XmlUtil.createAndAppendElementNS(restriction, "Audience", namespace, prefix);
+                            XmlUtil.setTextContent(audience, audienceRestriction);
+                        }
+                    }
                 }
-                if (notOnOrAfterTextField.getText().length() > 0) {
-                    conditions.setAttribute("NotOnOrAfter", notOnOrAfterTextField.getText());
-                }
-                if (audienceRestrictionTextField.getText().length() > 0) {
+                if (!ArrayUtils.contains(ALL_SUBJECT_CONFIRMATIONS, subjectConfirmation)) {
+                    // then strip out any confirmation
                     String namespace = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2 : SamlConstants.NS_SAML;
-                    String prefix = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2_PREFIX : SamlConstants.NS_SAML_PREFIX;
-                    String audienceRestrictionElementName = samlOptions.getVersion()==2 ? "AudienceRestriction" : "AudienceRestrictionCondition";
-                    Element restriction = XmlUtil.findOnlyOneChildElementByName(conditions, namespace, audienceRestrictionElementName);
-                    if (restriction == null) {
-                        restriction = XmlUtil.createAndAppendElementNS(conditions, audienceRestrictionElementName, namespace, prefix);
-                    }
-                    StringTokenizer audienceTok = new StringTokenizer(audienceRestrictionTextField.getText(), " ");
-                    while (audienceTok.hasMoreTokens()) {
-                        String audienceRestriction = audienceTok.nextToken();
-                        Element audience = XmlUtil.createAndAppendElementNS(restriction, "Audience", namespace, prefix);
-                        XmlUtil.setTextContent(audience, audienceRestriction);
+                    NodeList confirmationEles = assertion.getDocumentElement().getElementsByTagNameNS(namespace, "SubjectConfirmation");
+                    for (int c=0; c<confirmationEles.getLength(); c++) {
+                        Node confirmation = confirmationEles.item(c);
+                        confirmation.getParentNode().removeChild(confirmation);
                     }
                 }
-            }
-            if (!ArrayUtils.contains(ALL_SUBJECT_CONFIRMATIONS, subjectConfirmation)) {
-                // then strip out any confirmation
-                String namespace = samlOptions.getVersion()==2 ? SamlConstants.NS_SAML2 : SamlConstants.NS_SAML;
-                NodeList confirmationEles = assertion.getDocumentElement().getElementsByTagNameNS(namespace, "SubjectConfirmation");
-                for (int c=0; c<confirmationEles.getLength(); c++) {
-                    Node confirmation = confirmationEles.item(c);
-                    confirmation.getParentNode().removeChild(confirmation);
-                }
-            }
-            //1.1 <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">
-            //2.0 <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">
-            if (!SELECTION_NONE.equals(nameIdentifierFormatComboBox.getSelectedItem()) ||
-                nameQualifierTextField.getText().length() > 0 ||
-                nameIdentifierTextField.getText().length() > 0) {
-                NodeList nameIdNodeList = null;
-                if (samlOptions.getVersion()!=2) {
-                    nameIdNodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML, "NameIdentifier");
-                }
-                else {
-                    nameIdNodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML2, "NameID");
-                }
+                //1.1 <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">
+                //2.0 <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">
+                if (!SELECTION_NONE.equals(nameIdentifierFormatComboBox.getSelectedItem()) ||
+                    nameQualifierTextField.getText().length() > 0 ||
+                    nameIdentifierTextField.getText().length() > 0) {
+                    NodeList nameIdNodeList = null;
+                    if (samlOptions.getVersion()!=2) {
+                        nameIdNodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML, "NameIdentifier");
+                    }
+                    else {
+                        nameIdNodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML2, "NameID");
+                    }
 
-                if (nameIdNodeList != null && nameIdNodeList.getLength()>0) {
-                    Element nameIdEl = (Element) nameIdNodeList.item(0);
-                    if (!SELECTION_NONE.equals(nameIdentifierFormatComboBox.getSelectedItem()))
-                        nameIdEl.setAttribute("Format", (String)nameIdentifierFormatComboBox.getSelectedItem());
-                    if (nameIdentifierTextField.getText().length() > 0)
-                        XmlUtil.setTextContent(nameIdEl, nameIdentifierTextField.getText());
-                    if (nameQualifierTextField.getText().length() > 0)
-                        nameIdEl.setAttribute("NameQualifier", nameQualifierTextField.getText());
-                }
-            }
-            //1.1 <saml:AuthenticationStatement AuthenticationMethod="urn:ietf:rfc:3075">
-            //2.0 <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig</saml:AuthnContextClassRef>
-            if (!SELECTION_NONE.equals(authenticationMethod)) {
-                if (samlOptions.getVersion()!=2) {
-                    Element statement = XmlUtil.findFirstChildElementByName(
-                            assertion.getDocumentElement(),
-                            SamlConstants.NS_SAML,
-                            "AuthenticationStatement");
-                    if (statement != null)
-                        statement.setAttribute("AuthenticationMethod", authenticationMethod);
-                }
-                else {
-                    NodeList nodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML2, "AuthnContextClassRef");
-                    if (nodeList != null && nodeList.getLength()>0) {
-                        Element authContextClassRefEl = (Element) nodeList.item(0);
-                        XmlUtil.setTextContent(authContextClassRefEl, authenticationMethod);
+                    if (nameIdNodeList != null && nameIdNodeList.getLength()>0) {
+                        Element nameIdEl = (Element) nameIdNodeList.item(0);
+                        if (!SELECTION_NONE.equals(nameIdentifierFormatComboBox.getSelectedItem()))
+                            nameIdEl.setAttribute("Format", (String)nameIdentifierFormatComboBox.getSelectedItem());
+                        if (nameIdentifierTextField.getText().length() > 0)
+                            XmlUtil.setTextContent(nameIdEl, nameIdentifierTextField.getText());
+                        if (nameQualifierTextField.getText().length() > 0)
+                            nameIdEl.setAttribute("NameQualifier", nameQualifierTextField.getText());
                     }
                 }
-            }
+                //1.1 <saml:AuthenticationStatement AuthenticationMethod="urn:ietf:rfc:3075">
+                //2.0 <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig</saml:AuthnContextClassRef>
+                if (!SELECTION_NONE.equals(authenticationMethod)) {
+                    if (samlOptions.getVersion()!=2) {
+                        Element statement = XmlUtil.findFirstChildElementByName(
+                                assertion.getDocumentElement(),
+                                SamlConstants.NS_SAML,
+                                "AuthenticationStatement");
+                        if (statement != null)
+                            statement.setAttribute("AuthenticationMethod", authenticationMethod);
+                    }
+                    else {
+                        NodeList nodeList = assertion.getDocumentElement().getElementsByTagNameNS(SamlConstants.NS_SAML2, "AuthnContextClassRef");
+                        if (nodeList != null && nodeList.getLength()>0) {
+                            Element authContextClassRefEl = (Element) nodeList.item(0);
+                            XmlUtil.setTextContent(authContextClassRefEl, authenticationMethod);
+                        }
+                    }
+                }
 
-            // Reformat
-            if (formatXMLCheckBox.isSelected()) {
-                XmlUtil.stripWhitespace(assertion.getDocumentElement());
-                XmlUtil.format(assertion,true);
-            }
+                // Reformat
+                if (formatXMLCheckBox.isSelected()) {
+                    XmlUtil.stripWhitespace(assertion.getDocumentElement());
+                    XmlUtil.format(assertion,true);
+                }
 
-            // Sign
-            samlOptions.setSignAssertion(true);
-            SamlAssertionGenerator.signAssertion(samlOptions,
-                    assertion,
-                    issuerInfo.getPrivate(),
-                    issuerInfo.getCertificateChain(),
-                    samlOptions.isUseThumbprintForSignature());
+                // Sign
+                samlOptions.setSignAssertion(true);
+                SamlAssertionGenerator.signAssertion(samlOptions,
+                        assertion,
+                        issuerInfo.getPrivate(),
+                        issuerInfo.getCertificateChain(),
+                        samlOptions.isUseThumbprintForSignature());
+            }
 
             String assertionStr;
 
@@ -393,22 +402,39 @@ public class SamlGenerator {
                 Document soapDoc = XmlUtil.stringToDocument(messageText);
                 WssDecoratorImpl deco = new WssDecoratorImpl();
                 DecorationRequirements decoReq = new DecorationRequirements();
-                decoReq.setSenderSamlToken(assertion.getDocumentElement(), false);
+                decoReq.setSecurityHeaderActor(null);
+                if (assertion != null) decoReq.setSenderSamlToken(assertion.getDocumentElement(), false);
+                else {
+                    decoReq.setSenderMessageSigningPrivateKey(subjectPrivateKey);
+                    decoReq.setSenderMessageSigningCertificate(subjectCertificate);
+                }
                 if (signMessageCheckBox.isSelected()) {
                     decoReq.setSignTimestamp();
-                    if (!SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(subjectConfirmation) &&
-                        !SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES.equals(subjectConfirmation)) {
-                        if (SamlConstants.CONFIRMATION_BEARER.equals(subjectConfirmation) ||
-                            SamlConstants.CONFIRMATION_SAML2_BEARER.equals(subjectConfirmation)) {
-                            decoReq.setSenderMessageSigningCertificate(subjectCertificate);
+                    if (!signonly) {
+                        if (!SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(subjectConfirmation) &&
+                            !SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES.equals(subjectConfirmation)) {
+                            if (SamlConstants.CONFIRMATION_BEARER.equals(subjectConfirmation) ||
+                                SamlConstants.CONFIRMATION_SAML2_BEARER.equals(subjectConfirmation)) {
+                                decoReq.setSenderMessageSigningCertificate(subjectCertificate);
+                            }
+                            decoReq.setSenderMessageSigningPrivateKey(subjectPrivateKey);
                         }
-                        decoReq.setSenderMessageSigningPrivateKey(subjectPrivateKey);
-                    }
-                    else {
-                        decoReq.setSenderMessageSigningCertificate(issuerCertificate);
-                        decoReq.setSenderMessageSigningPrivateKey(issuerPrivateKey);
+                        else {
+                            decoReq.setSenderMessageSigningCertificate(issuerCertificate);
+                            decoReq.setSenderMessageSigningPrivateKey(issuerPrivateKey);
+                        }
                     }
                     decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(soapDoc.getDocumentElement(), (String[]) SoapUtil.ENVELOPE_URIS.toArray(new String[0]), "Body"));
+
+                    // sign address if present
+                    Element env = soapDoc.getDocumentElement();
+                    if (XmlUtil.hasChildNodesOfType(env, Node.ELEMENT_NODE)) {
+                        Element maybeHeader = XmlUtil.findFirstChildElement(env);
+                        decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(maybeHeader, SoapUtil.WSA_NAMESPACE_ARRAY, "Action"));
+                        decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(maybeHeader, SoapUtil.WSA_NAMESPACE_ARRAY, "MessageID"));
+                        decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(maybeHeader, SoapUtil.WSA_NAMESPACE_ARRAY, "ReplyTo"));
+                        decoReq.getElementsToSign().addAll(XmlUtil.findChildElementsByName(maybeHeader, SoapUtil.WSA_NAMESPACE_ARRAY, "To"));
+                    }
                 }
                 deco.decorateMessage(soapDoc, decoReq);
                 assertionStr = XmlUtil.nodeToString(soapDoc);
