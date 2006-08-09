@@ -18,6 +18,7 @@ import org.springframework.jdbc.LobRetrievalFailureException;
 import org.springframework.jdbc.SQLWarningException;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.identity.User;
@@ -95,6 +96,7 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
                             LobRetrievalFailureException.class,
                             SQLWarningException.class,
                             UncategorizedSQLException.class,
+                            ObjectOptimisticLockingFailureException.class,
                 },
                 sendStackToClient);
 

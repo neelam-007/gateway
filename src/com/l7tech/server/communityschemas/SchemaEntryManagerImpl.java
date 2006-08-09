@@ -14,11 +14,8 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -61,17 +58,13 @@ public class SchemaEntryManagerImpl
         }
     }
 
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findAll() throws FindException {
         Collection<SchemaEntry> output = super.findAll();
 
         // make sure the soapenv schema is always there
         if (!containsSoapEnv(output)) {
-            final Collection<SchemaEntry> current = output;
-            output = (Collection<SchemaEntry>) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
-                public Object doInTransaction(TransactionStatus status) {
-                    return addSoapEnv(current);
-                }
-            });
+            output = addSoapEnv(output);
         }
 
         return output;
@@ -98,7 +91,7 @@ public class SchemaEntryManagerImpl
     private Collection<SchemaEntry> addSoapEnv(Collection<SchemaEntry> collection) {
         SchemaEntry defaultEntry = newDefaultEntry();
         try {
-            save(defaultEntry);
+            defaultEntry.setOid(save(defaultEntry));
         } catch (SaveException e) {
             logger.log(Level.WARNING, "cannot save default soap xsd", e);
         }
@@ -112,7 +105,7 @@ public class SchemaEntryManagerImpl
      * Find a schema from it's name (name column in community schema table)
      */
     @SuppressWarnings({"unchecked"})
-    @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByName(final String schemaName) throws FindException {
         final String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = ?";
@@ -134,7 +127,7 @@ public class SchemaEntryManagerImpl
      * Find a schema from it's target namespace (tns column in community schema table)
      */
     @SuppressWarnings({"unchecked"})
-    @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByTNS(final String tns) throws FindException {
         final String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = ?";

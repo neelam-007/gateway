@@ -22,7 +22,6 @@ import java.util.Collection;
 @Transactional(propagation=Propagation.REQUIRED)
 @Secured(types= EntityType.SCHEMA_ENTRY)
 public interface SchemaAdmin {
-    @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<SchemaEntry> findAllSchemas() throws RemoteException, FindException;
 
@@ -32,11 +31,9 @@ public interface SchemaAdmin {
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
     long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException;
 
-    @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<SchemaEntry> findByName(String schemaName) throws RemoteException, FindException;
 
-    @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<SchemaEntry> findByTNS(String tns) throws RemoteException, FindException;
 }
