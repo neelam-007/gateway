@@ -55,6 +55,8 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Wsdl {
+    public static final String WSDL_SOAP_NAMESPACE = "http://schemas.xmlsoap.org/wsdl/soap/";
+
     public static final String NS = "ns";
     /**
      * bitmask for soap bindings filtering

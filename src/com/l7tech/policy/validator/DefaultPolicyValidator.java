@@ -6,12 +6,19 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.WsdlUtil;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
+
+import org.xml.sax.SAXException;
 
 /**
  * The policy validator that analyzes the policy assertion tree
@@ -38,6 +45,30 @@ import java.util.logging.Logger;
 public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
+    public PolicyValidatorResult validate(Assertion assertion, PublishedService service, AssertionLicense assertionLicense) {
+        PolicyValidatorResult r = super.validate(assertion, service, assertionLicense);
+
+        try {
+            if (service.isSoap() &&
+                Assertion.contains(assertion, XpathBasedAssertion.class) &&
+                WsdlUtil.isRPCWithNoSchema(service.getWsdlXml())) {
+
+                Assertion lastAssertion = assertion;
+                if (assertion instanceof CompositeAssertion) {
+                    List children = ((CompositeAssertion) assertion).getChildren();
+                    if (children != null && !children.isEmpty()) {
+                        lastAssertion = (Assertion) children.get(children.size()-1);
+                    }
+                }
+
+                r.addWarning(new PolicyValidatorResult.Warning(lastAssertion.getOrdinal(), 0, "Assertions that use XPaths may not work as expected with RPC services.", null));
+            }
+        } catch(SAXException se) {
+            log.warning("Could not parse wsdl '" + ExceptionUtils.getMessage(se) + "', skipping WSDL checks.");
+        }
+
+        return r;
+    }
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         Assertion[] ass = ap.getPath();
