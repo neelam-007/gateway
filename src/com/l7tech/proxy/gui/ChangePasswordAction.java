@@ -6,13 +6,14 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.gui.dialogs.PasswordDialog;
+import com.l7tech.proxy.gui.dialogs.ChangePasswordDialog;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -24,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -88,13 +90,28 @@ class ChangePasswordAction extends AbstractAction {
                         prompted = true;
                     }
 
-                    if (oldpass == null)
-                        oldpass = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, false);
-                    cmPasswdPotentiallyChanged = true;
-                    if (newpass == null)
-                        newpass = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "New password");
-                    if (newpass == null)
+                    String username = ssg.getUsername();
+                    boolean usernameEditable = true;
+                    final X509Certificate cert = ssg.getClientCertificate();
+                    if (cert != null) {
+                        username = CertUtils.extractCommonNameFromClientCertificate(cert);
+                        usernameEditable = false;
+                    }
+                    String message = "Change password for gateway: " + ssg.getSsgAddress();
+                    ChangePasswordDialog cpd = new ChangePasswordDialog(Gui.getInstance().getFrame(), message, username, usernameEditable);
+                    cpd.setVisible(true);
+
+                    if (cpd.wasOk()) {
+                        cmPasswdPotentiallyChanged = true;
+                        oldpass = cpd.getCurrentPasswordAuthentication();
+                        newpass = cpd.getNewPasswordAuthentication().getPassword();
+                        if (usernameEditable && (username==null || !username.equals(oldpass.getUserName()))) {
+                            ssg.setUsername(oldpass.getUserName());
+                        }
+                        ssg.getRuntime().setCachedPassword(oldpass.getPassword());
+                    } else {
                         return;
+                    }
 
                     try {
                         SslUtils.changePasswordAndRevokeClientCertificate(ssg,
@@ -122,8 +139,6 @@ class ChangePasswordAction extends AbstractAction {
                     } catch (OperationCanceledException e2) {
                         return; // cancel the password change as well
                     }
-                } catch (OperationCanceledException e1) {
-                    return;
                 } catch (SSLException sslException) {
                     PasswordAuthentication credentials = null;
                     try {
