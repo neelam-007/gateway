@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -40,12 +41,18 @@ public class EditPermissionsDialog extends JDialog {
         for (EntityType type : EntityType.values()) {
             if (type.isDisplayedInGui()) types.add(type);
         }
-        
+
         typeSelection.setModel(new DefaultComboBoxModel(types.toArray(new EntityType[0])));
         EntityType etype = permission.getEntityType();
         if (etype != null) typeSelection.setSelectedItem(etype);
 
-        operationSelection.setModel(new DefaultComboBoxModel(OperationType.values()));
+        java.util.List<OperationType> values = new ArrayList<OperationType>();
+        for (OperationType opType : OperationType.values()) {
+            if (opType != OperationType.NONE && opType != OperationType.OTHER)
+                values.add(opType);
+        }
+        operationSelection.setModel(new DefaultComboBoxModel(values.toArray(new OperationType[0])));
+
         OperationType op = permission.getOperation();
         if (op != null) operationSelection.setSelectedItem(op);
 
@@ -108,7 +115,7 @@ public class EditPermissionsDialog extends JDialog {
                         objectIdentityPredicate.setHeader(header);
                     }
                 }
-                
+
                 if (header != null) {
                     scopeField.setText(sd.getSpecificEntity().toString());
                 } else
