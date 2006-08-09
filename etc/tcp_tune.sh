@@ -25,8 +25,6 @@ start() {
 	echo 5 > /proc/sys/net/ipv4/tcp_keepalive_intvl
 	echo "Lowering FIN timeout"
 	echo 10 > /proc/sys/net/ipv4/tcp_fin_timeout
-	echo "Turning On timestamps"
-	echo 1 > /proc/sys/net/ipv4/tcp_timestamps
 	echo "Turning On Window scaling"
 	echo 1 > /proc/sys/net/ipv4/tcp_window_scaling
 	echo "Turning On Selective Acknowledgement"
