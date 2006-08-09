@@ -8,6 +8,7 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SetVariableAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetVariableAssertion;
@@ -23,8 +24,22 @@ public class SetVariableAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         SetVariableAssertion subject = (SetVariableAssertion) assertions[0];
+
+        int newLocation = pc.getChildLocation();
+        AssertionTreeNode parentNode = (AssertionTreeNode)pc.getParent();
+        Assertion beingInsertedAfter = null;
+
+        if (newLocation == 0) {
+            beingInsertedAfter = parentNode.asAssertion();
+        }
+        else {
+            beingInsertedAfter = parentNode.getChildCount() >= newLocation ?
+                ((AssertionTreeNode)parentNode.getChildAt(newLocation-1)).asAssertion() :
+                ((AssertionTreeNode)parentNode.getChildAt(parentNode.getChildCount()-1)).asAssertion();
+        }
+
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, subject);
+        SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, subject, beingInsertedAfter);
 
         // show the dialog
         dlg.pack();

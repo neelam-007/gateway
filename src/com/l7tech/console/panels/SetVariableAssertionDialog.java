@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.policy.assertion.SetVariableAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -36,6 +37,10 @@ public class SetVariableAssertionDialog extends JDialog {
     private final Set<String> predecessorVariables;
 
     public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion) throws HeadlessException {
+        this(owner, assertion, null);
+    }
+
+    public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion, final Assertion contextAssertion) throws HeadlessException {
         super(owner, "Set Variable", true);
 
         add(mainPanel);
@@ -51,7 +56,10 @@ public class SetVariableAssertionDialog extends JDialog {
             public void changedUpdate(DocumentEvent e) { updateFast(); }
         };
 
-        predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+        predecessorVariables = contextAssertion==null ?
+                PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
+                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
+
         variableNameField.getDocument().addDocumentListener(dl);
         expressionField.getDocument().addDocumentListener(dl);
 

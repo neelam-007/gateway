@@ -14,6 +14,23 @@ import java.util.*;
  * @author alex
  */
 public final class PolicyVariableUtils {
+    public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf(Assertion assertion) {
+        Assertion ancestor = assertion.getPath()[0];
+        Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>();
+        for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
+            Assertion ass = (Assertion) i.next();
+            if (ass instanceof SetsVariables) {
+                SetsVariables sv = (SetsVariables)ass;
+                for (int j = 0; j < sv.getVariablesSet().length; j++) {
+                    final VariableMetadata meta = sv.getVariablesSet()[j];
+                    vars.put(meta.getName(), meta);
+                }
+            }
+            if (ass == assertion) break; // Can't use variables of any subsequent assertion
+        }
+        return vars;
+    }
+
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors(Assertion assertion) {
         Assertion ancestor = assertion.getPath()[0];
         Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>();
