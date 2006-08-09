@@ -30,5 +30,5 @@ public abstract class ScopePredicate extends EntityImp {
         this.permission = permission;
     }
 
-    public abstract boolean matches(Entity entity);
+    abstract boolean matches(Entity entity);
 }

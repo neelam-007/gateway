@@ -85,7 +85,7 @@ public class AttributePredicate extends ScopePredicate {
         this.value = value;
     }
 
-    public boolean matches(Entity entity) {
+    boolean matches(Entity entity) {
         setupGetter();
         try {
             Object got = getter.invoke(entity);

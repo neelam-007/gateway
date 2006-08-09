@@ -1,7 +1,6 @@
 package com.l7tech.service;
 
 import static com.l7tech.common.security.rbac.EntityType.SAMPLE_MESSAGE;
-import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.uddi.WsdlInfo;
@@ -21,7 +20,6 @@ import java.rmi.RemoteException;
  * @see EntityHeader
  * @see Entity
  */
-@Secured(types=SERVICE)
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public interface ServiceAdmin extends ServiceAdminPublic {
     /**

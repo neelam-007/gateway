@@ -4,6 +4,7 @@
 
 package com.l7tech.service;
 
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityHeader;
@@ -22,6 +23,7 @@ import java.rmi.RemoteException;
  *            be maintaned. Therefore, do not remove or modify existing
  *            method declarations.
  */
+@Secured(types=SERVICE)
 public interface ServiceAdminPublic {
     /**
      * Retrieve all available published services.

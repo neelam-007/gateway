@@ -28,11 +28,12 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         this.targetEntityOid = targetEntityOid;
     }
 
-    public boolean matches(Entity entity) {
+    boolean matches(Entity entity) {
         EntityType etype = permission.getEntityType();
         if (etype == null || etype == EntityType.ANY)
             throw new IllegalStateException("Can't evaluate an ObjectIdentityPredicate without a specific EntityType");
-        return etype.getEntityClass().isAssignableFrom(entity.getClass()) && targetEntityOid == entity.getOid();
+        // Type has already been checked by {@link Permission#matches}
+        return targetEntityOid == entity.getOid();
     }
 
     public EntityHeader getHeader() {

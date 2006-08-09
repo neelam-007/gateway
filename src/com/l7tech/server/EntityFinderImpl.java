@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.common.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -97,9 +98,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     return (ET)session.load(clazz, pk);
                 }
             });
-        } catch (org.hibernate.ObjectNotFoundException e) {
-            return null;
-        } catch (HibernateException e) {
+        } catch (Exception e) {
+            if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class)) return null; 
             throw new FindException("Couldn't find entity ", e);
         }
     }
@@ -107,6 +107,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @Transactional(readOnly = true)
     public EntityHeader findHeader(com.l7tech.common.security.rbac.EntityType etype, long oid) throws FindException {
         Entity e = find(etype.getEntityClass(), oid);
+        if (e == null) return null;
+        
         com.l7tech.objectmodel.EntityType oldType = etype.getOldEntityType();
         String name = null;
         if (e instanceof NamedEntity) {

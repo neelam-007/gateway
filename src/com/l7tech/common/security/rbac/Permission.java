@@ -5,6 +5,7 @@ package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.imp.EntityImp;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.AnonymousEntityReference;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,7 +53,14 @@ public class Permission extends EntityImp {
      */
     public boolean matches(Entity entity) {
         if (entityType == EntityType.ANY) return true; // No scope is relevant for ANY
-        if (!entityType.getEntityClass().isAssignableFrom(entity.getClass())) return false;
+        Class eclass;
+        if (entity instanceof AnonymousEntityReference) {
+            eclass = ((AnonymousEntityReference)entity).getEntityClass();
+        } else {
+            eclass = entity.getClass();
+        }
+        
+        if (!entityType.getEntityClass().isAssignableFrom(eclass)) return false;
         for (ScopePredicate predicate : scope) {
             if (!predicate.matches(entity)) return false;
         }

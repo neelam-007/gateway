@@ -7,9 +7,9 @@ import com.l7tech.objectmodel.EntityHeader;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.ArrayList;
 
 public class EditPermissionsDialog extends JDialog {
     private JPanel contentPane;
@@ -76,9 +76,7 @@ public class EditPermissionsDialog extends JDialog {
         scopeLabel.setVisible(scopeEnabled);
         scopeField.setVisible(scopeEnabled);
         browseForScope.setVisible(scopeEnabled);
-
-        if (scopeEnabled)
-            browseForScope.setEnabled(etype != EntityType.ANY);
+        browseForScope.setEnabled(scopeEnabled);
     }
 
     private void setupButtonListeners() {
@@ -107,12 +105,15 @@ public class EditPermissionsDialog extends JDialog {
                 Utilities.centerOnScreen(sd);
                 sd.setVisible(true);
                 EntityHeader header = sd.getSpecificEntity();
-                Set<ScopePredicate> scopes = sd.getPermission().getScope();
-                if (scopes.size() == 1) {
-                    ScopePredicate pred = scopes.iterator().next();
-                    if (pred instanceof ObjectIdentityPredicate) {
-                        ObjectIdentityPredicate objectIdentityPredicate = (ObjectIdentityPredicate) pred;
-                        objectIdentityPredicate.setHeader(header);
+                final Permission perm = sd.getPermission();
+                if (perm != null) {
+                    Set<ScopePredicate> scopes = perm.getScope();
+                    if (scopes.size() == 1) {
+                        ScopePredicate pred = scopes.iterator().next();
+                        if (pred instanceof ObjectIdentityPredicate) {
+                            ObjectIdentityPredicate objectIdentityPredicate = (ObjectIdentityPredicate) pred;
+                            objectIdentityPredicate.setHeader(header);
+                        }
                     }
                 }
 

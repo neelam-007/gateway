@@ -164,17 +164,17 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public PublishedService findServiceByID(String serviceID) throws RemoteException, FindException {
-            long oid = toLong(serviceID);
-            PublishedService service = serviceManager.findByPrimaryKey(oid);
-            if (service != null) {
-                logger.finest("Returning service id " + oid + ", version " + service.getVersion());
-            }
-            return service;
+        long oid = toLong(serviceID);
+        PublishedService service = serviceManager.findByPrimaryKey(oid);
+        if (service != null) {
+            logger.finest("Returning service id " + oid + ", version " + service.getVersion());
+        }
+        return service;
     }
 
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
-            Collection<EntityHeader> res = serviceManager.findAllHeaders();
-            return collectionToHeaderArray(res);
+        Collection<EntityHeader> res = serviceManager.findAllHeaders();
+        return collectionToHeaderArray(res);
     }
 
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)

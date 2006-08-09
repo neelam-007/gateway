@@ -45,10 +45,16 @@ public class SecuredPointcut implements Pointcut {
                 logger.log(Level.FINE, "Security declaration found in class {0}", clazz.getName());
                 return true;
             }
+
             for (Class intf : clazz.getInterfaces()) {
                 if (intf.getAnnotation(Secured.class) != null) {
                     logger.log(Level.FINE, "Security declaration found in interface {0}", intf.getName());
                     return true;
+                } else for (Class superIntf : intf.getInterfaces()) {
+                    if (superIntf.getAnnotation(Secured.class) != null) {
+                        logger.log(Level.FINE, "Security declaration found in interface {0}", superIntf.getName());
+                        return true;
+                    }
                 }
             }
             logger.log(Level.INFO, "No security declaration found for class {0}", clazz.getName());

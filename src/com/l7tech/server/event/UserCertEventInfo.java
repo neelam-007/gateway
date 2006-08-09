@@ -6,13 +6,11 @@
 
 package com.l7tech.server.event;
 
+import com.l7tech.identity.AnonymousIdentityReference;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.cert.CertEntryRow;
 import org.springframework.context.ApplicationContext;
@@ -24,13 +22,15 @@ import org.springframework.context.ApplicationContext;
 public class UserCertEventInfo {
     public UserCertEventInfo(final CertEntryRow cer, String verb, EntityChangeSet changes, ApplicationContext springContext) {
         try {
-            NamedEntity u = null;
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(cer.getProvider());
-            u = (PersistentUser)provider.getUserManager().findByPrimaryKey(cer.getUserId());
-
-            if (u == null) u = new AnonymousEntityReference(User.class, cer.getUserId());
-            this.user = u;
+            User user = provider.getUserManager().findByPrimaryKey(cer.getUserId());
+            if (user instanceof Entity) {
+                this.user = (Entity)user;
+            } else {
+                // Make a fake user to satisfy the silly Entity requirement
+                this.user = new AnonymousIdentityReference(User.class, cer.getUserId(), cer.getProvider(), null);
+            }
 
             String note = verb;
             if (changes != null) {
