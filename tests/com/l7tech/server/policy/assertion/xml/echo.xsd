@@ -1,13 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<s:schema elementFormDefault="qualified"
-    targetNamespace="http://qaschematest.layer7.com/"
-    xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
-    xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
-    xmlns:s="http://www.w3.org/2001/XMLSchema"
-    xmlns:s0="http://qaschematest.layer7.com/"
-    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-    xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/">
+<s:schema elementFormDefault="qualified" targetNamespace="http://qaschematest.layer7.com/" xmlns:s="http://www.w3.org/2001/XMLSchema">
       <s:element name="Echo">
         <s:complexType>
             <s:sequence>

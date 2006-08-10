@@ -68,6 +68,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     private static final String CANCEL_BUTTON = "Cancel";
     private static final int MAX_DESC_LENGTH = 256;
     private boolean formModified;
+    private boolean wasoked = false;
 
     protected IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
@@ -212,7 +213,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
      *
      * @return the group that this panel is currently editing
      */
-    Group getGroup() {
+    public Group getGroup() {
         return group;
     }
 
@@ -562,6 +563,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
             Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
             dlg.setVisible(false);
             dlg.dispose();
+            wasoked = true;
         }
 
         /**
@@ -610,7 +612,9 @@ public abstract class GroupPanel extends EntityEditorPanel {
           }
       };
 
-
+    public boolean wasOKed() {
+        return wasoked;
+    }
 }
 
 

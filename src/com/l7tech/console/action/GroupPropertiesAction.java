@@ -8,6 +8,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
@@ -22,9 +23,10 @@ import java.util.NoSuchElementException;
  * @version 1.0
  */
 public class GroupPropertiesAction extends NodeAction {
-
+    GroupNode gn;
     public GroupPropertiesAction(GroupNode node) {
         super(node, MemberOfGroup.class);
+        this.gn = node;
     }
 
     /**
@@ -70,6 +72,16 @@ public class GroupPropertiesAction extends NodeAction {
                     dialog.pack();
                     Utilities.centerOnScreen(dialog);
                     dialog.setVisible(true);
+                    // bugzilla #1989
+                    // catch changes here and update node
+                    if (panel.wasOKed()) {
+                        Group g = panel.getGroup();
+                        EntityHeader nodeobject = (EntityHeader)gn.getUserObject();
+                        nodeobject.setDescription(g.getDescription());
+                        gn.firePropertyChange(nodeobject, null, nodeobject, nodeobject);
+                        // invalidate parent dialog
+                        firePropertyChange(null, null, null);
+                    }
                 } catch (NoSuchElementException e) {
                     // Bugzilla #801 - removing the group from the tree should not be performed 
                     // removeGroupTreeNode(header);

@@ -34,6 +34,8 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * Find Dialog
@@ -839,7 +841,11 @@ public class FindIdentitiesDialog extends JDialog {
             }
 
             final BaseAction a = action;
-
+            a.addPropertyChangeListener(new PropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent evt) {
+                    searchResultTable.repaint();
+                }
+            });
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     if (a instanceof UserPropertiesAction) {
