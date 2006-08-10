@@ -2,12 +2,6 @@
 -- MySQL version of SSG database creation script.
 --
 
--- MySQL dump 8.22
---
--- Host: localhost    Database: ssg
----------------------------------------------------------
--- Server version	3.23.56-log
-
 SET FOREIGN_KEY_CHECKS = 0;
 
 --
@@ -17,7 +11,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS hibernate_unique_key;
 CREATE TABLE hibernate_unique_key (
   next_hi int(11) default NULL
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'hibernate_unique_key'
@@ -40,7 +34,7 @@ CREATE TABLE identity_provider (
   properties mediumtext,
   PRIMARY KEY  (objectid),
   UNIQUE KEY ipnm_idx (name)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'identity_provider'
@@ -60,7 +54,7 @@ CREATE TABLE internal_group (
   description mediumtext,
   PRIMARY KEY  (objectid),
   UNIQUE KEY g_idx (name)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'internal_group'
@@ -86,7 +80,7 @@ CREATE TABLE internal_user (
   expiration bigint(20) NOT NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'internal_user'
@@ -112,7 +106,7 @@ CREATE TABLE internal_user_group (
   INDEX (provider_oid),
   INDEX (user_id),
   INDEX (subgroup_id)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'internal_user_group'
@@ -138,7 +132,7 @@ CREATE TABLE published_service (
   routing_uri varchar(128),
   http_methods mediumtext,
   PRIMARY KEY  (objectid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'published_service'
@@ -161,7 +155,7 @@ CREATE TABLE client_cert (
   PRIMARY KEY  (objectid),
   INDEX i_thumb (thumbprint_sha1),
   INDEX i_ski (ski)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'client_cert'
@@ -181,7 +175,7 @@ CREATE TABLE service_resolution (
   uri mediumtext character set latin1 BINARY default '',
   unique(digested),
   PRIMARY KEY (objectid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'service_resolution'
@@ -203,7 +197,7 @@ CREATE TABLE cluster_info (
   avgload double NOT NULL,
   statustimestamp bigint NOT NULL,
   PRIMARY KEY(mac)
-)  TYPE=InnoDB;
+)  TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'cluster_info'
@@ -221,7 +215,7 @@ CREATE TABLE service_usage (
   authorizedreqnr bigint NOT NULL,
   completedreqnr bigint NOT NULL,
   primary key(serviceid, nodeid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'service_usage'
@@ -244,7 +238,7 @@ CREATE TABLE jms_connection (
   username varchar(32) default '',
   password varchar(32) default '',
   primary key(objectid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table 'jms_endpoint'
@@ -263,7 +257,7 @@ CREATE TABLE jms_endpoint(
   max_concurrent_requests integer default '1',
   is_message_source tinyint default '0',
   primary key(objectid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table 'trusted_cert'
@@ -288,7 +282,7 @@ CREATE TABLE trusted_cert (
   unique (name),
   INDEX i_thumb (thumbprint_sha1),
   INDEX i_ski (ski)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_user;
 CREATE TABLE fed_user (
@@ -319,7 +313,7 @@ CREATE TABLE fed_group (
   PRIMARY KEY  (objectid),
   INDEX i_provider_oid (provider_oid),
   UNIQUE KEY i_name (provider_oid, name)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_user_group;
 CREATE TABLE fed_user_group (
@@ -327,7 +321,7 @@ CREATE TABLE fed_user_group (
   fed_user_oid bigint(20) NOT NULL,
   fed_group_oid bigint(20) NOT NULL,
   PRIMARY KEY (provider_oid,fed_user_oid,fed_group_oid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_group_virtual;
 CREATE TABLE fed_group_virtual (
@@ -344,7 +338,7 @@ CREATE TABLE fed_group_virtual (
   INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
   INDEX i_saml_email_pattern (saml_email_pattern),
   UNIQUE KEY i_name (provider_oid, name)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table `audit`
@@ -368,7 +362,7 @@ CREATE TABLE audit_main (
   KEY idx_ip_address (ip_address),
   KEY idx_level (audit_level),
   KEY idx_prov_user (provider_oid, user_id)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table `audit_admin`
@@ -384,7 +378,7 @@ CREATE TABLE audit_admin (
   KEY idx_class (entity_class),
   KEY idx_oid (entity_id),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table `audit_message`
@@ -409,7 +403,7 @@ CREATE TABLE audit_message (
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_oid),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_system;
 CREATE TABLE audit_system (
@@ -420,7 +414,7 @@ CREATE TABLE audit_system (
   KEY idx_component_id (component_id),
   KEY idx_action (action),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_detail;
 CREATE TABLE audit_detail (
@@ -435,7 +429,7 @@ CREATE TABLE audit_detail (
   KEY idx_component_id (component_id),
   KEY idx_audit_oid (audit_oid),
   FOREIGN KEY (audit_oid) REFERENCES audit_main (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_detail_params;
 CREATE TABLE audit_detail_params (
@@ -450,7 +444,7 @@ DROP TABLE IF EXISTS message_id;
 CREATE TABLE message_id (
   messageid varchar(255) NOT NULL PRIMARY KEY,
   expires bigint(20) NOT NULL
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS counters;
 CREATE TABLE counters (
@@ -465,7 +459,7 @@ CREATE TABLE counters (
   last_update bigint(20) default 0,
   unique(userid, providerid, countername),
   PRIMARY KEY (counterid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table 'community_schemas'
@@ -479,7 +473,7 @@ CREATE TABLE community_schemas (
   tns varchar(128) default '',
   schema_xml mediumtext default '',
   PRIMARY KEY (objectid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table 'cluster_properties'
@@ -494,7 +488,7 @@ CREATE TABLE cluster_properties (
   propvalue MEDIUMTEXT NOT NULL,
   PRIMARY KEY (objectid),
   UNIQUE(propkey)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS sample_messages;
 CREATE TABLE sample_messages (
@@ -506,7 +500,7 @@ CREATE TABLE sample_messages (
   INDEX i_ps_oid (published_service_oid),
   INDEX i_operation_name (operation_name),
   PRIMARY KEY (objectid)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS service_metrics;
 CREATE TABLE service_metrics (
@@ -531,7 +525,7 @@ CREATE TABLE service_metrics (
   INDEX i_sm_resolution (resolution),
   INDEX i_sm_pstart (period_start),
   PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table rbac_role
@@ -544,7 +538,7 @@ CREATE TABLE rbac_role (
   name varchar(128) default NULL,
   PRIMARY KEY (objectid),
   UNIQUE KEY name (name)
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table rbac_assignment
@@ -559,7 +553,7 @@ CREATE TABLE rbac_assignment (
   PRIMARY KEY  (objectid),
   UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table rbac_permission
@@ -575,7 +569,7 @@ CREATE TABLE rbac_permission (
   entity_type varchar(255) default NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table rbac_predicate
@@ -588,7 +582,7 @@ CREATE TABLE rbac_predicate (
   permission_oid bigint(20) default NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (permission_oid) REFERENCES rbac_permission (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table rbac_predicate_attribute
@@ -601,7 +595,7 @@ CREATE TABLE rbac_predicate_attribute (
   value varchar(255) default NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table rbac_predicate_oid
@@ -613,7 +607,7 @@ CREATE TABLE rbac_predicate_oid (
   entity_oid bigint(20) default NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
-) TYPE=InnoDB;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- Create Administrator role
 INSERT INTO rbac_role VALUES (-3,0,'Administrator');
