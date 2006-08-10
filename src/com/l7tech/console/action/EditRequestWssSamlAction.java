@@ -56,7 +56,7 @@ public class EditRequestWssSamlAction extends NodeAction {
             RequestWssSaml updatedAssertion;
             if (requestWssSaml.getVersion()==null ||
                 requestWssSaml.getVersion().intValue()==1) {
-                 updatedAssertion = new RequestWssSaml(requestWssSaml);
+                updatedAssertion = new RequestWssSaml(requestWssSaml);
             }
             else {
                 updatedAssertion = new RequestWssSaml2(requestWssSaml);
