@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
@@ -319,7 +320,7 @@ class PathValidator {
         }
 
         // kerberos is both credentials and authorization since authorization is delegated to issuer
-        if (a instanceof RequestWssKerberos) {
+        if (a instanceof RequestWssKerberos || a instanceof HttpNegotiate) {
             seenAccessControl = true;
         }
 
@@ -669,6 +670,10 @@ class PathValidator {
     public boolean seenCredentials(String actor) {
         Boolean currentvalue = (Boolean)seenCredentials.get(actor);
         return currentvalue != null && currentvalue.booleanValue();
+    }
+
+    public boolean seenAssertion(Class assertionClass) {
+        return this.haveSeenInstanceOf(assertionClass);
     }
 
     private void setSeenCredentials(Assertion context, boolean value) {
