@@ -1402,7 +1402,7 @@ public class WssProcessorImpl implements WssProcessor {
                 msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
             }
             logger.warning(msg.toString());
-            throw new ProcessorException(msg.toString());
+            throw new InvalidDocumentFormatException(msg.toString());
         }
 
         // Save the SignatureValue
@@ -1423,7 +1423,7 @@ public class WssProcessorImpl implements WssProcessor {
                 String msg = "Element covered by signature cannot be found in original document nor in " +
                         "processed document. URI: " + elementCoveredURI;
                 logger.warning(msg);
-                throw new ProcessorException(msg);
+                throw new InvalidDocumentFormatException(msg);
             }
             // check whether this is a token reference
             Element targetElement = (Element)cntx.securityTokenReferenceElementToTargetElement.get(elementCovered);
