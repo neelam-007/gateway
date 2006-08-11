@@ -215,7 +215,8 @@ public class TrafficLogger implements ApplicationContextAware {
             lock.lock();
             try {
                 if (loggerChanged || specialLogger == null) {
-                    Logger tmpSpecialLogger = Logger.getAnonymousLogger();
+                    //Logger tmpSpecialLogger = Logger.getAnonymousLogger();
+                    Logger tmpSpecialLogger = Logger.getLogger("com.l7tech.traffic");
                     FileHandler fileHandler;
                     try {
                         fileHandler = new FileHandler(tmpPattern, tmpLimit, tmpCount, true);
@@ -228,6 +229,7 @@ public class TrafficLogger implements ApplicationContextAware {
                             return TrafficLogger.this.format(record);
                         }
                     });
+                    fileHandler.setLevel(Level.ALL);
                     tmpSpecialLogger.addHandler(fileHandler);
                     tmpSpecialLogger.setLevel(Level.ALL);
                     specialLogger = tmpSpecialLogger;
