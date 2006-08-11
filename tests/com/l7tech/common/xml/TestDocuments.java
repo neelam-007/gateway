@@ -345,7 +345,7 @@ public final class TestDocuments {
         if (francoPrivateKey != null) return francoPrivateKey;
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         InputStream fis = getInputStream(DIR + "franco.ks");
-        final String passwd = "blahblah";
+        final String passwd = "password";
         keyStore.load(fis, passwd.toCharArray());
         fis.close();
         //final String alias = "tomcat";
