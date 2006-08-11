@@ -34,7 +34,7 @@ public class SystemAuditListener implements ApplicationListener {
             Level level = se.getLevel();
             if (se.getComponent() == Component.GW_SERVER) {
                 level = (event instanceof Started || event instanceof Stopped) ? Level.INFO : Level.FINE;
-            } if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {
+            } else if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {
                 level = Level.SEVERE;
             }
             auditContext.setCurrentRecord(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getMessage(), se.getIdentityProviderOid(), se.getUserName(), se.getUserId(), se.getAction(), se.getIpAddress()));

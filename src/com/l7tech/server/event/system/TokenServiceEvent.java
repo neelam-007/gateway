@@ -31,5 +31,5 @@ public class TokenServiceEvent extends SystemEvent {
 
     //- PRIVATE
     
-    private static final String NAME = "TokenRequested";
+    private static final String NAME = "Token Request";
 }

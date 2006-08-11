@@ -31,5 +31,5 @@ public class AdminWebServiceEvent extends SystemEvent {
 
     //- PRIVATE
 
-    private static final String NAME = "AdminWebServiceRequest";
+    private static final String NAME = "Admin Web Service Request";
 }

@@ -26,8 +26,8 @@ public class Component {
     public static final Component       GW_MSG_IDENTITY   = new Component(   2000, "Identity Assertions", GW_POLICY);
     public static final Component       GW_MSG_XMLSEC     = new Component(   3000, "XML Security Assertions", GW_POLICY);
     public static final Component       GW_MSG_ROUTING    = new Component(   5000, "Routing Assertions", GW_POLICY);
-    public static final Component     GW_POLICY_SERVICE   = new Component(  20000, "Policy Service", GW_SERVER);
-    public static final Component     GW_TOKEN_SERVICE    = new Component(  30000, "Security Token Service", GW_SERVER);
+    public static final Component     GW_POLICY_SERVICE   = new Component(  20000, "Policy Service", GW_SERVER, true);
+    public static final Component     GW_TOKEN_SERVICE    = new Component(  30000, "Security Token Service", GW_SERVER, true);
     public static final Component     GW_AUDIT_SYSTEM     = new Component(  40000, "Audit System", GW_SERVER);
     public static final Component     GW_LICENSE_MANAGER  = new Component(  50000, "License Manager", GW_SERVER);
     public static final Component     GW_ADMINWS          = new Component(  60000, "Admin Web Service", GW_SERVER);
@@ -38,9 +38,14 @@ public class Component {
     public static final Component MANAGER = new Component(3000000, "SecureSpan Manager", null);
 
     public Component(int localNum, String name, Component parent) {
+        this(localNum, name, parent, false);
+    }
+
+    public Component(int localNum, String name, Component parent, boolean clientComponent) {
         this.localNum = localNum;
         this.name = name;
         this.parent = parent;
+        this.clientComponent = clientComponent;
 
         if (componentsById == null) componentsById = new HashMap();
         Object old = componentsById.put(new Integer(getId()), this);
@@ -59,6 +64,10 @@ public class Component {
 
     public Component getParent() {
         return parent;
+    }
+
+    public boolean isClientComponent() {
+        return clientComponent;
     }
 
     private static class Stuff {
@@ -85,6 +94,7 @@ public class Component {
     private final int localNum;
     private final String name;
     private final Component parent;
+    private final boolean clientComponent;
 
     private static Map componentsById;
 }

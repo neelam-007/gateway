@@ -50,6 +50,13 @@ public interface AuditContext {
 
     /**
      * Message audit threshold to be used if
+     * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD} is
+     * unset or invalid
+     */
+    Level DEFAULT_SYSTEM_CLIENT_THRESHOLD = Level.WARNING;
+
+    /**
+     * Message audit threshold to be used if
      * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_ADMIN_THRESHOLD} is
      * unset or invalid
      */

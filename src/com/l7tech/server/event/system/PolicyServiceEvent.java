@@ -31,6 +31,6 @@ public class PolicyServiceEvent extends SystemEvent {
 
     //- PRIVATE
 
-    private static final String NAME = "PolicyRequested";
+    private static final String NAME = "Policy Request";
 
 }

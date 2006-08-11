@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import static com.l7tech.common.Component.fromId;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.ExceptionDialog;
@@ -493,7 +494,7 @@ public class LogPanel extends JPanel {
                     msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
                     msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
                     msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
-                    msg += "User ID    : " + (sum.getUserId()!=null ? sum.getUserId() : "<No ID>") + "\n";
+                    msg += "User ID    : " + fixUserId(sum.getUserId()) + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
 
                     if (sum.getRequestXml() != null) {
@@ -507,17 +508,19 @@ public class LogPanel extends JPanel {
                     }
                 } else if (arec instanceof SystemAuditRecord) {
                     SystemAuditRecord sys = (SystemAuditRecord)arec;
+                    com.l7tech.common.Component component = fromId(sys.getComponentId());
+                    boolean isClient = component==null ? false : component.isClientComponent();
                     msg += "Event Type : System Message" + "\n";
-                    if(arec.getUserId()==null) {
-                        msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                    if(isClient) {
+                        msg += "Client IP  : " + arec.getIpAddress() + "\n";
                     }
                     else {
-                        msg += "Client IP  : " + arec.getIpAddress() + "\n";
+                        msg += "Node IP    : " + arec.getIpAddress() + "\n";
                     }
                     msg += "Action     : " + sys.getAction() + "\n";
                     msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
-                    if(arec.getUserId()!=null) {
-                        msg += "User ID    : " + arec.getUserId() + "\n";
+                    if(isClient) {
+                        msg += "User ID    : " + fixUserId(arec.getUserId()) + "\n";
                         msg += "User Name  : " + arec.getUserName() + "\n";
                     }
                     msg += "Entity name: " + arec.getName() + "\n";
@@ -637,7 +640,7 @@ public class LogPanel extends JPanel {
     }
 
     private String fixComponent(int componentId) {
-        com.l7tech.common.Component c = com.l7tech.common.Component.fromId(componentId);
+        com.l7tech.common.Component c = fromId(componentId);
         if (c == null) return "Unknown Component #" + componentId;
         StringBuffer ret = new StringBuffer(c.getName());
         while (c.getParent() != null && c.getParent() != c) {
@@ -656,6 +659,10 @@ public class LogPanel extends JPanel {
         } else if (entityClassname.startsWith(coml7tech))
             return entityClassname.substring(coml7tech.length());
         return entityClassname;
+    }
+
+    private String fixUserId(String id) {
+        return (id!=null ? id : "<No ID>");
     }
 
     /** Convert a single-character action into a human-readable String. */

@@ -5,6 +5,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.*;
+import com.l7tech.common.Component;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
 
@@ -132,8 +133,21 @@ public class AuditContextImpl implements AuditContext {
                     }
                     return;
                 }
-            } else {
-                // System audit records are always saved
+            } else if (currentRecord instanceof SystemAuditRecord) {
+                Component component = Component.fromId(((SystemAuditRecord)currentRecord).getComponentId());
+                if (component!=null && component.isClientComponent()) {
+                    if (currentRecord.getLevel().intValue() < getSystemSystemClientThreshold().intValue()) {
+                        if(logger.isLoggable(Level.FINE)) {
+                            logger.fine("SystemAuditRecord for client component generated with level " +
+                                    currentRecord.getLevel() +
+                                    " will not be saved; current system client threshold is " +
+                                    getSystemSystemClientThreshold().getName() );
+                        }
+                        return;
+                    }
+                } else {
+                    // Non client system audit records are always saved
+                }
             }
 
             Set<AuditDetail> detailsToSave = new HashSet<AuditDetail>();
@@ -157,6 +171,7 @@ public class AuditContextImpl implements AuditContext {
             // Reinitialize in case this thread needs us again for a new request
             currentRecord = null;
             currentAdminThreshold = null;
+            currentSystemClientThreshold = null;
             currentAssociatedLogsThreshold = null;
             currentUseAssociatedLogsThreshold = null;
             currentMessageThreshold = null;
@@ -256,8 +271,29 @@ public class AuditContextImpl implements AuditContext {
         return currentAdminThreshold;
     }
 
+    private Level getSystemSystemClientThreshold() {
+        if (currentSystemClientThreshold == null) {
+            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD);
+            Level output = null;
+            if (msgLevel != null) {
+                try {
+                    output = Level.parse(msgLevel);
+                } catch(IllegalArgumentException e) {
+                    logger.warning("Invalid system client threshold value '" + msgLevel + "'. Will use default " +
+                                   DEFAULT_SYSTEM_CLIENT_THRESHOLD.getName() + " instead.");
+                }
+            }
+            if (output == null) {
+                output = DEFAULT_SYSTEM_CLIENT_THRESHOLD;
+            }
+            currentSystemClientThreshold = output;
+        }
+        return currentSystemClientThreshold;
+    }
+
     private Level currentMessageThreshold;
     private Level currentAdminThreshold;
+    private Level currentSystemClientThreshold;
     private Level currentAssociatedLogsThreshold;
     private Boolean currentUseAssociatedLogsThreshold;
     private final AuditRecordManager auditRecordManager;
