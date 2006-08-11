@@ -302,6 +302,18 @@ public class FindIdentitiesDialog extends JDialog {
 
         providersComboBox = new JComboBox();
         providersComboBox.setModel(getProvidersComboBoxModel());
+        providersComboBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if (searchResultTable.getModel() != null && searchResultTable.getModel() instanceof DynamicTableModel) {
+                    DynamicTableModel model = (DynamicTableModel)searchResultTable.getModel();
+                    try {
+                        model.clear();
+                    } catch (InterruptedException e1) {
+                        logger.log(Level.SEVERE, "unexpected interruption", e);
+                    }
+                }
+            }
+        });
         providersComboBox.setRenderer(new DefaultListCellRenderer() {
             public Component getListCellRendererComponent(JList list,
                                                           Object value,
