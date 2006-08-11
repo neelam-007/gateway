@@ -190,14 +190,26 @@ public class XencUtil {
         Element optionalDigestEle = XmlUtil.findOnlyOneChildElementByName(encryptionMethodEl,
                                                                           SoapUtil.DIGSIG_URI,
                                                                           "DigestMethod");
+
+        String digestAlgo = null;
+        if (optionalDigestEle != null && optionalDigestEle.hasAttribute("Algorithm")) {
+            digestAlgo = optionalDigestEle.getAttribute("Algorithm");
+        }
+
         if (encMethodValue == null || encMethodValue.length() < 1) {
             throw new InvalidDocumentFormatException("Algorithm not specified in EncryptionMethod element");
-        } else if (!encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO)
-                && !(encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2)
-                     && optionalDigestEle!=null
-                     && (SoapUtil.DIGSIG_URI+"sha1").equals(optionalDigestEle.getAttribute("Algorithm")))) {
-            throw new InvalidDocumentFormatException("Algorithm not supported " + encMethodValue);
         }
+
+        if (encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO)) {
+            return;
+        } else if(encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2)) {
+            if (digestAlgo==null || (SoapUtil.DIGSIG_URI+"sha1").equals(digestAlgo)) {
+                return;
+            }
+        }
+
+        throw new InvalidDocumentFormatException("Algorithm not supported " + encMethodValue +
+                (digestAlgo == null ? "" : (" with DigestMethod Algorithm " + digestAlgo)));
     }
 
     public static class EncryptedKeyValue {
@@ -237,11 +249,6 @@ public class XencUtil {
                                                                            "EncryptionMethod");
 
         String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
-        Element optionalDigestEle = XmlUtil.findOnlyOneChildElementByName(encryptionMethodEl,
-                                                                          SoapUtil.DIGSIG_URI,
-                                                                          "DigestMethod");
-        String digestAlgorithm = optionalDigestEle!=null ? optionalDigestEle.getAttribute("Algorithm") : null;
-
         Element oaepParamsEle = XmlUtil.findOnlyOneChildElementByName(encryptionMethodEl,
                                                                       SoapUtil.XMLENC_NS,
                                                                       "OAEPparams"); // not OAEPParams
@@ -264,7 +271,7 @@ public class XencUtil {
         String value = XmlUtil.getTextValue(cipherValue);
 
         // we got the value, decrypt it
-        return decryptKey(value, digestAlgorithm!=null, oaepBytes, recipientKey);
+        return decryptKey(value, SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(encMethodValue), oaepBytes, recipientKey);
     }
 
     /**
