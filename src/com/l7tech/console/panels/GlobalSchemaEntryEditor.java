@@ -13,8 +13,11 @@ import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.OkCancelDialog;
+import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +25,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 /**
  * Called by the GlobalSchemaDialog, this is used to edit an existing or add a new global schema entry.
@@ -41,6 +54,8 @@ public class GlobalSchemaEntryEditor extends JDialog {
     private SchemaEntry subject;
     private boolean dataloaded = false;
     public boolean success = false;
+    private JButton uploadFromURLBut;
+    private JButton uploadFromFileBut;
 
     public GlobalSchemaEntryEditor(JDialog owner, SchemaEntry subject) {
         super(owner, true);
@@ -101,12 +116,148 @@ public class GlobalSchemaEntryEditor extends JDialog {
             }
         });
 
+        uploadFromURLBut.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                uploadFromURL();
+            }
+        });
+
+        uploadFromFileBut.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                uploadFromFile();
+            }
+        });
+
         schemanametxt.setDocument(new FilterDocument(128, new FilterDocument.Filter() {
                                                                 public boolean accept(String str) {
                                                                     if (str == null) return false;
                                                                     return true;
                                                                 }
                                                             }));
+    }
+
+    private void uploadFromURL() {
+        OkCancelDialog dlg = new OkCancelDialog(this, "Load Schema From URL",
+                                                true, new UrlPanel("Enter URL to read XML Schema from", null));
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        dlg.setVisible(true);
+        String url = (String)dlg.getValue();
+        if (url != null) {
+            readFromUrl(url);
+        }
+    }
+
+    private void readFromUrl(String urlstr) {
+        if (urlstr == null || urlstr.length() < 1) {
+            displayError("A URL was not provided", null);
+            return;
+        }
+        // compose input source
+        URL url;
+        try {
+            url = new URL(urlstr);
+        } catch (MalformedURLException e) {
+            displayError(urlstr + " is not a valid url", null);
+            return;
+        }
+        // try to get document
+        InputStream is;
+        try {
+            is = url.openStream();
+        } catch (IOException e) {
+            displayError("Could not read from " + " " + urlstr, null);
+            return;
+        }
+
+        Document doc;
+        try {
+            doc = XmlUtil.parse(is);
+        } catch (SAXException e) {
+            displayError("No XML at " + urlstr, null);
+            return;
+        } catch (IOException e) {
+            displayError("No XML at " + urlstr, null);
+            return;
+        }
+        // check if it's a schema
+        if (docIsSchema(doc)) {
+            // set the new schema
+            String printedSchema;
+            try {
+                printedSchema = XmlUtil.nodeToFormattedString(doc);
+            } catch (IOException e) {
+                String msg = "error serializing document";
+                displayError(msg, null);
+                return;
+            }
+            uiAccessibility.getEditor().setText(printedSchema);
+        } else {
+            displayError("No XML Schema could be parsed from " + urlstr, null);
+        }
+    }
+
+    private boolean docIsSchema(Document doc) {
+        Element rootEl = doc.getDocumentElement();
+
+        if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getLocalName())) {
+            return false;
+        }
+        if (!SchemaValidation.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
+            return false;
+        }
+        return true;
+    }
+
+    private void displayError(String msg, String title) {
+        if (title == null) title = "Error";
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void uploadFromFile() {
+        JFileChooser dlg = Utilities.createJFileChooser();
+
+        if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
+            return;
+        }
+        FileInputStream fis;
+        String filename = dlg.getSelectedFile().getAbsolutePath();
+        try {
+            fis = new FileInputStream(dlg.getSelectedFile());
+        } catch (FileNotFoundException e) {
+            logger.log(Level.FINE, "cannot open file" + filename, e);
+            return;
+        }
+
+        // try to get document
+        Document doc;
+        try {
+            doc = XmlUtil.parse(fis);
+        } catch (SAXException e) {
+            displayError("No XML at " + filename, null);
+            logger.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        } catch (IOException e) {
+            displayError("No XML at" + filename, null);
+            logger.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        }
+        // check if it's a schema
+        if (docIsSchema(doc)) {
+            // set the new schema
+            String printedSchema;
+            try {
+                printedSchema = XmlUtil.nodeToFormattedString(doc);
+            } catch (IOException e) {
+                String msg = "error serializing document";
+                displayError(msg, null);
+                logger.log(Level.FINE, msg, e);
+                return;
+            }
+            uiAccessibility.getEditor().setText(printedSchema);
+        } else {
+            displayError("An XML Schema could not be read from " + filename, null);
+        }
     }
 
     private void help() {
@@ -117,27 +268,10 @@ public class GlobalSchemaEntryEditor extends JDialog {
         dispose();
     }
 
-    /*private boolean docIsSchema(Document doc) {
-        if (doc == null) return false;
-        Element rootEl = doc.getDocumentElement();
-
-        if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getLocalName())) {
-            logger.log(Level.WARNING, "document is not schema (top element " + rootEl.getLocalName() +
-              " is not " + SchemaValidation.TOP_SCHEMA_ELNAME + ")");
-            return false;
-        }
-        if (!SchemaValidation.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
-            logger.log(Level.WARNING, "document is not schema (namespace is not + " +
-              SchemaValidation.W3C_XML_SCHEMA + ")");
-            return false;
-        }
-        return true;
-    }*/
-
     private void ok() {
         // make sure this is a schema
         String contents = uiAccessibility.getEditor().getText();
-        String tns = null;
+        String tns;
         try {
             tns = XmlUtil.getSchemaTNS(contents);
         } catch (XmlUtil.BadSchemaException e) {
@@ -147,36 +281,6 @@ public class GlobalSchemaEntryEditor extends JDialog {
                                                 JOptionPane.ERROR_MESSAGE);
             return;
         }
-        /*if (contents == null || contents.length() < 1) {
-            JOptionPane.showMessageDialog(this, "There is not xml here. Insert a schema or cancel.",
-                                                "Empty",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        Document doc = null;
-        try {
-            doc = XmlUtil.stringToDocument(contents);
-        } catch (IOException e) {
-            logger.log(Level.INFO, "parsing problem", e);
-            JOptionPane.showMessageDialog(this, "Could not parse XML, consult log for more details.",
-                                                "Invalid XML",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
-        } catch (SAXException e) {
-            logger.log(Level.INFO, "parsing problem", e);
-            JOptionPane.showMessageDialog(this, "Could not parse XML, consult log for more details.",
-                                                "Invalid XML",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (!docIsSchema(doc)) {
-            JOptionPane.showMessageDialog(this, "This is not an xml schema. Consult log for more details",
-                                                "Invalid Schema",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        // get the tns
-        String tns = doc.getDocumentElement().getAttribute("targetNamespace");*/
         if (tns == null || tns.length() < 1) {
             JOptionPane.showMessageDialog(this, "This schema does not declare a target namespace.",
                                                 "Invalid Schema",
