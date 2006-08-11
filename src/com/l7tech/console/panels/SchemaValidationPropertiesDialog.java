@@ -309,14 +309,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         return wsdlBindingSoapUseIsLiteral;
     }
 
-    private boolean wsdlSchemaAppliesToArguments() {
-        if (!service.isSoap()) return false;
-        String wsdlXml = service.getWsdlXml();
-        if (wsdlXml == null) return false;
-        analyzeWsdl(wsdlXml);
-        return wsdlBindingSoapUseIsLiteral && !wsdlBindingStyleIsDocument;
-    }
-
     /**
      * Determine what kind of service is defined in the wsdl (doc/literal, rpc/encoded, rpc/literal)
      */
@@ -596,24 +588,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             final XMLEditor editor = uiAccessibility.getEditor();
             editor.setText(result);
             editor.setLineNumber(1);
-        }
-        if (wsdlSchemaAppliesToArguments()) {
-            checkSetAppliesToArgs();
-        }
-    }
-
-    private void checkSetAppliesToArgs() {
-        if (!rbApplyToArgs.isSelected()) {
-        String msg = "The WSDL style seems to indicate that the\n" +
-                     "schema validation should be applied to the body\n" +
-                     "'arguments' rather than the entire body. Would you\n" +
-                     "like to change the setting accordingly?";
-        int res = JOptionPane.showConfirmDialog(this, msg,
-                                                "Schema Applies To", JOptionPane.YES_NO_OPTION,
-                                                JOptionPane.QUESTION_MESSAGE);
-            if (res == JOptionPane.YES_OPTION) {
-                rbApplyToArgs.setSelected(true);
-            }
         }
     }
 
