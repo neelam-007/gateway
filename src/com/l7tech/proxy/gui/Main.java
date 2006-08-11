@@ -43,6 +43,8 @@ public final class Main extends com.l7tech.proxy.Main {
             }
         }
 
+        initConfig();
+
         if (config)
             startGuiConfigurator(hideMenus, quitLabel);
         else
@@ -84,7 +86,6 @@ public final class Main extends com.l7tech.proxy.Main {
 
     private static void startGuiBridge() {
         initLogging();
-        initConfig();
         log.info("Starting SecureSpan Bridge in GUI mode; " + BuildInfo.getLongBuildString());
 
         final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
