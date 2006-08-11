@@ -203,8 +203,10 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
             loginResponse = loginRequest.getResponse();
             HttpHeaders loginResponseHeaders = loginResponse.getHeaders();
             int loginResponseStatus = loginResponse.getStatus();
-            // TODO do we really want to log this much stuff unconditionally? -lyonsm
-            //logger.finest("The response returned code " + String.valueOf(loginResponseStatus) + "\n" + "-- response content --\n" + new String(HexUtils.slurpStreamLocalBuffer(loginResponse.getInputStream())));
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Artifact request to ''{0}'', completed with HTTP status code {1}",
+                        new Object[]{loginUrl, new Integer(loginResponseStatus)});
+            }
             if (loginResponseStatus == HttpConstants.STATUS_FOUND
               ||loginResponseStatus == HttpConstants.STATUS_SEE_OTHER) {
                 String location = loginResponseHeaders.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
@@ -246,6 +248,10 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
                     return doCheckRequest(context, false);
                 }
                 else {
+                    if(logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "Unexpected HTTP status code ({0}), response body is: \n{1}",
+                                new Object[]{new Integer(loginResponseStatus), new String(HexUtils.slurpStreamLocalBuffer(loginResponse.getInputStream()))});
+                    }
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_RESPONSE_NON_302);
                 }
             }
