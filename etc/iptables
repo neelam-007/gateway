@@ -1,6 +1,6 @@
 # /etc/sysconfig/iptables
-# note, for public net on eth1, s/eth0/eth1/
-# 
+# Use iptables-singlenet for single address configurations
+#
 *nat
 :PREROUTING ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
@@ -9,6 +9,7 @@
 # Optionally redirect the standard ports up to our ports
 #[0:0] -A PREROUTING -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080 
 #[0:0] -A PREROUTING -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 8443 
+
 COMMIT
 
 *filter
@@ -16,7 +17,6 @@ COMMIT
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :badflags - [0:0]
-:silent - [0:0]
 :portdrop - [0:0]
 
 # fast forward established connections, no need to have them traverse the rules
@@ -42,13 +42,14 @@ COMMIT
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 2/sec -j ACCEPT
 
 # drop the rest
-[0:0] -A INPUT -p icmp -j silent
+[0:0] -A INPUT -p icmp -j portdrop
+
+# And drop anything we might try and inadvertently send back, too
 [0:0] -A OUTPUT -p icmp -m state --state INVALID -j DROP
 
 # drop all the admin stuff on the public port by default
 # comment this entire section out if there is only one port in use
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 22 -j portdrop
-[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 2124 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 4160 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 3306 -j portdrop
 
@@ -62,16 +63,20 @@ COMMIT
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 8080 -j ACCEPT
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 8443 -j ACCEPT
 
-# optional drop all other TCP
-#[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 1:65535 -j portdrop
 # optional drop all UDP except for DNS and ntp
 #[0:0] -A INPUT -i eth1 -p udp -m udp --dport 53 -j ACCEPT
 #[0:0] -A INPUT -i eth1 -p udp -m udp --dport 123 -j ACCEPT
-#[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 1:65535 -j portdrop
+#[0:0] -A INPUT -i eth1 -p udp -m udp --dport 1:65535 -j portdrop
+# drop all other TCP on public port
+[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 1:65535 -j portdrop
 
+# Portdrop rule: Drop TCP with a tcp reset (as in "I'm not listening on this port)
 [0:0] -A portdrop -p tcp -m tcp -j REJECT --reject-with tcp-reset
+# any thing else just gets discarded
 [0:0] -A portdrop -j DROP
-[0:0] -A silent -j DROP
+
+# Limit logging to 15 per minute, so we don't DOS the logfiles
+# Anything that gets logged with badflags is LIKELY a port scan or attack attempt.
 [0:0] -A badflags -m limit --limit 15/min -j LOG --log-prefix "Badflags:" 
 [0:0] -A badflags -j DROP 
 COMMIT

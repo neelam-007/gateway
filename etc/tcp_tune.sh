@@ -29,6 +29,12 @@ start() {
 	echo 1 > /proc/sys/net/ipv4/tcp_window_scaling
 	echo "Turning On Selective Acknowledgement"
 	echo 1 > /proc/sys/net/ipv4/tcp_sack
+	echo "Disable route triangulation" 
+	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
+	echo "Disable Source routing" 
+	echo 1 > /proc/sys/net/ipv4/conf/all/accept_source_route
+	echo "Disable Ping broadcasts" 
+	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
 	echo "Increasing SYN packet Backlog"
 	echo 8192 > /proc/sys/net/ipv4/tcp_max_syn_backlog
 	echo "Setting higher tcp memory limits"
