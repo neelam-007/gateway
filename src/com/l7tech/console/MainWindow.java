@@ -1304,7 +1304,7 @@ public class MainWindow extends JFrame {
     private Action getManageClusterPropertiesAction() {
         if (manageClusterPropertiesAction != null) return manageClusterPropertiesAction;
         manageClusterPropertiesAction = new ManageClusterPropertiesAction();
-        manageClusterPropertiesAction.setEnabled(true);
+        manageClusterPropertiesAction.setEnabled(false);
         this.addLogonListener(manageClusterPropertiesAction);
         return manageClusterPropertiesAction;
     }
@@ -1312,7 +1312,7 @@ public class MainWindow extends JFrame {
     private Action getShowDashboardAction() {
         if (showDashboardAction != null) return showDashboardAction;
         showDashboardAction = new ShowDashboardAction();
-        showDashboardAction.setEnabled(true);
+        showDashboardAction.setEnabled(false);
         this.addLogonListener(showDashboardAction);
         return showDashboardAction;
     }
