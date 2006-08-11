@@ -31,6 +31,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogRecord;
 
 /**
  * Manages PublishedService instances.
@@ -301,6 +302,11 @@ public class ServiceManagerImp
                         logger.log(Level.WARNING, MessageFormat.format(msg, service.getOid(), service.getName(), ordinal, what));
                         // We don't actually disable the service here -- only the admin should be doing that.
                         // Instead, we will let the service cache continue to monitor the situation
+                    } catch (Exception e) {
+                        LogRecord r = new LogRecord(Level.WARNING, "Disabling PublishedService #{0} ({1}); policy could not be compiled");
+                        r.setParameters(new Object[] { service.getOid(), service.getName() });
+                        r.setThrown(e);
+                        logger.log(r);
                     }
                 }
                 TarariLoader.compile();
