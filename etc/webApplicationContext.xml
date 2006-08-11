@@ -260,13 +260,16 @@
     <!-- server side policy validator -->
     <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
         <property name="jmsEndpointManager">
-            <ref bean="jmsEndpointManager"/>
+            <ref local="jmsEndpointManager"/>
         </property>
         <property name="identityProviderFactory">
-            <ref bean='identityProviderFactory'/>
+            <ref local='identityProviderFactory'/>
         </property>
         <property name="schemaEntryManager">
-            <ref bean='schemaEntryManager'/>
+            <ref local='schemaEntryManager'/>
+        </property>
+        <property name="clientCertManager">
+            <ref local='clientCertManager'/>
         </property>
     </bean>
 

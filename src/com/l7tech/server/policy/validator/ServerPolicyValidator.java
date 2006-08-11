@@ -10,7 +10,9 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.*;
@@ -60,9 +62,13 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class ServerPolicyValidator extends PolicyValidator implements InitializingBean {
+
+    private static final String WARNING_NOCERT = "This identity requires a certificate for authentication (authentication will always fail).";
+
     private JmsEndpointManager jmsEndpointManager;
     private IdentityProviderFactory identityProviderFactory;
     private SchemaEntryManager schemaEntryManager;
+    private ClientCertManager clientCertManager;
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         Assertion[] ass = ap.getPath();
@@ -91,6 +97,9 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                       "Please remove the assertion from the policy.",
                       null));
                     break;
+                case ID_FIP_NOCERT:
+                    r.addWarning(new PolicyValidatorResult.Warning(a, ap, WARNING_NOCERT, null));
+                    // fall through to the rest of the samlonly handling
                 case ID_FIP:
                     { // scope
                         boolean foundUsableCredSource = false;
@@ -114,6 +123,9 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                         }
                     }
                     break;
+                case ID_SAMLONLY_NOCERT:
+                    r.addWarning(new PolicyValidatorResult.Warning(a, ap, WARNING_NOCERT, null));
+                    // fall through to the rest of the samlonly handling
                 case ID_SAMLONLY:
                     { // scope
                         boolean foundUsableCredSource = false;
@@ -132,10 +144,12 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                               "but another type of credential " +
                               "source is specified.",
                               null));
-                            break;
                         }
                     }
                     break;
+                case ID_X509ONLY_NOCERT:
+                    r.addWarning(new PolicyValidatorResult.Warning(a, ap, WARNING_NOCERT, null));
+                    // fall through to the rest of the x509only handling
                 case ID_X509ONLY:
                     { // scope
                         boolean foundUsableCredSource = false;
@@ -331,6 +345,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 }
 // check if user or group exists
                 boolean idexists = false;
+                boolean idhascert = false;
                 if (identityAssertion instanceof SpecificUser) {
                     SpecificUser su = (SpecificUser)identityAssertion;
                     final String uid = su.getUserUid();
@@ -342,6 +357,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     }
                     if (u != null) {
                         idexists = true;
+                        idhascert = clientCertManager.getUserCert(u)!=null;
                     }
                 } else if (identityAssertion instanceof MemberOfGroup) {
                     MemberOfGroup mog = (MemberOfGroup)identityAssertion;
@@ -354,6 +370,9 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     }
                     if (g != null) {
                         idexists = true;
+                        if (!(g instanceof VirtualGroup)) {
+                            idhascert = true;
+                        }
                     }
                 } else if (identityAssertion instanceof MappingAssertion) {
                     idexists = true;
@@ -368,10 +387,16 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     if (IdentityProviderType.is(prov, IdentityProviderType.FEDERATED)) {
                         val = ID_FIP;
                         FederatedIdentityProviderConfig cfg = (FederatedIdentityProviderConfig)prov.getConfig();
+                        boolean certmissing = false;
+                        if (cfg.getTrustedCertOids().length==0 && idexists && !idhascert) {
+                            certmissing = true;
+                        }
                         if (cfg.isSamlSupported() && !cfg.isX509Supported()) {
-                            val = ID_SAMLONLY;
+                            val = certmissing ? ID_SAMLONLY_NOCERT : ID_SAMLONLY;
                         } else if (!cfg.isSamlSupported() && cfg.isX509Supported()) {
-                            val = ID_X509ONLY;
+                            val = certmissing ? ID_X509ONLY_NOCERT : ID_X509ONLY;
+                        } else if (certmissing) {
+                            val = ID_FIP_NOCERT;
                         }
                     } else if (IdentityProviderType.is(prov, IdentityProviderType.LDAP)) {
                         val = ID_LDAP;
@@ -395,6 +420,9 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private static final int ID_X509ONLY = 4; // the corresponding id exists but belongs to X509 only fip
     private static final int ID_LDAP = 5; // the corresponding id exists in a ldap provider
     private static final int PROVIDER_NOT_EXIST = 6; // the corresponding provider does not exist any more
+    private static final int ID_FIP_NOCERT = 7; // 2 & there is no certificate available to authenticate with
+    private static final int ID_SAMLONLY_NOCERT = 8; // 3 & there is no certificate available to authenticate with
+    private static final int ID_X509ONLY_NOCERT = 9; // 4 & there is no certificate available to authenticate with
 
 // A new validator is instantiated once per policy validation
 // so it's ok to cache these here. This cache will expire at
@@ -420,6 +448,10 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         this.schemaEntryManager = schemaManager;
     }
 
+    public void setClientCertManager(ClientCertManager clientCertManager) {
+        this.clientCertManager = clientCertManager;
+    }
+
     public void afterPropertiesSet() throws Exception {
         if (jmsEndpointManager == null) {
             throw new IllegalArgumentException("JMS Endpoint manager is required");
@@ -427,6 +459,10 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
         if (identityProviderFactory == null) {
             throw new IllegalArgumentException("Identity Provider Factory is required");
+        }
+
+        if (clientCertManager == null) {
+            throw new IllegalArgumentException("Client Cert Manger is required");
         }
     }
 
