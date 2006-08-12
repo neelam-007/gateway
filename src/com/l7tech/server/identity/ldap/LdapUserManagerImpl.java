@@ -224,7 +224,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     public IdentityHeader userToHeader(LdapUser user) {
-        return new IdentityHeader(user.getProviderId(), user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), user.getName());
+        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), user.getName());
     }
 
     public LdapUser headerToUser(IdentityHeader header) {

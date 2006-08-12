@@ -26,13 +26,12 @@ public class SetVariableAssertionAdvice implements Advice {
         SetVariableAssertion subject = (SetVariableAssertion) assertions[0];
 
         int newLocation = pc.getChildLocation();
-        AssertionTreeNode parentNode = (AssertionTreeNode)pc.getParent();
-        Assertion beingInsertedAfter = null;
+        AssertionTreeNode parentNode = pc.getParent();
+        Assertion beingInsertedAfter;
 
         if (newLocation == 0) {
             beingInsertedAfter = parentNode.asAssertion();
-        }
-        else {
+        } else {
             beingInsertedAfter = parentNode.getChildCount() >= newLocation ?
                 ((AssertionTreeNode)parentNode.getChildAt(newLocation-1)).asAssertion() :
                 ((AssertionTreeNode)parentNode.getChildAt(parentNode.getChildCount()-1)).asAssertion();

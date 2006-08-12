@@ -10,8 +10,9 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
@@ -42,13 +43,13 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         this.nodeId = nodeId;
         this.auditContext = auditContext;
 
-        Map levels = new HashMap();
+        Map<Class<? extends PersistenceEvent>, Level> levels = new HashMap<Class<? extends PersistenceEvent>, Level>();
         levels.put(Deleted.class, Level.WARNING);
         levels.put(ServiceEvent.Disabled.class, Level.WARNING);
         LevelMapping lm = new LevelMapping(PublishedService.class, levels);
-        levelMappings.put(PublishedService.class.getName(), lm);
+        levelMappings.put(PublishedService.class, lm);
 
-        levels = new HashMap();
+        levels = new HashMap<Class<? extends PersistenceEvent>, Level>();
         levels.put(Deleted.class, Level.WARNING);
         levels.put(Updated.class, Level.WARNING);
         levels.put(Created.class, Level.WARNING);
@@ -73,24 +74,24 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             }
         }
 
-        if (event instanceof AdminEvent || event instanceof PersistenceEvent) {
-            auditContext.setCurrentRecord(makeAuditRecord((AdminEvent)event));
+        if (event instanceof AdminEvent) {
+            auditContext.setCurrentRecord(makeAuditRecord(event));
             auditContext.flush();
         }
 
         if (event instanceof LogonEvent) {
-            auditContext.setCurrentRecord(makeAuditRecord((LogonEvent)event));
+            auditContext.setCurrentRecord(makeAuditRecord(event));
             auditContext.flush();
         }
     }
 
     public static class LevelMapping {
-        public LevelMapping(Class entityClass, Map eventClassesToLevels) {
+        public LevelMapping(Class<? extends Entity> entityClass, Map<Class<? extends PersistenceEvent>, Level> eventClassesToLevels) {
             if (entityClass == null || eventClassesToLevels == null) throw new IllegalArgumentException("Args must not be null");
-            if (!Entity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException(Entity.class.getName() + " is not assignable from " + entityClass.getName());
-            for (Iterator i = eventClassesToLevels.keySet().iterator(); i.hasNext();) {
-                Class eventClass = (Class)i.next();
-                if (!ApplicationEvent.class.isAssignableFrom(eventClass)) throw new IllegalArgumentException(ApplicationEvent.class.getName() + " is not assignable from " + eventClass.getName());
+            if (!Entity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException(PersistentEntity.class.getName() + " is not assignable from " + entityClass.getName());
+            for (Class<? extends PersistenceEvent> eventClass : eventClassesToLevels.keySet()) {
+                if (!ApplicationEvent.class.isAssignableFrom(eventClass))
+                    throw new IllegalArgumentException(ApplicationEvent.class.getName() + " is not assignable from " + eventClass.getName());
             }
             this.entityClass = entityClass;
             this.eventClassesToLevels = eventClassesToLevels;
@@ -104,15 +105,15 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             return eventClassesToLevels;
         }
 
-        private final Class entityClass;
-        private final Map eventClassesToLevels;
+        private final Class<? extends Entity> entityClass;
+        private final Map<Class<? extends PersistenceEvent>, Level> eventClassesToLevels;
     }
 
     private Level level(ApplicationEvent genericEvent) {
         if (genericEvent instanceof PersistenceEvent) {
             PersistenceEvent event = (PersistenceEvent)genericEvent;
             Entity ent = event.getEntity();
-            LevelMapping lm = (LevelMapping)levelMappings.get(ent.getClass());
+            LevelMapping lm = levelMappings.get(ent.getClass());
             Level level = DEFAULT_LEVEL;
             if (lm != null) {
                 Map map = lm.getEventClassesToLevels();
@@ -134,14 +135,14 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
 
             String name = null;
             char action;
-            long entityOid = entity.getOid();
+            String entityId = entity.getId();
             String entityClassname = entity.getClass().getName();
             if (entity instanceof NamedEntity) name = ((NamedEntity)entity).getName();
 
             int ppos = entityClassname.lastIndexOf(".");
             String localClassname = ppos >= 0 ? entityClassname.substring(ppos + 1) : entityClassname;
             StringBuffer msg = new StringBuffer(localClassname);
-            msg.append(" #").append(entityOid);
+            msg.append(" #").append(entityId);
             if (entity instanceof NamedEntity) {
                 msg.append(" (");
                 msg.append(((NamedEntity)entity).getName());
@@ -159,7 +160,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 msg.append(" updated");
                 EntityChangeSet changes = ((Updated)event).getChangeSet();
 
-                List changeDescs = new ArrayList();
+                List<String> changeDescs = new ArrayList<String>();
                 for (Iterator i = changes.getProperties(); i.hasNext();) {
                     String property = (String)i.next();
                     if ("version".equals(property) || "disabled".equals(property)) continue;
@@ -200,7 +201,14 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             AdminInfo info = getAdminInfo();
             if (info == null) return null;
 
-            return new AdminAuditRecord(level(event), nodeId, entityOid, entityClassname, name, action, msg.toString(), info.identityProviderOid, info.login, info.id, info.ip);
+            long oid = PersistentEntity.DEFAULT_OID;
+            try {
+                oid = Long.parseLong(entityId);
+            } catch (NumberFormatException nfe) {
+                logger.log(Level.FINE, "Entity ID was not a long");
+            }
+
+            return new AdminAuditRecord(level(event), nodeId, oid, entityClassname, name, action, msg.toString(), info.identityProviderOid, info.login, info.id, info.ip);
         } else if (genericEvent instanceof AdminEvent) {
             AdminEvent event = (AdminEvent)genericEvent;
             AdminInfo info = getAdminInfo();
@@ -218,23 +226,21 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             }
             return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
                                         "User logged in",
-                                        admin.getProviderId(), admin.getLogin(), admin.getUniqueIdentifier(), ip);
+                                        admin.getProviderId(), admin.getLogin(), admin.getId(), ip);
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
         }
     }
 
     private boolean isEmpty(Object o) {
-        if (o == null) return true;
-        if (o instanceof String) return (((String)o).length() == 0);
-        return false;
+        return o == null || o instanceof String && (((String) o).length() == 0);
     }
 
     private AdminInfo getAdminInfo() {
         Subject clientSubject = null;
         String login = null;
         String uniqueId = null;
-        String address = null;
+        String address;
         long providerOid = IdentityProviderConfig.DEFAULT_OID;
         try {
             address = RemoteUtils.getClientHost();
@@ -252,7 +258,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 if (p instanceof User) {
                     User u = (User) p;
                     login = u.getLogin();
-                    uniqueId = u.getUniqueIdentifier();
+                    uniqueId = u.getId();
                     providerOid = u.getProviderId();
                 }
                 if (login == null) login = p.getName();
@@ -278,7 +284,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         private final String ip;
     }
 
-    private Map levelMappings = new HashMap();
+    private Map<Class<? extends Entity>, LevelMapping> levelMappings = new HashMap<Class<? extends Entity>, LevelMapping>();
     private static final Logger logger = Logger.getLogger(AdminAuditListener.class.getName());
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_SUBJECT = "localsystem";

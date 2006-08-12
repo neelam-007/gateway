@@ -27,13 +27,11 @@ public class JmsUtilities {
      */
     public static List loadJmsQueues(boolean outboundOnly) {
         try {
-            ArrayList jmsQueues = new ArrayList();
+            ArrayList<JmsAdmin.JmsTuple> jmsQueues = new ArrayList<JmsAdmin.JmsTuple>();
 
             JmsAdmin.JmsTuple[] tuples = Registry.getDefault().getJmsManager().findAllTuples();
-            for ( int i = 0; i < tuples.length; i++ ) {
-                JmsAdmin.JmsTuple tuple = tuples[i];
-                if ( !(outboundOnly && tuple.getEndpoint().isMessageSource() ) )
-                    jmsQueues.add( tuple );
+            for (JmsAdmin.JmsTuple tuple : tuples) {
+                if (!(outboundOnly && tuple.getEndpoint().isMessageSource())) jmsQueues.add(tuple);
             }
             return jmsQueues;
         } catch (Exception e) {
@@ -105,6 +103,6 @@ public class JmsUtilities {
      * @param endpoint the endpoint to select, or null to clear the selection.
      */
     public static void selectEndpoint(JComboBox cb, JmsEndpoint endpoint) {
-        selectEndpoint(cb, (Long) (endpoint == null ? null : new Long(endpoint.getOid())));
+        selectEndpoint(cb, endpoint == null ? null : new Long(endpoint.getOid()));
     }
 }

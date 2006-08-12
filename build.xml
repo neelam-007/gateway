@@ -1529,6 +1529,9 @@
             <exclude name="com/l7tech/policy/variable/**/*.java"/>
             <exclude name="com/l7tech/policy/PolicyValidator.java"/>
             <exclude name="com/l7tech/policy/validator/**/*.java"/>
+            <exclude name="com/l7tech/policy/PolicyPathResult.java"/>
+            <exclude name="com/l7tech/policy/PolicyPathBuilder.java"/>
+            <exclude name="com/l7tech/policy/DefaultPolicyPathBuilder.java"/>
             <exclude name="com/l7tech/common/Authorizer.java"/>
             <exclude name="com/l7tech/common/http/cache/**/*.java"/>
 	        <exclude name="com/l7tech/common/security/rbac/**/*.java"/>

@@ -11,7 +11,7 @@ enum CheckBefore {
     NONE,
 
     /** Check permission to execute operation against entity with specified OID */
-    OID,
+    ID,
 
     /** Check permission to execute operation against specified Entity */
     ENTITY,

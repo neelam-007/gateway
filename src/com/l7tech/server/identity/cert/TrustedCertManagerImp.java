@@ -265,7 +265,7 @@ public class TrustedCertManagerImp
         }
     }
 
-    protected void addedToCache(Entity ent) {
+    protected void addedToCache(PersistentEntity ent) {
         TrustedCert cert = (TrustedCert)ent;
         dnToOid.put(cert.getSubjectDn(), ent.getOid());
     }

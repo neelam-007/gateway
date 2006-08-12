@@ -1,9 +1,6 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.*;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
@@ -25,13 +22,10 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class IdentityPath {
-    protected static final Comparator DEFAULT_COMPARATOR = new Comparator() {
-        public int compare(Object o1, Object o2) {
-            if (!(o1 instanceof IdentityPath && o2 instanceof IdentityPath)) {
-                throw new ClassCastException();
-            }
-            Principal p1 = ((IdentityPath)o1).getPrincipal();
-            Principal p2 = ((IdentityPath)o2).getPrincipal();
+    protected static final Comparator<IdentityPath> DEFAULT_COMPARATOR = new Comparator<IdentityPath>() {
+        public int compare(IdentityPath o1, IdentityPath o2) {
+            Principal p1 = o1.getPrincipal();
+            Principal p2 = o2.getPrincipal();
 
             if (p1.equals(p2)) return 0;
             if (p1 instanceof User && p2 instanceof User) {
@@ -64,8 +58,8 @@ public class IdentityPath {
      * @return the <code>Set</code> of identities that
      *         are specified in this assertion tree.
      */
-    public static Set getIdentities(Assertion root) {
-        Set identities = new TreeSet(IDCOMPARATOR);
+    public static Set<Identity> getIdentities(Assertion root) {
+        Set<Identity> identities = new TreeSet<Identity>(IDCOMPARATOR);
         for (Iterator it = root.preorderIterator(); it.hasNext();) {
             Object o = it.next();
             if (isIdentity(o)) {
@@ -83,7 +77,7 @@ public class IdentityPath {
      * @param root the assertion root
      * @return the set of identity paths that exist in thi policy tree
      */
-    public static Set getPaths(Assertion root) {
+    public static Set<IdentityPath> getPaths(Assertion root) {
         return getPaths(root, DEFAULT_COMPARATOR);
     }
 
@@ -98,12 +92,11 @@ public class IdentityPath {
      *             set.
      * @return the set of identity paths that exist in thi policy tree
      */
-    public static Set getPaths(Assertion root, Comparator c) {
-        Set identities = getIdentities(root);
-        Set paths = new TreeSet(c);
-        for (Iterator i = identities.iterator(); i.hasNext();) {
-            Principal principal = (Principal)i.next();
-            paths.add(forIdentity(principal, root));
+    public static Set<IdentityPath> getPaths(Assertion root, Comparator<IdentityPath> c) {
+        Set<Identity> identities = getIdentities(root);
+        Set<IdentityPath> paths = new TreeSet<IdentityPath>(c);
+        for (Identity identity : identities) {
+            paths.add(forIdentity(identity, root));
         }
         IdentityPath anonPath = anonymousPaths(root);
         if (!anonPath.getPaths().isEmpty()) {
@@ -122,29 +115,28 @@ public class IdentityPath {
      * in the policy rooted at the <code>Assertion</code> for the the given
      * principal.
      *
-     * @param p    the principal
+     * @param identity    the principal
      * @param root the assertion root
      * @return the identity path with the collection of assertion paths
      *         for the given principal
      * @see IdentityPath
      */
-    public static IdentityPath forIdentity(Principal p, Assertion root) {
-        if (!(p instanceof User || p instanceof Group)) {
+    public static IdentityPath forIdentity(Identity identity, Assertion root) {
+        if (!(identity instanceof User || identity instanceof Group)) {
             throw new IllegalArgumentException("unknown type");
         }
-        IdentityPath ipath = new IdentityPath(p);
+        IdentityPath ipath = new IdentityPath(identity);
         PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
         PolicyPathResult ppr = pb.generate(root);
         outer:
-        for (Iterator i = ppr.paths().iterator(); i.hasNext();) {
-            AssertionPath ap = (AssertionPath)i.next();
-            Assertion[] path = ap.getPath();
+        for (AssertionPath assertionPath : ppr.paths()) {
+            Assertion[] path = assertionPath.getPath();
             for (int j = path.length - 1; j >= 0; j--) {
                 Assertion assertion = path[j];
                 if (isIdentity(assertion)) {
-                    Principal principal = extractIdentity(assertion);
-                    if (IDCOMPARATOR.compare(principal, p) == 0) {
-                        ipath.identityPaths.add(ap);
+                    Identity principal = extractIdentity(assertion);
+                    if (IDCOMPARATOR.compare(principal, identity) == 0) {
+                        ipath.identityPaths.add(assertionPath);
                         continue outer;
                     }
                 }
@@ -171,17 +163,16 @@ public class IdentityPath {
         PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
         PolicyPathResult ppr = pb.generate(root);
         outer:
-        for (Iterator i = ppr.paths().iterator(); i.hasNext();) {
-            AssertionPath ap = (AssertionPath)i.next();
-            Assertion[] path = ap.getPath();
+        for (AssertionPath assertionPath : ppr.paths()) {
+            Assertion[] path = assertionPath.getPath();
             for (int j = path.length - 1; j >= 0; j--) {
                 Assertion assertion = path[j];
                 if (isIdentity(assertion) ||
-                  isCustomAccessControl(assertion)) {
+                        isCustomAccessControl(assertion)) {
                     continue outer;
                 }
             }
-            ipath.identityPaths.add(ap);
+            ipath.identityPaths.add(assertionPath);
         }
         return ipath;
     }
@@ -204,10 +195,8 @@ public class IdentityPath {
         IdentityPath ipath = new IdentityPath(anon);
         PolicyPathBuilder pb = PolicyPathBuilder.getDefault();
         PolicyPathResult ppr = pb.generate(root);
-        outer:
-        for (Iterator i = ppr.paths().iterator(); i.hasNext();) {
-            AssertionPath ap = (AssertionPath)i.next();
-            Assertion[] path = ap.getPath();
+        for (AssertionPath assertionPath : ppr.paths()) {
+            Assertion[] path = assertionPath.getPath();
             boolean found = false;
             for (int j = path.length - 1; j >= 0; j--) {
                 Assertion assertion = path[j];
@@ -215,7 +204,7 @@ public class IdentityPath {
                     if (found) {
                         sb.append(", "); //multiple delegate assertions
                     }
-                    CustomAssertionHolder cah = (CustomAssertionHolder)assertion;
+                    CustomAssertionHolder cah = (CustomAssertionHolder) assertion;
                     CustomAssertion customAssertion = cah.getCustomAssertion();
                     if (customAssertion != null) {
                         sb.append(customAssertion.getName());
@@ -226,7 +215,7 @@ public class IdentityPath {
                 }
             }
             if (found) {
-                ipath.identityPaths.add(ap);
+                ipath.identityPaths.add(assertionPath);
             }
         }
         anon.setLogin(sb.toString());
@@ -263,7 +252,7 @@ public class IdentityPath {
      *
      * @return the identity paths
      */
-    public Set getPaths() {
+    public Set<AssertionPath> getPaths() {
         return Collections.unmodifiableSet(identityPaths);
     }
 
@@ -274,18 +263,18 @@ public class IdentityPath {
      * @param cl the assertion type
      * @return the <code>Set</code> of the assertion instances.
      */
-    public Set getEqualAssertions(Class cl) {
-        Set resultSet = new HashSet();
+    public <AT extends Assertion> Set<AT> getEqualAssertions(Class<AT> cl) {
+        Set<AT> resultSet = new HashSet<AT>();
         if (cl == null || !Assertion.class.isAssignableFrom(cl)) {
             return resultSet;
         }
 
-        for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
-            Assertion[] assertions = ((AssertionPath)iterator.next()).getPath();
-            for (int i = 0; i < assertions.length; i++) {
-                Assertion assertion = assertions[i];
+        for (AssertionPath identityPath : identityPaths) {
+            Assertion[] assertions = identityPath.getPath();
+            for (Assertion assertion : assertions) {
                 if (assertion.getClass().equals(cl)) {
-                    resultSet.add(assertion);
+                    //noinspection unchecked
+                    resultSet.add((AT) assertion);
                 }
             }
         }
@@ -300,15 +289,14 @@ public class IdentityPath {
      * @return the <code>Set</code> of the assertion instances.
      */
     public Set getAssignableAssertions(Class cl) {
-        Set resultSet = new HashSet();
+        Set<Assertion> resultSet = new HashSet<Assertion>();
         if (cl == null || !Assertion.class.isAssignableFrom(cl)) {
             return resultSet;
         }
 
-        for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
-            Assertion[] assertions = ((AssertionPath)iterator.next()).getPath();
-            for (int i = 0; i < assertions.length; i++) {
-                Assertion assertion = assertions[i];
+        for (AssertionPath identityPath : identityPaths) {
+            Assertion[] assertions = identityPath.getPath();
+            for (Assertion assertion : assertions) {
                 if (cl.isAssignableFrom(assertion.getClass())) {
                     resultSet.add(assertion);
                 }
@@ -326,15 +314,14 @@ public class IdentityPath {
      * @see AssertionFilter
      */
     public Set getAssertions(AssertionFilter af) {
-        Set resultSet = new HashSet();
+        Set<Assertion> resultSet = new HashSet<Assertion>();
         if (af == null) {
             return resultSet;
         }
 
-        for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
-            Assertion[] assertions = ((AssertionPath)iterator.next()).getPath();
-            for (int i = 0; i < assertions.length; i++) {
-                Assertion assertion = assertions[i];
+        for (AssertionPath identityPath : identityPaths) {
+            Assertion[] assertions = identityPath.getPath();
+            for (Assertion assertion : assertions) {
                 if (af.accept(assertion)) {
                     resultSet.add(assertion);
                 }
@@ -375,7 +362,7 @@ public class IdentityPath {
      * @param assertion
      * @return whether the assertion is an identity
      */
-    public static Principal extractIdentity(Object assertion) {
+    public static Identity extractIdentity(Object assertion) {
         if (assertion instanceof SpecificUser) {
             SpecificUser su = ((SpecificUser)assertion);
             UserBean u = new UserBean();
@@ -400,9 +387,9 @@ public class IdentityPath {
      * user or group
      */
     private Principal principal;
-    private Set identityPaths = new HashSet();
+    private Set<AssertionPath> identityPaths = new HashSet<AssertionPath>();
 
-    private static final Comparator IDCOMPARATOR = new Comparator() {
+    private static final Comparator<Identity> IDCOMPARATOR = new Comparator<Identity>() {
         /**
          * Compares its two arguments for order.  This compares users and groups
          * by provider and name. Two users or groups are considered equal if they
@@ -416,7 +403,7 @@ public class IdentityPath {
          * @throws ClassCastException if the arguments' types prevent them from
          *                            being compared by this Comparator.
          */
-        public int compare(Object o1, Object o2) {
+        public int compare(Identity o1, Identity o2) {
             if (o1.getClass() != o2.getClass()) {
                 return -1;
             }

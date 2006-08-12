@@ -25,7 +25,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(AssociatedLogsTableSorter.class.getName());
     private boolean ascending = false;
     private int columnToSort = 0;
-    private List rawdata = new ArrayList();
+    private List<Object> rawdata = new ArrayList<Object>();
     private Object[] sortedData = new Object[0];
 
     /**
@@ -46,7 +46,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     }
 
     public void clear() {
-        rawdata = new ArrayList();
+        rawdata = new ArrayList<Object>();
         sortData(columnToSort, false);
     }
 
@@ -55,7 +55,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
-    public void setData(List data) {
+    public void setData(List<Object> data) {
         this.rawdata = data;
         sortData(columnToSort, false);
     }
@@ -103,8 +103,8 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
      */
     public void sortData(int column, boolean orderToggle) {
 
-        if(orderToggle){
-            ascending = ascending ? false : true;
+        if (orderToggle){
+            ascending = !ascending;
         }
 
         // always sort in ascending order if the user select a new column
@@ -143,10 +143,10 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                 return sdf.format(cal.getTime());
 
             case ASSOCIATED_LOG_SECURITY_COLUMN_INDEX:
-                return (String) log.getSeverity();
+                return log.getSeverity();
 
             case ASSOCIATED_LOG_MSG_COLUMN_INDEX:
-                return (String) log.getMessage();
+                return log.getMessage();
 
             default:
                 throw new IllegalArgumentException("Bad Column: " + col);
@@ -156,7 +156,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     /**
      * A class for determining the order of two objects by comparing their values.
      */
-    public class ColumnSorter implements Comparator {
+    public class ColumnSorter implements Comparator<Object> {
         private boolean ascending;
         private int column;
 
@@ -193,13 +193,13 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                     break;
 
                 case ASSOCIATED_LOG_SECURITY_COLUMN_INDEX:
-                        elementA = (String) ((AssociatedLog) a).getSeverity();
-                        elementB = (String) ((AssociatedLog) b).getSeverity();
+                        elementA = ((AssociatedLog) a).getSeverity();
+                        elementB = ((AssociatedLog) b).getSeverity();
                     break;
 
                 case ASSOCIATED_LOG_MSG_COLUMN_INDEX:
-                        elementA = (String) ((AssociatedLog) a).getMessage();
-                        elementB = (String) ((AssociatedLog) b).getMessage();
+                        elementA = ((AssociatedLog) a).getMessage();
+                        elementB = ((AssociatedLog) b).getMessage();
                     break;
 
                 default:
@@ -225,18 +225,18 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    if (elementA instanceof Integer) {
+                    if (elementA instanceof Integer && elementB instanceof Integer) {
                         return ((Integer) elementA).intValue() > ((Integer) elementB).intValue()?1:0;
-                    } else if(elementA instanceof String) {
+                    } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
                         // add code here to support other types
                         return 0;
                     }
                 } else {
-                     if (elementA instanceof Integer) {
+                     if (elementA instanceof Integer && elementB instanceof Integer) {
                         return ((Integer) elementB).intValue() > ((Integer) elementA).intValue()?1:0;
-                    } else if(elementA instanceof String) {
+                    } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
                         // add code here to support other types

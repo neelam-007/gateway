@@ -9,7 +9,6 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -20,7 +19,6 @@ import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
@@ -35,7 +33,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public abstract class ServerIdentityAssertion extends AbstractServerAssertion implements ServerAssertion {
+public abstract class ServerIdentityAssertion extends AbstractServerAssertion<IdentityAssertion> {
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
 
     protected final Auditor auditor;
@@ -84,7 +82,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion im
             return checkUser(authResult, context);
         }
 
-        if (identityAssertion.getIdentityProviderOid() == Entity.DEFAULT_OID) {
+        if (identityAssertion.getIdentityProviderOid() == IdentityProviderConfig.DEFAULT_OID) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_ID_NOT_SET);
             throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
         }
@@ -137,7 +135,7 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion im
         String name = user.getLogin();
         if (name == null) name = user.getName();
         if (name == null) name = user.getSubjectDn();
-        if (name == null) name = user.getUniqueIdentifier();
+        if (name == null) name = user.getId();
 
         // Authentication succeeded
         context.setAuthenticationResult(authResult);

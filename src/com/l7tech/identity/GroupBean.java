@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class GroupBean implements Group, Serializable {
-    public String getUniqueIdentifier() {
+    public String getId() {
         return _uniqueId;
     }
 

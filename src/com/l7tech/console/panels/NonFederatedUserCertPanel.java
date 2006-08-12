@@ -63,7 +63,7 @@ class NonFederatedUserCertPanel extends UserCertPanel {
                             loadCertificateInfo();
                             // must tell parent to update user because version might have changed
                             EntityHeader eh = new EntityHeader();
-                            eh.setStrId(user.getUniqueIdentifier());
+                            eh.setStrId(user.getId());
                             eh.setName(user.getName());
                             eh.setType(EntityType.USER);
                             parentListener.entityUpdated(new EntityEvent(this, eh));

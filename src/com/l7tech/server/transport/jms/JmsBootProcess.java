@@ -11,7 +11,7 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
@@ -131,7 +131,7 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
             endpointDeleted( removedOid );
         }
 
-        protected void onSave( Entity updatedEntity ) {
+        protected void onSave( PersistentEntity updatedEntity ) {
             logger.info( "Endpoint " + updatedEntity.getOid() + " created or updated!" );
             endpointUpdated( (JmsEndpoint)updatedEntity );
         }
@@ -150,7 +150,7 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
             connectionDeleted( removedOid );
         }
 
-        protected void onSave( Entity updatedEntity ) {
+        protected void onSave( PersistentEntity updatedEntity ) {
             logger.info( "Connection " + updatedEntity.getOid() + " created or updated!" );
             connectionUpdated( (JmsConnection)updatedEntity );
         }

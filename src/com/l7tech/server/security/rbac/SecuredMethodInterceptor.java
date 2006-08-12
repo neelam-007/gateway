@@ -6,8 +6,6 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.*;
 import static com.l7tech.common.security.rbac.OperationType.*;
-import com.l7tech.identity.AnonymousIdentityReference;
-import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -18,8 +16,8 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.Subject;
-import java.lang.reflect.Method;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.util.*;
 import java.util.logging.Level;
@@ -31,19 +29,20 @@ import java.util.logging.Logger;
 public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationListener {
     private static final Logger logger = Logger.getLogger(SecuredMethodInterceptor.class.getName());
     private final RoleManager roleManager;
+    private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
     public SecuredMethodInterceptor(RoleManager roleManager) {
         this.roleManager = roleManager;
         logger.log(Level.INFO, this.getClass().getSimpleName() + " initialized");
     }
 
-    private List filter(Iterator iter, User user, CheckInfo check) throws FindException {
-        List newlist = new ArrayList();
+    private List<Object> filter(Iterator iter, User user, CheckInfo check) throws FindException {
+        List<Object> newlist = new ArrayList<Object>();
         while (iter.hasNext()) {
             Object element = iter.next();
             Entity testEntity;
             if (element instanceof Entity) {
-                testEntity = (Entity) element;
+                testEntity = (Entity)element;
             } else if (element instanceof EntityHeader) {
                 EntityHeader header = (EntityHeader) element;
                 testEntity = AnonymousEntityReference.fromHeader(header);
@@ -51,10 +50,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
             }
 
-            if (roleManager.isPermittedForEntity(user, testEntity, check.operation, check.otherOperationName)) {
+            if (testEntity == null || roleManager.isPermittedForEntity(user, testEntity, check.operation, check.otherOperationName)) {
                 newlist.add(element);
             } else {
-                logger.info("Omitting " + testEntity.getClass().getSimpleName() + " #" + testEntity.getOid() + " from return value of " + check.mname);
+                logger.info("Omitting " + testEntity.getClass().getSimpleName() + " #" + testEntity.getId() + " from return value of " + check.mname);
             }
         }
         return newlist;
@@ -125,14 +124,14 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 checkEntityBefore(check, args, UPDATE);
                 break;
             case READ:
-                checkOidBefore(check, args, READ);
+                checkIdBefore(check, args, READ);
                 check.after = CheckAfter.ENTITY;
                 break;
             case DELETE:
                 if (getEntityArg(check, args) != null) {
                     checkEntityBefore(check, args, DELETE);
                 } else {
-                    checkOidBefore(check, args, DELETE);
+                    checkIdBefore(check, args, DELETE);
                 }
                 break;
             case OTHER:
@@ -144,19 +143,19 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 if (getEntityArg(check, args) != null) {
                     check.before = CheckBefore.ENTITY;
                 } else {
-                    getOidArgOrThrow(check, args);
-                    check.before = CheckBefore.OID;
+                    getIdArgOrThrow(check, args);
+                    check.before = CheckBefore.ID;
                 }
 
                 check.after = CheckAfter.NONE;
                 break;
             default:
-                methodSwitch:
                 switch (check.stereotype) {
                     case SAVE_OR_UPDATE:
                         Entity entity = getEntityArg(check, args);
                         if (entity != null) {
-                            checkEntityBefore(check, args, entity.getOid() == Entity.DEFAULT_OID ? CREATE : UPDATE);
+                            String id = entity.getId();
+                            checkEntityBefore(check, args, id == null || DEFAULT_ID.equals(id) ? CREATE : UPDATE);
                             break;
                         } else {
                             // TODO this is incredibly ugly
@@ -189,22 +188,15 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         check.after = CheckAfter.COLLECTION;
                         break;
                     case FIND_BY_PRIMARY_KEY:
-                        OidArgResult result = getOidArg(check, args);
-                        check.operation = READ;
-                        switch (result) {
-                            case FOUND:
-                                logger.log(Level.FINER, "Will check OID before invocation");
-                                check.before = CheckBefore.OID;
-                                check.after = CheckAfter.NONE;
-                                break methodSwitch;
-                            case INVALID:
-                                check.before = CheckBefore.NONE;
-                                check.after = CheckAfter.ENTITY;
-                                logger.log(Level.FINER, "Will check Entity after invocation");
-                                break methodSwitch;
-                            case NOT_FOUND:
-                                throwNoOid(check);
-                                break methodSwitch;
+                        if (getIdArg(check, args)) {
+                            logger.log(Level.FINER, "Will check ID before invocation");
+                            check.before = CheckBefore.ID;
+                            check.after = CheckAfter.NONE;
+                            check.operation = READ;
+                            break;
+                        } else {
+                            throwNoId(check);
+                            break;
                         }
                     case FIND_ENTITY_BY_ATTRIBUTE:
                         check.before = CheckBefore.NONE;
@@ -214,16 +206,20 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     case DELETE_ENTITY:
                         checkEntityBefore(check, args, DELETE);
                         break;
-                    case DELETE_BY_OID:
+                    case DELETE_BY_ID:
                         if (check.types.length != 1)
                             throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but has multiple types");
-                        checkOidBefore(check, args, DELETE);
+                        checkIdBefore(check, args, DELETE);
                         break;
-                    case GET_PROPERTY_BY_OID:
-                        checkOidBefore(check, args, READ);
+                    case GET_PROPERTY_BY_ID:
+                        if (getIdArg(check, args)) {
+                            checkIdBefore(check, args, READ);
+                        } else {
+                            throwNoId(check);
+                        }
                         break;
-                    case SET_PROPERTY_BY_OID:
-                        checkOidBefore(check, args, UPDATE);
+                    case SET_PROPERTY_BY_ID:
+                        checkIdBefore(check, args, UPDATE);
                         break;
                     case GET_PROPERTY_OF_ENTITY:
                         checkEntityBefore(check, args, READ);
@@ -248,10 +244,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     throw new PermissionDeniedException(check.operation, check.entity);
                 }
                 break;
-            case OID:
-                if (check.oid == Entity.DEFAULT_OID) throw new NullPointerException("check.oid");
-                if (check.types.length > 1) throw new IllegalStateException("Security declaration for method " + mname + " needs to check OID, but multiple EntityTypes specified");
-                final AnonymousEntityReference entity = new AnonymousEntityReference(check.types[0].getEntityClass(), check.oid);
+            case ID:
+                if (check.id == null) throw new NullPointerException("check.id");
+                if (check.types.length > 1) throw new IllegalStateException("Security declaration for method " + mname + " needs to check ID, but multiple EntityTypes specified");
+                final AnonymousEntityReference entity = new AnonymousEntityReference(check.types[0].getEntityClass(), check.id);
                 if (!roleManager.isPermittedForEntity(user, entity, check.operation, check.otherOperationName)) {
                     throw new PermissionDeniedException(check.operation, entity);
                 }
@@ -273,12 +269,12 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             case COLLECTION:
                 if (rv instanceof EntityHeader[]) {
                     EntityHeader[] array = (EntityHeader[]) rv;
-                    List headers = filter(new ArrayIterator(array), user, check);
+                    List<Object> headers = filter(new ArrayIterator(array), user, check);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return headers.toArray(a0);
                 } else if (rv instanceof Entity[]) {
                     Entity[] array = (Entity[]) rv;
-                    List entities = filter(new ArrayIterator(array), user, check);
+                    List<Object> entities = filter(new ArrayIterator(array), user, check);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return entities.toArray(a0);
                 } else if (rv instanceof Collection) {
@@ -289,20 +285,15 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     throw new IllegalStateException("Return value of " + mname + " was not Entity[] or Collection<Entity>");
                 }
             case ENTITY:
-                Entity entity;
-                if (rv instanceof Entity) {
-                    entity = (Entity) rv;
-                } else if (rv instanceof Identity) {
-                    // Replace LDAP users and groups with a reasonable stand-in
-                    Identity id = (Identity) rv;
-                    entity = new AnonymousIdentityReference(id.getClass(), id.getUniqueIdentifier(), id.getProviderId(), id.getName());
-                } else {
+                if (!(rv instanceof Entity)) {
                     throw new IllegalStateException("Return value of " + mname + " was not an Entity");
                 }
-                    
+
+                Entity entity = (Entity)rv;
+
                 if (!roleManager.isPermittedForEntity(user, entity, check.operation, null))
-                    throw new PermissionDeniedException(check.operation, (Entity)rv);
-                return entity;
+                    throw new PermissionDeniedException(check.operation, entity);
+                return rv;
             case NONE:
                 logger.log(Level.FINE, "Permitted {0} on {1} for {2}",
                         new Object[]{check.operation.name(),
@@ -322,16 +313,16 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         if (entity instanceof NamedEntity) {
             return ((NamedEntity)entity).getName();
         } else if (entity != null) {
-            return entity.getClass().getSimpleName() + " #" + entity.getOid();
+            return entity.getClass().getSimpleName() + " #" + entity.getId();
         } else {
             return "<unknown>";
         }
     }
 
-    private void checkOidBefore(CheckInfo check, Object[] args, OperationType operation) {
-        getOidArgOrThrow(check, args);
-        logger.log(Level.FINER, "Will check OID before invocation");
-        check.before = CheckBefore.OID;
+    private void checkIdBefore(CheckInfo check, Object[] args, OperationType operation) {
+        getIdArgOrThrow(check, args);
+        logger.log(Level.FINER, "Will check ID before invocation");
+        check.before = CheckBefore.ID;
         check.operation = operation;
         check.after = CheckAfter.NONE;
     }
@@ -365,39 +356,26 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         return null;
     }
 
-    private void getOidArgOrThrow(CheckInfo info, Object[] args) {
-        if (getOidArg(info, args) != OidArgResult.FOUND)
-            throwNoOid(info);
+    private void getIdArgOrThrow(CheckInfo info, Object[] args) {
+        if (!getIdArg(info, args)) throwNoId(info);
     }
 
-    private void throwNoOid(CheckInfo info) {
+    private void throwNoId(CheckInfo info) {
         throw new IllegalStateException("Security declaration for method " +
                 info.mname + " specifies " + info.stereotype +
                 ", but can't find long or String argument");
     }
 
-    private OidArgResult getOidArg(CheckInfo info, Object[] args) {
+    private boolean getIdArg(CheckInfo info, Object[] args) {
         Object arg = getSingleOrRelevantArg(args, info.relevantArg);
-        if (arg == null) return OidArgResult.NOT_FOUND;
+        if (arg == null) return false;
 
-        if (arg instanceof Long) {
-            info.oid = (Long)arg;
-            return OidArgResult.FOUND;
-        } else if (arg instanceof String) {
-            try {
-                info.oid = Long.valueOf((String)arg);
-            } catch (NumberFormatException e) {
-                logger.fine("Argument is not a valid long; must check entity after invocation");
-                return OidArgResult.INVALID;
-            }
-            return OidArgResult.FOUND;
+        if (arg instanceof Long || arg instanceof String) {
+            info.id = arg.toString();
+            return true;
         }
 
-        return OidArgResult.NOT_FOUND;
-    }
-
-    private static enum OidArgResult {
-        FOUND, NOT_FOUND, INVALID
+        return false;
     }
 
     private Object getSingleOrRelevantArg(Object[] args, int relevantArg) {

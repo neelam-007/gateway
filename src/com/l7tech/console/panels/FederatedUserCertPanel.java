@@ -49,7 +49,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
                             // reset values and redisplay
                             cert = null;
                             if (parentListener != null)
-                                parentListener.entityUpdated(new EntityEvent(this, new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getName(), null)));
+                                parentListener.entityUpdated(new EntityEvent(this, new EntityHeader(user.getId(), EntityType.USER, user.getName(), null)));
 
                             loadCertificateInfo();
                             if (userPanel instanceof FederatedUserPanel) {

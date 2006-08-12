@@ -35,7 +35,7 @@ public class LdapGroup implements Group, Serializable, LdapIdentity {
         groupBean.setDescription( description );
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return dn;
     }
 

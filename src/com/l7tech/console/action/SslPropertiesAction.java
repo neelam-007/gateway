@@ -80,7 +80,7 @@ public class SslPropertiesAction extends NodeAction {
     }
 
     public void assertionChanged() {
-        JTree tree = (JTree)TopComponents.getInstance().getPolicyTree();
+        JTree tree = TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
             model.assertionTreeNodeChanged((AssertionTreeNode)node);

@@ -43,11 +43,11 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
         Principal principal = path.getPrincipal();
         if (principal instanceof Group) {
             Group g = (Group)principal;
-            identityAssertion = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
+            identityAssertion = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
             iconResource = "com/l7tech/console/resources/group16.png";
         } else if (principal instanceof User) {
             User u = (User)principal;
-            identityAssertion = new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName());
+            identityAssertion = new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName());
             iconResource = "com/l7tech/console/resources/user16.png";
         } else {
             throw new IllegalArgumentException("Unknown principal class " + principal.getClass());

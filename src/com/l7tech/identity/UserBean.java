@@ -5,7 +5,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.objectmodel.Entity;
 
 import java.io.Serializable;
 
@@ -21,7 +20,7 @@ public class UserBean implements User, Serializable {
         this._login = login;
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return _uniqueId;
     }
 
@@ -147,7 +146,7 @@ public class UserBean implements User, Serializable {
 
     private static final long serialVersionUID = -2689153614711342567L;
 
-    protected long _providerId = Entity.DEFAULT_OID;
+    protected long _providerId = IdentityProviderConfig.DEFAULT_OID;
     protected String _uniqueId;
     protected String _name;
     protected String _login;

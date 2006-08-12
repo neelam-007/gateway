@@ -16,9 +16,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.PersistentUser;
+import com.l7tech.identity.*;
 import com.l7tech.identity.mapping.AttributeConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.SecurityTokenMapping;
@@ -37,8 +35,8 @@ public enum EntityType {
     ANY("<any>", Entity.class, UNDEFINED, true),
 
     ID_PROVIDER_CONFIG("Identity Provider", IdentityProviderConfig.class, com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG, true),
-    USER("User", PersistentUser.class, com.l7tech.objectmodel.EntityType.USER, true),
-    GROUP("Group", PersistentGroup.class, com.l7tech.objectmodel.EntityType.GROUP, true),
+    USER("User", User.class, com.l7tech.objectmodel.EntityType.USER, true),
+    GROUP("Group", Group.class, com.l7tech.objectmodel.EntityType.GROUP, true),
     SERVICE("Published Service", PublishedService.class, com.l7tech.objectmodel.EntityType.SERVICE, true),
     JMS_CONNECTION("JMS Connection", JmsConnection.class, com.l7tech.objectmodel.EntityType.JMS_CONNECTION, false),
     JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT, true),

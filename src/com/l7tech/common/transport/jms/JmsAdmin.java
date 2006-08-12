@@ -16,7 +16,7 @@ import java.rmi.RemoteException;
  * @author alex
  * @version $Revision$
  */
-@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface JmsAdmin {
     /**
      * Holds a tuple of ({@link JmsConnection}, {@link JmsEndpoint}).
@@ -107,7 +107,7 @@ public interface JmsAdmin {
      * @throws UpdateException if a database problem prevented the endpoint from being updated
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
-    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SET_PROPERTY_BY_OID)
+    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.SET_PROPERTY_BY_ID)
     void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException;
 
     /**
@@ -140,7 +140,7 @@ public interface JmsAdmin {
      * @throws DeleteException if a database problem prevented the specified JmsEndpoint from being deleted
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
-    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.DELETE_BY_OID)
+    @Secured(types=JMS_ENDPOINT, stereotype= MethodStereotype.DELETE_BY_ID)
     void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException;
 
     /**
@@ -151,7 +151,7 @@ public interface JmsAdmin {
      * @throws DeleteException if a database problem prevented the specified JmsConnection from being deleted
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
-    @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.DELETE_BY_OID)
+    @Secured(types=JMS_CONNECTION, stereotype= MethodStereotype.DELETE_BY_ID)
     void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException;
 
     /**

@@ -9,6 +9,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
@@ -320,7 +321,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (clientUser != null) {
                 String id = clientUser.getLogin();
                 if (id == null || id.length() < 1) id = clientUser.getName();
-                if (id == null || id.length() < 1) id = clientUser.getUniqueIdentifier();
+                if (id == null || id.length() < 1) id = clientUser.getId();
 
                 if (id != null && id.length() > 0) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_USERNAME, new String[] {id});

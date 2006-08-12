@@ -2,11 +2,10 @@ package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.NamedEntity;
 
-public abstract class NamedEntityImp extends EntityImp implements NamedEntity {
+public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
     public String getName() { return _name; }
     public void setName( String name ) { _name = name; }
     protected String _name;
-
 
     public boolean equals(Object o) {
         if (this == o) return true;

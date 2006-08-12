@@ -78,7 +78,7 @@ public class JdkLoggerConfigurator {
                 final File file = new File(configCandidate);
 
                 if (file.exists()) {
-                    in = file.toURL().openStream();
+                    in = file.toURI().toURL().openStream();
                     if (in != null) {
                         logManager.readConfiguration(in);
                         probeFile = file;

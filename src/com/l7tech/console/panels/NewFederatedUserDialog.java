@@ -196,7 +196,7 @@ public class NewFederatedUserDialog extends JDialog {
                         EntityHeader header = new EntityHeader();
                         header.setType(EntityType.USER);
                         header.setName(user.getName());
-                        header.setStrId(user.getUniqueIdentifier());
+                        header.setStrId(user.getId());
                         UserPropertiesAction ua =
                                 new FederatedUserPropertiesAction((UserNode) TreeNodeFactory.asTreeNode(header));
                         try {

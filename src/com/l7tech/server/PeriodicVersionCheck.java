@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 
@@ -88,7 +88,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
             for (Long updatedOid : updatesAndAdditions) {
                 Integer newVersion = dbversions.get(updatedOid);
                 if (checkAddOrUpdate(updatedOid, newVersion)) {
-                    Entity updatedEntity;
+                    PersistentEntity updatedEntity;
                     try {
                         updatedEntity = manager.findEntity(updatedOid.longValue());
                     } catch (FindException e) {
@@ -124,7 +124,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         return loadEntity;
     }
 
-    private void addOrUpdate(Entity updatedEntity) {
+    private void addOrUpdate(PersistentEntity updatedEntity) {
         cachedVersionMap.put(new Long(updatedEntity.getOid()), new Integer(updatedEntity.getVersion()));
         onSave(updatedEntity);
     }
@@ -162,7 +162,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
      *
      * @param updatedEntity the updated Entity
      */
-    protected void onSave(Entity updatedEntity) {}
+    protected void onSave(PersistentEntity updatedEntity) {}
 
     public long getFrequency() {
         return DEFAULT_FREQUENCY;

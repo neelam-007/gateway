@@ -1,5 +1,7 @@
 package com.l7tech.console.table;
 
+import com.l7tech.common.xml.XmlSchemaConstants;
+
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.Definition;
 import javax.wsdl.Part;
@@ -8,8 +10,6 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import com.l7tech.common.xml.XmlSchemaConstants;
 
 /**
  * Class <code>WsdlMessagePartsTableModel</code> is an implementation
@@ -246,7 +246,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
         while (it.hasNext()) {
             Object o = it.next();
             if (row++ == rowIndex) {
-                Part p = (Part)message.getPart(o.toString());
+                Part p = message.getPart(o.toString());
                 if (p == null) {
                     throw new IllegalStateException("Internal error: Could not locate part "+o);
                 }
@@ -258,9 +258,9 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
 
     private String getNewMessagePartArgumentName() {
         String newMessagePartName = null;
-        boolean found = false;
+        boolean found;
         int suffixAdd = 0;
-        while (!found) {
+        while (true) {
             int partNameSuffix = getRowCount() + suffixAdd;
             newMessagePartName = "arg" + partNameSuffix;
             found = true;

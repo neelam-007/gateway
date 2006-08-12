@@ -100,16 +100,16 @@ public final class AuthenticationResult {
 
     public void setCachedGroupMembership(Group group, boolean isMember) {
         if (groupMembershipCache == null) return; // fail fast if caching disabled
-        groupMembershipCache.store(new CacheKey(user.getProviderId(), user.getUniqueIdentifier(),
-                                                group.getProviderId(), group.getUniqueIdentifier()),
+        groupMembershipCache.store(new CacheKey(user.getProviderId(), user.getId(),
+                                                group.getProviderId(), group.getId()),
                                    new Long(System.currentTimeMillis() * (isMember ? 1 : -1)));
     }
 
     public Boolean getCachedGroupMembership(Group group) {
         if (groupMembershipCache == null) return null; // fail fast if caching disabled
         Long when = (Long)groupMembershipCache.retrieve(
-                new CacheKey(user.getProviderId(), user.getUniqueIdentifier(),
-                             group.getProviderId(), group.getUniqueIdentifier()));
+                new CacheKey(user.getProviderId(), user.getId(),
+                             group.getProviderId(), group.getId()));
         if (when == null) return null; // missed
         long w = when.longValue();
         boolean success = w > 0;

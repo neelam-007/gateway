@@ -124,7 +124,7 @@ public class StubDataStoreTest extends TestCase {
         int allGroupsSize = newGroupHeaders.size();
 
         admin.saveUser(provider, user, newGroupHeaders);
-        Set headers = admin.getGroupHeaders(provider, user.getUniqueIdentifier());
+        Set headers = admin.getGroupHeaders(provider, user.getId());
         assertTrue("Expected number of groups "+allGroupsSize, headers.size() == allGroupsSize);
 
         if (allGroupsSize == 0) return;
@@ -134,7 +134,7 @@ public class StubDataStoreTest extends TestCase {
         newGroupHeaders.add(eh);
         admin.saveUser(provider, user, newGroupHeaders);
 
-        headers = admin.getGroupHeaders(provider, user.getUniqueIdentifier());
+        headers = admin.getGroupHeaders(provider, user.getId());
         assertTrue("Expected number of groups is 1", headers.size() == 1);
     }
 

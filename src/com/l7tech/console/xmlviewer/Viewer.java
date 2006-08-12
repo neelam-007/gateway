@@ -20,25 +20,23 @@
  */
 package com.l7tech.console.xmlviewer;
 
-import com.l7tech.console.xmlviewer.properties.ViewerProperties;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
+import com.l7tech.console.xmlviewer.properties.ViewerProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.io.XMLWriter;
+import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeSelectionListener;
 import java.awt.*;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
-
-import org.dom4j.DocumentException;
-import org.dom4j.Document;
-import org.dom4j.io.XMLWriter;
-import org.xml.sax.SAXParseException;
-import org.apache.xml.serialize.OutputFormat;
 
 /**
  * The viewer for a eXchaNGeR document. This gives a tree view of an
@@ -84,8 +82,7 @@ public class Viewer extends JPanel implements XDocumentListener {
         if (!(content == null || "".equals(content))) {
             exchangerDocument = asExchangerDocument(content);
         }
-        Viewer messageViewer = new Viewer(cp.getViewer(), exchangerDocument, scrollPane);
-        return messageViewer;
+        return new Viewer(cp.getViewer(), exchangerDocument, scrollPane);
     }
 
     /**
@@ -236,15 +233,15 @@ public class Viewer extends JPanel implements XDocumentListener {
     }
 
     public boolean selectXpath(String xpathString) {
-        XElement[] elements = null;
+        XElement[] elements;
         try {
-            elements = (XElement[])document.getElements(xpathString);
+            elements = document.getElements(xpathString);
 
             // tree.collapseAll();
             tree.clearSelection();
 
-            for (int i = 0; i < elements.length; i++) {
-                final ExchangerElement element = (ExchangerElement)elements[i];
+            for (XElement element1 : elements) {
+                final ExchangerElement element = (ExchangerElement) element1;
                 tree.setSelectedNode(element, true);
             }
             properties.addXPath(xpathString);
@@ -316,15 +313,15 @@ public class Viewer extends JPanel implements XDocumentListener {
       throws IOException, DocumentException {
         final File file = File.createTempFile("Temp", ".xml");
         Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
-        DocumentUtilities.writeDocument(doc, file.toURL());
+        DocumentUtilities.writeDocument(doc, file.toURI().toURL());
         file.deleteOnExit();
-        return file.toURL();
+        return file.toURI().toURL();
     }
 
     protected static URL emptyTempFileURL()
       throws IOException {
         final File file = File.createTempFile("Temp", ".xml");
         file.deleteOnExit();
-        return file.toURL();
+        return file.toURI().toURL();
     }
 }

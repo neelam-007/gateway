@@ -105,8 +105,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     }
 
     @Transactional(readOnly = true)
-    public EntityHeader findHeader(com.l7tech.common.security.rbac.EntityType etype, long oid) throws FindException {
-        Entity e = find(etype.getEntityClass(), oid);
+    public EntityHeader findHeader(com.l7tech.common.security.rbac.EntityType etype, Serializable pk) throws FindException {
+        Entity e = find(etype.getEntityClass(), pk);
         if (e == null) return null;
         
         com.l7tech.objectmodel.EntityType oldType = etype.getOldEntityType();
@@ -115,6 +115,6 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             NamedEntity ne = (NamedEntity) e;
             name = ne.getName();
         }
-        return new EntityHeader(Long.toString(e.getOid()), oldType, name, null);
+        return new EntityHeader(e.getId(), oldType, name, null);
     }
 }

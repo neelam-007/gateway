@@ -1,11 +1,10 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.HardcodedResponseTreeNode;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.HardcodedResponseDialog;
+import com.l7tech.console.tree.policy.HardcodedResponseTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 
 import javax.swing.*;
@@ -46,8 +45,7 @@ public class HardcodedResponseDialogAction extends NodeAction{
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                HardcodedResponseDialog d = null;
-                d = new HardcodedResponseDialog(f, (HardcodedResponseAssertion)node.asAssertion(), true);
+                HardcodedResponseDialog d = new HardcodedResponseDialog(f, (HardcodedResponseAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);
@@ -61,10 +59,10 @@ public class HardcodedResponseDialogAction extends NodeAction{
     }
 
     private void fireAssertionChanged() {
-        JTree tree = (JTree)TopComponents.getInstance().getPolicyTree();
+        JTree tree = TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-            model.assertionTreeNodeChanged((AssertionTreeNode)treeNode);
+            model.assertionTreeNodeChanged(treeNode);
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }

@@ -38,8 +38,8 @@ public class InternalGroupManagerImpl
     }
 
     public GroupMembership newMembership(InternalGroup group, InternalUser user) {
-        long groupOid = Long.parseLong(group.getUniqueIdentifier());
-        long userOid = Long.parseLong(user.getUniqueIdentifier());
+        long groupOid = Long.parseLong(group.getId());
+        long userOid = Long.parseLong(user.getId());
         return InternalGroupMembership.newInternalMembership(groupOid, userOid);
     }
 

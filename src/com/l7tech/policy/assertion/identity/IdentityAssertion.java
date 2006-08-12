@@ -6,7 +6,7 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
@@ -44,5 +44,5 @@ public abstract class IdentityAssertion extends Assertion {
         return _identityProviderOid;
     }
 
-    protected long _identityProviderOid = Entity.DEFAULT_OID;
+    protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
 }

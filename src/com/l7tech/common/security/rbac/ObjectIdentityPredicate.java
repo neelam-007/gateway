@@ -3,29 +3,35 @@
  */
 package com.l7tech.common.security.rbac;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Entity;
 
 /**
- * Matches any {@link Entity} that is of the expected type and has a matching {@link Entity#getOid()}.
+ * Matches any {@link com.l7tech.objectmodel.Entity} that is of the expected type and whose
+ * {@link com.l7tech.objectmodel.Entity#getId()} matches {@link #targetEntityId}.
  */
 public class ObjectIdentityPredicate extends ScopePredicate {
-    private long targetEntityOid;
+    private String targetEntityId;
     private EntityHeader header;
+
+    public ObjectIdentityPredicate(Permission permission, String targetEntityId) {
+        super(permission);
+        this.targetEntityId = targetEntityId;
+    }
 
     public ObjectIdentityPredicate(Permission permission, long targetEntityOid) {
         super(permission);
-        this.targetEntityOid = targetEntityOid;
+        this.targetEntityId = Long.toString(targetEntityOid);
     }
 
     protected ObjectIdentityPredicate() { }
 
-    public long getTargetEntityOid() {
-        return targetEntityOid;
+    public String getTargetEntityId() {
+        return targetEntityId;
     }
 
-    public void setTargetEntityOid(long targetEntityOid) {
-        this.targetEntityOid = targetEntityOid;
+    public void setTargetEntityId(String targetEntityId) {
+        this.targetEntityId = targetEntityId;
     }
 
     boolean matches(Entity entity) {
@@ -33,7 +39,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         if (etype == null || etype == EntityType.ANY)
             throw new IllegalStateException("Can't evaluate an ObjectIdentityPredicate without a specific EntityType");
         // Type has already been checked by {@link Permission#matches}
-        return targetEntityOid == entity.getOid();
+        return targetEntityId.equals(entity.getId());
     }
 
     public EntityHeader getHeader() {
@@ -49,7 +55,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
             return header.toString();
         
         StringBuilder sb = new StringBuilder(permission.getEntityType().getName());
-        sb.append(" #").append(targetEntityOid);
+        sb.append(" #").append(targetEntityId);
         return sb.toString();
     }
 
@@ -60,14 +66,15 @@ public class ObjectIdentityPredicate extends ScopePredicate {
 
         ObjectIdentityPredicate that = (ObjectIdentityPredicate) o;
 
-        if (targetEntityOid != that.targetEntityOid) return false;
+        if (targetEntityId != null ? !targetEntityId.equals(that.targetEntityId) : that.targetEntityId != null)
+            return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) (targetEntityOid ^ (targetEntityOid >>> 32));
+        result = 31 * result + (targetEntityId != null ? targetEntityId.hashCode() : 0);
         return result;
     }
 }

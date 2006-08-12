@@ -12,6 +12,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.service.PublishedService;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.wsdl.Binding;
@@ -20,18 +21,12 @@ import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.mime.MIMEContent;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
-import javax.xml.soap.Name;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPElement;
+import javax.xml.soap.*;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
-import java.net.MalformedURLException;
-import java.io.IOException;
-
-import org.xml.sax.SAXException;
 
 /**
  * The class <code>AddRequestSwAAssertionAdvice</code> intercepts policy
@@ -97,7 +92,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
             Binding binding = (Binding)iterator.next();
 
             Collection boList = binding.getBindingOperations();
-            HashMap operations = new HashMap();
+            HashMap<String, BindingOperationInfo> operations = new HashMap<String, BindingOperationInfo>();
 
             // for each operation in WSDL
             for (Iterator iterator1 = boList.iterator(); iterator1.hasNext();) {
@@ -107,7 +102,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                     continue;
                 }
 
-                HashMap partList = new HashMap();
+                HashMap<String, MimePartInfo> partList = new HashMap<String, MimePartInfo>();
                 List parts = multipart.getMIMEParts();
 
                 // for each MIME part of the input parameter of the operation in WSDL
@@ -118,13 +113,13 @@ public class AddRequestSwAAssertionAdvice implements Advice {
 
                     // for each extensible part of the MIME part of the input parameter of the operation in WSDL
                     for (Iterator subElementItr = mimePartSubElements.iterator(); subElementItr.hasNext();) {
-                        Object subElement = (Object)subElementItr.next();
+                        Object subElement = subElementItr.next();
 
                         if (subElement instanceof MIMEContent) {
                             MIMEContent mimeContent = (MIMEContent)subElement;
 
                             //concat the content type if the part alreay exists
-                            MimePartInfo retrievedPart = (MimePartInfo)partList.get(mimeContent.getPart());
+                            MimePartInfo retrievedPart = partList.get(mimeContent.getPart());
                             if (retrievedPart != null) {
                                 retrievedPart.addContentType(mimeContent.getType());
                             } else {
@@ -148,7 +143,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         }
     }
 
-    private void initializeXPath(PublishedService service, RequestSwAAssertion swaAssertion) throws WSDLException, RemoteException, MalformedURLException, IOException, SAXException {
+    private void initializeXPath(PublishedService service, RequestSwAAssertion swaAssertion) throws WSDLException, IOException, SAXException {
 
         final Wsdl wsdl = service.parsedWsdl();
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
@@ -156,14 +151,12 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         try {
             SoapMessageGenerator.Message[] soapMessages = sg.generateRequests(wsdl);
 
-            for (int i = 0; i < soapMessages.length; i++) {
-                SoapMessageGenerator.Message soapRequest = soapMessages[i];
-
+            for (SoapMessageGenerator.Message soapRequest : soapMessages) {
                 final SOAPEnvelope envelope = soapRequest.getSOAPMessage().getSOAPPart().getEnvelope();
                 final Name envelopeName = envelope.getElementName();
                 String soapEnvLocalName = envelopeName.getLocalName();
                 String soapEnvNamePrefix = envelopeName.getPrefix();
-                final javax.xml.soap.SOAPBody soapBody = envelope.getBody();
+                final SOAPBody soapBody = envelope.getBody();
                 final Name bodyName = soapBody.getElementName();
                 String soapBodyLocalName = bodyName.getLocalName();
                 String soapBodyNamePrefix = bodyName.getPrefix();
@@ -173,9 +166,9 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 }
                 Iterator soapBodyElements = soapBody.getChildElements();
 
-               // get the first element
+                // get the first element
                 Object operation = soapBodyElements.next();
-                if(!(operation instanceof SOAPElement))
+                if (!(operation instanceof SOAPElement))
                     throw new RuntimeException("operation must be an instance of SOAPBodyElement class");
 
                 String operationQName = ((SOAPElement) operation).getElementName().getQualifiedName();
@@ -192,10 +185,10 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 }
 
                 String xpathExpression = "/" + soapEnvNamePrefix +
-                  ":" + soapEnvLocalName +
-                  "/" + soapBodyNamePrefix +
-                  ":" + soapBodyLocalName +
-                  "/" + operationQName;
+                        ":" + soapEnvLocalName +
+                        "/" + soapBodyNamePrefix +
+                        ":" + soapBodyLocalName +
+                        "/" + operationQName;
 
                 if (bo != null) {
                     bo.setXpath(xpathExpression);

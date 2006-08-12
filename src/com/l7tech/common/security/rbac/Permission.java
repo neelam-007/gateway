@@ -3,9 +3,9 @@
  */
 package com.l7tech.common.security.rbac;
 
-import com.l7tech.objectmodel.imp.EntityImp;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.AnonymousEntityReference;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.Set;
  * Changes to this class *must* maintain up-to-date {@link #equals} and {@link #hashCode}, as
  * instances are routinely added to {@link java.util.Set}s.
  */
-public class Permission extends EntityImp {
+public class Permission extends PersistentEntityImp {
     private Role role;
     private OperationType operation;
     private String otherOperationName;
@@ -40,7 +40,7 @@ public class Permission extends EntityImp {
     protected Permission() { }
 
     /**
-     * Returns true if this permission is applicable to the specified {@link Entity}.
+     * Returns true if this permission is applicable to the specified {@link com.l7tech.objectmodel.Entity}.
      *
      * In order to be considered applicable, one of the following conditions must be met:
      * <ul>

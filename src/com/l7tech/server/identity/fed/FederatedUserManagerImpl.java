@@ -41,7 +41,7 @@ public class FederatedUserManagerImpl
 
     @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(FederatedUser user ) {
-        return new IdentityHeader(user.getProviderId(), user.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
+        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null);
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)

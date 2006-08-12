@@ -1,31 +1,17 @@
 package com.l7tech.server.util;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.URLClassLoader;
-import java.net.URL;
-import java.net.MalformedURLException;
-
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.EnumerationIterator;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
+
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A ClassLoader for modules.
@@ -328,7 +314,7 @@ public class ModuleClassLoader extends ClassLoader {
         try {
             List<URL> urlList = new ArrayList<URL>();
             for (File jarFile : jarFiles) {
-                urlList.add(jarFile.toURL());
+                urlList.add(jarFile.toURI().toURL());
             }
             URL[] urls = urlList.toArray(new URL[urlList.size()]);
             if (parent == null) {

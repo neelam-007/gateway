@@ -39,7 +39,7 @@ public class InternalUserManagerImpl
     @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(InternalUser user) {
         InternalUser imp = cast(user);
-        return new IdentityHeader(imp.getProviderId(), imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
+        return new IdentityHeader(imp.getProviderId(), imp.getId(), EntityType.USER, imp.getLogin(), null);
     }
 
     public InternalUser reify(UserBean bean) {

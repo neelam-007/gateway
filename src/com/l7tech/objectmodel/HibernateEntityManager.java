@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured
-public abstract class HibernateEntityManager<ET extends Entity, EHT extends EntityHeader>
+public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT extends EntityHeader>
         extends HibernateDaoSupport
         implements EntityManager<ET, EHT>
 {
@@ -131,7 +131,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     @Transactional(readOnly=true)
     public Map<Long,Integer> findVersionMap() throws FindException {
         Map<Long, Integer> result = new HashMap<Long, Integer>();
-        if (!Entity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
+        if (!PersistentEntity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         Session s = null;
         FlushMode old = null;
@@ -171,7 +171,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         Collection<ET> entities = findAll();
         List<EHT> headers = new ArrayList<EHT>();
         for (Object entity1 : entities) {
-            Entity entity = (Entity) entity1;
+            PersistentEntity entity = (PersistentEntity) entity1;
             String name = null;
             if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
             if (name == null) name = "";
@@ -340,10 +340,10 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     }
 
     /**
-     * Gets the {@link Entity} with the specified name from a cache where possible.  If the
+     * Gets the {@link PersistentEntity} with the specified name from a cache where possible.  If the
      * entity is not present in the cache, it will be retrieved from the database.  If the entity
      * is present in the cache but was cached too long ago, checks whether the cached entity
-     * is stale by looking up its {@link Entity#getVersion}.  If the cached entity has the same
+     * is stale by looking up its {@link PersistentEntity#getVersion}.  If the cached entity has the same
      * version as the database, the cached version is marked fresh.
      *
      * @param objectid the OID of the object to get
@@ -413,7 +413,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
         return cacheInfo.entity;
     }
 
-    protected void cacheRemove(Entity thing) {
+    protected void cacheRemove(PersistentEntity thing) {
         Sync write = cacheLock.writeLock();
         try {
             write.acquire();
@@ -448,7 +448,7 @@ public abstract class HibernateEntityManager<ET extends Entity, EHT extends Enti
     /**
      * Override this method to be notified when an Entity has been added to the cache.
      */
-    protected void addedToCache(Entity ent) { }
+    protected void addedToCache(PersistentEntity ent) { }
 
     protected ET checkAndCache(ET thing) throws CacheVeto {
         final Long oid = thing.getOid();

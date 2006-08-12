@@ -107,7 +107,7 @@ public class LdapUser implements User, LdapIdentity, Serializable {
         userBean.setDepartment( department );
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return dn;
     }
 

@@ -2,7 +2,7 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.util.HashCode;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
@@ -23,7 +23,7 @@ import java.security.NoSuchAlgorithmException;
  * Date: Nov 25, 2003<br/>
  * $Id$
  */
-public class ResolutionParameters extends EntityImp implements Serializable {
+public class ResolutionParameters extends PersistentEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(ResolutionParameters.class.getName());
     // todo, ideally, this should fail at the database layer but mysql truncs silently
     //public static final int MAX_LENGTH_RES_PARAMETER = 255;

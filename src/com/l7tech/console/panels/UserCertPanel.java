@@ -297,7 +297,7 @@ public abstract class UserCertPanel extends JPanel {
                         saveUserCert(tc);
 
                         if (parentListener != null)
-                            parentListener.entityUpdated(new EntityEvent(this, new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getName(), null)));
+                            parentListener.entityUpdated(new EntityEvent(this, new EntityHeader(user.getId(), EntityType.USER, user.getName(), null)));
 
                         // reset values and redisplay
                         cert = null;

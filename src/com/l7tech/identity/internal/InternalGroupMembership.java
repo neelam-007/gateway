@@ -12,7 +12,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
  *
  * Each row constitutes an edge in the many-to-many relationship between Users and Groups.
  *
- * The inherited {@link com.l7tech.objectmodel.imp.EntityImp#getOid()} property is
+ * The inherited {@link com.l7tech.objectmodel.imp.PersistentEntityImp#getOid()} property is
  * a generated OID in this class.
  *
  * @author alex

@@ -98,10 +98,10 @@ public class AddIdentityAssertionAction extends SecureAction {
                         EntityHeader header = headers[i];
                         if (header.getType() == EntityType.USER) {
                             User u = admin.findUserByID(providerId, header.getStrId());
-                            identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+                            identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
                         } else if (header.getType() == EntityType.GROUP) {
                             Group g = admin.findGroupByID(providerId, header.getStrId());
-                            MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
+                            MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
                             identityAssertions.add(ma);
                         }
                     }

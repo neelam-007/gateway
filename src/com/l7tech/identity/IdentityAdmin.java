@@ -19,7 +19,6 @@ import java.util.Set;
  *
  * @see IdentityProviderConfig
  * @see EntityHeader
- * @see Entity
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured
@@ -94,7 +93,7 @@ public interface IdentityAdmin {
      * @throws DeleteException if the requested object ID did not exist
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=ID_PROVIDER_CONFIG, stereotype=DELETE_BY_OID)
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype= DELETE_BY_ID)
     void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException;
 
     /**
@@ -112,7 +111,7 @@ public interface IdentityAdmin {
     EntityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException;
 
     /**
-     * Search for {@link Entity}s matching a pattern within the specified {@link IdentityProviderConfig}.
+     * Search for {@link com.l7tech.identity.Identity}s matching a pattern within the specified {@link IdentityProviderConfig}.
      *
      * @param idProvCfgId  the unique object ID of the {@link IdentityProviderConfig} whose users to load.
      * @param types        list of {@link EntityType}s to include in the results.  Must not be null or empty.
@@ -172,7 +171,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=USER, stereotype=DELETE_BY_OID, relevantArg=1)
+    @Secured(types=USER, stereotype= DELETE_BY_ID, relevantArg=1)
     void deleteUser(long idProvCfgId, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -242,7 +241,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=GROUP, stereotype=DELETE_BY_OID, relevantArg=1)
+    @Secured(types=GROUP, stereotype= DELETE_BY_ID, relevantArg=1)
     void deleteGroup(long idProvCfgId, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -347,7 +346,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype=GET_PROPERTY_BY_OID, relevantArg=1)
+    @Secured(types=USER, stereotype= GET_PROPERTY_BY_ID, relevantArg=1)
     Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException;
 
     /**
@@ -361,7 +360,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype=GET_PROPERTY_BY_OID, relevantArg=1)
+    @Secured(types=GROUP, stereotype= GET_PROPERTY_BY_ID, relevantArg=1)
     Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
 
 }

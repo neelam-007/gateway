@@ -263,8 +263,8 @@ public class MainWindow extends JFrame {
         LogonEvent event = new LogonEvent(this, LogonEvent.LOGOFF);
         ssmApplication.getApplicationContext().publishEvent(event);
         EventListener[] listeners = listenerList.getListeners(LogonListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((LogonListener)listeners[i]).onLogoff(event);
+        for (EventListener listener : listeners) {
+            ((LogonListener) listener).onLogoff(event);
         }
         disconnected = true;
         descriptionText.setText("");
@@ -721,7 +721,7 @@ public class MainWindow extends JFrame {
         }
         createServiceAction = new CreateServiceWsdlAction();
         createServiceAction.setEnabled(false);
-        this.addLogonListener((CreateServiceWsdlAction)createServiceAction);
+        this.addLogonListener(createServiceAction);
         return createServiceAction;
     }
 
@@ -808,7 +808,7 @@ public class MainWindow extends JFrame {
               }
 
               public void actionPerformed(ActionEvent event) {
-                  Collection alreadyRefreshed = new ArrayList();
+                  Collection<Refreshable> alreadyRefreshed = new ArrayList<Refreshable>();
                   // no matter what, if id provider tree exists, always refresh it
                   if (identityProvidersTree != null) {
                       identityProvidersTree.refresh(identitiesRootNode);
@@ -1071,8 +1071,7 @@ public class MainWindow extends JFrame {
         panel.setTransferHandler(new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener(){
             public boolean acceptFiles(File[] files) {
                 boolean accepted = false;
-                for (int i = 0; i < files.length; i++) {
-                    File file = files[i];
+                for (File file : files) {
                     accepted = accepted | getAuditOrLogsFromFileAction().openFile(file);
                 }
 
@@ -1745,7 +1744,6 @@ public class MainWindow extends JFrame {
     }
 
     /**
-     * @param event ActionEvent
      * @see ActionEvent for details
      */
     private void exitMenuEventHandler() {
@@ -1880,9 +1878,8 @@ public class MainWindow extends JFrame {
             final Font font = label.getFont();
             style.addAttribute(StyleConstants.FontFamily, font.getFamily());
             style.removeAttribute(StyleConstants.FontSize);
-            style.addAttribute(StyleConstants.FontSize, new Integer(font.getSize()).toString());
+            style.addAttribute(StyleConstants.FontSize, Integer.toString(font.getSize()));
         }
-        label = null;
     }
 
     /**
@@ -1952,9 +1949,9 @@ public class MainWindow extends JFrame {
             window.toFront();
         }
         else {
-            HelpSet hs = null;
+            HelpSet hs;
             URL url = null;
-            HelpBroker javaHelpBroker = null;
+            HelpBroker javaHelpBroker;
             String helpsetName = "SSG Help";
 
             try {
@@ -2325,8 +2322,7 @@ public class MainWindow extends JFrame {
 
               getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
-              int timeout = 0;
-              timeout = Preferences.getPreferences().getInactivityTimeout();
+              int timeout = Preferences.getPreferences().getInactivityTimeout();
 
               final int fTimeout = timeout;
               SwingUtilities.invokeLater(new Runnable() {
@@ -2343,9 +2339,7 @@ public class MainWindow extends JFrame {
           }
 
           /* invoked on authentication failure */
-          public void onAuthFailure() {
-              ;
-          }
+          public void onAuthFailure() { }
       };
 
     /**

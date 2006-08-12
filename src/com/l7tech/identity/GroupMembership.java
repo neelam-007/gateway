@@ -1,11 +1,11 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * Abstract superclass of all group memberships.
  */
-public abstract class GroupMembership extends EntityImp {
+public abstract class GroupMembership extends PersistentEntityImp {
     protected long thisGroupProviderOid;
     protected String memberUserId;
 

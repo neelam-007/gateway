@@ -137,7 +137,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     public void delete(UT user) throws DeleteException {
         UT userImp = cast(user);
         try {
-            UT originalUser = findByPrimaryKey(userImp.getUniqueIdentifier());
+            UT originalUser = findByPrimaryKey(userImp.getId());
 
             if (originalUser == null) {
                 throw new ObjectNotFoundException("User " + user.getName());
@@ -264,7 +264,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         UT imp = cast(user);
 
         try {
-            UT originalUser = findByPrimaryKey(user.getUniqueIdentifier());
+            UT originalUser = findByPrimaryKey(user.getId());
             if (originalUser == null) {
                 logger.warning("The user " + user.getName() + " is not found.");
                 throw new ObjectNotFoundException("User " + user.getName());
@@ -280,7 +280,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             checkUpdate(originalUser, imp);
 
             if (groupHeaders != null)
-                identityProvider.getGroupManager().setGroupHeaders(user.getUniqueIdentifier(), groupHeaders);
+                identityProvider.getGroupManager().setGroupHeaders(user.getId(), groupHeaders);
 
             // update user
             originalUser.copyFrom(imp);

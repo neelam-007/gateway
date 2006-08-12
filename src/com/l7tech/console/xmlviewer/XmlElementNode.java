@@ -24,7 +24,6 @@ import org.dom4j.*;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -88,7 +87,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     /**
      * Constructs the the XML element node.
      *
-     * @param the XML comment element.
+     * @param viewer the XML comment element.
      */
     public XmlElementNode(Viewer viewer) {
         this.viewer = viewer;
@@ -128,31 +127,24 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     /**
      * Constructs the node for the XML element.
      *
-     * @param element the XML element.
+     * @return the XML element.
      */
     public ExchangerElement getElement() {
         return element;
     }
 
     private void format() {
-        Vector lines = new Vector();
-        Line current = new Line();
-        lines.add(current);
-
-        if (isEndTag()) {
-            current = parseEndTag(lines, current, element);
-        } else {
-            current = parseElement(lines, current, element);
-        }
+        Vector<Line> lines = new Vector<Line>();
+        lines.add(new Line());
 
         this.lines = new Line[lines.size()];
 
         for (int i = 0; i < lines.size(); i++) {
-            this.lines[i] = (Line)lines.elementAt(i);
+            this.lines[i] = lines.elementAt(i);
         }
     }
 
-    protected Line parseElement(Vector lines, Line current, ExchangerElement elem) {
+    protected Line parseElement(Vector<Line> lines, Line current, ExchangerElement elem) {
 
         if (isMixed(elem)) {
             current = parseMixedElement(lines, current, elem);
@@ -178,7 +170,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     }
 
     // Elements parsed here can be both mixed and normal but then contained in a mixed element...
-    protected Line parseMixedElement(Vector lines, Line current, ExchangerElement elem) {
+    protected Line parseMixedElement(Vector<Line> lines, Line current, ExchangerElement elem) {
 
         current = parseStartTag(lines, current, elem);
 
@@ -197,13 +189,11 @@ public class XmlElementNode extends DefaultMutableTreeNode {
                     }
                 }
             } else {
-                List elements = (List)elem.elements();
+                List elements = elem.elements();
 
                 if (elements != null && elements.size() > 0) {
-                    Iterator iterator = elements.iterator();
-
-                    while (iterator.hasNext()) {
-                        current = parseMixedElement(lines, current, (ExchangerElement)iterator.next());
+                    for (Object element1 : elements) {
+                        current = parseMixedElement(lines, current, (ExchangerElement) element1);
                     }
 
                     current = parseEndTag(lines, current, elem);
@@ -217,7 +207,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
         return current;
     }
 
-    protected Line parseComment(Vector lines, Line current, Comment comment) {
+    protected Line parseComment(Vector<Line> lines, Line current, Comment comment) {
         StyledElement styledElement = new StyledElement();
         styledElement.addString(COMMENT_START);
 
@@ -232,7 +222,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     }
 
     // Create a styled version of the start-tag.
-    protected Line parseStartTag(Vector lines, Line current, Element elem) {
+    protected Line parseStartTag(Vector<Line> lines, Line current, Element elem) {
         StyledElement styledElement = new StyledElement();
         styledElement.addString(OPEN_BRACKET);
 
@@ -292,10 +282,8 @@ public class XmlElementNode extends DefaultMutableTreeNode {
             List namespaces = elem.additionalNamespaces();
 
             if (namespaces != null && namespaces.size() > 0) {
-                Iterator iterator = namespaces.iterator();
-
-                for (int i = 0; i < namespaces.size(); i++) {
-                    StyledElement sns = formatNamespace((Namespace)iterator.next());
+                for (Object namespace : namespaces) {
+                    StyledElement sns = formatNamespace((Namespace) namespace);
 
                     if (sns != null) {
                         if (current.length() + sns.length() + 1 > MAX_LINE_LENGTH) {
@@ -316,10 +304,8 @@ public class XmlElementNode extends DefaultMutableTreeNode {
             List attributes = elem.attributes();
 
             if (attributes != null && attributes.size() > 0) {
-                Iterator iterator = attributes.iterator();
-
-                for (int i = 0; i < attributes.size(); i++) {
-                    StyledElement sa = formatAttribute((Attribute)iterator.next());
+                for (Object attribute : attributes) {
+                    StyledElement sa = formatAttribute((Attribute) attribute);
 
                     if (current.length() + sa.length() + 1 > MAX_LINE_LENGTH) {
                         current = new Line();
@@ -345,8 +331,10 @@ public class XmlElementNode extends DefaultMutableTreeNode {
         return current;
     }
 
+
+
     // Create a styled version of the element content.
-    protected Line parseContent(Vector lines, Line current, String text) {
+    protected Line parseContent(Vector<Line> lines, Line current, String text) {
 
         if ((current.length() + 1 >= MAX_LINE_LENGTH) && (text.length() > 0)) {
             current = new Line();
@@ -361,7 +349,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
                 int length = MAX_LINE_LENGTH - (current.length() + 1);
 
                 if (length > text.length()) {
-                    int index = 0;
+                    int index;
 
                     if (text.indexOf("\n") != -1) {
                         index = text.indexOf("\n");
@@ -439,7 +427,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
         return current;
     }
 
-    protected Line parseCommentContent(Vector lines, Line current, String text) {
+    protected Line parseCommentContent(Vector<Line> lines, Line current, String text) {
 
         if ((current.length() + 1 >= MAX_LINE_LENGTH) && (text.length() > 0)) {
             current = new Line();
@@ -454,7 +442,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
                 int length = MAX_LINE_LENGTH - (current.length() + 1);
 
                 if (length > text.length()) {
-                    int index = 0;
+                    int index;
 
                     if (text.indexOf("\n") != -1) {
                         index = text.indexOf("\n");
@@ -533,7 +521,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     }
 
     // Create a styled version of the end-tag.
-    protected Line parseEndTag(Vector lines, Line current, Element elem) {
+    protected Line parseEndTag(Vector<Line> lines, Line current, Element elem) {
         StyledElement styledEnd = new StyledElement();
         styledEnd.addString(OPEN_BRACKET);
         styledEnd.addString(SLASH);
@@ -599,10 +587,10 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     }
 
     public class StyledElement {
-        private Vector strings = null;
+        private Vector<StyledString> strings = null;
 
         public StyledElement() {
-            strings = new Vector();
+            strings = new Vector<StyledString>();
         }
 
         public void addString(StyledString string) {
@@ -613,7 +601,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
             int result = 0;
 
             for (int i = 0; i < strings.size(); i++) {
-                result += ((StyledString)strings.elementAt(i)).getText().length();
+                result += strings.elementAt(i).getText().length();
             }
 
             return result;
@@ -625,10 +613,10 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     }
 
     public class Line {
-        private Vector strings = null;
+        private Vector<StyledString> strings = null;
 
         public Line() {
-            strings = new Vector();
+            strings = new Vector<StyledString>();
         }
 
         public void addStyledString(StyledString string) {
@@ -647,7 +635,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
             StyledString[] ss = new StyledString[strings.size()];
 
             for (int i = 0; i < strings.size(); i++) {
-                ss[i] = (StyledString)strings.elementAt(i);
+                ss[i] = strings.elementAt(i);
             }
 
             return ss;
@@ -657,7 +645,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
             int result = 0;
 
             for (int i = 0; i < strings.size(); i++) {
-                result += ((StyledString)strings.elementAt(i)).getText().length();
+                result += strings.elementAt(i).getText().length();
             }
 
             return result;
@@ -687,7 +675,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
             String result = "";
 
             for (int i = 0; i < strings.size(); i++) {
-                result += ((StyledString)strings.elementAt(i)).getText();
+                result += strings.elementAt(i).getText();
             }
 
             return result;
@@ -732,10 +720,6 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     private static final Font PLAIN_FONT = createDefaultFont();
     private static final Font BOLD_FONT = PLAIN_FONT.deriveFont(Font.BOLD);
     private static final Font ITALIC_FONT = PLAIN_FONT.deriveFont(Font.ITALIC);
-
-    private static final FontMetrics PLAIN_FONT_METRICS = (new XmlCellRenderer()).getFontMetrics(PLAIN_FONT);
-    private static final FontMetrics BOLD_FONT_METRICS = (new XmlCellRenderer()).getFontMetrics(BOLD_FONT);
-    private static final FontMetrics ITALIC_FONT_METRICS = (new XmlCellRenderer()).getFontMetrics(ITALIC_FONT);
 
     private static final Color BRACKET_COLOR = new Color(102, 102, 102);
     private static final Font BRACKET_FONT = PLAIN_FONT;
@@ -861,7 +845,7 @@ public class XmlElementNode extends DefaultMutableTreeNode {
     }
 
     private static Font createDefaultFont() {
-        Font font = null;
+        Font font;
         Component component = new XmlCellRenderer();
 
         // test to find out if the monospaced font has the same

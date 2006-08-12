@@ -4,13 +4,13 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * Statically assigns a {@link Role} to a {@link User}.
  * @author alex
  */
-public class UserRoleAssignment extends EntityImp {
+public class UserRoleAssignment extends PersistentEntityImp {
     protected long providerId;
     protected String userId;
     private Role role;

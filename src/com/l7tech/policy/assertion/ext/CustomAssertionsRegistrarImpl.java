@@ -212,7 +212,7 @@ public class CustomAssertionsRegistrarImpl
             }
             else {
                 File configFile = new File(fileName);
-                URL fileUrl = configFile.toURL();
+                URL fileUrl = configFile.toURI().toURL();
                 if (initFromUrl(fileUrl, caClassLoader))
                     initialized = true;
             }

@@ -6,13 +6,13 @@
 
 package com.l7tech.server.url;
 
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class UrlCacheRow extends EntityImp {
+public class UrlCacheRow extends PersistentEntityImp {
     public UrlCacheRow() {
         super();
     }

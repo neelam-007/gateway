@@ -1,10 +1,11 @@
+/**
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.objectmodel;
 
+/**
+ * @author alex
+ */
 public interface Entity {
-    public static final long DEFAULT_OID = -1L;
-
-    int getVersion();
-    void setVersion( int version );
-    long getOid();
-    void setOid( long oid );
+    String getId();
 }

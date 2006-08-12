@@ -28,7 +28,7 @@ public class PhysicalGroupPanel extends GroupPanel {
     }
 
     protected void loadedGroup( Group g ) throws RemoteException, FindException {
-        groupMembers = getIdentityAdmin().getUserHeaders(config.getOid(), group.getUniqueIdentifier());
+        groupMembers = getIdentityAdmin().getUserHeaders(config.getOid(), group.getId());
     }
 
     protected Group newGroup( EntityHeader groupHeader ) {

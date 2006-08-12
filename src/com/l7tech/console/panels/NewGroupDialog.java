@@ -353,7 +353,7 @@ public class NewGroupDialog extends JDialog {
                                 providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
                             } else providerid = ipc.getOid();
                             group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(providerid, group, null ));
-                            header.setStrId(group.getUniqueIdentifier());
+                            header.setStrId(group.getId());
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
                         } catch (DuplicateObjectException doe) {
@@ -403,7 +403,7 @@ public class NewGroupDialog extends JDialog {
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);
                                 header.setName(group.getName());
-                                header.setStrId(group.getUniqueIdentifier());
+                                header.setStrId(group.getId());
 
                                 GroupPanel panel = GroupPanel.newInstance(ipc, header);
                                 if (panel == null) return;

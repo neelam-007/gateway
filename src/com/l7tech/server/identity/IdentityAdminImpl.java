@@ -38,6 +38,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     private ClientCertManager clientCertManager;
 
     private final LicenseManager licenseManager;
+    private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
     public IdentityAdminImpl(LicenseManager licenseManager) {
         this.licenseManager = licenseManager;
@@ -248,8 +249,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
             if (user instanceof UserBean) user = userManager.reify((UserBean) user);
             user.getUserBean().setProviderId(identityProviderConfigId);
 
-            String id = user.getUniqueIdentifier();
-            if (id == null || id.equals(Long.toString(Entity.DEFAULT_OID))) {
+            String id = user.getId();
+            if (id == null || DEFAULT_ID.equals(id)) {
                 id = userManager.save(user, groupHeaders);
                 logger.info("Saved User: " + user.getLogin() + " [" + id + "]");
             } else {
@@ -304,8 +305,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
             if (group instanceof GroupBean) group = groupManager.reify((GroupBean) group);
             group.getGroupBean().setProviderId(identityProviderConfigId);
 
-            String id = group.getUniqueIdentifier();
-            if (id == null || id.equals(Long.toString(Entity.DEFAULT_OID))) {
+            String id = group.getId();
+            if (id == null || id.equals(DEFAULT_ID)) {
                 id = groupManager.save(group, userHeaders);
                 logger.info("Saved Group: " + group.getName() + " [" + id + "]");
             } else {

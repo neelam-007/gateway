@@ -344,7 +344,7 @@ public class PasswordDialog extends JDialog {
             dispose();
             if (listener != null) {
                 EntityHeader eh = new EntityHeader();
-                eh.setStrId(user.getUniqueIdentifier());
+                eh.setStrId(user.getId());
                 eh.setName(user.getName());
                 eh.setType(EntityType.USER);
                 listener.entityUpdated(new EntityEvent(this, eh));

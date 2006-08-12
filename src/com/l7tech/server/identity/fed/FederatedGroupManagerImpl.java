@@ -54,7 +54,7 @@ public class FederatedGroupManagerImpl
     @Transactional(propagation=Propagation.SUPPORTS)
     public GroupMembership newMembership(FederatedGroup group, FederatedUser user) {
         FederatedGroup fgroup = cast(group);
-        return new FederatedGroupMembership(providerConfig.getOid(), fgroup.getOid(), Long.parseLong(user.getUniqueIdentifier()));
+        return new FederatedGroupMembership(providerConfig.getOid(), fgroup.getOid(), Long.parseLong(user.getId()));
     }
 
     protected Class getMembershipClass() {
@@ -93,7 +93,7 @@ public class FederatedGroupManagerImpl
             // fix for bugzilla 1101 virtual group membership enforces trusted fip cert
             Set provCerts = federatedProvider.getValidTrustedCertOids();
             if (provCerts == null || provCerts.size() < 1) {
-                logger.warning("The virtual group " + group.getUniqueIdentifier() + " is itself invalid because " +
+                logger.warning("The virtual group " + group.getId() + " is itself invalid because " +
                                "the parent provider has no trusted certs declared (virtual group must rely on fip " +
                                "trusted cert). Returning false.");
                 return false;

@@ -171,7 +171,7 @@ public class NewVirtualGroupDialog extends JDialog {
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
                             group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getOid(), vGroup, null ));
-                            header.setStrId(group.getUniqueIdentifier());
+                            header.setStrId(group.getId());
                             NewVirtualGroupDialog.this.fireEventGroupAdded(header);
                         } catch (DuplicateObjectException doe) {
                             errorMessage = ExceptionUtils.getMessage(doe);

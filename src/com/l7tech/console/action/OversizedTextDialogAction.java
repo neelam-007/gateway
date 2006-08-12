@@ -6,11 +6,10 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.panels.OversizedTextDialog;
 import com.l7tech.console.tree.policy.OversizedTextAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.OversizedTextDialog;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 
 import javax.swing.*;
@@ -51,8 +50,7 @@ public class OversizedTextDialogAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                OversizedTextDialog d = null;
-                d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true);
+                OversizedTextDialog d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);
@@ -66,10 +64,10 @@ public class OversizedTextDialogAction extends NodeAction {
     }
 
     private void fireAssertionChanged() {
-        JTree tree = (JTree)TopComponents.getInstance().getPolicyTree();
+        JTree tree = TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-            model.assertionTreeNodeChanged((AssertionTreeNode)treeNode);
+            model.assertionTreeNodeChanged(treeNode);
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }

@@ -6,17 +6,17 @@
 
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.Entity;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class ServiceEvent extends Updated {
-    private ServiceEvent( Entity entity, EntityChangeSet changes, String which ) {
+    private ServiceEvent(Entity entity, EntityChangeSet changes, String which) {
         super( entity, changes );
         if (!(entity instanceof PublishedService)) throw new IllegalArgumentException("Entity must be a PublishedService");
         this.note = which;

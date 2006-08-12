@@ -134,7 +134,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
 
     private void updateServiceWithPolicytModel() {
         // first, get service from the service key
-        String serviceKey = ((ListMember)listData.get(serviceList.getSelectedIndex())).serviceKey;
+        String serviceKey = listData.get(serviceList.getSelectedIndex()).serviceKey;
         ServiceDetail serviceDetail;
         try {
             Get_serviceDetail getServiceDetail = new Get_serviceDetail();
@@ -208,7 +208,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             save.check();
             UDDI_Publication_PortType publishing = UDDIPublishStub.getInstance(data.getUddiurl() + "publishing");
             System.out.print("Save in progress ...");
-            ServiceDetail savedResult = publishing.save_service(save);
+            publishing.save_service(save);
             JOptionPane.showMessageDialog(this, "Service updated with policy tModel",
                                           "Success", JOptionPane.PLAIN_MESSAGE);
             done = true;

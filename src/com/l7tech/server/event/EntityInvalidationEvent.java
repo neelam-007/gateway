@@ -1,12 +1,8 @@
 package com.l7tech.server.event;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.ArrayList;
-
 import org.springframework.context.ApplicationEvent;
 
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 /**
  * Event raised when a database change is detected.
@@ -30,7 +26,7 @@ public class EntityInvalidationEvent extends ApplicationEvent {
     public EntityInvalidationEvent(Object source, Class entityClass, long[] entityIds) {
         super(source);
         if(entityClass==null) throw new IllegalArgumentException("entityClass must not be null");
-        if(!Entity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("entityClass must be an Entity");
+        if(!PersistentEntity.class.isAssignableFrom(entityClass)) throw new IllegalArgumentException("entityClass must be a PersistentEntity");
         if(entityIds==null) throw new IllegalArgumentException("entityIds must not be null");
 
         this.entityClass = entityClass;

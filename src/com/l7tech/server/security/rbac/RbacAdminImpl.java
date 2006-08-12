@@ -69,13 +69,13 @@ public class RbacAdminImpl implements RbacAdmin {
             for (ScopePredicate scopePredicate : permission.getScope()) {
                 if (scopePredicate instanceof ObjectIdentityPredicate) {
                     ObjectIdentityPredicate oip = (ObjectIdentityPredicate) scopePredicate;
-                    final long oid = oip.getTargetEntityOid();
+                    final String id = oip.getTargetEntityId();
                     try {
-                        oip.setHeader(entityFinder.findHeader(permission.getEntityType(), oid));
+                        oip.setHeader(entityFinder.findHeader(permission.getEntityType(), id));
                     } catch (FindException e) {
                         logger.severe("Couldn't look up EntityHeader for " +
                                 e.getClass().getSimpleName() +
-                                " #" + oid);
+                                " #" + id);
                     }
                 }
             }

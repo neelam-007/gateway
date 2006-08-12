@@ -13,7 +13,7 @@ import java.util.Map;
  * @author emil
  * @version Feb 17, 2005
  */
-public abstract class EntityManagerStub<ET extends Entity> implements EntityManager<ET, EntityHeader> {
+public abstract class EntityManagerStub<ET extends PersistentEntity> implements EntityManager<ET, EntityHeader> {
     public ET findByPrimaryKey(long oid) throws FindException {
         throw new UnsupportedOperationException();
     }
@@ -72,7 +72,7 @@ public abstract class EntityManagerStub<ET extends Entity> implements EntityMana
     }
 
     /**
-     * Returns the {@link Entity} with the specified OID. If the entity's version was last checked more than
+     * Returns the {@link PersistentEntity} with the specified OID. If the entity's version was last checked more than
      * <code>maxAge</code> milliseconds ago, check for an updated version in the database.  If the entity has been
      * updated, refresh it in the cache if the implementation doesn't complain.
      *

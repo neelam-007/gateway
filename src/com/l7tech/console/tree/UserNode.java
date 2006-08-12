@@ -93,7 +93,7 @@ public class UserNode extends EntityHeaderNode {
         User u = null;
         try {
             u = admin.findUserByID(parent.getEntityHeader().getOid(), getEntityHeader().getStrId());
-            return new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName());
+            return new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName());
         } catch (Exception e) {
             throw new RuntimeException("Couldn't retrieve user", e);
         }

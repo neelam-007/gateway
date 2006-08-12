@@ -25,7 +25,6 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.rmi.RemoteException;
 import java.util.EventListener;
-import java.util.Iterator;
 import java.util.Set;
 
 
@@ -53,8 +52,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             //final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
             //Assertion policy = cr.resolvePolicy(service.getPolicyXml());
             policy.treeChanged(); // preen policy, ensure everything is reparented and properly numbered
-            PolicyTreeModel model = new PolicyTreeModel(policy);
-            return model;
+            return new PolicyTreeModel(policy);
         } catch (Exception e) {
             throw new RuntimeException("Error while parsing the service policy", e);
         }
@@ -145,14 +143,14 @@ public class PolicyTreeModel extends DefaultTreeModel {
                 }
             }
 
-            TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
-            if (path.length < 2)  return true;
-            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
+            TreeNode[] nodePath = ((DefaultMutableTreeNode)node).getPath();
+            if (nodePath.length < 2)  return true;
+            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)nodePath[1];
             AssertionTreeNode an = (AssertionTreeNode)node;
             IdentityPath ip = in.getIdentityPath();
-            Set paths = ip.getPaths();
-            for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                Assertion[] apath = ((AssertionPath)iterator.next()).getPath();
+            Set<AssertionPath> paths = ip.getPaths();
+            for (AssertionPath path : paths) {
+                Assertion[] apath = path.getPath();
                 for (int i = apath.length - 1; i >= 0; i--) {
                     Assertion assertion = apath[i];
                     if (assertion.equals(an.asAssertion())) return true;
@@ -297,7 +295,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
         checkArgumentIsAssertionTreeNode(newChild);
         checkArgumentIsAssertionTreeNode(parent);
         Assertion p = ((AssertionTreeNode)parent).asAssertion();
-        Assertion a = ((AssertionTreeNode)newChild).asAssertion();
+        Assertion a = newChild.asAssertion();
         PolicyEvent event = new PolicyEvent(this,
           new AssertionPath(p.getPath()),
           new int[]{index}, new Assertion[]{a});
@@ -311,11 +309,8 @@ public class PolicyTreeModel extends DefaultTreeModel {
                 service = sn.getPublishedService();
             }
             Assertion policy = assertionTreeNode.asAssertion();
-            PolicyTreeModelChange pc = new PolicyTreeModelChange(policy,
-              event,
-              service,
-              this, (AssertionTreeNode)newChild,
-              (AssertionTreeNode)parent, index);
+            PolicyTreeModelChange pc = new PolicyTreeModelChange(
+                    policy, event, service, this, newChild, (AssertionTreeNode)parent, index);
             pc.advices = new Advice[]{new PolicyValidatorAdvice()};
             pc.proceed();
         } catch (PolicyChangeVetoException e) {
@@ -369,7 +364,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * Advices invocation. Supports invoking the policy change advice chain.
      */
     private static class PolicyTreeModelRemoveChange extends PolicyTreeModelChange {
-        private AssertionTreeNode childNode;
 
         /**
          * Construct the policy change that will invoke advices for a given policy
@@ -383,7 +377,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
                                            PolicyTreeModel treeModel, AssertionTreeNode childNode,
                                            AssertionTreeNode parent, int childLocation) {
             super(policy, event, service, treeModel, childNode, parent, childLocation);
-            this.childNode = childNode;
         }
 
         public void proceed() throws PolicyException {
@@ -430,7 +423,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
                 event,
                 service,
                 PolicyTreeModel.this, (AssertionTreeNode)node,
-                (AssertionTreeNode)parent, childIndex[0]);
+                      parent, childIndex[0]);
             pc.advices = new Advice[]{new PolicyValidatorAdvice()};
             try {
                 pc.proceed();

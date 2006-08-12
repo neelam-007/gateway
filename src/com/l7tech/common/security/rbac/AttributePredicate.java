@@ -5,13 +5,13 @@ package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Logger;
+import java.lang.reflect.Method;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Matches an {@link Entity} if a specified {@link #attribute} of that entity matches a
+ * Matches an {@link com.l7tech.objectmodel.Entity} if a specified {@link #attribute} of that entity matches a
  * predetermined value.
  * <p>
  * The values of the attribute in question <em>must</em> be of type <code>long</code>, {@link Long}

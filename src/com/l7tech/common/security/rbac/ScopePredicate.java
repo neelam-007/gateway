@@ -4,7 +4,7 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * A predicate in the "scope expression" of a {@link Permission}.
@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.imp.EntityImp;
  * Subclasses *must* implement {@link #equals} and {@link #hashCode}, as instances are added
  * to {@link java.util.Set}s.
  */
-public abstract class ScopePredicate extends EntityImp {
+public abstract class ScopePredicate extends PersistentEntityImp {
     protected Permission permission;
 
     protected ScopePredicate(Permission permission) {

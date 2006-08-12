@@ -185,7 +185,7 @@ public class ServerConfig extends ApplicationObjectSupport {
                         age = CLUSTER_DEFAULT_AGE;
                     }
 
-                    ClusterProperty cp = (ClusterProperty)clusterPropertyManager.getCachedEntityByName(clusterKey, age);
+                    ClusterProperty cp = clusterPropertyManager.getCachedEntityByName(clusterKey, age);
                     if (cp == null) {
                         logger.finest("No cluster property named '" + clusterKey + "'");
                     } else {
@@ -243,16 +243,15 @@ public class ServerConfig extends ApplicationObjectSupport {
     private String getServerConfigPropertyName(String suffix, String value) {
         String name = null;
         if(suffix!=null && value!=null) {
-            Set propEntries = _properties.entrySet();
-            for (Iterator iterator = propEntries.iterator(); iterator.hasNext();) {
-                Map.Entry propEntry = (Map.Entry) iterator.next();
+            Set<Map.Entry<Object,Object>> propEntries = _properties.entrySet();
+            for (Map.Entry<Object,Object> propEntry : propEntries) {
                 String propKey = (String) propEntry.getKey();
                 String propVal = (String) propEntry.getValue();
 
-                if(propKey==null || propVal==null) continue;
+                if (propKey == null || propVal == null) continue;
 
-                if(propKey.endsWith(suffix) && propVal.equals(value)) {
-                    name = propKey.substring(0, propKey.length()-suffix.length());
+                if (propKey.endsWith(suffix) && propVal.equals(value)) {
+                    name = propKey.substring(0, propKey.length() - suffix.length());
                     break;
                 }
             }
@@ -359,7 +358,6 @@ public class ServerConfig extends ApplicationObjectSupport {
         String overridePath = System.getProperty(PROPS_OVER_PATH_PROPERTY);
         if (overridePath == null) overridePath = PROPS_OVER_PATH_DEFAULT;
 
-        InputStream overStream = null;
         try {
             if (overridePath != null) {
                 propStream = new FileInputStream(overridePath);
@@ -376,13 +374,6 @@ public class ServerConfig extends ApplicationObjectSupport {
             logger.log(Level.INFO, "Couldn't find serverconfig_override.properties; continuing with no overrides");
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
-        } finally {
-            if (overStream != null)
-                try {
-                    overStream.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't close properties stream", e);
-                }
         }
 
         // export as system property. This is required so custom assertions
@@ -394,16 +385,6 @@ public class ServerConfig extends ApplicationObjectSupport {
         } else {
             logger.warning("The server config directory value is empty");
         }
-    }
-
-    private String print(InetAddress ip) {
-        StringBuffer result = new StringBuffer();
-        byte[] addr = ip.getAddress();
-        for (int i = 0; i < addr.length; i++) {
-            result.append(addr[i] & 0xff);
-            if (i < addr.length - 1) result.append(".");
-        }
-        return result.toString();
     }
 
     public int getServerId() {
@@ -631,7 +612,6 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     private ClusterPropertyManager clusterPropertyManager;
     private int _serverId;
-    private List _ipProtocolPorts;
     private String _hostname;
     private Properties _properties;
 

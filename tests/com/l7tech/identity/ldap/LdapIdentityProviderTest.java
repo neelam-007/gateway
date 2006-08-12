@@ -205,7 +205,7 @@ public class LdapIdentityProviderTest {
                 System.out.println("user not found");
                 return;
             } else {
-                System.out.println("user found " + notauthenticated.getUniqueIdentifier());
+                System.out.println("user found " + notauthenticated.getId());
             }
             AuthenticationResult authResult = null;
             try {

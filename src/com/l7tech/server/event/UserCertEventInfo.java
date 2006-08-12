@@ -6,10 +6,8 @@
 
 package com.l7tech.server.event;
 
-import com.l7tech.identity.AnonymousIdentityReference;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.cert.CertEntryRow;
@@ -24,13 +22,7 @@ public class UserCertEventInfo {
         try {
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(cer.getProvider());
-            User user = provider.getUserManager().findByPrimaryKey(cer.getUserId());
-            if (user instanceof Entity) {
-                this.user = (Entity)user;
-            } else {
-                // Make a fake user to satisfy the silly Entity requirement
-                this.user = new AnonymousIdentityReference(User.class, cer.getUserId(), cer.getProvider(), null);
-            }
+            this.user = provider.getUserManager().findByPrimaryKey(cer.getUserId());
 
             String note = verb;
             if (changes != null) {
@@ -51,7 +43,7 @@ public class UserCertEventInfo {
         }
     }
 
-    public Entity getUser() {
+    public User getUser() {
         return user;
     }
 
@@ -59,6 +51,6 @@ public class UserCertEventInfo {
         return note;
     }
 
-    private final Entity user;
+    private final User user;
     private final String note;
 }

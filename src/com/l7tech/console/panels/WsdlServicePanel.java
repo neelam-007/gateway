@@ -1,9 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.ibm.wsdl.extensions.soap.SOAPConstants;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.wsdl.*;
@@ -13,7 +10,6 @@ import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -174,14 +170,13 @@ public class WsdlServicePanel extends WizardStepPanel {
 
     private void collectSoapAddress(Port port) throws WSDLException {
         ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
-        ExtensibilityElement ee = null;
+        ExtensibilityElement ee;
 
-        java.util.List remove = new ArrayList();
+        java.util.List<SOAPAddress> remove = new ArrayList<SOAPAddress>();
         java.util.List extensibilityElements = port.getExtensibilityElements();
-        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
-            if (ee instanceof SOAPAddress) {
-                remove.add(o);
+        for (Object o : extensibilityElements) {
+            if (o instanceof SOAPAddress) {
+                remove.add((SOAPAddress) o);
             }
         }
         extensibilityElements.removeAll(remove);
@@ -206,8 +201,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         if (bindings.isEmpty()) {
             throw new IllegalStateException("Should have at least one binding");
         }
-        Binding binding = (Binding)bindings.values().iterator().next();
-        return binding;
+        return (Binding)bindings.values().iterator().next();
     }
 
 

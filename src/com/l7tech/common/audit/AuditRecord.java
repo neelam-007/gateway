@@ -8,6 +8,8 @@ package com.l7tech.common.audit;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -24,7 +26,10 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public abstract class AuditRecord extends SSGLogRecord {
+public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, PersistentEntity {
+    private long oid;
+    private int version;
+
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
     protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
     /** Login or name of the user that is making the request if known, or null otherwise. */
@@ -54,6 +59,18 @@ public abstract class AuditRecord extends SSGLogRecord {
         this.identityProviderOid = identityProviderOid;
         this.userName = userName;
         this.userId = userId;
+    }
+
+    public String getId() {
+        return Long.toString(oid);
+    }
+
+    public long getOid() {
+        return oid;
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     /**
@@ -128,6 +145,16 @@ public abstract class AuditRecord extends SSGLogRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setOid(long oid) {
+        this.oid = oid;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
     public void setIdentityProviderOid( long identityProviderOid ) {
         this.identityProviderOid = identityProviderOid;
     }
@@ -149,7 +176,7 @@ public abstract class AuditRecord extends SSGLogRecord {
      * @throws IOException
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        details = new LinkedHashSet(details);
+        details = new LinkedHashSet<AuditDetail>(details);
         out.defaultWriteObject();
     }
 }

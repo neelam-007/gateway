@@ -8,8 +8,6 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.AuditDetailEvent;
-import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.MessageSummaryAuditDetail;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
@@ -74,7 +72,7 @@ public class MessageSummaryAuditFactory {
                 if (creds != null) userName = creds.getLogin();
             } else {
                 identityProviderOid = u.getProviderId();
-                userId = u.getUniqueIdentifier();
+                userId = u.getId();
                 userName = u.getName();
                 if (userName == null) userName = u.getLogin();
             }

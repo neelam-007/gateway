@@ -15,7 +15,6 @@ import javax.swing.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -41,7 +40,7 @@ public abstract class NodeAction extends SecureAction {
      * @param requiredAssertionLicense assertion class that must be licensed, or null to allow action regardless of licensing
      */
     public NodeAction(AbstractTreeNode node, Class<? extends Assertion> requiredAssertionLicense) {
-        this(node, null, requiredAssertionLicense == null ? null : (List)Arrays.asList(requiredAssertionLicense));
+        this(node, null, requiredAssertionLicense == null ? (Collection)null : Arrays.asList(requiredAssertionLicense));
     }
 
     /**
@@ -65,9 +64,8 @@ public abstract class NodeAction extends SecureAction {
      * @param tree the tree this node is associated with
      */
     public final void setTree(JTree tree) {
-        JTree ot = tree;
         this.tree = tree;
-        this.firePropertyChange("tree", ot, tree);
+        this.firePropertyChange("tree", tree, tree);
     }
 
     /**
@@ -86,10 +84,10 @@ public abstract class NodeAction extends SecureAction {
      */
     public IdentityProviderConfig getIdentityProviderConfig(EntityHeaderNode node) {
         long providerId = -1;
-        if (node == null)
+        if (node == null) {
             providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
-        else if (node instanceof EntityHeaderNode) {
-            EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
+        } else {
+            EntityHeader header = node.getEntityHeader();
             if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
                 providerId = header.getOid();
             }

@@ -30,8 +30,8 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * default comparator for the child objects
      */
-    protected static final Comparator DEFAULT_COMPARATOR = new Comparator() {
-        public int compare(Object o1, Object o2) {
+    protected static final Comparator<TreeNode> DEFAULT_COMPARATOR = new Comparator<TreeNode>() {
+        public int compare(TreeNode o1, TreeNode o2) {
             if (o1 instanceof Comparable && o2 instanceof Comparable) {
                 return ((Comparable)o1).compareTo(o2);
             }
@@ -41,10 +41,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
-    private java.util.List cookies = new ArrayList();
+    private java.util.List<Cookie> cookies = new ArrayList<Cookie>();
     protected String tooltip = null;
-    ;
-    protected Comparator childrenComparator = EntityHeaderNode.DEFAULT_COMPARATOR;
+    protected Comparator<? super TreeNode> childrenComparator = DEFAULT_COMPARATOR;
 
     /**
      * Instantiate the tree node with the user object
@@ -62,7 +61,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @param object
      * @param c the children omparator used for sorting
      */
-    public AbstractTreeNode(Object object, Comparator c) {
+    public AbstractTreeNode(Object object, Comparator<? super TreeNode> c) {
         super(object);
         if (c !=null) {
             childrenComparator = c;
@@ -202,12 +201,12 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * subclasses may override this method
      */
-    protected void loadChildren(){};
+    protected void loadChildren(){}
 
     /**
      * Subclasses may override this method to take some action immediately after loadChildren is called.
      */
-    protected void filterChildren(){};
+    protected void filterChildren(){}
 
     /**
      * Get the set of actions associated with this node.
@@ -231,15 +230,14 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      *         by class.
      */
     public Action[] getActions(Class cl) {
-        java.util.List list = new ArrayList();
+        java.util.List<Action> list = new ArrayList<Action>();
         Action[] actions = getActions();
-        for (int i = 0; i < actions.length; i++) {
-            Action action = actions[i];
+        for (Action action : actions) {
             if (cl.isAssignableFrom(action.getClass())) {
-                list.add(actions[i]);
+                list.add(action);
             }
         }
-        return (Action[])list.toArray(new Action[]{});
+        return list.toArray(new Action[]{});
     }
 
 
@@ -255,18 +253,17 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         if (actions == null || actions.length == 0)
             return null;
         JPopupMenu pm = new JPopupMenu();
-        for (int i = 0; i < actions.length; i++) {
-            final Action action = actions[i];
+        for (final Action action : actions) {
             if (action instanceof SecureAction) {
-                final SecureAction secureAction = ((SecureAction)actions[i]);
+                final SecureAction secureAction = ((SecureAction) action);
                 if (secureAction.isAuthorized()) {
-                    pm.add(actions[i]);
+                    pm.add(action);
                     if (secureAction instanceof NodeAction) {
-                        ((NodeAction)secureAction).setTree(tree);
+                        ((NodeAction) secureAction).setTree(tree);
                     }
                 }
             } else {
-                pm.add(actions[i]);
+                pm.add(action);
             }
         }
         Utilities.removeToolTipsFromMenuItems(pm);
@@ -316,9 +313,6 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     public boolean canRefresh() {
         return false;
     }
-
-
-    ;
 
 
     /**
@@ -418,11 +412,11 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             return 0;
         }
         int size = children.size();
-        Comparator c = getChildrenComparator();
+        Comparator<? super TreeNode> c = getChildrenComparator();
         int index = 0;
 
         for (; index < size; index++) {
-            int res = c.compare(node, children.get(index));
+            int res = c.compare(node, (TreeNode)children.get(index));
             if (res <= 0) return index;
         }
         return index;
@@ -434,7 +428,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      *
      * @return the comparator used to sort the children
      */
-    protected Comparator getChildrenComparator() {
+    protected Comparator<? super TreeNode> getChildrenComparator() {
         return childrenComparator;
     }
 

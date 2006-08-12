@@ -18,7 +18,6 @@ import java.rmi.RemoteException;
  *
  * @see PublishedService
  * @see EntityHeader
- * @see Entity
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public interface ServiceAdmin extends ServiceAdminPublic {
@@ -121,7 +120,7 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @throws java.rmi.RemoteException on remote communication error
      * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
      */
-    @Secured(stereotype=DELETE_BY_OID)
+    @Secured(stereotype= DELETE_BY_ID)
     void deletePublishedService(String oid) throws RemoteException, DeleteException;
 
     /**

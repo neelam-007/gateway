@@ -171,7 +171,7 @@ CREATE TABLE rbac_predicate_attribute (
 DROP TABLE IF EXISTS rbac_predicate_oid;
 CREATE TABLE rbac_predicate_oid (
   objectid bigint(20) NOT NULL,
-  entity_oid bigint(20) default NULL,
+  entity_id varchar(255) default NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;

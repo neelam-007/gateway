@@ -50,7 +50,7 @@ public class CounterIDManagerImpl extends HibernateDaoSupport implements Counter
         if (identity == null) {
             key = counterName;
         } else {
-            key = counterName + identity.getProviderId() + identity.getUniqueIdentifier();
+            key = counterName + identity.getProviderId() + identity.getId();
         }
         synchronized (idCache) {
             Long res = (Long)idCache.get(key);
@@ -93,7 +93,7 @@ public class CounterIDManagerImpl extends HibernateDaoSupport implements Counter
             String query = null;
             List res = null;
             if (identity != null) {
-                data.setUserId(identity.getUniqueIdentifier());
+                data.setUserId(identity.getId());
                 data.setProviderId(identity.getProviderId());
             }
             query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +

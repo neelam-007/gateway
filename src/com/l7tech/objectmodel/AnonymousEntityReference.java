@@ -31,6 +31,14 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
         this(entityClass, uniqueId, null);
     }
 
+    /**
+     * Creates and returns an {@link AnonymousEntityReference} that's as close a reflection of the given
+     * {@link EntityHeader} as possible.  <code>null</code> is returned only if the {@link EntityHeader#type}
+     * is {@link EntityType#MAXED_OUT_SEARCH_RESULT}.  Otherwise, this method will create either an
+     * {@link AnonymousEntityReference}, an {@link AnonymousIdentityReference}, or throw an exception.
+     * @param header the EntityHeader to translate
+     * @return the anonymous entity reference, or null if the header was of type {@link EntityType#MAXED_OUT_SEARCH_RESULT} 
+     */
     public static AnonymousEntityReference fromHeader(EntityHeader header) {
         EntityType type = header.getType();
         if (type == EntityType.ID_PROVIDER_CONFIG) {
@@ -60,7 +68,7 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
         } else if (type == EntityType.RBAC_ROLE) {
             return new AnonymousEntityReference(Role.class, header.getOid(), header.getName());
         } else if (type == EntityType.MAXED_OUT_SEARCH_RESULT) {
-            throw new IllegalArgumentException("Can't get reference to " + header.toString());
+            return null;
         } else if (type == EntityType.UNDEFINED) {
             throw new IllegalArgumentException("Can't get reference to " + header.toString());
         } else {
@@ -72,15 +80,10 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
         this.entityClass = entityClass;
         this.uniqueId = uniqueId;
         this.name = name;
-        try {
-            this.oid = Long.valueOf(uniqueId).longValue();
-        } catch (NumberFormatException e) {
-        }
     }
 
     public AnonymousEntityReference(Class entityClass, long oid, String name) {
         this.entityClass = entityClass;
-        this.oid = oid;
         this.name = name;
         this.uniqueId = Long.toString(oid);
     }
@@ -97,13 +100,13 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
         this.uniqueId = uniqueId;
     }
 
-    public long getOid() {
-        return oid;
+    public String getId() {
+        return uniqueId;
     }
 
     public String getName() {
         if (name != null) return name;
-        return entityClass.getSimpleName() + " #" + oid;
+        return entityClass.getSimpleName() + " #" + uniqueId;
     }
 
     public String toString() {
@@ -134,5 +137,4 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
     private final Class entityClass;
     private final String name;
     protected String uniqueId;
-    private long oid;
 }

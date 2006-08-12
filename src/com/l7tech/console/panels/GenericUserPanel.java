@@ -157,7 +157,7 @@ public class GenericUserPanel extends UserPanel {
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 }
                 user = u;
-                userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getUniqueIdentifier());
+                userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getId());
             }
             // Populate the form for insert/update
             initialize();

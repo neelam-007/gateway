@@ -32,7 +32,7 @@ public class Main {
 
         try {
             if (file.exists()) {
-                final InputStream in = file.toURL().openStream();
+                final InputStream in = file.toURI().toURL().openStream();
                 if (in != null) {
                     logManager.readConfiguration(in);
                 }

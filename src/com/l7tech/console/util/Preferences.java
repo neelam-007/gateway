@@ -1,9 +1,9 @@
 package com.l7tech.console.util;
 
+import com.l7tech.common.util.ExceptionUtils;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
 import java.io.*;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -82,9 +82,8 @@ public class Preferences extends ApplicationObjectSupport {
      *               existing properties
      */
     public void updateFromProperties(Properties p, boolean append) {
-        Iterator keys = p.keySet().iterator();
-        while (keys.hasNext()) {
-            String key = (String)keys.next();
+        for (Object o : p.keySet()) {
+            String key = (String) o;
             if (append) {
                 putProperty(key, p.getProperty(key));
             } else {
@@ -157,7 +156,7 @@ public class Preferences extends ApplicationObjectSupport {
 
         if (!storeFile.exists()) {
             ts.load(null, null);
-            FileOutputStream fo = null;
+            FileOutputStream fo;
             fo = new FileOutputStream(storeFile);
             try {
                 ts.store(fo, password);
@@ -202,15 +201,13 @@ public class Preferences extends ApplicationObjectSupport {
      * thrown if an I/O error occurs
      */
     private void configureProperties() {
-        Map knownProps = new HashMap();
+        Map<String, String> knownProps = new HashMap<String, String>();
         knownProps.put("javax.net.ssl.trustStore", new File(TRUST_STORE_FILE).getAbsolutePath());
         knownProps.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
 
-        Iterator keys = knownProps.keySet().iterator();
-        while (keys.hasNext()) {
-            String key = (String)keys.next();
+        for (String key : knownProps.keySet()) {
             if (null == props.getProperty(key)) {
-                putProperty(key, (String)knownProps.get(key));
+                putProperty(key, knownProps.get(key));
             }
         }
     }
@@ -352,9 +349,7 @@ public class Preferences extends ApplicationObjectSupport {
     public void putProperty(String key, String value) throws NullPointerException {
         if (key == null) throw new NullPointerException("key == null");
         if (value == null) throw new NullPointerException("value == null");
-        Object old = props.setProperty(key, value);
-        PropertyChangeEvent e = new PropertyChangeEvent(this, key, old, value);
-        //firePropertyChange(e);
+        props.setProperty(key, value);
     }
 
     /**
@@ -367,8 +362,7 @@ public class Preferences extends ApplicationObjectSupport {
      */
     public void remove(String key) throws NullPointerException {
         if (key == null) throw new NullPointerException("key == null");
-        Object old = props.remove(key);
-        PropertyChangeEvent e = new PropertyChangeEvent(this, key, old, null);
+        props.remove(key);
         //firePropertyChange(e);
     }
 
@@ -413,11 +407,8 @@ public class Preferences extends ApplicationObjectSupport {
      */
     public boolean isStatusBarBarVisible() {
         // default set
-        if (props.getProperty(STATUS_BAR_VISIBLE) == null) {
-            return true;
-        }
-        return Boolean.
-          valueOf(props.getProperty(STATUS_BAR_VISIBLE)).booleanValue();
+        String sbprop = props.getProperty(STATUS_BAR_VISIBLE);
+        return sbprop == null || Boolean.valueOf(sbprop).booleanValue();
     }
 
     /**
@@ -436,11 +427,8 @@ public class Preferences extends ApplicationObjectSupport {
      */
     public boolean isPolicyMessageAreaVisible() {
         // default set
-        if (props.getProperty(POLICY_MSG_AREA_VISIBLE) == null) {
-            return true;
-        }
-        return Boolean.
-          valueOf(props.getProperty(POLICY_MSG_AREA_VISIBLE)).booleanValue();
+        String pmaprop = props.getProperty(POLICY_MSG_AREA_VISIBLE);
+        return pmaprop == null || Boolean.valueOf(pmaprop).booleanValue();
     }
 
     /**
@@ -489,20 +477,10 @@ public class Preferences extends ApplicationObjectSupport {
                     try {
                         fin.close();
                     } catch (IOException e) {
+                        log(ExceptionUtils.getMessage(e), e);
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * simple log (no log4j used here)
-     *
-     * @param msg the message to log
-     */
-    private void log(String msg) {
-        if (debug) {
-            System.err.println(msg);
         }
     }
 
@@ -536,10 +514,9 @@ public class Preferences extends ApplicationObjectSupport {
          * @param o the object to add to the
          */
         public void add(Object o) {
-            LinkedList values = values();
-            Collection remove = new ArrayList();
-            for (Iterator iterator = values.iterator(); iterator.hasNext();) {
-                Object value = (Object)iterator.next();
+            LinkedList<Object> values = values();
+            Collection<Object> remove = new ArrayList<Object>();
+            for (Object value : values) {
                 if (value.equals(o)) {
                     remove.add(value);
                 }
@@ -550,20 +527,19 @@ public class Preferences extends ApplicationObjectSupport {
         }
 
 
-        private LinkedList values() {
-            SortedSet sortedKeys = new TreeSet();
+        private LinkedList<Object> values() {
+            SortedSet<Object> sortedKeys = new TreeSet<Object>();
 
             Enumeration enumeration = props.keys();
             while (enumeration.hasMoreElements()) {
-                Object key = (Object)enumeration.nextElement();
+                Object key = enumeration.nextElement();
                 if (key.toString().startsWith(propertyName)) {
                     sortedKeys.add(key);
                 }
             }
 
-            LinkedList values = new LinkedList();
-            for (Iterator iterator = sortedKeys.iterator(); iterator.hasNext();) {
-                Object key = (Object)iterator.next();
+            LinkedList<Object> values = new LinkedList<Object>();
+            for (Object key : sortedKeys) {
                 values.add(props.get(key));
             }
             return values;
@@ -572,15 +548,15 @@ public class Preferences extends ApplicationObjectSupport {
         private void rekeyValues(List values) {
             Enumeration enumeration = props.keys();
             while (enumeration.hasMoreElements()) {
-                Object key = (Object)enumeration.nextElement();
+                Object key = enumeration.nextElement();
                 if (key.toString().startsWith(propertyName)) {
                     remove(key.toString());
                 }
             }
             int index = 0;
             for (Iterator iterator = values.iterator(); iterator.hasNext() && index < maxSize;) {
-                Object value = (Object)iterator.next();
-                String pn = null;
+                Object value = iterator.next();
+                String pn;
                 if (index == 0) {
                     pn = propertyName;
                 } else {

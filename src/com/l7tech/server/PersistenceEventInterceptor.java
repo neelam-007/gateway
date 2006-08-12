@@ -17,6 +17,7 @@ import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.ScopePredicate;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.AdminEvent;
@@ -41,7 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and
+ * Notices when any persistent {@link com.l7tech.objectmodel.PersistentEntity} is saved, updated or deleted, and creates and
  * fires corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
  * if and when the current transaction commits.
  *
@@ -52,7 +53,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
 
     public PersistenceEventInterceptor() {
-        ignoredClassNames = new HashSet();
+        ignoredClassNames = new HashSet<String>();
         ignoredClassNames.add(SSGLogRecord.class.getName());
         ignoredClassNames.add(ClusterNodeInfo.class.getName());
         ignoredClassNames.add(ResolutionParameters.class.getName());
@@ -70,10 +71,10 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(ServiceUsage.class.getName());
     }
 
-    private final Set ignoredClassNames;
+    private final Set<String> ignoredClassNames;
 
     private boolean ignored(Object entity) {
-        if (!(entity instanceof Entity)) return true;
+        if (!(entity instanceof PersistentEntity)) return true;
         return ignoredClassNames.contains(entity.getClass().getName());
     }
 

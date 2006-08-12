@@ -123,10 +123,10 @@ public class AdminWebServiceFilter implements Filter {
                 new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
                         new MemberOfGroup(adminGroup.getProviderId(),
                                 adminGroup.getName(),
-                                adminGroup.getUniqueIdentifier()),
+                                adminGroup.getId()),
                         new MemberOfGroup(operatorGroup.getProviderId(),
                                 operatorGroup.getName(),
-                                operatorGroup.getUniqueIdentifier())
+                                operatorGroup.getId())
                 }))
         }));
 
@@ -270,7 +270,7 @@ public class AdminWebServiceFilter implements Filter {
                 String message = "Administration Web Service";
                 if(polStatus!=null && polStatus!=AssertionStatus.NONE) message += ": " + polStatus.getMessage();
                 User user = getUser(context);
-                applicationContext.publishEvent(new AdminWebServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getUniqueIdentifier()));
+                applicationContext.publishEvent(new AdminWebServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getId()));
             }
             catch(Exception se) {
                 log.log(Level.WARNING, "Error dispatching event.", se);

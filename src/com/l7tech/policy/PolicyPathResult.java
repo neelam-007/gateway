@@ -23,5 +23,5 @@ public interface PolicyPathResult {
      * @see com.l7tech.policy.AssertionPath
      * @return the set of assertion paths
      */
-    Set paths();
+    Set<AssertionPath> paths();
 }

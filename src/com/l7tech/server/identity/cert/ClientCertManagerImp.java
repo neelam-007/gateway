@@ -134,7 +134,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (userData == null) {
             userData = new CertEntryRow();
             userData.setProvider(user.getProviderId());
-            userData.setUserId(user.getUniqueIdentifier());
+            userData.setUserId(user.getId());
             userData.setLogin(user.getLogin());
             userData.setResetCounter(0);
             newentry = true;
@@ -198,7 +198,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     private String getName(User user) {
         String name = user.getLogin();
         if (name == null || name.length() == 0) name = user.getName();
-        if (name == null || name.length() == 0) name = user.getUniqueIdentifier();
+        if (name == null || name.length() == 0) name = user.getId();
         return name;
     }
 
@@ -287,7 +287,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(FIND_BY_USER_ID);
                     q.setLong(0, user.getProviderId());
-                    q.setString(1, user.getUniqueIdentifier());
+                    q.setString(1, user.getId());
                     CertEntryRow row = (CertEntryRow)q.uniqueResult();
                     if (row != null) return row;
                     if (user.getLogin() != null && user.getLogin().length() > 0) {

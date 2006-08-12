@@ -66,11 +66,11 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     public long getOid() {
-        String uniqueId = bean.getUniqueIdentifier();
+        String uniqueId = bean.getId();
         if ( uniqueId == null || uniqueId.length() == 0 ) {
             return -1L;
         } else {
-            return Long.parseLong(bean.getUniqueIdentifier());
+            return Long.parseLong(bean.getId());
         }
     }
 
@@ -91,7 +91,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         bean.setName( name );
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return Long.toString(_oid);
     }
 

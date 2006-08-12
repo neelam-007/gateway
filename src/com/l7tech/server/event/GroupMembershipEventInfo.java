@@ -13,9 +13,9 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.AnonymousEntityReference;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.springframework.context.ApplicationContext;
 

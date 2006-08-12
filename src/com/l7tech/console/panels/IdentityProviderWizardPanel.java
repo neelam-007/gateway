@@ -484,10 +484,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 Principal p = (Principal)it.next();
                 if (p instanceof User) {
                     User u = (User)p;
-                    identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+                    identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
                 } else if (p instanceof Group) {
                     Group g = (Group)p;
-                    MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
+                    MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
                     identityAssertions.add(ma);
                 }
             }
@@ -556,10 +556,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             Principal p = (Principal)it.next();
             if (p instanceof User) {
                 User u = (User)p;
-                identityAssertion.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+                identityAssertion.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
             } else if (p instanceof Group) {
                 Group g = (Group)p;
-                MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
+                MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getId());
                 identityAssertion.add(ma);
             }
             allAssertions.add(new AllAssertion(identityAssertion));
@@ -634,7 +634,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
               if (p instanceof Group) {
                   // assume that the strid is a valuable piece of information if it;s something else than a number
-                  String strid = ((Group)p).getUniqueIdentifier();
+                  String strid = ((Group)p).getId();
                   String tt;
                   try {
                       Long.parseLong(strid);

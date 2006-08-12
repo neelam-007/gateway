@@ -3,36 +3,22 @@
  */
 package com.l7tech.common.security.rbac;
 
-import com.l7tech.objectmodel.Entity;
-
 /**
  * @author alex
  */
 public class AttemptedRead extends AttemptedOperation {
-    private final long oid;
-    private final String uniqueValue;
+    private final String id;
 
-    public AttemptedRead(EntityType type, long oid) {
+    public AttemptedRead(EntityType type, String id) {
         super(type);
-        this.oid = oid;
-        this.uniqueValue = null;
-    }
-
-    public AttemptedRead(EntityType type, String unique) {
-        super(type);
-        this.uniqueValue = unique;
-        this.oid = Entity.DEFAULT_OID;
-    }
-
-    public long getOid() {
-        return oid;
-    }
-
-    public String getUniqueValue() {
-        return uniqueValue;
+        this.id = id;
     }
 
     public OperationType getOperation() {
         return OperationType.READ;
+    }
+
+    public String getId() {
+        return id;
     }
 }

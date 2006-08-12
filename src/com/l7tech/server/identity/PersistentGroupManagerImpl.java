@@ -123,7 +123,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                         GT group = (GT)result;
                         headers.add(new IdentityHeader(
                                 group.getProviderId(),
-                                group.getUniqueIdentifier(),
+                                group.getId(),
                                 EntityType.GROUP,
                                 group.getName(),
                                 group.getDescription()));
@@ -308,7 +308,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         try {
             // if this is the admin group, make sure that we are not removing all memberships
             preUpdate(imp);
-            GT originalGroup = findByPrimaryKey(group.getUniqueIdentifier());
+            GT originalGroup = findByPrimaryKey(group.getId());
             if (originalGroup == null) {
                 throw new ObjectNotFoundException("Group " + group.getName());
             }
@@ -319,7 +319,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 throw new StaleUpdateException(msg);
             }
 
-            setUserHeaders(group.getUniqueIdentifier(), userHeaders);
+            setUserHeaders(group.getId(), userHeaders);
 
             originalGroup.copyFrom(imp);
             getHibernateTemplate().update(originalGroup);
@@ -336,8 +336,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             return (Boolean)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query query = session.createQuery(HQL_ISMEMBER);
-                    query.setString(0, user.getUniqueIdentifier());
-                    query.setString(1, group.getUniqueIdentifier());
+                    query.setString(0, user.getId());
+                    query.setString(1, group.getId());
                     return (query.iterate().hasNext());
                 }
             });
@@ -392,14 +392,14 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(getMembershipClass());
                 addMembershipCriteria(crit, group, user);
-                crit.add(Restrictions.eq("memberUserId", user.getUniqueIdentifier()));
-                crit.add(Restrictions.eq("thisGroupId", group.getUniqueIdentifier()));
+                crit.add(Restrictions.eq("memberUserId", user.getId()));
+                crit.add(Restrictions.eq("thisGroupId", group.getId()));
                 addMembershipCriteria(crit, group, user);
                 List toBeDeleted = crit.list();
                 if (toBeDeleted == null || toBeDeleted.size() == 0) {
-                    throw new RuntimeException("Couldn't find membership to be deleted; user " + user.getUniqueIdentifier() + ", group " + group.getUniqueIdentifier());
+                    throw new RuntimeException("Couldn't find membership to be deleted; user " + user.getId() + ", group " + group.getId());
                 } else if (toBeDeleted.size() > 1) {
-                    throw new RuntimeException("Found more than one membership to be deleted; user " + user.getUniqueIdentifier() + ", group " + group.getUniqueIdentifier());
+                    throw new RuntimeException("Found more than one membership to be deleted; user " + user.getId() + ", group " + group.getId());
                 }
                 session.delete(toBeDeleted.get(0));
                 return null;
@@ -459,7 +459,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public Set<IdentityHeader> getGroupHeaders(UT user) throws FindException {
-        return getGroupHeaders(user.getUniqueIdentifier());
+        return getGroupHeaders(user.getId());
     }
 
     public Set<IdentityHeader> getGroupHeaders(String userId) throws FindException {
@@ -472,7 +472,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public void setGroupHeaders(UT user, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
-        setGroupHeaders(user.getUniqueIdentifier(), groupHeaders);
+        setGroupHeaders(user.getId(), groupHeaders);
     }
 
     public void setGroupHeaders(String userId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
@@ -515,7 +515,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public Set<IdentityHeader> getUserHeaders(GT group) throws FindException {
-        return getUserHeaders(group.getUniqueIdentifier());
+        return getUserHeaders(group.getId());
     }
 
     public Set<IdentityHeader> getUserHeaders(String groupId) throws FindException {
@@ -553,7 +553,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 for (Iterator i = query.iterate(); i.hasNext();) {
                     //noinspection unchecked
                     GT group = (GT) i.next();
-                    headers.add(new IdentityHeader(group.getProviderId(), group.getUniqueIdentifier(), EntityType.GROUP, group.getName(), null));
+                    headers.add(new IdentityHeader(group.getProviderId(), group.getId(), EntityType.GROUP, group.getName(), null));
                 }
                 return headers;
             }
@@ -561,7 +561,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     public void setUserHeaders(GT group, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
-        setUserHeaders(group.getUniqueIdentifier(), groupHeaders);
+        setUserHeaders(group.getId(), groupHeaders);
     }
 
     private Set<String> headersToIds(Set<IdentityHeader> headers) {

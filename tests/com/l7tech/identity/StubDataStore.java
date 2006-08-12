@@ -255,13 +255,13 @@ public class StubDataStore {
 
         long providerId = pc.getOid();
 
-        MemberOfGroup memberOfGroup = new MemberOfGroup(providerId, g.getName(), g.getUniqueIdentifier());
+        MemberOfGroup memberOfGroup = new MemberOfGroup(providerId, g.getName(), g.getId());
         memberOfGroup.setGroupName(g.getName());
-        memberOfGroup.setGroupId(g.getUniqueIdentifier());
+        memberOfGroup.setGroupId(g.getId());
         identities.add(memberOfGroup);
         for (Iterator i = users.values().iterator(); i.hasNext();) {
             final User u = (User)i.next();
-            identities.add(new SpecificUser(providerId, u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+            identities.add(new SpecificUser(providerId, u.getLogin(), u.getId(), u.getName()));
         }
         OneOrMoreAssertion oom = new OneOrMoreAssertion(identities);
         AllAssertion assertion =
@@ -290,9 +290,9 @@ public class StubDataStore {
 
     private void populate(Object o) {
         if (o instanceof InternalGroup) {
-            groups.put(((InternalGroup)o).getUniqueIdentifier(), o);
+            groups.put(((InternalGroup)o).getId(), o);
         } else if (o instanceof InternalUser) {
-            users.put(((InternalUser)o).getUniqueIdentifier(), o);
+            users.put(((InternalUser)o).getId(), o);
         } else if (o instanceof GroupMembership) {
             memberships.add(o);
         } else if (o instanceof IdentityProviderConfig) {

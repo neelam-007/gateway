@@ -3,19 +3,21 @@
  */
 package com.l7tech.objectmodel.imp;
 
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import java.io.Serializable;
 
 /**
  * @author alex
  */
-public class EntityImp implements Entity, Serializable {
+public class PersistentEntityImp implements PersistentEntity, Serializable {
     public long getOid() { return _oid; }
 
-	public void setOid( long oid ) { _oid = oid; }
+    public String getId() { return Long.toString(_oid); }
 
-    public EntityImp() {
+    public void setOid( long oid ) { _oid = oid; }
+
+    public PersistentEntityImp() {
         _oid = DEFAULT_OID;
         _loadTime = System.currentTimeMillis();
     }
@@ -27,7 +29,7 @@ public class EntityImp implements Entity, Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final EntityImp entityImp = (EntityImp)o;
+        final PersistentEntityImp entityImp = (PersistentEntityImp)o;
 
         if (_oid != entityImp._oid) return false;
 

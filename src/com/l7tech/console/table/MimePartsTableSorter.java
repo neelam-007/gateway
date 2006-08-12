@@ -24,7 +24,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(MimePartsTableSorter.class.getName());
     private boolean ascending = true;
     private int columnToSort = 1;
-    private List rawdata = new ArrayList();
+    private List<MimePartInfo> rawdata = new ArrayList<MimePartInfo>();
     private Object[] sortedData = new Object[0];
 
     /**
@@ -49,8 +49,8 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
-    public void setData(Collection data) {
-        this.rawdata = new ArrayList(data);
+    public void setData(Collection<MimePartInfo> data) {
+        this.rawdata = new ArrayList<MimePartInfo>(data);
         sortData(columnToSort, false);
     }
 
@@ -59,18 +59,15 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param rowData The new row to be stored.
      */
-    public void addRow(Object rowData) {
+    public void addRow(MimePartInfo rowData) {
         this.rawdata.add(rowData);
         sortData(columnToSort, false);
     }
 
     public boolean isCellEditable(int row, int col) {
-         if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX ||
-            col == MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX)
-             return true;
-         else
-             return false;
-     }
+        return col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX ||
+                col == MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX;
+    }
 
    /**
      * Update the data of a row.
@@ -81,19 +78,18 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
    public void setValueAt(Object aValue, int row, int col) {
 
        // only max length column can be modified
-       if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
+       if (col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
 
-           Object o = (Object) getValueAt(row, MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX);
+           Object o = getValueAt(row, MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX);
 
            if (o instanceof String) {
                String mimePartName = (String) o;
 
-               for (int i = 0; i < rawdata.size(); i++) {
-                   MimePartInfo mimePart = (MimePartInfo) rawdata.get(i);
-                   if (mimePart != null && mimePart.getName() == mimePartName) {
+               for (MimePartInfo mimePart : rawdata) {
+                   if (mimePart != null && mimePart.getName().equals(mimePartName)) {
                        // replace the old one
-                       if(aValue instanceof Integer) {
-                           mimePart.setMaxLength(((Integer)aValue).intValue());
+                       if (aValue instanceof Integer) {
+                           mimePart.setMaxLength(((Integer) aValue).intValue());
                        }
                        break;
                    }
@@ -144,9 +140,8 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      * @param orderToggle  true if the sorting order is toggled, false otherwise.
      */
     public void sortData(int column, boolean orderToggle) {
-
-        if(orderToggle){
-            ascending = ascending ? false : true;
+        if (orderToggle) {
+            ascending = !ascending;
         }
 
         // always sort in ascending order if the user select a new column
@@ -156,7 +151,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
         // save the column index
         columnToSort = column;
 
-        Object[] sorted = rawdata.toArray();
+        MimePartInfo[] sorted = rawdata.toArray(new MimePartInfo[0]);
         Arrays.sort(sorted, new MimePartsTableSorter.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
         getRealModel().setRowCount(sortedData.length);
@@ -196,7 +191,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     /**
      * A class for determining the order of two objects by comparing their values.
      */
-    public class ColumnSorter implements Comparator {
+    public class ColumnSorter implements Comparator<MimePartInfo> {
         private boolean ascending;
         private int column;
 
@@ -220,26 +215,26 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
          * @param b  The other one of the two objects to be compared.
          * @return   -1 if a > b, 0 if a = b, and 1 if a < b.
          */
-        public int compare(Object a, Object b) {
+        public int compare(MimePartInfo a, MimePartInfo b) {
 
             Object elementA = new Object();
             Object elementB = new Object();
 
             switch (column) {
                 case MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX:
-                    elementA = ((MimePartInfo) a).getName();
-                    elementB = ((MimePartInfo) b).getName();
+                    elementA = a.getName();
+                    elementB = b.getName();
                     break;
 
                 case MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX:
-                    elementA = ((MimePartInfo) a).retrieveAllContentTypes();
-                    elementB = ((MimePartInfo) b).retrieveAllContentTypes();
+                    elementA = a.retrieveAllContentTypes();
+                    elementB = b.retrieveAllContentTypes();
 
                     break;
 
                 case MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX:
-                        elementA = new Integer(((MimePartInfo) a).getMaxLength());
-                        elementB = new Integer(((MimePartInfo) b).getMaxLength());
+                        elementA = new Integer(a.getMaxLength());
+                        elementB = new Integer(b.getMaxLength());
 
                     break;
 
@@ -266,18 +261,18 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    if (elementA instanceof Integer) {
+                    if (elementA instanceof Integer && elementB instanceof Integer) {
                         return ((Integer) elementA).intValue() > ((Integer) elementB).intValue()?1:0;
-                    } else if(elementA instanceof String) {
+                    } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
                         // add code here to support other types
                         return 0;
                     }
                 } else {
-                     if (elementA instanceof Integer) {
+                     if (elementA instanceof Integer && elementB instanceof Integer) {
                         return ((Integer) elementB).intValue() > ((Integer) elementA).intValue()?1:0;
-                    } else if(elementA instanceof String) {
+                    } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
                         // add code here to support other types

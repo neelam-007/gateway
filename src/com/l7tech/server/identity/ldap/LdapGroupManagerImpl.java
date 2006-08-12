@@ -247,7 +247,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 uberGroupMembershipFilter.append("(&" + "(objectClass=").append(grpclass).append(")");
                 uberGroupMembershipFilter.append("(|");
                 uberGroupMembershipFilter.append("(").append(mbmAttrName).append("=cn=").append(user.getName()).append(")");
-                uberGroupMembershipFilter.append("(").append(mbmAttrName).append("=").append(user.getUniqueIdentifier()).append(")");
+                uberGroupMembershipFilter.append("(").append(mbmAttrName).append("=").append(user.getId()).append(")");
                 uberGroupMembershipFilter.append(")");
                 uberGroupMembershipFilter.append(")");
                 somethingToSearchFor = true;
@@ -323,7 +323,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
         if (checkOuStrategyToo) {
             // look for OU memberships
-            String tmpdn = user.getUniqueIdentifier();
+            String tmpdn = user.getId();
             int pos = 0;
             int res = tmpdn.indexOf("ou=", pos);
             while (res >= 0) {

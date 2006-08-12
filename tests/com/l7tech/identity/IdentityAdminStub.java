@@ -50,7 +50,7 @@ public class IdentityAdminStub implements IdentityAdmin {
 
     public long saveIdentityProviderConfig(IdentityProviderConfig config) throws RemoteException, SaveException, UpdateException {
         long oid = config.getOid();
-        if (oid == 0 || oid == Entity.DEFAULT_OID) {
+        if (oid == 0 || oid == PersistentEntity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
         }
         config.setOid(oid);
@@ -108,25 +108,25 @@ public class IdentityAdminStub implements IdentityAdmin {
 
     public String saveUser(long idProvCfgId, User user, Set groupHeaders) throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         final StubDataStore store = StubDataStore.defaultStore();
-        if (user.getUniqueIdentifier() == null)
+        if (user.getId() == null)
             user.getUserBean().setUniqueIdentifier(Long.toString(store.nextObjectId()));
         user.getUserBean().setProviderId(idProvCfgId);
-        store.getUsers().put(user.getUniqueIdentifier(), user);
+        store.getUsers().put(user.getId(), user);
         if (groupHeaders != null) {
             // Clear existing memberships
             for (Iterator i = store.getGroupMemberships().iterator(); i.hasNext();) {
                 GroupMembership gm = (GroupMembership)i.next();
-                if (user.getUniqueIdentifier().equals(gm.getMemberUserId())) i.remove();
+                if (user.getId().equals(gm.getMemberUserId())) i.remove();
             }
 
             // Set new memberships
             for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
                 EntityHeader header = (EntityHeader)i.next();
-                GroupMembership mem = InternalGroupMembership.newInternalMembership(header.getOid(), Long.parseLong(user.getUniqueIdentifier()));
+                GroupMembership mem = InternalGroupMembership.newInternalMembership(header.getOid(), Long.parseLong(user.getId()));
                 store.getGroupMemberships().add(mem);
             }
         }
-        return user.getUniqueIdentifier();
+        return user.getId();
     }
 
     public EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException {
@@ -156,11 +156,11 @@ public class IdentityAdminStub implements IdentityAdmin {
     public String saveGroup(long idProvCfgId, Group group, Set userHeaders) throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();
-        if (group.getUniqueIdentifier() == null || group.getUniqueIdentifier().equals(Long.toString(Entity.DEFAULT_OID))) {
+        if (group.getId() == null || group.getId().equals(Long.toString(PersistentEntity.DEFAULT_OID))) {
             group.getGroupBean().setUniqueIdentifier(Long.toString(store.nextObjectId()));
         }
-        groups.put(group.getUniqueIdentifier(), group);
-        return group.getUniqueIdentifier();
+        groups.put(group.getId(), group);
+        return group.getId();
     }
 
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
@@ -215,7 +215,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         if (u == null) {
             throw new IllegalArgumentException();
         }
-        return new EntityHeader(u.getUniqueIdentifier(), EntityType.USER, u.getLogin(), u.getName());
+        return new EntityHeader(u.getId(), EntityType.USER, u.getLogin(), u.getName());
     }
 
     /**
@@ -228,7 +228,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         if (g == null) {
             throw new IllegalArgumentException();
         }
-        return new EntityHeader(g.getUniqueIdentifier(), EntityType.GROUP, g.getName(), g.getDescription());
+        return new EntityHeader(g.getId(), EntityType.GROUP, g.getName(), g.getDescription());
     }
 
     /**

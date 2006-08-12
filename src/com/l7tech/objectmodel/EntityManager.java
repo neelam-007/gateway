@@ -7,7 +7,7 @@ import java.util.Map;
  * ET is the Entity type; HT is the EntityHeader type.
  * @author alex
  */
-public interface EntityManager<ET extends Entity, HT extends EntityHeader> {
+public interface EntityManager<ET extends PersistentEntity, HT extends EntityHeader> {
     ET findByPrimaryKey(long oid) throws FindException;
 
     long save(ET entity) throws SaveException;
@@ -43,7 +43,7 @@ public interface EntityManager<ET extends Entity, HT extends EntityHeader> {
     void delete(ET entity) throws DeleteException;
 
     /**
-     * Returns the {@link Entity} with the specified OID. If the entity's version was last checked more than
+     * Returns the {@link PersistentEntity} with the specified OID. If the entity's version was last checked more than
      * <code>maxAge</code> milliseconds ago, check for an updated version in the database.  If the entity has been
      * updated, refresh it in the cache if the implementation doesn't complain.
      *
@@ -70,7 +70,7 @@ public interface EntityManager<ET extends Entity, HT extends EntityHeader> {
     void delete(long oid) throws DeleteException, FindException;
 
     /** Holds information about a cached Entity. */
-    static class CacheInfo<ET extends Entity> {
+    static class CacheInfo<ET extends PersistentEntity> {
         ET entity;
         long timestamp;
         int version;

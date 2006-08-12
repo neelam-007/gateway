@@ -65,7 +65,7 @@ class UserHolder {
     public String toString() {
         String name = user.getName();
         if (name == null) name = user.getLogin();
-        if (name == null) name = user.getUniqueIdentifier();
+        if (name == null) name = user.getId();
         StringBuilder sb = new StringBuilder(name);
         sb.append(" [").append(provName).append("]");
         return sb.toString();

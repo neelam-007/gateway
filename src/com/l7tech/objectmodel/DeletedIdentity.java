@@ -21,7 +21,7 @@ public class DeletedIdentity extends AnonymousEntityReference implements Identit
         return providerId;
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return uniqueId;
     }
 }

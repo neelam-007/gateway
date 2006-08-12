@@ -53,11 +53,11 @@ public class IdentityNode extends AbstractLeafPaletteNode {
                 if (header.getType() == EntityType.USER) {
                     User u = admin.findUserByID(result.providerConfigOid, header.getStrId());
                     if ( u == null ) throw new RuntimeException("Couldn't find user " + header.getStrId() );
-                    assertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+                    assertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getId(), u.getName()));
                 } else if (header.getType() == EntityType.GROUP) {
                     Group g = admin.findGroupByID(result.providerConfigOid, header.getStrId());
                     if ( g == null ) throw new RuntimeException("Couldn't find group " + header.getStrId() );
-                    assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier()));
+                    assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getId()));
                 }
             }
             return (Assertion[])assertions.toArray(new Assertion[]{});

@@ -138,7 +138,7 @@ public class FederatedUserPanel extends UserPanel {
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 }
                 user = u;
-                userGroups = admin.getGroupHeaders(config.getOid(), u.getUniqueIdentifier());
+                userGroups = admin.getGroupHeaders(config.getOid(), u.getId());
             }
             // Populate the form for insert/update
             initialize();

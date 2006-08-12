@@ -20,7 +20,7 @@ public class AnonymousIdentityReference extends AnonymousEntityReference impleme
         return providerOid;
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return uniqueId;
     }
 }

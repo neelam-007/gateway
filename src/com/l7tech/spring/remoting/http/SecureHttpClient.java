@@ -1,26 +1,20 @@
 package com.l7tech.spring.remoting.http;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.net.InetAddress;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.TrustManager;
-
+import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
-import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import javax.net.ssl.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Extension of HttpClient that sets up SSL for the Manager (or other client).
@@ -90,7 +84,7 @@ public class SecureHttpClient extends HttpClient {
             tmf.init((KeyStore)null);
             TrustManager[] trustManagers = tmf.getTrustManagers();
             for (int t=0; t<trustManagers.length; t++) {
-                TrustManager trustManager = (TrustManager) trustManagers[t];
+                TrustManager trustManager = trustManagers[t];
                 if (trustManager instanceof X509TrustManager) {
                     trustManagers[t] = getWrappedX509TrustManager((X509TrustManager) trustManager);
                 }
@@ -145,7 +139,7 @@ public class SecureHttpClient extends HttpClient {
     }
 
     private Protocol getProtocol(final SSLSocketFactory sockFac) {
-        Protocol protocol = new Protocol("https", new SecureProtocolSocketFactory() {
+        return new Protocol("https", new SecureProtocolSocketFactory() {
             public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
                 return sockFac.createSocket(socket, host, port, autoClose);
             }
@@ -158,6 +152,5 @@ public class SecureHttpClient extends HttpClient {
                 return sockFac.createSocket(host, port);
             }
         }, 443);
-        return protocol;
     }
 }

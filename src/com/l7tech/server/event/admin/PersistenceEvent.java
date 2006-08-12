@@ -26,6 +26,6 @@ public class PersistenceEvent extends AdminEvent {
     }
 
     public String toString() {
-        return this.getClass().getName() + " [" + source.getClass().getName() + " #" + ((Entity)source).getOid() + "]";
+        return this.getClass().getName() + " [" + source.getClass().getName() + " #" + ((Entity)source).getId() + "]";
     }
 }

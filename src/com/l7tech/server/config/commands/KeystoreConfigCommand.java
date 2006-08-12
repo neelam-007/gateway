@@ -154,7 +154,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 method.setAccessible(true);
                 for (int i = 0; i < lunaJars.length; i++) {
                     File lunaJar = lunaJars[i];
-                    URL url = lunaJar.toURL();
+                    URL url = lunaJar.toURI().toURL();
                     method.invoke(sysloader, new Object[]{url});
                 }
                 Class lunaJCAClass = null;

@@ -321,7 +321,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     public long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException {
         checkLicense();
         long oid = sm.getOid();
-        if (sm.getOid() == Entity.DEFAULT_OID) {
+        if (sm.getOid() == SampleMessage.DEFAULT_OID) {
             oid = sampleMessageManager.save(sm);
         } else {
             try {

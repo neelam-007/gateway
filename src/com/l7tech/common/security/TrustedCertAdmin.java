@@ -76,7 +76,7 @@ public interface TrustedCertAdmin  {
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted
      * @throws RemoteException on remote communication error
      */
-    @Secured(stereotype=DELETE_BY_OID)
+    @Secured(stereotype= DELETE_BY_ID)
     public void deleteCert(long oid) throws FindException, DeleteException, RemoteException;
 
     public static class HostnameMismatchException extends Exception {

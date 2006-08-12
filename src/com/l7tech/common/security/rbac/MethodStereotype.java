@@ -3,8 +3,6 @@
  */
 package com.l7tech.common.security.rbac;
 
-import com.l7tech.objectmodel.Entity;
-
 /**
  * The known stereotypes that persistence-related admin APIs conform to.  Admin APIs that do not conform
  * to any of the stereotypes listed below cannot currently be secured with RBAC, so the SSG's RBAC enforcement
@@ -13,60 +11,73 @@ import com.l7tech.objectmodel.Entity;
 public enum MethodStereotype {
     /**
      * The method returns one or more {@link EntityHeader}s.
+     *
+     * If the method's return type is a {@link java.util.Collection} or an array of
+     * {@link com.l7tech.objectmodel.EntityHeader}, the contents of the collection will be filtered so that only
+     * headers for which the caller has {@link OperationType#READ} permission on the corresponding ntity will be
+     * returned.
+     *
+     * If the method's return type is not a collection or an array, the caller must have {@link OperationType#READ}
+     * permission on <em>all</em> entities with the specified {@link EntityType}.
      */
     FIND_HEADERS,
 
     /**
-     * The method returns one or more {@link Entity}s.  If the method's return type is a {@link java.util.Collection},
-     * the contents of the collection will be filtered so that only entities for which the caller has a
-     * {@link OperationType#READ} permission will be returned. If the method's return type is not a collection, the
-     * caller must have {@link OperationType#READ} permission on <em>all</em> entities with the specified
-     * {@link EntityType}.
+     * The method returns one or more {@link com.l7tech.objectmodel.Entity}s.
+     *
+     * If the method's return type is a {@link java.util.Collection} or an array of
+     * {@link com.l7tech.objectmodel.Entity}, the contents of the collection will be filtered so that only entities for
+     * which the caller has {@link OperationType#READ} permission will be returned.
+     *
+     * If the method's return type is not a collection or an array, the caller must have {@link OperationType#READ}
+     * permission on <em>all</em> entities with the specified {@link EntityType}.
      */
     FIND_ENTITIES,
 
     /**
-     * The method returns one {@link Entity}, and takes a primary key (e.g. a long) as its sole argument.  Caller must
-     * hold {@link OperationType#READ} permission on the returned entity.
+     * The method returns one {@link com.l7tech.objectmodel.Entity}, and takes a primary key (e.g. a long)
+     * as a {@link Secured#relevantArg} argument.  Caller must hold {@link OperationType#READ} permission
+     * on the returned entity.
      */
     FIND_BY_PRIMARY_KEY,
 
     /**
-     * The method returns one {@link Entity}, and takes an attribute value as its sole argument.  Caller must hold
-     * {@link OperationType#READ} permission on the returned entity.
+     * The method returns one {@link com.l7tech.objectmodel.Entity}, and takes an attribute value as a
+     * {@link Secured#relevantArg} argument.  Caller must hold {@link OperationType#READ} permission
+     * on the returned entity.
      */
     FIND_ENTITY_BY_ATTRIBUTE,
 
     /**
-     * The sole argument must be an {@link Entity}, and the caller must hold {@link OperationType#CREATE} permission on
-     * it.
+     * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold 
+     * {@link OperationType#CREATE} permission on it.
      */
     SAVE,
 
     /**
-     * The sole argument must be an {@link Entity}, and the caller must hold {@link OperationType#UPDATE} permission on
-     * it.
+     * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold
+     * {@link OperationType#UPDATE} permission on it.
      */
     UPDATE,
 
     /**
-     * If the sole argument is an {@link Entity}, the caller must hold either {@link OperationType#CREATE} or
-     * {@link OperationType#UPDATE} permission on it, depending on whether
-     * {@link Entity#getOid()} == {@link Entity#DEFAULT_OID}.
+     * If a {@link Secured#relevantArg} argument is an {@link com.l7tech.objectmodel.Entity}, the caller must hold
+     * {@link OperationType#CREATE} permission on it, if {@link com.l7tech.objectmodel.Entity#getId} is null or
+     * {@link com.l7tech.objectmodel.PersistentEntity#DEFAULT_OID}, or {@link OperationType#UPDATE} permission if not.
      */
     SAVE_OR_UPDATE,
 
     /**
-     * The sole argument must be a <code>long</code>, and the caller must hold {@link OperationType#DELETE} permission
-     * on the corresonding {@link Entity}.
+     * A {@link Secured#relevantArg} argument must be a <code>long</code>, and the caller must hold
+     * {@link OperationType#DELETE} permission on the corresonding {@link com.l7tech.objectmodel.Entity}.
      */
-    DELETE_BY_OID,
+    DELETE_BY_ID,
 
     DELETE_BY_UNIQUE_ATTRIBUTE,
 
     /**
-     * The sole argument must be an {@link Entity}, and the caller must hold {@link OperationType#DELETE} permission on
-     * it.
+     * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold
+     * {@link OperationType#DELETE} permission on it.
      */
     DELETE_ENTITY,
 
@@ -77,35 +88,35 @@ public enum MethodStereotype {
     DELETE_MULTI,
 
     /**
-     * The sole argument must be an {@link Entity}, and the caller must hold {@link OperationType#READ} permission on
-     * it.
+     * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold
+     * {@link OperationType#READ} permission on it.
      */
     GET_PROPERTY_OF_ENTITY,
 
     /**
-     * The sole argument must be a {@link Long} or {@link String}, and the caller must hold {@link OperationType#READ}
-     * permission on the
-     * corresponding {@link Entity}.
+     * A {@link Secured#relevantArg} argument must be a {@link Long} or {@link String}, and the caller must hold
+     * {@link OperationType#READ} permission on the corresponding {@link com.l7tech.objectmodel.Entity}.
      */
-    GET_PROPERTY_BY_OID,
+    GET_PROPERTY_BY_ID,
 
     /**
-     * Exactly one argument must be an {@link Entity}, and the caller must hold {@link OperationType#UPDATE} permission
-     * on it.
+     * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold
+     * {@link OperationType#UPDATE} permission on it.
      */
     SET_PROPERTY_OF_ENTITY,
 
     /**
-     * Exactly one argument must be a {@link Long} or {@link String}, and the caller must hold
-     * {@link OperationType#UPDATE} permission on the corresponding {@link Entity}.
+     * A {@link Secured#relevantArg} argument argument must be a {@link Long} or {@link String}, and the caller must
+     * hold {@link OperationType#UPDATE} permission on the corresponding {@link com.l7tech.objectmodel.Entity}.
      */
-    SET_PROPERTY_BY_OID,
+    SET_PROPERTY_BY_ID,
 
     SET_PROPERTY_BY_UNIQUE_ATTRIBUTE,
 
     /**
-     * The method does not conform to any known stereotype.  Not currently supported (will throw an exception at
-     * runtime).
+     * The method does not conform to any known stereotype.
+     *
+     * Not currently supported (will throw an exception at runtime).
      */
     NONE,
     ;

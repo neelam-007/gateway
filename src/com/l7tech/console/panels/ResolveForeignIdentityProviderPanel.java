@@ -1,26 +1,25 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.action.NewFederatedIdentityProviderAction;
-import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.policy.exporter.IdProviderReference;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.console.policy.exporter.IdProviderReference;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.Set;
-import java.io.ByteArrayInputStream;
 
 /**
  * This wizard panel allows an administrator to resolve a missing identity provider
@@ -51,8 +50,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     }
 
     public boolean canFinish() {
-        if (hasNextPanel()) return false;
-        return true;
+        return !hasNextPanel();
     }
 
     public boolean onNextButton() {
@@ -81,7 +79,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         foreignProviderType.setText(IdentityProviderType.fromVal(unresolvedRef.getIdProviderTypeVal()).description());
 
         // make radio buttons sane
-        actionRadios = new ButtonGroup();
+        ButtonGroup actionRadios = new ButtonGroup();
         actionRadios.add(manualResolvRadio);
         actionRadios.add(removeRadio);
         actionRadios.add(ignoreRadio);
@@ -152,12 +150,11 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
             Map props = (Map)decoder.readObject();
             Set keys = props.keySet();
-            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-                Object o = (Object) iterator.next();
-                if (o instanceof String) {
-                    Object val = props.get(o);
+            for (Object key : keys) {
+                if (key instanceof String) {
+                    Object val = props.get(key);
                     if (val instanceof String) {
-                        model.addRow(new Object[] {o, val});
+                        model.addRow(new Object[]{key, val});
                     }
                 }
             }
@@ -166,8 +163,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
 
     private void populateIdProviders() {
         // populate provider selector
-        IdentityAdmin admin = null;
-        admin = Registry.getDefault().getIdentityAdmin();
+        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         if (admin == null) {
             logger.severe("Cannot get the IdentityAdmin");
             return;
@@ -184,16 +180,14 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             throw new RuntimeException("No providers at all?");
         }
         DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel();
-        for ( int i = 0; i < providerHeaders.length; i++ ) {
-            EntityHeader entityHeader = providerHeaders[i];
+        for (EntityHeader entityHeader : providerHeaders) {
             idprovidermodel.addElement(entityHeader.getName());
         }
         providerSelector.setModel(idprovidermodel);
     }
 
     private Long getProviderIdFromName(String name) {
-        for ( int i = 0; i < providerHeaders.length; i++ ) {
-            EntityHeader entityHeader = providerHeaders[i];
+        for (EntityHeader entityHeader : providerHeaders) {
             if (entityHeader.getName().equals(name)) {
                 return new Long(entityHeader.getOid());
             }
@@ -210,7 +204,6 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private JComboBox providerSelector;
     private JTable providerPropsTable;
     private JButton createProviderButton;
-    private ButtonGroup actionRadios;
 
     private IdProviderReference unresolvedRef;
     private EntityHeader[] providerHeaders;

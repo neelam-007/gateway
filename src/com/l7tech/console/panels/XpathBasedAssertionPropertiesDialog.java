@@ -69,6 +69,7 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -92,8 +93,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private Wsdl serviceWsdl;
     private Message[] soapMessages;
     private String blankMessage = "<empty />";
-    private Map namespaces = new HashMap();
-    private Map requiredNamespaces = new HashMap();
+    private Map<String, String> namespaces = new HashMap<String, String>();
+    private Map<String, String> requiredNamespaces = new HashMap<String, String>();
     private Viewer messageViewer;
     private ViewerToolBar messageViewerToolBar;
     private ExchangerDocument exchangerDocument;
@@ -204,8 +205,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     soapMessages = sg.generateResponses(serviceWsdl);
                 }
                 initializeBlankMessage(soapMessages[0]);
-                for (int i = 0; i < soapMessages.length; i++) {
-                    SoapMessageGenerator.Message soapRequest = soapMessages[i];
+                for (Message soapRequest : soapMessages) {
                     requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
                 }
             }
@@ -347,14 +347,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
     private void populateSampleMessages(String operationName, long whichToSelect) {
         EntityHeader[] sampleMessages;
-        ArrayList messageEntries = new ArrayList();
+        ArrayList<SampleMessageComboEntry> messageEntries = new ArrayList<SampleMessageComboEntry>();
         messageEntries.add(USE_AUTOGEN);
         SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
             sampleMessages = serviceManager.findSampleMessageHeaders(serviceNode.getPublishedService().getOid(), operationName);
-            for (int i = 0; i < sampleMessages.length; i++) {
-                long thisOid = sampleMessages[i].getOid();
+            for (EntityHeader sampleMessage : sampleMessages) {
+                long thisOid = sampleMessage.getOid();
                 SampleMessageComboEntry entry = new SampleMessageComboEntry(serviceManager.findSampleMessageById(thisOid));
                 if (thisOid == whichToSelect) whichEntryToSelect = entry;
                 messageEntries.add(entry);
@@ -687,18 +687,18 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         MutableTreeNode parentNode = root;
         int bindingsCounter = 0;
-        for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
-            Binding b = (Binding)iterator.next();
+        for (Object o : collection) {
+            Binding b = (Binding) o;
             if (showBindings) {
                 final BindingTreeNode bindingTreeNode = new BindingTreeNode(b, wo);
                 treeModel.insertNodeInto(bindingTreeNode, root, bindingsCounter++);
                 parentNode = bindingTreeNode;
             }
 
-            java.util.List operations = b.getBindingOperations();
+            List operations = b.getBindingOperations();
             int index = 0;
-            for (Iterator itop = operations.iterator(); itop.hasNext();) {
-                BindingOperation bo = (BindingOperation)itop.next();
+            for (Object operation : operations) {
+                BindingOperation bo = (BindingOperation) operation;
                 treeModel.insertNodeInto(new BindingOperationTreeNode(bo, wo), parentNode, index++);
             }
         }
@@ -728,9 +728,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
       throws IOException, DocumentException {
         final File file = File.createTempFile("Temp", ".xml");
         Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
-        DocumentUtilities.writeDocument(doc, file.toURL());
+        DocumentUtilities.writeDocument(doc, file.toURI().toURL());
         file.deleteOnExit();
-        return file.toURL();
+        return file.toURI().toURL();
     }
 
     /**
@@ -815,7 +815,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                             throw new RuntimeException(e1);
                         }
                     }
-                } else if (lpc == NON_SOAP_NODE) {
+                } else {
                     populateSampleMessages(null, 0);
                 }
                 messageViewerToolBar.setToolbarEnabled(true);
@@ -856,9 +856,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             try {
                 doc = XmlUtil.stringToDocument(soapMessage);
                 Map docns = XmlUtil.findAllNamespaces(doc.getDocumentElement());
-                for (Iterator i = docns.keySet().iterator(); i.hasNext();) {
-                    String prefix = (String)i.next();
-                    String uri = (String)docns.get(prefix);
+                for (Object o : docns.keySet()) {
+                    String prefix = (String) o;
+                    String uri = (String) docns.get(prefix);
                     if (!namespaces.containsValue(uri)) {
                         namespaces.put(prefix, uri);
                     }

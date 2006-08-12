@@ -3,11 +3,11 @@
  */
 package com.l7tech.server;
 
-import org.springframework.transaction.annotation.Transactional;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 
@@ -25,5 +25,5 @@ public interface EntityFinder {
             <ET> ET find(Class<ET> clazz, Serializable pk) throws FindException;
 
     @Transactional(readOnly=true)
-    EntityHeader findHeader(EntityType etype, long oid) throws FindException;
+    EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException;
 }

@@ -6,14 +6,13 @@
 
 package com.l7tech.server.event.admin;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.audit.AdminAuditListener;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.logging.Level;
 
 /**
- * Implementations are events in the lifecycle of a persistent {@link Entity}.
+ * Implementations are events in the lifecycle of a {@link com.l7tech.objectmodel.PersistentEntity}.
  * @author alex
  * @version $Revision$
  */

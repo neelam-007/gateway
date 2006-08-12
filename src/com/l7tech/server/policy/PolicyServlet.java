@@ -172,7 +172,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 try {
                     String message = success ? "Policy Service: Success" : "Policy Service: Failed";
                     User user = getUser(context);
-                    getApplicationContext().publishEvent(new PolicyServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getUniqueIdentifier()));
+                    getApplicationContext().publishEvent(new PolicyServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getId()));
                 }
                 catch(Exception e) {
                     logger.log(Level.WARNING, "Error publishing event", e);

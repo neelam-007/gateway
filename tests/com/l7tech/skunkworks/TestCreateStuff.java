@@ -62,10 +62,10 @@ public class TestCreateStuff {
 
         Criteria c = s.createCriteria(UserRoleAssignment.class);
         c.add(Restrictions.eq("providerId", adminUser.getProviderId()));
-        c.add(Restrictions.eq("userId", adminUser.getUniqueIdentifier()));
+        c.add(Restrictions.eq("userId", adminUser.getId()));
         UserRoleAssignment ura = (UserRoleAssignment) c.uniqueResult();
         if (ura == null) {
-            ura = new UserRoleAssignment(adminRole, adminUser.getProviderId(), adminUser.getUniqueIdentifier());
+            ura = new UserRoleAssignment(adminRole, adminUser.getProviderId(), adminUser.getId());
             s.save(ura);
         }
 

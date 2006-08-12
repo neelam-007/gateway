@@ -243,7 +243,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 User user = getUser(context);
                 getApplicationContext().publishEvent(new TokenServiceEvent(this, Level.INFO, getRemoteAddress(context)
                                                     , message, user.getProviderId()
-                                                    , getName(user), user.getUniqueIdentifier()));
+                                                    , getName(user), user.getId()));
             }
             catch(Exception e) {
                 logger.log(Level.WARNING, "Error dispatching event", e);

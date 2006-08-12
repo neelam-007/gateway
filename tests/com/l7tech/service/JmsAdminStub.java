@@ -59,7 +59,7 @@ public class JmsAdminStub implements JmsAdmin {
 
     public synchronized long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
         long oid = connection.getOid();
-        if (oid == 0 || oid == Entity.DEFAULT_OID) {
+        if (oid == 0 || oid == PersistentEntity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
         }
         connection.setOid(oid);

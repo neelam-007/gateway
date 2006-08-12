@@ -11,21 +11,20 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import javax.swing.*;
-import java.io.IOException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.rmi.RemoteException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.Iterator;
-import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A reference to an id provider.
@@ -158,7 +157,7 @@ public class IdProviderReference extends ExternalReference {
             return true;
         }
         // 2. Look for same properties. If that exists, => record corresponding match.
-        EntityHeader[] allConfigHeaders = null;
+        EntityHeader[] allConfigHeaders;
         try {
             allConfigHeaders = idAdmin.findAllIdentityProviderConfig();
         } catch (FindException e) {
@@ -169,9 +168,9 @@ public class IdProviderReference extends ExternalReference {
             return false;
         }
         if (allConfigHeaders != null) {
-            for (int i = 0; i < allConfigHeaders.length; i++) {
+            for (EntityHeader header : allConfigHeaders) {
                 try {
-                    configOnThisSystem = idAdmin.findIdentityProviderConfigByID(allConfigHeaders[i].getOid());
+                    configOnThisSystem = idAdmin.findIdentityProviderConfigByID(header.getOid());
                 } catch (RemoteException e) {
                     logger.log(Level.WARNING, "cannot get id provider config", e);
                     continue;
@@ -183,7 +182,7 @@ public class IdProviderReference extends ExternalReference {
                     logger.info("Type mismatch " + configOnThisSystem.getTypeVal() + " vs " + getIdProviderTypeVal());
                     continue;
                 }
-                String localProps = null;
+                String localProps;
                 try {
                     localProps = configOnThisSystem.getSerializedProps();
                 } catch (IOException e) {
@@ -206,8 +205,7 @@ public class IdProviderReference extends ExternalReference {
 
     private boolean equalsProps(String props1, String props2) {
         if (props1 == null || props1.equals("")) {
-            if (props2 == null || props2.equals("")) return true;
-            return false;
+            return props2 == null || props2.equals("");
         }
         if (props2 == null || props2.equals("")) return false;
 
@@ -222,38 +220,34 @@ public class IdProviderReference extends ExternalReference {
     }
 
     private boolean mapEquals(Map map1, Map map2) {
-        if (map1 == null) {
-            if (map2 == null) return true;
-            return false;
-        }
+        if (map1 == null) return map2 == null;
         if (map2 == null) return false;
         // make sure that all objects in map1 are also in map2 and their values are the same
         Set keys = map1.keySet();
-        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-            Object key = (Object) iterator.next();
+        for (Object key : keys) {
             Object val1 = map1.get(key);
             Object val2 = map2.get(key);
             // either a map or a string
             if (val1 instanceof Map) {
-                if (!mapEquals((Map)val1, (Map)val2)) return false;
+                if (!mapEquals((Map) val1, (Map) val2)) return false;
             } else if (val1 instanceof Object[] && val2 instanceof Object[]) {
-                if (!Arrays.equals((Object[])val1, (Object[])val2)) return false;
+                if (!Arrays.equals((Object[]) val1, (Object[]) val2)) return false;
             } else if (val1 instanceof long[] && val2 instanceof long[]) {
-                if (!Arrays.equals((long[])val1, (long[])val2)) return false;
+                if (!Arrays.equals((long[]) val1, (long[]) val2)) return false;
             } else if (val1 instanceof boolean[] && val2 instanceof boolean[]) {
-                if (!Arrays.equals((boolean[])val1, (boolean[])val2)) return false;
+                if (!Arrays.equals((boolean[]) val1, (boolean[]) val2)) return false;
             } else if (val1 instanceof byte[] && val2 instanceof byte[]) {
-                if (!Arrays.equals((byte[])val1, (byte[])val2)) return false;
+                if (!Arrays.equals((byte[]) val1, (byte[]) val2)) return false;
             } else if (val1 instanceof char[] && val2 instanceof char[]) {
-                if (!Arrays.equals((char[])val1, (char[])val2)) return false;
+                if (!Arrays.equals((char[]) val1, (char[]) val2)) return false;
             } else if (val1 instanceof double[] && val2 instanceof double[]) {
-                if (!Arrays.equals((double[])val1, (double[])val2)) return false;
+                if (!Arrays.equals((double[]) val1, (double[]) val2)) return false;
             } else if (val1 instanceof float[] && val2 instanceof float[]) {
-                if (!Arrays.equals((float[])val1, (float[])val2)) return false;
+                if (!Arrays.equals((float[]) val1, (float[]) val2)) return false;
             } else if (val1 instanceof int[] && val2 instanceof int[]) {
-                if (!Arrays.equals((int[])val1, (int[])val2)) return false;
+                if (!Arrays.equals((int[]) val1, (int[]) val2)) return false;
             } else if (val1 instanceof short[] && val2 instanceof short[]) {
-                if (!Arrays.equals((short[])val1, (short[])val2)) return false;
+                if (!Arrays.equals((short[]) val1, (short[]) val2)) return false;
             } else if (!val1.equals(val2)) {
                 logger.info("Mismatch on properties " + key + "" + val1 + "" + val2);
                 return false;
@@ -308,8 +302,8 @@ public class IdProviderReference extends ExternalReference {
                     User userFromLogin = idAdmin.findUserByLogin(providerId, su.getUserLogin());
                     if (userFromLogin != null) {
                         logger.info("Changing " + su.getUserLogin() + "'s id from " +
-                                    su.getUserUid() + " to " + userFromLogin.getUniqueIdentifier());
-                        su.setUserUid(userFromLogin.getUniqueIdentifier());
+                                    su.getUserUid() + " to " + userFromLogin.getId());
+                        su.setUserUid(userFromLogin.getId());
                     } else {
                         // the user is not found with the id nor the login
                         String userRef = su.getUserLogin();
@@ -340,8 +334,7 @@ public class IdProviderReference extends ExternalReference {
         if (this == o) return true;
         if (!(o instanceof IdProviderReference)) return false;
         final IdProviderReference idProviderReference = (IdProviderReference)o;
-        if (providerId != idProviderReference.providerId) return false;
-        return true;
+        return providerId == idProviderReference.providerId;
     }
 
     public int hashCode() {
@@ -427,9 +420,7 @@ public class IdProviderReference extends ExternalReference {
 
             final LocaliseAction localiseAction = (LocaliseAction) o;
 
-            if (val != localiseAction.val) return false;
-
-            return true;
+            return val == localiseAction.val;
         }
 
         public int hashCode() {

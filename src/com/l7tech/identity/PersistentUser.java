@@ -15,7 +15,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 public abstract class PersistentUser extends NamedEntityImp implements User {
     public PersistentUser(UserBean bean) {
         this.bean = bean;
-        String uid = bean.getUniqueIdentifier();
+        String uid = bean.getId();
         if (uid == null) {
             this._oid = DEFAULT_OID;
         } else {
@@ -27,7 +27,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         this.bean = new UserBean();
     }
 
-    public String getUniqueIdentifier() {
+    public String getId() {
         return Long.toString(_oid);
     }
 
@@ -37,11 +37,11 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     }
 
     public long getOid() {
-        String uniqueId = bean.getUniqueIdentifier();
+        String uniqueId = bean.getId();
         if ( uniqueId == null || uniqueId.length() == 0 )
             return -1L;
         else
-            return Long.parseLong(bean.getUniqueIdentifier());
+            return Long.parseLong(bean.getId());
     }
 
     /**

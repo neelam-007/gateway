@@ -66,7 +66,7 @@ public class CertificateAuthenticator {
         }
 
         String userLabel = user.getLogin();
-        if (userLabel == null || userLabel.trim().length() < 1) userLabel = user.getUniqueIdentifier();
+        if (userLabel == null || userLabel.trim().length() < 1) userLabel = user.getId();
 
         if (dbCert == null) {
             String err = "No certificate found for user " + userLabel;

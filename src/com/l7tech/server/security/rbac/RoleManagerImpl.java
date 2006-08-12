@@ -88,7 +88,7 @@ public class RoleManagerImpl
                 Set<UserRoleAssignment> assignments = new HashSet<UserRoleAssignment>();
                 Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
-                userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
+                userAssignmentQuery.add(Restrictions.eq("userId", user.getId()));
                 List directUserAssignments = userAssignmentQuery.list();
                 for (Object assignment : directUserAssignments) {
                     assignments.add((UserRoleAssignment) assignment);
@@ -105,7 +105,7 @@ public class RoleManagerImpl
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<Role> roles = new HashSet<Role>();
                 Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
-                userAssignmentQuery.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
+                userAssignmentQuery.add(Restrictions.eq("userId", user.getId()));
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
                 List uras = userAssignmentQuery.list();
                 for (Iterator i = uras.iterator(); i.hasNext();) {
@@ -128,7 +128,7 @@ public class RoleManagerImpl
 
     public void assignUser(Role role, User user) throws UpdateException {
         try {
-            getHibernateTemplate().save(new UserRoleAssignment(role, user.getProviderId(), user.getUniqueIdentifier()));
+            getHibernateTemplate().save(new UserRoleAssignment(role, user.getProviderId(), user.getId()));
         } catch (DataAccessException e) {
             throw new UpdateException(ExceptionUtils.getMessage(e), e);
         }
@@ -153,7 +153,7 @@ public class RoleManagerImpl
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
         if (user == null || entity == null || operation == null) throw new NullPointerException();
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
-        logger.log(Level.FINE, "Checking for permission to {0} {1} #{2}", new Object[] { operation.getName(), entity.getClass().getSimpleName(), entity.getOid()});
+        logger.log(Level.FINE, "Checking for permission to {0} {1} #{2}", new Object[] { operation.getName(), entity.getClass().getSimpleName(), entity.getId()});
 
         Collection<Role> assignedRoles = getAssignedRoles(user);
         for (Role role : assignedRoles) {
@@ -175,7 +175,7 @@ public class RoleManagerImpl
             public Object doInHibernate(Session session) throws HibernateException, SQLException {
                 Criteria findAssignment = session.createCriteria(UserRoleAssignment.class);
                 findAssignment.add(Restrictions.eq("role", role));
-                findAssignment.add(Restrictions.eq("userId", user.getUniqueIdentifier()));
+                findAssignment.add(Restrictions.eq("userId", user.getId()));
                 findAssignment.add(Restrictions.eq("providerId", user.getProviderId()));
                 for (Object o : findAssignment.list()) {
                     UserRoleAssignment ura = (UserRoleAssignment)o;

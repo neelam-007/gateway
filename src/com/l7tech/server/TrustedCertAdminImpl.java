@@ -86,7 +86,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
         checkLicense();
         long oid;
-        if (cert.getOid() == Entity.DEFAULT_OID) {
+        if (cert.getOid() == TrustedCert.DEFAULT_OID) {
             // check that cert with same dn not already exist
             // because the sql error thrown by hibernate makes it impossible
             // to handle that case specifically.

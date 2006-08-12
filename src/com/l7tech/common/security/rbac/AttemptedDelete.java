@@ -10,20 +10,20 @@ import com.l7tech.objectmodel.AnonymousEntityReference;
  * @author alex
  */
 public class AttemptedDelete extends AttemptedEntityOperation {
-    private final long oid;
+    private final String id;
 
     public AttemptedDelete(EntityType type, Entity entity) {
         super(type, entity);
-        this.oid = entity.getOid();
+        this.id = entity.getId();
     }
 
-    public AttemptedDelete(EntityType type, long oid) {
-        super(type, new AnonymousEntityReference(type.getEntityClass(), oid));
-        this.oid = oid;
+    public AttemptedDelete(EntityType type, String id) {
+        super(type, new AnonymousEntityReference(type.getEntityClass(), id));
+        this.id = id;
     }
 
-    public long getOid() {
-        return oid;
+    public String getId() {
+        return id;
     }
 
     public OperationType getOperation() {

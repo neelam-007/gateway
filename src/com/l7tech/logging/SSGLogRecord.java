@@ -1,7 +1,6 @@
 package com.l7tech.logging;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.objectmodel.Entity;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -18,7 +17,7 @@ import java.util.logging.LogRecord;
  * @version $Id$<br/>
  *
  */
-public class SSGLogRecord extends LogRecord implements Entity, Serializable {
+public class SSGLogRecord extends LogRecord implements Serializable {
 
     public SSGLogRecord() {
         super(Level.FINEST, null);
@@ -37,7 +36,6 @@ public class SSGLogRecord extends LogRecord implements Entity, Serializable {
         setMillis(record.getMillis());
         setThreadID(record.getThreadID());
         setSequenceNumber(record.getSequenceNumber());
-        setOid(record.getSequenceNumber());
 
         // Looks like this may be slow, so turning off for now:
         //
@@ -158,7 +156,7 @@ public class SSGLogRecord extends LogRecord implements Entity, Serializable {
      * @return TRUE if the two objects are the same. FALSE otherwise.
      */
     public boolean equals(Object obj) {
-        SSGLogRecord theOtherOne = null;
+        SSGLogRecord theOtherOne;
         if (obj instanceof SSGLogRecord) theOtherOne = (SSGLogRecord)obj;
         else return false;
         if (nodeId != null) {
@@ -171,36 +169,8 @@ public class SSGLogRecord extends LogRecord implements Entity, Serializable {
         return true;
     }
 
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-    }
-
-    /**
-     * Get the oid of the log record.
-     *
-     * @return long the oid of the log record.
-     */
-    public long getOid() {
-        return oid;
-    }
-
-    /**
-     * Set the oid of the log record.
-     *
-     * @param oid the oid of the log record.
-     */
-    public void setOid( long oid ) {
-        this.oid = oid;
-    }
-
     private static final long serialVersionUID = -2234601153074484000L;
 
-    private long oid;
-    private int version;
     protected String requestId;
     protected String nodeId;
 }

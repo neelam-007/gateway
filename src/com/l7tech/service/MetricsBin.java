@@ -1,6 +1,6 @@
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  *
  * @author rmak
  */
-public class MetricsBin extends EntityImp implements Comparable {
+public class MetricsBin extends PersistentEntityImp implements Comparable {
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is fine resolution */
     public static final int RES_FINE = 0;
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is hourly resolution */

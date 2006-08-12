@@ -44,12 +44,12 @@ public abstract class Authorizer {
                     if (perm.getScope() == null || perm.getScope().size() == 0) return true;
 
                     AttemptedRead read = (AttemptedRead) attempted;
-                    if (read.getOid() != Entity.DEFAULT_OID) {
+                    if (read.getId() != null) {
                         if (perm.getScope().size() == 1) {
                             ScopePredicate pred = perm.getScope().iterator().next();
                             if (pred instanceof ObjectIdentityPredicate) {
                                 ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
-                                if (oip.getTargetEntityOid() == read.getOid()) {
+                                if (read.getId().equals(oip.getTargetEntityId())) {
                                     // Permission is granted to read this object
                                     return true;
                                 }

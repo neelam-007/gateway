@@ -5,7 +5,7 @@
  */
 package com.l7tech.common.audit;
 
-import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -15,7 +15,7 @@ import java.util.Arrays;
 /**
  * An audit detail record.
  */
-public class AuditDetail extends EntityImp implements Serializable {
+public class AuditDetail extends PersistentEntityImp implements Serializable {
     private transient AuditRecord auditRecord;
     private long auditOid;
     private long time;

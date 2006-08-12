@@ -50,7 +50,7 @@
 
     <joined-subclass name="ObjectIdentityPredicate" extends="ScopePredicate" table="rbac_predicate_oid" lazy="false">
         <key column="objectid"/>
-        <property name="targetEntityOid" column="entity_oid" type="long" not-null="true"/>
+        <property name="targetEntityId" column="entity_id" type="string" length="255" not-null="true"/>
     </joined-subclass>
 
     <joined-subclass name="AttributePredicate" extends="ScopePredicate" table="rbac_predicate_attribute" lazy="false">

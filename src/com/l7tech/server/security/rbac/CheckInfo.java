@@ -4,8 +4,8 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.MethodStereotype;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.Entity;
 
 /**
@@ -32,6 +32,6 @@ class CheckInfo {
     OperationType operation;
     CheckBefore before;
     CheckAfter after;
-    long oid = Entity.DEFAULT_OID;
+    String id = null;
     Entity entity = null;
 }

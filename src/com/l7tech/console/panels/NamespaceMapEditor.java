@@ -38,9 +38,9 @@ public class NamespaceMapEditor extends JDialog {
     private JButton helpButton;
     private JButton cancelButton;
 
-    private java.util.List prefixes = new ArrayList();
-    private java.util.List namespaces = new ArrayList();
-    private java.util.List forbiddenNamespaces = new ArrayList();
+    private java.util.List<String> prefixes = new ArrayList<String>();
+    private java.util.List<String> namespaces = new ArrayList<String>();
+    private java.util.List<String> forbiddenNamespaces = new ArrayList<String>();
     boolean cancelled = false;
 
     /**
@@ -49,7 +49,7 @@ public class NamespaceMapEditor extends JDialog {
      * @param predefinedNamespaces optional, the initial namespace map (key is prefix, value is uri)
      * @param forcedNamespaces optional, the namespace values that cannot be removed nor changed
      */
-    public NamespaceMapEditor(Dialog owner, Map predefinedNamespaces, java.util.List forcedNamespaces) {
+    public NamespaceMapEditor(Dialog owner, Map<String, String> predefinedNamespaces, java.util.List<String> forcedNamespaces) {
         super(owner, true);
         initialize(predefinedNamespaces, forcedNamespaces);
     }
@@ -60,7 +60,7 @@ public class NamespaceMapEditor extends JDialog {
      * @param predefinedNamespaces optional, the initial namespace map (key is prefix, value is uri)
      * @param forcedNamespaces optional, the namespace values that cannot be removed nor changed
      */
-    public NamespaceMapEditor(Frame owner, Map predefinedNamespaces, java.util.List forcedNamespaces) {
+    public NamespaceMapEditor(Frame owner, Map<String, String> predefinedNamespaces, java.util.List<String> forcedNamespaces) {
         super(owner, true);
         initialize(predefinedNamespaces, forcedNamespaces);
     }
@@ -68,16 +68,16 @@ public class NamespaceMapEditor extends JDialog {
     /**
      * @return null if the dialog was canceled, otherwise a map with the namespaces.
      */
-    public Map newNSMap() {
+    public Map<String, String> newNSMap() {
         if (cancelled) return null;
-        Map output = new HashMap();
+        Map<String, String> output = new HashMap<String, String>();
         for (int i = 0; i < prefixes.size(); i++) {
             output.put(prefixes.get(i), namespaces.get(i));
         }
         return output;
     }
 
-    private void initialize(Map predefinedNamespaces, java.util.List forcedNamespaces) {
+    private void initialize(Map<String, String> predefinedNamespaces, java.util.List<String> forcedNamespaces) {
         if (predefinedNamespaces != null) {
             prefixes.addAll(predefinedNamespaces.keySet());
             namespaces.addAll(predefinedNamespaces.values());
@@ -133,7 +133,7 @@ public class NamespaceMapEditor extends JDialog {
                                                                                         row,
                                                                                         column);
                     Font font = output.getFont();
-                    Map fontAttributes = new HashMap(font.getAttributes());
+                    Map<TextAttribute, Object> fontAttributes = new HashMap<TextAttribute, Object>(font.getAttributes());
                     fontAttributes.put(TextAttribute.POSTURE, TextAttribute.POSTURE_REGULAR);
                     fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
                     String ns = (String)table1.getModel().getValueAt(row, 1);
@@ -216,7 +216,7 @@ public class NamespaceMapEditor extends JDialog {
             removeButton.setEnabled(false);
             return;
         }
-        String selectedNSURI = (String)namespaces.get(selectedRow);
+        String selectedNSURI = namespaces.get(selectedRow);
         if (forbiddenNamespaces != null && forbiddenNamespaces.contains(selectedNSURI)) {
             removeButton.setEnabled(false);
         } else {
@@ -308,12 +308,12 @@ public class NamespaceMapEditor extends JDialog {
 
     public static void main(String[] args) {
         // test the dlg
-        Map initialValues = new HashMap();
+        Map<String, String> initialValues = new HashMap<String, String>();
         initialValues.put("sp", "http://schemas.xmlsoap.org/soap/envelope/");
         initialValues.put("ns1", "http://warehouse.acme.com/ws");
         initialValues.put("acme", "http://ns.acme.com");
         initialValues.put("77", "http://77.acme.com");
-        java.util.List forbiddenNamespaces = new ArrayList();
+        java.util.List<String> forbiddenNamespaces = new ArrayList<String>();
         forbiddenNamespaces.add("http://schemas.xmlsoap.org/soap/envelope/");
         forbiddenNamespaces.add("http://warehouse.acme.com/ws");
         NamespaceMapEditor blah = new NamespaceMapEditor((Frame)null, initialValues, forbiddenNamespaces);

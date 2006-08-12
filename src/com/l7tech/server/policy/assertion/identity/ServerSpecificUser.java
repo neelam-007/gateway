@@ -45,7 +45,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
 
         User requestingUser = authResult.getUser();
         long requestProvider = requestingUser.getProviderId();
-        String requestUid = requestingUser.getUniqueIdentifier();
+        String requestUid = requestingUser.getId();
         String requestLogin = requestingUser.getLogin();
 
         // provider must always match

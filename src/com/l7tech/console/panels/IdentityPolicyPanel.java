@@ -10,6 +10,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.service.PublishedService;
+import com.l7tech.identity.Identity;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -22,7 +23,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.Principal;
 import java.util.*;
 import java.util.List;
 
@@ -55,9 +55,9 @@ public class IdentityPolicyPanel extends JPanel {
     private JComboBox jmsQueueComboBox;
     private JButton configureBridgeRoutingButton;
 
-    private Principal principal;
+    private Identity identity;
     private IdentityPath principalAssertionPaths;
-    private Set otherPaths;
+    private Set<IdentityPath> otherPaths;
     private Assertion rootAssertion;
     private PublishedService service;
     private AssertionTreeNode identityAssertionNode;
@@ -94,7 +94,7 @@ public class IdentityPolicyPanel extends JPanel {
         this.service = service;
         this.policyTreeModel = (PolicyTreeModel) model;
         this.identityAssertionNode = identityAssertionNode;
-        this.principal = IdentityPath.extractIdentity(identityAssertionNode.asAssertion());
+        this.identity = IdentityPath.extractIdentity(identityAssertionNode.asAssertion());
         rootAssertionTreeNode = (AssertionTreeNode) identityAssertionNode.getRoot();
         this.rootAssertion = rootAssertionTreeNode.asAssertion();
 
@@ -170,11 +170,10 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
         });
-        principalAssertionPaths = IdentityPath.forIdentity(principal, rootAssertion);
+        principalAssertionPaths = IdentityPath.forIdentity(identity, rootAssertion);
         otherPaths = IdentityPath.getPaths(rootAssertion);
-        Collection remove = new ArrayList();
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath) iterator.next();
+        Collection<IdentityPath> remove = new ArrayList<IdentityPath>();
+        for (IdentityPath ip : otherPaths) {
             if (ip.getPrincipal().equals(principalAssertionPaths.getPrincipal())) {
                 remove.add(ip);
             }
@@ -206,16 +205,15 @@ public class IdentityPolicyPanel extends JPanel {
         boolean canmod = true;
         boolean selected;
 
-        Set othersSslAssertions = new HashSet();
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath) iterator.next();
+        Set<SslAssertion> othersSslAssertions = new HashSet<SslAssertion>();
+        for (IdentityPath ip : otherPaths) {
             othersSslAssertions.addAll(ip.getEqualAssertions(SslAssertion.class));
         }
 
         Set principalSslAssertions = principalAssertionPaths.getEqualAssertions(SslAssertion.class);
         selected = !principalSslAssertions.isEmpty();
-        for (Iterator iterator = principalSslAssertions.iterator(); iterator.hasNext();) {
-            sslAssertion = (SslAssertion) iterator.next();
+        for (Object principalSslAssertion : principalSslAssertions) {
+            sslAssertion = (SslAssertion) principalSslAssertion;
             if (othersSslAssertions.contains(sslAssertion)) {
                 canmod = false;
                 break;

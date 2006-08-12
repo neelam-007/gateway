@@ -32,7 +32,6 @@ import org.dom4j.tree.DefaultElement;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -54,14 +53,12 @@ public class ConfigurationProperties {
     private ViewerProperties viewerProperties = null;
     private CategoryProperties rootCategoryProperties = null;
     private Element root = null;
-    private Vector services = null;
+    private Vector<ServiceProperties> services = null;
     private URL url = null;
 
     /**
      * Creates the Configuration Document wrapper.
      * It reads in the root element and sets the list of services.
-     *
-     * @param the url to the XML document.
      */
     public ConfigurationProperties() {
         if (DEBUG) System.out.println("ConfigurationProperties()");
@@ -75,7 +72,7 @@ public class ConfigurationProperties {
         File file = new File(dir, PROPERTIES_FILE);
 
         try {
-            url = file.toURL(); // MalformedURLException
+            url = file.toURI().toURL(); // MalformedURLException
         } catch (Exception e) {
             // Should never happen, am not sure what to do in this case...
             e.printStackTrace();
@@ -97,12 +94,10 @@ public class ConfigurationProperties {
 
         List list = root.elements("service");
 
-        services = new Vector();
+        services = new Vector<ServiceProperties>();
 
-        Iterator i = list.iterator();
-
-        while (i.hasNext()) {
-            services.addElement(new ServiceProperties((Element)i.next()));
+        for (Object aList : list) {
+            services.addElement(new ServiceProperties((Element) aList));
         }
 
         rootCategoryProperties = new CategoryProperties(root.element("category"));
@@ -183,7 +178,7 @@ public class ConfigurationProperties {
     /**
      * Adds a service to the properties.
      *
-     * @param the service properties.
+     * @param service the service properties.
      */
     public void addService(ServiceProperties service) {
         if (DEBUG) System.out.println("ConfigurationProperties.addService( " + service + ")");
@@ -236,8 +231,6 @@ public class ConfigurationProperties {
     }
 
     private Document createDocument() {
-        Document document = null;
-
         Element rootElement = new DefaultElement("xngr-config");
 
         rootElement.addElement("show-desktop").setText("" + false);
@@ -265,16 +258,11 @@ public class ConfigurationProperties {
     }
 
     private Element createDesktop() {
-        Element desktop = createViewElement("desktop", 100, 100, 300, 250);
-
-        return desktop;
+        return createViewElement("desktop", 100, 100, 300, 250);
     }
 
     private Element createEditor() {
-        Element editor = null;
-
-        editor = createViewElement("editor", 0, 0, 600, 550);
-
+        Element editor = createViewElement("editor", 0, 0, 600, 550);
         editor.addElement("search-match-case").setText("" + false);
         editor.addElement("search-direction-down").setText("" + true);
         editor.addElement("spaces").setText("" + 4);
@@ -284,10 +272,7 @@ public class ConfigurationProperties {
     }
 
     private Element createViewer() {
-        Element viewer = null;
-
-        viewer = createViewElement("viewer", 0, 0, 600, 550);
-
+        Element viewer = createViewElement("viewer", 0, 0, 600, 550);
         viewer.addElement("show-namespaces").setText("" + true);
         viewer.addElement("show-attributes").setText("" + true);
         viewer.addElement("show-values").setText("" + true);

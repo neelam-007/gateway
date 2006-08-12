@@ -102,7 +102,7 @@ public class ServerVariables {
                 User authenticatedUser = context.getAuthenticatedUser();
                 if (authenticatedUser != null) {
                     user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getUniqueIdentifier();
+                    if (user == null) user = authenticatedUser.getId();
                 }
                 return user;
             }
@@ -113,7 +113,7 @@ public class ServerVariables {
                 User authenticatedUser = context.getAuthenticatedUser();
                 if (authenticatedUser != null) {
                     user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getUniqueIdentifier();
+                    if (user == null) user = authenticatedUser.getId();
                 }
                 return user;
             }
