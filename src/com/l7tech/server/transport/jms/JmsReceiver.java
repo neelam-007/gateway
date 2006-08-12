@@ -9,9 +9,11 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.system.JMSEvent;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -39,6 +41,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     private static final long RECEIVE_TIMEOUT = 5 * 1000;
     public static final int OOPS_RETRY = 5000; // Five seconds
     public static final int OOPS_SLEEP = 1 * 60 * 1000; // One minute
+    public static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
 
     // Persistence stuff
     private final JmsReplyType _replyType;
@@ -48,10 +51,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     // JMS stuff
 
     // Runtime stuff
+    private Object syncRecv = new Object();
     private boolean _initialized = false;
     private ApplicationContext applicationContext;
-    private ServerConfig serverConfig;
-
+    private transient long lastAuditErrorTime = 0L;
 
     /**
      * Complete constructor
@@ -80,7 +83,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     }
 
     public String toString() {
-        return "jmsReceiver:" + getConnection().getName() + "/" + _inboundRequestEndpoint.getName();
+        return "jmsReceiver:" + getDisplayName();
     }
 
     JmsConnection getConnection() {
@@ -140,8 +143,16 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      *
      * @param applicationContext the spring application context
      */
-    public synchronized void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        synchronized(syncRecv) {
+            this.applicationContext = applicationContext;
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.log(Level.FINE, "Application context set.");
+            }
+            if (applicationContext == null) {
+                _logger.warning("Application context set to null");
+            }
+        }
     }
 
     /**
@@ -150,16 +161,17 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      * @param config
      * @throws LifecycleException
      */
-    public synchronized void setServerConfig(ServerConfig config) throws LifecycleException {
-        serverConfig = config;
-        _logger.info( "Initializing " + toString() + "..." );
-        try {
-            _initialized = true;
-            _handler = new JmsRequestHandler(applicationContext);
-            _loop = new MessageLoop();
-            _logger.info( toString() + " initialized successfully" );
-        } finally {
-            if ( !_initialized && _loop != null ) _loop.close();
+    public void setServerConfig(ServerConfig config) throws LifecycleException {
+        synchronized(syncRecv) {
+            _logger.info( "Initializing " + toString() + "..." );
+            try {
+                _initialized = true;
+                _handler = new JmsRequestHandler(applicationContext);
+                _loop = new MessageLoop();
+                _logger.info( toString() + " initialized successfully" );
+            } finally {
+                if ( !_initialized && _loop != null ) _loop.close();
+            }
         }
     }
 
@@ -167,19 +179,56 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     /**
      * Starts the receiver.
      */
-    public synchronized void start() throws LifecycleException {
-        _logger.info( "Starting " + toString() + "..." );
+    public void start() throws LifecycleException {
+        synchronized(syncRecv) {
+            _logger.info( "Starting " + toString() + "..." );
 
-        if (!_initialized) throw new LifecycleException("Can't start '" + _inboundRequestEndpoint.toString() + "', it has not been successfully initialized!");
+            if (!_initialized) throw new LifecycleException("Can't start '" + _inboundRequestEndpoint.toString() + "', it has not been successfully initialized!");
 
-        try {
-            _loop.start();
-        } catch (JMSException e) {
-            throw new LifecycleException(e.getMessage(), e);
-        } catch (NamingException e) {
-            throw new LifecycleException(e.getMessage(), e);
-        } catch ( JmsConfigException e ) {
-            throw new LifecycleException(e.getMessage(), e);
+            try {
+                _loop.start();
+            } catch (JMSException e) {
+                throw new LifecycleException(e.getMessage(), e);
+            } catch (NamingException e) {
+                throw new LifecycleException(e.getMessage(), e);
+            } catch ( JmsConfigException e ) {
+                throw new LifecycleException(e.getMessage(), e);
+            }
+        }
+    }
+
+    private String getDisplayName() {
+        return getConnection().getJndiUrl()  + "/" + getConnection().getName();
+    }
+
+    private void fireConnected() {
+        lastAuditErrorTime = 0L;
+        fireEvent(new JMSEvent(this, Level.INFO, null, "Connected to '"+getDisplayName()+"'"));
+    }
+
+    private void fireConnectError(String message) {
+        fireEvent(new JMSEvent(this, Level.WARNING,  null, "Error connecting to '"+getDisplayName()+"'; " + message));
+    }
+
+    private void fireEvent(JMSEvent event) {
+        _logger.finest("FIRE message is: " + event.getMessage());
+
+        ApplicationContext context;
+        synchronized(syncRecv) {
+           context = applicationContext;
+        }
+        if (context != null) {
+            long timeNow = System.currentTimeMillis();
+            if ((lastAuditErrorTime+OOPS_AUDIT) < timeNow) {
+                lastAuditErrorTime = timeNow;
+                _logger.finest("Publishing event.");
+                context.publishEvent(event);
+            } else {
+                _logger.info("Not publishing event due to recent failure.");
+            }
+
+        } else {
+            _logger.warning("Event not published, message is: " + event.getMessage());
         }
     }
 
@@ -189,39 +238,68 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             _thread.setDaemon( true );
         }
 
-        private synchronized JmsBag getBag() throws JmsConfigException, JMSException, NamingException {
-            if ( _bag == null ) {
-                _logger.finest( "Getting new JmsBag" );
-                _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
+        private JmsBag getBag() throws JmsConfigException, JMSException, NamingException {
+            synchronized(sync) {
+                if ( _bag == null ) {
+                    _logger.finest( "Getting new JmsBag" );
+                    _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
+                }
+                return _bag;
             }
-            return _bag;
         }
 
-        private synchronized QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException {
-            if ( _consumer == null ) {
-                _logger.finest( "Getting new MessageConsumer" );
-                JmsBag bag = getBag();
-                Session s = bag.getSession();
-                if ( !(s instanceof QueueSession) ) throw new JmsConfigException("Only QueueSessions are supported");
-                QueueSession qs = (QueueSession)s;
-                Queue q = getQueue();
-                _consumer = qs.createReceiver( q );
+        private QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException {
+            synchronized(sync) {
+                if ( _consumer == null ) {
+                    _logger.finest( "Getting new MessageConsumer" );
+                    boolean ok = false;
+                    String message = null;
+                    try {
+                        JmsBag bag = getBag();
+                        Session s = bag.getSession();
+                        if ( !(s instanceof QueueSession) ) throw new JmsConfigException("Only QueueSessions are supported");
+                        QueueSession qs = (QueueSession)s;
+                        Queue q = getQueue();
+                        _consumer = qs.createReceiver( q );
 
-                Connection conn = bag.getConnection();
-                conn.start();
+                        Connection conn = bag.getConnection();
+                        conn.start();
+                        ok = true;
+                    } catch (JMSException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } catch (NamingException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } catch (JmsConfigException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } catch (RuntimeException e) {
+                        message = ExceptionUtils.getMessage(e);
+                        throw e;
+                    } finally {
+                        if (ok) {
+                            fireConnected();
+                        } else {
+                            fireConnectError(message);
+                        }
+                    }
+                }
+                return _consumer;
             }
-            return _consumer;
         }
 
-        private synchronized Queue getQueue() throws NamingException, JmsConfigException, JMSException {
-            if ( _queue == null ) {
-                _logger.finest( "Getting new Queue" );
-                JmsBag bag = getBag();
-                Context context = bag.getJndiContext();
-                String qname = _inboundRequestEndpoint.getDestinationName();
-                _queue = (Queue)context.lookup( qname );
+        private Queue getQueue() throws NamingException, JmsConfigException, JMSException {
+            synchronized(sync) {
+                if ( _queue == null ) {
+                    _logger.finest( "Getting new Queue" );
+                    JmsBag bag = getBag();
+                    Context context = bag.getJndiContext();
+                    String qname = _inboundRequestEndpoint.getDestinationName();
+                    _queue = (Queue)context.lookup( qname );
+                }
+                return _queue;
             }
-            return _queue;
         }
 
         public String toString() {
@@ -232,15 +310,19 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             return s.toString();
         }
 
-        synchronized void start() throws JMSException, NamingException, JmsConfigException {
-            _logger.fine( "Starting " + toString() );
-            _thread.start();
-            _logger.fine( "Started " + toString() );
+        void start() throws JMSException, NamingException, JmsConfigException {
+            synchronized(sync) {
+                _logger.fine( "Starting " + toString() );
+                _thread.start();
+                _logger.fine( "Started " + toString() );
+            }
         }
 
-        synchronized void stop() {
-            _logger.fine( "Stopping " + toString() );
-            _stop = true;
+        void stop() {
+            synchronized(sync) {
+                _logger.fine( "Stopping " + toString() );
+                _stop = true;
+            }
             _thread.interrupt();
             try {
                 _thread.join();
@@ -252,22 +334,30 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             }
         }
 
-        private synchronized void cleanup() {
-            _logger.info( "Closing JMS connection..." );
-            if ( _consumer != null ) {
-                try {
-                    _consumer.close();
-                } catch ( JMSException e ) {
-                    _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
+        private void cleanup() {
+            synchronized(sync) {
+                _logger.info( "Closing JMS connection..." );
+                if ( _consumer != null ) {
+                    try {
+                        _consumer.close();
+                    } catch ( JMSException e ) {
+                        _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
+                    }
+                    _consumer = null;
                 }
-                _consumer = null;
+
+                _queue = null;
+
+                if ( _bag != null ) {
+                    _bag.close();
+                    _bag = null;
+                }
             }
+        }
 
-            _queue = null;
-
-            if ( _bag != null ) {
-                _bag.close();
-                _bag = null;
+        private boolean isStop() {
+            synchronized(sync) {
+                return _stop;
             }
         }
 
@@ -276,7 +366,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
 
             _logger.info( "Starting JMS poller on " + _inboundRequestEndpoint.getDestinationName() );
             try {
-                while ( !_stop ) {
+                while ( !isStop() ) {
                     try {
 //                        _logger.finest( "Polling for a message on " + _inboundRequestEndpoint.getDestinationName() );
                         Message jmsMessage = getConsumer().receive( RECEIVE_TIMEOUT );
@@ -284,7 +374,11 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                             _logger.fine( "Received a message on " + _inboundRequestEndpoint.getDestinationName() );
                             oopses = 0;
                             // todo support concurrent JMS messages some day
-                            _handler.onMessage( JmsReceiver.this, getBag(), jmsMessage );
+                            JmsRequestHandler jrh;
+                            synchronized(syncRecv) {
+                                jrh = _handler;
+                            }
+                            jrh.onMessage( JmsReceiver.this, getBag(), jmsMessage );
                         }
                     } catch ( Throwable e ) {
                         _logger.log( Level.WARNING,
@@ -317,10 +411,12 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         }
 
         public void close() {
-            _logger.fine( "Closing " + toString() );
-            stop();
-            if ( _bag != null ) _bag.close();
-            _logger.fine( "Closed " + toString() );
+            synchronized(sync) {
+                _logger.fine( "Closing " + toString() );
+                stop();
+                if ( _bag != null ) _bag.close();
+                _logger.fine( "Closed " + toString() );
+            }
         }
 
         // JMS stuff
@@ -330,14 +426,17 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
 
         // Runtime stuff
         private volatile boolean _stop = false;
+        private Object sync = new Object();
         private Thread _thread;
     }
 
     /**
      * Stops the receiver, e.g. temporarily.
      */
-    public synchronized void stop() throws LifecycleException {
-        if ( _loop != null ) _loop.stop();
+    public void stop() throws LifecycleException {
+        synchronized(syncRecv) {
+            if ( _loop != null ) _loop.stop();
+        }
     }
 
     /**
@@ -346,9 +445,11 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      * <p/>
      * Nulls all references to runtime objects.
      */
-    public synchronized void close() throws LifecycleException {
-        _initialized = false;
-        if ( _loop != null ) _loop.close();
+    public void close() throws LifecycleException {
+        synchronized(syncRecv) {
+            _initialized = false;
+            if ( _loop != null ) _loop.close();
+        }
     }
 
     private JmsRequestHandler _handler;

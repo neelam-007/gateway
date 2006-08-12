@@ -25,6 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -92,6 +93,17 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
                 }, 250);
             }
         }
+        else if (applicationEvent instanceof ContextRefreshedEvent) {
+            // Start on the refresh event since the auditing system won't work before the initial
+            // refresh is completed
+            try {
+                start();
+            } catch (LifecycleException e) {
+                    logger.log(Level.SEVERE,
+                                "Unable to start JMS message input subsystem: " + ExceptionUtils.getMessage(e),
+                                e);
+                }
+            }
     }
 
     public void destroy() throws Exception {
@@ -99,7 +111,11 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
     }
 
     public void afterPropertiesSet() throws Exception {
-        start();
+        if(applicationContext == null) throw new IllegalStateException("applicationContext is required.");
+        if(serverConfig == null) throw new IllegalStateException("serverConfig is required.");
+        if(licenseManager == null) throw new IllegalStateException("licenseManager is required.");
+        if(connectionManager == null) throw new IllegalStateException("connectionManager is required.");
+        if(endpointManager == null) throw new IllegalStateException("endpointManager is required.");
     }
 
     /**
@@ -156,6 +172,8 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
             started = true;  // "started" just means that we have already once attempted to start the JMS listener subsystem
         }
 
+        logger.info("JMS starting.");
+
         try {
             // Start up receivers for initial configuration
             Collection<JmsConnection> connections = connectionManager.findAll();
@@ -198,6 +216,8 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
 
         Background.scheduleRepeated( endpointChecker, endpointChecker.getFrequency() * 2,
                                 endpointChecker.getFrequency() );
+
+        logger.info("JMS started.");
     }
 
     /**
