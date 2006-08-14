@@ -994,8 +994,10 @@
                 <include name="com/l7tech/objectmodel/ObjectModelException.class"/>
                 <include name="com/l7tech/objectmodel/Entity.class"/>
                 <include name="com/l7tech/objectmodel/NamedEntity.class"/>
+                <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
                 <include name="com/l7tech/objectmodel/imp/EntityImp.class"/>
                 <include name="com/l7tech/objectmodel/imp/NamedEntityImp.class"/>
+                <include name="com/l7tech/objectmodel/imp/PersistentEntityImp.class"/>
 
                 <include name="com/l7tech/server/config/**/*"/>
                 <include name="com/l7tech/server/util/MakeLunaCerts*.class"/>
