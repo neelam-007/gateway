@@ -3,17 +3,17 @@
  */
 package com.l7tech.console.panels;
 
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * @author alex
@@ -154,6 +154,7 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
         }
 
         authenticationSummaryTextArea.setText(summary.toString());
+        pack();
     }
 
     private void updateButtons() {
