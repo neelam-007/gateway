@@ -38,8 +38,6 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         _data = data;
     }
 
-    public static final String ENCODING = "UTF-8";
-
     /**
      * Returns the authentication realm to use for this assertion.
      * We have little choice but to return a hardcoded value here because passwords are hashed with
