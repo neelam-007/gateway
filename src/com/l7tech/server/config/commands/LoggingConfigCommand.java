@@ -37,12 +37,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                 logProps
             };
 
-            try {
-                backupFiles(files, BACKUP_FILE_NAME);
-            } catch (IOException e) {
-                logger.warning("unable to create backup zip file: " + osFunctions.getSsgInstallRoot() + BACKUP_FILE_NAME + ".zip");
-                logger.warning(e.getMessage());
-            }
+            backupFiles(files, BACKUP_FILE_NAME);
         }
 
         success = updateSsgLogProperties(ssgLogPropsPath);

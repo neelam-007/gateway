@@ -50,16 +50,6 @@ rm -f %{buildroot}/ssg/dist/*
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
 
-chmod 774 %{buildroot}/ssg/configwizard
-chmod -R 775 %{buildroot}/ssg/configwizard/lib
-chmod 774 %{buildroot}/ssg/configwizard/*
-chmod 775 %{buildroot}/ssg/configwizard/*.sh
-
-chmod 774 %{buildroot}/ssg/sysconfigwizard
-chmod -R 775 %{buildroot}/ssg/sysconfigwizard/lib
-chmod 774 %{buildroot}/ssg/sysconfigwizard/*
-chmod 775 %{buildroot}/ssg/sysconfigwizard/*.sh
-
 %files
 %defattr(-,root,root)
 /etc/init.d/ssg
@@ -70,14 +60,22 @@ chmod 775 %{buildroot}/ssg/sysconfigwizard/*.sh
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(-,gateway,gateway)
-%config(noreplace) /ssg/etc/conf/*
-%config(noreplace) /ssg/tomcat/conf/*
 %config(noreplace) /ssg/*/jre/lib/security/java.security
 /ssg/*
+%defattr(775,gateway,gateway)
+%config(noreplace) /ssg/etc/conf/
+%config(noreplace) /ssg/etc/conf/*
+%config(noreplace) /ssg/etc/keys/
+%config(noreplace) /ssg/tomcat/conf/*
+%config(noreplace) /ssg/configwizard
+%config(noreplace) /ssg/configwizard/*
+%config(noreplace) /ssg/sysconfigwizard
+%config(noreplace) /ssg/sysconfigwizard/*
+%config(noreplace) /ssg/jdk/jre/lib/ext/*
+%config(noreplace) /ssg/jdk/jre/lib/security/
+%config(noreplace) /ssg/jdk/jre/lib/security/java.security
 %defattr(-,ssgconfig,gateway)
 /home/ssgconfig/.bashrc
-
-
 
 %pre
 if [ `grep ^gateway: /etc/passwd` ]; then

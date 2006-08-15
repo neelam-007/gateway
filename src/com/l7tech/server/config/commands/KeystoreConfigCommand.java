@@ -214,12 +214,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             systemPropertiesFile
         };
 
-        try {
-            backupFiles(files, BACKUP_FILE_NAME);
-        } catch (IOException e) {
-            logger.warning("unable to create backup zip file: " + osFunctions.getSsgInstallRoot() + BACKUP_FILE_NAME + ".zip");
-            logger.warning(e.getMessage());
-        }
+        backupFiles(files, BACKUP_FILE_NAME);
 
         try {
             prepareJvm(KeyStoreConstants.DEFAULT_KEYSTORE_NAME);
@@ -265,13 +260,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             sslCertFile
         };
 
-        try {
-            backupFiles(files, BACKUP_FILE_NAME);
-        } catch (IOException e) {
-            logger.warning("unable to create backup zip file: " + osFunctions.getSsgInstallRoot() + BACKUP_FILE_NAME + ".zip");
-            logger.warning(e.getMessage());
-        }
-
+        backupFiles(files, BACKUP_FILE_NAME);
 
 
         try {

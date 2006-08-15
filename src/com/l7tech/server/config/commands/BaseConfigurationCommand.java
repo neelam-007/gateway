@@ -36,40 +36,46 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
 
     }
 
-    protected void backupFiles(File[] files, String backupName) throws IOException {
+    protected void backupFiles(File[] files, String backupName) {
         if (currentTime == null) {
             currentTime = Calendar.getInstance().getTime();
         }
 
         String backupFileName = backupName + "_" + formatter.format(currentTime);
-        String fullBackupPath = osFunctions.getSsgInstallRoot() + backupFileName + ".zip";
+        String fullBackupPath = osFunctions.getSsgInstallRoot() + "configwizard/" + backupFileName + ".zip";
         if (files != null && files.length > 0) {
             logger.info("creating ZIP file: " + fullBackupPath);
 
 
-            ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fullBackupPath));
+            ZipOutputStream zos = null;
+            try {
+                zos = new ZipOutputStream(new FileOutputStream(fullBackupPath));
+                File origFile;
+                FileInputStream fis;
+                for (int i = 0; i < files.length; i++) {
+                    origFile = files[i];
+                    if (origFile != null && origFile.exists()) {
+                        zos.putNextEntry(new ZipEntry(origFile.getAbsolutePath()));
 
-            File origFile;
-            FileInputStream fis;
-            for (int i = 0; i < files.length; i++) {
-                origFile = files[i];
-                if (origFile != null && origFile.exists()) {
-                    zos.putNextEntry(new ZipEntry(origFile.getAbsolutePath()));
+                        fis = new FileInputStream(origFile);
 
-                    fis = new FileInputStream(origFile);
-
-                    byte[] buf = new byte[10240];
-                    int len = 0;
-                    while ((len = fis.read(buf)) > 0) {
-                        zos.write(buf, 0, len);
+                        byte[] buf = new byte[10240];
+                        int len = 0;
+                        while ((len = fis.read(buf)) > 0) {
+                            zos.write(buf, 0, len);
+                        }
+                        zos.closeEntry();
+                        fis.close();
                     }
-                    zos.closeEntry();
-                    fis.close();
+                }
+            } catch (IOException e) {
+                logger.warning("unable to create backup zip file: [" + e.getMessage() + "]");
+            } finally {
+                if (zos != null) {
+                    try { zos.finish(); } catch (IOException e) {}
+                    try { zos.close(); } catch (IOException e) {}
                 }
             }
-            zos.finish();
-            zos.close();
-            zos = null;
         }
     }
 
