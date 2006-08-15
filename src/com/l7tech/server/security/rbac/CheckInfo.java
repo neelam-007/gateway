@@ -8,14 +8,16 @@ import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.Entity;
 
+import java.io.Serializable;
+
 /**
  * @author alex
 */
 class CheckInfo {
-    CheckInfo(String mname, EntityType[] checkTypes, OperationType checkOperation,
+    CheckInfo(String methodName, EntityType[] checkTypes, OperationType checkOperation,
               MethodStereotype stereotype, int checkRelevantArg, String otherOperationName)
     {
-        this.mname = mname;
+        this.methodName = methodName;
         this.types = checkTypes;
         this.operation = checkOperation;
         this.stereotype = stereotype;
@@ -23,7 +25,7 @@ class CheckInfo {
         this.otherOperationName = otherOperationName;
     }
 
-    final String mname;
+    final String methodName;
     final EntityType[] types;
     final MethodStereotype stereotype;
     final int relevantArg;
@@ -32,6 +34,6 @@ class CheckInfo {
     OperationType operation;
     CheckBefore before;
     CheckAfter after;
-    String id = null;
+    Serializable id = null;
     Entity entity = null;
 }

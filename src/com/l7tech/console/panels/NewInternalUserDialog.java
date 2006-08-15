@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
@@ -13,9 +13,9 @@ import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -54,7 +54,7 @@ public class NewInternalUserDialog extends JDialog {
     private boolean createThenEdit = false;
 
     /* the user instance */
-    private UserBean user = new UserBean();
+    private final UserBean user;
 
     private int MIN_PASSWORD_LENGTH = 1;
     private EventListenerList listenerList = new EventListenerList();
@@ -69,6 +69,8 @@ public class NewInternalUserDialog extends JDialog {
      */
     public NewInternalUserDialog(JFrame parent) {
         super(parent, true);
+        this.user = new UserBean();
+        this.user.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         initResources();
         initComponents();
         pack();

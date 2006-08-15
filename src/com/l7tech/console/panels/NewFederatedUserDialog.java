@@ -63,7 +63,7 @@ public class NewFederatedUserDialog extends JDialog {
     private int userNameTextFieldUpdated = USER_NAME_NOT_YET_UPDATED;
     
     /* the user instance */
-    private UserBean user = new UserBean();
+    private final UserBean user;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog", Locale.getDefault());
 
     /**
@@ -74,6 +74,8 @@ public class NewFederatedUserDialog extends JDialog {
     public NewFederatedUserDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
         this.ipc = ipc;
+        this.user = new UserBean();
+        this.user.setProviderId(ipc.getOid());
         initialize();
         pack();
         Utilities.centerOnScreen(this);

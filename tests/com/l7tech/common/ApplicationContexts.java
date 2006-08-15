@@ -49,5 +49,10 @@ public class ApplicationContexts {
     }
     public static final String DEFAULT_TEST_BEAN_DEFINITIONS = "com/l7tech/common/testApplicationContext.xml";
 
-    public static final String[] PRODUCTION_BEAN_DEFINITIONS = {"etc/dataAccessContext.xml", "etc/webApplicationContext.xml", "etc/adminContext.xml"};
+    public static final String[] PRODUCTION_BEAN_DEFINITIONS = {
+            "etc/dataAccessContext.xml",
+            "etc/webApplicationContext.xml",
+            "etc/rbacEnforcementContext.xml",
+            "etc/adminContext.xml"
+    };
 }

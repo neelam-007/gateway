@@ -9,6 +9,7 @@ import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.EntityFinder;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections.iterators.ArrayIterator;
@@ -22,6 +23,7 @@ import java.security.AccessController;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.Serializable;
 
 /**
  * @author alex
@@ -29,10 +31,12 @@ import java.util.logging.Logger;
 public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationListener {
     private static final Logger logger = Logger.getLogger(SecuredMethodInterceptor.class.getName());
     private final RoleManager roleManager;
+    private final EntityFinder entityFinder;
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
-    public SecuredMethodInterceptor(RoleManager roleManager) {
+    public SecuredMethodInterceptor(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
+        this.entityFinder = entityFinder;
         logger.log(Level.INFO, this.getClass().getSimpleName() + " initialized");
     }
 
@@ -45,7 +49,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 testEntity = (Entity)element;
             } else if (element instanceof EntityHeader) {
                 EntityHeader header = (EntityHeader) element;
-                testEntity = AnonymousEntityReference.fromHeader(header);
+                testEntity = EntityHeaderUtils.fromHeader(header);
             } else {
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
             }
@@ -53,7 +57,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             if (testEntity == null || roleManager.isPermittedForEntity(user, testEntity, check.operation, check.otherOperationName)) {
                 newlist.add(element);
             } else {
-                logger.info("Omitting " + testEntity.getClass().getSimpleName() + " #" + testEntity.getId() + " from return value of " + check.mname);
+                logger.info("Omitting " + testEntity.getClass().getSimpleName() + " #" + testEntity.getId() + " from return value of " + check.methodName);
             }
         }
         return newlist;
@@ -124,14 +128,13 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 checkEntityBefore(check, args, UPDATE);
                 break;
             case READ:
-                checkIdBefore(check, args, READ);
-                check.after = CheckAfter.ENTITY;
+                checkEntityAfter(check);
                 break;
             case DELETE:
                 if (getEntityArg(check, args) != null) {
                     checkEntityBefore(check, args, DELETE);
                 } else {
-                    checkIdBefore(check, args, DELETE);
+                    checkEntityFromId(check, args, DELETE);
                 }
                 break;
             case OTHER:
@@ -188,38 +191,30 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         check.after = CheckAfter.COLLECTION;
                         break;
                     case FIND_BY_PRIMARY_KEY:
-                        if (getIdArg(check, args)) {
-                            logger.log(Level.FINER, "Will check ID before invocation");
-                            check.before = CheckBefore.ID;
-                            check.after = CheckAfter.NONE;
-                            check.operation = READ;
-                            break;
-                        } else {
-                            throwNoId(check);
-                            break;
-                        }
+                        // Check after; need to read entity before evaluating attribute predicates
+                        checkEntityAfter(check);
+                        break;
                     case FIND_ENTITY_BY_ATTRIBUTE:
-                        check.before = CheckBefore.NONE;
-                        check.operation = READ;
-                        check.after = CheckAfter.ENTITY;
+                        // Check after, not enough info to resolve entity
+                        checkEntityAfter(check);
                         break;
                     case DELETE_ENTITY:
+                        // Check before to prevent illegal deletion
                         checkEntityBefore(check, args, DELETE);
                         break;
                     case DELETE_BY_ID:
-                        if (check.types.length != 1)
-                            throw new IllegalStateException("Security declaration for method " + mname + " specifies DELETE_BY_OID, but has multiple types");
-                        checkIdBefore(check, args, DELETE);
+                        // Check before to prevent illegal deletion
+                        checkEntityFromId(check, args, DELETE);
                         break;
-                    case GET_PROPERTY_BY_ID:
-                        if (getIdArg(check, args)) {
-                            checkIdBefore(check, args, READ);
-                        } else {
-                            throwNoId(check);
-                        }
+                    case DELETE_IDENTITY_BY_ID:
+                        // Check before to prevent illegal deletion
+                        checkIdentityFromId(args, check, DELETE);
+                        break;
+                    case GET_IDENTITY_PROPERTY_BY_ID:
+                        checkIdentityFromId(args, check, READ);
                         break;
                     case SET_PROPERTY_BY_ID:
-                        checkIdBefore(check, args, UPDATE);
+                        checkEntityFromId(check, args, READ);
                         break;
                     case GET_PROPERTY_OF_ENTITY:
                         checkEntityBefore(check, args, READ);
@@ -247,7 +242,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             case ID:
                 if (check.id == null) throw new NullPointerException("check.id");
                 if (check.types.length > 1) throw new IllegalStateException("Security declaration for method " + mname + " needs to check ID, but multiple EntityTypes specified");
-                final AnonymousEntityReference entity = new AnonymousEntityReference(check.types[0].getEntityClass(), check.id);
+                Entity entity = entityFinder.find(check.types[0].getEntityClass(), check.id);
                 if (!roleManager.isPermittedForEntity(user, entity, check.operation, check.otherOperationName)) {
                     throw new PermissionDeniedException(check.operation, entity);
                 }
@@ -309,6 +304,39 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         }
     }
 
+    private void checkEntityAfter(CheckInfo check) {
+        check.before = CheckBefore.NONE;
+        check.operation = READ;
+        check.after = CheckAfter.ENTITY;
+    }
+
+    private void checkIdentityFromId(Object[] args, CheckInfo check, OperationType operation) throws FindException {
+        if (args[0] instanceof Long && args[1] instanceof String) {
+            IdentityHeader header = new IdentityHeader((Long)args[0], (String)args[1], check.types[0].getOldEntityType(), null, null);
+            Entity ent = (Entity) entityFinder.find(header);
+            check.before = CheckBefore.ENTITY;
+            check.operation = operation;
+            check.entity = ent;
+            check.after = CheckAfter.NONE;
+        } else {
+            throwNoId(check);
+        }
+    }
+
+    private void checkEntityFromId(CheckInfo check, Object[] args, OperationType operation) throws FindException {
+        if (check.types.length != 1)
+            throw new IllegalStateException("Security declaration for method " + check.methodName +
+                    " specifies " + operation.getName() + ", but has multiple types");
+
+        Serializable id = getIdArg(check, args);
+        if (id == null) throwNoId(check);
+
+        check.before = CheckBefore.ENTITY;
+        check.operation = operation;
+        check.entity = entityFinder.find(check.types[0].getEntityClass(), id);
+        check.after = CheckAfter.NONE;
+    }
+
     private String getEntityName(Entity entity) {
         if (entity instanceof NamedEntity) {
             return ((NamedEntity)entity).getName();
@@ -322,7 +350,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     private void checkIdBefore(CheckInfo check, Object[] args, OperationType operation) {
         getIdArgOrThrow(check, args);
         logger.log(Level.FINER, "Will check ID before invocation");
-        check.before = CheckBefore.ID;
+        check.before = CheckBefore.ENTITY;
         check.operation = operation;
         check.after = CheckAfter.NONE;
     }
@@ -339,7 +367,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         Entity ent = getEntityArg(info, args);
         if (ent != null) return ent;
         throw new IllegalStateException("Security declaration for method " +
-                info.mname + " specifies " + info.stereotype +
+                info.methodName + " specifies " + info.stereotype +
                 ", but can't find Entity argument");
 
     }
@@ -356,26 +384,28 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         return null;
     }
 
-    private void getIdArgOrThrow(CheckInfo info, Object[] args) {
-        if (!getIdArg(info, args)) throwNoId(info);
+    private Serializable getIdArgOrThrow(CheckInfo info, Object[] args) {
+        Serializable arg = getIdArg(info, args);
+        if (arg == null) throwNoId(info);
+        return arg;
     }
 
     private void throwNoId(CheckInfo info) {
         throw new IllegalStateException("Security declaration for method " +
-                info.mname + " specifies " + info.stereotype +
-                ", but can't find long or String argument");
+                info.methodName + " specifies " + info.stereotype +
+                ", but can't find appropriate argument(s)");
     }
 
-    private boolean getIdArg(CheckInfo info, Object[] args) {
+    private Serializable getIdArg(CheckInfo info, Object[] args) {
         Object arg = getSingleOrRelevantArg(args, info.relevantArg);
-        if (arg == null) return false;
+        if (arg == null) return null;
 
         if (arg instanceof Long || arg instanceof String) {
             info.id = arg.toString();
-            return true;
+            return arg.toString();
         }
 
-        return false;
+        return null;
     }
 
     private Object getSingleOrRelevantArg(Object[] args, int relevantArg) {

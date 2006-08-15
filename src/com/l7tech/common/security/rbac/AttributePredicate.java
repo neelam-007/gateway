@@ -22,7 +22,7 @@ public class AttributePredicate extends ScopePredicate {
 
     private String attribute;
     private String value;
-    private Method getter;
+    private transient Method getter;
 
     public AttributePredicate(Permission permission, String attribute, String value) {
         super(permission);

@@ -34,6 +34,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @Transactional(readOnly=true)
     public EntityHeader[] findAll(final Class<? extends Entity> entityClass) throws FindException {
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
+        final EntityType type = EntityHeaderUtils.getEntityHeaderType(entityClass);
         try {
             return (EntityHeader[])getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
@@ -56,7 +57,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                             oid = (Long) i.next();
                             name = null;
                         }
-                        headers.add(new EntityHeader(oid.toString(), EntityType.UNDEFINED, name, null));
+                        headers.add(new EntityHeader(oid.toString(), type, name, null));
                     }
                     if (arrays.size() >= 100)
                         headers.add(new EntityHeader("-1", EntityType.MAXED_OUT_SEARCH_RESULT, "Too many results", null));

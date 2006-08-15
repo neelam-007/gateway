@@ -93,7 +93,7 @@ public interface IdentityAdmin {
      * @throws DeleteException if the requested object ID did not exist
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=ID_PROVIDER_CONFIG, stereotype= DELETE_BY_ID)
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=DELETE_BY_ID)
     void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException;
 
     /**
@@ -171,7 +171,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=USER, stereotype= DELETE_BY_ID, relevantArg=1)
+    @Secured(types=USER, stereotype=DELETE_IDENTITY_BY_ID, relevantArg=1)
     void deleteUser(long idProvCfgId, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -241,7 +241,7 @@ public interface IdentityAdmin {
      *                                  identity provider
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=GROUP, stereotype= DELETE_BY_ID, relevantArg=1)
+    @Secured(types=GROUP, stereotype=DELETE_IDENTITY_BY_ID, relevantArg=1)
     void deleteGroup(long idProvCfgId, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException;
 
@@ -346,7 +346,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype= GET_PROPERTY_BY_ID, relevantArg=1)
+    @Secured(types=USER, stereotype=GET_IDENTITY_PROPERTY_BY_ID, relevantArg=1)
     Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException;
 
     /**
@@ -360,7 +360,7 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype= GET_PROPERTY_BY_ID, relevantArg=1)
+    @Secured(types=GROUP, stereotype=GET_IDENTITY_PROPERTY_BY_ID, relevantArg=1)
     Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
 
 }

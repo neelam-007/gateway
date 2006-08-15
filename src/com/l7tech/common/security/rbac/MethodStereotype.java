@@ -73,6 +73,12 @@ public enum MethodStereotype {
      */
     DELETE_BY_ID,
 
+    /**
+     * A {@link Secured#relevantArg} argument must be a <code>long</code>, and the caller must hold
+     * {@link OperationType#DELETE} permission on the corresonding {@link com.l7tech.objectmodel.Entity}.
+     */
+    DELETE_IDENTITY_BY_ID,
+
     DELETE_BY_UNIQUE_ATTRIBUTE,
 
     /**
@@ -97,7 +103,7 @@ public enum MethodStereotype {
      * A {@link Secured#relevantArg} argument must be a {@link Long} or {@link String}, and the caller must hold
      * {@link OperationType#READ} permission on the corresponding {@link com.l7tech.objectmodel.Entity}.
      */
-    GET_PROPERTY_BY_ID,
+    GET_IDENTITY_PROPERTY_BY_ID,
 
     /**
      * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold
