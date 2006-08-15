@@ -95,6 +95,7 @@ public class TrafficLogger implements ApplicationContextAware {
     private SoapFaultManager soapFaultManager;
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private FileHandler lastAssignedHandler = null;
 
     /**
      * Logs request to the traffic logger as per server setting. By default, this functionality is
@@ -230,6 +231,10 @@ public class TrafficLogger implements ApplicationContextAware {
                         }
                     });
                     fileHandler.setLevel(Level.ALL);
+                    if (lastAssignedHandler != null) {
+                        tmpSpecialLogger.removeHandler(lastAssignedHandler);
+                    }
+                    lastAssignedHandler = fileHandler;
                     tmpSpecialLogger.addHandler(fileHandler);
                     tmpSpecialLogger.setLevel(Level.ALL);
                     specialLogger = tmpSpecialLogger;
