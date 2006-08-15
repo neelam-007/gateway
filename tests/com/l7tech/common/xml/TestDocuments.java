@@ -56,7 +56,6 @@ public final class TestDocuments {
     public static final String ETTK_ENCRYPTED_REQUEST = DIR + "ibmEttkEncryptedRequest.xml";
     public static final String ETTK_SIGNED_ENCRYPTED_REQUEST = DIR + "ibmEttkSignedEncryptedRequest.xml";
     public static final String WEBSPHERE_SIGNED_REQUEST = DIR + "websphereSignedRequest.xml";
-    public static final String BRIDGE_FAILING_SIGNED_REQUEST = DIR + "agentSignedRequest.xml";
     public static final String SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST = DIR + "sampleSignedSamlHolderOfKeyRequest.xml";
     public static final String GOOGLESEARCH_RESPONSE = DIR + "googlesearch-response.xml";
     public static final String NON_SOAP_REQUEST = DIR + "nonSoapRequest.xml";

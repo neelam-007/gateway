@@ -193,10 +193,6 @@ public class WssProcessorTest extends TestCase {
         doTest(makeEttkTestDocument("websphere signed request", TestDocuments.WEBSPHERE_SIGNED_REQUEST));
     }
 
-    public void testFrancisAgentSignedRequest() throws Exception {
-        doTest(makeDotNetTestDocument("Bridge failing signed request", TestDocuments.BRIDGE_FAILING_SIGNED_REQUEST));
-    }
-
     public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {
         SignedSamlTest sst = new SignedSamlTest("blah");
         sst.setUp();
