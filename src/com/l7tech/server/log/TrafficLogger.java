@@ -87,7 +87,7 @@ public class TrafficLogger implements ApplicationContextAware {
     private boolean includeReq = false;
     private boolean includeRes = false;
     private Logger specialLogger;
-    private String[] varsUsed;
+    private String[] varsUsed = ExpandVariables.getReferencedNames(detail);
     private static final Logger logger = Logger.getLogger(TrafficLogger.class.getName());
     private ServerConfig serverConfig;
     private final Timer checker = new Timer(true);
@@ -248,6 +248,9 @@ public class TrafficLogger implements ApplicationContextAware {
                 if (!tmpdetail.equals(detail)) {
                     detail = tmpdetail;
                     varsUsed = ExpandVariables.getReferencedNames(detail);
+                    if (varsUsed == null) {
+                        varsUsed = new String[0];
+                    }
                 }
             } finally {
                 lock.unlock();
