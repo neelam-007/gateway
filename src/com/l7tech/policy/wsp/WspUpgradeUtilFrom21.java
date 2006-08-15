@@ -219,7 +219,10 @@ class WspUpgradeUtilFrom21 {
         if (isCredentialSource && !isResponse)
             root.addChild(new RequestWssX509Cert());
         root.addChild(enforcement);
-        return WspWriter.getCurrent().toElement(root);
+
+        WspWriter writer = new WspWriter();
+        writer.setPre32Compat(false);
+        return writer.toElement(root);
     }
 
     /** A wrapper visitor that knows how to correct for the old 2.1 property names on RequestXpathAssertion. */

@@ -64,39 +64,22 @@ public class WspReaderTest extends TestCase {
         assertEquals(xmlA, xmlB);
     }
 
-    private interface throwingRunnable {
-        void run() throws Throwable;
-    }
-
-    private void mustThrow(Class mustThrowThis, throwingRunnable tr) {
-        boolean caught = false;
-        try {
-            System.err.println(">>>>>> The following operation should throw the exception " + mustThrowThis);
-            tr.run();
-        } catch (Throwable t) {
-            caught = true;
-            if (!mustThrowThis.isAssignableFrom(t.getClass()))
-                t.printStackTrace();
-            assertTrue(mustThrowThis.isAssignableFrom(t.getClass()));
-        }
-        assertTrue(caught);
-        System.err.println(">>>>>> The correct exception was thrown.");
-    }
-
     public void testParseNonXml() {
-        mustThrow(IOException.class, new throwingRunnable() {
-            public void run() throws IOException {
-                WspReader.parseStrictly("asdfhaodh/asdfu2h$9ha98h");
-            }
-        });
+        try {
+            WspReader.parseStrictly("asdfhaodh/asdfu2h$9ha98h");
+            fail("Expected IOException not thrown");
+        } catch (IOException e) {
+            // Ok
+        }
     }
 
     public void testParseStrangeXml() {
-        mustThrow(IOException.class,  new throwingRunnable() {
-            public void run() throws IOException {
-                WspReader.parseStrictly("<foo><bar blee=\"1\"/></foo>");
-            }
-        });
+        try {
+            WspReader.parseStrictly("<foo><bar blee=\"1\"/></foo>");
+            fail("Expected IOException not thrown");
+        } catch (IOException e) {
+            // Ok
+        }
     }
 
     public void testParseSwAPolicy() throws Exception {
@@ -418,6 +401,95 @@ public class WspReaderTest extends TestCase {
         System.out.println(WspWriter.getPolicyXml(xslt));
     }
 
+    public void testPolicyFromBug2160() throws Exception {
+        String policy = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<Policy xmlns=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "    <All>\n" +
+                "        <XmlRequestSecurity>\n" +
+                "            <Elements elementSecurityArrayValue=\"included\">\n" +
+                "                <item elementSecurityValue=\"included\">\n" +
+                "                    <Cipher stringValue=\"AES\"/>\n" +
+                "                    <KeyLength intValue=\"128\"/>\n" +
+                "                    <PreconditionXpath xpathExpressionValueNull=\"null\"/>\n" +
+                "                    <ElementXpath xpathExpressionValue=\"included\">\n" +
+                "                        <Expression stringValue=\"/soapenv:Envelope\"/>\n" +
+                "                        <Namespaces mapValue=\"included\">\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"xsi\"/>\n" +
+                "                                <value stringValue=\"http://www.w3.org/2001/XMLSchema-instance\"/>\n" +
+                "                            </entry>\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"xsd\"/>\n" +
+                "                                <value stringValue=\"http://www.w3.org/2001/XMLSchema\"/>\n" +
+                "                            </entry>\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"tns1\"/>\n" +
+                "                                <value stringValue=\"http://echo.l7tech.com\"/>\n" +
+                "                            </entry>\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"soapenv\"/>\n" +
+                "                                <value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
+                "                            </entry>\n" +
+                "                        </Namespaces>\n" +
+                "                    </ElementXpath>\n" +
+                "                    <Encryption booleanValue=\"false\"/>\n" +
+                "                </item>\n" +
+                "            </Elements>\n" +
+                "        </XmlRequestSecurity>\n" +
+                "        <SpecificUser>\n" +
+                "            <UserLogin stringValue=\"test\"/>\n" +
+                "            <IdentityProviderOid longValue=\"-2\"/>\n" +
+                "        </SpecificUser>\n" +
+                "        <HttpRoutingAssertion>\n" +
+                "            <AttachSamlSenderVouches booleanValue=\"false\"/>\n" +
+                "            <UserAgent stringValueNull=\"null\"/>\n" +
+                "            <ProtectedServiceUrl stringValue=\"http://sat.test.example.com:8080/axis/services/Echo\"/>\n" +
+                "            <Login stringValueNull=\"null\"/>\n" +
+                "            <GroupMembershipStatement booleanValue=\"false\"/>\n" +
+                "            <Password stringValueNull=\"null\"/>\n" +
+                "            <Realm stringValueNull=\"null\"/>\n" +
+                "            <MaxConnections intValue=\"100\"/>\n" +
+                "            <SamlAssertionExpiry intValue=\"5\"/>\n" +
+                "        </HttpRoutingAssertion>\n" +
+                "        <XmlResponseSecurity>\n" +
+                "            <Elements elementSecurityArrayValue=\"included\">\n" +
+                "                <item elementSecurityValue=\"included\">\n" +
+                "                    <Cipher stringValue=\"AES\"/>\n" +
+                "                    <KeyLength intValue=\"128\"/>\n" +
+                "                    <PreconditionXpath xpathExpressionValueNull=\"null\"/>\n" +
+                "                    <ElementXpath xpathExpressionValue=\"included\">\n" +
+                "                        <Expression stringValue=\"/soapenv:Envelope\"/>\n" +
+                "                        <Namespaces mapValue=\"included\">\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"xsi\"/>\n" +
+                "                                <value stringValue=\"http://www.w3.org/2001/XMLSchema-instance\"/>\n" +
+                "                            </entry>\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"xsd\"/>\n" +
+                "                                <value stringValue=\"http://www.w3.org/2001/XMLSchema\"/>\n" +
+                "                            </entry>\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"tns1\"/>\n" +
+                "                                <value stringValue=\"http://echo.l7tech.com\"/>\n" +
+                "                            </entry>\n" +
+                "                            <entry>\n" +
+                "                                <key stringValue=\"soapenv\"/>\n" +
+                "                                <value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
+                "                            </entry>\n" +
+                "                        </Namespaces>\n" +
+                "                    </ElementXpath>\n" +
+                "                    <Encryption booleanValue=\"false\"/>\n" +
+                "                </item>\n" +
+                "            </Elements>\n" +
+                "        </XmlResponseSecurity>\n" +
+                "    </All>\n" +
+                "</Policy>";
+
+        Assertion got = WspReader.parseStrictly(policy);
+        assertNotNull(got);
+        log.info("Parsed policy from Bug #2160: " + WspWriter.getPolicyXml(got));
+    }
+
     public void testResourceInfo() throws Exception {
         tryIt(WspWriterTest.makeStaticInfo());
         tryIt(WspWriterTest.makeMessageInfo());
@@ -433,6 +505,7 @@ public class WspReaderTest extends TestCase {
     }
 
     public static void main(String[] args) {
+        System.out.println("Heya");
         junit.textui.TestRunner.run(suite());
     }
 }

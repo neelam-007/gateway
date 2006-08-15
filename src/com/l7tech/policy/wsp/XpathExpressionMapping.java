@@ -105,8 +105,9 @@ class XpathExpressionMapping implements TypeMapping {
 
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         // Parse a MessagePredicate, Integrity/MessageParts, or Confidentiality/MessageParts assertion
+        if (source == null) throw new InvalidPolicyStreamException("Missing XPath based assertion element (expecting " + elementName + ")");
         String dialect = source.getAttribute("Dialect");
-        if (dialect != null && !DIALECT_XPATH.equals(dialect))
+        if (dialect != null && dialect.length() > 0 && !DIALECT_XPATH.equals(dialect))
             throw new InvalidPolicyStreamException("Unsupported MessagePredicate Dialect: " + dialect);
         String xpathExpr = XmlUtil.getTextValue(source);
         Map nsMap = XmlUtil.getNamespaceMap(source);
