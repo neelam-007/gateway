@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class ServerHttpBasic extends ServerHttpCredentialSource implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerHttpBasic.class.getName());
 
-    public static final String ENCODING = "UTF-8";
+    public static final String ENCODING = "ISO-8859-1";//"UTF-8"; http client will not encode this with utf-8, see bugzilla #2733
     public static final String SCHEME = "Basic";
     public static final String REALM = "L7SSGBasicRealm";
 
@@ -69,7 +69,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             return null;
         }
 
-        String userPassRealm = new String( HexUtils.decodeBase64( base64, true ), ENCODING );
+        String userPassRealm = new String(HexUtils.decodeBase64( base64, true ), ENCODING);
         String login = null;
         String pass = null;
 
@@ -78,7 +78,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             login = userPassRealm.substring( 0, cpos );
             pass = userPassRealm.substring( cpos + 1 );
 
-            logger.fine( "Found HTTP Basic credentials for user " + login );
+            logger.fine("Found HTTP Basic credentials for user " + login);
 
             return new LoginCredentials( login, pass.toCharArray(), CredentialFormat.CLEARTEXT,
                                          _data.getClass(), null );
