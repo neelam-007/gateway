@@ -133,7 +133,7 @@ Section "SecureSpan Bridge" SecCopyUI
   File /r "${J2RE_PATH}"
   Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
   File "${BUILD_DIR}\..\installer\proxy\win32\SSBService.exe"
-  File "${BUILD_DIR}\..\installer\proxy\win32\disableTGTemptySessionKey.reg"
+  File "${BUILD_DIR}\..\installer\proxy\win32\enableKerberos.reg"
   File "${BUILD_DIR}\..\src\com\l7tech\proxy\resources\logging.properties"
 
   SetOutPath "$INSTDIR/lib"
