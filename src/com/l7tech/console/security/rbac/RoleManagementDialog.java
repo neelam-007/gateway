@@ -12,9 +12,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class RoleManagementDialog extends JDialog {
@@ -56,6 +54,8 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void initialize() {
+        enableRoleManagmentButtons(true);
+
         propertiesPane.setEditable(false);
         propertiesPane.setLineWrap(false);
         populateList();
@@ -70,6 +70,12 @@ public class RoleManagementDialog extends JDialog {
         enableEditRemoveButtons();
 
         pack();
+    }
+
+    private void enableRoleManagmentButtons(boolean enable) {
+        addRole.setVisible(enable);
+        editRole.setVisible(enable);
+        removeRole.setVisible(enable);
     }
 
     private void setupActionListeners() {
@@ -89,6 +95,9 @@ public class RoleManagementDialog extends JDialog {
         roleList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 try {
+                    //disable this code for now since we are not allowing the editing of roles in 3.6.
+                    //Uncomment this to allow double click editing and enable/disable of the buttons
+
                     if (e.getClickCount() == 1)
                         enableEditRemoveButtons();
                     else if (e.getClickCount() >= 2)
@@ -130,12 +139,12 @@ public class RoleManagementDialog extends JDialog {
         propertiesPane.setText(message);
     }
 
-    private java.util.List<String> getPermissionList(Role role) {
-        java.util.List<String> list = new ArrayList<String>();
+    private Set<String> getPermissionList(Role role) {
+        Set<String> sorted = new TreeSet<String>();
         if (role != null) {
             Set<Permission> permissions = role.getPermissions();
             if (permissions == null || permissions.isEmpty()) {
-                list.add("   NONE \n");
+                sorted.add("   NONE \n");
             } else {
                 for (Permission permission : permissions) {
                     StringBuilder sb = new StringBuilder();
@@ -158,24 +167,26 @@ public class RoleManagementDialog extends JDialog {
                         default:
                             sb.append("<Complex Scope>");
                     }
-                    list.add(sb.toString());
+                    sorted.add(sb.toString());
                 }
             }
         }
-        return list;
+        return sorted;
     }
 
-    private java.util.List<String> getAssignmentList(Role role) throws RemoteException {
-        java.util.List<String> list = new ArrayList<String>();
+    private Set<String> getAssignmentList(Role role) throws RemoteException {
+        Set<String> sorted = new TreeSet<String>();
+
+//        java.util.List<String> list = new ArrayList<String>();
         if (role != null) {
             Set<UserRoleAssignment> users = role.getUserAssignments();
             if (users == null || users.isEmpty()) {
-                list.add("   NONE\n");
+                sorted.add("   NONE\n");
             } else {
                 for (UserRoleAssignment ura : users) {
                     try {
                         UserHolder holder = new UserHolder(ura);
-                        list.add("   " + holder);
+                        sorted.add("   " + holder);
                     } catch (FindException e) {
                         logger.warning("Could not find a user with id=" + ura.getUserId());
                     }
@@ -183,7 +194,7 @@ public class RoleManagementDialog extends JDialog {
             }
         }
 
-        return list;
+        return sorted;
     }
 
     private void setupButtonListeners() {
