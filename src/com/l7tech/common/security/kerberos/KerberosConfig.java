@@ -1,19 +1,15 @@
 package com.l7tech.common.security.kerberos;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.Arrays;
-import java.text.MessageFormat;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
+
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.HexUtils;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Generates Kerberos configuration for SecureSpan Bridge and Gateway.
@@ -217,9 +213,11 @@ class KerberosConfig {
                 OutputStream out = null;
                 try {
                     in = KerberosConfig.class.getResourceAsStream(RESOURCE_SSB_LOGINCFG);
-                    out = new FileOutputStream(loginConfigFile);
-                    HexUtils.copyStream(in, out);
-                    out.flush();
+                    if (in != null) {
+                        out = new FileOutputStream(loginConfigFile);
+                        HexUtils.copyStream(in, out);
+                        out.flush();
+                    }
                 }
                 finally {
                     ResourceUtils.closeQuietly(in);
