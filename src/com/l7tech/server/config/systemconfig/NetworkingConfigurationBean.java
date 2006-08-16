@@ -171,13 +171,11 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         private String ipAddress;
         private String netMask;
         private String gateway;
-        private boolean isNewInterface;
         private String[] nameservers;
 
         public NetworkConfig(String interfaceName, String bootProto) {
             this.interfaceName = interfaceName;
             this.bootProto = bootProto;
-            isNewInterface = false;
         }
 
         public String getInterfaceName() {
@@ -244,14 +242,6 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             }
 
             return sb.toString();
-        }
-
-        public void isNew(boolean isItNew) {
-            isNewInterface = isItNew;
-        }
-
-        public boolean isNew() {
-            return isNewInterface;
         }
 
         public void setNameServer(String[] nameServers) {
