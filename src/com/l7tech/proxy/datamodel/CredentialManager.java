@@ -48,6 +48,9 @@ public abstract class CredentialManager {
     /**
      * Same as getCredentialsForTrustedSsg(), but can provide a hint to the user about what the credentials are to be
      * used for.
+     *
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
+     *
      * @param ssg the Ssg whose credentials you want
      * @param hint optional hint to the user about what we plan to do with the password when we get it.
      *             The same credentials must be returned regardless of which hint is provided.

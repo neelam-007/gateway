@@ -199,6 +199,9 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
         }
 
+        PrivateKey gotKey = null;
+        PasswordAuthentication pw = null;
+
         synchronized (ssg) {
             if (!isClientCertAvailabile())
                 return null;
@@ -214,28 +217,32 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
 
                 return ssg.getRuntime().getCachedPrivateKey();
             }
+
+            if (passwordAuthentication != null) {
+                try {
+                    char[] password = passwordAuthentication.getPassword();
+                    gotKey = (PrivateKey) getKeyStore(password).getKey(CLIENT_CERT_ALIAS, password);
+                    pw = passwordAuthentication;
+                } catch(KeyStoreException e) {
+                    log.log(Level.WARNING, "Could not open key store.", e);
+                } catch (UnrecoverableKeyException e) {
+                    log.log(Level.WARNING, "Error getting private key from keystore.", e);
+                }
+            }
+        }
+
+        // Must do this check here, since we aren't allowed to call the credential manager while holding
+        // the Ssg monitor (it will deadlock)
+        if (gotKey == null) {
+            pw = ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg,
+                                                                              CredentialManager.ReasonHint.PRIVATE_KEY,
+                                                                              false,
+                                                                              false);
         }
 
         synchronized (ssg) {
             try {
-                PrivateKey gotKey = null;
-                PasswordAuthentication pw = null;
-                if (passwordAuthentication != null) {
-                    try {
-                        char[] password = passwordAuthentication.getPassword();
-                        gotKey = (PrivateKey) getKeyStore(password).getKey(CLIENT_CERT_ALIAS, password);
-                        pw = passwordAuthentication;
-                    } catch(KeyStoreException e) {
-                        log.log(Level.WARNING, "Could not open key store.", e);
-                    } catch (UnrecoverableKeyException e) {
-                        log.log(Level.WARNING, "Error getting private key from keystore.", e);
-                    }
-                }
                 if (gotKey == null) {
-                    pw = ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg,
-                                                                                      CredentialManager.ReasonHint.PRIVATE_KEY,
-                                                                                      false,
-                                                                                      false);
                     if (pw == null) {
                         log.finer("No credentials configured -- unable to access private key");
                         return null;
