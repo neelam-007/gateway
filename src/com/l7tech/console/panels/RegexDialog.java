@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.variable.ExpandVariables;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.*;
@@ -45,6 +46,10 @@ public class RegexDialog extends JDialog {
     private JRadioButton proceedIfNoMatchRadioButton;
     private JSpinner mimePartSpinner;
     private JFormattedTextField encodingField;
+    private JPanel testReplacementPanel;
+    private JLabel testInputLabel;
+    private JLabel testResultLabel;
+    private JScrollPane testInputScroller;
 
     public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
         super(owner, true);
@@ -67,6 +72,7 @@ public class RegexDialog extends JDialog {
             encodingField.setText(regexAssertion.getEncoding());
         }
 
+        matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
         ButtonGroup group = new ButtonGroup();
         group.add(proceedIfMatchRadioButton);
         group.add(matchAndReplaceRadioButton);
@@ -75,8 +81,7 @@ public class RegexDialog extends JDialog {
         final ItemListener radioButtonListener = new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 boolean enable = matchAndReplaceRadioButton.isSelected();
-                replaceTextArea.setEnabled(enable);
-                replacementTextAreaLabel.setEnabled(enable);
+                enableDisableReplacementItems(enable);
             }
         };
 
@@ -245,6 +250,19 @@ public class RegexDialog extends JDialog {
         }
         mimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
         mimePartSpinner.setValue(mimePartIndex);
+    }
+
+    private void enableDisableReplacementItems(boolean enable) {
+        replaceTextArea.setEnabled(enable);
+        replacementTextAreaLabel.setEnabled(enable);
+
+        testButton.setEnabled(enable);
+        clearTestOutputButton.setEnabled(enable);
+        testInputLabel.setEnabled(enable);
+        testInputScroller.setEnabled(enable);
+        testInputTextArea.setEnabled(enable);
+        testResultLabel.setEnabled(enable);
+        testResultTextPane.setEnabled(enable);
     }
 
     private boolean shouldEnableTestButton() {
