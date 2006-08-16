@@ -4,9 +4,7 @@ import com.l7tech.server.config.beans.BaseConfigurationBean;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -23,8 +21,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     private String hostname;
 
-    private Map<String, NetworkConfig> availableNetworkInterfaces;
-    private Map<String, NetworkConfig> networkingConfigs;
+    private List<NetworkConfig> networkingConfigs;
 
     public static NetworkConfig makeNetworkConfig(String interfaceName, String bootProto) {
         return new NetworkConfig(interfaceName, bootProto);
@@ -36,15 +33,13 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        networkingConfigs = new HashMap<String, NetworkConfig>();
+        getExistingInterfaces();
     }
 
-    public void reset() {
-    }
+    public void reset() {}
 
     protected void populateExplanations() {
-        for (String key: networkingConfigs.keySet()) {
-            NetworkConfig networkConfig = networkingConfigs.get(key);
+        for (NetworkConfig networkConfig : networkingConfigs) {
             if (networkConfig != null) {
                 explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
                 explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
@@ -67,12 +62,13 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         return null;
     }
 
-    public Map<String, NetworkConfig> getNetworkingConfigurations() {
+    public List<NetworkConfig> getNetworkingConfigurations() {
         return networkingConfigs;
     }
 
     public void addNetworkingConfig(NetworkConfig netConfig) {
-        networkingConfigs.put(netConfig.getInterfaceName(), netConfig);
+        if (!networkingConfigs.contains(netConfig))
+            networkingConfigs.add(netConfig);
     }
 
     public String getHostname() {
@@ -83,11 +79,15 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         this.hostname = hostname;
     }
 
-    public Map<String,NetworkConfig> getExistingNetworkInterfaces() {
 
-        if (availableNetworkInterfaces == null) {
+    public List<NetworkConfig> getAllNetworkInterfaces() {
+        return networkingConfigs;
+    }
+
+    private void getExistingInterfaces() {
+        if (networkingConfigs == null) {
             logger.info("Determining existing interface information.");
-            availableNetworkInterfaces = new HashMap<String, NetworkingConfigurationBean.NetworkConfig>();
+            networkingConfigs = new ArrayList<NetworkConfig>();
 
             File parentDir = new File(osFunctions.getNetworkConfigurationDirectory());
             File[] configFiles = parentDir.listFiles(new FilenameFilter() {
@@ -98,23 +98,20 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
             if (configFiles != null && configFiles.length != 0) {
                 for (File file : configFiles) {
-                    NetworkingConfigurationBean.NetworkConfig theConfig = parseConfigFile(file);
+                    NetworkConfig theConfig = parseConfigFile(file);
                     if (theConfig != null) {
                         //in case the file name is off, like it has some extra characters at the end of it, or has an extension
                         //we are only interested in the configurations from files with the pattern:
                         //  ifcfg-<interface>
                         String ifName = theConfig.getInterfaceName();
                         if (ifName != null && file.getName().endsWith(ifName)) {
-                            availableNetworkInterfaces.put(theConfig.getInterfaceName(), theConfig);
+                            networkingConfigs.add(theConfig);
                             logger.info("found existing configuration for interface: " + theConfig.describe());
                         }
                     }
                 }
             }
         }
-
-        availableNetworkInterfaces.putAll(networkingConfigs);
-        return availableNetworkInterfaces;
     }
 
     private NetworkingConfigurationBean.NetworkConfig parseConfigFile(File file) {

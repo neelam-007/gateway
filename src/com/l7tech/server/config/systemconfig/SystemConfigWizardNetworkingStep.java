@@ -6,10 +6,7 @@ import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -157,37 +154,44 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private NetworkingConfigurationBean.NetworkConfig doSelectInterfacePrompts() throws IOException, WizardNavigationException {
 
-        Map<String, NetworkingConfigurationBean.NetworkConfig> choicesMap = new TreeMap<String, NetworkingConfigurationBean.NetworkConfig>();
+        List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = getInterfaces();
+
         List<String> promptList = new ArrayList<String>();
 
         int x = 1;
-        Map<String, NetworkingConfigurationBean.NetworkConfig> existingConfigs = getInterfaces();
-
-        for (String key : existingConfigs.keySet()) {
-            NetworkingConfigurationBean.NetworkConfig networkConfig = existingConfigs.get(key);
-            String indexStr = String.valueOf(x);
+        for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
+            String indexStr = String.valueOf(x++);
             String prompt = indexStr + ") " + networkConfig.describe();
-
-            choicesMap.put(indexStr, networkConfig);
             promptList.add(prompt + getEolChar());
-            x++;
         }
+
+        promptList.add(x + ") Configure an unlisted interface" + getEolChar());
+
         promptList.add("Please make a selection [1] : ");
 
         printText("Select the Interface you wish to configure." + getEolChar());
         printText("Current configurations are shown in ()" + getEolChar());
 
-        String whichChoice = getData(promptList, "1", choicesMap.keySet().toArray(new String[]{}));
+        String whichChoice = getData(promptList, "1");
 
-        return choicesMap.get(whichChoice);
+        int choiceNum = Integer.parseInt(whichChoice);
+        NetworkingConfigurationBean.NetworkConfig theConfig;
+
+        if (choiceNum < 1 || choiceNum > networkConfigs.size()) {
+            //creating a new interface
+            theConfig = NetworkingConfigurationBean.makeNetworkConfig(null, null);
+        } else {
+            theConfig = networkConfigs.get(choiceNum -1);
+        }
+
+        return theConfig;
     }
 
     private NetworkingConfigurationBean.NetworkConfig doConfigurationPrompts(NetworkingConfigurationBean.NetworkConfig whichConfig) throws IOException, WizardNavigationException {
 
-        if (whichConfig.isNew()) {
-            whichConfig = promptForNewInterfaceName(whichConfig);
+        if (StringUtils.isEmpty(whichConfig.getInterfaceName())) {
+            whichConfig.setInterfaceName(promptForNewInterfaceName(whichConfig));
         }
-
 
         String bootProto = getBootProtocol(whichConfig);
         whichConfig.setBootProto(bootProto);
@@ -203,15 +207,14 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return whichConfig;
     }
 
-    private NetworkingConfigurationBean.NetworkConfig promptForNewInterfaceName(NetworkingConfigurationBean.NetworkConfig theConfig) throws IOException, WizardNavigationException {
+    private String promptForNewInterfaceName(NetworkingConfigurationBean.NetworkConfig theConfig) throws IOException, WizardNavigationException {
 
         String[] prompts = new String[] {
             "Please enter the name of the new interface (ex: eth5): ",
         };
 
-        String input = getData(prompts, "");
-        theConfig.setInterfaceName(input);
-        return theConfig;
+
+        return getData(prompts, "");
     }
 
     private String[] getNameServer(String[] currentNameServers, String interfaceName) throws IOException, WizardNavigationException {
@@ -356,15 +359,8 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         return bootProto;
     }
 
-    private Map<String, NetworkingConfigurationBean.NetworkConfig> getInterfaces() {
-        Map<String, NetworkingConfigurationBean.NetworkConfig> interfaces = netBean.getExistingNetworkInterfaces();
-
-        NetworkingConfigurationBean.NetworkConfig newInterface = NetworkingConfigurationBean.makeNetworkConfig(null, null);
-        newInterface.isNew(true);
-
-        interfaces.put(null, newInterface);
-
-        return interfaces;
+    private List<NetworkingConfigurationBean.NetworkConfig> getInterfaces() {
+        return netBean.getAllNetworkInterfaces();
     }
 
     public String getTitle() {

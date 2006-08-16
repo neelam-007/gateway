@@ -28,15 +28,14 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
 
-        Map<String, NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
+        List<NetworkingConfigurationBean.NetworkConfig> netConfigs = netBean.getNetworkingConfigurations();
         File currentWorkingDir = new File(".");
         File configDir = new File(currentWorkingDir, "configfiles");
         if (!configDir.mkdir())
             logger.info("Created new directory for networking configuration: " + configDir.getAbsolutePath());
 
 
-        for (String key : netConfigs.keySet()) {
-            NetworkingConfigurationBean.NetworkConfig networkConfig = netConfigs.get(key);
+        for (NetworkingConfigurationBean.NetworkConfig networkConfig : netConfigs) {
             if (networkConfig != null) {
                 String interfaceName = networkConfig.getInterfaceName();
                 logger.info("Configuring \"" + interfaceName + "\" interface");
