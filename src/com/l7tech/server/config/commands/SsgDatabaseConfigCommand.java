@@ -28,6 +28,9 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_USERNAME_KEY = "hibernate.connection.username";
     private static final String HIBERNATE_PASSWORD_KEY = "hibernate.connection.password";
     private static final String HIBERNATE_PROPERTY_COMMENTS = "This hibernate configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
+    private static final String HIBERNATE_MAXCONNECTIONS_KEY = "hibernate.c3p0.max_size";
+    private static final String HIBERNATE_MAXCONNECTIONS_VALUE = "510";
+    private static final String HIBERNATE_MAXCONNECTIONS_DEFVALUE = "100";
 
     private static final String HIBERNATE_MYSQL_URL_START = "jdbc:mysql://";
     public static final String HIBERNATE_DEFAULT_CONNECTION_URL = HIBERNATE_MYSQL_URL_START + "localhost/ssg";
@@ -111,20 +114,8 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
 
-            boolean isDefault = false;
-            Matcher matcher = urlPattern.matcher(origUrl);
-
-            if (StringUtils.isEmpty(origUrl) || origUrl.equals(DB_URL_PLACEHOLDER)) {
-                logger.info("Found an empty Database URL, replacing with the default");
-                isDefault = true;
-            } else if (!origUrl.startsWith(HIBERNATE_MYSQL_URL_START) || !matcher.matches()) {
-                logger.info("Found an invalid database URL, replacing with the default");
-                isDefault = true;
-            }
-
-            if (isDefault)
+            if (checkIsDefault(origUrl))
                 origUrl = HIBERNATE_DEFAULT_CONNECTION_URL;
-
 
             String[] parts = origUrl.split("\\?");
 
@@ -142,12 +133,8 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             dbProps.setProperty(HIBERNATE_USERNAME_KEY, dbUsername);
             dbProps.setProperty(HIBERNATE_PASSWORD_KEY, new String(dbPassword));
 
-            String currentVersion = ConfigurationWizard.getCurrentVersion();
-            if (Float.parseFloat(currentVersion) >= 3.6f) {
-                dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
-                dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
-                dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
-            }
+            upgradePackageName(dbProps);
+            setMaxConnections(dbProps);
 
             fos = new FileOutputStream(dbConfigFile);
             dbProps.store(fos, HIBERNATE_PROPERTY_COMMENTS);
@@ -160,13 +147,39 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                }
-            }
+            if (fos != null)
+                try { fos.close(); } catch (IOException e) {}
         }
+    }
+
+    private void upgradePackageName(Properties dbProps) {
+        String currentVersion = ConfigurationWizard.getCurrentVersion();
+        if (Float.parseFloat(currentVersion) >= 3.6f) {
+            dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
+            dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
+            dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
+        }
+    }
+
+    private boolean checkIsDefault(String origUrl) {
+        boolean isDefault = false;
+        Matcher matcher = urlPattern.matcher(origUrl);
+
+        if (StringUtils.isEmpty(origUrl) || origUrl.equals(DB_URL_PLACEHOLDER)) {
+            logger.info("Found an empty Database URL, replacing with the default");
+            isDefault = true;
+        } else if (!origUrl.startsWith(HIBERNATE_MYSQL_URL_START) || !matcher.matches()) {
+            logger.info("Found an invalid database URL, replacing with the default");
+            isDefault = true;
+        }
+        return isDefault;
+    }
+
+    private void setMaxConnections(Properties dbProps) {
+        //fix the maximum connections for upgrades if is a default configuration
+        String maxConnections = dbProps.getProperty(HIBERNATE_MAXCONNECTIONS_KEY);
+        if (StringUtils.equals(maxConnections, HIBERNATE_MAXCONNECTIONS_DEFVALUE))
+            dbProps.setProperty(HIBERNATE_MAXCONNECTIONS_KEY, HIBERNATE_MAXCONNECTIONS_VALUE);
     }
 
     private String replaceParams(String paramPart) {
