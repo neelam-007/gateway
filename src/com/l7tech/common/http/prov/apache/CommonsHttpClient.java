@@ -10,6 +10,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -192,7 +193,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : new Long(Long.parseLong(clh.getValue()));
                 } catch (IOException e) {
-                    throw new GenericHttpException(e);
+                    throw new GenericHttpException("Unable to obtain HTTP response: " + ExceptionUtils.getMessage(e), e);
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
