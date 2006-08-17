@@ -1285,7 +1285,10 @@ public class LogPanel extends JPanel {
         // save the number of selected message
         if (selectedRowIndexOld >= 0) {
             Object nodeId = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_NODE_ID_COLUMN_INDEX);
-            Object mesNum = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX);
+            // bugzilla #2739 this id is reassigned at every refresh and is therefore useless to identify
+            // the record. using timestamp instead
+            //Object mesNum = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX);
+            Object mesNum = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_TIMESTAMP_COLUMN_INDEX);
 
             if(nodeId!=null && mesNum!=null) {
                 msgNumSelected =
@@ -1341,13 +1344,16 @@ public class LogPanel extends JPanel {
      * @param msgNumber  The message number of the log being selected.
      */
     public void setSelectedRow(String msgNumber) {
-        if (msgNumber != null) {
+        if (msgNumber != null && !msgNumber.equals("-1")) {
             // keep the current row selection
             int rowCount = getMsgTable().getRowCount();
             boolean rowFound = false;
             for (int i = 0; i < rowCount; i++) {
                 Object nodeId = getMsgTable().getModel().getValueAt(i, LOG_NODE_ID_COLUMN_INDEX);
-                Object mesNum = getMsgTable().getModel().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX);
+                // bugzilla #2739 this id is reassigned at every refresh and is therefore useless to identify
+                // the record. using timestamp instead
+                // Object mesNum = getMsgTable().getModel().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX);
+                Object mesNum = getMsgTable().getModel().getValueAt(i, LOG_TIMESTAMP_COLUMN_INDEX);
 
                 if(nodeId!=null && mesNum!=null) {
                     String selctedMsgNum = nodeId.toString().trim() + mesNum.toString().trim();
