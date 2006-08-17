@@ -8,18 +8,20 @@ package com.l7tech.proxy.gui.dialogs;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.WsFederationPRPSamlTokenStrategy;
+import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
+import java.util.logging.Logger;
 
 /**
  * @author mike
  */
 public class NewSsgDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(NewSsgDialog.class.getName());
     private static final String PROP_GENERIC_ENABLE = "com.l7tech.proxy.gui.dialogs.enableGenericWebService";
     private JPanel rootPanel;
     private JRadioButton radioTokenOther;
@@ -134,14 +136,20 @@ public class NewSsgDialog extends JDialog {
 
         if(!Boolean.getBoolean(PROP_GENERIC_ENABLE)) {
             radioRawUrl.setVisible(false);
+            radioRawUrl.setEnabled(false);
             genericWebServiceLabel.setVisible(false);
+            genericWebServiceLabel.setEnabled(false);
+            Container radioParent = radioRawUrl.getParent();
+            if (radioParent != null) radioParent.remove(radioRawUrl);
+            Container labelParent = genericWebServiceLabel.getParent();
+            if (labelParent != null) labelParent.remove(genericWebServiceLabel);
         }
 
         checkButtonState();
     }
 
     private void checkButtonState() {
-        ImageIcon wantImage = null;
+        final ImageIcon wantImage;
         boolean fed = true;
         boolean haveTrusted = trustedSsgComboBox.getModel().getSize() > 0;
         if (radioTrustedGateway.isSelected()) {
