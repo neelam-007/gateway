@@ -19,6 +19,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         VariableMetadata meta = getMetadata(variableToSet);
         if (meta != null && !meta.isSettable()) throw new VariableNotSettableException(variableToSet);
         this.variableToSet = variableToSet;
+        this.meta = null;
     }
 
     private VariableMetadata getMetadata(String variableToSet) {
@@ -35,6 +36,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
 
     public void setExpression(String expression) {
         this.expression = expression;
+        this.meta = null;
     }
 
     public VariableMetadata[] getVariablesSet() {
