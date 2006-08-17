@@ -162,6 +162,10 @@ Section "SecureSpan Gateway" SecCopyUI
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\configwizard"
 
+  SetOutPath "$INSTDIR/configwizard"
+  File "${BUILD_DIR}\..\installer\server\win32\SecureSpanConfigWizard.exe"
+  File "${BUILD_DIR}\..\installer\server\win32\SecureSpanConfigWizard.ini"
+
   ;Store install folder
   WriteRegStr HKLM "Software\${COMPANY}\${MUI_PRODUCT}" "" $INSTDIR
 
@@ -171,7 +175,7 @@ Section "SecureSpan Gateway" SecCopyUI
   CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
   CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Gateway.lnk" "$INSTDIR\Uninstall.exe"
   SetOutPath "$INSTDIR/configwizard"
-  CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Configure SecureSpan Gateway.lnk" "$INSTDIR\configwizard\ssgconfig.cmd"
+  CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Configure SecureSpan Gateway.lnk" "$INSTDIR\configwizard\SecureSpanConfigWizard.exe"
   SetOutPath "$INSTDIR"
 
   !insertmacro MUI_STARTMENU_WRITE_END
