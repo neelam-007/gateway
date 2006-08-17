@@ -81,7 +81,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private FederatedSamlTokenStrategy fedSamlTokenStrategy = null; // non-default saml token strategy, or null
     private String serverUrl = null; // Special URL for generic (non-SSG) services
 
-    private transient Set listeners = new HashSet(); // List of weak references to listeners
+    private transient Set listeners = Collections.synchronizedSet(new HashSet()); // Set of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
     private transient X509Certificate lastSeenPeerCertificate = null;
     private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
@@ -617,26 +617,29 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * Add a listener to be notified of changes to this Ssg's state, including policy changes.
      * Adding a listener requires that a Gui be available, since event delivery is done on the Swing
      * thread.  The listeners are stored in a Set; thus you may add the same listener instance multiple
-     * times, but it will only receive one copy of each event.
+     * times, but it will only receive one copy of each event.  Must be called on Swing thread.
      */
-    public synchronized void addSsgListener(SsgListener listener) {
+    public void addSsgListener(SsgListener listener) {
         listeners.add(new WeakReference(listener));
     }
 
     /**
-     * Remove a listener from the queue.
+     * Remove a listener from the queue.  Must be called on Swing thread.
      */
-    public synchronized void removeSsgListener(SsgListener listener) {
-        for (Iterator i = listeners.iterator(); i.hasNext();) {
-            WeakReference reference = (WeakReference) i.next();
-            Object o = reference.get();
-            if (o == null || o == listener)
-                i.remove();
+    public void removeSsgListener(SsgListener listener) {
+        synchronized (listeners) {
+            for (Iterator i = listeners.iterator(); i.hasNext();) {
+                WeakReference reference = (WeakReference) i.next();
+                Object o = reference.get();
+                if (o == null || o == listener)
+                    i.remove();
+            }
         }
     }
 
     /**
-     * Notify all listeners that an SsgEvent has occurred.
+     * Notify all listeners that an SsgEvent has occurred.  Does not need to be called on Swing thread.
+     *
      * @param event  the event to transmit
      */
     private void fireSsgEvent(final SsgEvent event) {
@@ -646,16 +649,18 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
             return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                for (Iterator i = listeners.iterator(); i.hasNext();) {
-                    WeakReference reference = (WeakReference) i.next();
-                    SsgListener target = (SsgListener) reference.get();
-                    if (target != null) {
-                        if (event.getType() == SsgEvent.POLICY_ATTACHED)
-                            target.policyAttached(event);
-                        else if (event.getType() == SsgEvent.DATA_CHANGED)
-                            target.dataChanged(event);
-                        else
-                            throw new IllegalArgumentException("Unknown event type: " + event.getType());
+                synchronized (listeners) {
+                    for (Iterator i = listeners.iterator(); i.hasNext();) {
+                        WeakReference reference = (WeakReference) i.next();
+                        SsgListener target = (SsgListener) reference.get();
+                        if (target != null) {
+                            if (event.getType() == SsgEvent.POLICY_ATTACHED)
+                                target.policyAttached(event);
+                            else if (event.getType() == SsgEvent.DATA_CHANGED)
+                                target.dataChanged(event);
+                            else
+                                throw new IllegalArgumentException("Unknown event type: " + event.getType());
+                            }
                     }
                 }
             }
