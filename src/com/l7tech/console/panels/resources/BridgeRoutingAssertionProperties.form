@@ -11,7 +11,7 @@
     <children>
       <component id="d0607" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="192" width="73" height="14"/>
+          <xy x="20" y="190" width="73" height="14"/>
           <grid row="6" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -20,7 +20,7 @@
       </component>
       <component id="7977c" class="javax.swing.JRadioButton" binding="rbPolicyAutoDisco">
         <constraints>
-          <xy x="40" y="209" width="135" height="22"/>
+          <xy x="40" y="207" width="135" height="22"/>
           <grid row="7" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -30,7 +30,7 @@
       </component>
       <component id="191d9" class="javax.swing.JRadioButton" binding="rbPolicyManual">
         <constraints>
-          <xy x="40" y="231" width="163" height="22"/>
+          <xy x="40" y="229" width="163" height="22"/>
           <grid row="8" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -69,7 +69,7 @@
       </component>
       <scrollpane id="65b89">
         <constraints>
-          <xy x="62" y="253" width="530" height="215"/>
+          <xy x="62" y="251" width="530" height="217"/>
           <grid row="9" column="3" row-span="1" col-span="5" vsize-policy="7" hsize-policy="0" anchor="8" fill="3">
             <minimum-size width="100" height="200"/>
             <preferred-size width="350" height="-1"/>
@@ -91,7 +91,7 @@
       </scrollpane>
       <hspacer id="d071">
         <constraints>
-          <xy x="345" y="495" width="127" height="11"/>
+          <xy x="295" y="495" width="177" height="11"/>
           <grid row="11" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
         </constraints>
       </hspacer>
@@ -113,7 +113,7 @@
       </vspacer>
       <hspacer id="89365">
         <constraints>
-          <xy x="0" y="193" width="20" height="11"/>
+          <xy x="0" y="191" width="20" height="11"/>
           <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="12" height="-1"/>
           </grid>
@@ -137,7 +137,7 @@
       </vspacer>
       <hspacer id="720ee">
         <constraints>
-          <xy x="62" y="472" width="263" height="12"/>
+          <xy x="62" y="472" width="213" height="12"/>
           <grid row="10" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1">
             <minimum-size width="16" height="12"/>
           </grid>
@@ -161,7 +161,7 @@
       </hspacer>
       <component id="22bb" class="javax.swing.JLabel" binding="xmlMessages">
         <constraints>
-          <xy x="345" y="478" width="0" height="0"/>
+          <xy x="295" y="478" width="0" height="0"/>
           <grid row="10" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -170,11 +170,12 @@
       </component>
       <component id="746fe" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="23" width="95" height="14"/>
+          <xy x="20" y="23" width="93" height="14"/>
           <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
           <text value="Server Certificate:"/>
+          <visible value="false"/>
         </properties>
       </component>
       <component id="36259" class="javax.swing.JRadioButton" binding="rbServerCertAuto">
@@ -185,37 +186,43 @@
         <properties>
           <selected value="true"/>
           <text value="Discover Automatically"/>
+          <visible value="false"/>
         </properties>
       </component>
       <component id="6d6be" class="javax.swing.JRadioButton" binding="rbServerCertManual">
         <constraints>
-          <xy x="40" y="62" width="263" height="22"/>
+          <xy x="40" y="60" width="263" height="22"/>
           <grid row="3" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
           <text value="Manually Specify Certificate (Paste Base64 PEM):"/>
+          <visible value="false"/>
         </properties>
       </component>
       <scrollpane id="dfe71">
         <constraints>
-          <xy x="62" y="84" width="530" height="85"/>
+          <xy x="62" y="80" width="530" height="87"/>
           <grid row="4" column="3" row-span="1" col-span="5" vsize-policy="7" hsize-policy="7" anchor="0" fill="3">
             <minimum-size width="100" height="70"/>
             <preferred-size width="350" height="-1"/>
           </grid>
         </constraints>
-        <properties/>
+        <properties>
+          <visible value="false"/>
+        </properties>
         <border type="none"/>
         <children>
           <component id="d2982" class="javax.swing.JTextArea" binding="serverCertText">
             <constraints/>
-            <properties/>
+            <properties>
+              <visible value="true"/>
+            </properties>
           </component>
         </children>
       </scrollpane>
       <vspacer id="3d624">
         <constraints>
-          <xy x="188" y="169" width="11" height="20"/>
+          <xy x="163" y="167" width="11" height="20"/>
           <grid row="5" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="12"/>
           </grid>
