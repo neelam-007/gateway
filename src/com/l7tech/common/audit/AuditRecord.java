@@ -106,6 +106,11 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         this.ipAddress = ipAddress;
     }
 
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setName( String name ) {
+        this.name = name;
+    }
+
     /** the IP address of the entity that caused this AuditRecord to be created. */
     protected String ipAddress;
 
