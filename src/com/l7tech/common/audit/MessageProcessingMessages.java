@@ -27,7 +27,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M COMPLETION_STATUS           = m(3014, Level.FINE, "Request was completed with status {0} ({1})");
     public static final M SERVER_ERROR                = m(3015, Level.WARNING, "Policy status was NONE but routing was attempted anyway!");
     public static final M ROUTING_FAILED              = m(3016, Level.WARNING, "Request routing failed with status {0} ({1})");
-    public static final M POLICY_EVALUATION_RESULT    = m(3017, Level.INFO, "Policy evaluation resulted in status {0} ({1})");
+    public static final M POLICY_EVALUATION_RESULT    = m(3017, Level.INFO, "Policy evaluation for service {0} resulted in status {1} ({2})");
     public static final M EVENT_MANAGER_EXCEPTION     = m(3018, Level.WARNING, "EventManager threw exception logging message processing result");
     public static final M WSS_PROCESSING_COMPLETE     = m(3019, Level.FINEST, "WSS processing of request complete.");
     public static final M LICENSE_NOT_ENABLED         = m(3020, Level.WARNING, "Message processor not enabled by license: {0}");

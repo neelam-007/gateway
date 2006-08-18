@@ -411,7 +411,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     }
 
                     // Most likely the failure was in some other assertion
-                    auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
+                    String serviceName = "";
+                    if (context != null && context.getService() != null) {
+                        serviceName = context.getService().getName() + " [" + context.getService().getOid() + "].";
+                    }
+                    auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{serviceName, String.valueOf(status.getNumeric()), status.getMessage()});
                 }
             }
 
