@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -18,6 +19,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.KeyEvent;
 import java.util.EventListener;
 import java.util.NoSuchElementException;
+import java.util.ArrayList;
 
 /**
  * The <code>Wizard</code> that drives the wizard step panels.
@@ -182,9 +184,11 @@ public class Wizard extends JDialog {
         stepLabelsPanel.add(stepsTitlePanel);
         int i = 0;
         WizardStepPanel p = startPanel;
+        java.util.List<WizardLabel> stepsLabels = new ArrayList<WizardLabel>();
         while (p != null) {
             String label = "" + (++i) + ". " + p.getStepLabel();
-            WizardLabel l = new WizardLabel(label, p, false);
+            WizardLabel l = new WizardLabel(label, p, true);
+            stepsLabels.add(l);
             stepLabelsPanel.add(l);
             addWizardListener(l);
             p = p.nextPanel();
@@ -209,6 +213,8 @@ public class Wizard extends JDialog {
         mainPanel.add(wizardStepPanel, BorderLayout.CENTER);
         mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
         getContentPane().add(mainPanel, BorderLayout.CENTER);
+
+        Utilities.equalizeComponentSizes(stepsLabels.toArray(new JComponent[0]));
     }
 
     /**
