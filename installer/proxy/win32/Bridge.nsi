@@ -238,6 +238,7 @@ Section "Uninstall"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\SSBService.exe"
   Delete "$INSTDIR\logging.properties"
+  Delete "$INSTDIR\enableKerberos.reg"
 
   ;Remove shortcut
   ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
