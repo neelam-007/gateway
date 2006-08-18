@@ -72,7 +72,7 @@ public class EditPermissionsDialog extends JDialog {
         EntityType etype = (EntityType)typeSelection.getSelectedItem();
         buttonOK.setEnabled(etype != null && operationSelection.getSelectedItem() != null);
 
-        boolean scopeEnabled = etype == EntityType.SERVICE;
+        boolean scopeEnabled = RbacUtilities.isEnableRoleEditing() || etype == EntityType.SERVICE;
         scopeLabel.setVisible(scopeEnabled);
         scopeField.setVisible(scopeEnabled);
         browseForScope.setVisible(scopeEnabled);
@@ -92,8 +92,17 @@ public class EditPermissionsDialog extends JDialog {
             }
         });
 
+        operationSelection.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                OperationType opType = (OperationType) operationSelection.getSelectedItem();
+                permission.setOperation(opType);
+            }
+        } );
+
         typeSelection.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                EntityType eType = (EntityType) typeSelection.getSelectedItem();
+                permission.setEntityType(eType);
                 enableDisable();
             }
         });

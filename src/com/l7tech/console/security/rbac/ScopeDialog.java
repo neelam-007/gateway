@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
+import java.lang.reflect.Method;
+import java.beans.*;
 
 /**
  * @author alex
@@ -39,6 +41,11 @@ public class ScopeDialog extends JDialog {
     private RadioListener radioListener;
     private EntityHeader specificEntity;
     private final EntityType entityType;
+    private JRadioButton attributeRadioButton;
+    private JTextField attrValue;
+    private JLabel attrNameLabel;
+    private JLabel attrValueLabel;
+    private JComboBox attrNamesList;
 
     public ScopeDialog(Frame owner, Permission perm, EntityType etype) throws HeadlessException {
         super(owner);
@@ -63,18 +70,22 @@ public class ScopeDialog extends JDialog {
     }
 
     private void initialize() {
+        setupAttributeNames();
         setModal(true);
         radioListener = new RadioListener();
 
         setRadioText(allRadioButton);
         setRadioText(specificRadioButton);
+        setRadioText(attributeRadioButton);
 
         ButtonGroup rbGroup = new ButtonGroup();
         rbGroup.add(allRadioButton);
         rbGroup.add(specificRadioButton);
+        rbGroup.add(attributeRadioButton);
 
         allRadioButton.addActionListener(radioListener);
         specificRadioButton.addActionListener(radioListener);
+        attributeRadioButton.addActionListener(radioListener);
 
         if (scope.size() == 0) {
             allRadioButton.setSelected(true);
@@ -119,6 +130,26 @@ public class ScopeDialog extends JDialog {
         add(mainPanel);
     }
 
+    private void setupAttributeNames() {
+        List<String> names = new ArrayList<String>();
+
+        Class eClazz = entityType.getEntityClass();
+        try {
+            BeanInfo info = Introspector.getBeanInfo(eClazz);
+            PropertyDescriptor[] props = info.getPropertyDescriptors();
+            for (PropertyDescriptor propertyDescriptor : props) {
+                Method getter = propertyDescriptor.getReadMethod();
+                if (getter != null)
+                    //there is a getter for this property, so use it in the list
+                    names.add(propertyDescriptor.getName());
+            }
+            attrNamesList.setModel(new DefaultComboBoxModel(names.toArray(new String[0])));
+        } catch (IntrospectionException e) {
+            e.printStackTrace();
+        }
+        Method[] getters = eClazz.getMethods();
+    }
+
     private void setRadioText(JRadioButton rb) {
         rb.setText(MessageFormat.format(rb.getText(), entityType.getName()));
     }
@@ -133,12 +164,25 @@ public class ScopeDialog extends JDialog {
         specificFindButton.setEnabled(specificRadioButton.isSelected());
         specificText.setText(specificRadioButton.isSelected() ? getSpecificLabel() : "");
         specificText.setEnabled(specificRadioButton.isSelected());
+        attrNameLabel.setEnabled(attributeRadioButton.isSelected());
+        attrValueLabel.setEnabled(attributeRadioButton.isSelected());
+        attrNamesList.setEnabled(attributeRadioButton.isSelected());
+        attrValue.setEnabled(attributeRadioButton.isSelected());
     }
 
     void ok() {
+
+        if (attributeRadioButton.isSelected())
+            addAttributePredicate();
+
         permission.getScope().clear();
         permission.getScope().addAll(scope);
         dispose();
+    }
+
+    private void addAttributePredicate() {
+        AttributePredicate aPred = new AttributePredicate(permission, (String) attrNamesList.getSelectedItem(), attrValue.getText());
+        scope.add(aPred);
     }
 
     void cancel() {

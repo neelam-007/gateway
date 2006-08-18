@@ -15,6 +15,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
+
 public class RoleManagementDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
 
@@ -31,6 +33,7 @@ public class RoleManagementDialog extends JDialog {
     private JTextArea propertiesPane;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
+
     private final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
 
     private final ActionListener roleActionListener = new ActionListener() {
@@ -54,10 +57,10 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void initialize() {
-        enableRoleManagmentButtons(true);
-
+        enableRoleManagmentButtons(RbacUtilities.isEnableRoleEditing());
         propertiesPane.setEditable(false);
         propertiesPane.setLineWrap(false);
+
         populateList();
         setupButtonListeners();
         setupActionListeners();
@@ -74,7 +77,6 @@ public class RoleManagementDialog extends JDialog {
 
     private void enableRoleManagmentButtons(boolean enable) {
         addRole.setVisible(enable);
-        editRole.setVisible(enable);
         removeRole.setVisible(enable);
     }
 

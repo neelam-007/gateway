@@ -56,6 +56,7 @@ public class EditRoleDialog extends JDialog {
 
     private final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
     private final Map<Long, String> idpNames = new HashMap<Long, String>();
+    private boolean shouldAllowEdits = RbacUtilities.isEnableRoleEditing();
 
     public EditRoleDialog(Role role, Dialog parent) {
         super(parent, true);
@@ -141,6 +142,8 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void inititialize() {
+        enablePermissionEdits(shouldAllowEdits);
+
         try {
             EntityHeader[] hs = identityAdmin.findAllIdentityProviderConfig();
             for (EntityHeader h : hs) {
@@ -169,6 +172,16 @@ public class EditRoleDialog extends JDialog {
         setupActionListeners();
         updateButtonStates();
         pack();
+    }
+
+    private void enablePermissionEdits(boolean enableRoleEditing) {
+        addPermission.setVisible(enableRoleEditing);
+        editPermission.setVisible(enableRoleEditing);
+        removePermission.setVisible(enableRoleEditing);
+
+        addPermission.setEnabled(enableRoleEditing);
+        editPermission.setEnabled(enableRoleEditing);
+        removePermission.setEnabled(enableRoleEditing);
     }
 
     private void enablePermissionEditDeleteButtons() {
@@ -248,7 +261,7 @@ public class EditRoleDialog extends JDialog {
 
         permissionsTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() >= 2)
+                if (e.getClickCount() >= 2 && shouldAllowEdits)
                     showEditPermissionDialog(getSelectedPermission());
             }
         });
