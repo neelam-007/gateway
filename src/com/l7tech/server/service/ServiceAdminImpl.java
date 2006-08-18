@@ -2,10 +2,15 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.mime.ContentTypeHeader;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.common.security.rbac.OperationType.*;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.JaasUtils;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
@@ -14,9 +19,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.sla.CounterIDManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
+import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -63,6 +69,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     private SampleMessageManager sampleMessageManager;
     private CounterIDManager counterIDManager;
     private SslClientTrustManager trustManager;
+    private RoleManager roleManager;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -71,7 +78,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
                             PolicyValidator policyValidator,
                             SampleMessageManager sampleMessageManager,
                             CounterIDManager counterIDManager,
-                            SslClientTrustManager trustManager) {
+                            SslClientTrustManager trustManager,
+                            RoleManager roleManager) {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
@@ -80,6 +88,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         this.sampleMessageManager = sampleMessageManager;
         this.counterIDManager = counterIDManager;
         this.trustManager = trustManager;
+        this.roleManager = roleManager;
     }
 
     private void checkLicense() throws RemoteException {
@@ -220,8 +229,39 @@ public class ServiceAdminImpl implements ServiceAdmin {
             // SAVING NEW SERVICE
             logger.fine("Saving new PublishedService");
             oid = serviceManager.save(service);
+            addManageServiceRole(service);
         }
         return oid;
+    }
+
+    private void addManageServiceRole(PublishedService service) throws SaveException {
+        User currentUser = JaasUtils.getCurrentUser();
+        if (currentUser == null) throw new IllegalStateException("Couldn't get current user");
+
+        String name = "Manage " + service.getName() + " Service";
+
+        logger.info("Creating new Role: " + name);
+
+        Role newRole = new Role();
+        newRole.setName(name);
+        newRole.addPermission(READ, SERVICE, service.getId()); // Read this service
+        newRole.addPermission(UPDATE, SERVICE, service.getId()); // Update this service
+        newRole.addPermission(DELETE, SERVICE, service.getId()); // Delete this service
+
+        boolean omnipotent;
+        try {
+            omnipotent = roleManager.isPermittedForAllEntities(currentUser, SERVICE, READ);
+            omnipotent = omnipotent & roleManager.isPermittedForAllEntities(currentUser, SERVICE, UPDATE);
+            omnipotent = omnipotent & roleManager.isPermittedForAllEntities(currentUser, SERVICE, DELETE);
+        } catch (FindException e) {
+            throw new SaveException("Coudln't get existing permissions", e);
+        }
+
+        if (!omnipotent) {
+            logger.info("Assigning current User to new Role");
+            newRole.addAssignedUser(currentUser);
+        }
+        roleManager.save(newRole);
     }
 
     public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {

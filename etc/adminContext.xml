@@ -223,6 +223,9 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="roleManager"/>
+        </constructor-arg>
         <property name="identityProviderConfigManager">
             <ref bean="identityProviderConfigManager"/>
         </property>
@@ -278,6 +281,9 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="httpRoutingAssertionTrustManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="roleManager"/>
         </constructor-arg>
     </bean>
 

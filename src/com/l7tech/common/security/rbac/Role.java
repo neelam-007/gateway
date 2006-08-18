@@ -4,6 +4,7 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.identity.User;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -13,8 +14,8 @@ import java.util.Set;
  * to individual users using {@link UserRoleAssignment}s.  Roles do not point back to
  * identities, because:
  * <ul>
- * <li>They can be shared by multiple identites;
- * <li>They may be assigned at runtime, rather than statically.
+ * <li>They can be assigned to multiple identites;
+ * <li>They may in future be assigned at runtime, rather than statically.
  * </ul>
  * @author alex
  */
@@ -38,6 +39,39 @@ public class Role extends NamedEntityImp {
 
     protected void setUserAssignments(Set<UserRoleAssignment> userAssignments) {
         this.userAssignments = userAssignments;
+    }
+
+    /**
+     * Adds a new Permission granting the specified privilege with its scope set to an
+     * {@link ObjectIdentityPredicate} for the provided ID.
+     */
+    public void addPermission(OperationType operation, EntityType etype, String id) {
+        Permission perm = new Permission(this, operation, etype);
+        perm.getScope().add(new ObjectIdentityPredicate(perm, id));
+        permissions.add(perm);
+    }
+
+    /**
+     * Adds a new Permission granting the specified privilege with its scope set to an
+     * {@link AttributePredicate} for the provided attribute name and value.
+     * @throws IllegalArgumentException if the provided attribute name doesn't match a getter on the class represented 
+     *         by the provided EntityType.
+     */
+    public void addPermission(OperationType operation,
+                              EntityType etype,
+                              String attr,
+                              String name)
+                       throws IllegalArgumentException {
+        Permission perm = new Permission(this, operation, etype);
+        perm.getScope().add(new AttributePredicate(perm, attr, name));
+        permissions.add(perm);
+    }
+
+    /**
+     * Creates and adds a new {@link UserRoleAssignment} assigning the provided {@link User} to this Role.
+     */
+    public void addAssignedUser(User user) {
+        userAssignments.add(new UserRoleAssignment(this, user.getProviderId(), user.getId()));
     }
 
     public String toString() {

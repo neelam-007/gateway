@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.AnonymousEntityReference;
 public class AnonymousIdentityReference extends AnonymousEntityReference implements Identity {
     private final long providerOid;
 
-    public AnonymousIdentityReference(Class entityClass, String uniqueId, long providerOid, String name) {
+    public AnonymousIdentityReference(Class<? extends Identity> entityClass, String uniqueId, long providerOid, String name) {
         super(entityClass, uniqueId, name);
         this.providerOid = providerOid;
     }

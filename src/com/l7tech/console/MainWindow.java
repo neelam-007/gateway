@@ -9,6 +9,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LicenseDialog;
@@ -29,7 +30,6 @@ import javax.help.DefaultHelpBroker;
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
-import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
@@ -53,7 +53,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
-import java.security.AccessController;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -233,11 +232,8 @@ public class MainWindow extends JFrame {
      * notification on this event type (connection event).
      */
     private void fireConnected() {
-        Subject sub = Subject.getSubject(AccessController.getContext());
-        if (sub == null) throw new IllegalStateException("Logon apparently worked, but no Subject is present");
-        Set<User> users = sub.getPrincipals(User.class);
-        if (users == null || users.isEmpty() || users.size() > 1) throw new IllegalStateException("Logon apparently worked, but Subject has no User");
-        User u = users.iterator().next();
+        User u = JaasUtils.getCurrentUser();
+        if (u == null) throw new IllegalStateException("Logon apparently worked, but no User is available");
         Set<Permission> perms = new HashSet<Permission>();
         try {
             Collection<Role> roles = Registry.getDefault().getRbacAdmin().findRolesForUser(u);

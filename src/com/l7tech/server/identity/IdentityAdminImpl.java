@@ -4,8 +4,12 @@ import com.l7tech.common.Authorizer;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.HexUtils;
+import static com.l7tech.common.security.rbac.EntityType.*;
+import static com.l7tech.common.security.rbac.OperationType.*;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -13,6 +17,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.security.rbac.RoleManager;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
@@ -38,10 +43,12 @@ public class IdentityAdminImpl implements IdentityAdmin {
     private ClientCertManager clientCertManager;
 
     private final LicenseManager licenseManager;
+    private final RoleManager roleManager;
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
-    public IdentityAdminImpl(LicenseManager licenseManager) {
+    public IdentityAdminImpl(LicenseManager licenseManager, RoleManager roleManager) {
         this.licenseManager = licenseManager;
+        this.roleManager = roleManager;
     }
 
     private void checkLicense() throws RemoteException {
@@ -84,6 +91,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws RemoteException, SaveException, UpdateException {
         try {
+            long oid;
             checkLicense();
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
@@ -91,14 +99,73 @@ public class IdentityAdminImpl implements IdentityAdmin {
                 originalConfig.copyFrom(identityProviderConfig);
                 manager.update(originalConfig);
                 logger.info("Updated IDProviderConfig: " + identityProviderConfig.getOid());
-                return identityProviderConfig.getOid();
+                oid = identityProviderConfig.getOid();
+            } else {
+                logger.info("Saving IDProviderConfig: " + identityProviderConfig.getOid());
+                oid = getIdProvCfgMan().save(identityProviderConfig);
+                addManageProviderRole(identityProviderConfig);
             }
-            logger.info("Saving IDProviderConfig: " + identityProviderConfig.getOid());
-            return getIdProvCfgMan().save(identityProviderConfig);
+
+            return oid;
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException("This object cannot be found (it no longer exist?).", e);
         }
+    }
+
+    private void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
+        User currentUser = JaasUtils.getCurrentUser();
+        if (currentUser == null) throw new IllegalStateException("Couldn't get current user");
+
+        String name = "Manage " + config.getName() + " Identity Provider";
+
+        logger.info("Creating new Role: " + name);
+
+        Role newRole = new Role();
+        newRole.setName(name);
+        // Permissions on this IPC
+        newRole.addPermission(READ, ID_PROVIDER_CONFIG, config.getId());
+        newRole.addPermission(UPDATE, ID_PROVIDER_CONFIG, config.getId());
+        newRole.addPermission(DELETE, ID_PROVIDER_CONFIG, config.getId());
+        
+        // Permissions on users in this IdP
+        newRole.addPermission(CREATE, USER, "providerId", config.getId());
+        newRole.addPermission(READ, USER, "providerId", config.getId());
+        newRole.addPermission(UPDATE, USER, "providerId", config.getId());
+        newRole.addPermission(DELETE, USER, "providerId", config.getId());
+        
+        // Permissions on groups in this IdP
+        newRole.addPermission(CREATE, GROUP, "providerId", config.getId());
+        newRole.addPermission(READ, GROUP, "providerId", config.getId());
+        newRole.addPermission(UPDATE, GROUP, "providerId", config.getId());
+        newRole.addPermission(DELETE, GROUP, "providerId", config.getId());
+
+        // Check if current user can already do everything this Role will grant
+        boolean omnipotent;
+        try {
+            omnipotent = roleManager.isPermittedForEntity(currentUser, config, READ, null);
+            omnipotent = omnipotent && roleManager.isPermittedForEntity(currentUser, config, UPDATE, null);
+            omnipotent = omnipotent && roleManager.isPermittedForEntity(currentUser, config, DELETE, null);
+            
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, CREATE);
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, READ);
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, UPDATE);
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, DELETE);
+
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, CREATE);
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, UPDATE);
+            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, DELETE);
+        } catch (FindException e) {
+            throw new SaveException("Coudln't get existing permissions", e);
+        }
+
+        if (!omnipotent) {
+            logger.info("Assigning current User to new Role");
+            newRole.addAssignedUser(currentUser);
+        }
+        
+        roleManager.save(newRole);
     }
 
     /**

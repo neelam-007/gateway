@@ -12,6 +12,7 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -400,11 +401,7 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityHeader header = new EntityHeader();
-                                header.setType(EntityType.GROUP);
-                                header.setName(group.getName());
-                                header.setStrId(group.getId());
-
+                                IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), null);
                                 GroupPanel panel = GroupPanel.newInstance(ipc, header);
                                 if (panel == null) return;
                                 try {

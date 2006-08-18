@@ -6,6 +6,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.*;
 import static com.l7tech.common.security.rbac.OperationType.*;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -16,10 +17,8 @@ import org.apache.commons.collections.iterators.ArrayIterator;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import javax.security.auth.Subject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,8 +47,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             if (element instanceof Entity) {
                 testEntity = (Entity)element;
             } else if (element instanceof EntityHeader) {
-                EntityHeader header = (EntityHeader) element;
-                testEntity = EntityHeaderUtils.fromHeader(header);
+                testEntity = (Entity)entityFinder.find((EntityHeader) element);
             } else {
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
             }
@@ -116,11 +114,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             check = new CheckInfo(mname, checkTypes, checkOperation, checkStereotype, checkRelevantArg, checkOtherOperationName);
         }
 
-        Subject subject = Subject.getSubject(AccessController.getContext());
-        if (subject == null) throw new IllegalStateException("Secured method " + mname + " invoked with no Subject active");
-        Set<User> users = subject.getPrincipals(User.class);
-        if (users == null || users.isEmpty()) throw new IllegalStateException("Secured method " + mname + " invoked with Subject containing no User principal");
-        User user = users.iterator().next();
+        User user = JaasUtils.getCurrentUser();
+        if (user == null) throw new IllegalStateException("Secured method " + mname + " invoked with Subject containing no User principal");
 
         switch (check.operation) {
             case CREATE:

@@ -22,9 +22,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
+    private static final Logger logger = Logger.getLogger(EntityFinderImpl.class.getName());
     private final IdentityProviderFactory identityProviderFactory;
 
     public EntityFinderImpl(IdentityProviderFactory ipf) {
@@ -86,17 +88,31 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 throw new IllegalArgumentException("EntityHeader is an IdentityHeader, but type is neither USER nor GROUP");
             }
         }
-        return (Entity)find(header.getType().getClass(), header.getStrId());
+        return find(EntityHeaderUtils.getEntityClass(header), header.getStrId());
     }
 
     @Transactional(readOnly=true)
-    public <ET> ET find(final Class<ET> clazz, final Serializable pk) throws FindException {
+    public <ET> ET find(final Class<ET> clazz, Serializable pk) throws FindException {
         try {
+            Serializable tempPk;
+            if (pk instanceof String) {
+                try {
+                    tempPk = Long.valueOf((String)pk);
+                } catch (NumberFormatException nfe) {
+                    // TODO make this metadata-based?
+                    logger.fine("Primary key {0} is not a valid Long; using String value instead");
+                    tempPk = pk;
+                }
+            } else {
+                tempPk = pk;
+            }
+
+            final Serializable finalPk = tempPk;
             //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     //noinspection unchecked
-                    return (ET)session.load(clazz, pk);
+                    return (ET)session.load(clazz, finalPk);
                 }
             });
         } catch (Exception e) {

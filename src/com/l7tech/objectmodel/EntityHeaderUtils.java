@@ -80,5 +80,9 @@ public final class EntityHeaderUtils {
         }
     }
 
+    public static Class<? extends Entity> getEntityClass(EntityHeader header) {
+        return fromHeader(header).getEntityClass();
+    }
+
     private EntityHeaderUtils() { }
 }

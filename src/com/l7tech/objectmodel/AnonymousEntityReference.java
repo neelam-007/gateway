@@ -13,27 +13,23 @@ import java.io.Serializable;
  * @version $Revision$
  */
 public class AnonymousEntityReference implements NamedEntity, Serializable {
-    public AnonymousEntityReference(Class entityClass, long oid) {
-        this(entityClass, oid, null);
-    }
-
-    public AnonymousEntityReference(Class entityClass, String uniqueId) {
+    public AnonymousEntityReference(Class<? extends Entity> entityClass, String uniqueId) {
         this(entityClass, uniqueId, null);
     }
 
-    public AnonymousEntityReference(Class entityClass, String uniqueId, String name) {
+    public AnonymousEntityReference(Class<? extends Entity> entityClass, String uniqueId, String name) {
         this.entityClass = entityClass;
         this.uniqueId = uniqueId;
         this.name = name;
     }
 
-    public AnonymousEntityReference(Class entityClass, long oid, String name) {
+    public AnonymousEntityReference(Class<? extends Entity> entityClass, long oid, String name) {
         this.entityClass = entityClass;
         this.name = name;
         this.uniqueId = Long.toString(oid);
     }
 
-    public Class getEntityClass() {
+    public Class<? extends Entity> getEntityClass() {
         return entityClass;
     }
 
@@ -63,23 +59,13 @@ public class AnonymousEntityReference implements NamedEntity, Serializable {
     }
 
     /** @deprecated */
-    public void setVersion(int version) {
-        throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated */
-    public void setOid(long oid) {
-        throw new UnsupportedOperationException();
-    }
-
-    /** @deprecated */
     public void setName(String name) {
         throw new UnsupportedOperationException();
     }
 
     private static final long serialVersionUID = 5741062976640065826L;
 
-    private final Class entityClass;
+    private final Class<? extends Entity> entityClass;
     private final String name;
     protected String uniqueId;
 }
