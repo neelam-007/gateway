@@ -113,6 +113,7 @@ public final class Message {
         try {
             HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
             HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
+            if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
             rootFacet = new XmlFacet(this, rootFacet);
