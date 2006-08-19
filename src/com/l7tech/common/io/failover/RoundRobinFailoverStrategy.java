@@ -6,6 +6,9 @@
 
 package com.l7tech.common.io.failover;
 
+import java.util.LinkedHashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 
 /**
@@ -14,7 +17,13 @@ package com.l7tech.common.io.failover;
  * This implementation is unsynchronized; see {@link AbstractFailoverStrategy#makeSynchronized}.
  */
 public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
+    private static final long DEFAULT_PROBE_MILLIS = 5 * 60 * 1000; // Retry failed server every 5 min by default
+
+    private long probeTime = DEFAULT_PROBE_MILLIS;
+
     int next = 0;
+    LinkedHashMap up = new LinkedHashMap();
+    LinkedHashMap down = new LinkedHashMap();
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -24,20 +33,55 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
      */
     public RoundRobinFailoverStrategy(Object[] servers) {
         super(servers);
+        for (int i = 0; i < servers.length; i++) {
+            Object server = servers[i];
+            up.put(server, null);
+        }
+        down.clear();
     }
 
     public Object selectService() {
-        Object service = servers[next++];
-        if (next >= servers.length) next = 0;
-        return service;
+        if (!down.isEmpty()) {
+            // Check if it's time to probe one of the downed servers
+            long now = System.currentTimeMillis();
+            for (Iterator i = down.entrySet().iterator(); i.hasNext();) {
+                Map.Entry entry = (Map.Entry)i.next();
+                Object server = entry.getKey();
+                Long probeWhen = (Long)entry.getValue();
+                if (probeWhen >= now) {
+                    // Probe this server; update time, move to end of list, and return it
+                    i.remove();
+                    down.put(server, new Long(now + probeTime));
+                    return server;
+                }
+            }
+        }
+
+        // Round robin through UP list, unless all are down, in which case we robin through DOWN list
+        LinkedHashMap toUse = up.isEmpty() ? down : up;
+        assert !toUse.isEmpty();  // Must always be at least 1 server, whether its up or down
+
+        // Select first server
+        Iterator i = toUse.entrySet().iterator();
+        Map.Entry entry = (Map.Entry)i.next();
+        Object server = entry.getKey();
+        Long value = (Long)entry.getValue();
+
+        // Move it to end of list
+        i.remove();
+        toUse.put(server, value);
+
+        return server;
     }
 
     public void reportFailure(Object service) {
-        // ignored
+        if (up.isEmpty() || up.remove(service) == null) return;
+        down.put(service, new Long(System.currentTimeMillis() + probeTime));
     }
 
     public void reportSuccess(Object service) {
-        // ignored
+        if (down.isEmpty() || down.remove(service) == null) return;
+        up.put(service, null);
     }
 
     public String getName() {
@@ -45,6 +89,6 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
     }
 
     public String getDescription() {
-        return "Pure Round-Robin";
+        return "Round-Robin";
     }
 }

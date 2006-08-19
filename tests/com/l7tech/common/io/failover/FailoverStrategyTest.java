@@ -70,14 +70,17 @@ public class FailoverStrategyTest extends TestCase {
     public void testRoundRobinFailoverStrategy() throws Exception {
         FailoverStrategy s = new RoundRobinFailoverStrategy(servers);
 
-        // Strict round-robin must ignore success or failure
+        // Strict round-robin must do blacklisting
         assertEquals(SA, s.selectService());
-        s.reportFailure(SB);
-        assertEquals(SB, s.selectService());
         s.reportSuccess(SA);
+        assertEquals(SB, s.selectService());
+        s.reportFailure(SB);
         assertEquals(SC, s.selectService());
-        s.reportFailure(SA);
+        s.reportSuccess(SC);
         assertEquals(SA, s.selectService());
+        s.reportFailure(SA);
+        assertEquals(SC, s.selectService());
+        s.reportSuccess(SC);
     }
 
     public void testRandomFailoverStrategy() throws Exception {
