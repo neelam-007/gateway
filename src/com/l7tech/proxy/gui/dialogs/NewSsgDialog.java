@@ -36,6 +36,7 @@ public class NewSsgDialog extends JDialog {
     private JComboBox trustedSsgComboBox;
     private JButton cancelButton;
     private JButton createButton;
+    private JLabel bottomSpace;
 
     private ImageIcon lastImage = null;
     private SsgFinder ssgFinder;
@@ -140,12 +141,15 @@ public class NewSsgDialog extends JDialog {
             genericWebServiceLabel.setVisible(false);
             genericWebServiceLabel.setEnabled(false);
             Container radioParent = radioRawUrl.getParent();
-            if (radioParent != null) radioParent.remove(radioRawUrl);
+            //if (radioParent != null) radioParent.remove(radioRawUrl);
             Container labelParent = genericWebServiceLabel.getParent();
-            if (labelParent != null) labelParent.remove(genericWebServiceLabel);
+            //if (labelParent != null) labelParent.remove(genericWebServiceLabel);
         }
 
         checkButtonState();
+
+        Utilities.equalizeButtonSizes(new AbstractButton[] { createButton, cancelButton });
+        Utilities.equalizeComponentSizes(new JComponent[] { createButton, cancelButton, bottomSpace });
     }
 
     private void checkButtonState() {
