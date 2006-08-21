@@ -47,7 +47,13 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             if (element instanceof Entity) {
                 testEntity = (Entity)element;
             } else if (element instanceof EntityHeader) {
-                testEntity = (Entity)entityFinder.find((EntityHeader) element);
+                EntityHeader header = (EntityHeader) element;
+                if (header.getType() == com.l7tech.objectmodel.EntityType.MAXED_OUT_SEARCH_RESULT) {
+                    // This one can get by without a permission check
+                    testEntity = null;
+                } else {
+                    testEntity = (Entity)entityFinder.find(header);
+                }
             } else {
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
             }

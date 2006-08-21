@@ -1,14 +1,17 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.*;
-import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.console.panels.CreateFederatedIPWizard;
+import com.l7tech.console.panels.FederatedIPGeneralPanel;
+import com.l7tech.console.panels.FederatedIPTrustedCertsPanel;
+import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
@@ -84,6 +87,8 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
 
+                // Refresh permission cache so that newly created IdP is usable
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             }
         });
 

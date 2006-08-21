@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
     private static final Logger logger = Logger.getLogger(SecurityProvider.class.getName());
-    private Set<Permission> subjectPermissions = new HashSet<Permission>();
+    private final Set<Permission> subjectPermissions = new HashSet<Permission>();
 
     /**
      * Return the authentication provider associated with this security provider
@@ -83,41 +83,21 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
     }
 
     /**
-     * Subclasses update the subject permissions using this method.
-     *
-     * @param permissions the subject permissions
-     * @throws IllegalStateException if the method is invoked in wrokng time, i.e. the subject
-     *                               is not set
-     */
-    private void setPermissions(Collection<Permission> permissions) {
-        Subject subject = Subject.getSubject(AccessController.getContext());
-        if (subject == null) {
-            throw new IllegalStateException("The subject is null");
-        }
-        synchronized (this) {
-            subjectPermissions.clear();
-            subjectPermissions.addAll(permissions);
-        }
-    }
-
-    private Set<Permission> getSubjectPermissions() {
-        synchronized (this) {
-            return Collections.unmodifiableSet(subjectPermissions);
-        }
-    }
-
-    /**
      * Determine the permissions for the current user
      *
      * @return the set of permission for the current subject
      * @throws RuntimeException on error retrieving user permissions
      */
     public Collection<Permission> getUserPermissions() throws RuntimeException {
-        final Set<Permission> subjectPerms = getSubjectPermissions();
-        if (!subjectPerms.isEmpty()) {
-            return subjectPerms;
+        Set<Permission> result;
+        synchronized (this) {
+            result = Collections.unmodifiableSet(subjectPermissions);
         }
+        if (!result.isEmpty()) return result;
+        return refreshPermissionCache();
+    }
 
+    public Collection<Permission> refreshPermissionCache() {
         RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         if (rbacAdmin == null) {
             throw new IllegalStateException("Unable to obtain admin service");
@@ -125,7 +105,10 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
 
         try {
             final Collection<Permission> perms = rbacAdmin.findCurrentUserPermissions();
-            setPermissions(perms);
+            synchronized (this) {
+                subjectPermissions.clear();
+                subjectPermissions.addAll(perms);
+            }
             return perms;
         } catch (RemoteException e) {
             throw new RuntimeException(e);

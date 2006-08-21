@@ -9,6 +9,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -83,6 +84,8 @@ public class NewLdapProviderAction extends NewProviderAction {
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
 
+                // Refresh permission cache so that newly created IdP is usable
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             }
         });
 
