@@ -48,7 +48,7 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
                 Map.Entry entry = (Map.Entry)i.next();
                 Object server = entry.getKey();
                 Long probeWhen = (Long)entry.getValue();
-                if (probeWhen >= now) {
+                if (probeWhen.longValue() >= now) {
                     // Probe this server; update time, move to end of list, and return it
                     i.remove();
                     down.put(server, new Long(now + probeTime));
