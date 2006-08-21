@@ -17,7 +17,7 @@ start() {
 	echo "Setting wide local port range for more outbound connections"
 	echo "1024 65530" > /proc/sys/net/ipv4/ip_local_port_range
 	echo "Disable ECN because some systems don't do it right yet"
-	echo 1 > /proc/sys/net/ipv4/tpc_ecn
+	echo 0 > /proc/sys/net/ipv4/tcp_ecn
 	echo "Setting Low latency TCP"
 	echo 1 > /proc/sys/net/ipv4/tcp_low_latency
 	echo "Turning off timestamps"
