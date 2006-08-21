@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Filter that wraps the input stream for http requests that (may) have a body.
@@ -23,9 +24,11 @@ public class InputTimeoutFilter implements Filter {
      */
     public InputTimeoutFilter() {
         // init with defaults
-        timeout = DEFAULT_BLOCKED_READ_TIMEOUT;
-        readTime = DEFAULT_SLOW_READ_TIMEOUT;
-        readRate = DEFAULT_SLOW_READ_LIMIT;
+        synchronized(sync) {
+            timeout = DEFAULT_BLOCKED_READ_TIMEOUT;
+            readTime = DEFAULT_SLOW_READ_TIMEOUT;
+            readRate = DEFAULT_SLOW_READ_LIMIT;
+        }
     }
 
     /**
@@ -49,9 +52,12 @@ public class InputTimeoutFilter implements Filter {
         String configReadTime = filterConfig.getInitParameter(INIT_PROP_SLOW_READ_THRESHOLD);
         String configReadRate = filterConfig.getInitParameter(INIT_PROP_SLOW_READ_THROUGHPUT);
 
-        timeout = parseLong(configTimeout, 500, 3600000, DEFAULT_BLOCKED_READ_TIMEOUT, INIT_PROP_TIMEOUT);
-        readTime = parseLong(configReadTime, 500, 3600000, DEFAULT_SLOW_READ_TIMEOUT, INIT_PROP_SLOW_READ_THRESHOLD);
-        readRate = parseInt(configReadRate, 0, 1000000, DEFAULT_SLOW_READ_LIMIT, INIT_PROP_SLOW_READ_THROUGHPUT);
+        synchronized(sync) {
+            timeout = parseLong(configTimeout, 500, 3600000, DEFAULT_BLOCKED_READ_TIMEOUT, INIT_PROP_TIMEOUT);
+            readTime = parseLong(configReadTime, 500, 3600000, DEFAULT_SLOW_READ_TIMEOUT, INIT_PROP_SLOW_READ_THRESHOLD);
+            readRate = parseInt(configReadRate, 0, 1000000, DEFAULT_SLOW_READ_LIMIT, INIT_PROP_SLOW_READ_THROUGHPUT);
+        }
+        initPropUpdater();
     }
 
     /**
@@ -77,7 +83,17 @@ public class InputTimeoutFilter implements Filter {
         TimeoutServletRequest tsr = null;
 
         if(servletRequest instanceof HttpServletRequest) {
-            tsr = new TimeoutServletRequest((HttpServletRequest) servletRequest, getTimeout(), getReadTime(), getReadRate());
+            long reqTimeout;
+            long reqReadTime;
+            int reqReadRate;
+
+            synchronized(sync) {
+                reqTimeout = timeout;
+                reqReadTime = readTime;
+                reqReadRate = readRate;
+            }
+
+            tsr = new TimeoutServletRequest((HttpServletRequest) servletRequest, reqTimeout, reqReadTime, reqReadRate);
             requestForNextFilter = tsr;
         }
 
@@ -114,6 +130,7 @@ public class InputTimeoutFilter implements Filter {
     private static final int DEFAULT_SLOW_READ_LIMIT = 1024; //Bytes per second
 
     //
+    private Object sync = new Object();
     private long timeout;
     private long readTime;
     private int readRate;
@@ -169,28 +186,83 @@ public class InputTimeoutFilter implements Filter {
     /**
      * Get the timeout from server config, use servlet config as default.
      */
-    private long getTimeout() {
+    private long getTimeout(long currentValue) {
         String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
-        long scTimeout = parseLong(rawVal, 500, 3600000, timeout, ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
+        long scTimeout = parseLong(rawVal, 500, 3600000, currentValue, ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
         return scTimeout;
     }
 
     /**
      * Get the slow read threshold from server config, use servlet config as default.
      */
-    private long getReadTime() {
+    private long getReadTime(long currentValue) {
         String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
-        long scReadTimeout = parseLong(rawVal, 500, 3600000, readTime, ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
+        long scReadTimeout = parseLong(rawVal, 500, 3600000, currentValue, ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
         return scReadTimeout;
     }
 
     /**
      * Get the slow read rate from server config, use servlet config as default.
      */
-    private int getReadRate() {
+    private int getReadRate(int currentValue) {
         String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
-        int scReadRate = parseInt(rawVal, 0, 1000000, readRate, ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
+        int scReadRate = parseInt(rawVal, 0, 1000000, currentValue, ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
         return scReadRate;
+    }
+
+    /**
+     * Update the properties periodically.
+     */
+    private void initPropUpdater() {
+        Thread propUpdater = new Thread(new TimeoutPropertyUpdate(), "TimeoutFilterConfigRefresh");
+        propUpdater.setDaemon(true);
+        propUpdater.setPriority(Thread.NORM_PRIORITY-1);
+    }
+
+    private final class TimeoutPropertyUpdate implements Runnable {
+        public void run() {
+            while(true) {
+                try {
+                    while(true) {
+                        long newTimeout;
+                        long newReadTime;
+                        int newReadRate;
+
+                        synchronized(sync) {
+                            newTimeout = timeout;
+                            newReadTime = readTime;
+                            newReadRate = readRate;
+                        }
+
+                        newTimeout = getTimeout(newTimeout);
+                        newReadTime = getReadTime(newReadTime);
+                        newReadRate = getReadRate(newReadRate);
+
+                        synchronized(sync) {
+                            timeout = newTimeout;
+                            readTime = newReadTime;
+                            readRate = newReadRate;
+                        }
+
+                        Thread.sleep(30000);
+                    }
+                }
+                catch(InterruptedException ie) {
+                    logger.log(Level.INFO, "Shutting down timeout property update thread.");
+                }
+                catch(Exception e) {
+                    logger.log(Level.WARNING, "Unexpected exception in timeout property update thread.", e);
+                }
+
+                try {
+                    Thread.sleep(60000);
+                }
+                catch(InterruptedException ie) {
+                    logger.log(Level.INFO, "Shutting down timeout property update thread.");
+                    break;
+                }
+            }
+        }
     }
 
     /**
