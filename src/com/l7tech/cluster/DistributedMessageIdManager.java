@@ -115,7 +115,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                     for (Iterator i = toBeRemoved.iterator(); i.hasNext();) {
                         String id = (String)i.next();
                         tree.remove(MESSAGEID_PARENT_NODE + "/" + id);
-                        logger.fine("Removing expired message ID " + id + " from replay cache");
+                        if (logger.isLoggable(Level.FINE)) logger.fine("Removing expired message ID " + id + " from replay cache");
                     }
 
                     tx.commit();
@@ -133,7 +133,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                     ps = conn.prepareStatement("DELETE FROM message_id WHERE expires < ?");
                     ps.setLong(1, now);
                     int num = ps.executeUpdate();
-                    if (num > 0) logger.fine("Deleted " + num + " stale message ID entries from database");
+                    if (num > 0) if (logger.isLoggable(Level.FINE)) logger.fine("Deleted " + num + " stale message ID entries from database");
                     conn = null;
                 } finally {
                     try {
@@ -188,7 +188,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                 String id = rs.getString(1);
                 long expires = rs.getLong(2);
                 if (expires >= now) {
-                    logger.fine("Reloading saved message ID '" + id + "' from database");
+                    if (logger.isLoggable(Level.FINE)) logger.fine("Reloading saved message ID '" + id + "' from database");
                     tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(expires > 0 ? -expires : expires));
                 }
             }
@@ -245,17 +245,32 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         }
 
         try {
+            // Build message IDs to save
+            Map toSave = new HashMap();
+            {
+                tx = new DummyUserTransaction(dummyTransactionManager);
+                tx.begin();
+                final Set ids = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
+                if (ids == null) return;
+                for (Iterator i = ids.iterator(); i.hasNext();) {
+                    String id = (String)i.next();
+                    if (id == null) continue;
+                    Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR);
+                    toSave.put(id, expires);
+                }
+                tx.commit();
+                tx = null;
+            }
+
             // save message ids to database
             conn = session.connection();
             ps = conn.prepareStatement("INSERT INTO message_id (messageid, expires) VALUES (?,?)");
-            final Set ids = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
-            if (ids == null) return;
             Map saved = new HashMap();
-            for (Iterator i = ids.iterator(); i.hasNext();) {
-                String id = (String)i.next();
-                if (id == null) continue;
+            for (Iterator i = toSave.entrySet().iterator(); i.hasNext();) {
+                Map.Entry entry = (Map.Entry)i.next();
+                String id = (String)entry.getKey();
+                Long expires = (Long)entry.getValue();
 
-                Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR);
                 if (expires != null && expires.longValue() > 0) {
                     ps.clearParameters();
                     ps.setString(1, id);
@@ -279,7 +294,8 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                 Map.Entry entry = (Map.Entry)i.next();
                 String id = (String)entry.getKey();
                 Long expires = (Long)entry.getValue();
-                tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(-expires.longValue()));
+                if (expires.longValue() >= 0)
+                    tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(-expires.longValue()));
             }
 
             tx.commit();
