@@ -217,6 +217,7 @@ public class InputTimeoutFilter implements Filter {
         Thread propUpdater = new Thread(new TimeoutPropertyUpdate(), "TimeoutFilterConfigRefresh");
         propUpdater.setDaemon(true);
         propUpdater.setPriority(Thread.NORM_PRIORITY-1);
+        propUpdater.start();
     }
 
     private final class TimeoutPropertyUpdate implements Runnable {
