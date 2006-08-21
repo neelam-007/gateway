@@ -1,7 +1,7 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.6m4b
-Release: 1
+Version: 3.6m4c
+Release: 3
 Group: Applications/Internet
 License: Copyright Layer7 Technologies 2003-2005
 URL: http://www.layer7tech.com
