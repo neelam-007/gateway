@@ -16,7 +16,7 @@ import java.util.Set;
  * Changes to this class *must* maintain up-to-date {@link #equals} and {@link #hashCode}, as
  * instances are routinely added to {@link java.util.Set}s.
  */
-public class Permission extends PersistentEntityImp {
+public class Permission extends PersistentEntityImp implements Cloneable {
     private Role role;
     private OperationType operation;
     private String otherOperationName;
@@ -155,6 +155,22 @@ public class Permission extends PersistentEntityImp {
         if (role != null ? !role.equals(that.role) : that.role != null) return false;
 
         return true;
+    }
+
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    public Permission getAnonymousClone() {
+        try {
+            Permission perm = (Permission) clone();
+            perm.setRole(null);
+            return perm;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public int hashCode() {

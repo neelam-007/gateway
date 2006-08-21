@@ -34,12 +34,11 @@ public interface RbacAdmin {
     Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException;
 
     /**
-     * The collection of Roles granted to the specified User.
-     * @return the collection of Roles granted to the specified User.  Never null, may be empty.
+     * Gets the permissions of the current admin user.  This is unsecured, so that anyone running
+     * the SSM can find out what functionality they can access. 
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITIES)
-    Collection<Role> findRolesForUser(User user) throws FindException, RemoteException;
+    Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException;
 
     /**
      * Saves the specified Role.

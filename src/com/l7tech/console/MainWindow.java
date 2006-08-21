@@ -7,7 +7,6 @@ import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.Permission;
-import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.*;
@@ -234,12 +233,9 @@ public class MainWindow extends JFrame {
     private void fireConnected() {
         User u = JaasUtils.getCurrentUser();
         if (u == null) throw new IllegalStateException("Logon apparently worked, but no User is available");
-        Set<Permission> perms = new HashSet<Permission>();
+        Set<Permission> perms;
         try {
-            Collection<Role> roles = Registry.getDefault().getRbacAdmin().findRolesForUser(u);
-            for (Role role : roles) {
-                perms.addAll(role.getPermissions());
-            }
+            perms = new HashSet<Permission>(Registry.getDefault().getRbacAdmin().findCurrentUserPermissions());
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get permissions for logged on user");
         }

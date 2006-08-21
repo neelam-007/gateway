@@ -7,6 +7,7 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
@@ -14,6 +15,8 @@ import com.l7tech.server.GatewayFeatureSets;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Logger;
 
 /**
@@ -55,13 +58,20 @@ public class RbacAdminImpl implements RbacAdmin {
         return attachHeaders(roleManager.findByPrimaryKey(oid));
     }
 
-    public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
+
+    public Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException {
+        User u = JaasUtils.getCurrentUser();
+        if (u == null) throw new FindException("Couldn't get current user");
+        Set<Permission> perms = new HashSet<Permission>();
         // No license check--needed for SSM login
-        final Collection<Role> assignedRoles = roleManager.getAssignedRoles(user);
+        final Collection<Role> assignedRoles = roleManager.getAssignedRoles(u);
         for (Role role : assignedRoles) {
-            attachHeaders(role);
+            for (final Permission perm : role.getPermissions()) {
+                Permission perm2 = perm.getAnonymousClone();
+                perms.add(perm2);
+            }
         }
-        return assignedRoles;
+        return perms;
     }
 
     private Role attachHeaders(Role theRole) {

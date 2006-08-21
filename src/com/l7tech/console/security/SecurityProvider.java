@@ -1,10 +1,9 @@
 package com.l7tech.console.security;
 
 import com.l7tech.common.Authorizer;
+import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.common.security.rbac.Role;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.FindException;
 
@@ -27,7 +26,7 @@ import java.util.logging.Logger;
  */
 public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
     private static final Logger logger = Logger.getLogger(SecurityProvider.class.getName());
-    private Set<Role> subjectRoles = new HashSet<Role>();
+    private Set<Permission> subjectPermissions = new HashSet<Permission>();
 
     /**
      * Return the authentication provider associated with this security provider
@@ -56,7 +55,7 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
             }
             subject.getPrincipals().clear();
             subject.getPrivateCredentials().clear();
-            subjectRoles.clear();
+            subjectPermissions.clear();
         }
     }
 
@@ -84,40 +83,39 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
     }
 
     /**
-     * Subclasses update the subject roles using this method.
+     * Subclasses update the subject permissions using this method.
      *
-     * @param roles the subject roles
+     * @param permissions the subject permissions
      * @throws IllegalStateException if the method is invoked in wrokng time, i.e. the subject
      *                               is not set
      */
-    protected final void setRoles(Collection<Role> roles) {
+    private void setPermissions(Collection<Permission> permissions) {
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null) {
             throw new IllegalStateException("The subject is null");
         }
         synchronized (this) {
-            subjectRoles.clear();
-            subjectRoles.addAll(roles);
+            subjectPermissions.clear();
+            subjectPermissions.addAll(permissions);
         }
     }
 
-    protected Set<Role> getSubjectRoles() {
+    private Set<Permission> getSubjectPermissions() {
         synchronized (this) {
-            return Collections.unmodifiableSet(subjectRoles);
+            return Collections.unmodifiableSet(subjectPermissions);
         }
     }
 
     /**
-     * Determine the roles (groups) for hte given subject
+     * Determine the permissions for the current user
      *
-     * @param subject the subject
-     * @return the set of user roles for the given subject
-     * @throws RuntimeException on error retrieving user roles
+     * @return the set of permission for the current subject
+     * @throws RuntimeException on error retrieving user permissions
      */
-    public Collection<Role> getUserRoles(Subject subject) throws RuntimeException {
-        final Set<Role> subjectRoles = getSubjectRoles();
-        if (!subjectRoles.isEmpty()) {
-            return subjectRoles;
+    public Collection<Permission> getUserPermissions() throws RuntimeException {
+        final Set<Permission> subjectPerms = getSubjectPermissions();
+        if (!subjectPerms.isEmpty()) {
+            return subjectPerms;
         }
 
         RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
@@ -126,12 +124,9 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
         }
 
         try {
-            Set<User> users = subject.getPrincipals(User.class);
-            if (users.size() > 1) throw new IllegalStateException("Multiple Users in current Subject");
-            User u = users.iterator().next();
-            final Collection<Role> roles = rbacAdmin.findRolesForUser(u);
-            setRoles(roles);
-            return roles;
+            final Collection<Permission> perms = rbacAdmin.findCurrentUserPermissions();
+            setPermissions(perms);
+            return perms;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         } catch (FindException e) {

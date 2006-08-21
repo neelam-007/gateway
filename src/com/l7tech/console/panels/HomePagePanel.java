@@ -6,7 +6,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.panels.identity.finder.Options;
@@ -87,11 +87,8 @@ public class HomePagePanel extends JPanel {
         if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
             return false;
         }
-        Collection<Role> roles = Registry.getDefault().getSecurityProvider().getUserRoles(subject);
-        for (Role role : roles) {
-            if (!role.getPermissions().isEmpty()) return true;
-        }
-        return false;
+        Collection<Permission> perms = Registry.getDefault().getSecurityProvider().getUserPermissions();
+        return !perms.isEmpty();
     }
 
     private Component getToolbar() {

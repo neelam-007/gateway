@@ -1,6 +1,5 @@
 package com.l7tech.server.identity;
 
-import com.l7tech.common.Authorizer;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -19,9 +18,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
 
-import javax.security.auth.Subject;
 import java.rmi.RemoteException;
-import java.security.Principal;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -493,15 +490,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
         this.identityProviderFactory = identityProviderFactory;
     }
 
-    public void setAuthorizer(Authorizer authorizer) {
-        this.authorizer = authorizer;
-    }
-
     public void initDao() throws Exception {
         checkidentityProviderFactory();
         checkidentityProviderConfigManager();
         checkClientCertManager();
-        checkAuthorizer();
         checkLicenseManager();
     }
 
@@ -522,12 +514,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
             throw new IllegalArgumentException("client certificate manager required");
         }
     }
-
-    private void checkAuthorizer() {
-         if (authorizer == null) {
-             throw new IllegalArgumentException("Authorizer is required");
-         }
-     }
 
     private void checkLicenseManager() {
         if (licenseManager == null) {
@@ -568,40 +554,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
         return ret;
     }
 
-    private boolean isSameUser(Subject s1, Subject s2) {
-        boolean same = false;
-
-        if (s1 != null && s2 != null) {
-            User u1 = getUser(s1);
-            User u2 = getUser(s2);
-
-            if (u1 != null && u2 != null) {
-                if (u1.getProviderId() == u2.getProviderId() &&
-                    u1.getLogin().equals(u2.getLogin())) {
-                    same = true;
-                }
-            }
-        }
-
-        return same;
-    }
-
-    private User getUser(Subject subject) {
-        User user = null;
-
-        for (Principal principal : subject.getPrincipals()) {
-            if (principal instanceof User) {
-                user = (User) principal;
-                break;
-            }
-        }
-
-        return user;
-    }
-
     private IdentityProviderConfigManager identityProviderConfigManager = null;
     private IdentityProviderFactory identityProviderFactory = null;
-    private Authorizer authorizer = null;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 

@@ -86,12 +86,6 @@
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
-    <!-- server side admin authorizer -->
-    <bean id="authorizer" class="com.l7tech.server.identity.internal.InternalIdentityProviderAuthorizer">
-        <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
-        <property name="roleManager" ref="roleManager"/>
-    </bean>
-
     <bean id="rmiRegistryInit" class="com.l7tech.spring.remoting.rmi.RmiRegistryInitializer">
         <property name="port">
             <value>2124</value>
@@ -234,9 +228,6 @@
         </property>
         <property name="identityProviderFactory">
             <ref bean='identityProviderFactory'/>
-        </property>
-        <property name="authorizer">
-            <ref bean='authorizer'/>
         </property>
     </bean>
 
