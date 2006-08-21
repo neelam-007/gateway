@@ -5,12 +5,18 @@
 
 package com.l7tech.common.security.rbac;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
- * Placeholder for apparently-uncommitted class.  Replace with the real one on Monday.
+ * User: megery
+ * Date: Jul 31, 2006
+ * Time: 4:55:46 PM
  */
+
 public class RbacUtilities {
+    public static final String SYSTEM_PROP_ENABLEROLEEDIT = "com.l7tech.rbac.allowEditRoles";
+
     public static boolean isEnableRoleEditing() {
-        // TODO need the real impl of this method
-        return false;
+        return StringUtils.equalsIgnoreCase(System.getProperty(SYSTEM_PROP_ENABLEROLEEDIT), "true");
     }
 }
