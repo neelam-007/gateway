@@ -82,10 +82,35 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingStartTime;
     private long routingEndTime;
     private AssertionStatus policyoutcome;
+    private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
         this.requestId = RequestIdGenerator.next();
+        setInstance();
+    }
+
+    private void setInstance() {
+        instanceHolder.set(this);
+    }
+
+    /**
+     * There is one PolicyEnforcementContext per request sent to the SSG. This allows the caller to
+     * retrieve the current PEC for the thread which is this is being called from.
+     * @see PolicyEnforcementContext#close()
+     * @return the last PEC constructed in the current thread, null if none
+     */
+    public static PolicyEnforcementContext getCurrent() {
+        return instanceHolder.get();
+    }
+
+    /**
+     * Call this when you are done using a PEC. This is important for PolicyEnforcementContext#close() to
+     * function properly.
+     */
+    public void close() {
+        instanceHolder.set(null);
+        super.close();
     }
 
     public boolean isAuthenticated() {
@@ -122,6 +147,11 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setAuditContext(AuditContext auditContext) {
         this.auditContext = auditContext;
+        /*if (auditContext != null) {
+            auditContext.setPec(this);
+        } else {
+            Logger.getLogger("com.l7tech.blah").severe("unexpected audit context " + auditContext);
+        }*/
     }
 
     public RoutingStatus getRoutingStatus() {

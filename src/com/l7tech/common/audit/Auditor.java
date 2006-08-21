@@ -5,6 +5,9 @@ import org.springframework.context.ApplicationContext;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.common.util.JdkLoggerConfigurator;
+
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
@@ -28,15 +31,29 @@ public class Auditor {
         if (context != null)
             context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e)));
 
-        if(logger == null) return;
+        if (logger == null) return;
 
-        if(logger.isLoggable(msg.getLevel())) {
+        if (logger.isLoggable(msg.getLevel())) {
             LogRecord rec = new AuditHackLogRecord(msg);
             rec.setLoggerName(logger.getName());
             if (e != null) rec.setThrown(e);
             if (params != null) rec.setParameters(params);
+            if (JdkLoggerConfigurator.serviceNameAppenderState()) {
+                String serviceName = getServiceName();
+                if (serviceName != null && serviceName.length() > 0) {
+                    rec.setMessage(rec.getMessage() + " @ " + serviceName);
+                }
+            }
             logger.log(rec);
         }
+    }
+
+    private String getServiceName() {
+        PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+        if (pec != null && pec.getService() != null) {
+            return pec.getService().getName() + " [" + pec.getService().getOid() + "]";
+        }
+        return "";
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params) {

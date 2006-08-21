@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class JdkLoggerConfigurator {
     private static Probe probe;
+    private static boolean serviceNameAppenderState = false;
 
     /**
      * this class cannot be instantiated
@@ -83,6 +85,7 @@ public class JdkLoggerConfigurator {
                         logManager.readConfiguration(in);
                         probeFile = file;
                         configFound = true;
+                        readServiceNameSufficeAppenderState();
                         break;
                     }
                 }
@@ -91,6 +94,7 @@ public class JdkLoggerConfigurator {
                 if (resource != null) {
                     logManager.readConfiguration(resource.openStream());
                     configFound = true;
+                    readServiceNameSufficeAppenderState();
                     probeFile = new File(resource.getPath());
                     break;
                 }
@@ -216,9 +220,9 @@ public class JdkLoggerConfigurator {
                             logManager.readConfiguration(in);
                             interval = getInterval();
                             logger.log(Level.CONFIG,
-                              "logging config file reread complete," +
-                              " new interval is {0} secs",
-                              new Long(interval));
+                                       "logging config file reread complete, new interval is {0} secs",
+                                       new Long(interval));
+                            readServiceNameSufficeAppenderState();
                         } catch (Throwable t) {
                             logger.log(Level.WARNING,
                               "exception reading logging config file",
@@ -262,4 +266,30 @@ public class JdkLoggerConfigurator {
         return interval;
     }
 
+    private static void readServiceNameSufficeAppenderState() {
+        LogManager logManager = LogManager.getLogManager();
+        String val = logManager.getProperty("com.l7tech.logging.appendservicename");
+        ReentrantReadWriteLock.WriteLock lock = serviceNameAppenderStateLock.writeLock();
+        lock.lock();
+        try {
+            if (val != null) {
+                serviceNameAppenderState = Boolean.parseBoolean(val);
+            } else {
+                serviceNameAppenderState = false;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public static boolean serviceNameAppenderState() {
+        ReentrantReadWriteLock.ReadLock lock = serviceNameAppenderStateLock.readLock();
+        lock.lock();
+        try {
+            return serviceNameAppenderState;
+        } finally {
+            lock.unlock();
+        }
+    }
+    private static final ReentrantReadWriteLock serviceNameAppenderStateLock = new ReentrantReadWriteLock();
 }
