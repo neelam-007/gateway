@@ -406,33 +406,35 @@ class PathValidator {
                   "This assertion should be preceeded by a WSS Signature assertion, " +
                   "a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
-        }
-        else if(a instanceof WsTrustCredentialExchange) {
+        } else if(a instanceof WsTrustCredentialExchange) {
             if(!seenUsernamePasswordCredentials()
             && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by a credential assertion (HTTP, XPath Credentials, WSS UsernameToken Basic or SAML).", null));
             }
-        }
-        else if(a instanceof WsFederationPassiveTokenRequest) {
+        } else if(a instanceof WsFederationPassiveTokenRequest) {
             if(!seenUsernamePasswordCredentials()) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by a credential assertion (HTTP, XPath Credentials or WSS UsernameToken Basic).", null));
             }
-        }
-        else if(a instanceof WsFederationPassiveTokenExchange) {
+        } else if(a instanceof WsFederationPassiveTokenExchange) {
             if(!seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by a SAML Security assertion.", null));
             }
-        }
-        else if (a instanceof WssBasic) {
+        } else if (a instanceof WssBasic) {
             // bugzilla 2518
             if (!(a instanceof EncryptedUsernameTokenAssertion)) {
                 if (!haveSeen(SslAssertion.class)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion should be preceeded by a TLS/SSL assertion.", null));
                 }
+            }
+        } else if (a instanceof ResponseWssSecurityToken) {
+            // bugzilla 2753
+            if (!haveSeen(WssBasic.class)) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by a WSS Basic authentication assertion.", null));
             }
         }
 
@@ -660,7 +662,8 @@ class PathValidator {
                a instanceof WsFederationPassiveTokenExchange ||
                a instanceof WsFederationPassiveTokenRequest ||
               (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
-               a instanceof WssBasic;
+               a instanceof WssBasic ||
+               a instanceof ResponseWssSecurityToken;
     }
 
     private boolean seenCredentials(Assertion context) {
