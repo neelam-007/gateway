@@ -55,7 +55,7 @@
         <children>
           <component id="f33b7" class="javax.swing.JLabel">
             <constraints>
-              <xy x="10" y="84" width="33" height="15"/>
+              <xy x="10" y="277" width="33" height="15"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -64,32 +64,16 @@
           </component>
           <component id="e0065" class="javax.swing.JLabel">
             <constraints>
-              <xy x="10" y="108" width="44" height="15"/>
+              <xy x="10" y="372" width="44" height="15"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
             </constraints>
             <properties>
               <text value="Value: "/>
             </properties>
           </component>
-          <scrollpane id="468f1">
-            <constraints>
-              <xy x="93" y="108" width="413" height="427"/>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3">
-                <minimum-size width="300" height="300"/>
-              </grid>
-            </constraints>
-            <properties/>
-            <border type="none"/>
-            <children>
-              <component id="6d753" class="javax.swing.JTextArea" binding="valueField">
-                <constraints/>
-                <properties/>
-              </component>
-            </children>
-          </scrollpane>
           <scrollpane id="9aa18">
             <constraints>
-              <xy x="93" y="30" width="413" height="45"/>
+              <xy x="93" y="10" width="413" height="187"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties>
@@ -112,19 +96,28 @@
           </scrollpane>
           <component id="1a7c8" class="javax.swing.JComboBox" binding="keyComboBox">
             <constraints>
-              <xy x="93" y="80" width="413" height="23"/>
+              <xy x="93" y="273" width="413" height="23"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
             </constraints>
             <properties/>
           </component>
           <component id="2d6fa" class="javax.swing.JLabel">
             <constraints>
-              <xy x="10" y="45" width="73" height="15"/>
+              <xy x="10" y="96" width="73" height="15"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Description:"/>
             </properties>
+          </component>
+          <component id="e9c8f" class="javax.swing.JTextField" binding="valueField">
+            <constraints>
+              <xy x="93" y="443" width="413" height="21"/>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
           </component>
         </children>
       </grid>
