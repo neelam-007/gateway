@@ -42,7 +42,7 @@
         <VERIFY_SUSPECT timeout="1500" up_thread="false" down_thread="false" />
         <pbcast.NAKACK gc_lag="50" max_xmit_size="8192" retransmit_timeout="600,1200,2400,4800" up_thread="false"
            down_thread="false" />
-        <UNICAST timeout="600,1200,2400" window_size="100" min_threshold="10" down_thread="false" />
+        <UNICAST timeout="600,1200,2400" down_thread="false"/>
         <pbcast.STABLE desired_avg_gossip="20000" up_thread="false" down_thread="false" />
         <FRAG frag_size="8192" down_thread="false" up_thread="false" />
         <pbcast.GMS join_timeout="5000" join_retry_timeout="2000" shun="true" print_local_addr="true" />
