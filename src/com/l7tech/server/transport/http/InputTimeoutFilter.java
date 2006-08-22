@@ -109,9 +109,10 @@ public class InputTimeoutFilter implements Filter {
     }
 
     /**
-     * Nothing to destroy.
+     * Stop the timeout property update thread.
      */
     public void destroy() {
+        shutdownPropUpdater();
     }
 
     //- PRIVATE
@@ -128,6 +129,10 @@ public class InputTimeoutFilter implements Filter {
     private static final long DEFAULT_BLOCKED_READ_TIMEOUT = 30000;
     private static final long DEFAULT_SLOW_READ_TIMEOUT = 30000;
     private static final int DEFAULT_SLOW_READ_LIMIT = 1024; //Bytes per second
+
+    // property update shutdown flag;
+    private Thread updateThread;
+    private TimeoutPropertyUpdate updater;
 
     //
     private Object sync = new Object();
@@ -211,58 +216,129 @@ public class InputTimeoutFilter implements Filter {
     }
 
     /**
+     * Stop property updates
+     */
+    private void shutdownPropUpdater() {
+        if (updater != null) {
+            synchronized(updater.lock) {
+                updater.run = false;
+            }
+            updateThread.interrupt();
+
+            boolean stopped = false;
+            try {
+                updateThread.join(3000);
+                if (!updateThread.isAlive()) {
+                    stopped = true;
+                }
+            }
+            catch(InterruptedException ie) {
+            }
+
+            if (!stopped)
+                logger.warning("Property update thread did not stop on request.");
+
+            updater = null;
+            updateThread = null;
+        }
+    }
+
+    /**
      * Update the properties periodically.
      */
     private void initPropUpdater() {
-        Thread propUpdater = new Thread(new TimeoutPropertyUpdate(), "TimeoutFilterConfigRefresh");
-        propUpdater.setDaemon(true);
-        propUpdater.setPriority(Thread.NORM_PRIORITY-1);
-        propUpdater.start();
+        updater = new TimeoutPropertyUpdate();
+        updateThread = new Thread(updater, "TimeoutFilterConfigRefresh");
+        updateThread.setDaemon(true);
+        updateThread.setPriority(Thread.NORM_PRIORITY-1);
+        updateThread.start();
     }
 
     private final class TimeoutPropertyUpdate implements Runnable {
+        private boolean run;
+        private Object lock = new Object();
+
+        private TimeoutPropertyUpdate() {
+            synchronized(lock) {
+                run = true;
+            }
+        }
+
         public void run() {
             while(true) {
                 try {
+                    boolean stop = false;
                     while(true) {
-                        long newTimeout;
-                        long newReadTime;
-                        int newReadRate;
-
-                        synchronized(sync) {
-                            newTimeout = timeout;
-                            newReadTime = readTime;
-                            newReadRate = readRate;
+                        synchronized(lock) {
+                            stop = !run;
+                        }
+                        if (stop) {
+                            break;
                         }
 
-                        newTimeout = getTimeout(newTimeout);
-                        newReadTime = getReadTime(newReadTime);
-                        newReadRate = getReadRate(newReadRate);
+                        long currentTimeout;
+                        long currentReadTime;
+                        int currentReadRate;
 
                         synchronized(sync) {
-                            timeout = newTimeout;
-                            readTime = newReadTime;
-                            readRate = newReadRate;
+                            currentTimeout = timeout;
+                            currentReadTime = readTime;
+                            currentReadRate = readRate;
+                        }
+
+                        long newTimeout = getTimeout(currentTimeout);
+                        long newReadTime = getReadTime(currentReadTime);
+                        int newReadRate = getReadRate(currentReadRate);
+
+                        if (newTimeout != currentTimeout ||
+                            newReadTime != currentReadTime ||
+                            newReadRate != currentReadRate) {
+
+                            if (newTimeout != currentTimeout)
+                                logger.log(Level.CONFIG, "Updating timeout, new value is {0}", newTimeout);
+
+                            if (newReadTime != currentReadTime)
+                                logger.log(Level.CONFIG, "Updating readTime, new value is {0}", newReadTime);
+
+                            if (newReadRate != currentReadRate) 
+                                logger.log(Level.CONFIG, "Updating readRate, new value is {0}", newReadRate);
+
+                            synchronized(sync) {
+                                timeout = newTimeout;
+                                readTime = newReadTime;
+                                readRate = newReadRate;
+                            }
                         }
 
                         Thread.sleep(30000);
                     }
+
+                    if (stop) {
+                        break;
+                    }
                 }
                 catch(InterruptedException ie) {
-                    logger.log(Level.INFO, "Shutting down timeout property update thread.");
+                    synchronized(lock) {
+                        run = false;
+                    }
+                    logger.log(Level.INFO, "Setting shutdown flag for timeout property update thread (interrupted).");
                 }
                 catch(Exception e) {
                     logger.log(Level.WARNING, "Unexpected exception in timeout property update thread.", e);
                 }
 
+                // sleep for a while after any exception
                 try {
-                    Thread.sleep(60000);
+                    if(run) Thread.sleep(60000);
                 }
                 catch(InterruptedException ie) {
-                    logger.log(Level.INFO, "Shutting down timeout property update thread.");
-                    break;
+                    synchronized(lock) {
+                        run = false;
+                    }
+                    logger.log(Level.INFO, "Setting shutdown flag for timeout property update thread (interrupted).");
                 }
             }
+            logger.log(Level.INFO, "Shutting down timeout property update thread.");
         }
     }
 
