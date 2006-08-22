@@ -34,8 +34,6 @@ import java.util.Iterator;
 
 /**
  * Utility class to help with XML digital signatures.
- *
- * TODO [WS-I BSP] Check requirement that Xpath sigs use XPath Filter 2.0 Transform [ref: section 8.2.2]
  */
 public class DsigUtil {
     /** @noinspection UNUSED_SYMBOL*/
