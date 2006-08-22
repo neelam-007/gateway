@@ -296,7 +296,13 @@ public class SoapUtil {
 
     public static MessageFactory getMessageFactory() {
         try {
-            return MessageFactory.newInstance();
+            // bugzilla #2171, avoid 3rd party imposing their own implementations here
+            if (System.getProperty("javax.xml.soap.MessageFactory") == null) {
+                System.setProperty("javax.xml.soap.MessageFactory",
+                                   "com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl");
+            }
+            MessageFactory output = MessageFactory.newInstance();
+            return output;
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen
         }
