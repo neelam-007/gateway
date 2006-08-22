@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.FlushMode;
@@ -97,6 +99,20 @@ public class ClusterPropertyManagerImpl
             logger.log(Level.WARNING, msg, e);
             throw new FindException(msg, e);
         }
+    }
+
+    public long save(ClusterProperty clusterProperty) throws SaveException {
+        if (clusterProperty != null && clusterProperty.getName() != null) {
+            try {
+                ClusterProperty existing = findByUniqueName(clusterProperty.getName());
+                if (existing != null) {
+                    throw new DuplicateObjectException("A cluster property named '"+clusterProperty.getName()+"' already exists.");
+                }
+            } catch (FindException e) {
+            }
+        }
+
+        return super.save(clusterProperty);
     }
 
     public void update(ClusterProperty clusterProperty) throws UpdateException {

@@ -10,10 +10,12 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -233,6 +235,11 @@ public class ClusterPropertyDialog extends JDialog {
                 reg.getClusterStatusAdmin().saveProperty(dlg.getProperty());
             } catch (RemoteException e) {
                 logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (DuplicateObjectException e) {
+                ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(this, "Cluster-Wide Property Error", null, e.getMessage(), null, Level.WARNING);
+                dialog.pack();
+                Utilities.centerOnScreen(dialog);
+                dialog.setVisible(true);
             } catch (SaveException e) {
                 logger.log(Level.SEVERE, "exception setting property", e);
             } catch (UpdateException e) {
