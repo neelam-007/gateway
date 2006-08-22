@@ -8,15 +8,15 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.tomcat.ResponseKillerValve;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -27,10 +27,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.InetAddress;
 
 /**
  * @see <a href="http://sarek.l7tech.com/mediawiki/index.php?title=SSG_Ping_Url">Ping servlet specification 3.6</a>
@@ -262,7 +262,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         response.setContentType("text/html");
         final PrintWriter out = response.getWriter();
         try {
-            out.println("<html><head><title>SecureSpan Gateway</title></head><body><h1>FAILURE</h1><p>Cannot connect to database from " + InetAddress.getLocalHost().getHostName() + ".</p></body></html>");
+            out.println("<html><head><title>SecureSpan Gateway</title></head><body><h1>FAILURE</h1><p>Cannot connect to database from " + InetAddress.getLocalHost().getCanonicalHostName() + ".</p></body></html>");
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Responded to Ping with Failure and full info (" + details + ").");
             }
