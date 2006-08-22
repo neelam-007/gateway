@@ -9,15 +9,12 @@ package com.l7tech.server.service;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.security.rbac.Secured;
-import com.l7tech.common.security.rbac.OperationType;
-import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyHandle;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.service.resolution.ResolutionManager;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.transaction.TransactionStatus;
@@ -30,14 +27,13 @@ import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * Manages PublishedService instances.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-@Secured(types=SERVICE)
 public class ServiceManagerImp
         extends HibernateEntityManager<PublishedService, EntityHeader>
         implements ServiceManager
@@ -61,7 +57,6 @@ public class ServiceManagerImp
         throw new UnsupportedOperationException();
     }
 
-    @Secured(operation=OperationType.CREATE)
     public long save(PublishedService service) throws SaveException {
         // 1. record the service
         long oid = super.save(service);
@@ -108,7 +103,6 @@ public class ServiceManagerImp
         return service.getOid();
     }
 
-    @Secured(operation=OperationType.UPDATE)
     public void update(PublishedService service) throws UpdateException, VersionException {
         final PublishedService original;
         // check for original service
@@ -168,7 +162,6 @@ public class ServiceManagerImp
         });
     }
 
-    @Secured(operation=OperationType.DELETE)
     public void delete(PublishedService service) throws DeleteException {
         super.delete(service);
         resolutionManager.deleteResolutionParameters(service.getOid());

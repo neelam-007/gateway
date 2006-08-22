@@ -3,14 +3,14 @@
  */
 package com.l7tech.server.security.rbac;
 
-import org.springframework.aop.Pointcut;
+import com.l7tech.common.security.rbac.Secured;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.MethodMatcher;
-import com.l7tech.common.security.rbac.Secured;
+import org.springframework.aop.Pointcut;
 
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides a {@link ClassFilter} and {@link MethodMatcher} for detecting use of the {@link Secured}
@@ -57,8 +57,8 @@ public class SecuredPointcut implements Pointcut {
                     }
                 }
             }
-            logger.log(Level.INFO, "No security declaration found for class {0}", clazz.getName());
-            return false;
+
+            throw new IllegalArgumentException("No security declaration found for class " + clazz.getName());
         }
     }
 

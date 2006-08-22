@@ -12,4 +12,54 @@
         <property name="pointcut" ref="rbacPointcut"/>
         <property name="advice" ref="rbacAdvice"/>
     </bean>
+
+    <!-- Transaction and RBAC interception -->
+    <bean id="rbacIntercepted" abstract="true" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="interceptorNames">
+            <list>
+                <idref bean="annotationTransactionInterceptor"/>
+                <idref bean="rbacAdvisor"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="serviceAdmin" parent="rbacIntercepted">
+        <property name="target" ref="serviceAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.service.ServiceAdmin"/>
+    </bean>
+
+    <bean id="auditAdmin" parent="rbacIntercepted">
+        <property name="target" ref="auditAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.audit.AuditAdmin"/>
+    </bean>
+
+    <bean id="identityAdmin" parent="rbacIntercepted">
+        <property name="target" ref="identityAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.identity.IdentityAdmin"/>
+    </bean>
+
+    <bean id="jmsAdmin" parent="rbacIntercepted">
+        <property name="target" ref="jmsAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.transport.jms.JmsAdmin"/>
+    </bean>
+
+    <bean id="rbacAdmin" parent="rbacIntercepted">
+        <property name="target" ref="rbacAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.security.rbac.RbacAdmin"/>
+    </bean>
+
+    <bean id="schemaAdmin" parent="rbacIntercepted">
+        <property name="target" ref="schemaAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.xml.schema.SchemaAdmin"/>
+    </bean>
+
+    <bean id="trustedCertAdmin" parent="rbacIntercepted">
+        <property name="target" ref="trustedCertAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.security.TrustedCertAdmin"/>
+    </bean>
+
+    <bean id="clusterStatusAdmin" parent="rbacIntercepted">
+        <property name="target" ref="clusterStatusAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.cluster.ClusterStatusAdmin"/>
+    </bean>
 </beans>
