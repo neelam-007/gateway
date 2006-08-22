@@ -42,7 +42,7 @@ if [ `expr $java_ram \> 2274412` == 1 ]; then
 fi
 let maxnewsize="$java_ram*75/100"
 
-default_java_opts="-Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxConnectionsPerHost=750"
+default_java_opts="-Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxConnectionsPerHost=750 -Djava.net.preferIPv4Stack=true "
 default_java_opts="$default_java_opts -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxTotalConnections=7500"
 default_java_opts="$default_java_opts -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl"
 default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30"
