@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.Map;
 import java.util.Collections;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
@@ -47,9 +49,10 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
     }
 
     protected LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
-        String wwwAuthorize = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
-        Object connectionId = request.getHttpRequestKnob().getConnectionIdentifier();
-        return findCredentials( request, wwwAuthorize, connectionId );
+        HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
+        String wwwAuthorize = httpRequestKnob.getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
+        Object connectionId = httpRequestKnob.getConnectionIdentifier();
+        return findCredentials( wwwAuthorize, connectionId );
     }
 
     protected String realm() {
@@ -66,7 +69,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
     private static final String SCHEME = "Negotiate";
     private final ThreadLocal connectionCredentials = new ThreadLocal(); // stores Object[] = id, LoginCredentials
 
-    private LoginCredentials findCredentials( Message request, String wwwAuthorize, Object connectionId ) throws IOException {
+    private LoginCredentials findCredentials( String wwwAuthorize, Object connectionId ) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             LoginCredentials loginCreds = getConnectionCredentials(connectionId);
             if (loginCreds != null) {
@@ -119,7 +122,12 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
             return loginCreds;
         }
         catch(KerberosException ke) {
-            logger.info("Could not process kerberos token (Negotiate), error is '"+ke.getMessage()+"'.");
+            if (logger.isLoggable(Level.FINE)) {
+                // then include the exception stack
+                logger.log(Level.INFO, "Could not process kerberos token (Negotiate), error is '"+ke.getMessage()+"'.", ke);
+            } else if (logger.isLoggable(Level.INFO)) {
+                logger.log(Level.INFO, "Could not process kerberos token (Negotiate), error is '"+ke.getMessage()+"'.");
+            }
             return null;
         }
     }
