@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class CaptureProperty extends JDialog {
     private JPanel mainPanel;
-    private JTextField valueField;
+    private JTextArea valueField;
     private JComboBox keyComboBox;
     private JTextArea descField;
     private JButton cancelButton;
@@ -35,7 +35,6 @@ public class CaptureProperty extends JDialog {
     private String title;
     private boolean oked = false;
     private Map propertyNamesToDescriptions;
-    private JTextField textField1;
 
     public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Map suggestedValues) {
         super(parent, true);
