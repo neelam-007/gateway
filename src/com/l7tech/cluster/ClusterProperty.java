@@ -15,10 +15,10 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @author flascelles@layer7-tech.com
  */
 public class ClusterProperty extends NamedEntityImp {
-    private static final long serialVersionUID = -5971674585207716765L;
+    private static final long serialVersionUID = 1L;
 
     private String value;
-    private transient String description;
+    private String description;
 
     public ClusterProperty() { }
 

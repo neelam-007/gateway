@@ -9,7 +9,6 @@ package com.l7tech.console.panels;
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
-import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -22,6 +21,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -83,7 +85,18 @@ public class ClusterPropertyDialog extends JDialog {
                 return "";
             }
         };
+        TableColumnModel columnModel = new DefaultTableColumnModel();
+        columnModel.addColumn(new TableColumn(0, 100));
+        columnModel.addColumn(new TableColumn(1, 150));
+        // Set headers
+        for(int i = 0; i < columnModel.getColumnCount(); i++){
+            TableColumn tc = columnModel.getColumn(i);
+            tc.setMinWidth(50);
+            tc.setHeaderValue(model.getColumnName(tc.getModelIndex()));
+        }
+
         propsTable.setModel(model);
+        propsTable.setColumnModel(columnModel);
         propsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         propsTable.getTableHeader().setReorderingAllowed(false);
 
@@ -229,7 +242,6 @@ public class ClusterPropertyDialog extends JDialog {
             }
 
             populate();
-            TableUtil.adjustColumnWidth(propsTable, 1);
         } else {
             logger.severe("cannot get cluster status admin for removing property");
         }
@@ -262,7 +274,6 @@ public class ClusterPropertyDialog extends JDialog {
             }
 
             populate();
-            TableUtil.adjustColumnWidth(propsTable, 1);
         } else {
             logger.severe("cannot get cluster status admin for editing property");
         }
@@ -322,13 +333,6 @@ public class ClusterPropertyDialog extends JDialog {
             logger.severe("cannot get cluster status admin for populating dlg");
         }
         ((AbstractTableModel)propsTable.getModel()).fireTableDataChanged();
-    }
-
-    public void setVisible(boolean visible) {
-        if(visible) {
-            TableUtil.adjustColumnWidth(propsTable, 1);
-        }
-        super.setVisible(visible);
     }
 
     public static void main(String[] args) {

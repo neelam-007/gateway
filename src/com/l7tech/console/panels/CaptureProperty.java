@@ -34,14 +34,14 @@ public class CaptureProperty extends JDialog {
     private final ClusterProperty property;
     private String title;
     private boolean oked = false;
-    private Map propertyNamesToDescriptions;
+    private Map propertyNamesToDescriptionAndDefault;
 
     public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Map suggestedValues) {
         super(parent, true);
         this.title = title;
         this.description = description;
         this.property = property;
-        this.propertyNamesToDescriptions = suggestedValues;
+        this.propertyNamesToDescriptionAndDefault = suggestedValues;
         initialize();
     }
 
@@ -54,20 +54,26 @@ public class CaptureProperty extends JDialog {
             keyComboBox.setSelectedIndex(0);
             keyComboBox.setEnabled(false);
             keyComboBox.setEditable(false);
+            valueField.setText(property.getValue());
         } else {
-            if (propertyNamesToDescriptions == null || propertyNamesToDescriptions.isEmpty()) {
+            valueField.setText("");
+            if (propertyNamesToDescriptionAndDefault == null || propertyNamesToDescriptionAndDefault.isEmpty()) {
                 keyComboBox.setModel(new DefaultComboBoxModel());
                 keyComboBox.setEnabled(true);
                 keyComboBox.setEditable(true);
             } else {
-                keyComboBox.setModel(new DefaultComboBoxModel(propertyNamesToDescriptions.keySet().toArray(new String[0])));
+                keyComboBox.setModel(new DefaultComboBoxModel(propertyNamesToDescriptionAndDefault.keySet().toArray(new String[0])));
                 keyComboBox.setEnabled(true);
                 keyComboBox.setEditable(true);
                 ItemListener itemListener = new ItemListener() {
                     public void itemStateChanged(ItemEvent e) {
-                        String description = (String) propertyNamesToDescriptions.get(keyComboBox.getSelectedItem());
+                        String[] values = (String[]) propertyNamesToDescriptionAndDefault.get(keyComboBox.getSelectedItem());
+                        String description = values==null ? null : values[0];
                         if (description == null) description = "";
                         descField.setText(description);
+                        String initialValue = values==null ? null : values[1];
+                        if (initialValue == null) initialValue = "";
+                        valueField.setText(initialValue);
                     }
                 };
                 keyComboBox.addItemListener(itemListener);
@@ -75,7 +81,6 @@ public class CaptureProperty extends JDialog {
                 itemListener.itemStateChanged(null); // init desc
             }
         }
-        valueField.setText(property.getValue());
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();

@@ -223,12 +223,21 @@ public class ServerConfig extends ApplicationObjectSupport {
     }
 
     /**
-     * Get the list of all declared cluster properties.
+     * Get the Map of all declared cluster properties.
      *
      * @return The Map of declared property names to descriptions.
      */
     public Map<String, String> getClusterPropertyNames() {
         return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_DESC);
+    }
+
+    /**
+     * Get the Map of all declared cluster properties.
+     *
+     * @return The Map of declared property names to default values (NOT CURRENT VALUE).
+     */
+    public Map<String, String> getClusterPropertyDefaults() {
+        return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_DEFAULT);
     }
 
     public String getNameFromClusterName(String clusterPropertyName) {

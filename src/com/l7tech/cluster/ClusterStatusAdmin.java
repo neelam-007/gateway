@@ -99,7 +99,7 @@ public interface ClusterStatusAdmin {
     /**
      * Get a map of all known cluster wide properties.
      *
-     * <p>Keys are names, values are descriptions which may be null</p>
+     * <p>Keys are names, values are an String[2] array with description/default either of which may be null</p>
      *
      * @return a Map of names / descriptions
      */

@@ -24,6 +24,8 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -159,8 +161,16 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return clusterPropertyManager.findAll();
     }
 
-    public Map<String, String> getKnownProperties() throws RemoteException {
-        return serverConfig.getClusterPropertyNames();
+    public Map<String, String[]> getKnownProperties() throws RemoteException {
+        Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
+        Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
+
+        Map<String, String[]> known = new LinkedHashMap<String, String[]>();
+        for (String name : namesToDesc.keySet()) {
+            known.put(name, new String[]{namesToDesc.get(name), namesToDefs.get(name)});
+        }
+
+        return Collections.unmodifiableMap(known);
     }
 
     public ClusterProperty findPropertyByName(String key) throws RemoteException, FindException {
