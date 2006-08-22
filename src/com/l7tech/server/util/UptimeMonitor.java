@@ -6,6 +6,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.ServerConfig;
 
 import java.io.BufferedInputStream;
@@ -153,14 +154,15 @@ public class UptimeMonitor {
         try {
             up = Runtime.getRuntime().exec(uptimePath);
             got = new BufferedInputStream(up.getInputStream());
+            if (Thread.currentThread().isInterrupted())
+                throw new InterruptedException("Interrupted during exec.");
             byte[] buff = HexUtils.slurpStreamLocalBuffer(got);
             String uptimeOutput = new String(buff);
             UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput, ServerConfig.getInstance().getServerBootTime() );
             up.waitFor();
             return snapshot;
         } finally {
-            if (got != null)
-                got.close();
+            ResourceUtils.closeQuietly(got);
             if (up != null)
                 up.destroy();
         }

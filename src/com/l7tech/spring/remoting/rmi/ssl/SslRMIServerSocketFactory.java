@@ -461,8 +461,16 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      *
      * @param socket the socket with the info
      */
-    private void setContext(SSLSocket socket) {
-        contextLocal.set(new Context(socket.getSession()));
+    private void setContext(final SSLSocket socket) {
+        ThreadLocal local = contextLocal;
+        if (local != null) { // may be null when system is shutting down
+            if (socket == null) {
+                local.set(null);
+            } else {
+                Context context = new Context(socket.getSession());
+                local.set(context);
+            }
+        }
     }
 
     /**
