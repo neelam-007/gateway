@@ -40,11 +40,12 @@ set /a maxnewsize=%java_ram%/2
 ::           %JVMOPTIONS% in service.cmd. You must edit the same changes there
 ::           manually.
 set JAVA_OPTS=^
--Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl ^
 -Dcom.l7tech.server.home="%SSG_HOME%" ^
 -Dfile.encoding=UTF-8 ^
 -Djava.awt.headless=true ^
 -Djava.library.path="%SSG_HOME%\lib" ^
+-Djava.net.preferIPv4Stack=true ^
+-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl ^
 -Dnetworkaddress.cache.ttl=30 ^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger ^
 -server ^

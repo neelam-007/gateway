@@ -63,6 +63,7 @@ set JVMOPTIONS=^
 -Djava.endorsed.dirs=%TOMCAT_HOME%\common\endorsed;^
 -Djava.io.tmpdir=%catalina_tmpdir_shortname%;^
 -Djava.library.path=%SSG_HOME%\lib;^
+-Djava.net.preferIPv4Stack=true;^
 -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl;^
 -Dnetworkaddress.cache.ttl=30;^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger;^
