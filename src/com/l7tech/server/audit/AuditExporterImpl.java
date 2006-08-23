@@ -303,8 +303,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             throw new CausedSignatureException(e);
         } catch (XSignatureException e) {
             throw new CausedSignatureException(e);
-        } catch (CertificateEncodingException e) {
-            throw new CausedSignatureException(e);
         } finally {
             if (zipOut != null) zipOut.close();
         }

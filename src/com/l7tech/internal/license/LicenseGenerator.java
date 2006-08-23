@@ -195,8 +195,6 @@ public final class LicenseGenerator {
             throw new LicenseGeneratorException(e);
         } catch (XSignatureException e) {
             throw new LicenseGeneratorException(e);
-        } catch (CertificateEncodingException e) {
-            throw new LicenseGeneratorException(e);
         } catch (IOException e) {
             throw new LicenseGeneratorException(e); // shouldn't happen
         } catch (SAXException e) {

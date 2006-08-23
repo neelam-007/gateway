@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -53,14 +52,13 @@ public class DsigUtil {
      * @throws SignatureException   if there is a problem creating the signature
      * @throws SignatureStructureException if there is a problem creating the signature
      * @throws XSignatureException  if there is a problem creating the signature
-     * @throws CertificateEncodingException if senderSigningCert is no good
      */
     public static Element createEnvelopedSignature(Element elementToSign,
                                                    X509Certificate senderSigningCert,
                                                    PrivateKey senderSigningKey,
                                                    boolean useKeyInfoTumbprint,
                                                    String keyName)
-            throws SignatureException, SignatureStructureException, XSignatureException, CertificateEncodingException
+            throws SignatureException, SignatureStructureException, XSignatureException
     {
         String signaturemethod;
         if (senderSigningKey instanceof RSAPrivateKey)
@@ -148,10 +146,14 @@ public class DsigUtil {
      * Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList.
      */
     public static void addInclusiveNamespacesToElement(Element element) {
-        Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-                                                                       "InclusiveNamespaces",
-                                                                       Transform.C14N_EXCLUSIVE,
-                                                                       "c14n");
+        //
+        // NOTE: Since we have no PrefixList attribute we should not have any inlclusive namespaces
+        // element (See the DTD http://www.w3.org/TR/xml-exc-c14n/exc-c14n.dtd)
+        //
+        //Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
+        //                                                               "InclusiveNamespaces",
+        //                                                               Transform.C14N_EXCLUSIVE,
+        //                                                               "c14n");
         // omit prefix list attribute if empty (WS-I BSP R5410)
         //inclusiveNamespaces.setAttribute("PrefixList", "");
     }
