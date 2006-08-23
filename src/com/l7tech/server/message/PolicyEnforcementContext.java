@@ -68,7 +68,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private AuditContext auditContext = null;
     private SoapFaultManager soapFaultManager = null;
     private final Map<String,Object> variables = new HashMap<String, Object>();
-    private boolean isStealthResponseMode = false;
     private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
     private int authFailureCacheTime = AuthCache.FAILURE_CACHE_TIME;
     private PolicyContextCache cache;
@@ -398,18 +397,13 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     /**
      * Whether or not the transport layer should send back a response at all.
+     *
+     * <p>Note this is depends on the FaultLevel that is set.</p>
+     *
      * @return true means the requestor's connection should be dropped completly
      */
     public boolean isStealthResponseMode() {
-        return isStealthResponseMode;
-    }
-
-    /**
-     * This tells the transport layer to not send back a response at all even if a response has been constructed.
-     * @param stealthResponseMode true means the requestor's connection should be dropped completly
-     */
-    public void setStealthResponseMode(boolean stealthResponseMode) {
-        isStealthResponseMode = stealthResponseMode;
+        return faultlevel!=null && faultlevel.getLevel() == SoapFaultLevel.DROP_CONNECTION;
     }
 
     /**
