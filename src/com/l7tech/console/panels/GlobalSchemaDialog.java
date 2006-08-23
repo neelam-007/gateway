@@ -229,6 +229,8 @@ public class GlobalSchemaDialog extends JDialog {
 
     /**
      * returns true if there was at least one unresolved import
+     *
+     * NOTE this code is reused (copy/paste) in SchemaValidationPropertiesDialog
      */
     private boolean checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
         Document schemaDoc = null;
@@ -243,6 +245,7 @@ public class GlobalSchemaDialog extends JDialog {
         java.util.List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
         if (listofimports.isEmpty()) return false;
         ArrayList unresolvedImportsList = new ArrayList();
+        ArrayList resolutionSuggestionList = new ArrayList();
         Registry reg = Registry.getDefault();
         if (reg == null || reg.getSchemaAdmin() == null) {
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
@@ -256,6 +259,14 @@ public class GlobalSchemaDialog extends JDialog {
                     //if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
                         if (importloc != null) {
                             unresolvedImportsList.add(importloc);
+
+                            // Check for the desired namespace with different location
+                            if (importns != null) {
+                                for (SchemaEntry entry : reg.getSchemaAdmin().findByTNS(importns)) {
+                                    if (entry.getName() != null && entry.getName().length() > 0)
+                                        resolutionSuggestionList.add(entry.getName());
+                                }
+                            }
                         } else {
                             unresolvedImportsList.add(importns);
                         }
@@ -274,8 +285,15 @@ public class GlobalSchemaDialog extends JDialog {
         if (!unresolvedImportsList.isEmpty()) {
             StringBuffer msg = new StringBuffer("This schema contains the following unresolved imported schemas:\n");
             for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
-                msg.append(iterator.next());
+                msg.append("  " + iterator.next());
                 msg.append("\n");
+            }
+            if (!resolutionSuggestionList.isEmpty()) {
+                msg.append("Note that these schemas are imported but the locations do not match:\n");
+                for (Iterator iterator = resolutionSuggestionList.iterator(); iterator.hasNext();) {
+                    msg.append("  " + iterator.next());
+                    msg.append("\n");
+                }
             }
             msg.append("You must add those unresolved schemas now.");
             JOptionPane.showMessageDialog(this, msg, "Unresolved Imports", JOptionPane.WARNING_MESSAGE);

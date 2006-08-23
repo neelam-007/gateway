@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -583,7 +585,7 @@ public class SchemaManagerImpl implements SchemaManager {
             return imports;
         } catch (RuntimeException e) {
             UnresolveableException unres = (UnresolveableException)ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
-            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres);
+            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres.getCause());
             throw e;
         }
     }
@@ -601,6 +603,22 @@ public class SchemaManagerImpl implements SchemaManager {
      */
     private String computeEffectiveUrl(String base, String relative) throws MalformedURLException {
         if (base == null || relative == null) throw new NullPointerException();
+
+        // First check if the "relative" uri is in fact absolute, in which case we avoid
+        // parsing the base as a URL in case it is relative.
+        try {
+            final URI relativeUri = new URI(relative);
+            if (relativeUri.isAbsolute()) {
+                final String proto = relativeUri.getScheme();
+                if (!proto.equals("http") && !proto.equals("https"))
+                    throw new MalformedURLException("Refusing remote schema reference with non-HTTP(S) base URL: " + base);
+                return relativeUri.toURL().toExternalForm();
+            }
+        }
+        catch(URISyntaxException use) {
+            // we'll find out below ...
+        }
+
         final URL baseUrl = new URL(base);
 
         final String proto = baseUrl.getProtocol();
@@ -713,7 +731,7 @@ public class SchemaManagerImpl implements SchemaManager {
             throw new SAXException("Unable to parse Schema", e);
         } catch (RuntimeException e) {
             Throwable unres = ExceptionUtils.getCauseIfCausedBy(e, UnresolveableException.class);
-            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres);
+            if (unres != null) throw new CausedIOException("Unable to resolve remote subschema", unres.getCause());
             throw e;
         }
     }

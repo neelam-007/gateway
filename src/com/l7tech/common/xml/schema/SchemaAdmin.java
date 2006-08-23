@@ -19,7 +19,7 @@ import java.util.Collection;
  *
  * @author flascelles@layer7-tech.com
  */
-@Transactional(propagation=Propagation.REQUIRED)
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.SCHEMA_ENTRY)
 public interface SchemaAdmin {
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
