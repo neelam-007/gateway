@@ -186,14 +186,15 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                             return methodInvocation.proceed();
                         }
                     case FIND_ENTITIES:
-                        check.before = CheckBefore.NONE;
                         check.operation = READ;
                         if (Collection.class.isAssignableFrom(method.getReturnType()) ||
                                 method.getReturnType().isArray()) {
+                            check.before = CheckBefore.NONE;
                             check.after = CheckAfter.COLLECTION;
                         } else {
                             // Unsupported return value type; must be able to read all
                             check.before = CheckBefore.ALL;
+                            check.after = CheckAfter.NONE;
                         }
                         break;
                     case FIND_HEADERS:
