@@ -114,7 +114,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         User currentUser = JaasUtils.getCurrentUser();
         if (currentUser == null) throw new IllegalStateException("Couldn't get current user");
 
-        String name = "Manage " + config.getName() + " Identity Provider";
+        String name = "Manage " + config.getName() + " Identity Provider (#" + config.getOid() + ")";
 
         logger.info("Creating new Role: " + name);
 
