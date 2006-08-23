@@ -238,7 +238,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         User currentUser = JaasUtils.getCurrentUser();
         if (currentUser == null) throw new IllegalStateException("Couldn't get current user");
 
-        String name = "Manage " + service.getName() + " Service";
+        String name = "Manage " + service.getName() + " Service (#" + service.getOid() + ")";
 
         logger.info("Creating new Role: " + name);
 
