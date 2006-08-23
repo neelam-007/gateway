@@ -359,14 +359,6 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         }
     }
 
-    private void checkIdBefore(CheckInfo check, Object[] args, OperationType operation) {
-        getIdArgOrThrow(check, args);
-        logger.log(Level.FINER, "Will check ID before invocation");
-        check.before = CheckBefore.ENTITY;
-        check.operation = operation;
-        check.after = CheckAfter.NONE;
-    }
-
     private void checkEntityBefore(CheckInfo check, Object[] args, OperationType operation) {
         getEntityArgOrThrow(check, args);
         logger.log(Level.FINER, "Will check Entity before invocation");
