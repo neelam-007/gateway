@@ -191,7 +191,7 @@ public interface ClusterStatusAdmin {
      *         criteria
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
     MetricsBin getLastestMetricsSummary(final String clusterNodeId,
                                         final Long serviceOid,
                                         final int resolution,
