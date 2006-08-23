@@ -9,20 +9,23 @@ import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections.iterators.ArrayIterator;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.Serializable;
 
 /**
  * @author alex
@@ -36,7 +39,6 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     public SecuredMethodInterceptor(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
         this.entityFinder = entityFinder;
-        logger.log(Level.INFO, this.getClass().getSimpleName() + " initialized");
     }
 
     private List<Object> filter(Iterator iter, User user, CheckInfo check) throws FindException {
@@ -61,7 +63,15 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             if (testEntity == null || roleManager.isPermittedForEntity(user, testEntity, check.operation, check.otherOperationName)) {
                 newlist.add(element);
             } else {
-                logger.info("Omitting " + testEntity.getClass().getSimpleName() + " #" + testEntity.getId() + " from return value of " + check.methodName);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.FINEST, 
+                            "Omitting {0} #{1} from return value of {2}",
+                            new Object[] {
+                                testEntity.getClass().getSimpleName(),
+                                testEntity.getId(),
+                                check.methodName}
+                            );
+                }
             }
         }
         return newlist;
