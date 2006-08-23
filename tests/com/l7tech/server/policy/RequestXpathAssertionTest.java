@@ -2,9 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
@@ -53,9 +51,6 @@ public class RequestXpathAssertionTest extends TestCase {
     }
 
     private AssertionStatus getResultForXPath(String expression) throws Exception {
-        Map namespaces = new HashMap();
-        namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
-        namespaces.put("sesyn", namespaces.get("soapenv"));
         ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
         Message m = new Message();
         m.initialize(testDoc);
@@ -90,13 +85,13 @@ public class RequestXpathAssertionTest extends TestCase {
     private String[] passingXpaths =
     {
         "//", // sanity
-        "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid", // contains a value
-        "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='-9206260647417300294'", // works with proper namespaces
+        "/soap:Envelope/soap:Body/ware:placeOrder/productid", // contains a value
+        "/soap:Envelope/soap:Body/ware:placeOrder/productid='-9206260647417300294'", // works with proper namespaces
         "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='placeOrder']/productid='-9206260647417300294'", // works with no-namespace hack
-        "/soapenv:Envelope[@*[local-name()=\"soapenv\"]]",
+        "/soap:Envelope[@*[local-name()=\"soapenv\"]]",
         "//*[@sesyn:encodingStyle]",
-        "/soapenv:Envelope[3=3]",
-        "soapenv:Envelope/soapenv:Body", // relative match should match against document element
+        "/soap:Envelope[3=3]",
+        "soap:Envelope/soap:Body", // relative match should match against document element
     };
 
     private String[] failingXpaths =
@@ -104,8 +99,18 @@ public class RequestXpathAssertionTest extends TestCase {
         "[", // invalid expression
         "/Envelope/Body/placeOrder/productid='-9206260647417300294'", // fails without namespaces
         "/foo:Envelope/bar:Body/baz:placeOrder/productid='-9206260647417300294'", // fails with bogus namespaces
-        "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='blah'", // wrong value with correct namespaces
+        "/soap:Envelope/soap:Body/ware:placeOrder/productid='blah'", // wrong value with correct namespaces
         "/Envelope/Body/placeOrder/productid='blah'", // wrong value without namespaces
-        "soapenv:Envelopee/soapenv:Body", // misspelled Envelopee
+        "soap:Envelopee/soap:Body", // misspelled Envelopee
     };
+
+    private Map<String, String> namespaces = new HashMap<String, String>();
+    {
+        namespaces.put("soap", "http://schemas.xmlsoap.org/soap/envelope/");
+        namespaces.put("ware", "http://warehouse.acme.com/ws");
+        namespaces.put("sesyn", "http://schemas.xmlsoap.org/soap/envelope/");
+        namespaces.put("foo", "http://schemas.foo.org/");
+        namespaces.put("bar", "http://schemas.bar.org/");
+        namespaces.put("baz", "http://schemas.baz.org/");
+    }
 }
