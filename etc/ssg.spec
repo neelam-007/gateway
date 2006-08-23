@@ -158,6 +158,7 @@ echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
+/sbin/chkconfig --add ssg
 
 %preun
 # Modifications to handle upgrades properly
@@ -195,6 +196,7 @@ if [ "$1" = "0" ] ; then
 	fi
 
 fi
+chkconfig --del ssg
 
 %changelog
 * Mon Aug 21 2006 CY
