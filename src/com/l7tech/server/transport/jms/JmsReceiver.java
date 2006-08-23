@@ -211,8 +211,6 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     }
 
     private void fireEvent(JMSEvent event) {
-        _logger.finest("FIRE message is: " + event.getMessage());
-
         ApplicationContext context;
         synchronized(syncRecv) {
            context = applicationContext;
@@ -221,7 +219,6 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             long timeNow = System.currentTimeMillis();
             if ((lastAuditErrorTime+OOPS_AUDIT) < timeNow) {
                 lastAuditErrorTime = timeNow;
-                _logger.finest("Publishing event.");
                 context.publishEvent(event);
             } else {
                 _logger.info("Not publishing event due to recent failure.");
