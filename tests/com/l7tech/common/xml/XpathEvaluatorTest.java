@@ -6,7 +6,6 @@
 
 package com.l7tech.common.xml;
 
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -14,7 +13,6 @@ import junit.framework.TestSuite;
 import org.jaxen.NamespaceContext;
 import org.w3c.dom.Document;
 
-import javax.xml.soap.SOAPMessage;
 import java.util.*;
 
 /**
@@ -32,11 +30,21 @@ public class XpathEvaluatorTest extends TestCase {
         return new TestSuite(XpathEvaluatorTest.class);
     }
 
+    private Map<String, String> namespaces = new HashMap<String, String>();
+    {
+        namespaces.put("SOAP-ENV", "http://schemas.xmlsoap.org/soap/envelope/");
+        namespaces.put("m", "Some-URI");
+        namespaces.put("soap", "http://schemas.xmlsoap.org/soap/envelope/");
+        namespaces.put("ware", "http://warehouse.acme.com/ws");
+        namespaces.put("sesyn", "http://schemas.xmlsoap.org/soap/envelope/");
+        namespaces.put("foo", "http://schemas.foo.org/");
+        namespaces.put("bar", "http://schemas.bar.org/");
+        namespaces.put("baz", "http://schemas.baz.org/");
+    }
+
     public void testOtherFunctions() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         System.out.println(XmlUtil.nodeToFormattedString(doc));
-        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
-        Map namespaces = XpathEvaluator.getNamespaces(sm);
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namespaces);
         List nodes = xe.select("string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol)");
         assertTrue("Size should have been >0", nodes.size() > 0);
@@ -63,8 +71,6 @@ public class XpathEvaluatorTest extends TestCase {
     public void testContains() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         System.out.println(XmlUtil.nodeToFormattedString(doc));
-        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
-        Map namespaces = XpathEvaluator.getNamespaces(sm);
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namespaces);
         List nodes = xe.select("contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI')");
         assertTrue("Size should have been >0", nodes.size() > 0);
@@ -116,9 +122,6 @@ public class XpathEvaluatorTest extends TestCase {
      */
     public void testSoapMessage() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
-        Map namespaces = XpathEvaluator.getNamespaces(sm);
-
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namespaces);
         List nodes = xe.select("//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice");
         assertTrue("Size should have been >0", nodes.size() > 0);
@@ -134,9 +137,6 @@ public class XpathEvaluatorTest extends TestCase {
      */
     public void testNamespaceSoapMessage() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
-        final Map namespaces = XpathEvaluator.getNamespaces(sm);
-
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new NamespaceContext() {
             public String translateNamespacePrefixToUri(String prefix) {
                 String ns = (String)namespaces.get(prefix);
@@ -158,9 +158,6 @@ public class XpathEvaluatorTest extends TestCase {
      */
     public void testNamespaceNonExistSoapMessage() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
-        final Map namespaces = XpathEvaluator.getNamespaces(sm);
-
         try {
             XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new NamespaceContext() {
                 public String translateNamespacePrefixToUri(String prefix) {
@@ -185,9 +182,6 @@ public class XpathEvaluatorTest extends TestCase {
      */
     public void testMethodElementEnvelopeAcestor() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
-        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
-        final Map namespaces = XpathEvaluator.getNamespaces(sm);
-
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new NamespaceContext() {
             public String translateNamespacePrefixToUri(String prefix) {
                 String ns = (String)namespaces.get(prefix);
