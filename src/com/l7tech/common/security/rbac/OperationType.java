@@ -21,7 +21,7 @@ public enum OperationType {
 
     private final String opName;
 
-    public Object getName() {
+    public String getName() {
         return opName;
     }
 

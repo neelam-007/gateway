@@ -24,6 +24,7 @@ class Handlers {
             new PersistenceErrorHandler(),
             new RmiErrorHandler(),
             new AdminSessionExpiredErrorHandler(),
+            new PermissionDeniedErrorHandler(),
             new DefaultErrorHandler()
         };
     }
