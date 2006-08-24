@@ -204,7 +204,9 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Failed to invoke the custom assertion"}, e);
                 return AssertionStatus.FAILED;
             } catch (AccessControlException e) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
+                auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                        customAssertion.getName(),
+                        "Authorization (access control) failed; detail '"+ExceptionUtils.getMessage(e)+"'"});
                 return AssertionStatus.UNAUTHORIZED;
             }
         } finally {
