@@ -460,23 +460,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
             }
 
-            if (metrics != null) {
+            if (metrics != null && attemptedRequest) {
                 final int frontTime = (int)(context.getEndTime() - context.getStartTime());
                 final int backTime = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
-                metrics.lockCurrentBins();
-                try {
-                    if (attemptedRequest) {
-                        metrics.addAttemptedRequest(frontTime);
-                        if (authorizedRequest) {
-                            metrics.addAuthorizedRequest();
-                            if (completedRequest) {
-                                metrics.addCompletedRequest(backTime);
-                            }
-                        }
-                    }
-                } finally {
-                    metrics.unlockCurrentBins();
-                }
+                metrics.addRequest(authorizedRequest, completedRequest, frontTime, backTime);
             }
 
             try {

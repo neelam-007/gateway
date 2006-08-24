@@ -25,6 +25,8 @@ import java.util.logging.Logger;
  * fine resolution bin and then collating them into the hourly bin on the hour
  * and the daily bin at midnight.
  *
+ * TODO what happens when the interval changes?
+ *
  * @author rmak
  */
 public class ServiceMetrics {
@@ -92,7 +94,6 @@ public class ServiceMetrics {
      * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} for which metrics are being gathered
      * @param nodeId the MAC address of the cluster node for which metrics are being gathered
      * @param fineInterval the interval currently being used for buckets of {@link MetricsBin#RES_FINE} resolution
-     * TODO what happens when the interval changes?
      * @param queue the ServiceMetricsManager queue to which archived bins should be added
      */
     public ServiceMetrics(long serviceOid, String nodeId, int fineInterval, BoundedChannel queue) {
@@ -104,7 +105,7 @@ public class ServiceMetrics {
         this._queue = queue;
         _serviceOid = serviceOid;
         _clusterNodeId = nodeId;
-        _fineInterval = fineInterval; // TODO what happens when the interval changes?
+        _fineInterval = fineInterval;
 
         final long now = System.currentTimeMillis();
         _currentFineBin = new MetricsBin(now, fineInterval, MetricsBin.RES_FINE, nodeId, serviceOid);
@@ -122,73 +123,26 @@ public class ServiceMetrics {
     }
 
     /**
-     * Pins down the current bins, i.e., stops current bins from being archived
-     * and new current bins being created until {@link #unlockCurrentBins()} is
-     * called.
-     * <p/>
-     * This is used to ensure group of calls to {@link #addAttemptedRequest},
-     * {@link #addAuthorizedRequest}, {@link #addCompletedRequest} are applied
-     * to the same current bins.
-     * <p/>
-     * TODO This is neccessary because we are using counters for the old categories
-     * (Attempted, Authorized, Completed) which are successively inclusive and
-     * needs to be incremented as a group. If we instead use counters for
-     * the new categories (Routing Failure, Policy Violation, Success), which
-     * are mutually exclusive, callers will not have to worry about locking, and
-     * synchronization with the archive*Bins methods can be internalized.
+     * Record a request.
+     *
+     * @param authorized True if the policy execution was successful (routing attempted).
+     * @param completed  True if the routing was successful
+     * @param frontTime  Complete time for request processing
+     * @param backTime   Time taken by the protected service
      */
-    public void lockCurrentBins() {
+    public void addRequest(boolean authorized, boolean completed, int frontTime, int backTime) {
+        lockCurrentBins();
         try {
-            _fineLock.readLock().acquire();
-            _hourlyLock.readLock().acquire();
-            _dailyLock.readLock().acquire();
-        } catch (InterruptedException e) {
-            _logger.warning("Interrupted waiting for current bins read lock.");
+            addAttemptedRequest(frontTime);
+            if (authorized) {
+                addAuthorizedRequest();
+                if (completed) {
+                    addCompletedRequest(backTime);
+                }
+            }
+        } finally {
             unlockCurrentBins();
-            Thread.currentThread().interrupt();
         }
-    }
-
-    public void unlockCurrentBins() {
-        _fineLock.readLock().release();
-        _hourlyLock.readLock().release();
-        _dailyLock.readLock().release();
-    }
-
-    /**
-     * Records an attempted request.
-     *
-     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
-     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
-     */
-    public void addAttemptedRequest(final int frontendResponseTime) {
-        _currentFineBin.addAttemptedRequest(frontendResponseTime);
-        _currentHourlyBin.addAttemptedRequest(frontendResponseTime);
-        _currentDailyBin.addAttemptedRequest(frontendResponseTime);
-    }
-
-    /**
-     * Records an authorized request.
-     *
-     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
-     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
-     */
-    public void addAuthorizedRequest() {
-        _currentFineBin.addAuthorizedRequest();
-        _currentHourlyBin.addAuthorizedRequest();
-        _currentDailyBin.addAuthorizedRequest();
-    }
-
-    /**
-     * Records a completed request.
-     *
-     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
-     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
-     */
-    public void addCompletedRequest(final int backendResponseTime) {
-        _currentFineBin.addCompletedRequest(backendResponseTime);
-        _currentHourlyBin.addCompletedRequest(backendResponseTime);
-        _currentDailyBin.addCompletedRequest(backendResponseTime);
     }
 
     /**
@@ -208,7 +162,7 @@ public class ServiceMetrics {
                 _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
-            // TODO what happens when the interval changes?
+
             _currentFineBin = new MetricsBin(now, _fineInterval, MetricsBin.RES_FINE, _clusterNodeId, _serviceOid);
         } catch (InterruptedException e) {
             _logger.warning("Interrupted waiting for fine bin write lock");
@@ -268,5 +222,73 @@ public class ServiceMetrics {
         } finally {
             _dailyLock.writeLock().release();
         }
+    }
+
+    /**
+     * Pins down the current bins, i.e., stops current bins from being archived
+     * and new current bins being created until {@link #unlockCurrentBins()} is
+     * called.
+     * <p/>
+     * This is used to ensure group of calls to {@link #addAttemptedRequest},
+     * {@link #addAuthorizedRequest}, {@link #addCompletedRequest} are applied
+     * to the same current bins.
+     * <p/>
+     * TODO This is neccessary because we are using counters for the old categories
+     * (Attempted, Authorized, Completed) which are successively inclusive and
+     * needs to be incremented as a group. If we instead use counters for
+     * the new categories (Routing Failure, Policy Violation, Success), which
+     * are mutually exclusive, callers will not have to worry about locking, and
+     * synchronization with the archive*Bins methods can be internalized.
+     */
+    private void lockCurrentBins() {
+        try {
+            _fineLock.readLock().acquire();
+            _hourlyLock.readLock().acquire();
+            _dailyLock.readLock().acquire();
+        } catch (InterruptedException e) {
+            _logger.warning("Interrupted waiting for current bins read lock.");
+            unlockCurrentBins();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void unlockCurrentBins() {
+        _fineLock.readLock().release();
+        _hourlyLock.readLock().release();
+        _dailyLock.readLock().release();
+    }    /**
+     * Records an attempted request.
+     *
+     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
+     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
+     */
+    private void addAttemptedRequest(final int frontendResponseTime) {
+        _currentFineBin.addAttemptedRequest(frontendResponseTime);
+        _currentHourlyBin.addAttemptedRequest(frontendResponseTime);
+        _currentDailyBin.addAttemptedRequest(frontendResponseTime);
+    }
+
+    /**
+     * Records an authorized request.
+     *
+     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
+     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
+     */
+    private void addAuthorizedRequest() {
+        _currentFineBin.addAuthorizedRequest();
+        _currentHourlyBin.addAuthorizedRequest();
+        _currentDailyBin.addAuthorizedRequest();
+    }
+
+    /**
+     * Records a completed request.
+     *
+     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
+     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
+     */
+    private void addCompletedRequest(final int backendResponseTime) {
+        _currentFineBin.addCompletedRequest(backendResponseTime);
+        _currentHourlyBin.addCompletedRequest(backendResponseTime);
+        _currentDailyBin.addCompletedRequest(backendResponseTime);
     }
 }
