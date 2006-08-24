@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sysmem", "sysmem.vcproj", "{40A9323B-6D33-4176-AC50-471396FE5AFE}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{40A9323B-6D33-4176-AC50-471396FE5AFE}.Debug.ActiveCfg = Debug|Win32
+		{40A9323B-6D33-4176-AC50-471396FE5AFE}.Debug.Build.0 = Debug|Win32
+		{40A9323B-6D33-4176-AC50-471396FE5AFE}.Release.ActiveCfg = Release|Win32
+		{40A9323B-6D33-4176-AC50-471396FE5AFE}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

@@ -30,9 +30,9 @@ set JPDA_TRANSPORT=
 set JPDA_ADDRESS=
 
 :: Compute system physical RAM amount for tunning JVM.
-for /F "delims=: tokens=1,2" %%i in ('systeminfo') do if "%%i"=="Total Physical Memory" set tmpstr1=%%j
-for /F "tokens=1" %%i in ("%tmpstr1%") do set tmpstr2=%%i
-set system_ram=%tmpstr2:,=%
+pushd "%SSG_HOME%"
+for /F "tokens=1" %%i in ('bin\sysmem.exe "--unit=M" --roundoff TotalPhys') do set system_ram=%%i
+popd
 set /a java_ram=%system_ram%*2/3
 set /a maxnewsize=%java_ram%/2
 
