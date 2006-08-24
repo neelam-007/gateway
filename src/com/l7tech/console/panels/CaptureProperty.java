@@ -9,8 +9,10 @@ package com.l7tech.console.panels;
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.gui.util.DocumentSizeFilter;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemListener;
@@ -81,6 +83,8 @@ public class CaptureProperty extends JDialog {
                 itemListener.itemStateChanged(null); // init desc
             }
         }
+        ((AbstractDocument)((JTextField)keyComboBox.getEditor().getEditorComponent()).getDocument())
+                .setDocumentFilter(new DocumentSizeFilter(128));
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
