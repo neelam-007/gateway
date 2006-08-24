@@ -1,15 +1,15 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.io.ByteLimitInputStream;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JaasUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
@@ -37,7 +37,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -101,11 +100,12 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public String resolveWsdlTarget(String url) throws IOException {
+        GetMethod get = null;
         try {
             checkLicense();
             URL urltarget = new URL(url);
             HttpClient client = new HttpClient();
-            GetMethod get = new GetMethod(url);
+            get = new GetMethod(url);
             // bugfix for 1857 (next 3 lines)
             get.setHttp11(true);
             String hostval = urltarget.getHost();
@@ -132,43 +132,23 @@ public class ServiceAdminImpl implements ServiceAdmin {
             } else {
                 ret = client.executeMethod(get);
             }
-            byte[] body;
             if (ret == 200) {
-                Header contentTypeHeader = get.getResponseHeader(
-                        com.l7tech.common.http.HttpConstants.HEADER_CONTENT_TYPE);
-                if(contentTypeHeader!=null) {
-                    ContentTypeHeader cth = null;
-                    try {
-                        cth = ContentTypeHeader.parseValue(contentTypeHeader.getValue());
-                    }
-                    catch(Exception e) {
-                        logger.info("Error parsing content type header '"+e.getMessage()+"'.");
-                    }
-                    if(cth!=null) {
-                        if(!cth.isXml()) {
-                            throw new CausedIOException("The document with URL '" + url +
-                                    "' is not WSDL (incorrect content type).");
-                        }
-                    }
-                }
-                body = get.getResponseBody();
-                return new String(body, get.getResponseCharSet());
+                byte[] body = HexUtils.slurpStream(new ByteLimitInputStream(get.getResponseBodyAsStream(), 16, 10*1024*1024));
+                String charset = get.getResponseCharSet();
+                return new String(body, charset);
             } else {
-                String msg = "The URL '" + url + "' is returning code " + ret;
-                logger.info(msg);
-                logger.info("error detail: " + get.getResponseBodyAsString());
-                throw new RemoteException(msg);
+                String msg = "The URL '" + url + "' is returning status code " + ret;
+                throw new IOException(msg);
             }
-        } catch (MalformedURLException e) {
-            String msg = "Bad url: " + url;
-            logger.log(Level.WARNING, msg, e);
-            throw e;
         } catch (HttpException e) {
             String msg = "Http error getting " + url;
-            logger.log(Level.WARNING, msg, e);
             IOException ioe =new  IOException(msg);
             ioe.initCause(e);
             throw ioe;
+        } finally {
+            if (get != null) {
+                get.releaseConnection();
+            }
         }
     }
 

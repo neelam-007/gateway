@@ -17,6 +17,11 @@ public class ByteLimitInputStream extends PushbackInputStream {
     private long sizeLimit = 0;
     private long bytesRead = 0;
 
+    public ByteLimitInputStream(InputStream in, int pushbackSize, long limit) {
+        super(in, pushbackSize);
+        sizeLimit = limit;
+    }
+
     public ByteLimitInputStream(InputStream in, int pushbackSize) {
         super(in, pushbackSize);
     }
