@@ -318,7 +318,7 @@ public interface IdentityAdmin {
      * @throws UpdateException if there was a problem updating the database
      * @throws RemoteException on remote communication error
      */
-    @Secured(types=USER, stereotype=SET_PROPERTY_OF_ENTITY)
+    @Secured(types=USER, stereotype=SET_PROPERTY_OF_ENTITY, relevantArg=0)
     void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException;
 
     /**
