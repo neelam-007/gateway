@@ -71,15 +71,11 @@ public class PropertyHelper {
      *        object will be added to the list (must not be null or empty).
      * @param createIfNew whether to create the origPropsFile if it is found not to exist
      *
-     * @throws <ul>
-     *          <li>FileNotFoundException if the original file could not be found for reading</li>
-     *          <li>IOException if there was an error while reading one of the properties files</li>
-     *
-     * @return <ul>
-     * <li>a new Properties object (possibly empty if the original and the new file could not be found)
+     * @throws FileNotFoundException if the original file could not be found for reading
+     * @throws IOException if there was an error while reading one of the properties files
+     * @return a new Properties object (possibly empty if the original and the new file could not be found)
      * consisting of all properties contained in the two properies files. This will be equivalent to the original if
-     * something failed with the new one.</li>
-     * </ul>
+     * something failed with the new one.
      */
     public static Properties mergeProperties(File origPropsFile, File newPropsFile, boolean createIfNew) throws IOException {
         if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
