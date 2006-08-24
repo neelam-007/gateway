@@ -234,6 +234,17 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     case SET_PROPERTY_OF_ENTITY:
                         checkEntityBefore(check, args, UPDATE);
                         break;
+                    case SET_PROPERTY_BY_UNIQUE_ATTRIBUTE:
+                        check.before = CheckBefore.ALL;
+                        check.after = CheckAfter.NONE;
+                        check.operation = UPDATE;
+                        break;
+                    case DELETE_BY_UNIQUE_ATTRIBUTE:
+                    case DELETE_MULTI:
+                        check.before = CheckBefore.ALL;
+                        check.after = CheckAfter.NONE;
+                        check.operation = DELETE;
+                        break;
                     default:
                         throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + check.stereotype.name());
                 }

@@ -117,6 +117,10 @@ public enum MethodStereotype {
      */
     SET_PROPERTY_BY_ID,
 
+    /**
+     * Caller must hold {@link OperationType#UPDATE} permission on all entities of the declared type (we are currently
+     * unable to find entities by unique attributes in a generic way)  
+     */
     SET_PROPERTY_BY_UNIQUE_ATTRIBUTE,
 
     /**
