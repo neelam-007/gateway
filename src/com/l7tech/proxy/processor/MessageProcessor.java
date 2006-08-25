@@ -225,7 +225,7 @@ public class MessageProcessor {
             throw new HttpChallengeRequiredException(e);
 
         if (ssg.isFederatedGateway())
-            throw new OperationCanceledException("Client identity rejected by federated Gateway " + ssg.getSsgAddress());
+            throw new OperationCanceledException("Client identity rejected by federated Gateway " + ssg.getSsgAddress(), e);
 
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
@@ -969,7 +969,9 @@ public class MessageProcessor {
                 ssg.getRuntime().getPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {
-                ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                Ssg certSsg = ssg.getTrustedGateway();
+                if (certSsg == null) certSsg = ssg;
+                ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(certSsg);
                 throw new CertificateAlreadyIssuedException(e);
             }
         }
