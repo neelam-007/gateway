@@ -535,9 +535,9 @@
                 <include name="jboss-*.jar"/>
                 <include name="commons-logging-1.0.4.jar"/>
 
-                <include name="tarari_xcx.jar"/>
-                <include name="tarari_xpath.jar"/>
-                <include name="tarari_raxj.jar"/>
+                <!--<include name="tarari_xcx.jar"/>-->
+                <!--<include name="tarari_xpath.jar"/>-->
+                <!--<include name="tarari_raxj.jar"/>-->
                 <include name="activation.jar"/>
                 <include name="mailapi-1.3.2.jar"/>
                 <include name="smtp-1.3.2.jar"/>
@@ -1378,9 +1378,9 @@
                 <include name="*.jar"/>
             </fileset>
 
-            <fileset dir="${src.root}/lib/gateway/tarari">
-                <include name="*.jar"/>
-            </fileset>
+            <!--<fileset dir="${src.root}/lib/gateway/tarari">-->
+                <!--<include name="*.jar"/>-->
+            <!--</fileset>-->
 
             <fileset dir="${src.root}/lib/gateway/snmp">
                 <include name="*.jar"/>
@@ -1961,7 +1961,7 @@
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
-                <include name="tarari.sh"/>
+                <!--<include name="tarari.sh"/>-->
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="tarari-initd"/>
