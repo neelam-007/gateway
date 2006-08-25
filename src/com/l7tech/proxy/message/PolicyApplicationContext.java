@@ -443,7 +443,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     {
         try {
             if (ssg.getClientCertificate() == null) {
-                logger.info("PendingRequest: applying for client certificate");
+                logger.info("applying for client certificate");
                 Ssg trusted = ssg.getTrustedGateway();
                 if (trusted == null) {
                     if (ssg.isFederatedGateway())
@@ -451,10 +451,11 @@ public class PolicyApplicationContext extends ProcessingContext {
                     ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(getCredentialsForTrustedSsg());
                 } else {
                     trusted.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(getFederatedCredentials());
+                    ssg.getRuntime().resetSslContext();
                 }
             }
             else if(!ssg.isFederatedGateway()){ // the following is primarily for SAML SenderVouches
-                logger.info("PendingRequest: ensuring client certificate key is accessible");
+                logger.info("ensuring client certificate key is accessible");
                 ssg.getClientCertificatePrivateKey(getCredentialsForTrustedSsg());
             }
         } catch (CertificateAlreadyIssuedException e) {
@@ -464,7 +465,9 @@ public class PolicyApplicationContext extends ProcessingContext {
                 getSsg().getRuntime().getPolicyManager().flushPolicy(getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {
-                ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                Ssg certSsg = ssg.getTrustedGateway();
+                if (certSsg == null) certSsg = ssg;
+                ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(certSsg);
                 throw new OperationCanceledException("Unable to obtain a client certificate");
             }
         } catch (IOException e) {
