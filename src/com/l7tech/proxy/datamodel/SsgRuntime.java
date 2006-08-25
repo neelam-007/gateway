@@ -509,6 +509,7 @@ public class SsgRuntime {
             simpleHttpClient = null;
             httpConnectionManager = null; // bugzilla #1808
         }
+        ssg.fireSsgEvent(SsgEvent.createSslResetEvent(ssg)); // bug #2540
     }
 
     /**

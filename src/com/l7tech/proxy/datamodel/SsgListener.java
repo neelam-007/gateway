@@ -30,4 +30,11 @@ public interface SsgListener extends EventListener {
      * This event is fired when field data in an Ssg such as name, local endpoing etc. are changed.
      */
     void dataChanged(SsgEvent evt);
+
+    /**
+     * This event is fired when the SSL/http client information is reset.
+     *
+     * @param evt
+     */
+    void sslReset(SsgEvent evt);
 }

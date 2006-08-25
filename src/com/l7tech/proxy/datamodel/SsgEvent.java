@@ -31,6 +31,7 @@ public class SsgEvent extends EventObject {
     /** The types of events we can describe. */
     public static final SsgEventType POLICY_ATTACHED = new SsgEventType(1, "policy added");
     public static final SsgEventType DATA_CHANGED = new SsgEventType(2, "data changed");
+    public static final SsgEventType SSL_RESET = new SsgEventType(3, "ssl reset");
 
     /** Type of this event, chosen from the list above. */
     private final SsgEventType type;
@@ -67,6 +68,11 @@ public class SsgEvent extends EventObject {
     public static SsgEvent createDataChangedEvent(Ssg ssg) {
         SsgEvent evt = new SsgEvent(ssg, DATA_CHANGED);
         return evt;
+    }
+
+    /** Create a new SsgEvent of type SSL_RESET. */
+    public static SsgEvent createSslResetEvent(Ssg ssg) {
+        return new SsgEvent(ssg, SSL_RESET);
     }
 
     /**

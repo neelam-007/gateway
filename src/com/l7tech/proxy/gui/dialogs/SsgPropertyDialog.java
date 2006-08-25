@@ -936,6 +936,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         // Take no action; we don't override the user's data.
     }
 
+    public void sslReset(SsgEvent evt) {
+        // Don't care
+    }
+
     public void setVisible(boolean b) {
         if (b)
             getFieldServerAddress().requestFocus();

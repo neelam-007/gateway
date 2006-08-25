@@ -329,6 +329,10 @@ class SsgTableModel extends AbstractTableModel implements SsgListener {
             fireSsgUpdated((Ssg) evt.getSource());
     }
 
+    public void sslReset(SsgEvent evt) {
+        // Don't care
+    }
+
     /**
      * Fire an event indicating that row containing the specified SSG should be updated.
      * Takes no action if the given SSG is not in the table.

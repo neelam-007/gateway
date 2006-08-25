@@ -80,12 +80,13 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private PersistentPolicyManager persistentPolicyManager = new PersistentPolicyManager(); // policy store that gets saved to disk
     private FederatedSamlTokenStrategy fedSamlTokenStrategy = null; // non-default saml token strategy, or null
     private String serverUrl = null; // Special URL for generic (non-SSG) services
+    private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
+    private boolean genericService = false; // true if the server is not actually an SSG
 
     private transient Set listeners = Collections.synchronizedSet(new HashSet()); // Set of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
     private transient X509Certificate lastSeenPeerCertificate = null;
-    private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
-    private boolean genericService = false; // true if the server is not actually an SSG
+    private transient SsgListener trustedGatewayListener = null;
 
     private static Set headersToCopy = new TreeSet(String.CASE_INSENSITIVE_ORDER);
     static {
@@ -235,7 +236,26 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     }
 
     public void setTrustedGateway(Ssg trustedGateway) {
+        Ssg oldTrustedGateway = this.trustedGateway;
         this.trustedGateway = trustedGateway;
+
+        if (oldTrustedGateway != null && trustedGatewayListener != null)
+            oldTrustedGateway.removeSsgListener(trustedGatewayListener);
+
+        // Make sure we reset our SSL context when our trusted SSG does (Bug #2540)
+        if (trustedGateway != null) {
+            if (trustedGatewayListener == null) {
+                trustedGatewayListener = new SsgListener() {
+                    public void policyAttached(SsgEvent evt) {}
+                    public void dataChanged(SsgEvent evt) {}
+                    public void sslReset(SsgEvent evt) {
+                        log.info("Trusted SSG has reset its SSL context; resetting ours as well");
+                        getRuntime().resetSslContext();
+                    }
+                };
+            }
+            trustedGateway.addSsgListener(trustedGatewayListener);
+        }
     }
 
     public boolean isFederatedGateway() {
@@ -642,7 +662,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      *
      * @param event  the event to transmit
      */
-    private void fireSsgEvent(final SsgEvent event) {
+    void fireSsgEvent(final SsgEvent event) {
         if (event.getSource() != this)
             throw new IllegalArgumentException("Event to be fired must identify this Ssg as the source");
         if (listeners.size() < 1)
@@ -658,6 +678,8 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
                                 target.policyAttached(event);
                             else if (event.getType() == SsgEvent.DATA_CHANGED)
                                 target.dataChanged(event);
+                            else if (event.getType() == SsgEvent.SSL_RESET)
+                                target.sslReset(event);
                             else
                                 throw new IllegalArgumentException("Unknown event type: " + event.getType());
                             }
