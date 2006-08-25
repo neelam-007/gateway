@@ -510,10 +510,12 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
 
             saveKeyStore(privateKeyPassword);
             saveTrustStore();
+            ssg.getRuntime().resetSslContext();
             ssg.getRuntime().setHaveClientCert(Boolean.TRUE);
             ssg.getRuntime().setCachedPrivateKey(privateKey);
             ssg.getRuntime().setPrivateKeyPasswordHash(HexUtils.getMd5Digest(toBytes(privateKeyPassword)));
             ssg.getRuntime().setCachedClientCert(cert);
+            ssg.getRuntime().setPasswordCorrectForPrivateKey(true);
         }
     }
 
