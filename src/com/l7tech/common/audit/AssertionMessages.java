@@ -447,4 +447,6 @@ public class AssertionMessages extends Messages {
 
     public static final M WSDLOPERATION_NOMATCH               = m(8100, Level.INFO, "Could not match WSDL operation ({0} instead of {1}).");
     public static final M WSDLOPERATION_CANNOTIDENTIFY        = m(8101, Level.INFO, "Cannot identify any WSDL operation from request.");
+
+    public static final M HTTPNEGOTIATE_WARNING               = m(8200, Level.WARNING, "Could not process kerberos token (Negotiate), error is ''{0}''.");
 }

@@ -23,6 +23,8 @@ import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.token.KerberosSecurityToken;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 
 /**
  * Server implementation for Negotiate (Windows Integrated) Authentication
@@ -36,6 +38,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
 
     public ServerHttpNegotiate(HttpNegotiate data, ApplicationContext springContext) {
         super(data, springContext);
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
     //- PROTECTED
@@ -68,6 +71,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
     private static final Logger logger = Logger.getLogger(ServerHttpNegotiate.class.getName());
     private static final String SCHEME = "Negotiate";
     private final ThreadLocal connectionCredentials = new ThreadLocal(); // stores Object[] = id, LoginCredentials
+    private final Auditor auditor;
 
     private LoginCredentials findCredentials( String wwwAuthorize, Object connectionId ) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
@@ -124,9 +128,9 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
         catch(KerberosException ke) {
             if (logger.isLoggable(Level.FINE)) {
                 // then include the exception stack
-                logger.log(Level.INFO, "Could not process kerberos token (Negotiate), error is '"+ke.getMessage()+"'.", ke);
-            } else if (logger.isLoggable(Level.INFO)) {
-                logger.log(Level.INFO, "Could not process kerberos token (Negotiate), error is '"+ke.getMessage()+"'.");
+                auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()}, ke);
+            } else {
+                auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()});
             }
             return null;
         }

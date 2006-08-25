@@ -85,7 +85,7 @@ class GSSSpnego {
         DerInputStream dis = null;
 
         try {
-            DerValue dv = dv = dv = dv = new DerValue(possiblySpnegoToken);
+            DerValue dv = new DerValue(possiblySpnegoToken);
             if (dv.isConstructed() && dv.isApplication() && (0==(dv.getTag()&31))) {
                 dis = new DerInputStream(dv.getDataBytes());
                 oid = dis.getOID();

@@ -1,6 +1,5 @@
 package com.l7tech.common.security.kerberos;
 
-import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Principal;
@@ -15,7 +14,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -149,10 +147,10 @@ public class KerberosClient {
                     GSSCredential credential = null;
                     GSSContext context = null;
                     try {
-                        credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, kerb5Oid, GSSCredential.INITIATE_ONLY);
-                        GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
+                        credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, kerberos5Oid, GSSCredential.INITIATE_ONLY);
+                        GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerberos5Oid);
 
-                        context = manager.createContext(serviceName, kerb5Oid, credential, KERBEROS_LIFETIME.intValue());
+                        context = manager.createContext(serviceName, kerberos5Oid, credential, KERBEROS_LIFETIME.intValue());
                         context.requestMutualAuth(false);
                         context.requestAnonymity(false);
                         context.requestConf(false);
@@ -220,8 +218,8 @@ public class KerberosClient {
                     GSSContext scontext = null;
                     try {
                         String gssPrincipal = KerberosUtils.toGssName(servicePrincipalName);
-                        GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
-                        scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerb5Oid, GSSCredential.ACCEPT_ONLY);
+                        GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerberos5Oid);
+                        scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerberos5Oid, GSSCredential.ACCEPT_ONLY);
                         scontext = manager.createContext(scred);
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
@@ -258,7 +256,11 @@ public class KerberosClient {
             throw new KerberosException("Could not login", le);
         }
         catch(PrivilegedActionException pae) {
-            throw new KerberosException("Error creating Kerberos Service Ticket", pae.getCause());
+            Throwable cause = pae.getCause();
+            if (cause instanceof KerberosException) { // the don't wrap, just re-throw
+                throw (KerberosException) cause;
+            }
+            throw new KerberosException("Error creating Kerberos Service Ticket", cause);
         }
 
         return ticket;
@@ -339,14 +341,15 @@ public class KerberosClient {
      * @throws KerberosException on error
      */
     public static String getKerberosAcceptPrincipal() throws KerberosException {
-        if (acceptPrincipal != null) {
+        String aPrincipal = acceptPrincipal;
+        if (aPrincipal != null) {
             if (!KerberosConfig.hasKeytab()) throw new KerberosConfigException("Not configured");
 
-            if(acceptPrincipal.length()==0) {
+            if(aPrincipal.length()==0) {
                 throw new KerberosException("Principal detection failed.");
             }
             else {
-                return acceptPrincipal;
+                return aPrincipal;
             }
         }
 
@@ -357,7 +360,7 @@ public class KerberosClient {
                 final Subject kerberosSubject = new Subject();
                 LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(spn));
                 loginContext.login();
-                acceptPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+                aPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                     public Object run() throws Exception {
                         String name = null;
 
@@ -400,27 +403,33 @@ public class KerberosClient {
             throw new KerberosException("Error getting principal.", pae.getCause());
         }
 
-        if (acceptPrincipal == null) {
+        if (aPrincipal != null) {
+            acceptPrincipal = aPrincipal; // cache success
+        }
+        else {
             acceptPrincipal = ""; // cache failure
             throw new KerberosException("Error getting principal.");
         }
 
-        return acceptPrincipal;
+        return aPrincipal;
     }
 
 
     //- PACKAGE
 
     static Oid getKerberos5Oid() throws KerberosException {
-        if(kerb5Oid==null) {
+        Oid k5oid = kerb5Oid;
+        if(k5oid==null) {
             try {
-                kerb5Oid = new Oid(KERBEROS_5_OID);
+                k5oid = new Oid(KERBEROS_5_OID);
             }
             catch(GSSException gsse) {
                 throw new KerberosException("Could not create Oid for Kerberos v5 '"+KERBEROS_5_OID+"'", gsse);
             }
+
+            kerb5Oid = k5oid; // stash for later ...
         }
-        return kerb5Oid;
+        return k5oid;
     }
 
     //- PRIVATE
@@ -520,7 +529,7 @@ public class KerberosClient {
      */
     private static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
         return new CallbackHandler() {
-            public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+            public void handle(Callback[] callbacks) {
                 for (int i = 0; i < callbacks.length; i++) {
                     Callback callback = callbacks[i];
                     if(callback instanceof NameCallback) {

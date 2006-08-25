@@ -8,6 +8,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.l7tech.common.util.ArrayUtils;
+
 /**
  * Represents a Kerberos BST (GSS AP REQ)
  *
@@ -64,6 +66,10 @@ public final class KerberosGSSAPReqTicket {
      * Get the ticket body (the byte[] less gss header and token identifier)
      */
     InputStream getTicketBody() throws IOException, GSSException, KerberosException {
+        // Check for NTLMSSP
+        if (ArrayUtils.matchSubarrayOrPrefix(ticketBytes, 0, 1, NTLM_MESSAGE_PREFIX, 0) > -1) {
+            throw new KerberosException("Client attempted to negotiate NTLM!");
+        }
 
         // Skip any SPNEGO wrapper
         byte[] token = GSSSpnego.removeSpnegoWrapper(ticketBytes);
@@ -87,6 +93,8 @@ public final class KerberosGSSAPReqTicket {
     }
 
     //- PRIVATE
+
+    private static final byte[] NTLM_MESSAGE_PREFIX =  new byte[]{'N', 'T', 'L', 'M', 'S', 'S', 'P', 0};
 
     /**
      * The GSS wrapped request ticket / packet
