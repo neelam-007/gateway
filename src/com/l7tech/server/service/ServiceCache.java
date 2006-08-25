@@ -97,8 +97,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             List<Long> unlicensed = new ArrayList<Long>(servicesThatAreUnlicensed);
 
             int numUnlicensed = unlicensed.size();
-            if (numUnlicensed < 0) return;
-            logger.info("License has changed -- resetting " + numUnlicensed + " affected services");
+            if (numUnlicensed < 1) return;
+            if (logger.isLoggable(Level.INFO))
+                logger.info("License has changed -- resetting " + numUnlicensed + " affected services");
             for (Long oid : unlicensed) {
                 PublishedService service = services.get(oid);
                 if (service == null) continue; // no longer relevant
