@@ -121,6 +121,15 @@ public class EntityHeader implements Serializable, Comparable {
 
     public int compareTo(Object o) {
         EntityHeader other = (EntityHeader)o;
+        // bugzilla 2786: if only one of the two is a MAXED_OUT_SEARCH_RESULT, then it should be on top
+        if (!(this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal() &&
+              other != null && other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal())) {
+            if (this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal()) {
+                return -1;
+            } else if (other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal()) {
+                return 1;
+            }
+        }
         if (strId != null && other.strId != null) {
             if (strId.equals(other.strId)) return 0;
         }

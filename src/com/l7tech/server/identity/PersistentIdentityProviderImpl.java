@@ -46,7 +46,7 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
             else if (type == EntityType.GROUP) wantGroups = true;
         }
         if (!wantUsers && !wantGroups) throw new IllegalArgumentException("types must contain users and or groups");
-        Collection<IdentityHeader> searchResults = new TreeSet<IdentityHeader>(new EntityHeaderComparator());
+        Collection<IdentityHeader> searchResults = new TreeSet<IdentityHeader>();
         if (wantUsers) searchResults.addAll(getUserManager().search(searchString));
         if (wantGroups) searchResults.addAll(getGroupManager().search(searchString));
         return searchResults;

@@ -304,7 +304,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
     }
 
     private Collection<IdentityHeader> doSearch(String filter) {
-        Collection<IdentityHeader> output = new TreeSet<IdentityHeader>(new EntityHeaderComparator());
+        Collection<IdentityHeader> output = new TreeSet<IdentityHeader>();
         DirContext context = null;
         NamingEnumeration answer = null;
         try {
