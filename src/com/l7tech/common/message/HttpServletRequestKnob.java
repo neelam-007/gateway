@@ -102,6 +102,15 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return request.getDateHeader(name);
     }
 
+    public int getIntHeader(String name) {
+        try {
+            return request.getIntHeader(name);
+        }
+        catch(NumberFormatException nfe) {
+            return -1;
+        }
+    }
+
     public String getHeaderSingleValue(String name) throws IOException {
         Enumeration en = request.getHeaders(name);
         while (en.hasMoreElements()) {

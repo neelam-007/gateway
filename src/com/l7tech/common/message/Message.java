@@ -11,6 +11,8 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.util.CausedIllegalStateException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.http.HttpConstants;
+
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -199,8 +201,8 @@ public final class Message {
      * <p>
      * If this method returns true, an XmlKnob will be present on this Message.
      *
-     * @return true if this message has a first part declared as text/xml;
-     *         false if this message has no first part or its first part isn't declared as XML.
+     * @return true if this message has a first part declared as text/xml, which has some content;
+     *         false if this message has no first part or its first part isn't declared as XML or has a length of 0.
      * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      */
     public boolean isXml() throws IOException {
@@ -212,7 +214,16 @@ public final class Message {
         if (!mimeKnob.getFirstPart().getContentType().isXml())
             return false;
 
-        // It's declared as XML.  Create the XML knob while we are here (won't actually try to parse yet)
+        // It's declared as XML, check that there is some content
+        HttpRequestKnob knob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
+        if (knob != null) {
+            int length = knob.getIntHeader(HttpConstants.HEADER_CONTENT_LENGTH);
+            if (length == 0) {
+                return false;
+            }
+        }
+
+        // Create the XML knob while we are here (won't actually try to parse yet)
         try {
             getXmlKnob();
             return true;

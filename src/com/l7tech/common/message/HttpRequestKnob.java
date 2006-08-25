@@ -50,6 +50,12 @@ public interface HttpRequestKnob extends TcpKnob {
 
     /**
      * @param name the name of the header whose value should be retrieved. Must not be null.
+     * @return the value of the specified header, expressed as a int, -1 if the request doesn't have a header of this name or it cannot be parsed
+     */
+    public int getIntHeader(String name);
+
+    /**
+     * @param name the name of the header whose value should be retrieved. Must not be null.
      * @return the first value of the specified header, or null if the requested header was not present.
      * @throws IOException if the header is multivalued
      */
