@@ -55,10 +55,14 @@ public class PolicyDownloader {
         final X509Certificate serverCert = ssg.getServerCertificateAlways();
 
         // Try anonymous download first
+        boolean hadClientCert = false;
         try {
-            if (useSsl && ssg.getClientCertificate() != null)
+            if (useSsl && ssg.getClientCertificate() != null) {
                 log.info("Trying SSL-with-client-cert policy download from " + ssg);
-            else
+                ssg.getClientCertificatePrivateKey();
+                ssg.getSslContext();
+                hadClientCert = true;
+            } else
                 log.info("Trying anonymous policy download from " + ssg);
             return PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg.getRuntime().getHttpClient(),
                                                                           ssg,
@@ -79,21 +83,39 @@ public class PolicyDownloader {
             try {
                 Policy policy = null;
                 if (ssg.isFederatedGateway()) {
-                    // Federated SSG -- use a SAML token for authentication.
+                    // Federated SSG -- use X.509 or a SAML token for authentication.
+                    boolean useX509 = false; // true = x.509; false = use saml holder-of-key
                     log.info("Trying SAML-authenticated policy download from Federated Gateway " + ssg);
                     PrivateKey key = null;
                     if (ssg.getTrustedGateway() != null) {
                         request.prepareClientCertificate(); // TODO make client cert work with third-part WS-Trust
                         key = ssg.getClientCertificatePrivateKey();
+
+                        // If we didn't have a client cert when we tried the initial SSL download, try again
+                        // now that we have one (Bug #2540)
+                        if (useSsl && !hadClientCert) {
+                            useX509 = true;
+                        }
                     }
-                    SamlAssertion saml = request.getOrCreateSamlHolderOfKeyAssertion(0);
-                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg.getRuntime().getHttpClient(),
-                                                                                 ssg,
-                                                                                 serviceId,
-                                                                                 serverCert,
-                                                                                 useSsl || key == null,
-                                                                                 saml,
-                                                                                 key);
+
+                    if (useX509) {
+                        // Retry once with SSL, now that we just got a client cert
+                        hadClientCert = true;
+                        policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg.getRuntime().getHttpClient(),
+                                                                                        ssg,
+                                                                                        serviceId,
+                                                                                        serverCert,
+                                                                                        true);
+                    } else {
+                        SamlAssertion saml = request.getOrCreateSamlHolderOfKeyAssertion(0);
+                        policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg.getRuntime().getHttpClient(),
+                                                                                     ssg,
+                                                                                     serviceId,
+                                                                                     serverCert,
+                                                                                     useSsl || key == null,
+                                                                                     saml,
+                                                                                     key);
+                    }
                 } else if (ssg.getClientCertificate() != null) {
                     // Trusted SSG, but with a client cert -- use WSS signature for authentication.
                     log.info("Trying WSS-signature-authenticated policy download from Trusted Gateway " + ssg);
