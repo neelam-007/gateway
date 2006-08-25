@@ -5,17 +5,12 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
+import org.springframework.remoting.RemoteAccessException;
 
 import java.net.SocketException;
-import java.rmi.RemoteException;
-import java.rmi.NoSuchObjectException;
-import java.rmi.UnknownHostException;
-import java.rmi.ConnectIOException;
-import java.rmi.ConnectException;
-import java.util.logging.Level;
+import java.rmi.*;
 import java.security.AccessControlException;
-
-import org.springframework.remoting.RemoteAccessException;
+import java.util.logging.Level;
 
 /**
  * This is now more of a "remoting" error handler, not just RMI.
@@ -38,6 +33,7 @@ public class RmiErrorHandler implements ErrorHandler {
         final RemoteException rex = (RemoteException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
         final RemoteAccessException raex = (RemoteAccessException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
 
+        final MainWindow mainWindow = getMainWindow();
         if (throwable instanceof SocketException ||
             rex instanceof ConnectException ||
             rex instanceof ConnectIOException ||
@@ -46,7 +42,7 @@ public class RmiErrorHandler implements ErrorHandler {
             throwable instanceof AccessControlException) {
             // prevent error cascade during repaint if it's a network problem
             e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
-            getMainWindow().disconnectFromGateway();
+            if (mainWindow != null) mainWindow.disconnectFromGateway();
         }
 
         if (throwable instanceof RemoteException ||
@@ -58,7 +54,8 @@ public class RmiErrorHandler implements ErrorHandler {
             e.getLogger().log(Level.SEVERE, message, t);
             Level level = Level.SEVERE;
             if (rex instanceof NoSuchObjectException ||
-                throwable instanceof AccessControlException) {
+                throwable instanceof AccessControlException)
+            {
                 message = "SecureSpan Gateway restarted, please log in again.";
                 level = Level.WARNING;
                 t = null;
@@ -69,7 +66,8 @@ public class RmiErrorHandler implements ErrorHandler {
                 level = Level.WARNING;
                 t = null;
             }
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway error", message, t, level);
+            if (mainWindow != null) mainWindow.repaint();
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(mainWindow, "SecureSpan Manager - Gateway error", message, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);
