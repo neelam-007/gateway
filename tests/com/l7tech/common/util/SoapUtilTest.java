@@ -101,6 +101,7 @@ public class SoapUtilTest extends TestCase {
             public String getRequestUrl() {return null;}
             public URL getRequestURL() {return null;}
             public long getDateHeader(String name) throws ParseException {return 0;}
+            public int getIntHeader(String name){return -1;}
             public String[] getHeaderNames() {return new String[0];}
             public String[] getHeaderValues(String name) {return new String[0];}
             public X509Certificate[] getClientCertificate() throws IOException {return new X509Certificate[0];}
