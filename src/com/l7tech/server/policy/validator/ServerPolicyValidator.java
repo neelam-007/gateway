@@ -78,6 +78,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         }
     }
 
+    @SuppressWarnings(value = "fallthrough")
     private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap, AssertionLicense assertionLicense) {
         if (a instanceof IdentityAssertion) {
             final IdentityAssertion identityAssertion = (IdentityAssertion)a;

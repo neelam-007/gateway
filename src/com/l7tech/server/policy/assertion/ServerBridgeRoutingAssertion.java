@@ -349,10 +349,16 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
             }
 
+            /**
+             * @deprecated
+             */
             public void setKeyStorePath(String keyStorePath) {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
             }
 
+            /**
+             * @deprecated
+             */
             public synchronized String getTrustStorePath() {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a trust store path");
             }
