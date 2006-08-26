@@ -183,7 +183,7 @@ public abstract class SsgKeyStoreManager {
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user canceled the password prompt
      */
     public abstract PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication)
-            throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException;
+            throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, HttpChallengeRequiredException;
 
     /**
      * Very quickly check if a client certificate is available for the specified SSG.

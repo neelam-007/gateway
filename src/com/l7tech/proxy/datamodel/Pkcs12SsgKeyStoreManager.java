@@ -181,8 +181,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
     }
 
     public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication)
-            throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
-    {
+            throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, HttpChallengeRequiredException {
         if (Thread.holdsLock(ssg))
             throw new IllegalStateException("Must not hold SSG monitor when calling for private key");
 
@@ -235,9 +234,9 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         // the Ssg monitor (it will deadlock)
         if (gotKey == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentialsWithReasonHint(ssg,
-                                                                              CredentialManager.ReasonHint.PRIVATE_KEY,
-                                                                              false,
-                                                                              false);
+                                                                                      CredentialManager.ReasonHint.PRIVATE_KEY,
+                                                                                      false,
+                                                                                      false);
         }
 
         synchronized (ssg) {

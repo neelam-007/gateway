@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.ssl.SslPeer;
 
 import java.net.PasswordAuthentication;
@@ -43,7 +44,7 @@ public abstract class CredentialManager {
      * @return the credentials for this Ssg, or null if none are configured
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
-    public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException;
+    public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException, HttpChallengeRequiredException;
 
     /**
      * Same as getCredentialsForTrustedSsg(), but can provide a hint to the user about what the credentials are to be
@@ -64,7 +65,7 @@ public abstract class CredentialManager {
                                                                         ReasonHint hint,
                                                                         boolean disregardExisting,
                                                                         boolean reportBadPassword)
-            throws OperationCanceledException;
+            throws OperationCanceledException, HttpChallengeRequiredException;
 
     /**
      * Get replacement credentials for this SSG.  This method will always prompt the user for
@@ -77,7 +78,7 @@ public abstract class CredentialManager {
      * @return the new credentials for this Ssg.  Never null.
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
-    public abstract PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException;
+    public abstract PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException, HttpChallengeRequiredException;
 
     /**
      * Unobtrusively notify that a lengthy operation is now in progress.

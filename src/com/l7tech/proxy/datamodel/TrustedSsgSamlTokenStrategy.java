@@ -14,10 +14,7 @@ import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 
 import java.io.IOException;
@@ -46,8 +43,7 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
     protected SamlAssertion acquireSamlAssertion(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException,
-            KeyStoreCorruptException, BadCredentialsException, IOException
-    {
+            KeyStoreCorruptException, BadCredentialsException, IOException, HttpChallengeRequiredException {
         log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         SamlAssertion s;
         // TODO extract the strategies for getting tokenServer client cert, private key, and server cert

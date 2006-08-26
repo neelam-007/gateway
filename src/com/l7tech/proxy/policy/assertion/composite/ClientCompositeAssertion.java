@@ -6,16 +6,23 @@
 
 package com.l7tech.proxy.policy.assertion.composite;
 
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import org.xml.sax.SAXException;
 
-import java.util.List;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author alex
@@ -28,6 +35,44 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
     public ClientCompositeAssertion() {
         super();
     }
+
+    /**
+     * Call decorateRequest() on the specified client assertion, handling any HttpHandshakeRequiredException
+     * it may throw, turning it into AssertionStatus.FAILED with the "authentication missing" flag set.
+     *
+     * @param assertion  the assertion on which to call decorateRequest().   Must not be null.
+     * @param context    the context to use for the call.  Must not be null.
+     * @return the assertion status.
+     */
+    protected final AssertionStatus decorateRequest(ClientAssertion assertion, PolicyApplicationContext context)
+            throws ConfigurationException, InvalidDocumentFormatException, OperationCanceledException, PolicyAssertionException, GeneralSecurityException, IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException, BadCredentialsException, SAXException
+    {
+        try {
+            return assertion.decorateRequest(context);
+        } catch (HttpChallengeRequiredException e) {
+            context.setAuthenticationMissing();
+            return AssertionStatus.FAILED;
+        }
+    }
+
+    /**
+     * Call unDecorateReply() on the specified client assertion.  This method currently takes no additional action;
+     * it is just here for symmetry with
+     * {@link #decorateRequest(com.l7tech.proxy.policy.assertion.ClientAssertion,
+     *                         com.l7tech.proxy.message.PolicyApplicationContext)}, and in case
+     * customization is required in the future.
+     *
+     * @param assertion  the assertion on which to call unDecorateReply().   Must not be null.
+     * @param context    the context to use for the call.  Must not be null.
+     * @return the assertion status.
+     */
+    protected final AssertionStatus unDecorateReply(ClientAssertion assertion, PolicyApplicationContext context)
+            throws InvalidDocumentFormatException, OperationCanceledException, PolicyAssertionException, GeneralSecurityException, IOException, ResponseValidationException, KeyStoreCorruptException, BadCredentialsException, SAXException
+    {
+        return assertion.unDecorateReply(context);
+    }
+
+
 
     public ClientCompositeAssertion( CompositeAssertion composite ) throws PolicyAssertionException {
         Assertion child;

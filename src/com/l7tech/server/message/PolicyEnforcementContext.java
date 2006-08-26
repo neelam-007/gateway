@@ -59,7 +59,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
     private SoapFaultLevel faultlevel = null;
-    private boolean isAuthenticationMissing = false;
     private boolean isRequestPolicyViolated = false;
     private boolean isRequestClaimingWrongPolicyVersion = false;
     private PublishedService service;
@@ -230,21 +229,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
         routingResultListener.removeListener(listener);
     }
 
-    /**
-     * Check if some authentication credentials that were expected in the request were not found.
-     * This implies {@link #setRequestPolicyViolated}, as well.
-     * @return true if the policy expected credentials, but they weren't present
-     */
-    public boolean isAuthenticationMissing() {
-        return isAuthenticationMissing;
-    }
-
-    /**
-     * Report that some authentication credentials that were expected in the request were not found.
-     * This implies requestPolicyViolated, as well.
-     */
     public void setAuthenticationMissing() {
-        isAuthenticationMissing = true;
+        super.setAuthenticationMissing();
         setRequestPolicyViolated();
     }
 

@@ -20,6 +20,7 @@ import com.l7tech.common.util.DateTranslator;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.ssl.*;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.collections.LRUMap;
@@ -84,7 +85,7 @@ public class SsgRuntime {
     private Map tokenStrategiesByType;
     private Map senderVouchesTokenStrategiesByUser;
     private SimpleHttpClient simpleHttpClient = null;
-    private CredentialManager credentialManager = Managers.getCredentialManager();
+    private CredentialManager credentialManager = null;
     private SsgKeyStoreManager ssgKeyStoreManager;
     private String policyServiceFile = SecureSpanConstants.POLICY_SERVICE_FILE;
 
@@ -760,6 +761,28 @@ public class SsgRuntime {
      * @return the Credential Manager to use for this Ssg.  Never null.
      */
     public CredentialManager getCredentialManager() {
+        if (credentialManager == null) {
+            if (ssg.isChainCredentialsFromClient()) {
+                // Use special credential manager that triggers HTTP challenge back to the client
+                // any time (new) credentials are needed
+                credentialManager = new DelegatingCredentialManager(Managers.getCredentialManager()) {
+                    public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws HttpChallengeRequiredException {
+                        throw new HttpChallengeRequiredException();
+                    }
+
+                    public PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg, ReasonHint hint, boolean disregardExisting, boolean reportBadPassword) throws HttpChallengeRequiredException {
+                        throw new HttpChallengeRequiredException();
+                    }
+
+                    public PasswordAuthentication getCredentials(Ssg ssg) throws HttpChallengeRequiredException {
+                        throw new HttpChallengeRequiredException();
+                    }
+                };
+            } else {
+                credentialManager = Managers.getCredentialManager();
+            }
+        }
+
         return credentialManager;
     }
 

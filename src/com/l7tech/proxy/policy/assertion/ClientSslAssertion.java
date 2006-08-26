@@ -29,8 +29,8 @@ public class ClientSslAssertion extends ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
-      throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException,
-             ClientCertificateException, BadCredentialsException, PolicyRetryableException {
+            throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException,
+            ClientCertificateException, BadCredentialsException, PolicyRetryableException, HttpChallengeRequiredException {
         if (data.getOption() == SslAssertion.FORBIDDEN)
             context.setSslForbidden(true);
         if (data.getOption() == SslAssertion.REQUIRED) {

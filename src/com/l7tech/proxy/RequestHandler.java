@@ -206,11 +206,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 }
             }
 
-            if (reqUsername == null || reqPassword == null) {
-                sendChallenge(httpResponse);
-                log.info("Send HTTP Basic auth challenge back to the client");
-                return;
-            }
+            // We no longer send a challenge at this point -- instead  (Bug #2689)
         }
 
         PolicyApplicationContext context = null;
@@ -237,7 +233,7 @@ public class RequestHandler extends AbstractHttpHandler {
                                                        pak,
                                                        originalUrl);
 
-                if (ssg.isChainCredentialsFromClient())
+                if (ssg.isChainCredentialsFromClient() && reqUsername != null && reqPassword != null)
                     context.setRequestCredentials(new LoginCredentials(reqUsername,
                             reqPassword.toCharArray(),
                             CredentialFormat.CLEARTEXT,

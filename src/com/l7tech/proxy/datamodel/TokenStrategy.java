@@ -43,7 +43,7 @@ public interface TokenStrategy {
      * <p>
      * @return a SecurityToken or throws an exception. Never null.
      */
-    SecurityToken getOrCreate(Ssg ssg) throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException;
+    SecurityToken getOrCreate(Ssg ssg) throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, HttpChallengeRequiredException;
 
     /**
      * Return a SecurityToken if it is immediately available, or null if it is not.

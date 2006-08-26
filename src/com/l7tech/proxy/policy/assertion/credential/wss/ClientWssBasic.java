@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
@@ -43,11 +44,10 @@ public class ClientWssBasic extends ClientWssCredentialSource {
      * Decorate the xml soap message with a WSS header containing the username and password.
      *
      * @param context
-     * @return
+     * @return the result of running the decorateRequest() event through the policy.  Never null.
      */
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
-            throws OperationCanceledException, IOException, SAXException
-    {
+            throws OperationCanceledException, IOException, SAXException, HttpChallengeRequiredException {
         if (context.getSsg().isFederatedGateway()) {
             log.log(Level.INFO, "Plaintext passwords not permitted with Federated Gateway.  Assertion therefore fails.");
             return AssertionStatus.FAILED;

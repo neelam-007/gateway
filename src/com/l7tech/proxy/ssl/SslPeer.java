@@ -8,6 +8,7 @@ package com.l7tech.proxy.ssl;
 
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -26,7 +27,7 @@ public interface SslPeer extends SslContextHaver {
     X509Certificate getClientCertificate();
 
     /** @return the private key for the client certificate to present during the SSL handhsake, or null if not known. */
-    PrivateKey getClientCertificatePrivateKey() throws OperationCanceledException, BadCredentialsException;
+    PrivateKey getClientCertificatePrivateKey() throws OperationCanceledException, BadCredentialsException, HttpChallengeRequiredException;
 
     /** @return the hostname to expect of the SSL peer during the SSL handshake. */
     String getHostname();

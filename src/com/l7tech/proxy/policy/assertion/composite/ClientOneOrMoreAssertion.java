@@ -40,7 +40,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            result = assertion.decorateRequest(context);
+            result = decorateRequest(assertion, context);
             if (result == AssertionStatus.NONE)
                 return result;
         }
@@ -57,7 +57,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            result = assertion.unDecorateReply(context);
+            result = unDecorateReply(assertion, context);
             if (result == AssertionStatus.NONE)
                 return result;
         }

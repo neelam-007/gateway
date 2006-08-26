@@ -40,7 +40,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            AssertionStatus thisResult = assertion.decorateRequest(context);
+            AssertionStatus thisResult = decorateRequest(assertion, context);
             if (thisResult == AssertionStatus.NONE)
                 return thisResult;
             result = thisResult;
@@ -58,7 +58,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            AssertionStatus thisResult = assertion.unDecorateReply(context);
+            AssertionStatus thisResult = unDecorateReply(assertion, context);
             if (thisResult == AssertionStatus.NONE)
                 return thisResult;
             result = thisResult;

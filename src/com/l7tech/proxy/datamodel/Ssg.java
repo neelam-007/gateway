@@ -4,10 +4,7 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 
@@ -747,7 +744,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * Get the private key.  Might take a long time if it needs to prompt for a password.
      * @return the private key, or null if we don't yet have a client certificate.
      */
-    public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException {
+    public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException, HttpChallengeRequiredException, OperationCanceledException {
         return getClientCertificatePrivateKey(null);
     }
 
@@ -756,7 +753,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * @param passwordAuthentication OPTIONAL credentials to use (may be null)
      * @return the private key, or null if we don't yet have a client certificate.
      */
-    public PrivateKey getClientCertificatePrivateKey(PasswordAuthentication passwordAuthentication) throws BadCredentialsException {
+    public PrivateKey getClientCertificatePrivateKey(PasswordAuthentication passwordAuthentication) throws BadCredentialsException, HttpChallengeRequiredException, OperationCanceledException {
         PasswordAuthentication pa = passwordAuthentication;
         for (;;) {
             try {
@@ -772,8 +769,6 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
                     throw new RuntimeException(msg, e1); // cancel it
                 }
                 /* FALLTHROUGH and retry */
-            } catch (OperationCanceledException e) {
-                throw new RuntimeException(e);
             }
         }
     }

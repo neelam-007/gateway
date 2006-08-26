@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
@@ -37,8 +38,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, IOException, SAXException,
-            PolicyAssertionException, ServerCertificateUntrustedException
-    {
+            PolicyAssertionException, ServerCertificateUntrustedException, HttpChallengeRequiredException {
         if (context.getSsg().isFederatedGateway()) {
             log.log(Level.INFO, "Plaintext passwords not permitted with Federated Gateway.  Assertion therefore fails.");
             return AssertionStatus.FAILED;

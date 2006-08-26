@@ -14,10 +14,7 @@ import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 
@@ -335,7 +332,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel) || ssg.isFederatedGateway())
             throw new IllegalStateException("Not supported for Federated Gateway");
 
-        PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
+        PasswordAuthentication creds = null;
+        try {
+            creds = Managers.getCredentialManager().getCredentials(ssg);
+        } catch (HttpChallengeRequiredException e) {
+            throw new RuntimeException(e); // can't happen, it's a GuiCredentialManager (even if ssg has pass-through auth enabled)
+        }
 
         // make sure that the host name is set
         String newHost = fieldServerAddress.getText();

@@ -333,11 +333,11 @@ public class PolicyApplicationContext extends ProcessingContext {
         policySettings.messageId = newId;
     }
 
-    public String getUsername() throws OperationCanceledException {
+    public String getUsername() throws OperationCanceledException, HttpChallengeRequiredException {
         return getCredentialsForTrustedSsg().getUserName();
     }
 
-    public char[] getPassword() throws OperationCanceledException {
+    public char[] getPassword() throws OperationCanceledException, HttpChallengeRequiredException {
         return getCredentialsForTrustedSsg().getPassword();
     }
 
@@ -365,8 +365,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      *                                    the logon dialog.
      */
     public PasswordAuthentication getFederatedCredentials()
-      throws OperationCanceledException
-    {
+            throws OperationCanceledException, HttpChallengeRequiredException {
         if (!ssg.isFederatedGateway())
             throw new OperationCanceledException("Trusted Gateway does not have any Federated credentials");
         Ssg trusted = ssg.getTrustedGateway();
@@ -420,13 +419,29 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @throws OperationCanceledException if credentials are not available, and the CredentialManager
      *                                    was unable to get some, possibly because the user canceled
      *                                    the logon dialog.
+     * @throws UnsupportedOperationException if this is a federated SSG
      */
-    public PasswordAuthentication getCredentialsForTrustedSsg() throws OperationCanceledException {
+    public PasswordAuthentication getCredentialsForTrustedSsg() throws OperationCanceledException, HttpChallengeRequiredException {
         if (ssg.isFederatedGateway())
-            throw new OperationCanceledException("Not permitted to send real password to Federated Gateway.");
+            throw new UnsupportedOperationException("Not permitted to send real password to Federated Gateway.");
         PasswordAuthentication pw = getPasswordAuthentication();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
+        return pw;
+    }
+
+    /**
+     * Get the currently-cached credentials for this request, or null if none are currently known.
+     * This will NOT prompt the user for credentials, and will NOT (by itself) trigger an HTTP challenge.
+     * It will simply return whatever credentials are already on hand.
+     *
+     * @return current credentials, or null if there aren't any.
+     * @throws UnsupportedOperationException if this is a federated SSG
+     */
+    public PasswordAuthentication getCachedCredentialsForTrustedSsg() {
+        if (ssg.isFederatedGateway())
+            throw new UnsupportedOperationException("Not permitted to send real password to Federated Gateway.");
+        PasswordAuthentication pw = getPasswordAuthentication();
         return pw;
     }
 
@@ -438,9 +453,8 @@ public class PolicyApplicationContext extends ProcessingContext {
      * will be applied for through the Trusted gateway.
      */
     public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
-      GeneralSecurityException, ClientCertificateException,
-      ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException
-    {
+            GeneralSecurityException, ClientCertificateException,
+            ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException, HttpChallengeRequiredException {
         try {
             if (ssg.getClientCertificate() == null) {
                 logger.info("applying for client certificate");
@@ -495,8 +509,7 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     private String establishSecureConversationSession()
             throws OperationCanceledException, GeneralSecurityException,
-            BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException
-    {
+            BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, HttpChallengeRequiredException {
         Ssg ssg = getSsg();
         TokenServiceClient.SecureConversationSession s;
 
@@ -600,7 +613,8 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public String getOrCreateSecureConversationId()
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException {
+            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException,
+            HttpChallengeRequiredException {
         checkExpiredSecureConversationSession();
         if (secureConversationId != null)
             return secureConversationId;
@@ -656,8 +670,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public SamlAssertion getOrCreateSamlHolderOfKeyAssertion(int version)
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
-            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException
-    {
+            ClientCertificateException, BadCredentialsException, PolicyRetryableException, ConfigurationException, HttpChallengeRequiredException {
         TokenStrategy samlStrat;
 
         if (version == 1) {
@@ -683,9 +696,8 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public SamlAssertion getOrCreateSamlSenderVouchesAssertion(int version)
             throws ConfigurationException, OperationCanceledException, GeneralSecurityException,
-                   IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
-                   PolicyRetryableException
-    {
+            IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
+            PolicyRetryableException, HttpChallengeRequiredException {
         LoginCredentials creds = getRequestCredentials();
         if (creds == null) {
             if (ssg.isChainCredentialsFromClient())
@@ -760,9 +772,12 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @return the ticket
      * @throws GeneralSecurityException is a ticket could not be obtained.
      */
-    public KerberosServiceTicket getKerberosServiceTicket() throws GeneralSecurityException, OperationCanceledException, HttpChallengeRequiredException {
+    public KerberosServiceTicket getKerberosServiceTicket() throws
+            GeneralSecurityException, OperationCanceledException, HttpChallengeRequiredException
+    {
         final int flagCanceled = 0;
-        final boolean[] flags = new boolean[1];
+        final int flagChallenge = 1;
+        final boolean[] flags = new boolean[2];
         try {
             // determine the kerberos service/host
             String kerberosName = ssg.getKerberosName();
@@ -795,10 +810,16 @@ public class PolicyApplicationContext extends ProcessingContext {
                         }
                         catch(OperationCanceledException oce) {
                             flags[flagCanceled] = true;
+                        } catch (HttpChallengeRequiredException e) {
+                            flags[flagChallenge] = true;
                         }
                     }
                 }
             });
+
+            if (flags[flagChallenge])
+                throw new HttpChallengeRequiredException();
+
             KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getGSSServiceName(serviceName,hostName));
 
             ssg.getRuntime().kerberosTicket(kst);
@@ -806,7 +827,10 @@ public class PolicyApplicationContext extends ProcessingContext {
             return kst;
         }
         catch(KerberosException ke) {
-            if(flags[flagCanceled]) throw new OperationCanceledException("User did not supply credentials.");
+            if(flags[flagCanceled])
+                throw new OperationCanceledException("User did not supply credentials.");
+            if (flags[flagChallenge])
+                throw new HttpChallengeRequiredException();
             if(ExceptionUtils.causedBy(ke, LoginException.class)) {
                 getNewCredentials();
                 return getKerberosServiceTicket();

@@ -24,6 +24,7 @@ public abstract class ProcessingContext {
 
     private LoginCredentials credentials;
     private final List runOnClose = new ArrayList();
+    private boolean isAuthenticationMissing = false;
 
     /**
      * Create a processing context holding the specified request and response.
@@ -95,5 +96,23 @@ public abstract class ProcessingContext {
                 }
             }
         }
+    }
+
+    /**
+     * Check if some authentication credentials that were expected in the request were not found.
+     * (For PolicyEnforcementContext, this implies PolicyViolated, as well.)
+     *
+     * @return true if the policy expected credentials, but they weren't present
+     */
+    public boolean isAuthenticationMissing() {
+        return isAuthenticationMissing;
+    }
+
+    /**
+     * Report that some authentication credentials that were expected in the request were not found.
+     * This implies requestPolicyViolated, as well.
+     */
+    public void setAuthenticationMissing() {
+        isAuthenticationMissing = true;
     }
 }

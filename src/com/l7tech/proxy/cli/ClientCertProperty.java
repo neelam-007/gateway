@@ -9,6 +9,8 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 
 import java.io.PrintStream;
 import java.io.IOException;
@@ -66,6 +68,10 @@ class ClientCertProperty extends NounProperty {
                 } catch (RuntimeException e) {
                     if (!ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class))
                         throw e;
+                    // Ok, fair enough -- just checking
+                } catch (OperationCanceledException e) {
+                    // Ok, fair enough -- just checking
+                } catch (HttpChallengeRequiredException e) {
                     // Ok, fair enough -- just checking
                 }
 

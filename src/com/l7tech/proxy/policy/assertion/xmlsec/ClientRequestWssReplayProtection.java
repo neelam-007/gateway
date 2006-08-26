@@ -45,7 +45,8 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context)
                     throws OperationCanceledException, GeneralSecurityException,
-                    KeyStoreCorruptException, BadCredentialsException, ClientCertificateException, PolicyRetryableException
+                    KeyStoreCorruptException, BadCredentialsException, ClientCertificateException,
+                    PolicyRetryableException, HttpChallengeRequiredException
             {
                 DecorationRequirements wssReqs = context.getDefaultWssRequirements();
 

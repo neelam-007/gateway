@@ -194,7 +194,7 @@ public class MessageProcessor {
         }
     }
 
-    private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException {
+    private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, HttpChallengeRequiredException {
         if (context.getSsg().isGeneric()) {
             // We won't try to handle SSL exceptions for generic services
             throw new SSLException(e);
@@ -308,7 +308,7 @@ public class MessageProcessor {
      *                                    this shouldn't happen unless the user clears the credentials
      */
     private boolean securePasswordPing(PolicyApplicationContext context)
-      throws IOException, OperationCanceledException {
+            throws IOException, OperationCanceledException, HttpChallengeRequiredException {
         Ssg ssg = context.getSsg();
         if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
@@ -413,6 +413,19 @@ public class MessageProcessor {
                 throw e;
             }
             if (result != AssertionStatus.NONE) {
+                if (context.isAuthenticationMissing()) {
+                    if (!context.getSsg().isFederatedGateway()) {
+                        // Prevent infinite challenge if we already have some credentials
+                        PasswordAuthentication pw = context.getCachedCredentialsForTrustedSsg();
+                        if (pw != null && pw.getUserName() != null && pw.getPassword() != null && pw.getUserName().length() >= 1) {
+                            log.warning("Policy evaluated with an error: " + result + "; aborting");
+                            throw new ConfigurationException("Unable to decorate request; policy evaluated with error: " + result);
+                        }
+                    }
+                    context.getCredentialsForTrustedSsg();
+                    throw new PolicyRetryableException("Retrying now that we've got credentials");
+                }
+
                 log.warning("Policy evaluated with an error: " + result + "; aborting");
                 throw new ConfigurationException("Unable to decorate request; policy evaluated with error: " + result);
             }
@@ -934,6 +947,9 @@ public class MessageProcessor {
             log.log(Level.WARNING, "Couldn't get new client certificate", e);
         } catch (CertificateAlreadyIssuedException e) {
             log.log(Level.WARNING, "Couldn't get new client certificate", e);
+        } catch (HttpChallengeRequiredException e) {
+            log.log(Level.WARNING, "Couldn't get new client certificate", e);
+            // Fallthrough, they will get the challenge next time something needs the password
         }
     }
 
@@ -943,8 +959,7 @@ public class MessageProcessor {
      */
     private int handleCertStatusInvalid(PolicyApplicationContext context, GenericHttpResponse httpResponse)
             throws ConfigurationException, BadCredentialsException, KeyStoreCorruptException,
-                   OperationCanceledException, PolicyRetryableException, ClientCertificateException
-    {
+            OperationCanceledException, PolicyRetryableException, ClientCertificateException, HttpChallengeRequiredException {
         log.info("Gateway response contained a " +
                 SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_INVALID +
                 " header.  Will get new client cert then retry request.");
@@ -1105,8 +1120,7 @@ public class MessageProcessor {
      * @param params   the HTTP request parameters to configure
      */
     private void setAuthenticationAndBufferingState(PolicyApplicationContext context, GenericHttpRequestParams params)
-            throws OperationCanceledException, IOException
-    {
+            throws OperationCanceledException, IOException, HttpChallengeRequiredException {
         // Turn off request buffering unless HTTP digest is required (Bug #1376)
         if (!context.isDigestAuthRequired()) {
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing

@@ -41,8 +41,7 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
 
     public SecurityToken getOrCreate(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException,
-            KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException
-    {
+            KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, HttpChallengeRequiredException {
         synchronized (lock) {
             removeIfExpired();
             if (cachedAssertion != null)
@@ -101,5 +100,5 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
      */
     protected abstract SamlAssertion acquireSamlAssertion(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException,
-            KeyStoreCorruptException, BadCredentialsException, IOException;
+            KeyStoreCorruptException, BadCredentialsException, IOException, HttpChallengeRequiredException;
 }

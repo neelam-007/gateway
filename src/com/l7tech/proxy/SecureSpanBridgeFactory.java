@@ -280,6 +280,10 @@ public class SecureSpanBridgeFactory {
                 return ssg.getClientCertificatePrivateKey();
             } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
                 throw new CausedBadCredentialsException(e);
+            } catch (HttpChallengeRequiredException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (OperationCanceledException e) {
+                throw new CausedBadCredentialsException(e);
             }
         }
 

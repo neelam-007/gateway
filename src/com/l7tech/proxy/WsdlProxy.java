@@ -16,6 +16,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -77,8 +78,7 @@ class WsdlProxy {
      * @throws ServiceNotFoundException     if we got back a 404 from the Wsdl service
      */
     static Wsdl obtainWsdlForService(Ssg ssg, long serviceoid)
-            throws OperationCanceledException, WSDLException, IOException, DownloadException, ServiceNotFoundException
-    {
+            throws OperationCanceledException, WSDLException, IOException, DownloadException, ServiceNotFoundException, HttpChallengeRequiredException {
         try {
             return (Wsdl) doDownload(ssg, serviceoid, new StreamReader() {
                 public Object readStream(InputStream is) throws WSDLException {
@@ -105,8 +105,7 @@ class WsdlProxy {
      * @throws ServiceNotFoundException     if we got back a 404
      */
     static Document obtainWsilForServices(Ssg ssg)
-            throws OperationCanceledException, DownloadException, IOException, SAXException, ServiceNotFoundException
-    {
+            throws OperationCanceledException, DownloadException, IOException, SAXException, ServiceNotFoundException, HttpChallengeRequiredException {
         try {
             return (Document) doDownload(ssg, 0, new StreamReader() {
                 public Object readStream(InputStream is) throws IOException, SAXException {
@@ -120,8 +119,7 @@ class WsdlProxy {
 
     private static Object doDownload(Ssg ssg, long serviceoid, StreamReader sr)
             throws OperationCanceledException, IOException, DownloadException,
-                   WSDLException, SAXException, ServiceNotFoundException
-    {
+            WSDLException, SAXException, ServiceNotFoundException, HttpChallengeRequiredException {
         String file = SecureSpanConstants.WSDL_PROXY_FILE;
         if (serviceoid != 0)
             file += "?serviceoid=" + serviceoid;

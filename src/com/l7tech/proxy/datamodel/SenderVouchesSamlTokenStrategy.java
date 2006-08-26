@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -51,8 +52,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
     protected SamlAssertion acquireSamlAssertion(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException,
-                   BadCredentialsException, IOException
-    {
+            BadCredentialsException, IOException, HttpChallengeRequiredException {
         log.log(Level.INFO, "Creating new SAML sender-vouches assertion vouching for username " + subjectUsername);
 
         PrivateKey privateKey = ssg.getClientCertificatePrivateKey();

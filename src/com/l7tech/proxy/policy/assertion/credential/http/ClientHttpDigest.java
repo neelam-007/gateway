@@ -9,6 +9,7 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
@@ -32,15 +33,15 @@ public class ClientHttpDigest extends ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
-            throws OperationCanceledException
-    {
+            throws OperationCanceledException, HttpChallengeRequiredException {
         if (context.getSsg().isFederatedGateway()) {
             log.info("this is a Federated SSG.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }
-        PasswordAuthentication pw = context.getCredentialsForTrustedSsg();
+        PasswordAuthentication pw = context.getCachedCredentialsForTrustedSsg();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1) {
-            log.info("HttpDigest: Unable to obtain username/password credentials for HTTP digest.  Assertion therefore fails.");
+            log.info("HttpDigest: No username/password credentials available for HTTP digest.  Assertion therefore fails.");
+            context.setAuthenticationMissing();
             return AssertionStatus.FAILED;
         }
         context.setDigestAuthRequired(true);

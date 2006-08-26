@@ -18,10 +18,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.ssl.SslPeer;
@@ -136,7 +133,14 @@ public class SslUtils {
     {
         // fla added to fix #1757
         // preemptively try to get the private key to resolve corrupted key store before initiating the ssl connection
-        ssg.getClientCertificatePrivateKey();
+        try {
+            Managers.getCredentialManager().getCredentials(ssg);
+            ssg.getClientCertificatePrivateKey();
+        } catch (HttpChallengeRequiredException e) {
+            // can't happen
+        } catch (OperationCanceledException e) {
+            return;
+        }
         URL url = ssg.getServerPasswordChangeUrl();
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);

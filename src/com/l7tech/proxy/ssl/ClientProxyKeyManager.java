@@ -8,6 +8,7 @@ package com.l7tech.proxy.ssl;
 
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 
 import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
@@ -37,6 +38,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
             log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
             throw new ClientProxySslException(e);
         } catch (OperationCanceledException e) {
+            log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
+            throw new ClientProxySslException(e);
+        } catch (HttpChallengeRequiredException e) {
             log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
             throw new ClientProxySslException(e);
         }
@@ -88,6 +92,8 @@ public class ClientProxyKeyManager implements X509KeyManager {
             log.log(Level.FINE, "Private key for client cert for Gateway " + peer + " is currently unrecoverable; won't bother to present this cert");
             return null;
         } catch (OperationCanceledException e) {
+            throw new RuntimeException(e);
+        } catch (HttpChallengeRequiredException e) {
             throw new RuntimeException(e);
         }
         log.log(Level.FINE, "No client cert found for this connection to hostname " + hostname);
