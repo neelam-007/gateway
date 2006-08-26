@@ -767,15 +767,15 @@ public class SsgRuntime {
                 // any time (new) credentials are needed
                 credentialManager = new DelegatingCredentialManager(Managers.getCredentialManager()) {
                     public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws HttpChallengeRequiredException {
-                        throw new HttpChallengeRequiredException();
+                        throw new HttpChallengeRequiredException("invalid username or password");
                     }
 
                     public PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg, ReasonHint hint, boolean disregardExisting, boolean reportBadPassword) throws HttpChallengeRequiredException {
-                        throw new HttpChallengeRequiredException();
+                        throw new HttpChallengeRequiredException("username and password required");
                     }
 
                     public PasswordAuthentication getCredentials(Ssg ssg) throws HttpChallengeRequiredException {
-                        throw new HttpChallengeRequiredException();
+                        throw new HttpChallengeRequiredException("username and password required");
                     }
                 };
             } else {

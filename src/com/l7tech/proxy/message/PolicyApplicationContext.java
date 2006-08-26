@@ -18,13 +18,12 @@ import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.wstrust.WsTrustConfig;
 import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -374,8 +373,11 @@ public class PolicyApplicationContext extends ProcessingContext {
             throw new OperationCanceledException("Federated Gateway that uses third-party WS-Trust does not have any Federated credentials");
 
         PasswordAuthentication pw = getPasswordAuthentication();
-        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(trusted);
+            if (pw != null)
+                setCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+        }
         return pw;
     }
 
@@ -401,10 +403,9 @@ public class PolicyApplicationContext extends ProcessingContext {
      * this behaves like gatherCredentials().
      */
     public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
-        if (ssg.isChainCredentialsFromClient())
-            throw new HttpChallengeRequiredException("Invalid user name or password");
         PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
-        setCredentials(new LoginCredentials(pw.getUserName(), pw.getPassword(), CredentialFormat.CLEARTEXT, null));
+        if (pw != null)
+            setCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         return pw;
     }
 
@@ -425,8 +426,11 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (ssg.isFederatedGateway())
             throw new UnsupportedOperationException("Not permitted to send real password to Federated Gateway.");
         PasswordAuthentication pw = getPasswordAuthentication();
-        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
+            if (pw != null)
+                setCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+        }
         return pw;
     }
 
@@ -701,7 +705,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         LoginCredentials creds = getRequestCredentials();
         if (creds == null) {
             if (ssg.isChainCredentialsFromClient())
-                throw new ConfigurationException("Can't create Sender-Vouches without enabling chainCredentialsFromClient for this Gateway account");
+                throw new HttpChallengeRequiredException("username and password required");
 
             PasswordAuthentication pw = ssg.getRuntime().getCredentials();
             creds = LoginCredentials.makePasswordCredentials(pw.getUserName(), null, HttpBasic.class);

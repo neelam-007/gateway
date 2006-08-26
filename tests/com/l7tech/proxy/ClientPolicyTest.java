@@ -17,6 +17,8 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -74,21 +76,25 @@ public class ClientPolicyTest extends TestCase {
 
         ssg.setUsername(null);
         ssg.getRuntime().setCachedPassword("".toCharArray());
+        context.getCredentialsForTrustedSsg();
         result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE != result);
 
         ssg.setUsername("");
+        context.getCredentialsForTrustedSsg();
         result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE != result);
 
         final String USER = "fbunky";
         ssg.setUsername(USER);
+        context.getCredentialsForTrustedSsg();
         result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(context.isBasicAuthRequired());
 
         final String PASS = "s3cr3t";
         ssg.getRuntime().setCachedPassword(PASS.toCharArray());
+        context.getCredentialsForTrustedSsg();
         result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(context.isBasicAuthRequired());
@@ -108,8 +114,11 @@ public class ClientPolicyTest extends TestCase {
     }
 
     private PolicyApplicationContext context;
-    private PolicyApplicationContext makeContext(Ssg ssg,Document env) throws IOException, SAXException {
-        return context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
+    private PolicyApplicationContext makeContext(Ssg ssg,Document env) throws IOException, SAXException, OperationCanceledException, HttpChallengeRequiredException {
+        context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
+        // preheat credentials
+        context.getCredentialsForTrustedSsg();
+        return context;
     }
 
     /** Test a composite policy. */
