@@ -283,6 +283,7 @@ public class RoleManagementDialog extends JDialog {
     private void populateList() {
         try {
             Role[] roles = rbacAdmin.findAllRoles().toArray(new Role[0]);
+            Arrays.sort(roles);
             roleList.setModel(new DefaultComboBoxModel(roles));
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get initial list of Roles", e);
