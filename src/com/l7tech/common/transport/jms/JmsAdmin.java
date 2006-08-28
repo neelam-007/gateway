@@ -16,6 +16,7 @@ import java.rmi.RemoteException;
  * @author alex
  * @version $Revision$
  */
+@Secured
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface JmsAdmin {
     /**
