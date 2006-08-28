@@ -232,7 +232,7 @@ public class JmsQueuesWindow extends JDialog {
             addButton = new JButton("Add");
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(getOwner(), null, null, false);
+                    JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
                     Utilities.centerOnScreen(amew);
                     amew.setVisible(true);
 
@@ -268,7 +268,7 @@ public class JmsQueuesWindow extends JDialog {
                         JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
                         if (i != null) {
                             JmsQueuePropertiesDialog pd =
-                              JmsQueuePropertiesDialog.createInstance(getOwner(), i.getConnection(), i.getEndpoint(), false);
+                              JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);
                             Utilities.centerOnScreen(pd);
                             pd.setVisible(true);
                             if (!pd.isCanceled()) {
