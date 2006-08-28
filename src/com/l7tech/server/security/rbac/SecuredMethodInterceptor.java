@@ -187,8 +187,11 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         }
                     case FIND_ENTITIES:
                         check.operation = READ;
-                        if (Collection.class.isAssignableFrom(method.getReturnType()) ||
-                                method.getReturnType().isArray()) {
+                        Class<?> rtype = method.getReturnType();
+                        if (Collection.class.isAssignableFrom(rtype)) {
+                            check.before = CheckBefore.NONE;
+                            check.after = CheckAfter.COLLECTION;
+                        } else if ((rtype.isArray() && (Entity.class.isAssignableFrom(rtype.getComponentType()) || EntityHeader.class.isAssignableFrom(rtype.getComponentType())))) {
                             check.before = CheckBefore.NONE;
                             check.after = CheckAfter.COLLECTION;
                         } else {
