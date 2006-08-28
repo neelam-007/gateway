@@ -19,7 +19,7 @@ import java.util.Set;
  * </ul>
  * @author alex
  */
-public class Role extends NamedEntityImp {
+public class Role extends NamedEntityImp implements Comparable<Role> {
     public static final int ADMIN_ROLE_OID = -3;
 
     private Set<Permission> permissions = new HashSet<Permission>();
@@ -76,5 +76,12 @@ public class Role extends NamedEntityImp {
 
     public String toString() {
         return _name;
+    }
+
+    public int compareTo(Role that) {
+        if (this.equals(that))
+            return 0;
+        
+        return this.getName().compareTo(that.getName());
     }
 }
