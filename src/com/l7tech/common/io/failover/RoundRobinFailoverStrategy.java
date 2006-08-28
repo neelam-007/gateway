@@ -9,6 +9,8 @@ package com.l7tech.common.io.failover;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -17,9 +19,10 @@ import java.util.Map;
  * This implementation is unsynchronized; see {@link AbstractFailoverStrategy#makeSynchronized}.
  */
 public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
+    private static final Logger logger = Logger.getLogger(RoundRobinFailoverStrategy.class.getName());
     private static final long DEFAULT_PROBE_MILLIS = 5 * 60 * 1000; // Retry failed server every 5 min by default
 
-    private long probeTime = DEFAULT_PROBE_MILLIS;
+    private long probeTime = Long.getLong("com.l7tech.common.io.failover.robin.retryMillis", DEFAULT_PROBE_MILLIS).longValue();
 
     int next = 0;
     LinkedHashMap up = new LinkedHashMap();
@@ -48,8 +51,9 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
                 Map.Entry entry = (Map.Entry)i.next();
                 Object server = entry.getKey();
                 Long probeWhen = (Long)entry.getValue();
-                if (probeWhen != null && probeWhen.longValue() >= now) {
+                if (probeWhen != null && probeWhen.longValue() <= now) {
                     // Probe this server; update time, move to end of list, and return it
+                    if (logger.isLoggable(Level.FINE)) logger.finer("Probing server: " + server);
                     i.remove();
                     down.put(server, new Long(now + probeTime));
                     return server;
@@ -75,12 +79,14 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
     }
 
     public void reportFailure(Object service) {
-        if (up.isEmpty() || up.remove(service) == null) return;
+        if (up.isEmpty() || !up.containsKey(service)) return;
+        up.remove(service);
         down.put(service, new Long(System.currentTimeMillis() + probeTime));
     }
 
     public void reportSuccess(Object service) {
-        if (down.isEmpty() || down.remove(service) == null) return;
+        if (down.isEmpty() || !down.containsKey(service)) return;
+        down.remove(service);
         up.put(service, null);
     }
 

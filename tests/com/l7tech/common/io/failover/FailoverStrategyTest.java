@@ -20,6 +20,10 @@ import java.util.logging.Logger;
 public class FailoverStrategyTest extends TestCase {
     private static Logger log = Logger.getLogger(FailoverStrategyTest.class.getName());
 
+    static {
+        System.setProperty("com.l7tech.common.io.failover.robin.retryMillis", "200");
+    }
+
     public FailoverStrategyTest(String name) {
         super(name);
     }
@@ -81,6 +85,9 @@ public class FailoverStrategyTest extends TestCase {
         s.reportFailure(SA);
         assertEquals(SC, s.selectService());
         s.reportSuccess(SC);
+        Thread.sleep(300);
+        assertEquals(SB, s.selectService());
+        s.reportSuccess(SB);
     }
 
     public void testRandomFailoverStrategy() throws Exception {
