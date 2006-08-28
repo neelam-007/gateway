@@ -143,24 +143,32 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     protected String getData(List<String> promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
         if (promptLines == null) return "";
-        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), allowedEntries);
+        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), allowedEntries, null);
     }
 
     protected String getData(List<String> promptLines, String defaultValue) throws IOException, WizardNavigationException {
         if (promptLines == null) return "";
-        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), new String[]{});
+        return consoleWizardUtils.getData(promptLines.toArray(new String[]{}), defaultValue, isShowNavigation(), new String[]{}, null);
+    }
+
+    protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
     }
 
     protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries);
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, null);
+    }
+
+    protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
     }
 
     protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries);
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, null);
     }
 
     protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), new String[]{});
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), new String[]{}, null);
     }
 
     protected void printText(List<String> textToPrint) {

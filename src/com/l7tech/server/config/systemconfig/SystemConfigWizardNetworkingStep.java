@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 /**
@@ -24,12 +25,22 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private static final String PROMPT_DYNAMIC_NIC = NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO + " - all configuration is determined by the DHCP server" + getEolChar();
     private static final String TITLE = "Configure Network Interfaces";
 
+    private static final String NETBEANNAME = "Network Interface Configuration";
+
+    private static final String HOSTNAME_PROMPT = "Enter the hostname for this SSG: ";
+    private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
+    private static final String MISSING_NETMASK_MSG = "Missing Netmask.";
+    private static final String MISSING_GATEWAY_MSG = "Missing Gateway.";
+    private static final String CONFIGURE_MORE_INTERFACES_PROMPT = "Would you like to configure another interface? [no]: ";
+    private static final String NEW_INTERFACE_NAME_PROMPT = "Please enter the name of the new interface (ex: eth5): ";
+    private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface? [no]";
+
     private NetworkingConfigurationBean netBean;
 
     public SystemConfigWizardNetworkingStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
 
-        configBean = new NetworkingConfigurationBean("Network Interface Configuration", "");
+        configBean = new NetworkingConfigurationBean(NETBEANNAME, "");
         configCommand = new NetworkingConfigurationCommand(configBean);
         netBean = (NetworkingConfigurationBean) configBean;
     }
@@ -65,7 +76,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private void doHostnamePrompt() throws IOException, WizardNavigationException {
         String newHostname = getData(
-                new String[] {"Enter the hostname for this SSG: "},
+                new String[] {HOSTNAME_PROMPT},
                 ""
         );
 
@@ -77,7 +88,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         String message = null;
         if (StringUtils.isEmpty(ipAddress))
-            message = "Missing IP Address";
+            message = MISSING_IP_ADDRESS_MSG;
         else if (!isValidIpAddress(ipAddress, false))
             message = ipAddress + "\" is not a valid IP Address";
 
@@ -92,7 +103,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         String message = null;
         if (StringUtils.isEmpty(netMask))
-            message = "Missing Netmask.";
+            message = MISSING_NETMASK_MSG;
         else if (!isValidIpAddress(netMask, true))
             message = netMask + "\" is not a valid netmask ";
 
@@ -107,7 +118,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         String message = null;
         if (StringUtils.isEmpty(gateway))
-            message = "Missing Gateway.";
+            message = MISSING_GATEWAY_MSG;
         else if (!isValidIpAddress(gateway, false))
             message = gateway + "\" is not a valid gateway address";
 
@@ -141,7 +152,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private boolean doRepeatConfiguration() throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-            "Would you like to configure another interface? [no]: ",
+            CONFIGURE_MORE_INTERFACES_PROMPT,
         };
         String doItAgain = getData(prompts, "no");
 
@@ -210,11 +221,11 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private String promptForNewInterfaceName(NetworkingConfigurationBean.NetworkConfig theConfig) throws IOException, WizardNavigationException {
 
         String[] prompts = new String[] {
-            "Please enter the name of the new interface (ex: eth5): ",
+            NEW_INTERFACE_NAME_PROMPT,
         };
 
 
-        return getData(prompts, "");
+        return getData(prompts, "", Pattern.compile("^\\S$"), "*** Please specify an interface name ***");
     }
 
     private String[] getNameServer(String[] currentNameServers, String interfaceName) throws IOException, WizardNavigationException {
@@ -222,7 +233,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         String[] nameServers = null;
 
         String shouldConfigNameServers = getData(
-                new String[]{"Would you like to configure the nameservers for this interface? [no]"},
+                new String[]{CONFIGURE_NAMESERVERS_PROMPT},
                 "no"
         );
 

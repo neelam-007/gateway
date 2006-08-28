@@ -42,14 +42,14 @@ public class ConsoleWizardUtils {
         this.out = out;
     }
 
-    public String getData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntriesPattern) throws IOException, WizardNavigationException {
+    public String getData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntriesPattern, String errorMessage) throws IOException, WizardNavigationException {
         boolean isValidInput = true;
 
         String input = null;
         do {
             isValidInput = true;
             printText(promptLines);
-            input = readLine();
+            input = readLine().trim();
             handleInput(input, isNavAware);
 
             if (StringUtils.isEmpty(input)) {
@@ -61,20 +61,25 @@ public class ConsoleWizardUtils {
                 Matcher matcher = allowedEntriesPattern.matcher(input);
                 isValidInput = matcher.matches();
             }
-            if (!isValidInput) printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+            if (!isValidInput) {
+                if (StringUtils.isEmpty(errorMessage))
+                    printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+                else
+                    printText(errorMessage + "\n");
+            }
         } while (!isValidInput);
 
         return input;
     }
 
-    public String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries) throws IOException, WizardNavigationException {
+    public String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
         boolean isValidInput = true;
 
         String input = null;
         do {
             isValidInput = true;
             printText(promptLines);
-            input = readLine();
+            input = readLine().trim();
             handleInput(input, isNavAware);
 
             if (StringUtils.isEmpty(input)) {
@@ -90,7 +95,13 @@ public class ConsoleWizardUtils {
                 }
                 isValidInput = foundAMatch;
             }
-            if (!isValidInput) printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+            if (!isValidInput) {
+                if (StringUtils.isEmpty(errorMessage))
+                    printText("*** Invalid Selection. Please select one of the options shown. ***\n");
+                else
+                    printText(errorMessage + "\n");
+
+            }
         } while (!isValidInput);
 
         return input;
@@ -180,10 +191,10 @@ public class ConsoleWizardUtils {
         for (int i = 0; i < prompts.length; i++) {
             String prompt = prompts[i];
             if (isNoDefaults) {
-                gotData.put(prompt, getData(new String[]{prompt}, null, isNavAware, (String[])null));
+                gotData.put(prompt, getData(new String[]{prompt}, null, isNavAware, (String[])null, null));
             } else {
                 String defaultValue = defaultValues[i];
-                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, isNavAware, (String[])null));
+                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, isNavAware, (String[])null, null));
             }
         }
 
