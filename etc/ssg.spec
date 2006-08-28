@@ -60,7 +60,6 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(-,gateway,gateway)
-%config(noreplace) /ssg/*/jre/lib/security/java.security
 /ssg/*
 %defattr(775,gateway,gateway)
 %config(noreplace) /ssg/etc/conf/
@@ -159,6 +158,10 @@ echo "Kernel \r on an \m" >>/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
 /sbin/chkconfig --add ssg
+#chown some files that may have been written as root in a previous install so that this, and future rpms can write them
+/bin/chown -Rf gateway.gateway /ssg
+chmod -Rf 775 /ssg/configwizard
+chmod -Rf 775 /ssg/sysconfigwizard
 
 %preun
 # Modifications to handle upgrades properly
