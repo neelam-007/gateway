@@ -251,6 +251,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
             checkLicense();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
+            roleManager.deleteEntitySpecificRole(service);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);

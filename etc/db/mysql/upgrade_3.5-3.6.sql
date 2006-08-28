@@ -176,17 +176,37 @@ CREATE TABLE rbac_predicate_oid (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
--- Create new Administrator role
+-- Create new Administrator role with CRUD on ANY
 INSERT INTO rbac_role VALUES (-3,0,'Administrator');
-
--- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment VALUES (-4, -2, -3, 3);
-
--- Grant all CRUD permissions to admin role
 INSERT INTO rbac_permission VALUES (-5, 0, -3, 'CREATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-6, 0, -3, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
+
+-- Create Operator role with READ on ANY
+INSERT INTO rbac_role VALUES (-9,0,'Operator');
+INSERT INTO rbac_permission VALUES (-10, 0, -9, 'READ', null, 'ANY');
+
+-- Assign Administrator role to existing admin users
+alter table rbac_assignment drop primary key;
+alter table rbac_assignment change objectid objectid bigint(20) not null primary key auto_increment;
+insert into rbac_assignment
+    (role_oid, provider_oid, user_id) 
+    select -3, -2, user_id from internal_user_group where internal_group = 2;
+
+-- Create bogus sentinel value so INSERT ... SELECT doesn't fail
+insert into internal_user_group
+    (objectid, internal_group, provider_oid, user_id)
+    values (-2147483648, 4, -2, -2147483648);
+
+-- Assign Operator role to existing operator users
+insert into rbac_assignment
+    (role_oid, provider_oid, user_id)
+    select -9, -2, user_id from internal_user_group where internal_group = 4;
+
+delete from rbac_assignment where user_id = -2147483648;
+
+alter table rbac_assignment change objectid objectid bigint(20) not null;
 
 --Create Other Predefined roles
 INSERT INTO `rbac_role` VALUES (-200,1,'Manage Internal Users and Groups'),(-300,2,'Publish LDAP Identity Providers'),(-400,1,'Search Users and Groups'),(-500,0,'Publish Webservices'),(-600,1,'Manage Webservices'),(-700,0,'View Audit Records and Logs'),(-800,0,'View Service Metrics'),(-900,0,'Manage Cluster Status'),(-1000,0,'Manage Certificates (truststore)'),(-2000,0,'Manage JMS Connections'),(-3000,0,'Manage Cluster Properties');

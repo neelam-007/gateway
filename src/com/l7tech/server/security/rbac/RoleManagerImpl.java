@@ -3,10 +3,7 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.security.rbac.Permission;
-import com.l7tech.common.security.rbac.Role;
-import com.l7tech.common.security.rbac.UserRoleAssignment;
+import com.l7tech.common.security.rbac.*;
 import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.IdentityProvider;
@@ -186,4 +183,43 @@ public class RoleManagerImpl
         });
     }
 
+
+    public void deleteEntitySpecificRole(Entity entity, PermissionMatchCallback callback) throws DeleteException {
+        try {
+            for (Role role : findAll()) {
+                boolean match = !role.getPermissions().isEmpty();
+                for (Permission perm : role.getPermissions()) {
+                    match = match && callback.matches(perm);
+                    if (!match) break;
+                }
+
+                if (match) {
+                    logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+                    delete(role);
+                    break;
+                }
+            }
+        } catch (FindException e) {
+            throw new DeleteException("Couldn't find Roles for this Entity", e);
+        }
+    }
+
+    public void deleteEntitySpecificRole(final Entity entity) throws DeleteException {
+        deleteEntitySpecificRole(entity, new PermissionMatchCallback() {
+            public boolean matches(Permission permission) {
+                if (!permission.getEntityType().getEntityClass().isAssignableFrom(entity.getClass()))
+                    return false;
+
+                Set<ScopePredicate> scope = permission.getScope();
+                if (scope == null || scope.isEmpty()) return false;
+                if (scope.size() > 1) return false;
+                ScopePredicate pred = scope.iterator().next();
+                if (pred instanceof ObjectIdentityPredicate) {
+                    ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
+                    if (oip.getTargetEntityId().equals(entity.getId())) return true;
+                }
+                return false;
+            }
+        });
+    }
 }

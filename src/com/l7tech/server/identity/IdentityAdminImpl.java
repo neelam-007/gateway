@@ -5,7 +5,7 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import static com.l7tech.common.security.rbac.EntityType.*;
 import static com.l7tech.common.security.rbac.OperationType.*;
-import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
@@ -14,9 +14,11 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.security.rbac.PermissionMatchCallback;
 
 import java.rmi.RemoteException;
 import java.security.SecureRandom;
@@ -236,6 +238,34 @@ public class IdentityAdminImpl implements IdentityAdmin {
             }
 
             manager.delete(ipc);
+
+            roleManager.deleteEntitySpecificRole(ipc, new PermissionMatchCallback() {
+                public boolean matches(Permission permission) {
+                    com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
+                    Set<ScopePredicate> scope = permission.getScope();
+                    if (scope == null || scope.isEmpty()) return false;
+                    if (scope.size() > 1) return false;
+
+                    ScopePredicate pred = scope.iterator().next();
+                    switch(etype) {
+                        case ID_PROVIDER_CONFIG:
+                            if (pred instanceof ObjectIdentityPredicate) {
+                                ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
+                                if (oip.getTargetEntityId().equals(ipc.getId())) return true;
+                            }
+                            return false;
+                        case USER:
+                        case GROUP:
+                            if (pred instanceof AttributePredicate) {
+                                AttributePredicate ap = (AttributePredicate) pred;
+                                if (ap.getAttribute().equals("providerId") && ap.getValue().equals(ipc.getId())) return true;
+                            }
+                            return false;
+                        default:
+                            return false;
+                    }
+                }
+            });
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);

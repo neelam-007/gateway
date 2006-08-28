@@ -57,13 +57,6 @@ CREATE TABLE internal_group (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
--- Dumping data for table 'internal_group'
---
-
-INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','SecureSpan Manager users with full administrative rights in the SecureSpan Gateway.');
-INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager users with partial read-only rights in the SecureSpan Gateway.');
-
---
 -- Table structure for table 'internal_user'
 --
 
@@ -107,13 +100,6 @@ CREATE TABLE internal_user_group (
   INDEX (user_id),
   INDEX (subgroup_id)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
---
--- Dumping data for table 'internal_user_group'
---
-
-
-INSERT INTO internal_user_group VALUES (1, 0, 2, -2, '3', null);
 
 --
 -- Table structure for table 'published_service'
@@ -609,18 +595,22 @@ CREATE TABLE rbac_predicate_oid (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
--- Create Administrator role
+-- Create Administrator roles with CRUD on ANY
 INSERT INTO rbac_role VALUES (-3,0,'Administrator');
-
--- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment VALUES (-4, -2, -3, 3);
-INSERT INTO `rbac_role` VALUES (-200,1,'Manage Internal Users and Groups'),(-300,2,'Publish LDAP Identity Providers'),(-400,1,'Search Users and Groups'),(-500,0,'Publish Webservices'),(-600,1,'Manage Webservices'),(-700,0,'View Audit Records and Logs'),(-800,0,'View Service Metrics'),(-900,0,'Manage Cluster Status'),(-1000,0,'Manage Certificates (truststore)'),(-2000,0,'Manage JMS Connections'),(-3000,0,'Manage Cluster Properties');
-
--- Grant all CRUD permissions to admin role (no predicates required, null scope = ALL)
 INSERT INTO rbac_permission VALUES (-5, 0, -3, 'CREATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-6, 0, -3, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
+
+-- Assign Administrator role to existing admin user
+INSERT INTO rbac_assignment VALUES (-4, -2, -3, 3);
+
+-- Create Operator role with READ on ANY
+INSERT INTO rbac_role VALUES (-9,0,'Operator');
+INSERT INTO rbac_permission VALUES (-10, 0, -9, 'READ', null, 'ANY');
+
+-- Create other canned roles
+INSERT INTO `rbac_role` VALUES (-200,1,'Manage Internal Users and Groups'),(-300,2,'Publish LDAP Identity Providers'),(-400,1,'Search Users and Groups'),(-500,0,'Publish Webservices'),(-600,1,'Manage Webservices'),(-700,0,'View Audit Records and Logs'),(-800,0,'View Service Metrics'),(-900,0,'Manage Cluster Status'),(-1000,0,'Manage Certificates (truststore)'),(-2000,0,'Manage JMS Connections'),(-3000,0,'Manage Cluster Properties');
 
 INSERT INTO `rbac_permission` VALUES (163840,1,-500,'READ',NULL,'GROUP'),(163841,1,-500,'READ',NULL,'ID_PROVIDER_CONFIG'),(163842,1,-500,'READ',NULL,'USER'),(163843,1,-600,'READ',NULL,'ID_PROVIDER_CONFIG'),(163844,1,-600,'READ',NULL,'GROUP'),(163845,1,-600,'READ',NULL,'USER'),(1179648,1,-400,'READ',NULL,'USER'),(1179649,1,-400,'READ',NULL,'ID_PROVIDER_CONFIG'),(1179650,1,-400,'READ',NULL,'GROUP'),(1179651,1,-500,'CREATE',NULL,'SERVICE'),(1179652,2,-600,'READ',NULL,'SERVICE'),(1179653,2,-600,'CREATE',NULL,'SERVICE'),(1179654,2,-600,'UPDATE',NULL,'SERVICE'),(1179655,2,-600,'DELETE',NULL,'SERVICE'),(1179656,0,-700,'READ',NULL,'CLUSTER_INFO'),(1179657,0,-700,'READ',NULL,'AUDIT_RECORD'),(1179658,0,-800,'READ',NULL,'METRICS_BIN'),(1179659,0,-800,'READ',NULL,'SERVICE'),(1179660,0,-800,'READ',NULL,'CLUSTER_INFO'),(1179661,0,-900,'READ',NULL,'CLUSTER_INFO'),(1179662,0,-900,'UPDATE',NULL,'CLUSTER_INFO'),(1179663,0,-900,'DELETE',NULL,'CLUSTER_INFO'),(1179664,0,-1000,'UPDATE',NULL,'TRUSTED_CERT'),(1179665,0,-1000,'READ',NULL,'TRUSTED_CERT'),(1179666,0,-1000,'DELETE',NULL,'TRUSTED_CERT'),(1179667,0,-1000,'CREATE',NULL,'TRUSTED_CERT'),(1179668,0,-2000,'CREATE',NULL,'JMS_ENDPOINT'),(1179669,0,-2000,'DELETE',NULL,'JMS_ENDPOINT'),(1179670,0,-2000,'UPDATE',NULL,'JMS_ENDPOINT'),(1179671,0,-2000,'READ',NULL,'JMS_ENDPOINT'),(1179672,0,-3000,'READ',NULL,'CLUSTER_PROPERTY'),(1179673,0,-3000,'CREATE',NULL,'CLUSTER_PROPERTY'),(1179674,0,-3000,'UPDATE',NULL,'CLUSTER_PROPERTY'),(1179675,0,-3000,'DELETE',NULL,'CLUSTER_PROPERTY'),(1441792,1,-300,'CREATE',NULL,'ID_PROVIDER_CONFIG'),(4751360,1,-200,'READ',NULL,'USER'),(4751361,1,-200,'READ',NULL,'ID_PROVIDER_CONFIG'),(4751362,1,-200,'UPDATE',NULL,'USER'),(4751363,1,-200,'READ',NULL,'GROUP'),(4751364,1,-200,'DELETE',NULL,'USER'),(4751365,1,-200,'CREATE',NULL,'USER'),(4751366,1,-200,'CREATE',NULL,'GROUP'),(4751367,1,-200,'DELETE',NULL,'GROUP'),(4751368,1,-200,'UPDATE',NULL,'GROUP');
 
