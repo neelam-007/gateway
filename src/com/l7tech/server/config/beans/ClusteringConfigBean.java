@@ -90,10 +90,13 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
 
-        if (clusterType == CLUSTER_NONE )  {
-            explanations.add(insertTab + NOTHING_TO_DO_INFO);
-        } else {
-            explanations.add(insertTab + CLUSTER_HOSTFILE_UPDATE_INFO + getClusterHostname());
+        switch (clusterType) {
+            case CLUSTER_NONE:
+                explanations.add(insertTab + NOTHING_TO_DO_INFO);
+                break;
+            default:
+                explanations.add(insertTab + CLUSTER_HOSTFILE_UPDATE_INFO + getClusterHostname());
+                break;
         }
     }
 

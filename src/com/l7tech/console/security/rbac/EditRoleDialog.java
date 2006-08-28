@@ -58,6 +58,8 @@ public class EditRoleDialog extends JDialog {
     private final Map<Long, String> idpNames = new HashMap<Long, String>();
     private boolean shouldAllowEdits = RbacUtilities.isEnableRoleEditing();
 
+    private static final String[] COL_NAMES = new String[]{"Operation", "Applies To"};
+
     public EditRoleDialog(Role role, Dialog parent) {
         super(parent, true);
         this.role = role;
@@ -70,7 +72,64 @@ public class EditRoleDialog extends JDialog {
         inititialize();
     }
 
-    private static final String[] COL_NAMES = new String[]{"Operation", "Applies To"};
+    private void inititialize() {
+        enablePermissionEdits(shouldAllowEdits);
+
+        try {
+            EntityHeader[] hs = identityAdmin.findAllIdentityProviderConfig();
+            for (EntityHeader h : hs) {
+                idpNames.put(h.getOid(), h.getName());
+            }
+
+            assignmentListModel = new AssignmentListModel();
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't lookup Identity Providers", e);
+        }
+
+        this.tableModel = new PermissionTableModel();
+        permissionsTable.setModel(tableModel);
+        permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        setContentPane(contentPane);
+        getRootPane().setDefaultButton(buttonOK);
+        if (role.getOid() == Role.DEFAULT_OID) {
+            setTitle(resources.getString("editRoleDialog.newTitle"));
+        } else {
+            setTitle(MessageFormat.format(resources.getString("editRoleDialog.existingTitle"), role.getName()));
+            roleName.setText(role.getName());
+        }
+
+        setupButtonListeners();
+        setupActionListeners();
+        updateButtonStates();
+        pack();
+    }
+
+
+    private void enablePermissionEdits(boolean enableRoleEditing) {
+        addPermission.setVisible(enableRoleEditing);
+        editPermission.setVisible(enableRoleEditing);
+        removePermission.setVisible(enableRoleEditing);
+
+        addPermission.setEnabled(enableRoleEditing);
+        editPermission.setEnabled(enableRoleEditing);
+        removePermission.setEnabled(enableRoleEditing);
+    }
+
+    private void enablePermissionEditDeleteButtons() {
+        boolean enabled = permissionsTable.getModel().getRowCount() != 0 &&
+                getSelectedPermission() != null;
+
+        editPermission.setEnabled(enabled);
+        removePermission.setEnabled(enabled);
+    }
+
+    private void enableAssignmentDeleteButton() {
+        boolean enabled = assignmentListModel.getSize() != 0 &&
+                userAssignmentList.getSelectedIndex() < userAssignmentList.getModel().getSize();
+
+        removeAssignment.setEnabled(enabled);
+    }
 
     private class PermissionTableModel extends AbstractTableModel {
         private final java.util.List<Permission> permissions;
@@ -139,64 +198,6 @@ public class EditRoleDialog extends JDialog {
             permissions.remove(p);
             fireTableDataChanged();
         }
-    }
-
-    private void inititialize() {
-        enablePermissionEdits(shouldAllowEdits);
-
-        try {
-            EntityHeader[] hs = identityAdmin.findAllIdentityProviderConfig();
-            for (EntityHeader h : hs) {
-                idpNames.put(h.getOid(), h.getName());
-            }
-
-            assignmentListModel = new AssignmentListModel();
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't lookup Identity Providers", e);
-        }
-
-        this.tableModel = new PermissionTableModel();
-        permissionsTable.setModel(tableModel);
-        permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        setContentPane(contentPane);
-        getRootPane().setDefaultButton(buttonOK);
-        if (role.getOid() == Role.DEFAULT_OID) {
-            setTitle(resources.getString("editRoleDialog.newTitle"));
-        } else {
-            setTitle(MessageFormat.format(resources.getString("editRoleDialog.existingTitle"), role.getName()));
-            roleName.setText(role.getName());
-        }
-
-        setupButtonListeners();
-        setupActionListeners();
-        updateButtonStates();
-        pack();
-    }
-
-    private void enablePermissionEdits(boolean enableRoleEditing) {
-        addPermission.setVisible(enableRoleEditing);
-        editPermission.setVisible(enableRoleEditing);
-        removePermission.setVisible(enableRoleEditing);
-
-        addPermission.setEnabled(enableRoleEditing);
-        editPermission.setEnabled(enableRoleEditing);
-        removePermission.setEnabled(enableRoleEditing);
-    }
-
-    private void enablePermissionEditDeleteButtons() {
-        boolean enabled = permissionsTable.getModel().getRowCount() != 0 &&
-                getSelectedPermission() != null;
-
-        editPermission.setEnabled(enabled);
-        removePermission.setEnabled(enabled);
-    }
-
-    private void enableAssignmentDeleteButton() {
-        boolean enabled = assignmentListModel.getSize() != 0 &&
-                userAssignmentList.getSelectedIndex() < userAssignmentList.getModel().getSize();
-
-        removeAssignment.setEnabled(enabled);
     }
 
     private class AssignmentListModel extends AbstractListModel {
