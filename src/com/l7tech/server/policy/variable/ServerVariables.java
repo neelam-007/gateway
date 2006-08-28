@@ -11,6 +11,7 @@ import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -253,6 +254,20 @@ public class ServerVariables {
                     logger.severe("cannot get ClusterPropertyManager through context");
                     return null;
                 }
+            }
+        }),
+        new Variable("request.username", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                LoginCredentials creds = context.getCredentials();
+                if (creds == null) return null;
+                return creds.getName();
+            }
+        }),
+        new Variable("request.password", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                LoginCredentials creds = context.getCredentials();
+                if (creds == null) return null;
+                return new String(creds.getCredentials());
             }
         })
     };

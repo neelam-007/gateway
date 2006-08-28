@@ -21,7 +21,7 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE_URL = "service.url";
     public static final String PREFIX_REQUEST_URL = "request.url";
-    public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table 
+    public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
 
     private static final Map metadataByName = new HashMap();
 
@@ -82,7 +82,9 @@ public class BuiltinVariables {
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
 
         new VariableMetadata("response.http.status", false, false, null, false),
-        new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false)
+        new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),
+        new VariableMetadata("request.username", false, false, null, true),
+        new VariableMetadata("request.password", false, false, null, true),
     };
 
     static {

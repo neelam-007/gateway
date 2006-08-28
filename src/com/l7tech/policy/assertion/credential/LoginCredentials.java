@@ -232,6 +232,26 @@ public class LoginCredentials implements SecurityToken {
         return cachedDigest;
     }
 
+    /**
+     * Returns the best username available given the {@link #format}.
+     */
+    public String getName() {
+        if (format == CredentialFormat.CLEARTEXT || format == CredentialFormat.DIGEST || format == CredentialFormat.BASIC) {
+            return getLogin();
+        } else if (format == CredentialFormat.CLIENTCERT) {
+            X509Certificate cert = (X509Certificate)payload;
+            return cert.getSubjectDN().getName();
+        } else if (format == CredentialFormat.SAML) {
+            SamlAssertion ass = (SamlAssertion)payload;
+            return ass.getNameIdentifierValue();
+        } else if (format == CredentialFormat.KERBEROSTICKET) {
+            KerberosServiceTicket tick = (KerberosServiceTicket) payload;
+            return tick.getClientPrincipalName();
+        } else {
+            return null;
+        }
+    }
+
     private final String login;
     private final String realm;
     private final CredentialFormat format;
