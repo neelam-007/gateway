@@ -166,7 +166,7 @@
             </properties>
             <border type="etched" title="Role Properties"/>
             <children>
-              <scrollpane id="da377">
+              <scrollpane id="da377" binding="propertyScroller">
                 <constraints>
                   <xy x="6" y="22" width="419" height="181"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3">

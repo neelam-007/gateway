@@ -12,10 +12,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
 
 public class RoleManagementDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
@@ -45,6 +46,7 @@ public class RoleManagementDialog extends JDialog {
             }
         }
     };
+    private JScrollPane propertyScroller;
 
     public RoleManagementDialog(Dialog parent) throws HeadlessException {
         super(parent, resources.getString("manageRoles.title"));
@@ -139,6 +141,7 @@ public class RoleManagementDialog extends JDialog {
             message = sb.toString();
         }
         propertiesPane.setText(message);
+        propertiesPane.getCaret().setDot(0);
     }
 
     private Set<String> getPermissionList(Role role) {
