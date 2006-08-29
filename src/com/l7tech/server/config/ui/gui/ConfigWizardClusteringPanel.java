@@ -3,6 +3,7 @@ package com.l7tech.server.config.ui.gui;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
+import com.l7tech.server.config.ClusteringType;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -108,17 +109,17 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         }
 
         if (noClusterOption.isSelected()) {
-            clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
+            clusteringConfigBean.setDoClusterType(ClusteringType.CLUSTER_NONE);
         }
 
         else if (newClusterOption.isSelected()) {
-            clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NEW);
+            clusteringConfigBean.setDoClusterType(ClusteringType.CLUSTER_NEW);
         }
         else if (joinClusterOption.isSelected()) {
-            clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_JOIN);
+            clusteringConfigBean.setDoClusterType(ClusteringType.CLUSTER_JOIN);
         }
         else { //somehow none of these is selected so it's best not to do anything with the cluster
-            clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
+            clusteringConfigBean.setDoClusterType(ClusteringType.CLUSTER_NONE);
         }
 
         //set the hostname in the wizard so it can be used by later panels

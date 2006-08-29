@@ -31,8 +31,8 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
     public String[] getKeystoreTypes() {
         return new String[]
         {
-            KeyStoreConstants.DEFAULT_KEYSTORE_NAME,
-            KeyStoreConstants.LUNA_KEYSTORE_NAME
+            KeystoreType.DEFAULT_KEYSTORE_NAME.getName(),
+            KeystoreType.LUNA_KEYSTORE_NAME.getName()
         };
     }
 

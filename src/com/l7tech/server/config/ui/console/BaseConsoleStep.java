@@ -50,20 +50,10 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
     public void showStep(boolean validated) throws WizardNavigationException {
         doUserInterview(validated);
         boolean isValid = validateStep();
-        if (isValid) setupManualSteps();
-        else showStep(false);
+        if (!isValid)
+            showStep(false);
     }
 
-    protected void setupManualSteps() {
-        if (configBean != null) {
-            List<String> steps = configBean.getManualSteps();
-            if (steps == null || steps.isEmpty()) {
-                return;
-            }
-
-            getParentWizard().addManualSteps(this.getClass().getName(), steps);
-        }
-    }
 
     public ConfigurationCommand getConfigurationCommand() {
         return configCommand;

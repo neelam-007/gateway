@@ -8,9 +8,6 @@ package com.l7tech.server.config;
  * To change this template use File | Settings | File Templates.
  */
 public class KeyStoreConstants {
-    public static final String DEFAULT_KEYSTORE_NAME = "Default (PKCS12) Keystore";
-    public static final String LUNA_KEYSTORE_NAME = "Luna Keystore";
-    public static final String NO_KEYSTORE = "";
 
     public static final String LUNA_WINDOWS_REGKEY = "\\HKEY_LOCAL_MACHINE\\SOFTWARE\\SafeNet-Inc";
     public static final String LUNA_LINUX_INSTALL_FILE = "/usr/lunasa/bin/salogin";

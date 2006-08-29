@@ -1,13 +1,14 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.WizardInputValidator;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.beans.KeystoreConfigBean;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -25,7 +26,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
 
     private KeystoreConfigBean keystoreBean;
 
-    private Map<String, String> ksTypeMap;
+    private Map<String, KeystoreType> ksTypeMap;
 
     public ConfigWizardConsoleKeystoreStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -40,9 +41,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         configBean = new KeystoreConfigBean();
         keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
-        ksTypeMap = new TreeMap<String,String>();
-        ksTypeMap.put("1", KeyStoreConstants.DEFAULT_KEYSTORE_NAME);
-        ksTypeMap.put("2", KeyStoreConstants.LUNA_KEYSTORE_NAME);
+        ksTypeMap = new TreeMap<String,KeystoreType>();
+        ksTypeMap.put("1", KeystoreType.DEFAULT_KEYSTORE_NAME);
+        ksTypeMap.put("2", KeystoreType.LUNA_KEYSTORE_NAME);
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
@@ -62,29 +63,29 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     private void doKeystoreTypePrompts() throws IOException, WizardNavigationException {
-        Set<Map.Entry<String,String>> entries = ksTypeMap.entrySet();
+        Set<Map.Entry<String,KeystoreType>> entries = ksTypeMap.entrySet();
         List<String> prompts = new ArrayList<String>();
 
         prompts.add(KEYSTORE_TYPE_HEADER);
 
-        for (Map.Entry<String, String> entry : entries) {
+        for (Map.Entry<String, KeystoreType> entry : entries) {
             prompts.add(entry.getKey() + ") " + entry.getValue() + getEolChar());
         }
         prompts.add("Please select the keystore type you wish to use: [1]");
 
         String input = getData(prompts, "1", ksTypeMap.keySet().toArray(new String[]{}));
-        String ksType = ksTypeMap.get(input);
+        KeystoreType ksType = ksTypeMap.get(input);
 
         if (ksType == null) {
-            ksType = KeyStoreConstants.NO_KEYSTORE;
+            ksType = KeystoreType.NO_KEYSTORE;
         }
 
         keystoreBean.setKeyStoreType(ksType);
         getParentWizard().setKeystoreType(ksType);
 
-        if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+        if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
             askDefaultKeystoreQuestions();
-        } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+        } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
             askLunaKeystoreQuestions();
         }
     }
@@ -148,7 +149,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
             "2) Create SSL keys only\n",
             "Please make a selection: [" + defaultValue + "] ",
         };
-        String input = getData(prompts, defaultValue);
+        String input = getData(prompts, defaultValue, new String[] {"1", "2"});
         keystoreBean.setDoBothKeys( (input != null && "1".equals(input)));
         doKeystorePasswordPrompts();
     }
@@ -177,7 +178,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
 
         shouldConfigure = input != null && input.trim().equals("2");
         keystoreBean.doKeystoreConfig(shouldConfigure);
-        getParentWizard().setKeystoreType(KeyStoreConstants.NO_KEYSTORE);
+        getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
         return shouldConfigure;
     }
 

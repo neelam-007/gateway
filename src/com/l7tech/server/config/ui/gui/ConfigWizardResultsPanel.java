@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.util.*;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -243,15 +242,11 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private void setupManualStepsPanel() {
         StringBuilder allSteps = new StringBuilder();
 
-        Map<String, List<String>> manualSteps = getParentWizard().getManualSteps();
+        List<String> manualSteps = getParentWizard().getManualSteps();
         boolean showManualSteps = manualSteps != null && !manualSteps.isEmpty();
         if (showManualSteps) {
-            Set<String> keys = manualSteps.keySet();
-            for (String key : keys) {
-                List<String> steps = manualSteps.get(key);
-                for (String step : steps) {
-                    allSteps.append(step);
-                }
+            for (String manualStep : manualSteps) {
+                    allSteps.append(manualStep);
             }
 
             stepsBuffer.append("<html>").append(eol);
@@ -263,7 +258,6 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
             stepsBuffer.append("</body>").append(eol);
             stepsBuffer.append("</html>").append(eol);
         }
-
         manualStepsPanel.setVisible(showManualSteps);
     }
 

@@ -9,19 +9,15 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.*;
 import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
-import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -59,12 +55,11 @@ public class ConfigurationWizard extends Wizard {
     public static final String LOG_PROPERTIES_NAME = "configuration-logging.properties";
 
     boolean hadFailures = false;
-    private int clusteringType;
-    private String keystoreType;
     private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
     private Set<ConfigurationCommand> additionalCommands;
 
-    private Map<String, java.util.List<String>> manualSteps;
+    private ManualStepsManager manualSteps;
+    private ClusteringType clusteringType;
 
     /**
      * Creates new wizard
@@ -88,7 +83,7 @@ public class ConfigurationWizard extends Wizard {
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
         wizardInput = new HashSet<ConfigurationCommand>();
-        manualSteps = new HashMap<String, java.util.List<String>>();
+        manualSteps = new ManualStepsManager();
 
         setupAdditionalCommands();
 
@@ -282,31 +277,21 @@ public class ConfigurationWizard extends Wizard {
         JdkLoggerConfigurator.configure("com.l7tech", "configlogging.properties");
     }
 
-    public int getClusteringType() {
+    public ClusteringType getClusteringType() {
         return clusteringType;
     }
 
-    public void setClusteringType(int clusteringConfigured) {
-        this.clusteringType = clusteringConfigured;
+    public void setClusteringType(ClusteringType clusteringType) {
+        this.clusteringType = clusteringType;
+        manualSteps.setClusteringType(clusteringType);
     }
 
-    public String getKeystoreType() {
-        return keystoreType;
+    public void setKeystoreType(KeystoreType ksType) {
+        manualSteps.setKeystoreType(ksType);
     }
 
-    public void setKeystoreType(String type) {
-        keystoreType = type;
-    }
-
-    public void addManualSteps(String stepKey, java.util.List<String> steps) {
-        if (StringUtils.isEmpty(stepKey)) throw new IllegalArgumentException("key cannot be empty or null");
-        if (steps == null) throw new IllegalArgumentException("steps cannot be null");
-
-        manualSteps.put(stepKey, steps);
-    }
-
-    public Map<String,java.util.List<String>> getManualSteps() {
-        return manualSteps;
+    public java.util.List<String> getManualSteps() {
+        return manualSteps.getManualSteps();
     }
 
     public static String getCurrentVersion() {

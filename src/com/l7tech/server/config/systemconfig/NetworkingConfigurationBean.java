@@ -58,10 +58,6 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         }
     }
 
-    public List<String> getManualSteps() {
-        return null;
-    }
-
     public List<NetworkConfig> getNetworkingConfigurations() {
         return networkingConfigs;
     }

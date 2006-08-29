@@ -1,9 +1,6 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.BaseConfigurationBean;
-
-import java.util.List;
-
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -56,9 +53,5 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
 
     public void setTimeServerAddress(String timeServerAddress) {
         this.timeServerAddress = timeServerAddress;
-    }
-
-    public List<String> getManualSteps() {
-        return null;
     }
 }

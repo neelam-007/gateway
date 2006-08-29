@@ -58,6 +58,4 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     }
 
     protected abstract void populateExplanations();
-
-    public abstract List<String> getManualSteps();
 }

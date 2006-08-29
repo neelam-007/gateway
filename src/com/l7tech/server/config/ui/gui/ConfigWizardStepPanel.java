@@ -6,8 +6,6 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 
-import java.util.List;
-
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -56,12 +54,6 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
     protected void setupManualSteps() {
         if (configBean != null) {
             updateModel();
-            List<String> steps = configBean.getManualSteps();
-            if (steps == null || steps.isEmpty()) {
-                return;
-            }
-
-            getParentWizard().addManualSteps(this.getClass().getName(), steps);
         }
     }
 

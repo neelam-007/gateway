@@ -1,10 +1,5 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.OSSpecificFunctions;
-
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -36,10 +31,6 @@ public class WindowsServiceBean extends BaseConfigurationBean {
         } else {
            explanations.add(insertTab + DONT_DO_SERVICE_INFO);
         }
-    }
-
-    public List<String> getManualSteps() {
-        return null;
     }
 
     public boolean isDoService() {

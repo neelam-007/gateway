@@ -15,8 +15,9 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
 
     private String manualStepsFileName = "ssg_config_manual_steps.txt";
     private String title = "SSG Configuration Results";
-    private Map<String, List<String>> manualSteps;
+    private List<String> manualSteps;
     private String logFilename = "ssgconfig0.log";
+    private File manualStepsFile;
 
     public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -38,9 +39,10 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         }
 
         if (needsManualSteps()) {
-            printText(getEolChar() + "**** Some manual steps are required to complete the configuration of the SSG ****" + getEolChar());
-            printText("\tThese manual steps have been saved to a the file: " + manualStepsFileName + getEolChar());
-            saveManualSteps();
+            if (saveManualSteps() ) {
+                printText(getEolChar() + "**** Some manual steps are required to complete the configuration of the SSG ****" + getEolChar());
+                printText("\tThese manual steps have been saved to a the file: " + manualStepsFile.getAbsolutePath() + getEolChar());
+            }
         }
 
         printText(getEolChar() + "The following is a summary of the actions taken by the wizard" + getEolChar());
@@ -70,12 +72,8 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         StringBuilder allSteps = new StringBuilder();
 
         if (needsManualSteps()) {
-            Set<String> keys = manualSteps.keySet();
-            for (String key : keys) {
-                List<String> steps = manualSteps.get(key);
-                for (String step : steps) {
-                    allSteps.append(step);
-                }
+            for (String manualStep : manualSteps) {
+                allSteps.append(manualStep);
             }
 
             stepsBuffer.append("The following manual steps are required to complete the configuration of the SSG");
@@ -86,10 +84,11 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
 
             PrintWriter saveWriter = null;
             try {
+                manualStepsFile = new File(manualStepsFileName);
                 saveWriter = new PrintWriter(manualStepsFileName);
                 saveWriter.print(convertStepsForConsole(stepsBuffer.toString()));
             } catch (FileNotFoundException e) {
-                printText("Could not create file: " + manualStepsFileName + getEolChar());
+                printText("Could not create file: " + manualStepsFile.getAbsolutePath() + getEolChar());
                 printText(e.getMessage() + getEolChar());
                 success = false;
             } finally {

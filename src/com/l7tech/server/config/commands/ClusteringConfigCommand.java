@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.ClusteringType;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -49,7 +50,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
 
-        boolean configureCluster = clusterBean.getClusterType() != ClusteringConfigBean.CLUSTER_NONE;
+        boolean configureCluster = clusterBean.getClusterType() != ClusteringType.CLUSTER_NONE;
 
         File clusterHostNameFile = configureCluster? new File(osFunctions.getClusterHostFile()):null;
         File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());

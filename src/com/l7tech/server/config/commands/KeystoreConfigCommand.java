@@ -3,11 +3,11 @@ package com.l7tech.server.config.commands;
 import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.ClusteringType;
+import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
-import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.util.MakeLunaCerts;
 import com.l7tech.server.util.SetKeys;
 import org.w3c.dom.Document;
@@ -94,9 +94,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
 
-            String ksType = ksBean.getKeyStoreType();
+            KeystoreType ksType = ksBean.getKeyStoreType();
             try {
-                 if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+                 if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
                     doDefaultKeyConfig(ksBean);
                     success = true;
                 } else {
@@ -110,14 +110,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void prepareJvm(String ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException {
+    private void prepareJvm(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException {
         Provider[] currentProviders = Security.getProviders();
         for (int i = 0; i < currentProviders.length; i++) {
             Provider provider = currentProviders[i];
             Security.removeProvider(provider.getName());
         }
 
-        if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+        if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
             if (isJava15()) {
                 Security.addProvider(new sun.security.provider.Sun());
                 Security.addProvider(new sun.security.rsa.SunRsaSign());
@@ -126,7 +126,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 Security.addProvider(new sun.security.jgss.SunProvider());
                 Security.addProvider(new com.sun.security.sasl.Provider());
             }
-        } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+        } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
             File classDir = new File(osFunctions.getPathToJreLibExt());
             if (!classDir.exists()) {
                 throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
@@ -217,7 +217,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         backupFiles(files, BACKUP_FILE_NAME);
 
         try {
-            prepareJvm(KeyStoreConstants.DEFAULT_KEYSTORE_NAME);
+            prepareJvm(KeystoreType.DEFAULT_KEYSTORE_NAME);
             makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
             updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
@@ -267,7 +267,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             //prepare the JDK and the Luna environment before generating keys
             setLunaSystemProps(ksBean);
             copyLunaJars(ksBean);
-            prepareJvm(KeyStoreConstants.LUNA_KEYSTORE_NAME);
+            prepareJvm(KeystoreType.LUNA_KEYSTORE_NAME);
             makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
             updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
@@ -285,7 +285,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         String hostname = ksBean.getHostname();
         boolean exportOnly = false;
         try {
-            exportOnly = (ksBean.getClusteringType() == ClusteringConfigBean.CLUSTER_JOIN);
+            exportOnly = (ksBean.getClusteringType() == ClusteringType.CLUSTER_JOIN);
             MakeLunaCerts.makeCerts(hostname, true, exportOnly, caCertFile, sslCertFile);
             success = true;
         } catch (LunaCmu.LunaCmuException e) {
@@ -331,7 +331,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         PrintWriter writer = null;
         File newFile = new File(osFunctions.getSsgSystemPropertiesFile() + ".confignew");
 
-        //Properties props = new Properties();
         try {
             if (!systemPropertiesFile.exists()) {
                 systemPropertiesFile.createNewFile();
@@ -344,7 +343,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             while ((line = reader.readLine()) != null) {
                 if (!line.startsWith("#") && line.startsWith(PROPKEY_JCEPROVIDER)) {
                     jceProviderFound = true;
-                    if (ksBean.getKeyStoreType().equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+                    if (ksBean.getKeyStoreType() == KeystoreType.LUNA_KEYSTORE_NAME) {
                         line = PROPKEY_JCEPROVIDER + "=" + PROPERTY_LUNA_JCEPROVIDER_VALUE;
                     }
                     else {
@@ -353,7 +352,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 }
                 writer.println(line);
             }
-            if (ksBean.getKeyStoreType().equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+            if (ksBean.getKeyStoreType() == KeystoreType.LUNA_KEYSTORE_NAME) {
                 String lunaPropLine = PROPKEY_JCEPROVIDER + "=" + PROPERTY_LUNA_JCEPROVIDER_VALUE;
                 if (!jceProviderFound) {
                     writer.println(lunaPropLine);
@@ -664,8 +663,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private String getKsType() {
-        String ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
-        if (ksTypeFromBean.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+        KeystoreType ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
+        if (ksTypeFromBean == KeystoreType.LUNA_KEYSTORE_NAME) {
             return "Luna";
         }
         else {

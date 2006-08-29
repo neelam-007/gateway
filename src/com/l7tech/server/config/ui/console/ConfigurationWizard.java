@@ -1,17 +1,14 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.commands.ConfigurationCommand;
-import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.server.config.*;
+import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.*;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -30,8 +27,6 @@ public class ConfigurationWizard {
     private Set<ConfigurationCommand> commands;
     private boolean hadFailures;
     String currentVersion = null;
-    private String keystoreType;
-    private int clusteringType;
     private String hostname;
     private static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
     private static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
@@ -39,7 +34,8 @@ public class ConfigurationWizard {
     private static final String LOGCONFIG_NAME = "configlogging.properties";
 
     ConsoleWizardUtils wizardUtils = null;
-    private Map<String, List<String>> manualSteps;
+
+    private ManualStepsManager manualStepsManager;
 
     public ConfigurationWizard(InputStream in, PrintStream out) {
         init(in, out);
@@ -63,7 +59,7 @@ public class ConfigurationWizard {
         osFunctions = OSDetector.getOSSpecificFunctions();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new HashSet<ConfigurationCommand>();
-        manualSteps = new HashMap<String, List<String>>();
+        manualStepsManager = new ManualStepsManager();
     }
 
     private void addSteps(List<ConfigWizardConsoleStep> steps) {
@@ -138,20 +134,12 @@ public class ConfigurationWizard {
         return currentVersion;
     }
 
-    public void setKeystoreType(String ksType) {
-        this.keystoreType = ksType;
+    public void setKeystoreType(KeystoreType ksType) {
+        manualStepsManager.setKeystoreType(ksType);
     }
 
-    public String getKeystoreType() {
-        return keystoreType;
-    }
-
-    public int getClusteringType() {
-        return clusteringType;
-    }
-
-    public void setClusteringType(int clusteringType) {
-        this.clusteringType = clusteringType;
+    public void setClusteringType(ClusteringType clusteringType) {
+        manualStepsManager.setClusteringType(clusteringType);
     }
 
     public void setHostname(String hostname) {
@@ -178,25 +166,11 @@ public class ConfigurationWizard {
     }
 
 
-//    private static void checkSilentMode(String[] args) {
-//        if (args.length < 2 || args[FILENAME_INDEX] == null) {
-//            System.err.println("A filename must be specified when operating in silent mode");
-//            System.exit(1);
-//        }
-//    }
-
     public ConsoleWizardUtils getWizardUtils() {
         return wizardUtils;
     }
 
-    public void addManualSteps(String stepKey, java.util.List<String> steps) {
-        if (StringUtils.isEmpty(stepKey)) throw new IllegalArgumentException("key cannot be empty or null");
-        if (steps == null) throw new IllegalArgumentException("steps cannot be null");
-
-        manualSteps.put(stepKey, steps);
-    }
-
-    public Map<String, List<String>> getManualSteps() {
-        return manualSteps;
+    public List<String> getManualSteps() {
+        return manualStepsManager.getManualSteps();
     }
 }

@@ -1,7 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 
@@ -55,15 +55,15 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         ksBean.setClusterType(getParentWizard().getClusteringType());
         if (dontDoKsConfig.isSelected()) {
             ksBean.doKeystoreConfig(false);
-            getParentWizard().setKeystoreType(KeyStoreConstants.NO_KEYSTORE);
+            getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
         } else {
             ksBean.doKeystoreConfig(true);
             ksBean.setHostname(getParentWizard().getHostname());
 
-            String ksType = (String) keystoreType.getSelectedItem();
+            KeystoreType ksType = (KeystoreType) keystoreType.getSelectedItem();
             ksBean.setKeyStoreType(ksType);
 
-            if (ksType == KeyStoreConstants.DEFAULT_KEYSTORE_NAME) {
+            if (ksType == KeystoreType.DEFAULT_KEYSTORE_NAME) {
                 ksBean.setKsPassword(((DefaultKeystorePanel)whichKeystorePanel).getKsPassword());
                 ksBean.setDoBothKeys(((DefaultKeystorePanel)whichKeystorePanel).doBothKeys());
             } else {
@@ -79,7 +79,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         String[] keystores = getKeystores(isLunaOk);
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
 
-        String ksType = ksConfigBean.getKeyStoreType();
+        KeystoreType ksType = ksConfigBean.getKeyStoreType();
         keystoreType.setSelectedItem(ksType == null?keystores[0]:ksType);
     }
 
@@ -92,7 +92,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
             ArrayList<String> newKeystoreList = new ArrayList<String>();
             for (int i = 0; i < fullList.length; i++) {
                 String s = new String(fullList[i]);
-                if (!s.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+                if (!s.equalsIgnoreCase(KeystoreType.LUNA_KEYSTORE_NAME.toString())) {
                     newKeystoreList.add(s);
                 }
             }
@@ -103,6 +103,12 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     private void init() {
         setShowDescriptionPanel(false);
+        java.util.List<KeystoreType> kstypes = new ArrayList<KeystoreType>();
+        for (KeystoreType type : KeystoreType.values()) {
+            if (type != KeystoreType.NO_KEYSTORE)
+                kstypes.add(type);
+        }
+        keystoreType.setModel(new DefaultComboBoxModel(kstypes.toArray(new KeystoreType[0])));
         stepLabel = "Setup SSG Keystore";
         configBean = new KeystoreConfigBean();
         configCommand = new KeystoreConfigCommand(configBean);
@@ -159,14 +165,14 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     private void updateKeystorePanel() {
-        String selectedItem = (String) keystoreType.getSelectedItem();
+        KeystoreType selectedItem = (KeystoreType) keystoreType.getSelectedItem();
         if (selectedItem == null) {
             return;
         }
 
-        if (selectedItem.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+        if (selectedItem == KeystoreType.DEFAULT_KEYSTORE_NAME) {
             whichKeystorePanel = new DefaultKeystorePanel();
-        } else if (selectedItem.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+        } else if (selectedItem == KeystoreType.LUNA_KEYSTORE_NAME) {
             whichKeystorePanel = new LunaKeystorePanel();
             ((LunaKeystorePanel)whichKeystorePanel).setDefaultLunaInstallPath(osFunctions.getLunaInstallDir());
             ((LunaKeystorePanel)whichKeystorePanel).setDefaultLunaJSPPath(osFunctions.getLunaJSPDir());

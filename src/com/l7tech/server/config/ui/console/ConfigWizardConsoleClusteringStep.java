@@ -1,15 +1,14 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.commands.ClusteringConfigCommand;
+import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -85,20 +84,18 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
 
         clusterTypePrompts.add("-- Creating or joining a cluster --" + getEolChar());
 
-        Map<String, ClusteringConfigBean.ClusterTypePair> clusterPromptMapper = new TreeMap<String, ClusteringConfigBean.ClusterTypePair>();
+        Map<String, ClusteringType> clusterPromptMapper = new TreeMap<String, ClusteringType>();
 
         //get clustering type preference
         int i = 1;
-        for (ClusteringConfigBean.ClusterTypePair clusterTypePair : ClusteringConfigBean.clusterTypes) {
-            if (clusterTypePair != null) {
-                clusterPromptMapper.put(String.valueOf(i++), clusterTypePair);
-            }
+        for (ClusteringType clusterType : ClusteringType.values()) {
+            clusterPromptMapper.put(String.valueOf(i++), clusterType);
         }
 
         Set<String> keys = clusterPromptMapper.keySet();
         for (String key : keys) {
-            ClusteringConfigBean.ClusterTypePair ctp = clusterPromptMapper.get(key);
-            clusterTypePrompts.add(key + ") " + ctp.getClusterTypeDescription() + getEolChar());
+            ClusteringType ctype = clusterPromptMapper.get(key);
+            clusterTypePrompts.add(key + ") " + ctype + getEolChar());
         }
 
         clusterTypePrompts.add("Please make a selection: [1]");
@@ -108,7 +105,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                 "1",
                 clusterPromptMapper.keySet().toArray(new String[]{}));
 
-        int clusterType = clusterPromptMapper.get(input).getClusterType();
+        ClusteringType clusterType = clusterPromptMapper.get(input);
 
         clusterBean.setDoClusterType(clusterType);
         getParentWizard().setClusteringType(clusterBean.getClusterType());
@@ -125,12 +122,11 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             validatedHostname = true;
         }
 
-        int clusterType = clusterBean.getClusterType();
         boolean validatedType = false;
-        switch (clusterType) {
-            case ClusteringConfigBean.CLUSTER_NONE:
-            case ClusteringConfigBean.CLUSTER_NEW:
-            case ClusteringConfigBean.CLUSTER_JOIN:
+        switch (clusterBean.getClusterType()) {
+            case CLUSTER_NONE:
+            case CLUSTER_NEW:
+            case CLUSTER_JOIN:
                 validatedType = true;
                 break;
             default:

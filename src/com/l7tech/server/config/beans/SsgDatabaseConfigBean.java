@@ -1,9 +1,5 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.OSSpecificFunctions;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -46,10 +42,6 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
         explanations.add(insertTab + "    HOSTNAME = " + getDbHostname());
         explanations.add(insertTab + "    USERNAME = " + getDbUsername());
         explanations.add(insertTab + "    DATABASE = " + getDbName());
-    }
-
-    public List<String> getManualSteps() {
-        return null;
     }
 
     public void setPrivUserName(String username) {

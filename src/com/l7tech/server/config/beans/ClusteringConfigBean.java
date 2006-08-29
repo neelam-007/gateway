@@ -1,11 +1,9 @@
 package com.l7tech.server.config.beans;
 
+import com.l7tech.server.config.ClusteringType;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,24 +13,12 @@ import java.util.TreeMap;
  * To change this template use File | Settings | File Templates.
  */
 public class ClusteringConfigBean extends BaseConfigurationBean {
-   private static final String updateHostsFileLine =
-        "<li>UPDATE HOSTS FILE:" +
-            "<p>add a line containing the IP address for this SSG node, then the cluster host name, then this SSG node's hostname" + eol +
-            "<dl>" + eol +
-                "<dt>ex:</dt>" + eol +
-                    "<dd>192.168.1.186      ssgcluster.domain.com ssgnode1.domain.com</dd>" + eol +
-            "</dl>" + eol +
-        "</li>" + eol;
 
-    private static final String timeSyncLine =
-        "<li>TIME SYNCHRONIZATION:" +
-            "<p>Please ensure time is synchronized among all SSG nodes within the cluster" + eol +
-        "</li>" + eol;
 
     private boolean isNewHostName;
     private String hostname;
     private String localHostName;
-    private int clusterType;
+    private ClusteringType clusterType;
 
 
     private final static String NAME = "Clustering Configuration";
@@ -104,7 +90,7 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
         isNewHostName = false;
         hostname = "";
         localHostName  = "";
-        clusterType = CLUSTER_NONE;
+        clusterType = ClusteringType.CLUSTER_NONE;
     }
 
     public void setClusterHostname(String hostName) {
@@ -131,22 +117,11 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
         this.localHostName = localHostName;
     }
 
-    public void setDoClusterType(int clusterType) {
+    public void setDoClusterType(ClusteringType clusterType) {
         this.clusterType= clusterType;
     }
 
-    public int getClusterType() {
+    public ClusteringType getClusterType() {
         return clusterType;
     }
-
-    public List<String> getManualSteps() {
-        List<String> steps = new ArrayList<String>();
-        if (clusterType != CLUSTER_NONE) {
-            steps.add(updateHostsFileLine);
-            steps.add(timeSyncLine);
-            steps.add("<br>");
-        }
-        return steps;
-    }
-
 }
