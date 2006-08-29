@@ -98,25 +98,30 @@ public class RoleManagementDialog extends JDialog {
 
         roleList.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                try {
                     //disable this code for now since we are not allowing the editing of roles in 3.6.
                     //Uncomment this to allow double click editing and enable/disable of the buttons
-
                     if (e.getClickCount() == 1)
                         enableEditRemoveButtons();
-                    else if (e.getClickCount() >= 2)
+                    else if (e.getClickCount() >= 2) {
                         showEditDialog(getSelectedRole());
+                        try {
+                            updatePropertiesSummary();
+                        } catch (RemoteException re) {
+                            throw new RuntimeException(re);
+                        }
+                    }
+            }
 
-                    updatePropertiesSummary();
-                } catch (RemoteException re) {
-                    throw new RuntimeException(re);
-                }
-             }
         });
 
         roleList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableEditRemoveButtons();
+                try {
+                    updatePropertiesSummary();
+                } catch (RemoteException re) {
+                    throw new RuntimeException(re);
+                }
             }
         });
     }
