@@ -298,11 +298,12 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         }
     }
 
-    public void update(GT group) throws UpdateException, ObjectNotFoundException {
+    @Override
+    public void update(GT group) throws UpdateException {
         update(group, null);
     }
 
-    public void update(GT group, Set<IdentityHeader> userHeaders) throws UpdateException, ObjectNotFoundException {
+    public void update(GT group, Set<IdentityHeader> userHeaders) throws UpdateException {
         GT imp = cast(group);
 
         try {
@@ -310,7 +311,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             preUpdate(imp);
             GT originalGroup = findByPrimaryKey(group.getId());
             if (originalGroup == null) {
-                throw new ObjectNotFoundException("Group " + group.getName());
+                throw new FindException("Couldn't find original version of Group " + group.getName());
             }
             // check for version conflict
             if (originalGroup.getVersion() != imp.getVersion()) {
@@ -497,14 +498,6 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             for (String existingGid : existingGids) {
                 if (!newGids.contains(existingGid)) {
                     GT oldGroup = findByPrimaryKey(existingGid);
-                    if (Group.ADMIN_GROUP_NAME.equals(oldGroup.getName())) {
-                        Set adminUserHeaders = getUserHeaders(oldGroup);
-                        if (adminUserHeaders.size() < 2) {
-                            String msg = "Can't remove last administrator membership!";
-                            logger.info(msg);
-                            throw new UpdateException(msg);
-                        }
-                    }
                     deleteMembership(oldGroup, thisUser);
                 }
             }
@@ -579,12 +572,6 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             Set<String> existingUids = headersToIds(doGetUserHeaders(groupId));
 
             GT thisGroup = findByPrimaryKey(groupId);
-            if (Group.ADMIN_GROUP_NAME.equals(thisGroup.getName()) &&
-              userHeaders.size() == 0) {
-                String msg = "Can't delete last administrator";
-                logger.info(msg);
-                throw new UpdateException(msg);
-            }
 
             // Check for new memberships
             final UMT uman = identityProvider.getUserManager();

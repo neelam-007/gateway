@@ -164,33 +164,19 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-    public void update(SchemaEntry existingSchema) throws UpdateException {
-        if (existingSchema.getOid() != SchemaEntry.DEFAULT_OID) {
-            invalidateCompiledSchema(existingSchema.getOid());
+    public void update(SchemaEntry schemaEntry) throws UpdateException {
+        if (schemaEntry.getOid() != SchemaEntry.DEFAULT_OID) {
+            invalidateCompiledSchema(schemaEntry.getOid());
         }
 
-        // Get current object (Load from DB to ensure previous values are available in the session)
+        super.update(schemaEntry);
+
         try {
-            SchemaEntry fromDb = (SchemaEntry) findByPrimaryKey(SchemaEntry.class, existingSchema.getOid());
-            if(fromDb==null) throw new UpdateException("Schema does not exist '"+existingSchema.getName()+"'");
-
-            // Update any potentially modified fields
-            fromDb.setName(existingSchema.getName());
-            fromDb.setTns(existingSchema.getTns());
-            fromDb.setSchema(existingSchema.getSchema());
-
-            // Commit
-            getHibernateTemplate().update(fromDb);
-
-            try {
-                compileAndCache(fromDb.getOid(), fromDb);
-            } catch (IOException e) {
-                throw new UpdateException("Schema document imports missing or invalid remote document", e);
-            } catch (SAXException e) {
-                throw new UpdateException("Invalid schema document", e);
-            }
-        } catch (FindException fe) {
-            throw new UpdateException(fe.getMessage(), fe.getCause());
+            compileAndCache(schemaEntry.getOid(), schemaEntry);
+        } catch (IOException e) {
+            throw new UpdateException("Schema document imports missing or invalid remote document", e);
+        } catch (SAXException e) {
+            throw new UpdateException("Invalid schema document", e);
         }
     }
 
@@ -274,6 +260,11 @@ public class SchemaEntryManagerImpl
 
     public String getTableName() {
         return TABLE_NAME;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
     }
 
     private static final String TABLE_NAME = "community_schema";

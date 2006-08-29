@@ -83,7 +83,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         return getManager().findBySubjectDn(dn);
     }
 
-    public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
+    public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, RemoteException {
         checkLicense();
         long oid;
         if (cert.getOid() == TrustedCert.DEFAULT_OID) {

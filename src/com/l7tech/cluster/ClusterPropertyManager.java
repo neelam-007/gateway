@@ -9,5 +9,4 @@ import com.l7tech.objectmodel.*;
 public interface ClusterPropertyManager extends EntityManager<ClusterProperty, EntityHeader> {
     ClusterProperty getCachedEntityByName(String name, int maxAge) throws FindException;
     String getProperty(String key) throws FindException;
-    void update(ClusterProperty clusterProperty) throws UpdateException;
 }

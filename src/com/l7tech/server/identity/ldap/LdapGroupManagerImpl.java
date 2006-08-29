@@ -104,56 +104,56 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     /**
      * throws an UnsupportedOperationException
      */
-    public void delete(LdapGroup group) throws DeleteException, ObjectNotFoundException {
+    public void delete(LdapGroup group) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAll(long ipoid) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAllVirtual(long ipoid) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
+    public void delete(String identifier) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public String saveGroup(LdapGroup group) throws SaveException {
+    public String saveGroup(LdapGroup group) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void update(LdapGroup group) throws UpdateException, ObjectNotFoundException {
+    public void update(LdapGroup group) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public String save(LdapGroup group, Set userHeaders) throws SaveException {
+    public String save(LdapGroup group, Set userHeaders) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void update(LdapGroup group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
+    public void update(LdapGroup group, Set userHeaders) {
         throw new UnsupportedOperationException();
     }
 
@@ -183,42 +183,42 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     /**
      * throws an UnsupportedOperationException
      */
-    public void addUsers(LdapGroup group, Set users) throws FindException, UpdateException {
+    public void addUsers(LdapGroup group, Set users) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void removeUsers(LdapGroup group, Set users) throws FindException, UpdateException {
+    public void removeUsers(LdapGroup group, Set users) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void addUser(LdapUser user, Set groups) throws FindException, UpdateException {
+    public void addUser(LdapUser user, Set groups) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void removeUser(LdapUser user, Set groups) throws FindException, UpdateException {
+    public void removeUser(LdapUser user, Set groups) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void addUser(LdapUser user, LdapGroup group) throws FindException, UpdateException {
+    public void addUser(LdapUser user, LdapGroup group) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void removeUser(LdapUser user, LdapGroup group) throws FindException, UpdateException {
+    public void removeUser(LdapUser user, LdapGroup group) {
         throw new UnsupportedOperationException();
     }
 
@@ -355,14 +355,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     /**
      * throws an UnsupportedOperationException
      */
-    public void setGroupHeaders(LdapUser user, Set groupHeaders) throws FindException, UpdateException {
+    public void setGroupHeaders(LdapUser user, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
+    public void setGroupHeaders(String userId, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
@@ -594,14 +594,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     /**
      * throws an UnsupportedOperationException
      */
-    public void setUserHeaders(LdapGroup group, Set groupHeaders) throws FindException, UpdateException {
+    public void setUserHeaders(LdapGroup group, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws an UnsupportedOperationException
      */
-    public void setUserHeaders(String groupId, Set groupHeaders) throws FindException, UpdateException {
+    public void setUserHeaders(String groupId, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
@@ -615,7 +615,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     /**
      * throws an UnsupportedOperationException
      */
-    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) {
         throw new UnsupportedOperationException();
     }
 
@@ -651,7 +651,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         return Collections.EMPTY_MAP;
     }
 
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, EntityManager.CacheVeto {
+    public Entity getCachedEntity(long o, int maxAge) {
         throw new UnsupportedOperationException();
     }
 

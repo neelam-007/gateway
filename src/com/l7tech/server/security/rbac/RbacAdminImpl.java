@@ -113,16 +113,6 @@ public class RbacAdminImpl implements RbacAdmin {
         roleManager.delete(role);
     }
 
-    public void addUserToRole(User user, Role role) throws UpdateException, RemoteException {
-        checkLicense();
-        roleManager.assignUser(role, user);
-    }
-
-    public void removeUserFromRole(User user, Role role) throws UpdateException, RemoteException {
-        checkLicense();
-        roleManager.deleteAssignment(user, role);
-    }
-
     public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {
         checkLicense();
         return entityFinder.findAll(entityClass);

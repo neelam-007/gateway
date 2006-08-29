@@ -1,14 +1,18 @@
 package com.l7tech.server.identity.internal;
 
-import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.UserRoleAssignment;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
+import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -26,8 +30,8 @@ public class InternalUserManagerImpl
         extends PersistentUserManagerImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
         implements InternalUserManager 
 {
-    public InternalUserManagerImpl(InternalIdentityProvider identityProvider) {
-        super(identityProvider);
+    public InternalUserManagerImpl(InternalIdentityProvider identityProvider, RoleManager roleManager) {
+        super(identityProvider, roleManager);
     }
 
     protected InternalUserManagerImpl() {}
@@ -93,24 +97,21 @@ public class InternalUserManagerImpl
     }
 
     /**
-     * Checks whether this user is the last member of the "Gateway Administrators" group.
-     * Prevents the administrator from removing his own admin accout membership
+     * Checks whether this user is the last user assigned to the Administrator {@link Role}.
      *
-     * @throws DeleteException if the proposed deletion would remove the last member of the "Gateway Administrators" group.
+     * @throws DeleteException if the proposed deletion would remove the last user assigned to the "Administrator" role.
      */
     protected void preDelete(InternalUser user) throws DeleteException {
         try {
-            GroupManager<InternalUser, InternalGroup> groupManager = identityProvider.getGroupManager();
-            for (IdentityHeader grp : groupManager.getGroupHeaders(user)) {
-                // is he an administrator?
-                if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
-                    // is he the last one ?
-                    Set adminUserHeaders = groupManager.getUserHeaders(grp.getStrId());
-                    if (adminUserHeaders.size() <= 1) {
-                        String msg = "An attempt was made to nuke the last standing adminstrator";
-                        logger.severe(msg);
-                        throw new DeleteException(msg);
+            Collection<Role> roles = roleManager.getAssignedRoles(user);
+            for (Role role : roles) {
+                if (role.getOid() == Role.ADMIN_ROLE_OID) {
+                    boolean anybodyElse = false;
+                    for (UserRoleAssignment assignment : role.getUserAssignments()) {
+                        if (!user.getId().equals(assignment.getUserId()) && user.getProviderId() != assignment.getProviderId())
+                            anybodyElse = true;
                     }
+                    if (!anybodyElse) throw new DeleteException("At least one User must always be assigned to the Administrator role");
                 }
             }
         } catch (FindException e) {
@@ -132,6 +133,20 @@ public class InternalUserManagerImpl
         return imp;
     }
 
-
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+/*
+    @Override
+    protected Map<String, Object> getUniqueAttributeMap(InternalUser entity) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("login", entity.getLogin());
+        map.put("providerId", entity.getProviderId());
+        return map;
+    }
+*/
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
+    }
+
 }

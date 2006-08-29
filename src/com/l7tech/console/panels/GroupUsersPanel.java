@@ -4,7 +4,6 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -405,28 +404,11 @@ class GroupUsersPanel extends JPanel {
             groupRemove.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Object[] removals = groupMemberList.getSelectedValues();
+                    Set members = groupPanel.getGroupMembers();
 
-                    if (((Group.ADMIN_GROUP_NAME.equals(groupPanel.getGroup().getName())) &&
-                      (listInModel.getSize() - removals.length > 0)) ||
-                      (!Group.ADMIN_GROUP_NAME.equals(groupPanel.getGroup().getName()))) {
-
-                        Set members = groupPanel.getGroupMembers();
-
-                        for (int i = 0; removals != null && i < removals.length; i++) {
-                            listInModel.removeElement(removals[i]);
-                            members.remove(removals[i]);
-                        }
-                    } else {
-                        // there must be at least one member in this group after the deletion
-                        StringBuffer msg = new StringBuffer();
-                        msg.append("Cannot delete all members in ");
-                        msg.append("Group ").append(groupPanel.getGroup().getName());
-                        msg.append(". This group must have at least one member.\n");
-
-                        JOptionPane.showMessageDialog(null,
-                          msg.toString(),
-                          "Error",
-                          JOptionPane.ERROR_MESSAGE);
+                    for (int i = 0; removals != null && i < removals.length; i++) {
+                        listInModel.removeElement(removals[i]);
+                        members.remove(removals[i]);
                     }
                     setAddRemoveButtons();
                 }

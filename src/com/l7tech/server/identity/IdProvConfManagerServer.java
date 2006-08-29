@@ -3,14 +3,12 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -57,23 +55,6 @@ public class IdProvConfManagerServer
             throw new SaveException("this type of config cannot be saved");
         }
 
-        // first, check that there isn't an existing provider with same name
-        // TODO there's already a unique constraint, and this is prone to SQL injection attacks!
-        try {
-            List existingProvidersWithSameName =
-              getHibernateTemplate().find("from " + getTableName() + " in class " + getImpClass().getName() +
-              " where " + getTableName() + ".name = ?", identityProviderConfig.getName());
-
-            if (existingProvidersWithSameName != null && !(existingProvidersWithSameName.isEmpty())) {
-                logger.fine("sending error back to requestor because existing provider with same name exists");
-                throw new DuplicateObjectException("The name " + identityProviderConfig.getName() + " is already used by " +
-                  "another id provider.");
-            }
-        } catch (DataAccessException e) {
-            logger.log(Level.INFO, "problem trying to check for provider with same name as " +
-              identityProviderConfig.getName(), e);
-        }
-
         return super.save(identityProviderConfig);
     }
 
@@ -85,7 +66,7 @@ public class IdProvConfManagerServer
         }
         try {
             identityProviderFactory.dropProvider(identityProviderConfig);
-            getHibernateTemplate().update(identityProviderConfig);
+            super.update(identityProviderConfig);
         } catch (DataAccessException se) {
             throw new UpdateException(se.toString(), se);
         }

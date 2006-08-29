@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.hibernate.*;
@@ -43,9 +44,11 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
     protected ClientCertManager clientCertManager;
+    protected RoleManager roleManager;
 
-    public PersistentUserManagerImpl(PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
+    public PersistentUserManagerImpl(PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider, RoleManager roleManager) {
         this.identityProvider = identityProvider;
+        this.roleManager = roleManager;
     }
 
     protected PersistentUserManagerImpl() { }
@@ -172,7 +175,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      * @throws ObjectNotFoundException
      */
     @Secured(operation=OperationType.DELETE)
-    public void deleteAll(final long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAll(final long ipoid) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
@@ -191,7 +194,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     @Secured(operation=OperationType.DELETE)
-    public void delete(final String identifier) throws DeleteException, ObjectNotFoundException {
+    public void delete(final String identifier) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
@@ -249,7 +252,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     @Secured(operation=OperationType.UPDATE)
-    public void update(UT user) throws UpdateException, ObjectNotFoundException {
+    public void update(UT user) throws UpdateException {
         update(user, null);
     }
 
@@ -260,14 +263,14 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      * @param user existing user
      */
     @Secured(operation=OperationType.UPDATE)
-    public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException, ObjectNotFoundException {
+    public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException {
         UT imp = cast(user);
 
         try {
             UT originalUser = findByPrimaryKey(user.getId());
             if (originalUser == null) {
                 logger.warning("The user " + user.getName() + " is not found.");
-                throw new ObjectNotFoundException("User " + user.getName());
+                throw new FindException("Couldn't find original version of user " + user.getName());
             }
 
             // check for version conflict
@@ -317,6 +320,9 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         super.initDao();
         if (clientCertManager == null) {
             throw new IllegalArgumentException("The Client Certificate Manager is required");
+        }
+        if (roleManager == null) {
+            throw new IllegalArgumentException("The RoleManager is required");
         }
     }
 

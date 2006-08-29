@@ -7,13 +7,15 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.HibernateEntityManager;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -23,8 +25,6 @@ public class JmsEndpointManagerImpl
         extends HibernateEntityManager<JmsEndpoint, EntityHeader>
         implements JmsEndpointManager
 {
-    private static final Logger logger = Logger.getLogger(JmsEndpointManagerImpl.class.getName());
-    
     public Collection findMessageSourceEndpoints() throws FindException {
         StringBuffer query = new StringBuffer("from endpoint in class ");
         query.append(JmsEndpoint.class.getName());
@@ -79,6 +79,7 @@ public class JmsEndpointManagerImpl
         }
     }
 
+/*
     public void update(final JmsEndpoint endpoint) throws VersionException, UpdateException {
         _logger.info("Updating JmsEndpoint" + endpoint);
 
@@ -102,6 +103,11 @@ public class JmsEndpointManagerImpl
         getHibernateTemplate().update(original);
         logger.info("Updated JmsEndpoint #" + endpoint.getOid());
     }
+*/
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
+    }
 
     public Class getImpClass() {
         return JmsEndpoint.class;
@@ -118,6 +124,4 @@ public class JmsEndpointManagerImpl
     public EntityType getEntityType() {
         return EntityType.JMS_ENDPOINT;
     }
-
-    private final Logger _logger = Logger.getLogger(getClass().getName());
 }

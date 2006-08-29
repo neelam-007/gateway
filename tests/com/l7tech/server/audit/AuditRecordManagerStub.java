@@ -24,4 +24,8 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord> imple
     public void deleteOldAuditRecords() throws DeleteException {
         throw new UnsupportedOperationException();
     }
+
+    public void update(AuditRecord entity) throws UpdateException {
+        throw new UnsupportedOperationException();
+    }
 }

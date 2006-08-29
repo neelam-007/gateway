@@ -15,5 +15,4 @@ public interface JmsEndpointManager extends EntityManager<JmsEndpoint, EntityHea
     Collection findMessageSourceEndpoints() throws FindException;
     JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException;
     EntityHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException;
-    void update(JmsEndpoint endpoint) throws VersionException, UpdateException;
 }

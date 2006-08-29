@@ -754,9 +754,6 @@
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl">
-        <constructor-arg>
-            <ref local="identityProviderFactory"/>
-        </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>

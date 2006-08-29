@@ -131,7 +131,7 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void update(Group group) throws UpdateException, ObjectNotFoundException {
+        public void update(Group group) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -139,7 +139,7 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void update(Group group, Set<IdentityHeader> userHeaders) throws UpdateException, ObjectNotFoundException {
+        public void update(Group group, Set<IdentityHeader> userHeaders) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -239,11 +239,11 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
+        public void delete(String identifier) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+        public void deleteAll(long ipoid) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -251,7 +251,7 @@ public class TestIdentityProvider implements IdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public void update(User user) throws UpdateException, ObjectNotFoundException {
+        public void update(User user) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -263,7 +263,7 @@ public class TestIdentityProvider implements IdentityProvider {
             return bean;
         }
 
-        public void update(User user, Set<IdentityHeader> groupHeaders) throws UpdateException, ObjectNotFoundException {
+        public void update(User user, Set<IdentityHeader> groupHeaders) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 

@@ -29,6 +29,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xmlsec.*;
 
@@ -132,6 +133,7 @@ public class AllAssertions {
         new WsspAssertion(),
         new CookieCredentialSourceAssertion(),
         new XpathCredentialSource(),
+        new AuthenticationAssertion(),
     };
 
 

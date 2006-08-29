@@ -3,9 +3,8 @@
  */
 package com.l7tech.common.security.rbac;
 
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.*;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
+import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,18 +45,6 @@ public interface RbacAdmin {
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     long saveRole(Role role) throws SaveException, RemoteException;
-
-    /**
-     * Grants the specified Role to the specified User.
-     */
-    @Secured(stereotype=UPDATE)
-    void addUserToRole(User user, Role role) throws UpdateException, RemoteException;
-
-    /**
-     * Drops the specified User from the specified Role.
-     */
-    @Secured(stereotype=UPDATE)
-    void removeUserFromRole(User user, Role role) throws UpdateException, RemoteException;
 
     @Secured(stereotype=DELETE_ENTITY)
     void deleteRole(Role selectedRole) throws DeleteException, RemoteException;

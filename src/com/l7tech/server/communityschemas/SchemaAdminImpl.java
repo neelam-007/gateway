@@ -11,10 +11,7 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
 
 import java.rmi.RemoteException;
@@ -67,10 +64,14 @@ public class SchemaAdminImpl implements SchemaAdmin {
         return schemaEntryManager.findByTNS(tns);
     }
 
-    public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException {
+    public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException {
         checkLicense();
         if (entry.getOid() != -1) {
-            schemaEntryManager.update(entry);
+            try {
+                schemaEntryManager.update(entry);
+            } catch (ObjectModelException e) {
+                throw new SaveException("Couldn't save Schema", e);
+            }
             return entry.getOid();
         } else {
             return schemaEntryManager.save(entry);

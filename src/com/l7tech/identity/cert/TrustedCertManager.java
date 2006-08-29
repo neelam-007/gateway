@@ -31,21 +31,6 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
     TrustedCert findBySubjectDn(String dn) throws FindException;
 
     /**
-     * Updates an existing {@link TrustedCert} in the database.
-     * @param cert an existing {@link TrustedCert} to be updated
-     * @throws UpdateException if the {@link TrustedCert} cannot be updated for any reason.
-     */
-    void update(TrustedCert cert) throws UpdateException;
-
-    /**
-     * Deletes an existing {@link TrustedCert} from the database.
-     * @param oid the oid of the {@link TrustedCert} to be deleted
-     * @throws FindException if the {@link TrustedCert} does not exist or cannot be retrieved prior to deletion
-     * @throws DeleteException if the {@link TrustedCert} cannot be deleted for any reason other than nonexistence
-     */
-    void delete(long oid) throws FindException, DeleteException;
-
-    /**
      * Retrieves the TrustedCert with the specified subject DN from a cache,
      * if it was cached less than maxAge milliseconds ago.
      * <p>

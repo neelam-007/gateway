@@ -151,42 +151,42 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
-    public void delete(LdapUser user) throws DeleteException {
+    public void delete(LdapUser user) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws UnsupportedOperationException
      */
-    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+    public void deleteAll(long ipoid) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws UnsupportedOperationException
      */
-    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
+    public void delete(String identifier) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws UnsupportedOperationException
      */
-    public String saveUser(LdapUser user) throws SaveException {
+    public String saveUser(LdapUser user) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws UnsupportedOperationException
      */
-    public void update(LdapUser user) throws UpdateException, ObjectNotFoundException {
+    public void update(LdapUser user) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * throws UnsupportedOperationException
      */
-    public String save(LdapUser user, Set groupHeaders) throws SaveException {
+    public String save(LdapUser user, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
@@ -197,7 +197,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
-    public void update(LdapUser user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
+    public void update(LdapUser user, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
@@ -215,7 +215,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
-    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) throws FindException {
+    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) {
         throw new UnsupportedOperationException();
     }
 
@@ -255,7 +255,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         return Collections.EMPTY_MAP;
     }
 
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, EntityManager.CacheVeto {
+    public Entity getCachedEntity(long o, int maxAge) {
         throw new UnsupportedOperationException();
     }
 

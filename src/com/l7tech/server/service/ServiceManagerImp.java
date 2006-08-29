@@ -103,26 +103,7 @@ public class ServiceManagerImp
         return service.getOid();
     }
 
-    public void update(PublishedService service) throws UpdateException, VersionException {
-        final PublishedService original;
-        // check for original service
-        try {
-            original = findByPrimaryKey(service.getOid());
-            if (original == null) {
-                throw new UpdateException("Could not retrieve the service " + service.getName() + ".\n" +
-                  "The service has been removed in the meantime.");
-            }
-        } catch (FindException e) {
-            throw new UpdateException("could not get original service", e);
-        }
-
-        // check version
-        if (original.getVersion() != service.getVersion()) {
-            logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: "
-              + service.getVersion());
-            throw new VersionException("The service '" + service.getName() + "' has been changed in the meantime by another user.");
-        }
-
+    public void update(PublishedService service) throws UpdateException {
         // try recording resolution parameters
         try {
             resolutionManager.recordResolutionParameters(service);
@@ -132,9 +113,7 @@ public class ServiceManagerImp
             throw new UpdateException(msg, e);
         }
 
-        // update
-        getHibernateTemplate().merge(service);
-        logger.info("Updated service " + service.getName() + "  #" + service.getOid());
+        super.update(service);
 
         // update cache after commit
         final long passedServiceId = service.getOid();
@@ -310,6 +289,10 @@ public class ServiceManagerImp
         } catch (Exception e) {
             throw new ObjectModelException("Exception building cache", e);
         }
+    }
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
     }
 
     private ResolutionManager resolutionManager;

@@ -32,13 +32,13 @@ public interface UserManager<UT extends User> {
     /**
      * Deletes the user with the specified primary key.
      */
-    void delete( String identifier ) throws DeleteException, ObjectNotFoundException;
+    void delete( String identifier ) throws DeleteException, FindException;
 
     /**
      * Deletes all users.
      * @param ipoid is unnecessary, since the UserManager maintains a link to its provider.
      */
-    void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException;
+    void deleteAll(long ipoid) throws DeleteException, FindException;
 
     /**
      * Saves a new user.
@@ -49,7 +49,7 @@ public interface UserManager<UT extends User> {
     /**
      * Updates an existing user.
      */
-    void update(UT user) throws UpdateException, ObjectNotFoundException;
+    void update(UT user) throws UpdateException, FindException;
 
     /**
      * Saves a new user and replaces its group memberships based on a {@link Set} of {@link IdentityHeader}s pointing to {@link Group}s.
@@ -65,7 +65,7 @@ public interface UserManager<UT extends User> {
      * @throws UpdateException
      * @throws ObjectNotFoundException
      */
-    void update(UT user, Set<IdentityHeader> groupHeaders ) throws UpdateException, ObjectNotFoundException;
+    void update(UT user, Set<IdentityHeader> groupHeaders ) throws UpdateException, FindException;
 
     /**
      * Finds users whose name or login matches the specified pattern.

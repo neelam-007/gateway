@@ -59,6 +59,7 @@ public class SampleMessageManagerImp
         }
     }
 
+/*
     public void update(SampleMessage sm) throws UpdateException {
         try {
             SampleMessage original = findByPrimaryKey(sm.getOid());
@@ -72,6 +73,12 @@ public class SampleMessageManagerImp
         } catch (Exception e) {
             throw new UpdateException("Couldn't update SampleMessage", e);
         }
+    }
+*/
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
     }
 
     public Class getImpClass() {

@@ -121,20 +121,10 @@ public class TrustedCertManagerImp
     public void update(TrustedCert cert) throws UpdateException {
         try {
             checkCachable(cert);
-            TrustedCert original = findByPrimaryKey(cert.getOid());
-            if (original == null) throw new UpdateException("Can't find TrustedCert #" + cert.getOid() + ": it was probably deleted by another transaction");
-
-            if (original.getVersion() != cert.getVersion())
-                throw new StaleUpdateException("TrustedCert #" + cert.getOid() + " was modified by another transaction");
-
-            original.copyFrom(cert);
-            getHibernateTemplate().update(original);
+            super.update(cert);
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new UpdateException("Couldn't update cert", e);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, e.toString(), e);
-            throw new UpdateException("Couldn't find cert to be udpated");
         } catch (CacheVeto e) {
             final String msg = e.getMessage();
             logger.log(Level.WARNING, msg, e.getCause());
@@ -304,6 +294,18 @@ public class TrustedCertManagerImp
                 peruseTrustedCertificates();
             }
         });
+    }
+
+    protected Map<String,Object> getUniqueAttributeMap(TrustedCert cert) {
+        Map<String,Object> map = new HashMap<String, Object>();
+        map.put("name", cert.getName());
+        map.put("subjectDn", cert.getSubjectDn());
+        return map;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
     }
 
     private void peruseTrustedCertificates() {

@@ -124,7 +124,7 @@ public class JmsAdminImpl implements JmsAdmin {
             else
                 jmsConnectionManager.update(connection);
             return oid;
-        } catch (UpdateException e) {
+        } catch (ObjectModelException e) {
             throw new SaveException("Couldn't save JmsConnection", e);
         }
     }
@@ -251,7 +251,7 @@ public class JmsAdminImpl implements JmsAdmin {
             }
 
             return oid;
-        } catch (UpdateException e) {
+        } catch (ObjectModelException e) {
             throw new SaveException("Couldn't save endpoint", e);
         }
     }

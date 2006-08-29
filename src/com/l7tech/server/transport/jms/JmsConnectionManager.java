@@ -14,6 +14,4 @@ import java.util.Collection;
  */
 public interface JmsConnectionManager extends EntityManager<JmsConnection, EntityHeader> {
     Collection<JmsProvider> findAllProviders() throws FindException;
-
-    void update(JmsConnection conn) throws VersionException, UpdateException;
 }

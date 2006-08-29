@@ -181,7 +181,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             UserManager userManager = retrieveUserManager(ipoid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             userManager.deleteAll(ipoid);
-        } catch (ObjectNotFoundException e) {
+        } catch (FindException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         }
     }
@@ -292,8 +292,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
                 }
             }
             Collection<IdentityHeader> searchResults = provider.search(types, pattern);
-            if (searchResults == null) return new EntityHeader[0];
-            return (EntityHeader[])searchResults.toArray(new EntityHeader[]{});
+            if (searchResults == null) return new IdentityHeader[0];
+            return searchResults.toArray(new IdentityHeader[]{});
     }
 
     public User findUserByID(long identityProviderConfigId, String userId)

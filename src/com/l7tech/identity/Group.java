@@ -7,17 +7,6 @@ package com.l7tech.identity;
  * the Group objects themselves.
  */
 public interface Group extends Identity {
-    /**
-     * Name of the admin group. those admins can do anything.
-     * This group is there at ssg install and cannot be made empty
-     * nor deleted.
-     */
-    static final String ADMIN_GROUP_NAME = "Gateway Administrators";
-    /**
-     * Name of the operator group. Those admins have read only permissions.
-     * This group can be made empty but cannot be deleted.
-     */
-    static final String OPERATOR_GROUP_NAME = "Gateway Operators";
 
     /**
      * Gets a human-readable description for this Group

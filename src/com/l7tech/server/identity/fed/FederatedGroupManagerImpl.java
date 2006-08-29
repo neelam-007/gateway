@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -134,6 +136,13 @@ public class FederatedGroupManagerImpl
             // Same as internal groups
             return super.isMember(user, group);
         }
+    }
+
+    protected Map<String, Object> getUniqueAttributeMap(FederatedUser entity) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("providerId", entity.getProviderId());
+        map.put("name", entity.getName());
+        return map;
     }
 
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {

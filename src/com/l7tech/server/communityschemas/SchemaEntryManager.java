@@ -15,8 +15,5 @@ import java.util.Collection;
  */
 public interface SchemaEntryManager extends EntityManager<SchemaEntry, EntityHeader> {
     Collection<SchemaEntry> findByTNS(String tns) throws FindException;
-
     Collection<SchemaEntry> findByName(String schemaName) throws FindException;
-
-    void update(SchemaEntry entry) throws UpdateException;
 }

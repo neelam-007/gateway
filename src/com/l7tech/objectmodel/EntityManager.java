@@ -69,6 +69,8 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
 
     void delete(long oid) throws DeleteException, FindException;
 
+    void update(ET entity) throws UpdateException;
+
     /** Holds information about a cached Entity. */
     static class CacheInfo<ET extends PersistentEntity> {
         ET entity;
@@ -84,6 +86,10 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
         public CacheVeto(String msg, Throwable cause) {
             super(msg, cause);
         }
+    }
+
+    public static enum UniqueType {
+        NONE, NAME, OTHER
     }
 
 }

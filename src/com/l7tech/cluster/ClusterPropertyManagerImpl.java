@@ -9,26 +9,18 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.orm.hibernate3.HibernateCallback;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * Hibernate manager for read/write access to the cluster_properties table.
@@ -38,10 +30,9 @@ import java.sql.SQLException;
 @Transactional(propagation=Propagation.REQUIRED)
 public class ClusterPropertyManagerImpl
         extends HibernateEntityManager<ClusterProperty, EntityHeader>
-        implements ApplicationContextAware, ClusterPropertyManager
+        implements ClusterPropertyManager
 {
     private final Logger logger = Logger.getLogger(ClusterPropertyManagerImpl.class.getName());
-    private ApplicationContext applicationContext;
 
     private final String HQL_FIND_BY_NAME =
             "from " + getTableName() +
@@ -101,20 +92,7 @@ public class ClusterPropertyManagerImpl
         }
     }
 
-    public long save(ClusterProperty clusterProperty) throws SaveException {
-        if (clusterProperty != null && clusterProperty.getName() != null) {
-            try {
-                ClusterProperty existing = findByUniqueName(clusterProperty.getName());
-                if (existing != null) {
-                    throw new DuplicateObjectException("A cluster property named '"+clusterProperty.getName()+"' already exists.");
-                }
-            } catch (FindException e) {
-            }
-        }
-
-        return super.save(clusterProperty);
-    }
-
+/*
     public void update(ClusterProperty clusterProperty) throws UpdateException {
         ClusterProperty old;
         try {
@@ -135,10 +113,7 @@ public class ClusterPropertyManagerImpl
             throw new UpdateException("Couldn't save new property", e);
         }
     }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
+*/
 
     public Class getImpClass() {
         return ClusterProperty.class;

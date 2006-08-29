@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.identity.fed.*;
 import com.l7tech.server.identity.internal.*;
 import com.l7tech.server.identity.ldap.*;
+import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -169,12 +170,19 @@ public class IdentityProviderFactory
     public final Object createManagerInstance(Class managerClass, IdentityProvider identityProvider)
       throws InvalidIdProviderCfgException {
         try {
+            RoleManager roleManager = (RoleManager) springContext.getBean("roleManager");
             Class[] idpIntfs = identityProvider.getClass().getInterfaces();
             for (Constructor ctor : managerClass.getConstructors()) {
-                if (ctor.getParameterTypes().length == 1) {
+                int len = ctor.getParameterTypes().length;
+                if (len >= 1) {
                     for (Class intf : idpIntfs) {
                         if (ctor.getParameterTypes()[0] == intf) {
-                            return ctor.newInstance(identityProvider);
+                            switch(len) {
+                                case 1:
+                                    return ctor.newInstance(identityProvider);
+                                case 2:
+                                    return ctor.newInstance(identityProvider, roleManager);
+                            }
                         }
                     }
                 }

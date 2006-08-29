@@ -13,6 +13,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -22,7 +23,6 @@ import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.dao.DataAccessException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -74,10 +74,56 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         return findEntity(oid);
     }
 
+    protected List findMatching(final Map<String, Object> map) throws FindException {
+        for (Object o : map.values()) {
+            if (o == null) return Collections.emptyList();
+        }
+
+        try {
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(getImpClass());
+                    for (Map.Entry<String,?> entry: map.entrySet()) {
+                        crit.add(Restrictions.eq(entry.getKey(), entry.getValue()));
+                    }
+                    return crit.list();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't check uniqueness", e);
+        }
+    }
+
+    protected Map<String,Object> getUniqueAttributeMap(ET entity) {
+        switch(getUniqueType()) {
+            case NAME:
+                if (entity instanceof NamedEntity) {
+                    //noinspection unchecked
+                    NamedEntity namedEntity = (NamedEntity) entity;
+                    Map<String,Object> map = new HashMap<String, Object>();
+                    map.put("name", namedEntity.getName());
+                    return map;
+                } else {
+                    throw new IllegalArgumentException("UniqueType is NAME, but entity is not a NamedEntity");
+                }
+            case NONE:
+                return Collections.emptyMap();
+            case OTHER:
+            default:
+                throw new IllegalArgumentException("UniqueType is OTHER, but getUniqueAttributeMap() not overridden");
+        }
+    }
+
     @Secured(operation=OperationType.CREATE)
     public long save(ET entity) throws SaveException {
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity });
         try {
+            if (getUniqueType() != UniqueType.NONE) {
+                final Map<String, Object> newMap = getUniqueAttributeMap(entity);
+                List others = findMatching(newMap);
+                if (!others.isEmpty()) throw new SaveException("The object is not unique");
+            }
+
             Object key = getHibernateTemplate().save(entity);
             if (!(key instanceof Long))
                 throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Long");
@@ -85,6 +131,30 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
             return ((Long)key);
         } catch (Exception e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
+        }
+    }
+
+    public void update(ET entity) throws UpdateException {
+        try {
+            if (getUniqueType() != UniqueType.NONE) {
+                final Map<String, Object> newMap = getUniqueAttributeMap(entity);
+                List others = findMatching(newMap);
+                if (!others.isEmpty()) {
+                    if (others.size() == 1) {
+                        //noinspection unchecked
+                        ET other = (ET)others.get(0);
+                        Map existingMap = getUniqueAttributeMap(other);
+                        if (!existingMap.equals(newMap)) throw new UpdateException("The object is not unique");
+                    } else {
+                        throw new UpdateException("The object is not unique");
+                    }
+                }
+            }
+            getHibernateTemplate().merge(entity);
+        } catch (UpdateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UpdateException("Couldn't update " + entity.getClass().getSimpleName(), e);
         }
     }
 
@@ -266,9 +336,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
             cacheInfo = cacheInfoByOid.get(objectid);
             read.release(); read = null;
 
-            if (cacheInfo == null) return false;
-
-            return cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
+            return cacheInfo != null && cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
             Thread.currentThread().interrupt();
@@ -545,6 +613,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         } catch (Exception he) {
             throw new DeleteException(he.toString(), he);
         }
+    }
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.NAME;
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());

@@ -10,12 +10,9 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
+import com.l7tech.server.security.rbac.RoleManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -23,6 +20,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * The {@link com.l7tech.identity.UserManager} for {@link FederatedIdentityProvider}s.
@@ -35,8 +34,8 @@ public class FederatedUserManagerImpl
         extends PersistentUserManagerImpl<FederatedUser, FederatedGroup, FederatedUserManager, FederatedGroupManager>
         implements FederatedUserManager
 {
-    public FederatedUserManagerImpl(FederatedIdentityProvider identityProvider) {
-        super(identityProvider);
+    public FederatedUserManagerImpl(FederatedIdentityProvider identityProvider, RoleManager roleManager) {
+        super(identityProvider, roleManager);
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -136,6 +135,19 @@ public class FederatedUserManagerImpl
 
     protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
         findHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
+    }
+
+    @Override
+    protected Map<String, Object> getUniqueAttributeMap(FederatedUser entity) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("providerId", entity.getProviderId());
+        map.put("name", entity.getName());
+        return map;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
     }
 
     private final String FIND_BY_ =

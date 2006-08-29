@@ -15,7 +15,6 @@ import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -46,8 +45,6 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
 
     private AdminSessionManager sessionManager;
 
-    //todo: consider moving to Spring bean configuration
-    private final List adminGroups = Arrays.asList(new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private RoleManager roleManager;
@@ -144,12 +141,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             if (username != null) {
                 try {
                     User user = getInternalIdentityProvider().getUserManager().findByLogin(username);
-                    if (user != null) {
-                        String[] roles = getUserRoles(user);
-                        if (containsAdminAccessRole(roles)) {
-                            digestWith = user.getPassword();
-                        }
-                    }
+                    if (user != null) digestWith = user.getPassword(); 
                 } catch (FindException e) {
                     // catch here so there is no difference to the client for one username vs another.
                     logger.log(Level.WARNING, "Authentication provider error", e);
@@ -203,27 +195,6 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
         if (identityProviderConfigManager == null) {
             throw new IllegalArgumentException("identity provider config is required");
         }
-    }
-
-    private boolean containsAdminAccessRole(String[] groups) {
-        for (int i = 0; i < groups.length; i++) {
-            String group = groups[i];
-            if (adminGroups.contains(group)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String[] getUserRoles(User user) throws FindException, InvalidIdProviderCfgException {
-        IdentityProvider provider = getInternalIdentityProvider();
-        GroupManager gman = provider.getGroupManager();
-        List roles = new ArrayList();
-        for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
-            EntityHeader grp = (EntityHeader)i.next();
-            roles.add(grp.getName());
-        }
-        return (String[])roles.toArray(new String[]{});
     }
 
     private byte[] getDigest(String password, X509Certificate serverCertificate)

@@ -4,7 +4,6 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
 
 import java.util.Collection;
 
@@ -14,8 +13,6 @@ import java.util.Collection;
 public interface IdentityProviderConfigManager extends EntityManager<IdentityProviderConfig, EntityHeader> {
     // since this provider config is not persisted, we need a special id to identify it for certain operations
     long INTERNALPROVIDER_SPECIAL_OID = -2;
-
-    void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
 
     Collection<IdentityProvider> findAllIdentityProviders() throws FindException;
 

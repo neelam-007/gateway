@@ -4,37 +4,37 @@
 
 package com.l7tech.server.admin.ws;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.LicenseException;
-import com.l7tech.identity.*;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
-import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.util.SoapFaultManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -42,6 +42,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.security.auth.Subject;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -49,9 +50,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
+import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.PrivilegedExceptionAction;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,19 +101,6 @@ public class AdminWebServiceFilter implements Filter {
         serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
         securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
 
-        IdentityProviderFactory ipf = (IdentityProviderFactory)getBean(applicationContext, "identityProviderFactory", "Identity Provider Factory", IdentityProviderFactory.class);
-
-        final Group adminGroup;
-        final Group operatorGroup;
-        try {
-            IdentityProvider iip = ipf.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-            final GroupManager groupManager = iip.getGroupManager();
-            adminGroup = groupManager.findByName(Group.ADMIN_GROUP_NAME);
-            operatorGroup = groupManager.findByName(Group.OPERATOR_GROUP_NAME);
-        } catch (FindException e) {
-            throw new ServletException(ERR_PREFIX + "Internal Identity Provider or admin groups", e);
-        }
-
         final AllAssertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
                 // TODO support configurable IP range assertions
                 new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
@@ -120,14 +113,7 @@ public class AdminWebServiceFilter implements Filter {
                         new RequestWssX509Cert(), // TODO do we care what part of the message is signed?
                         new SecureConversation(),
                 })),
-                new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
-                        new MemberOfGroup(adminGroup.getProviderId(),
-                                adminGroup.getName(),
-                                adminGroup.getId()),
-                        new MemberOfGroup(operatorGroup.getProviderId(),
-                                operatorGroup.getName(),
-                                operatorGroup.getId())
-                }))
+                new AuthenticationAssertion(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID)
         }));
 
         final ServerPolicyFactory policyFactory = (ServerPolicyFactory) applicationContext.getBean("policyFactory");
@@ -148,7 +134,7 @@ public class AdminWebServiceFilter implements Filter {
         }
     }
 
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain filterChain) throws IOException, ServletException {
         final Message response = new Message();
         final Message request = new Message();
 
@@ -194,11 +180,13 @@ public class AdminWebServiceFilter implements Filter {
             trogdor(context, request);
 
             final AssertionStatus status = polStatus = adminPolicy.checkRequest(context);
+            User authenticatedUser = context.getAuthenticatedUser();
+            if (authenticatedUser == null) throw new ServletException("Authentication Required");
             context.setPolicyResult(status);
             if (status == AssertionStatus.NONE) {
                 // TODO support admin services that requre Gateway Administrators membership
                 // Pass it along to XFire
-                HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpServletRequest) {
+                final HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpServletRequest) {
                     public ServletInputStream getInputStream() throws IOException {
                         try {
                             final InputStream is = request.getMimeKnob().getEntireMessageBodyAsInputStream();
@@ -235,7 +223,15 @@ public class AdminWebServiceFilter implements Filter {
                     }
                 };
 
-                filterChain.doFilter(wrapper, servletResponse);
+                Set<Principal> principals = new HashSet<Principal>();
+                principals.add(authenticatedUser);
+                Subject subject = new Subject(true, principals, Collections.emptySet(), Collections.emptySet());
+                Subject.doAs(subject, new PrivilegedExceptionAction() {
+                    public Object run() throws Exception {
+                        filterChain.doFilter(wrapper, servletResponse);
+                        return null;
+                    }
+                });
                 respKnob.beginResponse();
             } else {
                 respKnob.beginResponse();
@@ -283,11 +279,8 @@ public class AdminWebServiceFilter implements Filter {
 
     private void trogdor(PolicyEnforcementContext context, Message request) throws IOException, SAXException, InvalidDocumentFormatException, ProcessorException {
         // WSS-Processing Step
-        boolean isSoap = false;
-        boolean hasSecurity = false;
-
-        isSoap = context.getRequest().isSoap();
-        hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
+        boolean isSoap = context.getRequest().isSoap();
+        boolean hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
 
         if (isSoap && hasSecurity) {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator

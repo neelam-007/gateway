@@ -3,28 +3,22 @@
  */
 package com.l7tech.server.security.rbac;
 
+import static com.l7tech.common.security.rbac.EntityType.ANY;
 import com.l7tech.common.security.rbac.*;
-import static com.l7tech.common.security.rbac.EntityType.*;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -35,13 +29,6 @@ public class RoleManagerImpl
         implements RoleManager
 {
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
-    private IdentityProviderFactory identityProviderFactory;
-
-    public RoleManagerImpl(IdentityProviderFactory ipf) {
-        this.identityProviderFactory = ipf;
-    }
-
-    protected RoleManagerImpl() { }
 
     public Class getImpClass() {
         return Role.class;
@@ -56,46 +43,6 @@ public class RoleManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public Collection<User> getAssignedUsers(final Role role) throws FindException {
-        Set<User> users = new HashSet<User>();
-        List assignments = (List) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Criteria assignmentsForRole = session.createCriteria(UserRoleAssignment.class);
-                assignmentsForRole.add(Restrictions.eq("role", role));
-                return assignmentsForRole.list();
-            }
-        });
-        if (assignments.isEmpty()) return users;
-
-        for (Iterator i = assignments.iterator(); i.hasNext();) {
-            UserRoleAssignment ura = (UserRoleAssignment) i.next();
-            IdentityProvider idp = identityProviderFactory.getProvider(ura.getProviderId());
-            UserManager uman = idp.getUserManager();
-            users.add(uman.findByPrimaryKey(ura.getUserId()));
-        }
-
-        return users;
-    }
-
-    @Transactional(readOnly=true)
-    public Collection<UserRoleAssignment> getAssignments(final User user) throws FindException {
-        //noinspection unchecked
-        return (Collection<UserRoleAssignment>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Set<UserRoleAssignment> assignments = new HashSet<UserRoleAssignment>();
-                Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
-                userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
-                userAssignmentQuery.add(Restrictions.eq("userId", user.getId()));
-                List directUserAssignments = userAssignmentQuery.list();
-                for (Object assignment : directUserAssignments) {
-                    assignments.add((UserRoleAssignment) assignment);
-                }
-                return assignments;
-            }
-        });
-    }
-
-    @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
         //noinspection unchecked
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -105,6 +52,8 @@ public class RoleManagerImpl
                 userAssignmentQuery.add(Restrictions.eq("userId", user.getId()));
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
                 List uras = userAssignmentQuery.list();
+                //(hibernate results aren't generic)
+                //noinspection ForLoopReplaceableByForEach
                 for (Iterator i = uras.iterator(); i.hasNext();) {
                     UserRoleAssignment ura = (UserRoleAssignment) i.next();
                     roles.add(ura.getRole());
@@ -113,22 +62,6 @@ public class RoleManagerImpl
                 return roles;
             }
         });
-    }
-
-    public void update(Role role) throws UpdateException {
-        try {
-            getHibernateTemplate().merge(role);
-        } catch (Exception e) {
-            throw new UpdateException("Couldn't save Role", e);
-        }
-    }
-
-    public void assignUser(Role role, User user) throws UpdateException {
-        try {
-            getHibernateTemplate().save(new UserRoleAssignment(role, user.getProviderId(), user.getId()));
-        } catch (DataAccessException e) {
-            throw new UpdateException(ExceptionUtils.getMessage(e), e);
-        }
     }
 
     @Transactional(readOnly=true)
@@ -165,22 +98,6 @@ public class RoleManagerImpl
             }
         }
         return false;
-    }
-
-    public void deleteAssignment(final User user, final Role role) {
-        getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                Criteria findAssignment = session.createCriteria(UserRoleAssignment.class);
-                findAssignment.add(Restrictions.eq("role", role));
-                findAssignment.add(Restrictions.eq("userId", user.getId()));
-                findAssignment.add(Restrictions.eq("providerId", user.getProviderId()));
-                for (Object o : findAssignment.list()) {
-                    UserRoleAssignment ura = (UserRoleAssignment)o;
-                    session.delete(ura);
-                }
-                return null;
-            }
-        });
     }
 
 

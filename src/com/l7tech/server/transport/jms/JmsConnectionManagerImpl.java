@@ -25,9 +25,8 @@ import java.util.logging.Logger;
  */
 public class JmsConnectionManagerImpl
         extends HibernateEntityManager<JmsConnection, EntityHeader>
-        implements InitializingBean, JmsConnectionManager {
-    private static final Logger logger = Logger.getLogger(JmsConnectionManagerImpl.class.getName());
-    
+        implements InitializingBean, JmsConnectionManager
+{
     private List<JmsProvider> _allProviders = null;
 
     public Collection<JmsProvider> findAllProviders() throws FindException {
@@ -45,6 +44,7 @@ public class JmsConnectionManagerImpl
         return _allProviders;
     }
 
+/*
     public void update(final JmsConnection conn) throws VersionException, UpdateException {
         _logger.info("Updating JmsConnection " + conn);
 
@@ -68,6 +68,7 @@ public class JmsConnectionManagerImpl
         getHibernateTemplate().update(original);
         logger.info("Updated JmsConnection #" + conn.getOid());
     }
+*/
 
 
     /**
@@ -92,6 +93,10 @@ public class JmsConnectionManagerImpl
         } catch (Exception e) {
             throw new DeleteException(e.toString(), e);
         }
+    }
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
     }
 
     public Class getImpClass() {

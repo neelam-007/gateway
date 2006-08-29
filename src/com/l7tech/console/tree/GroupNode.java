@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.GroupPropertiesAction;
-import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -49,13 +48,13 @@ public class GroupNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
+        java.util.List<Action> list = new ArrayList<Action>();
         final GroupPropertiesAction groupPropertiesAction = new GroupPropertiesAction(this);
         //groupPropertiesAction.setEnabled(isInternal());
         list.add(groupPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
 
-        return (Action[])list.toArray(new Action[]{});
+        return list.toArray(new Action[]{});
     }
 
     /**
@@ -65,12 +64,7 @@ public class GroupNode extends EntityHeaderNode {
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        if (isInternal() &&
-          (getEntityHeader().getName().equals(Group.ADMIN_GROUP_NAME) ||
-          getEntityHeader().getName().equals(Group.OPERATOR_GROUP_NAME))) {
-            return false;
-        } else
-            return true;
+        return true;
     }
 
     /**

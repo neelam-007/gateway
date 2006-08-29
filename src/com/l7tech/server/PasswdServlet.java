@@ -6,11 +6,10 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.AuthenticationResult;
 import sun.misc.BASE64Decoder;
 
 import javax.servlet.ServletConfig;
@@ -135,9 +134,6 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (UpdateException e) {
-            logger.log(Level.WARNING, "could not complete operation, returning 500", e);
-            sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (ObjectNotFoundException e) {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (InvalidPasswordException e) {

@@ -142,6 +142,11 @@ public class AuditRecordManagerImpl
         }
     }
 
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
+    }
+
     public Class getImpClass() {
         return AuditRecord.class;
     }

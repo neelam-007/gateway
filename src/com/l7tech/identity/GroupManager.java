@@ -15,9 +15,9 @@ public interface GroupManager<UT extends User, GT extends Group> {
     void deleteAll( long ipoid ) throws DeleteException, ObjectNotFoundException;
     void deleteAllVirtual( long ipoid ) throws DeleteException, ObjectNotFoundException;
     String saveGroup(GT group) throws SaveException;
-    void update(GT group) throws UpdateException, ObjectNotFoundException;
+    void update(GT group) throws UpdateException, FindException;
     String save(GT group, Set<IdentityHeader> userHeaders ) throws SaveException;
-    void update(GT group, Set<IdentityHeader> userHeaders ) throws UpdateException, ObjectNotFoundException;
+    void update(GT group, Set<IdentityHeader> userHeaders ) throws UpdateException, FindException;
     Collection<IdentityHeader> search(String searchString) throws FindException;
     Class getImpClass();
     GT reify(GroupBean bean);
