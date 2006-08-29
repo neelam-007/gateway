@@ -17,14 +17,14 @@ public class ManageRolesAction extends SecureAction {
     }
 
     public String getName() {
-        return "Manage Access Controls";
+        return "Manage Roles";
     }
 
     /**
      * @return the action description
      */
     public String getDescription() {
-        return "View Access Controls";
+        return "View Roles";
     }
 
     /**
