@@ -486,12 +486,17 @@ public class PolicyApplicationContext extends ProcessingContext {
                 Ssg certSsg = ssg.getTrustedGateway();
                 if (certSsg == null) certSsg = ssg;
                 ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(certSsg);
-                throw new OperationCanceledException("Unable to obtain a client certificate");
+                throw new OperationCanceledException("Unable to obtain a client certificate: " + ExceptionUtils.getMessage(e), e);
             }
         } catch (IOException e) {
             if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
                 throw new ServerCertificateUntrustedException(e); // (this is a rethrow, so we preserve existing sslPeer)
             throw new ClientCertificateException("Unable to obtain a client certificate", e);
+        } catch (ServerFeatureUnavailableException e) {
+            Ssg certSsg = ssg.getTrustedGateway();
+            if (certSsg == null) certSsg = ssg;
+            ssg.getRuntime().getCredentialManager().notifyFeatureNotAvailable(certSsg, "certificate signing service");
+            throw new OperationCanceledException("Unable to obtain a client certificate: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

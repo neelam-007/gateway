@@ -259,6 +259,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                 log.log(Level.WARNING, msg, csrex);
                                 Gui.errorMessage(msg);
                                 return;
+                            } catch (ServerFeatureUnavailableException sfue) {
+                                final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
+                                        ssgName() + " because the certificate signing service is not available " +
+                                        "on this Gateway.";
+                                log.log(Level.WARNING, msg, sfue);
+                                Gui.errorMessage(msg);
+                                return;
                             } catch (BadCredentialsException csrex) {
                                 final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
                                         ssgName() + " because of credentials provided. Contact the " +
@@ -327,8 +334,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     }
 
     private void manualCSR() throws OperationCanceledException, GeneralSecurityException,
-                                    IOException, KeyStoreCorruptException, BadCredentialsException,
-                                    CertificateAlreadyIssuedException {
+            IOException, KeyStoreCorruptException, BadCredentialsException,
+            CertificateAlreadyIssuedException, ServerFeatureUnavailableException {
         if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel) || ssg.isFederatedGateway())
             throw new IllegalStateException("Not supported for Federated Gateway");
 
@@ -351,7 +358,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             JOptionPane.showMessageDialog(this,
                                           "You must set a gateway host name before you can apply for a client " +
                                           "certificate.", "Cannot apply for client certificate",
-                                          JOptionPane.ERROR_MESSAGE);
+                                                          JOptionPane.ERROR_MESSAGE);
             throw new OperationCanceledException();
         }
 

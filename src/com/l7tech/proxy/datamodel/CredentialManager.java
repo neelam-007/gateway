@@ -123,6 +123,15 @@ public abstract class CredentialManager {
     public abstract void notifyCertificateAlreadyIssued(Ssg ssg);
 
     /**
+     * Notify the user that an operation could not be performed because the specified feature does not seem
+     * to be available on the specified target Gateway.
+     *
+     * @param ssg      the gateway we needed service from.  Must not be null
+     * @param feature  the feature we were trying to use, ie "certificate signing service".  Must not be null.
+     */
+    public abstract void notifyFeatureNotAvailable(Ssg ssg, String feature);
+
+    /**
      * Notify the user that an SSL connection to the server could not be established because the hostname did not match
      * the one in the certificate presented by the server during the handshake.
      * <p>

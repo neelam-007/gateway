@@ -198,11 +198,6 @@ class GuiCredentialManager extends CredentialManager {
         final DestructionFlag df = new DestructionFlag();
         df.destroyKeystore = false;
 
-        long now = System.currentTimeMillis();
-
-        // Avoid spamming the user with reports
-        if (System.currentTimeMillis() > now + 1000)
-            return;
         invokeOnSwingThread(new Runnable() {
             public void run() {
                 String msg = "Your password is incorrect for this client certificate, or the certificate\n" +
@@ -242,12 +237,6 @@ class GuiCredentialManager extends CredentialManager {
         if (!ssg.getRuntime().promptForUsernameAndPassword())
             return;
 
-        long now = System.currentTimeMillis();
-
-        // Avoid spamming the user with reports
-        if (System.currentTimeMillis() > now + 1000)
-            return;
-
         invokeOnSwingThread(new Runnable() {
             public void run() {
                 Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
@@ -259,13 +248,19 @@ class GuiCredentialManager extends CredentialManager {
         });
     }
 
-    public void notifySslHostnameMismatch(final String server, final String whatWeWanted, final String whatWeGotInstead) {
-        long now = System.currentTimeMillis();
-
-        // Avoid spamming the user with reports
-        if (System.currentTimeMillis() > now + 1000)
+    public void notifyFeatureNotAvailable(final Ssg ssg, final String feature) {
+        // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
+        if (!ssg.getRuntime().promptForUsernameAndPassword())
             return;
 
+        invokeOnSwingThread(new Runnable() {
+            public void run() {
+                Gui.errorMessage("The Gateway " + ssg + " does not provide the feature: " + feature);
+            }
+        });
+    }
+
+    public void notifySslHostnameMismatch(final String server, final String whatWeWanted, final String whatWeGotInstead) {
         invokeOnSwingThread(new Runnable() {
             public void run() {
                 Gui.errorMessage(

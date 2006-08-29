@@ -186,13 +186,14 @@ public class SslUtils {
      * @throws SignatureException           if the resulting cert was not signed by the correct CA key
      * @throws BadCredentialsException if the username or password was rejected by the CSR signer
      * @throws CertificateAlreadyIssuedException if the Gateway has already issued a certificate for this account
+     * @throws ServerFeatureUnavailableException if the Gateway isn't licensed for a CSR service
      */
     public static X509Certificate obtainClientCertificate(Ssg ssg, String username, char[] password,
                                                           CertificateRequest csr,
                                                           X509Certificate caCert)
             throws IOException, CertificateException, NoSuchAlgorithmException,
                    InvalidKeyException, NoSuchProviderException, BadCredentialsException,
-                   SignatureException, CertificateAlreadyIssuedException
+                   SignatureException, CertificateAlreadyIssuedException, ServerFeatureUnavailableException
     {
         URL url = ssg.getServerCertificateSigningRequestUrl();
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
@@ -203,10 +204,11 @@ public class SslUtils {
         params.setPasswordAuthentication(new PasswordAuthentication(username, password));
         SimpleHttpClient.SimpleHttpResponse result = client.post(params, csrBytes);
         int status = result.getStatus();
-        if ( status == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + status );
-        if ( status == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + status);
+        if ( status == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + status + " (bad credentials?)");
+        if ( status == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + status + " (certificate already issued?)");
+        if ( status == 503 ) throw new ServerFeatureUnavailableException("HTTP POST to certificate signer returned status " + status + " (feature not available?)");
         if ( status != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + status );
-        
+
         byte[] certBytes = result.getBytes();
         X509Certificate cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(certBytes));
 

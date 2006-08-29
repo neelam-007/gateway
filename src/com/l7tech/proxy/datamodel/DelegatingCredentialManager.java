@@ -56,6 +56,10 @@ public class DelegatingCredentialManager extends CredentialManager {
         getDelegate().notifyCertificateAlreadyIssued(ssg);
     }
 
+    public void notifyFeatureNotAvailable(Ssg ssg, String feature) {
+        getDelegate().notifyFeatureNotAvailable(ssg, feature);
+    }
+
     public void notifySslHostnameMismatch(String server, String whatWeWanted, String whatWeGotInstead) {
         getDelegate().notifySslHostnameMismatch(server, whatWeWanted, whatWeGotInstead);
     }

@@ -149,10 +149,11 @@ public abstract class SsgKeyStoreManager {
      * @throws BadCredentialsException    if the SSG rejected the credentials we provided
      * @throws com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException if the SSG has already issued the client certificate for this account
      * @throws KeyStoreCorruptException   if the keystore is corrupt
+     * @throws ServerFeatureUnavailableException   if the target Gateway isn't licensed for a CSR service
      */
     public abstract void obtainClientCertificate(PasswordAuthentication credentials)
             throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException,
-                   CertificateAlreadyIssuedException, IOException;
+            CertificateAlreadyIssuedException, IOException, ServerFeatureUnavailableException;
 
 
     /** @return the username in our client certificate, or null if we don't have an active client cert. */

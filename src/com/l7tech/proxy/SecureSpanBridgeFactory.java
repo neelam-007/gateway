@@ -311,6 +311,8 @@ public class SecureSpanBridgeFactory {
                 throw new CausedBadCredentialsException(e);
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
                 throw new CausedCertificateAlreadyIssuedException(e);
+            } catch (ServerFeatureUnavailableException e) {
+                throw new CausedIOException(e); // TODO document a new exception for this, but without breaking preexisting code
             }
         }
 

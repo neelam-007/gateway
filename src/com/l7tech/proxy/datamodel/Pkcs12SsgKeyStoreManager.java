@@ -56,7 +56,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
      * corruption when it is reloaded.
      */
     private static final char[] TRUSTSTORE_PASSWORD = "lwbnasudg".toCharArray();
-    /** Keystore type.  JCEKS is more secure than the default JKS format. */
+
     private static final String IMPORT_KEYSTORE_TYPE = "PKCS12";
     private static final String OUR_KEYSTORE_TYPE = "BCPKCS12";
     private static final String TRUSTSTORE_TYPE = "BCPKCS12";
@@ -520,8 +520,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
 
     public void obtainClientCertificate(PasswordAuthentication credentials)
             throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException,
-            CertificateAlreadyIssuedException, IOException
-    {
+            CertificateAlreadyIssuedException, IOException, ServerFeatureUnavailableException {
         if (credentials == null)
             throw new BadCredentialsException("Unable to apply for client certificate without credentials");
         if (ssg.isFederatedGateway())
@@ -549,11 +548,11 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
      * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG rejected the credentials we provided
      * @throws com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException if the SSG has already issued the client certificate for this account
      * @throws com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException   if the keystore is corrupt
+     * @throws ServerFeatureUnavailableException if the Gateway isn't licensed for a CSR service
      */
     private void obtainClientCertificate(PasswordAuthentication credentials, KeyPair keyPair)
-            throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
-                    BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException
-    {
+            throws ServerCertificateUntrustedException, GeneralSecurityException, IOException,
+            BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException, ServerFeatureUnavailableException {
         CertificateRequest csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
 
         X509Certificate caCert = getServerCert();

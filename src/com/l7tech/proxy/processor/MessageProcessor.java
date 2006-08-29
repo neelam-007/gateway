@@ -947,6 +947,8 @@ public class MessageProcessor {
             log.log(Level.WARNING, "Couldn't get new client certificate", e);
         } catch (CertificateAlreadyIssuedException e) {
             log.log(Level.WARNING, "Couldn't get new client certificate", e);
+        } catch (ServerFeatureUnavailableException e) {
+            log.log(Level.WARNING, "Couldn't get new client certificate", e);
         } catch (HttpChallengeRequiredException e) {
             log.log(Level.WARNING, "Couldn't get new client certificate", e);
             // Fallthrough, they will get the challenge next time something needs the password
@@ -989,6 +991,11 @@ public class MessageProcessor {
                 ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(certSsg);
                 throw new CertificateAlreadyIssuedException(e);
             }
+        } catch (ServerFeatureUnavailableException e) {
+            Ssg certSsg = ssg.getTrustedGateway();
+            if (certSsg == null) certSsg = ssg;
+            ssg.getRuntime().getCredentialManager().notifyFeatureNotAvailable(certSsg, "certificate signing service");
+            throw new ClientCertificateException("Unable to obtain new client certificate: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

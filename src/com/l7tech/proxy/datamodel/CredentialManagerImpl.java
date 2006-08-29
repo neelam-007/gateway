@@ -69,6 +69,10 @@ public class CredentialManagerImpl extends CredentialManager {
         log.log(Level.SEVERE, "Certificate has already been issued for this account on Gateway " + ssg + "; the server refuses to give us a new one until the Gateway admin revokes our old one");
     }
 
+    public void notifyFeatureNotAvailable(Ssg ssg, String feature) {
+        log.log(Level.SEVERE, "A needed feature is not available on Gateway " + ssg + ": " + feature);
+    }
+
     public void notifySslHostnameMismatch(String server, String whatWeWanted, String whatWeGotInstead) {
         log.log(Level.SEVERE, "Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
     }
