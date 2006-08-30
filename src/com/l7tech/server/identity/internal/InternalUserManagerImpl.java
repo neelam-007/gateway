@@ -108,10 +108,11 @@ public class InternalUserManagerImpl
                 if (role.getOid() == Role.ADMIN_ROLE_OID) {
                     boolean anybodyElse = false;
                     for (UserRoleAssignment assignment : role.getUserAssignments()) {
-                        if (!user.getId().equals(assignment.getUserId()) && user.getProviderId() != assignment.getProviderId())
+                        if (!user.getId().equals(assignment.getUserId()) || user.getProviderId() != assignment.getProviderId()) {
                             anybodyElse = true;
+                        }
                     }
-                    if (!anybodyElse) throw new DeleteException("At least one User must always be assigned to the Administrator role");
+                    if (!anybodyElse) throw new DeleteException(RoleManager.ADMIN_REQUIRED);
                 }
             }
         } catch (FindException e) {

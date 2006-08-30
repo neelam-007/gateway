@@ -1,10 +1,12 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.io.ByteLimitInputStream;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import static com.l7tech.common.security.rbac.OperationType.*;
-import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.ExceptionUtils;
@@ -20,6 +22,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.security.rbac.PermissionMatchCallback;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
@@ -28,6 +31,7 @@ import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.MetricsBin;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -42,10 +46,7 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -227,12 +228,16 @@ public class ServiceAdminImpl implements ServiceAdmin {
         newRole.addPermission(READ, SERVICE, service.getId()); // Read this service
         newRole.addPermission(UPDATE, SERVICE, service.getId()); // Update this service
         newRole.addPermission(DELETE, SERVICE, service.getId()); // Delete this service
+        newRole.addPermission(READ, METRICS_BIN, MetricsBin.ATTR_SERVICE_OID, service.getId()); // Read this service's metrics
+        newRole.addPermission(READ, AUDIT_MESSAGE, MessageSummaryAuditRecord.ATTR_SERVICE_OID, service.getId()); // Read this service's audit records
 
         boolean omnipotent;
         try {
             omnipotent = roleManager.isPermittedForAllEntities(currentUser, SERVICE, READ);
-            omnipotent = omnipotent & roleManager.isPermittedForAllEntities(currentUser, SERVICE, UPDATE);
-            omnipotent = omnipotent & roleManager.isPermittedForAllEntities(currentUser, SERVICE, DELETE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE, UPDATE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE, DELETE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, METRICS_BIN, READ);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, AUDIT_MESSAGE, READ);
         } catch (FindException e) {
             throw new SaveException("Coudln't get existing permissions", e);
         }
@@ -245,13 +250,13 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
-        PublishedService service;
+        final PublishedService service;
         try {
             long oid = toLong(serviceID);
             checkLicense();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
-            roleManager.deleteEntitySpecificRole(service);
+            roleManager.deleteEntitySpecificRole(service, new DeleteServiceCallback(service));
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
@@ -432,5 +437,44 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     public String getConsumptionURL(String serviceoid) throws RemoteException, FindException {
         return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
+    }
+
+    private static class DeleteServiceCallback implements PermissionMatchCallback {
+        private final PublishedService service;
+
+        public DeleteServiceCallback(PublishedService service) {
+            this.service = service;
+        }
+
+        public boolean matches(Permission permission) {
+            com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
+            Set<ScopePredicate> scope = permission.getScope();
+            if (scope == null || scope.isEmpty()) return false;
+            if (scope.size() > 1) return false;
+
+            ScopePredicate pred = scope.iterator().next();
+            switch(etype) {
+                case SERVICE:
+                    if (pred instanceof ObjectIdentityPredicate) {
+                        ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
+                        return oip.getTargetEntityId().equals(service.getId());
+                    }
+                    return false;
+                case AUDIT_MESSAGE:
+                    return serviceIdMatchesAttribute(pred, MessageSummaryAuditRecord.ATTR_SERVICE_OID);
+                case METRICS_BIN:
+                    return serviceIdMatchesAttribute(pred, MetricsBin.ATTR_SERVICE_OID);
+                default:
+                    return false;
+            }
+        }
+
+        private boolean serviceIdMatchesAttribute(ScopePredicate pred, String attrName) {
+            if (pred instanceof AttributePredicate) {
+                AttributePredicate attributePredicate = (AttributePredicate) pred;
+                return attributePredicate.getAttribute().equals(attrName) && attributePredicate.getValue().equals(service.getId());
+            }
+            return false;
+        }
     }
 }

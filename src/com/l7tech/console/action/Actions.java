@@ -5,12 +5,12 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.CannotDeleteAdminAccountException;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.common.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -63,14 +63,12 @@ public class Actions {
             IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             admin.deleteUser(config.getOid(), eh.getStrId());
             return true;
-        } catch (CannotDeleteAdminAccountException e) {
+        } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(getMainWindow(),
-              "User " +
-              node.getName() +
-              " is an administrator, and cannot be deleted.",
-              "Delete User",
+              ExceptionUtils.getMessage(e),
+              "User Cannot Be Deleted",
               JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting user", e);

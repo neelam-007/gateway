@@ -15,6 +15,7 @@ import java.util.Collection;
  * Manages persistent {@link Role} instances.  Primarily used by {@link RbacAdminImpl}.
  */
 public interface RoleManager extends EntityManager<Role, EntityHeader> {
+    public static final String ADMIN_REQUIRED = "At least one User must always be assigned to the Administrator role";
 
     Collection<Role> getAssignedRoles(User user) throws FindException;
 

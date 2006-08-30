@@ -156,6 +156,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             }
             getHibernateTemplate().delete(userImp);
             revokeCert(userImp);
+        } catch (DeleteException e) {
+            throw e;
         } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException(e.toString(), e);

@@ -27,6 +27,7 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class MessageSummaryAuditRecord extends AuditRecord {
+    public static final String ATTR_SERVICE_OID = "serviceOid";
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     public MessageSummaryAuditRecord() {

@@ -30,6 +30,8 @@ import java.io.IOException;
  * @author rmak
  */
 public class MetricsBin extends PersistentEntityImp implements Comparable {
+    public static final String ATTR_SERVICE_OID = "serviceOid";
+
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is fine resolution */
     public static final int RES_FINE = 0;
     /** The value to be used for {@link MetricsBin#getResolution()} to indicate that this bin is hourly resolution */

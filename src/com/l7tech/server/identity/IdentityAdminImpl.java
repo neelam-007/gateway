@@ -239,33 +239,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
             manager.delete(ipc);
 
-            roleManager.deleteEntitySpecificRole(ipc, new PermissionMatchCallback() {
-                public boolean matches(Permission permission) {
-                    com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
-                    Set<ScopePredicate> scope = permission.getScope();
-                    if (scope == null || scope.isEmpty()) return false;
-                    if (scope.size() > 1) return false;
-
-                    ScopePredicate pred = scope.iterator().next();
-                    switch(etype) {
-                        case ID_PROVIDER_CONFIG:
-                            if (pred instanceof ObjectIdentityPredicate) {
-                                ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
-                                if (oip.getTargetEntityId().equals(ipc.getId())) return true;
-                            }
-                            return false;
-                        case USER:
-                        case GROUP:
-                            if (pred instanceof AttributePredicate) {
-                                AttributePredicate ap = (AttributePredicate) pred;
-                                if (ap.getAttribute().equals("providerId") && ap.getValue().equals(ipc.getId())) return true;
-                            }
-                            return false;
-                        default:
-                            return false;
-                    }
-                }
-            });
+            roleManager.deleteEntitySpecificRole(ipc, new DeleteProviderCallback(ipc));
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -589,4 +563,37 @@ public class IdentityAdminImpl implements IdentityAdmin {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 
+    private static class DeleteProviderCallback implements PermissionMatchCallback {
+        private final IdentityProviderConfig ipc;
+
+        public DeleteProviderCallback(IdentityProviderConfig ipc) {
+            this.ipc = ipc;
+        }
+
+        public boolean matches(Permission permission) {
+            com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
+            Set<ScopePredicate> scope = permission.getScope();
+            if (scope == null || scope.isEmpty()) return false;
+            if (scope.size() > 1) return false;
+
+            ScopePredicate pred = scope.iterator().next();
+            switch(etype) {
+                case ID_PROVIDER_CONFIG:
+                    if (pred instanceof ObjectIdentityPredicate) {
+                        ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
+                        if (oip.getTargetEntityId().equals(ipc.getId())) return true;
+                    }
+                    return false;
+                case USER:
+                case GROUP:
+                    if (pred instanceof AttributePredicate) {
+                        AttributePredicate ap = (AttributePredicate) pred;
+                        if (ap.getAttribute().equals("providerId") && ap.getValue().equals(ipc.getId())) return true;
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        }
+    }
 }

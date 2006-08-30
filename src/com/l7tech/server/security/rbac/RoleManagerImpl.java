@@ -79,6 +79,13 @@ public class RoleManagerImpl
         return false;
     }
 
+    @Override
+    public void update(Role role) throws UpdateException {
+        if (role.getOid() == Role.ADMIN_ROLE_OID && role.getUserAssignments().isEmpty())
+            throw new UpdateException(RoleManager.ADMIN_REQUIRED);
+        super.update(role);
+    }
+
     @Transactional(readOnly=true)
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
         if (user == null || entity == null || operation == null) throw new NullPointerException();
