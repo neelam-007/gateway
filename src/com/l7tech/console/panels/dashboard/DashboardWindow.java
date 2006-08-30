@@ -400,11 +400,17 @@ public class DashboardWindow extends JFrame implements LogonListener {
             connected = true;
         } catch (RemoteException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
+            refreshTimer.stop();
+            dispose();
         } catch (RuntimeException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
+            refreshTimer.stop();
+            dispose();
         } catch (FindException e) {
             logger.log(Level.WARNING, "SSG can't get data", e);
             statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
+            refreshTimer.stop();
+            dispose();
         }
     }
 
