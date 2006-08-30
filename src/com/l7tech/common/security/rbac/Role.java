@@ -20,7 +20,7 @@ import java.util.Set;
  * @author alex
  */
 public class Role extends NamedEntityImp implements Comparable<Role> {
-    public static final int ADMIN_ROLE_OID = -3;
+    public static final int ADMIN_ROLE_OID = -100;
 
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<UserRoleAssignment> userAssignments = new HashSet<UserRoleAssignment>();

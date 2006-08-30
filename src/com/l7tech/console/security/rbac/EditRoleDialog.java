@@ -3,6 +3,8 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.identity.finder.SearchType;
@@ -11,10 +13,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.*;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -409,9 +408,9 @@ public class EditRoleDialog extends JDialog {
         try {
             long oid = Registry.getDefault().getRbacAdmin().saveRole(role);
             role.setOid(oid);
-        } catch (SaveException se) {
+        } catch (ObjectModelException se) {
             JOptionPane.showMessageDialog(this.getParent(),
-                    "The Role could not be saved: " + se.getMessage(),
+                    "The Role could not be saved: " + ExceptionUtils.getMessage(se),
                     "Error Saving Role",
                     JOptionPane.ERROR_MESSAGE);
         } catch (RemoteException re) {

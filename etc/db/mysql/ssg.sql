@@ -18,7 +18,7 @@ CREATE TABLE hibernate_unique_key (
 --
 
 
-INSERT INTO hibernate_unique_key VALUES (0);
+INSERT INTO hibernate_unique_key VALUES (1);
 
 --
 -- Table structure for table 'identity_provider'
@@ -595,30 +595,109 @@ CREATE TABLE rbac_predicate_oid (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
--- Create Administrator roles with CRUD on ANY
-INSERT INTO rbac_role VALUES (-3,0,'Administrator');
-INSERT INTO rbac_permission VALUES (-5, 0, -3, 'CREATE', null, 'ANY');
-INSERT INTO rbac_permission VALUES (-6, 0, -3, 'READ',   null, 'ANY');
-INSERT INTO rbac_permission VALUES (-7, 0, -3, 'UPDATE', null, 'ANY');
-INSERT INTO rbac_permission VALUES (-8, 0, -3, 'DELETE', null, 'ANY');
+-- Create Administrator role
+INSERT INTO rbac_role VALUES (-100,0,'Administrator'); -- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
+INSERT INTO rbac_permission VALUES (-101, 0, -100, 'CREATE', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-102, 0, -100, 'READ',   null, 'ANY');
+INSERT INTO rbac_permission VALUES (-103, 0, -100, 'UPDATE', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-104, 0, -100, 'DELETE', null, 'ANY');
 
--- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment VALUES (-4, -2, -3, 3);
-
--- Create Operator role with READ on ANY
-INSERT INTO rbac_role VALUES (-9,0,'Operator');
-INSERT INTO rbac_permission VALUES (-10, 0, -9, 'READ', null, 'ANY');
+-- Create Operator role
+INSERT INTO rbac_role VALUES (-150,0,'Operator');
+INSERT INTO rbac_permission VALUES (-151, 0, -150, 'READ', null, 'ANY');
 
 -- Create other canned roles
-INSERT INTO `rbac_role` VALUES (-200,1,'Manage Internal Users and Groups'),(-300,2,'Publish LDAP Identity Providers'),(-400,1,'Search Users and Groups'),(-500,0,'Publish Webservices'),(-600,1,'Manage Webservices'),(-700,0,'View Audit Records and Logs'),(-800,0,'View Service Metrics'),(-900,0,'Manage Cluster Status'),(-1000,0,'Manage Certificates (truststore)'),(-2000,0,'Manage JMS Connections'),(-3000,0,'Manage Cluster Properties');
+INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups');
+INSERT INTO rbac_permission VALUES (-201,0,-200,'READ',NULL,'USER');
+INSERT INTO rbac_predicate VALUES (-202,0,-201);
+INSERT INTO rbac_predicate_attribute VALUES (-202,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-203,0,-200,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate VALUES (-204,0,-203);
+INSERT INTO rbac_predicate_oid VALUES (-204,'-2');
+INSERT INTO rbac_permission VALUES (-205,0,-200,'UPDATE',NULL,'USER');
+INSERT INTO rbac_predicate VALUES (-206,0,-205);
+INSERT INTO rbac_predicate_attribute VALUES (-206,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-207,0,-200,'READ',NULL,'GROUP');
+INSERT INTO rbac_predicate VALUES (-208,0,-207);
+INSERT INTO rbac_predicate_attribute VALUES (-208,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-209,0,-200,'DELETE',NULL,'USER');
+INSERT INTO rbac_predicate VALUES (-210,0,-209);
+INSERT INTO rbac_predicate_attribute VALUES (-210,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-211,0,-200,'CREATE',NULL,'USER');
+INSERT INTO rbac_predicate VALUES (-212,0,-211);
+INSERT INTO rbac_predicate_attribute VALUES (-212,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-213,0,-200,'CREATE',NULL,'GROUP');
+INSERT INTO rbac_predicate VALUES (-214,0,-213);
+INSERT INTO rbac_predicate_attribute VALUES (-214,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-215,0,-200,'DELETE',NULL,'GROUP');
+INSERT INTO rbac_predicate VALUES (-216,0,-215);
+INSERT INTO rbac_predicate_attribute VALUES (-216,'providerId','-2');
+INSERT INTO rbac_permission VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
+INSERT INTO rbac_predicate VALUES (-218,0,-217);
+INSERT INTO rbac_predicate_attribute VALUES (-218,'providerId','-2');
 
-INSERT INTO `rbac_permission` VALUES (163840,1,-500,'READ',NULL,'GROUP'),(163841,1,-500,'READ',NULL,'ID_PROVIDER_CONFIG'),(163842,1,-500,'READ',NULL,'USER'),(163843,1,-600,'READ',NULL,'ID_PROVIDER_CONFIG'),(163844,1,-600,'READ',NULL,'GROUP'),(163845,1,-600,'READ',NULL,'USER'),(1179648,1,-400,'READ',NULL,'USER'),(1179649,1,-400,'READ',NULL,'ID_PROVIDER_CONFIG'),(1179650,1,-400,'READ',NULL,'GROUP'),(1179651,1,-500,'CREATE',NULL,'SERVICE'),(1179652,2,-600,'READ',NULL,'SERVICE'),(1179653,2,-600,'CREATE',NULL,'SERVICE'),(1179654,2,-600,'UPDATE',NULL,'SERVICE'),(1179655,2,-600,'DELETE',NULL,'SERVICE'),(1179656,0,-700,'READ',NULL,'CLUSTER_INFO'),(1179657,0,-700,'READ',NULL,'AUDIT_RECORD'),(1179658,0,-800,'READ',NULL,'METRICS_BIN'),(1179659,0,-800,'READ',NULL,'SERVICE'),(1179660,0,-800,'READ',NULL,'CLUSTER_INFO'),(1179661,0,-900,'READ',NULL,'CLUSTER_INFO'),(1179662,0,-900,'UPDATE',NULL,'CLUSTER_INFO'),(1179663,0,-900,'DELETE',NULL,'CLUSTER_INFO'),(1179664,0,-1000,'UPDATE',NULL,'TRUSTED_CERT'),(1179665,0,-1000,'READ',NULL,'TRUSTED_CERT'),(1179666,0,-1000,'DELETE',NULL,'TRUSTED_CERT'),(1179667,0,-1000,'CREATE',NULL,'TRUSTED_CERT'),(1179668,0,-2000,'CREATE',NULL,'JMS_ENDPOINT'),(1179669,0,-2000,'DELETE',NULL,'JMS_ENDPOINT'),(1179670,0,-2000,'UPDATE',NULL,'JMS_ENDPOINT'),(1179671,0,-2000,'READ',NULL,'JMS_ENDPOINT'),(1179672,0,-3000,'READ',NULL,'CLUSTER_PROPERTY'),(1179673,0,-3000,'CREATE',NULL,'CLUSTER_PROPERTY'),(1179674,0,-3000,'UPDATE',NULL,'CLUSTER_PROPERTY'),(1179675,0,-3000,'DELETE',NULL,'CLUSTER_PROPERTY'),(1441792,1,-300,'CREATE',NULL,'ID_PROVIDER_CONFIG'),(4751360,1,-200,'READ',NULL,'USER'),(4751361,1,-200,'READ',NULL,'ID_PROVIDER_CONFIG'),(4751362,1,-200,'UPDATE',NULL,'USER'),(4751363,1,-200,'READ',NULL,'GROUP'),(4751364,1,-200,'DELETE',NULL,'USER'),(4751365,1,-200,'CREATE',NULL,'USER'),(4751366,1,-200,'CREATE',NULL,'GROUP'),(4751367,1,-200,'DELETE',NULL,'GROUP'),(4751368,1,-200,'UPDATE',NULL,'GROUP');
+INSERT INTO rbac_role VALUES (-250,0,'Publish LDAP Identity Providers');
+INSERT INTO rbac_permission VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate VALUES (-252,0,-251);
+INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2');
 
-INSERT INTO `rbac_predicate` VALUES (1474560,0,1441792),(4784128,0,4751360),(4784129,0,4751361),(4784130,0,4751362),(4784131,0,4751363),(4784132,0,4751364),(4784133,0,4751365),(4784134,0,4751366),(4784135,0,4751367),(4784136,0,4751368);
+INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups');
+INSERT INTO rbac_permission VALUES (-301,0,-300,'READ',NULL,'USER');
+INSERT INTO rbac_permission VALUES (-302,0,-300,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission VALUES (-303,0,-300,'READ',NULL,'GROUP');
 
-INSERT INTO `rbac_predicate_attribute` VALUES (1474560,'typeVal','2'),(4784128,'providerId','-2'),(4784130,'providerId','-2'),(4784131,'providerId','-2'),(4784132,'providerId','-2'),(4784133,'providerId','-2'),(4784134,'providerId','-2'),(4784135,'providerId','-2'),(4784136,'providerId','-2');
+INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices');
+INSERT INTO rbac_permission VALUES (-351,0,-350,'READ',NULL,'GROUP');
+INSERT INTO rbac_permission VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission VALUES (-353,0,-350,'READ',NULL,'USER');
+INSERT INTO rbac_permission VALUES (-354,0,-350,'CREATE',NULL,'SERVICE');
 
-INSERT INTO `rbac_predicate_oid` VALUES (4784129,'-2');
+INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices');
+INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission VALUES (-402,0,-400,'READ',NULL,'GROUP');
+INSERT INTO rbac_permission VALUES (-403,0,-400,'READ',NULL,'USER');
+INSERT INTO rbac_permission VALUES (-404,0,-400,'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-405,0,-400,'CREATE',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-406,0,-400,'UPDATE',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-407,0,-400,'DELETE',NULL,'SERVICE');
 
+INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs');
+INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission VALUES (-452,0,-450,'READ',NULL,'AUDIT_RECORD');
+
+INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics');
+INSERT INTO rbac_permission VALUES (-501,0,-500,'READ',NULL,'METRICS_BIN');
+INSERT INTO rbac_permission VALUES (-502,0,-500,'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-503,0,-500,'READ',NULL,'CLUSTER_INFO');
+
+INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status');
+INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
+
+INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)');
+INSERT INTO rbac_permission VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission VALUES (-602,0,-600,'READ',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission VALUES (-603,0,-600,'DELETE',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission VALUES (-604,0,-600,'CREATE',NULL,'TRUSTED_CERT');
+
+INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections');
+INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission VALUES (-654,1,-650,'UPDATE',NULL,'JMS_CONNECTION');
+INSERT INTO rbac_permission VALUES (-655,1,-650,'CREATE',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-656,1,-650,'DELETE',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-657,1,-650,'UPDATE',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
+
+INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties');
+INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_permission VALUES (-702,0,-700,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_permission VALUES (-703,0,-700,'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_permission VALUES (-704,0,-700,'DELETE',NULL,'CLUSTER_PROPERTY');
+
+-- Assign Administrator role to existing admin user
+INSERT INTO rbac_assignment VALUES (-105, -2, -100, 3);
 
 SET FOREIGN_KEY_CHECKS = 1;

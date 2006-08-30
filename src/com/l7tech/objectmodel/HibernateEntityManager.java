@@ -120,8 +120,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Map<String, Object> newMap = getUniqueAttributeMap(entity);
-                List others = findMatching(newMap);
-                if (!others.isEmpty()) throw new SaveException("The object is not unique");
+                List others;
+                try {
+                    others = findMatching(newMap);
+                } catch (FindException e) {
+                    throw new SaveException("Couldn't find previous version(s) to check uniqueness");
+                }
+
+                if (!others.isEmpty()) throw new SaveException(describeAttributes(newMap) + " must be unique");
             }
 
             Object key = getHibernateTemplate().save(entity);
@@ -129,31 +135,53 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
                 throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Long");
 
             return ((Long)key);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }
+    }
+
+    private String describeAttributes(Map<String, Object> newMap) {
+        String what;
+        if (newMap.size() == 1) {
+            what = newMap.keySet().iterator().next();
+        } else if (newMap.size() > 1) {
+            StringBuilder sb = new StringBuilder();
+            for (Iterator<String> i = newMap.keySet().iterator(); i.hasNext();) {
+                String key = i.next();
+                sb.append(key);
+                if (i.hasNext()) sb.append(", ");
+            }
+            what = sb.toString();
+        } else {
+            throw new IllegalStateException("Unique attribute map was empty");
+        }
+        return what;
     }
 
     public void update(ET entity) throws UpdateException {
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Map<String, Object> newMap = getUniqueAttributeMap(entity);
-                List others = findMatching(newMap);
+                List others;
+                try {
+                    others = findMatching(newMap);
+                } catch (FindException e) {
+                    throw new UpdateException("Couldn't find previous version(s) to check uniqueness");
+                }
+
                 if (!others.isEmpty()) {
-                    if (others.size() == 1) {
+                    //noinspection ForLoopReplaceableByForEach
+                    for (Iterator i = others.iterator(); i.hasNext();) {
                         //noinspection unchecked
-                        ET other = (ET)others.get(0);
-                        Map existingMap = getUniqueAttributeMap(other);
-                        if (!existingMap.equals(newMap)) throw new UpdateException("The object is not unique");
-                    } else {
-                        throw new UpdateException("The object is not unique");
+                        ET other = (ET) i.next();
+                        if (!entity.getId().equals(other.getId()) || !entity.getClass().equals(other.getClass())) {
+                            throw new UpdateException(describeAttributes(newMap) + " must be unique");
+                        }
                     }
                 }
             }
             getHibernateTemplate().merge(entity);
-        } catch (UpdateException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new UpdateException("Couldn't update " + entity.getClass().getSimpleName(), e);
         }
     }
