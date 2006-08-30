@@ -72,4 +72,6 @@ push @jarsgateway, "build/lib/servlet-api.jar";
 push @jarsgateway, "build/lib/catalina.jar";
 push @jarsgateway, "build/lib/org.mortbay.jetty.jar";
 push @jarsgateway, "build/layer7-api.jar";
+push @jarsgateway, "lib/gateway/tarari/tarari_raxj.jar";
+
 zkm_file_replace("etc/obfuscation/ssg.zkm", "etc/obfuscation/ssg_new.zkm", \@jarsgateway, "");
