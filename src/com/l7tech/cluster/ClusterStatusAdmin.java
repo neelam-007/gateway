@@ -179,7 +179,8 @@ public interface ClusterStatusAdmin {
 
     /**
      * Summarizes the latest metrics bins in the database for the given criteria.
-     *
+     * <em>NOTE:</em> This is tagged {@link MethodStereotype#FIND_ENTITIES} so that the interceptor will require READ
+     * against all ServiceMetrics records.
      * @param clusterNodeId the MAC address of the cluster node to search for
      * @param serviceOid    the OID of the {@link com.l7tech.service.PublishedService}
      *                      to search for
@@ -191,7 +192,7 @@ public interface ClusterStatusAdmin {
      *         criteria
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
     MetricsBin getLastestMetricsSummary(final String clusterNodeId,
                                         final Long serviceOid,
                                         final int resolution,
