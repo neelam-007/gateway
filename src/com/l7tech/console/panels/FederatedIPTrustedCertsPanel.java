@@ -181,11 +181,9 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      */
      public boolean onNextButton() {
         final JDialog owner = getOwner();
-        if(trustedCertTable.getModel().getRowCount() == 0) {
-
+        if (trustedCertTable.getModel().getRowCount() == 0) {
             FederatedIPWarningDialog d = new FederatedIPWarningDialog(owner, createMsgPanel());
-
-            d.setSize(650, 350);
+            d.pack();
             d.addWizardListener(wizardListener);
             Utilities.centerOnScreen(d);
             d.setVisible(true);

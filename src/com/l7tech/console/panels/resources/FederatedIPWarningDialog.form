@@ -12,17 +12,15 @@
       <grid id="76dc9" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="10" width="776" height="250"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
-            <preferred-size width="600" height="350"/>
-          </grid>
+          <xy x="10" y="10" width="776" height="222"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="d3ad4" class="javax.swing.JLabel" binding="headerLabel1">
             <constraints>
-              <xy x="0" y="3" width="392" height="14"/>
+              <xy x="0" y="2" width="473" height="15"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -32,7 +30,7 @@
           <grid id="1a18d" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="0" y="85" width="776" height="165"/>
+              <xy x="0" y="85" width="776" height="137"/>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -41,7 +39,7 @@
               <grid id="3646e" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="10" left="0" bottom="10" right="0"/>
                 <constraints>
-                  <xy x="0" y="100" width="776" height="65"/>
+                  <xy x="0" y="72" width="776" height="65"/>
                   <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
@@ -49,7 +47,7 @@
                 <children>
                   <component id="1fe41" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="0" y="38" width="396" height="14"/>
+                      <xy x="0" y="37" width="563" height="15"/>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                     </constraints>
                     <properties>
@@ -58,7 +56,7 @@
                   </component>
                   <component id="24e46" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="0" y="13" width="319" height="14"/>
+                      <xy x="0" y="12" width="384" height="15"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                     </constraints>
                     <properties>
@@ -67,12 +65,6 @@
                   </component>
                 </children>
               </grid>
-              <vspacer id="c585a">
-                <constraints>
-                  <xy x="382" y="25" width="11" height="75"/>
-                  <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
-                </constraints>
-              </vspacer>
               <xy id="f6a5c" binding="msgPanel" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
@@ -93,7 +85,7 @@
           </grid>
           <component id="1b2fd" class="javax.swing.JLabel" binding="headerLabel2">
             <constraints>
-              <xy x="0" y="28" width="184" height="14"/>
+              <xy x="0" y="27" width="215" height="15"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -111,7 +103,7 @@
             <children>
               <component id="40bda" class="javax.swing.JLabel" binding="headerLabel3">
                 <constraints>
-                  <xy x="0" y="13" width="54" height="14"/>
+                  <xy x="0" y="12" width="69" height="15"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -125,7 +117,7 @@
       <grid id="29f97" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="265" width="776" height="24"/>
+          <xy x="10" y="237" width="776" height="52"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -133,7 +125,7 @@
         <children>
           <component id="6945a" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <xy x="652" y="0" width="48" height="24"/>
+              <xy x="638" y="13" width="53" height="25"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -142,7 +134,7 @@
           </component>
           <component id="9f050" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="710" y="0" width="66" height="24"/>
+              <xy x="701" y="13" width="75" height="25"/>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -151,7 +143,7 @@
           </component>
           <hspacer id="7084b">
             <constraints>
-              <xy x="0" y="6" width="652" height="11"/>
+              <xy x="0" y="20" width="638" height="11"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
