@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.server.identity.mapping.AttributeConfigManagerImpl;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -182,5 +183,10 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
         } catch (FindException e) {
             throw new AuthenticationException("Couldn't search for users and/or groups", e);
         }
+    }
+
+    protected AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
+        // Doesn't care
+        return AssertionStatus.NONE;
     }
 }

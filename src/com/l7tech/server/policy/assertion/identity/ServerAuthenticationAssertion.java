@@ -5,6 +5,9 @@ package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -16,5 +19,10 @@ import org.springframework.context.ApplicationContext;
 public class ServerAuthenticationAssertion extends ServerIdentityAssertion {
     public ServerAuthenticationAssertion(AuthenticationAssertion data, ApplicationContext spring) {
         super(data, spring);
+    }
+
+    protected AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
+        // Doesn't care
+        return AssertionStatus.NONE;
     }
 }

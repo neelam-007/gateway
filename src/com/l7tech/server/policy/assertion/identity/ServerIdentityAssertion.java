@@ -194,10 +194,8 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
     }
 
     /**
-     * Override to decide whether the authenticated user is acceptable.
+     * Implement to decide whether the authenticated user is acceptable.
      */
-    protected AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
-        return AssertionStatus.NONE;
-    }
+    protected abstract AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context);
 
 }
