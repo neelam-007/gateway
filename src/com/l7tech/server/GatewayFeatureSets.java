@@ -154,7 +154,8 @@ public class GatewayFeatureSets {
             ass(HttpBasic.class),
             ass(HttpDigest.class),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
-            ass(XpathCredentialSource.class));
+            ass(XpathCredentialSource.class),
+            ass(RequestWssX509Cert.class));
 
         GatewayFeatureSet accessFw =
         fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
@@ -163,7 +164,6 @@ public class GatewayFeatureSets {
             fs(wssc),
             ass(MappingAssertion.class),
             ass(WssBasic.class),
-            ass(RequestWssX509Cert.class),
             ass(RequestWssSaml.class),
             ass(RequestWssSaml2.class),
             ass(EncryptedUsernameTokenAssertion.class),
