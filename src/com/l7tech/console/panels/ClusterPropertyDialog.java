@@ -236,7 +236,10 @@ public class ClusterPropertyDialog extends JDialog {
             } catch (RemoteException e) {
                 logger.log(Level.SEVERE, "exception setting property", e);
             } catch (DuplicateObjectException e) {
-                ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(this, "Cluster-Wide Property Error", null, e.getMessage(), null, Level.WARNING);
+                ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
+                        this, "Cluster-Wide Property Error", null,
+                        "Cannot save duplicate property '"+dlg.getProperty().getName()+"'.",
+                        null, Level.WARNING);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);

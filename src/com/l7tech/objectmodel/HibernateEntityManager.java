@@ -127,7 +127,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
                     throw new SaveException("Couldn't find previous version(s) to check uniqueness");
                 }
 
-                if (!others.isEmpty()) throw new SaveException(describeAttributes(newMap) + " must be unique");
+                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(newMap) + " must be unique");
             }
 
             Object key = getHibernateTemplate().save(entity);
