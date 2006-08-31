@@ -226,7 +226,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                     SslRMIClientSocketFactory other = (SslRMIClientSocketFactory) obj;
                     if(other.trustFailureHandler == this.trustFailureHandler) {
                         if(host==null || other.host==null) {
-                            equal = true;
+                            equal = host==null && other.host==null;
                         }
                         else {
                             equal = host.equals(other.host);
@@ -340,14 +340,8 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     }
 
     private Object readResolve() throws ObjectStreamException {
-        SslRMIClientSocketFactory resolved = this;
-
-        if(resolved.trustFailureHandler != currentTrustFailureHandler) {
-            // if the trust failure handler has changed we must create a new factory.
-            resolved = new SslRMIClientSocketFactory();
-        }
-
-        return resolved;
+        checkInit();
+        return this;
     }
 
     /**

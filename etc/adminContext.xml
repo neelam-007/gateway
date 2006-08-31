@@ -59,9 +59,6 @@
     </bean>
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
-          depends-on="setKeyManagerFactoryForNodeToNodeRMI, setInternalTrustFailureHandler"/>
-
-    <bean id="rmiClusterClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
           depends-on="setKeyManagerFactoryForNodeToNodeRMI, setInternalTrustFailureHandler, setNode2NodeInternalTrustFailureHandler">
         <property name="host">
             <!-- Extract host name from this nodes cluster node info -->
@@ -111,7 +108,7 @@
     </bean>
 
     <!--    shared export properties, inherited with parent= -->
-    <bean id="baseExportProperties" abstract="true">
+    <bean id="sharedClusterExportProperties" abstract="true">
         <property name="registry">
             <ref bean="rmiRegistry"/>
         </property>
@@ -126,20 +123,6 @@
         </property>
         <property name="stubRemoteInvocationFactory">
             <ref bean="adminSessionInvocationFactory"/>
-        </property>
-    </bean>
-    <bean id="sharedExportProperties" parent="baseExportProperties" abstract="true">
-        <property name="remoteInvocationExecutor">
-            <bean class="com.l7tech.spring.remoting.rmi.SecureRemoteInvocationExecutor">
-                <property name="adminSessionManager">
-                    <ref bean="adminSessionManager"/>
-                </property>
-            </bean>
-        </property>
-    </bean>
-    <bean id="sharedClusterExportProperties" parent="baseExportProperties" abstract="true">
-        <property name="clientSocketFactory">
-            <ref bean="rmiClusterClientSocketFactory"/>
         </property>
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.spring.remoting.rmi.ClusterRemoteInvocationExecutor">
