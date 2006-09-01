@@ -36,7 +36,9 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
 
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any associated requirements and/or conditions against <br> which the assertion is validated.</html>");
+        descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any " +
+                                 "associated <br>requirements and/or conditions against which the " +
+                                 "assertion is validated.</html>");
     }
 
     /**
