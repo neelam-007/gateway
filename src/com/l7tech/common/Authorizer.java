@@ -26,7 +26,13 @@ public abstract class Authorizer {
 
         for (com.l7tech.common.security.rbac.Permission perm : perms) {
             if (perm.getEntityType() != EntityType.ANY && perm.getEntityType() != attempted.getType()) continue;
-            if (perm.getOperation() != attempted.getOperation()) continue;
+            if (perm.getOperation() != attempted.getOperation()) {
+                if (attempted instanceof AttemptedAnyOperation) {
+                    return true;
+                } else {
+                    continue;
+                }
+            }
 
             if (attempted instanceof AttemptedEntityOperation) {
                 AttemptedEntityOperation aeo = (AttemptedEntityOperation) attempted;
@@ -35,11 +41,11 @@ public abstract class Authorizer {
             } else if (attempted instanceof AttemptedCreate) {
                 // CREATE doesn't support any scope yet, only a type
                 return true;
-            } else if (attempted instanceof AttemptedRead) {
+            } else if (attempted instanceof AttemptedReadSpecific) {
                 // Permission grants read access to anything with matching type
                 if (perm.getScope() == null || perm.getScope().size() == 0) return true;
 
-                AttemptedRead read = (AttemptedRead) attempted;
+                AttemptedReadSpecific read = (AttemptedReadSpecific) attempted;
                 if (read.getId() != null) {
                     if (perm.getScope().size() == 1) {
                         ScopePredicate pred = perm.getScope().iterator().next();
@@ -52,6 +58,11 @@ public abstract class Authorizer {
                         }
                     }
                 }
+            } else if (attempted instanceof AttemptedReadAny) {
+                // EntityType and Operation already match
+                return true;
+            } else if (attempted instanceof AttemptedReadAll) {
+                return perm.getScope().isEmpty();
             }
         }
         return false;

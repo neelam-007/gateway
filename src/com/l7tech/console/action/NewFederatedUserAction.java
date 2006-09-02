@@ -4,6 +4,8 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.NewFederatedUserDialog;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.EntityType;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -17,7 +19,7 @@ public class NewFederatedUserAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewFederatedUserAction.class.getName());
 
     public NewFederatedUserAction(AbstractTreeNode node) {
-        super(node, null, LIC_AUTH_ASSERTIONS);
+        super(node, LIC_AUTH_ASSERTIONS, new AttemptedCreate(EntityType.USER));
     }
 
     /**

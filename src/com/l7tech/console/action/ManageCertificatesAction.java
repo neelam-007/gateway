@@ -1,13 +1,15 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.panels.CertManagerWindow;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -23,7 +25,7 @@ public class ManageCertificatesAction extends SecureAction {
      * create the aciton that disables the service
      */
     public ManageCertificatesAction() {
-        super(null, LIC_AUTH_ASSERTIONS);
+        super(new AttemptedAnyOperation(EntityType.TRUSTED_CERT), LIC_AUTH_ASSERTIONS);
     }
 
     /**

@@ -7,18 +7,23 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.rmi.RemoteException;
+import java.util.EnumSet;
 
 /**
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
  */
 public class DeleteAuditEventsAction extends SecureAction {
     private Action chainAction = null;
+    private static final EnumSet<EntityType> AUDIT_SUBTYPES = EnumSet.of(EntityType.AUDIT_MESSAGE, EntityType.AUDIT_ADMIN, EntityType.AUDIT_SYSTEM);
 
     public DeleteAuditEventsAction() {
         super(null);
@@ -39,6 +44,21 @@ public class DeleteAuditEventsAction extends SecureAction {
     /** Set an action to chain to after this action is performed. */
     public void setChainAction(Action chainAction) {
         this.chainAction = chainAction;
+    }
+
+    @Override
+    public synchronized boolean isAuthorized() {
+        // The set of EntityTypes on which the current user has blanket DELETE permissions
+        EnumSet<EntityType> allTypes = EnumSet.noneOf(EntityType.class);
+
+        for (Permission perm : getSecurityProvider().getUserPermissions()) {
+            if (perm.getOperation() == OperationType.DELETE && perm.getScope().isEmpty()) {
+                EntityType etype = perm.getEntityType();
+                if (etype == EntityType.ANY || etype == EntityType.AUDIT_RECORD) return true;
+                if (AUDIT_SUBTYPES.contains(etype)) allTypes.add(etype);
+            }
+        }
+        return allTypes.equals(AUDIT_SUBTYPES);
     }
 
     protected void performAction() {

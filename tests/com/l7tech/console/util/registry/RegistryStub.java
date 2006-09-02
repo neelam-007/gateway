@@ -38,6 +38,10 @@ public class RegistryStub extends Registry {
         serviceAdmin.setServiceManager(new ServiceManagerStub());
     }
 
+    public boolean isAdminContextPresent() {
+        return serviceAdmin != null;
+    }
+
     public IdentityAdmin getIdentityAdmin() {
         return identityAdmin;
     }

@@ -1,6 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
@@ -31,7 +33,7 @@ public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
-        super(null);
+        super(new AttemptedCreate(EntityType.SERVICE));
     }
 
     /**

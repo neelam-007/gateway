@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class EnableServiceAction extends SecureAction {
+public class EnableServiceAction extends UpdateServiceAction {
     static final Logger log = Logger.getLogger(EnableServiceAction.class.getName());
     ServiceNode node;
 

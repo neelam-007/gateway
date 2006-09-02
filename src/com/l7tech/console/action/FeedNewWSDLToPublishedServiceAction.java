@@ -35,10 +35,10 @@ import java.util.logging.Level;
  * User: flascell<br/>
  * Date: Oct 18, 2004<br/>
  */
-public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
+public class FeedNewWSDLToPublishedServiceAction extends UpdateServiceAction {
 
     public FeedNewWSDLToPublishedServiceAction(ServiceNode node) {
-        super(node, null);
+        super(node);
     }
 
     public String getName() {
@@ -55,7 +55,7 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
 
     protected void performAction() {
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        PublishedService svc = null;
+        PublishedService svc;
         try {
             svc = ((ServiceNode)node).getPublishedService();
         } catch (FindException e) {

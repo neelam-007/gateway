@@ -27,7 +27,7 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
     private SecurityHeaderAddressable assertion;
 
     public EditXmlSecurityRecipientContextAction(AssertionTreeNode node) {
-        super(node, null);
+        super(node);
         assertion = (SecurityHeaderAddressable)node.asAssertion();
     }
 

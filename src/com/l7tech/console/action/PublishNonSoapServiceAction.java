@@ -1,6 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -31,7 +33,7 @@ import java.util.logging.Level;
  */
 public class PublishNonSoapServiceAction extends SecureAction {
     public PublishNonSoapServiceAction() {
-        super(null, SchemaValidation.class);
+        super(new AttemptedCreate(EntityType.SERVICE), SchemaValidation.class);
     }
 
     public String getName() {

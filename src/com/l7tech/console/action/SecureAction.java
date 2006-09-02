@@ -7,7 +7,6 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -29,8 +28,8 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
-    public static final Collection<Class<? extends Assertion>> LIC_AUTH_ASSERTIONS =
-            Arrays.<Class<? extends Assertion>>asList(SpecificUser.class, MemberOfGroup.class);
+    public static final Collection<Class> LIC_AUTH_ASSERTIONS =
+            Arrays.asList(new Class[] { SpecificUser.class, MemberOfGroup.class });
 
     private final Set<String> assertionLicenseClassnames = new HashSet<String>();
     private final AttemptedOperation attemptedOperation;
@@ -49,7 +48,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      *
      * @param requiredAssertionLicense  if non-null, action will be disabled unless the specified assertion is licensed
      */
-    protected SecureAction(AttemptedOperation attemptedOperation, Class<? extends Assertion> requiredAssertionLicense) {
+    protected SecureAction(AttemptedOperation attemptedOperation, Class requiredAssertionLicense) {
         this(attemptedOperation);
         if (requiredAssertionLicense != null)
             assertionLicenseClassnames.add(requiredAssertionLicense.getName());
@@ -62,10 +61,10 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      *
      * @param allowedAssertionLicenses
      */
-    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class<? extends Assertion>> allowedAssertionLicenses) {
+    protected SecureAction(AttemptedOperation attemptedOperation, Collection<Class> allowedAssertionLicenses) {
         this.attemptedOperation = attemptedOperation;
         if (allowedAssertionLicenses != null)
-            for (Class<? extends Assertion> clazz : allowedAssertionLicenses)
+            for (Class clazz : allowedAssertionLicenses)
                 assertionLicenseClassnames.add(clazz.getName());
         initLicenseListener();
     }
@@ -82,9 +81,8 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      *
      * @return true if the current subject is authorized, false otheriwse
      */
-    public final boolean isAuthorized() {
-        if (attemptedOperation == null) return true;
-        return canAttemptOperation(attemptedOperation);
+    public boolean isAuthorized() {
+        return attemptedOperation == null || canAttemptOperation(attemptedOperation);
     }
 
     /**
@@ -95,14 +93,17 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
         if (assertionLicenseClassnames.isEmpty())
             return true;
 
-        ConsoleLicenseManager lm = Registry.getDefault().getLicenseManager();
+        ConsoleLicenseManager lm = ConsoleLicenseManager.getInstance();
         for (String s : assertionLicenseClassnames)
             if (lm.isAssertionEnabled(s))
                 return true;
         return false;
     }
 
+    @SuppressWarnings({"SimplifiableIfStatement"})
     public final boolean canAttemptOperation(AttemptedOperation ao) {
+        if (ao == null) return true;
+        if (!Registry.getDefault().isAdminContextPresent()) return false;
         return getSecurityProvider().hasPermission(Subject.getSubject(AccessController.getContext()), ao);
     }
 
@@ -113,7 +114,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      * @see javax.swing.Action#isEnabled
      */
     public final boolean isEnabled() {
-        return super.isEnabled() && isAuthorized() && isLicensed();
+        return super.isEnabled() && isLicensed() && isAuthorized();
     }
 
     /**
@@ -125,7 +126,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      */
     public final void setEnabled(boolean b) {
         boolean wasEnabled = isEnabled();
-        final boolean enabled = b && isAuthorized() && isLicensed();
+        final boolean enabled = b && isLicensed() && isAuthorized();
         super.setEnabled(enabled);
         boolean isEnabled = isEnabled();
         if (wasEnabled != isEnabled)

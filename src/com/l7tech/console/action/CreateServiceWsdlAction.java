@@ -1,6 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
@@ -38,7 +40,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -55,7 +56,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
 
     public CreateServiceWsdlAction() {
-        super(null, LIC_AUTH_ASSERTIONS);
+        super(new AttemptedCreate(SERVICE), LIC_AUTH_ASSERTIONS);
     }
 
     /**
@@ -128,7 +129,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 service.setWsdlXml(sw.toString());
                 final String serviceAddress = getServiceAddress(def);
                 service.setWsdlUrl(serviceAddress);
-                RoutingAssertion ra = null;
+                RoutingAssertion ra;
                 if (serviceAddress != null) {
                     ra = new HttpRoutingAssertion(serviceAddress);
                 } else {
@@ -223,10 +224,9 @@ public class CreateServiceWsdlAction extends SecureAction {
         }
         Port port = (Port)ports.values().iterator().next();
         java.util.List extensibilityElements = port.getExtensibilityElements();
-        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-            Object o = iterator.next();
+        for (Object o : extensibilityElements) {
             if (o instanceof SOAPAddress) {
-                return ((SOAPAddress)o).getLocationURI();
+                return ((SOAPAddress) o).getLocationURI();
             }
         }
         throw new IllegalArgumentException("missing SOAP address port definition");

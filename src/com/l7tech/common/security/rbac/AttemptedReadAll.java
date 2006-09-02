@@ -4,21 +4,16 @@
 package com.l7tech.common.security.rbac;
 
 /**
+ * User is allowed to invoke the operation if s/he has blanket permission to read
+ * <em>all</em> instances of the type.
  * @author alex
  */
-public class AttemptedRead extends AttemptedOperation {
-    private final String id;
-
-    public AttemptedRead(EntityType type, String id) {
+public class AttemptedReadAll extends AttemptedOperation {
+    public AttemptedReadAll(EntityType type) {
         super(type);
-        this.id = id;
     }
 
     public OperationType getOperation() {
         return OperationType.READ;
-    }
-
-    public String getId() {
-        return id;
     }
 }

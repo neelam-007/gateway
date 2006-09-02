@@ -6,6 +6,8 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.EntityType;
 
 import javax.swing.event.EventListenerList;
 import java.util.EventListener;
@@ -20,7 +22,7 @@ abstract public class NewProviderAction extends NodeAction {
     protected EventListenerList listenerList = new EventListenerList();
 
     public NewProviderAction(AbstractTreeNode node) {
-        super(node, null, LIC_AUTH_ASSERTIONS);
+        super(node, LIC_AUTH_ASSERTIONS, new AttemptedCreate(EntityType.ID_PROVIDER_CONFIG));
     }
 
     /**
@@ -31,8 +33,8 @@ abstract public class NewProviderAction extends NodeAction {
     protected void fireEventProviderAdded(EntityHeader header) {
         EntityEvent event = new EntityEvent(this, header);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((EntityListener) listeners[i]).entityAdded(event);
+        for (EventListener listener : listeners) {
+            ((EntityListener) listener).entityAdded(event);
         }
     }
 

@@ -4,10 +4,10 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.EditServiceNameDialog;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -22,12 +22,12 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class EditServiceNameAction extends NodeAction {
+public class EditServiceNameAction extends UpdateServiceAction {
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
     private String lastServiceName; // remeber old name fro for rename property event
 
     public EditServiceNameAction(ServiceNode node) {
-        super(node, null);
+        super(node);
     }
 
     /**
@@ -50,6 +50,7 @@ public class EditServiceNameAction extends NodeAction {
     protected String iconResource() {
         return "com/l7tech/console/resources/Edit16.gif";
     }
+
 
     /** Actually perform the action.
      * This is the method which should be called programmatically.

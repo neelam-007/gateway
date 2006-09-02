@@ -32,7 +32,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     private EventListenerList listenerList = new EventListenerList();
 
     public IdentityProviderPropertiesAction(IdentityProviderNode nodeIdentity) {
-        super(nodeIdentity, null, LIC_AUTH_ASSERTIONS);
+        super(nodeIdentity, LIC_AUTH_ASSERTIONS, null);
     }
 
     /**
@@ -69,15 +69,15 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
-                IdentityProviderConfig iProvider = null;
+                IdentityProviderConfig iProvider;
                 if (header.getOid() != -1) {
 
                     try {
                         iProvider =
                           getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
 
-                        WizardStepPanel configPanel = null;
-                        Wizard w = null;
+                        WizardStepPanel configPanel;
+                        Wizard w;
 
                         if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
 
@@ -131,8 +131,8 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     private void fireEventProviderUpdated(EntityHeader header) {
         EntityEvent event = new EntityEvent(this, header);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((EntityListener)listeners[i]).entityUpdated(event);
+        for (EventListener listener : listeners) {
+            ((EntityListener) listener).entityUpdated(event);
         }
     }
 

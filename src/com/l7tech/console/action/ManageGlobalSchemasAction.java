@@ -9,6 +9,8 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.GlobalSchemaDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 /**
@@ -18,7 +20,7 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
  */
 public class ManageGlobalSchemasAction extends SecureAction {
     public ManageGlobalSchemasAction() {
-        super(null, SchemaValidation.class);
+        super(new AttemptedAnyOperation(EntityType.SCHEMA_ENTRY), SchemaValidation.class);
     }
 
     public String getName() {

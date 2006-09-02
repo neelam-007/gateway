@@ -21,7 +21,7 @@ public abstract class RefreshAction extends NodeAction {
      * @param node the node to refresh
      */
     public RefreshAction(AbstractTreeNode node) {
-        super(node, null);
+        super(node);
     }
 
     /**

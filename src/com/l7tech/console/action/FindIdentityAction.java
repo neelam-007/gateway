@@ -61,8 +61,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener {
      * @return the action name
      */
     public String getName() {
-        String name = resapplication.getString("Find_MenuItem_text_name");
-        return name;
+        return resapplication.getString("Find_MenuItem_text_name");
     }
 
     /**
@@ -92,7 +91,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener {
         fd.getSearchResultTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.centerOnScreen(fd);
         FindIdentitiesDialog.FindResult result = fd.showDialog();
-        if (result.entityHeaders != null && result.entityHeaders.length > 0) {
+        if (result != null && result.entityHeaders != null && result.entityHeaders.length > 0) {
             showEditDialog(result.providerConfigOid, result.entityHeaders[0]);
         }
     }

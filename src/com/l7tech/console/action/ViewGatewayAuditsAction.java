@@ -2,11 +2,16 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.GatewayAuditWindow;
+import com.l7tech.console.util.Registry;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.EnumSet;
 
 
 /**
@@ -17,6 +22,9 @@ import java.awt.event.WindowEvent;
 public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayAuditWindow gatewayAuditWindow;
 
+    /**
+     * @see #isAuthorized()
+     */
     public ViewGatewayAuditsAction() {
         super(null);
     }
@@ -55,6 +63,23 @@ public class ViewGatewayAuditsAction extends SecureAction {
         gaw.toFront();
     }
 
+    private static final EnumSet<EntityType> ANY_AUDIT_RECORD = EnumSet.copyOf(EnumSet.of(EntityType.AUDIT_MESSAGE, EntityType.AUDIT_ADMIN, EntityType.AUDIT_SYSTEM));
+    static {
+        ANY_AUDIT_RECORD.add(EntityType.ANY);
+        ANY_AUDIT_RECORD.add(EntityType.AUDIT_RECORD);
+    }
+
+    @Override
+    public synchronized boolean isAuthorized() {
+        if (!Registry.getDefault().isAdminContextPresent()) return false;
+        
+        for (Permission perm : getSecurityProvider().getUserPermissions()) {
+            EntityType etype = perm.getEntityType();
+            OperationType op = perm.getOperation();
+            if (op == OperationType.READ && ANY_AUDIT_RECORD.contains(etype)) return true;
+        }
+        return false;
+    }
 
     private GatewayAuditWindow getGatewayAuditWindow() {
         if (gatewayAuditWindow != null) return gatewayAuditWindow;
@@ -97,5 +122,4 @@ public class ViewGatewayAuditsAction extends SecureAction {
               return;
           gatewayAuditWindow.onLogoff(e);
     }
-
 }

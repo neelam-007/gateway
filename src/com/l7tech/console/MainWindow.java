@@ -157,9 +157,6 @@ public class MainWindow extends JFrame {
     private JPanel mainSplitPaneRight = null;
     private JTabbedPane paletteTabbedPane;
 
-    /* progress bar indicator */
-    private ProgressBar progressBar = null;
-
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
@@ -213,17 +210,8 @@ public class MainWindow extends JFrame {
      *
      * @param listener the ConnectionListener
      */
-    public void addLogonListener(LogonListener listener) {
+    private void addLogonListener(LogonListener listener) {
         listenerList.add(LogonListener.class, listener);
-    }
-
-    /**
-     * remove the the ConnectionListener
-     *
-     * @param listener the ConnectionListener
-     */
-    public void removeLogonListener(LogonListener listener) {
-        listenerList.remove(LogonListener.class, listener);
     }
 
     /**
@@ -252,6 +240,7 @@ public class MainWindow extends JFrame {
      * notification on this event type (connection event).
      */
     private void fireDisconnected() {
+        Registry.getDefault().getLicenseManager().setLicense(null);
         LogonEvent event = new LogonEvent(this, LogonEvent.LOGOFF);
         ssmApplication.getApplicationContext().publishEvent(event);
         EventListener[] listeners = listenerList.getListeners(LogonListener.class);
@@ -1409,8 +1398,7 @@ public class MainWindow extends JFrame {
 
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
-            progressBar =
-              (ProgressBar)TopComponents.getInstance().getComponent(ProgressBar.NAME);
+            ProgressBar progressBar = (ProgressBar) TopComponents.getInstance().getComponent(ProgressBar.NAME);
             if (progressBar == null) {
                 progressBar = new ProgressBar(0, 100, 20);
                 TopComponents.getInstance().registerComponent(ProgressBar.NAME, progressBar);
@@ -2314,9 +2302,8 @@ public class MainWindow extends JFrame {
 
               getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
-              int timeout = Preferences.getPreferences().getInactivityTimeout();
 
-              final int fTimeout = timeout;
+              final int fTimeout = Preferences.getPreferences().getInactivityTimeout();
               SwingUtilities.invokeLater(new Runnable() {
                   public void run() {
                       MainWindow.this.

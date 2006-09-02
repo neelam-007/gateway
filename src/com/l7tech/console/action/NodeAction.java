@@ -1,5 +1,7 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ServiceNode;
@@ -9,7 +11,6 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.util.Arrays;
@@ -31,31 +32,29 @@ public abstract class NodeAction extends SecureAction {
     protected AbstractTreeNode node;
     protected JTree tree;
 
+    public NodeAction(AbstractTreeNode node) {
+        this(node, null);
+    }
+
     /**
-     * constructor accepting the node that this action will
-     * act on.
+     * constructor accepting the node that this action will act on.
      * The tree will be set to <b>null<b/>
      *
      * @param node the node this action will acto on
      * @param requiredAssertionLicense assertion class that must be licensed, or null to allow action regardless of licensing
      */
-    public NodeAction(AbstractTreeNode node, Class<? extends Assertion> requiredAssertionLicense) {
-        this(node, null, requiredAssertionLicense == null ? (Collection)null : Arrays.asList(requiredAssertionLicense));
+    public NodeAction(AbstractTreeNode node, Class requiredAssertionLicense) {
+        this(node, requiredAssertionLicense, null);
     }
 
-    /**
-     * full constructor. Construct the node action with the
-     * node and the tree parameters.
-     *
-     * @param node the node that this action will act on
-     * @param tree the tree where the node lives
-     * @param permittedAssertionLicenses list of assertion classes, at least one of which must be licensed;
-     *                                   or null or empty to allow action regardless of licensing
-     */
-    public NodeAction(AbstractTreeNode node, JTree tree, Collection<Class<? extends Assertion>> permittedAssertionLicenses) {
-        super(null, permittedAssertionLicenses);
+
+    public NodeAction(AbstractTreeNode node, Collection<Class> allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
+        super(attemptedOperation, allowedAssertionLicenses);
         this.node = node;
-        this.tree = tree;
+    }
+
+    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedCreate attemptedOperation) {
+        this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
     }
 
     /**

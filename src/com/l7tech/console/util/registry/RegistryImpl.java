@@ -51,6 +51,10 @@ public final class RegistryImpl extends Registry
     private KerberosAdmin kerberosAdmin;
     private RbacAdmin rbacAdmin;
 
+    public boolean isAdminContextPresent() {
+        return adminContext != null;
+    }
+
     /**
      * @return the {@link IdentityAdmin} implementation
      */
@@ -243,7 +247,7 @@ public final class RegistryImpl extends Registry
          if (event instanceof LogonEvent) {
              LogonEvent le = (LogonEvent)event;
              if (le.getType() == LogonEvent.LOGOFF) {
-                 onLogoff(le);
+                 onLogoff();
              } else {
                  onLogon(le);
              }
@@ -275,7 +279,7 @@ public final class RegistryImpl extends Registry
     }
 
 
-     private void onLogoff(LogonEvent e) {
+     private void onLogoff() {
          if(logger.isLoggable(Level.FINER)) logger.finer("Logoff message received, invalidating admin context");
          resetAdminContext();
      }

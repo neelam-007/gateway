@@ -9,15 +9,15 @@ import com.l7tech.objectmodel.AnonymousEntityReference;
 /**
  * @author alex
  */
-public class AttemptedDelete extends AttemptedEntityOperation {
+public class AttemptedDeleteSpecific extends AttemptedEntityOperation {
     private final String id;
 
-    public AttemptedDelete(EntityType type, Entity entity) {
+    public AttemptedDeleteSpecific(EntityType type, Entity entity) {
         super(type, entity);
         this.id = entity.getId();
     }
 
-    public AttemptedDelete(EntityType type, String id) {
+    public AttemptedDeleteSpecific(EntityType type, String id) {
         super(type, new AnonymousEntityReference(type.getEntityClass(), id));
         this.id = id;
     }

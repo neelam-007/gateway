@@ -36,7 +36,7 @@ public class EditServicePolicyAction extends NodeAction {
      * @param b    true validate the policy, false
      */
     public EditServicePolicyAction(ServiceNode node, boolean b) {
-        super(node, null);
+        super(node);
         validate = b;
     }
 
@@ -119,7 +119,7 @@ public class EditServicePolicyAction extends NodeAction {
                         Subject s = Subject.getSubject(AccessController.getContext());
                         return Registry.getDefault().getSecurityProvider().hasPermission(s, new AttemptedUpdate(EntityType.SERVICE, serviceNode.getPublishedService()));
                     } catch (Exception e) {
-                        log.log(Level.WARNING, "Error performing permisison check", e);
+                        log.log(Level.WARNING, "Error performing permissison check", e);
                         throw new RuntimeException(e);
                     }
                 }

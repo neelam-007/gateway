@@ -27,9 +27,9 @@ import java.util.logging.Level;
  * Date: Sep 15, 2004<br/>
  * $Id$<br/>
  */
-public class EditServiceRoutingURIAction extends NodeAction {
+public class EditServiceRoutingURIAction extends UpdateServiceAction {
     public EditServiceRoutingURIAction(ServiceNode node) {
-        super(node, null);
+        super(node);
     }
 
     public String getName() {

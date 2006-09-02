@@ -57,6 +57,8 @@ public abstract class Registry {
     protected Registry() {
     }
 
+    public abstract boolean isAdminContextPresent();
+
     /**
      * @return the {@link IdentityAdmin} implementation
      */
@@ -119,6 +121,10 @@ public abstract class Registry {
      */
     private static final class Empty extends Registry {
         Empty() {
+        }
+
+        public boolean isAdminContextPresent() {
+            return false;
         }
 
         public IdentityAdmin getIdentityAdmin() {

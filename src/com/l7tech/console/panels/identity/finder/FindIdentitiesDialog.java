@@ -45,7 +45,7 @@ import java.beans.PropertyChangeEvent;
  */
 public class FindIdentitiesDialog extends JDialog {
     final Logger logger = Logger.getLogger(FindIdentitiesDialog.class.getName());
-    static Map oTypes = new TreeMap(); // sorted
+    static Map<String, SearchType> oTypes = new TreeMap<String, SearchType>(); // sorted
 
     static {
         oTypes.put(SearchType.USER.getName(), SearchType.USER);
@@ -157,7 +157,7 @@ public class FindIdentitiesDialog extends JDialog {
     public FindResult showDialog() {
         setVisible(true);
         IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBoxModel.getSelectedItem();
-        return new FindResult(ipc.getOid(), selections);
+        return ipc == null ? null : new FindResult(ipc.getOid(), selections);
     }
 
     public static class FindResult {
@@ -377,7 +377,7 @@ public class FindIdentitiesDialog extends JDialog {
             searchType.setEditable(false);
         }
         else
-            searchType = new JComboBox(new Vector(oTypes.keySet()));
+            searchType = new JComboBox(new Vector<String>(oTypes.keySet()));
 
         searchType.setToolTipText(resources.getString("findType.tooltip"));
         constraints = new GridBagConstraints();
@@ -505,9 +505,7 @@ public class FindIdentitiesDialog extends JDialog {
         if (actionCommand == null) {
             // do nothing
         } else if (actionCommand.equals(CMD_CANCEL)) {
-            ;
         } else if (actionCommand.equals(CMD_CLOSE)) {
-            ;
         } else if (actionCommand.equals(CMD_FIND)) {
             if (collectFormData()) {
                 showSearchResult(searchInfo);
@@ -526,7 +524,7 @@ public class FindIdentitiesDialog extends JDialog {
         String option = (String)searchNameOptions.getSelectedItem();
         searchInfo.setSearchName(name, NAME_SEARCH_OPTION_EQUALS.equals(option));
         String key = (String)searchType.getSelectedItem();
-        searchInfo.setSearchType((SearchType)oTypes.get(key));
+        searchInfo.setSearchType(oTypes.get(key));
         searchInfo.setProviderConfig((IdentityProviderConfig)providersComboBox.getSelectedItem());
 
         return true;
@@ -556,7 +554,7 @@ public class FindIdentitiesDialog extends JDialog {
                                                          types, searchName);
             setTableModel(Collections.enumeration(Arrays.asList(headers)));
         } catch (Exception e) {
-            setTableModel(Collections.enumeration(Collections.EMPTY_LIST));
+            setTableModel(Collections.enumeration(Collections.emptyList()));
             ErrorManager.getDefault().
               notify(Level.WARNING, e, "The system reported an error during search.");
         }
@@ -600,14 +598,14 @@ public class FindIdentitiesDialog extends JDialog {
         selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int rows[] = searchResultTable.getSelectedRows();
-                List principals = new ArrayList();
+                List<EntityHeader> principals = new ArrayList<EntityHeader>();
                 for (int i = 0; rows != null && i < rows.length; i++) {
                     int row = rows[i];
                     EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
                     principals.add(eh);
                 }
                 if (options.isDisposeOnSelect()) {
-                    selections = (EntityHeader[])principals.toArray(new EntityHeader[]{});
+                    selections = principals.toArray(new EntityHeader[]{});
                     FindIdentitiesDialog.this.dispose();
                 } else {
                     int row = searchResultTable.getSelectedRow();
@@ -964,8 +962,7 @@ public class FindIdentitiesDialog extends JDialog {
             final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             EntityHeader[] headers =
               admin.findAllIdentityProviderConfig();
-            for ( int i = 0; i < headers.length; i++ ) {
-                EntityHeader header = headers[i];
+            for (EntityHeader header : headers) {
                 IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
                 if (config == null) {
                     logger.warning("IdentityProviderConfig #" + header.getOid() + " no longer exists");

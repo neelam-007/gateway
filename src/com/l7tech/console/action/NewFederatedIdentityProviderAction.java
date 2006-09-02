@@ -162,7 +162,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
     };
 
     public void onLogoff(LogonEvent e) {
-        setEnabled(false);
+        super.onLogoff(e);
         node = null;
     }
 }

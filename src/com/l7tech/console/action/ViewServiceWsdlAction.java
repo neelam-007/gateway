@@ -35,7 +35,7 @@ public class ViewServiceWsdlAction extends NodeAction {
     private PublishedService publishedService;
 
     public ViewServiceWsdlAction(ServiceNode sn) {
-        super(sn, null, LIC_AUTH_ASSERTIONS);
+        super(sn, LIC_AUTH_ASSERTIONS, null);
         if (sn == null) {
             throw new IllegalArgumentException();
         }

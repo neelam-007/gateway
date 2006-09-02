@@ -3,14 +3,16 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedReadAll;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.panels.dashboard.DashboardWindow;
 
-import java.util.ResourceBundle;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.*;
+import java.util.ResourceBundle;
 
 /**
  * Action to show a {@link com.l7tech.console.panels.dashboard.DashboardWindow} from the SSM.
@@ -20,7 +22,7 @@ public class ShowDashboardAction extends SecureAction {
     private DashboardWindow dashboardWindow;
 
     public ShowDashboardAction() {
-        super(null);
+        super(new AttemptedReadAll(EntityType.METRICS_BIN));
     }
 
     public String getName() {

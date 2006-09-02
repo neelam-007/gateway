@@ -9,6 +9,8 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.ClusterPropertyDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.common.security.rbac.EntityType;
 
 /**
  * Action to manager cluster properties from the ssm.
@@ -17,7 +19,7 @@ import com.l7tech.common.gui.util.Utilities;
  */
 public class ManageClusterPropertiesAction extends SecureAction {
     public ManageClusterPropertiesAction() {
-        super(null);
+        super(new AttemptedAnyOperation(EntityType.CLUSTER_PROPERTY));
     }
 
     public String getName() {
