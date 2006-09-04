@@ -1,16 +1,14 @@
 package com.l7tech.console.action;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Arrays;
-
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 
 
 /**
@@ -75,6 +73,17 @@ public class DeleteAssertionAction extends SecureAction {
             delete(node);
         } else {
             delete(nodes);
+        }
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        if (node == null) return false;
+        try {
+            PublishedService svc = node.getService();
+            return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get current service", e);
         }
     }
 

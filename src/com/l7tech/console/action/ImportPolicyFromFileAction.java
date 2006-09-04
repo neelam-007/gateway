@@ -8,6 +8,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -61,6 +63,12 @@ public class ImportPolicyFromFileAction extends SecureAction {
      */
     protected String iconResource() {
         return "com/l7tech/console/resources/saveTemplate.gif";
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        if (pubService == null) return false;
+        return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, pubService));
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -65,6 +67,17 @@ public class SavePolicyAction extends SecureAction {
             performAction(bo.toString());
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
+        }
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        if (node == null) return false;
+        try {
+            PublishedService svc = node.getService();
+            return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get current service", e);
         }
     }
 

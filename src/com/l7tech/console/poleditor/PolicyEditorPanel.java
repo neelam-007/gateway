@@ -1,6 +1,8 @@
 package com.l7tech.console.poleditor;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -891,6 +893,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getUDDIImportAction() {
         return new SecureAction(null, SecureAction.LIC_AUTH_ASSERTIONS) {
+            @Override
+            public boolean isAuthorized() {
+                PublishedService svc = getPublishedService();
+                return svc != null && canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+            }
 
             public String getName() {
                 return "Import From UDDI";
