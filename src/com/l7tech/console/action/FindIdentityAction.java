@@ -1,6 +1,9 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.EntityEditorPanel;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
@@ -11,12 +14,14 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +32,8 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
+ * 
+ * TODO why doesn't this extend SecureAction?
  */
 public class FindIdentityAction extends BaseAction implements LicenseListener {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
@@ -147,10 +154,19 @@ public class FindIdentityAction extends BaseAction implements LicenseListener {
             firePropertyChange("enabled", wasEnabled, isEnabled);
     }
 
+    private static final EnumSet TYPES = EnumSet.of(
+            EntityType.ANY, EntityType.ID_PROVIDER_CONFIG, EntityType.USER, EntityType.GROUP);
+
     public boolean isEnabled() {
         boolean e = super.isEnabled();
         if (!e) return false;
-        return Registry.getDefault().getLicenseManager().isAuthenticationEnabled();
+        if (!Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) return false;
+        SecurityProvider sp = Registry.getDefault().getSecurityProvider();
+        if (sp == null) return false;
+        for (Permission perm : sp.getUserPermissions()) {
+            if (perm.getOperation() == OperationType.READ && TYPES.contains(perm.getEntityType())) return true;
+        }
+        return false;
     }
 
     public void licenseChanged(ConsoleLicenseManager licenseManager) {
