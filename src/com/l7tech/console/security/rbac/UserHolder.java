@@ -1,15 +1,15 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.security.rbac.UserRoleAssignment;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 
 import java.rmi.RemoteException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: megery
@@ -30,7 +30,7 @@ class UserHolder {
             identityAdmin = Registry.getDefault().getIdentityAdmin();
             idpNames = new HashMap<Long, String>();
 
-            EntityHeader[] hs = new EntityHeader[0];
+            EntityHeader[] hs;
             try {
                 hs = identityAdmin.findAllIdentityProviderConfig();
             } catch (RemoteException e) {
@@ -45,13 +45,23 @@ class UserHolder {
         }
     }
 
-    public UserHolder(UserRoleAssignment ura) throws RemoteException, FindException {
+    static class NoSuchUserException extends Exception {
+        final UserRoleAssignment assignment;
+
+        public NoSuchUserException(UserRoleAssignment ura) {
+            this.assignment = ura;
+        }
+    }
+
+    public UserHolder(UserRoleAssignment ura) throws RemoteException, FindException, NoSuchUserException {
         initIdpMap();
         this.userRoleAssignment = ura;
-        this.user = identityAdmin.findUserByID(ura.getProviderId(), ura.getUserId());
-        String name = idpNames.get(user.getProviderId());
-        if (name == null) name = "Unknown Identity Provider #" + user.getProviderId();
-        provName = name;
+        User u = identityAdmin.findUserByID(ura.getProviderId(), ura.getUserId());
+        if (u == null) throw new NoSuchUserException(ura);
+        String name = idpNames.get(u.getProviderId());
+        if (name == null) name = "Unknown Identity Provider #" + u.getProviderId();
+        this.user = u;
+        this.provName = name;
     }
 
     public UserRoleAssignment getUserRoleAssignment() {

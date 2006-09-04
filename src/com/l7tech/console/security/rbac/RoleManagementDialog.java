@@ -199,6 +199,8 @@ public class RoleManagementDialog extends JDialog {
                         sorted.add("   " + holder);
                     } catch (FindException e) {
                         logger.warning("Could not find a user with id=" + ura.getUserId());
+                    } catch (UserHolder.NoSuchUserException e) {
+                        logger.info("Removing deleted user #" + ura.getUserId());
                     }
                 }
             }

@@ -26,8 +26,11 @@ import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class EditRoleDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(EditRoleDialog.class.getName());
+
     private Role role;
 
     private JPanel contentPane;
@@ -205,8 +208,13 @@ public class EditRoleDialog extends JDialog {
 
         public AssignmentListModel() throws RemoteException, FindException {
             for (UserRoleAssignment assignment : role.getUserAssignments()) {
-                assignments.add(assignment);
-                holders.add(new UserHolder(assignment));
+                try {
+                    UserHolder uh = new UserHolder(assignment);
+                    holders.add(uh);
+                    assignments.add(assignment);
+                } catch (UserHolder.NoSuchUserException e) {
+                    logger.info("Removing deleted user #" + assignment.getUserId());
+                }
             }
         }
 
@@ -222,7 +230,12 @@ public class EditRoleDialog extends JDialog {
 
         public synchronized void add(UserRoleAssignment ura) throws RemoteException, FindException, DuplicateObjectException {
             try {
-                UserHolder holder = new UserHolder(ura);
+                UserHolder holder = null;
+                try {
+                    holder = new UserHolder(ura);
+                } catch (UserHolder.NoSuchUserException e) {
+                    throw new FindException("Can't assign deleted user", e);
+                }
                 if (assignments.contains(ura) || holders.contains(holder)) {
                     throw new DuplicateObjectException("The user \"" + holder.getUser().getName() + "\" is already assigned to this role");
                 }
