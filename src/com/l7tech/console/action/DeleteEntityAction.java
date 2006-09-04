@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import static com.l7tech.common.security.rbac.EntityType.GROUP;
 import static com.l7tech.common.security.rbac.EntityType.USER;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WeakEventListenerList;
@@ -60,12 +61,14 @@ public class DeleteEntityAction extends SecureAction {
             EntityHeader header = node.getEntityHeader();
             if (header == null) return null;
             
-            EntityType type = header.getType();
+            com.l7tech.objectmodel.EntityType type = header.getType();
             com.l7tech.common.security.rbac.EntityType etype;
             if (type == EntityType.USER) {
                 etype = USER;
             } else if (type == EntityType.GROUP) {
                 etype = GROUP;
+            } else if (type == EntityType.ID_PROVIDER_CONFIG) {
+                etype = ID_PROVIDER_CONFIG;
             } else {
                 throw new IllegalArgumentException("EntityHeaderNode is a " + type + ", expecting User or Group");
             }
