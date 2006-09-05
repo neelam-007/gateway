@@ -177,7 +177,7 @@ Section "SecureSpan Bridge" SecCopyUI
     ; this version uses newer version of javaservice which supports the -description parameter
     ; ExecWait '"$INSTDIR\SSBService.exe" -install "SecureSpan Bridge" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log" -description "Layer 7 Technologies SecureSpan Bridge"' $0
     ; this is a recompiled version from an older version which does not support the -description parameter but appears to be a l7 util instead of a sourceforge one
-    ExecWait '"$INSTDIR\SSBService.exe" -install "SecureSpan Bridge" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log" $0
+    ExecWait '"$INSTDIR\SSBService.exe" -install "SecureSpan Bridge" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log"' $0
     DetailPrint "creation of service returned with code $0"
     MessageBox MB_YESNO "Would you like to configure the SecureSpan Bridge now?" IDNO endofserviceinstall
         ExecWait '"$INSTDIR\jre\bin\javaw.exe" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Bridge.jar" -config -hideMenus -quitLabel Continue' $0
