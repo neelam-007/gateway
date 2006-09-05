@@ -2,11 +2,14 @@ package com.l7tech.console;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.console.action.SecureAction;
+import com.l7tech.common.security.rbac.Permission;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.action.BaseAction;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.EditGatewayNameDialog;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.security.LogonListener;
@@ -16,8 +19,8 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -1157,6 +1160,18 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
             return RESOURCE_PATH + "/Edit16.gif";
         }
 
+
+        @Override
+        public boolean isAuthorized() {
+            for (Permission perm : getSecurityProvider().getUserPermissions()) {
+                if (perm.getEntityType() == EntityType.ANY || perm.getEntityType() == EntityType.CLUSTER_INFO) {
+                    if (perm.getOperation() == OperationType.UPDATE) {
+                        if (perm.getScope().isEmpty()) return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         /**
          * Invoked when an action occurs.
