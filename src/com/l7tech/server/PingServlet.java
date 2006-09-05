@@ -40,17 +40,14 @@ import java.util.logging.Logger;
 public class PingServlet extends AuthenticatableHttpServlet {
     private static final Logger _logger = Logger.getLogger(PingServlet.class.getName());
 
-    /** Name of system property specifying the operating mode. */
-    private static final String MODE_PROP_NAME = "com.l7tech.server.PingServlet.mode";
+    /** Name of server config property specifying the operating mode. */
+    private static final String MODE_PROP_NAME = "pingServletMode";
 
     /** Available operating modes. */
     private enum Mode { OFF, REQUIRE_CREDS, OPEN };
 
     /** Default operating mode. */
     private static final Mode DEFAULT_MODE = Mode.REQUIRE_CREDS;
-
-    /** Operating mode. */
-    private Mode _mode;
 
     private ClusterInfoManager _clusterInfoManager;
     private RoleManager _roleManager;
@@ -67,23 +64,6 @@ public class PingServlet extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        // Determines the operating mode.
-        final String modeString = System.getProperty(MODE_PROP_NAME);
-        if (modeString == null) {
-            _logger.config("System property not found (" + MODE_PROP_NAME +
-                    "). Setting ping servlet mode to default (" + DEFAULT_MODE + ").");
-            _mode = DEFAULT_MODE;
-        } else {
-            try {
-                _mode = Mode.valueOf(modeString.trim());
-                _logger.config("Setting ping servlet mode=" + _mode);
-            } catch (IllegalArgumentException e) {
-                _logger.warning("Invalid property value (" + MODE_PROP_NAME + "=" + modeString +
-                        "). Setting ping servlet mode to default (" + DEFAULT_MODE + ").");
-                _mode = DEFAULT_MODE;
-            }
-        }
-
         final WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         if (webApplicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
@@ -94,21 +74,38 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        if (_mode == Mode.OFF) {
-            respondNone(request, "mode=" + _mode);
+        // Determines the operating mode.
+        Mode mode = DEFAULT_MODE;
+        final String modeString = ServerConfig.getInstance().getProperty(MODE_PROP_NAME);
+        if (modeString == null) {
+            _logger.fine("Property not found (" + MODE_PROP_NAME +
+                    "). Setting ping servlet mode to default (" + DEFAULT_MODE + ").");
+        } else {
+            try {
+                mode = Mode.valueOf(modeString.trim());
+                _logger.fine("Ping servlet mode=" + mode);
+            } catch (IllegalArgumentException e) {
+                _logger.warning("Invalid property value (" + MODE_PROP_NAME + "=" + modeString +
+                        "). Setting ping servlet mode to default (" + DEFAULT_MODE + ").");
+                mode = DEFAULT_MODE;
+            }
+        }
+
+        if (mode == Mode.OFF) {
+            respondNone(request, "mode=" + mode);
             return;
         }
 
         final int port = request.getServerPort();
         final String protocol = request.isSecure() ? "https" : "http";
 
-        if (_mode == Mode.REQUIRE_CREDS) {
+        if (mode == Mode.REQUIRE_CREDS) {
             if ("http".equals(protocol) && port == 8080) {
-                respondNone(request, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port);
+                respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
             } else if ("https".equals(protocol) && port == 8443) {
                 final boolean hasCredentials = findCredentialsBasic(request) != null;
                 if (!hasCredentials) {
-                    respondChallenge(response, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
+                    respondChallenge(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
                     return;
                 }
 
@@ -131,7 +128,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                     authenticated = false;
                 } catch (CannotCreateTransactionException e) {
                     // Database unreachable.
-                    respondDatabaseFailureMinimal(response, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
+                    respondDatabaseFailureMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
                     if (_logger.isLoggable(Level.FINE)) {
                         _logger.fine("Failed to authenticate request: " + e.getMessage());
                     }
@@ -139,16 +136,16 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 }
 
                 if (authenticated) {
-                    respondFull(response, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+                    respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
                 } else {
-                    respondNone(request, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
+                    respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials + ", authenticated=" + authenticated);
                 }
             }
-        } else if (_mode == Mode.OPEN) {
+        } else if (mode == Mode.OPEN) {
             if ("http".equals(protocol) && port == 8080) {
-                respondMinimal(response, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port);
+                respondMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
             } else if ("https".equals(protocol) && port == 8443) {
-                respondFull(response, "mode=" + _mode + ", protocol=" + protocol + ", port=" + port);
+                respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
             }
         }
     }
