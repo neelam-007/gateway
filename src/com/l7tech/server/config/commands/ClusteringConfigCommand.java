@@ -87,7 +87,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         try {
             Properties props = PropertyHelper.mergeProperties(systemPropertiesFile,
                     new File(systemPropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()),
-                    true);
+                    true, true);
 
             props.setProperty(PROP_RMI_HOSTNAME, hostname);
 

@@ -1,17 +1,22 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
-import com.l7tech.server.config.PropertyHelper;
-
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.*;
-import java.io.*;
-
 import org.apache.commons.lang.StringUtils;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -110,7 +115,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             Properties dbProps = PropertyHelper.mergeProperties(
                     dbConfigFile,
                     new File(dbConfigFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()), 
-                    true);
+                    true, true);
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
 

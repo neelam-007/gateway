@@ -632,7 +632,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             Properties keystoreProps = PropertyHelper.mergeProperties(
                     keystorePropertiesFile,
                     new File(keystorePropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()), 
-                    true);
+                    true, true);
 
             keystoreProps.setProperty(PROP_KS_TYPE, getKsType());
             keystoreProps.setProperty(PROP_KEYSTORE_DIR, osFunctions.getKeystoreDir());

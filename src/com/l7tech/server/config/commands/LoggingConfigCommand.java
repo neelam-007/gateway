@@ -54,7 +54,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             props = PropertyHelper.mergeProperties(
                     loggingPropertiesFile,
                     new File(ssgLogPropsPath + "." + osFunctions.getUpgradedFileExtension()), 
-                    true);
+                    true, true);
 
             String fullLogPattern = osFunctions.getSsgInstallRoot() + SSG_LOG_PATTERN;
             props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);

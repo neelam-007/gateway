@@ -71,13 +71,14 @@ public class PropertyHelper {
      *        object will be added to the list (must not be null or empty).
      * @param createIfNew whether to create the origPropsFile if it is found not to exist
      *
+     * @param deleteExistingNewFile
      * @throws FileNotFoundException if the original file could not be found for reading
      * @throws IOException if there was an error while reading one of the properties files
      * @return a new Properties object (possibly empty if the original and the new file could not be found)
      * consisting of all properties contained in the two properies files. This will be equivalent to the original if
      * something failed with the new one.
      */
-    public static Properties mergeProperties(File origPropsFile, File newPropsFile, boolean createIfNew) throws IOException {
+    public static Properties mergeProperties(File origPropsFile, File newPropsFile, boolean createIfNew, boolean deleteExistingNewFile) throws IOException {
         if (origPropsFile == null) throw new IllegalArgumentException("The original property file cannot be null");
         if (newPropsFile == null) throw new IllegalArgumentException("The new property file cannot be null");
 
@@ -102,6 +103,12 @@ public class PropertyHelper {
         try {
             newFis = new FileInputStream(newPropsFile);
             newProps.load(newFis);
+            // if we've made it this far, the file exists and we should delete it if requested.
+            if (deleteExistingNewFile) {
+                logger.info(newPropsFile.getAbsoluteFile() + " will be deleted after merging properties");
+                 newPropsFile.deleteOnExit();
+            }
+
         } catch (FileNotFoundException e) {
             logger.info(newPropsFile.getAbsolutePath() + " does not exist, no need to merge with existing properties");
         } finally {
@@ -153,6 +160,7 @@ public class PropertyHelper {
      *        file will be added to the list (must not be null or empty).
      * @param createIfNew whether to create a file called originalPropsFileName if it is found not to exist
      *
+     * @param deleteExistingNewFile
      * @return
      * <ul>
      * * <li>a new Properties object (possibly empty if the original and the new file could not be found)
@@ -160,7 +168,7 @@ public class PropertyHelper {
      * something failed with the new one.</li>
      * </ul>
      */
-    public static Properties mergeProperties(String originalPropsFileName, String newPropsFileName, boolean createIfNew) throws IOException {
+    public static Properties mergeProperties(String originalPropsFileName, String newPropsFileName, boolean createIfNew, boolean deleteExistingNewFile) throws IOException {
         if (StringUtils.isEmpty(originalPropsFileName))
             throw new IllegalArgumentException("The original property file propName cannot be empty");
 
@@ -169,6 +177,6 @@ public class PropertyHelper {
 
         File origPropsFile = new File(originalPropsFileName);
         File newPropsFile = new File(newPropsFileName);
-        return mergeProperties(origPropsFile, newPropsFile,  createIfNew);
+        return mergeProperties(origPropsFile, newPropsFile,  createIfNew, deleteExistingNewFile);
     }
 }
