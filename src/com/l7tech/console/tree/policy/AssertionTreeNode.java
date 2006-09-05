@@ -19,6 +19,9 @@ import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.util.JaasUtils;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -203,7 +206,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
+        java.util.List<Action> list = new ArrayList<Action>();
         list.addAll(Arrays.asList(super.getActions()));
         CompositeAssertionTreeNode ca =
           (CompositeAssertionTreeNode)((this instanceof CompositeAssertionTreeNode) ? this : this.getParent());
@@ -216,9 +219,12 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             list.add(a);
         }
 
-        Action da = new DeleteAssertionAction(this);
-        da.setEnabled(canDelete());
-        list.add(da);
+        try {
+            PublishedService svc = getService();
+            if (Registry.getDefault().getSecurityProvider().hasPermission(JaasUtils.getCurrentSubject(), new AttemptedUpdate(EntityType.SERVICE, svc))) {
+                Action da = new DeleteAssertionAction(this);
+                da.setEnabled(canDelete());
+                list.add(da);
 
 /*      commented out as it is currently NOT supported
         Action ea = new ExplainAssertionAction();
@@ -226,13 +232,17 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         list.add(ea);
         */
 
-        Action mu = new AssertionMoveUpAction(this);
-        mu.setEnabled(canMoveUp());
-        list.add(mu);
+                Action mu = new AssertionMoveUpAction(this);
+                mu.setEnabled(canMoveUp());
+                list.add(mu);
 
-        Action md = new AssertionMoveDownAction(this);
-        md.setEnabled(canMoveDown());
-        list.add(md);
+                Action md = new AssertionMoveDownAction(this);
+                md.setEnabled(canMoveDown());
+                list.add(md);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get current service", e);
+        }
 
         /*
             Action sp = new SavePolicyAction(this);
@@ -242,7 +252,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             list.add(vp);
         */
 
-        return (Action[])list.toArray(new Action[]{});
+        return list.toArray(new Action[]{});
     }
 
     /**

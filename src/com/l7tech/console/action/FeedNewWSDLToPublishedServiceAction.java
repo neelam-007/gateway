@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SelectWsdlDialog;
 import com.l7tech.console.tree.ServiceNode;
@@ -35,10 +36,14 @@ import java.util.logging.Level;
  * User: flascell<br/>
  * Date: Oct 18, 2004<br/>
  */
-public class FeedNewWSDLToPublishedServiceAction extends UpdateServiceAction {
+public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
 
     public FeedNewWSDLToPublishedServiceAction(ServiceNode node) {
         super(node);
+    }
+
+    protected OperationType getOperation() {
+        return OperationType.UPDATE;
     }
 
     public String getName() {

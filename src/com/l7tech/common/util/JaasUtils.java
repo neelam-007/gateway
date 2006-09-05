@@ -16,10 +16,14 @@ public class JaasUtils {
     private JaasUtils() { }
 
     public static User getCurrentUser() {
-        Subject subject = Subject.getSubject(AccessController.getContext());
+        Subject subject = getCurrentSubject();
         if (subject == null) return null;
         Set<User> users = subject.getPrincipals(User.class);
         if (users == null || users.isEmpty()) return null;
         return users.iterator().next();
+    }
+
+    public static Subject getCurrentSubject() {
+        return Subject.getSubject(AccessController.getContext());
     }
 }

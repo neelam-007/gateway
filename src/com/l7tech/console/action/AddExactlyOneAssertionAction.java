@@ -20,17 +20,15 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AddExactlyOneAssertionAction extends SecureAction {
+public class AddExactlyOneAssertionAction extends PolicyUpdatingAssertionAction {
     private static final Logger log = Logger.getLogger(AddExactlyOneAssertionAction.class.getName());
-    AssertionTreeNode treeNode;
 
     /**
      * @param n the assertion tree node must be composite
      */
     public AddExactlyOneAssertionAction(AssertionTreeNode n) {
-        super(null, ExactlyOneAssertion.class);
-        treeNode = n;
-        if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
+        super(n, ExactlyOneAssertion.class);
+        if (!(n.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
     }
@@ -72,7 +70,7 @@ public class AddExactlyOneAssertionAction extends SecureAction {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     ExactlyOneAssertion aas = new ExactlyOneAssertion();
                     model.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(aas),
-                                         treeNode, treeNode.getChildCount());
+                                         assertionTreeNode, assertionTreeNode.getChildCount());
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }

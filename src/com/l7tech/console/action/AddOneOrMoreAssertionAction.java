@@ -22,9 +22,8 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AddOneOrMoreAssertionAction extends SecureAction {
+public class AddOneOrMoreAssertionAction extends PolicyUpdatingAssertionAction {
     private static final Logger log = Logger.getLogger(AddOneOrMoreAssertionAction.class.getName());
-    private AssertionTreeNode treeNode;
     private int insertPosition = 0;
 
     /**
@@ -35,12 +34,11 @@ public class AddOneOrMoreAssertionAction extends SecureAction {
     }
 
     public AddOneOrMoreAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
-        super(null, OneOrMoreAssertion.class);
+        super(treeNode, OneOrMoreAssertion.class);
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
         this.insertPosition = insertPosition;
-        this.treeNode = treeNode;
     }
 
     /**
@@ -80,7 +78,7 @@ public class AddOneOrMoreAssertionAction extends SecureAction {
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     OneOrMoreAssertion oom = new OneOrMoreAssertion();
-                    model.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(oom), treeNode, insertPosition);
+                    model.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(oom), assertionTreeNode, insertPosition);
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }

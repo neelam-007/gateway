@@ -927,10 +927,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getImportAction() {
         if (importPolicyAction == null) {
             if (subject.getServiceNode() != null) {
-                importPolicyAction = new ImportPolicyFromFileAction() {
+                importPolicyAction = new ImportPolicyFromFileAction(getPublishedService()) {
                     protected void performAction() {
-                        pubService = getPublishedService();
-
                         super.performAction();
                         if (policyImportSuccess) {
                             String newPolicy = getNewPolicyXml();

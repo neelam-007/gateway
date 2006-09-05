@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
@@ -18,9 +19,8 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DeleteServiceAction extends SecureAction {
+public class DeleteServiceAction extends ServiceNodeAction {
     static final Logger log = Logger.getLogger(DeleteServiceAction.class.getName());
-    ServiceNode node;
 
     /**
      * create the acction that deletes the service
@@ -28,8 +28,11 @@ public class DeleteServiceAction extends SecureAction {
      * @param en the node to delete
      */
     public DeleteServiceAction(ServiceNode en) {
-        super(null);
-        node = en;
+        super(en);
+    }
+
+    protected OperationType getOperation() {
+        return OperationType.DELETE;
     }
 
     /**
@@ -60,7 +63,7 @@ public class DeleteServiceAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        if (!Actions.deleteService(node)) return;
+        if (!Actions.deleteService(serviceNode)) return;
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -78,7 +81,7 @@ public class DeleteServiceAction extends SecureAction {
                     PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                     PublishedService svc = pe.getServiceNode().getPublishedService();
                     // if currently edited service was deleted
-                    if (node.getPublishedService().getOid() == svc.getOid()) {
+                    if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
                         cws.clearWorkspace();
                         TopComponents.getInstance().getMainWindow().firePolicyEditDeleted();
                     }

@@ -1,12 +1,18 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.AddAssertionAction;
 import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AssertionMoveUpAction;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.util.Registry;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -23,8 +29,8 @@ import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.util.logging.Logger;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * The policy toolbar with toolbar actions and listeners.
@@ -247,15 +253,25 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         if (!validPolicyAssertionNode && !validPNode) {
             return;
         }
+        SecurityProvider sp = Registry.getDefault().getSecurityProvider();
+
+        boolean canUpdateService;
+        try {
+            PublishedService svc = rootAssertionNode.getService();
+            canUpdateService = sp.hasPermission(JaasUtils.getCurrentSubject(), new AttemptedUpdate(EntityType.SERVICE, svc));
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get current service", e);
+        }
+
         if (validPolicyAssertionNode) {
-            getDeleteAssertionAction().setEnabled(canDelete(lastAssertionNode, lastAssertionNodes));
-            getAssertionMoveDownAction().setEnabled(canMoveDown(lastAssertionNode, lastAssertionNodes));
-            getAssertionMoveUpAction().setEnabled(canMoveUp(lastAssertionNode, lastAssertionNodes));
+            getDeleteAssertionAction().setEnabled(canUpdateService && canDelete(lastAssertionNode, lastAssertionNodes));
+            getAssertionMoveDownAction().setEnabled(canUpdateService && canMoveDown(lastAssertionNode, lastAssertionNodes));
+            getAssertionMoveUpAction().setEnabled(canUpdateService && canMoveUp(lastAssertionNode, lastAssertionNodes));
         }
         if (validPNode) {
-            validPNode = validPNode && (lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode));
+            validPNode = lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode);
         }
-        getAddAssertionAction().setEnabled(validPNode && validPolicyAssertionNode);
+        getAddAssertionAction().setEnabled(canUpdateService && validPNode && validPolicyAssertionNode);
     }
 
     private boolean validPolicyAssertionNode() {

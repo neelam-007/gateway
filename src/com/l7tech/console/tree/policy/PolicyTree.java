@@ -1,6 +1,8 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.action.EditServicePolicyAction;
@@ -12,9 +14,12 @@ import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.service.PublishedService;
 
+import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
@@ -30,6 +35,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -67,6 +73,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
         super(newModel);
         initialize();
         setSelectionModel(getTreeSelectionModel());
+    }
+
+    public PolicyEditorPanel getPolicyEditorPanel() {
+        return policyEditorPanel;
     }
 
     /**
@@ -153,6 +163,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         private boolean canDelete(AssertionTreeNode node, AssertionTreeNode[] nodes) {
+            if (!Registry.getDefault().isAdminContextPresent()) return false;
+            PublishedService svc = null;
+            try {
+                svc = node.getService();
+            } catch (Exception e) {
+                throw new RuntimeException("Couldn't get current service", e);
+            }
+            if (!Registry.getDefault().getSecurityProvider().hasPermission(Subject.getSubject(AccessController.getContext()), new AttemptedUpdate(EntityType.SERVICE, svc))) return false;
             boolean delete = false;
 
             if (nodes == null) {

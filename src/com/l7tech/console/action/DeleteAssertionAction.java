@@ -1,10 +1,10 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -78,7 +78,7 @@ public class DeleteAssertionAction extends SecureAction {
 
     @Override
     public boolean isAuthorized() {
-        if (node == null) return false;
+        if (node == null) return true;
         try {
             PublishedService svc = node.getService();
             return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));

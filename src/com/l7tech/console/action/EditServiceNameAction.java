@@ -9,6 +9,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.security.rbac.OperationType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -22,12 +23,16 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class EditServiceNameAction extends UpdateServiceAction {
+public class EditServiceNameAction extends ServiceNodeAction {
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
     private String lastServiceName; // remeber old name fro for rename property event
 
     public EditServiceNameAction(ServiceNode node) {
         super(node);
+    }
+
+    protected OperationType getOperation() {
+        return OperationType.UPDATE;
     }
 
     /**

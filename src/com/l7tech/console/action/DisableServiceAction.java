@@ -6,6 +6,7 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.security.rbac.OperationType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -19,17 +20,19 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DisableServiceAction extends UpdateServiceAction {
+public class DisableServiceAction extends ServiceNodeAction {
     static final Logger log = Logger.getLogger(DisableServiceAction.class.getName());
-    ServiceNode node;
 
     /**
      * create the aciton that disables the service
      * @param en the node to deleteEntity
      */
     public DisableServiceAction(ServiceNode en) {
-        super(null);
-        node = en;
+        super(en);
+    }
+
+    protected OperationType getOperation() {
+        return OperationType.UPDATE;
     }
 
     /**
@@ -60,10 +63,10 @@ public class DisableServiceAction extends UpdateServiceAction {
      */
     protected void performAction() {
         try {
-            final PublishedService publishedService = node.getPublishedService();
+            final PublishedService publishedService = serviceNode.getPublishedService();
             publishedService.setDisabled(true);
             Registry.getDefault().getServiceManager().savePublishedService(publishedService);
-            node.clearServiceHolder();
+            serviceNode.clearServiceHolder();
 
             JTree tree =
               (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);

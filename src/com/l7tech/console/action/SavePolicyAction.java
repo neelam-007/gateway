@@ -1,18 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Iterator;
 
 
 /**
@@ -22,7 +18,7 @@ import java.util.Iterator;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class SavePolicyAction extends SecureAction {
+public class SavePolicyAction extends ServiceNodeAction {
     protected AssertionTreeNode node;
 
     public SavePolicyAction() {
@@ -70,15 +66,8 @@ public class SavePolicyAction extends SecureAction {
         }
     }
 
-    @Override
-    public boolean isAuthorized() {
-        if (node == null) return false;
-        try {
-            PublishedService svc = node.getService();
-            return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service", e);
-        }
+    protected OperationType getOperation() {
+        return OperationType.UPDATE;
     }
 
     protected void performAction(String xml) {
@@ -86,7 +75,7 @@ public class SavePolicyAction extends SecureAction {
             throw new IllegalStateException("no node specified");
         }
         try {
-            ServiceNode serviceNode = getServiceNodeCookie();
+            ServiceNode serviceNode = getServiceNode();
             if (serviceNode == null) {
                 throw new IllegalArgumentException("No edited service specified");
             }
@@ -97,16 +86,5 @@ public class SavePolicyAction extends SecureAction {
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }
-    }
-
-    /**
-     * @return the published service cookie or null if not founds
-     */
-    private ServiceNode getServiceNodeCookie() {
-        for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
-            Object value = ((Cookie)i.next()).getValue();
-            if (value instanceof ServiceNode) return (ServiceNode)value;
-        }
-        return null;
     }
 }

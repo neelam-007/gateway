@@ -32,8 +32,7 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AddIdentityAssertionAction extends SecureAction {
-    private AssertionTreeNode node;
+public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
     private int inserPosition = 0;
 
     public AddIdentityAssertionAction(AssertionTreeNode n) {
@@ -41,12 +40,11 @@ public class AddIdentityAssertionAction extends SecureAction {
     }
 
     public AddIdentityAssertionAction(AssertionTreeNode node, int inserPosition) {
-        super(null, LIC_AUTH_ASSERTIONS);
+        super(node, LIC_AUTH_ASSERTIONS);
         if (!(node.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
         this.inserPosition = inserPosition;
-        this.node = node;
     }
 
     /**
@@ -116,7 +114,7 @@ public class AddIdentityAssertionAction extends SecureAction {
                     for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {
                         Assertion ass = (Assertion)idit.next();
                         AssertionTreeNode an = AssertionTreeNodeFactory.asTreeNode(ass);
-                        model.insertNodeInto(an, node, pos++);
+                        model.insertNodeInto(an, assertionTreeNode, pos++);
                     }
                 } else {
                     log.log(Level.WARNING, "Unable to reach the policy tree.");

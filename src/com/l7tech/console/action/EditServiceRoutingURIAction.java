@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.rbac.OperationType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -27,9 +28,13 @@ import java.util.logging.Level;
  * Date: Sep 15, 2004<br/>
  * $Id$<br/>
  */
-public class EditServiceRoutingURIAction extends UpdateServiceAction {
+public class EditServiceRoutingURIAction extends ServiceNodeAction {
     public EditServiceRoutingURIAction(ServiceNode node) {
         super(node);
+    }
+
+    protected OperationType getOperation() {
+        return OperationType.UPDATE;
     }
 
     public String getName() {

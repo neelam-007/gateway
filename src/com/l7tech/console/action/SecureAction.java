@@ -146,7 +146,8 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      */
     public final void actionPerformed(ActionEvent ev) throws AccessControlException {
         if (!isAuthorized()) {
-            throw new AccessControlException("Not authorized, action: " + getName());
+            logger.warning("Not authorized, action: " + getName()); // TODO pop a dialog?
+            return;
         }
 //        TODO should we do hard license check here?
 //        or should we allow programmatic invocation of otherwise-unlicensed actions?
