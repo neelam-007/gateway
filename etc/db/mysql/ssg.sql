@@ -596,7 +596,9 @@ CREATE TABLE rbac_predicate_oid (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- Create Administrator role
-INSERT INTO rbac_role VALUES (-100,0,'Administrator'); -- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
+-- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
+
+INSERT INTO rbac_role VALUES (-100,0,'Administrator');
 INSERT INTO rbac_permission VALUES (-101, 0, -100, 'CREATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-102, 0, -100, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-103, 0, -100, 'UPDATE', null, 'ANY');
