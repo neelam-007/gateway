@@ -6,6 +6,7 @@ package com.l7tech.server;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.common.util.ExceptionUtils;
 import org.hibernate.Criteria;
@@ -87,6 +88,8 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else {
                 throw new IllegalArgumentException("EntityHeader is an IdentityHeader, but type is neither USER nor GROUP");
             }
+        } else if (header.getType() == EntityType.ID_PROVIDER_CONFIG && header.getOid() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
+            return identityProviderFactory.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID).getConfig();
         }
         return find(EntityHeaderUtils.getEntityClass(header), header.getStrId());
     }
