@@ -104,6 +104,10 @@ Section "SecureSpan Gateway" SecCopyUI
       ; make sure existing ssg is not running before trying to overwrite files (bugzilla #1964)
       ExecWait 'net stop SSG' $0
       DetailPrint "net stop SSG returned with code $0"
+      ; delete unwanted portions of the previous install
+      IfFileExists "${TEMP}\tomcat\webapps\ROOT" 0 +2
+        RMDir /r "${TEMP}\tomcat\webapps\ROOT"
+        DetailPrint "Deleted the existing installation directory ${TEMP}\tomcat\webapps\ROOT"
 
   cleaninstall:
 
