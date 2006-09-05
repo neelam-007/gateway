@@ -88,9 +88,18 @@ public class Options {
         return disposeOnSelect;
     }
 
+    public boolean isInternalOnly() {
+        return internalOnly;
+    }
+
+    public void setInternalOnly(boolean internalOnly) {
+        this.internalOnly = internalOnly;
+    }
+
     SearchType searchType = SearchType.ALL;
     boolean enableDeleteAction = false;
     boolean enableOpenProperties = true;
+    boolean internalOnly = false;
     private boolean disposeOnSelect = false;
     int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
     long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
