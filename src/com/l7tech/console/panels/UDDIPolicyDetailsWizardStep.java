@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import java.net.URL;
 import java.net.MalformedURLException;
 
+import com.l7tech.common.util.TextUtils;
+
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard pertaining
  * to describing the policy to publish a reference to.
@@ -128,7 +130,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
     }
 
     private void showError(String err) {
-        JOptionPane.showMessageDialog(this, breakOnMultipleLines(err, 30), "Error", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(err, 30), "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void publishPolicyReferenceToSystinet65Directory() {
@@ -206,7 +208,7 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
             String msg = "Publication successful, policy tModel key: " + saved.getTModelKey() +
                          " choose 'Next' below to associate this policy tModel to " +
                          "a business service or 'Finish' to end.";
-            JOptionPane.showConfirmDialog(this, breakOnMultipleLines(msg, 30), "Success", JOptionPane.DEFAULT_OPTION);
+            JOptionPane.showConfirmDialog(this, TextUtils.breakOnMultipleLines(msg, 30), "Success", JOptionPane.DEFAULT_OPTION);
             data.setPolicytModelKey(saved.getTModelKey());
             done = true;
             // this causes wizard's finish or next button to become enabled (because we're now ready to continue)
@@ -231,44 +233,6 @@ public class UDDIPolicyDetailsWizardStep extends WizardStepPanel {
         Throwable root = e;
         while (root.getCause() != null) root = root.getCause();
         return root.getMessage();
-    }
-
-    /**
-     * Breaks input stream on a multiple lines breaking at space characters
-     * to form lines of maximum length passed.
-     */
-    public static String breakOnMultipleLines(String input, int maxlinelength) {
-        input = input.trim();
-        if (input.length() <= maxlinelength) return input;
-        StringBuffer output = new StringBuffer();
-        int pos = 0;
-        while ((input.length() - pos) > maxlinelength) {
-            int tmp = input.indexOf(' ', pos);
-            if (tmp < 0) break;
-            int lastspace = tmp;
-            while (true) if ((lastspace - pos) > maxlinelength) {
-                output.append(input.substring(pos, lastspace)).append("\n");
-                pos = lastspace + 1;
-                break;
-            } else if (tmp < 0 && lastspace > 0) {
-                output.append(input.substring(pos, lastspace)).append("\n");
-                pos = lastspace + 1;
-                break;
-            } else if ((tmp - pos) == maxlinelength) {
-                output.append(input.substring(pos, tmp)).append("\n");
-                pos = tmp + 1;
-                break;
-            } else if ((tmp - pos) > maxlinelength && (lastspace - pos) < maxlinelength) {
-                output.append(input.substring(pos, lastspace)).append("\n");
-                pos = lastspace + 1;
-                break;
-            } else {
-                lastspace = tmp;
-                tmp = input.indexOf(' ', tmp + 1);
-            }
-        }
-        output.append(input.substring(pos));
-        return output.toString();
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {

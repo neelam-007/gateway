@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.policy.wsp.WspConstants;
 
 /**
@@ -180,7 +181,7 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
     }
 
     private void showError(String err) {
-        JOptionPane.showMessageDialog(this, UDDIPolicyDetailsWizardStep.breakOnMultipleLines(err, 30),
+        JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(err, 30),
                                       "Error", JOptionPane.ERROR_MESSAGE);
     }
 

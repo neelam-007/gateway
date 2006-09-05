@@ -19,6 +19,8 @@ import java.util.logging.Level;
 import java.util.Iterator;
 import java.util.ArrayList;
 
+import com.l7tech.common.util.TextUtils;
+
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard that
  * allows a saved tModel policy to be associated to a UDDI
@@ -173,7 +175,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             }
         }
         if (existingLocalpolicyreference != null) {
-            int res = JOptionPane.showConfirmDialog(this,UDDIPolicyDetailsWizardStep.breakOnMultipleLines(
+            int res = JOptionPane.showConfirmDialog(this,TextUtils.breakOnMultipleLines(
                                   "There is already a policy associated to this Business " +
                                   "Service (key: " + existingLocalpolicyreference.getKeyValue() + "). Would you like to override it?", 30),
                                   "Policy tModel already associated",
@@ -238,7 +240,7 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
     }
 
     private void showError(String err) {
-        JOptionPane.showMessageDialog(this, UDDIPolicyDetailsWizardStep.breakOnMultipleLines(err, 30),
+        JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(err, 30),
                                       "Invalid Input", JOptionPane.ERROR_MESSAGE);
     }
 

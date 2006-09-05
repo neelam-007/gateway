@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Preferences;
+import com.l7tech.common.util.TextUtils;
 
 import javax.swing.*;
 import javax.xml.soap.SOAPException;
@@ -189,7 +190,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     }
 
     private void showError(String err) {
-        JOptionPane.showMessageDialog(this, UDDIPolicyDetailsWizardStep.breakOnMultipleLines(err, 30),
+        JOptionPane.showMessageDialog(this, TextUtils.breakOnMultipleLines(err, 30),
                                       "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

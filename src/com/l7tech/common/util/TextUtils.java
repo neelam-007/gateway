@@ -84,4 +84,41 @@ public class TextUtils {
                 return true;
         return false;
     }
+
+    /**
+     * breaks a string in multiple lines based on the max length of each line
+     */
+    public static String breakOnMultipleLines(String input, int maxlinelength) {
+        input = input.trim();
+        if (input.length() <= maxlinelength) return input;
+        StringBuffer output = new StringBuffer();
+        int pos = 0;
+        while ((input.length() - pos) > maxlinelength) {
+            int tmp = input.indexOf(' ', pos);
+            if (tmp < 0) break;
+            int lastspace = tmp;
+            while (true) if ((lastspace - pos) > maxlinelength) {
+                output.append(input.substring(pos, lastspace)).append("\n");
+                pos = lastspace + 1;
+                break;
+            } else if (tmp < 0 && lastspace > 0) {
+                output.append(input.substring(pos, lastspace)).append("\n");
+                pos = lastspace + 1;
+                break;
+            } else if ((tmp - pos) == maxlinelength) {
+                output.append(input.substring(pos, tmp)).append("\n");
+                pos = tmp + 1;
+                break;
+            } else if ((tmp - pos) > maxlinelength && (lastspace - pos) < maxlinelength) {
+                output.append(input.substring(pos, lastspace)).append("\n");
+                pos = lastspace + 1;
+                break;
+            } else {
+                lastspace = tmp;
+                tmp = input.indexOf(' ', tmp + 1);
+            }
+        }
+        output.append(input.substring(pos));
+        return output.toString();
+    }
 }

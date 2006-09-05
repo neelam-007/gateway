@@ -10,6 +10,7 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.*;
@@ -25,6 +26,8 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -132,7 +135,7 @@ public class GlobalSchemaDialog extends JDialog {
     private void setListeners() {
         addbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                add();
+                add((String)null);
             }
         });
 
@@ -195,8 +198,11 @@ public class GlobalSchemaDialog extends JDialog {
         }
     }
 
-    private void add() {
+    private void add(String systemid) {
         SchemaEntry newEntry = new SchemaEntry();
+        if (systemid != null) {
+            newEntry.setName(systemid);
+        }
         GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry);
         dlg.pack();
         Dimension dim = dlg.getSize();
@@ -211,12 +217,9 @@ public class GlobalSchemaDialog extends JDialog {
                 logger.warning("No access to registry. Cannot save.");
                 return;
             }
+            checkEntryForUnresolvedImports(newEntry);
             try {
-                checkEntryForUnresolvedImports(newEntry);
                 reg.getSchemaAdmin().saveSchemaEntry(newEntry);
-                // pickup all changes from gateway
-                populate();
-                TableUtil.adjustColumnWidth(schemaTable, 1);
             } catch (RemoteException e) {
                 logger.log(Level.WARNING, "error saving schema entry", e);
             } catch (SaveException e) {
@@ -224,6 +227,9 @@ public class GlobalSchemaDialog extends JDialog {
             } catch (UpdateException e) {
                 logger.log(Level.WARNING, "error saving schema entry", e);
             }
+            // pickup all changes from gateway
+            populate();
+            TableUtil.adjustColumnWidth(schemaTable, 1);
         }
     }
 
@@ -244,8 +250,8 @@ public class GlobalSchemaDialog extends JDialog {
         Element schemael = schemaDoc.getDocumentElement();
         java.util.List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
         if (listofimports.isEmpty()) return false;
-        ArrayList unresolvedImportsList = new ArrayList();
-        ArrayList resolutionSuggestionList = new ArrayList();
+        ArrayList<String> unresolvedImportsList = new ArrayList<String>();
+        ArrayList<String> resolutionSuggestionList = new ArrayList<String>();
         Registry reg = Registry.getDefault();
         if (reg == null || reg.getSchemaAdmin() == null) {
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
@@ -283,20 +289,31 @@ public class GlobalSchemaDialog extends JDialog {
             }
         }
         if (!unresolvedImportsList.isEmpty()) {
-            StringBuffer msg = new StringBuffer("This schema contains the following unresolved imported schemas:\n");
-            for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
-                msg.append("  " + iterator.next());
-                msg.append("\n");
-            }
-            if (!resolutionSuggestionList.isEmpty()) {
-                msg.append("Note that these schemas are imported but the locations do not match:\n");
-                for (Iterator iterator = resolutionSuggestionList.iterator(); iterator.hasNext();) {
-                    msg.append("  " + iterator.next());
-                    msg.append("\n");
+            for (String unresolvedimportname : unresolvedImportsList) {
+                boolean isurl = true;
+                try {
+                    new URL(unresolvedimportname);
+                } catch (MalformedURLException e) {
+                    isurl = false;
+                }
+                String msg;
+                if (isurl) {
+                    msg = "This schema has an unresolved import (" + unresolvedimportname + "). Click 'yes' " +
+                          "to import this missing schema now, 'no' if you want the SecureSpan Gateway to try to " +
+                          "try import it from the URL.";
+                } else {
+                    msg = "This schema has an unresolved import (" + unresolvedimportname + "). Click 'yes' " +
+                          "to import this missing schema now, 'no' to abort.";
+                }
+                msg = TextUtils.breakOnMultipleLines(msg, 30);
+                if (JOptionPane.showConfirmDialog(this, msg, "Unresolved Imports", JOptionPane.YES_NO_OPTION) ==
+                    JOptionPane.YES_OPTION) {
+                    add(unresolvedimportname);
+                } else if (!isurl) {
+                    // if user wants to abort, then we're all done
+                    break;
                 }
             }
-            msg.append("You must add those unresolved schemas now.");
-            JOptionPane.showMessageDialog(this, msg, "Unresolved Imports", JOptionPane.WARNING_MESSAGE);
             return true;
         }
         return false;
