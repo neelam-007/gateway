@@ -3,13 +3,11 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.rbac.AttemptedCreate;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
@@ -53,8 +51,8 @@ public class CertManagerWindow extends JDialog {
     private JScrollPane certTableScrollPane;
     private JScrollPane gatewayCertTableScrollPane;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
-    private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
+    private final PermissionFlags flags;
 
     /**
      * Constructor
@@ -64,23 +62,23 @@ public class CertManagerWindow extends JDialog {
     public CertManagerWindow(Frame owner) throws RemoteException {
         super(owner, resources.getString("dialog.title"), true);
 
+        flags = PermissionFlags.get(TRUSTED_CERT);
+
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-
-        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(TRUSTED_CERT));
 
         initialize();
         loadTrustedCerts();
         loadCerts();
     }
 
+
     /**
      * Initialization of the cert manager window
      */
     private void initialize() {
-
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -169,7 +167,7 @@ public class CertManagerWindow extends JDialog {
                 }
 
                 trustedCertTable.getTableSorter().updateData(sr, updatedTrustedCert);
-                CertPropertiesWindow cpw = new CertPropertiesWindow(CertManagerWindow.this, updatedTrustedCert, true);
+                CertPropertiesWindow cpw = new CertPropertiesWindow(CertManagerWindow.this, updatedTrustedCert, flags.canUpdateSome()); // TODO do a permission check for *this* cert
 
                 cpw.setVisible(true);
             }
@@ -235,14 +233,14 @@ public class CertManagerWindow extends JDialog {
      */
     private void loadTrustedCerts() throws RemoteException {
 
-        java.util.List certList = null;
+        java.util.List certList;
         try {
             certList = getTrustedCertAdmin().findAllCerts();
 
-            Vector certs = new Vector();
-            for (int i = 0; i < certList.size(); i++) {
-                Object o = certList.get(i);
-                certs.add(o);
+            Vector<TrustedCert> certs = new Vector<TrustedCert>();
+            for (Object o : certList) {
+                TrustedCert cert = (TrustedCert) o;
+                certs.add(cert);
             }
 
             trustedCertTable.getTableSorter().setData(certs);
@@ -262,7 +260,7 @@ public class CertManagerWindow extends JDialog {
      */
     private void loadCerts() throws RemoteException {
 
-        Vector certList = new Vector();
+        Vector<TrustedCert> certList = new Vector<TrustedCert>();
         try {
             TrustedCert rootCertHolder = new TrustedCert();
             rootCertHolder.setName("CA");
@@ -297,9 +295,9 @@ public class CertManagerWindow extends JDialog {
             removeEnabled = true;
             propsEnabled = true;
         }
-        removeButton.setEnabled(removeEnabled);
-        propertiesButton.setEnabled(propsEnabled);
-        applyFormSecurity();
+        addButton.setEnabled(flags.canCreateSome());
+        removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
+        propertiesButton.setEnabled(propsEnabled); // Child dialog should be read-only if !canUpdateAny
     }
 
     /**
@@ -313,15 +311,6 @@ public class CertManagerWindow extends JDialog {
         }
         gatewayPropertiesButton.setEnabled(propsEnabled);
     }
-
-    private void applyFormSecurity() {
-        // list components that are subject to security (they require the full admin role)
-        securityFormAuthorizationPreparer.prepare(new Component[]{
-            removeButton,
-            addButton
-        });
-    }
-
 
     /**
      * The callback for saving the new cert to the database
@@ -343,61 +332,58 @@ public class CertManagerWindow extends JDialog {
 
                 final TrustedCert tc = (TrustedCert)o;
 
-                if (tc != null) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
 
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
+                        try {
+                            getTrustedCertAdmin().saveCert(tc);
 
-                            try {
-                                getTrustedCertAdmin().saveCert(tc);
+                            // reload all certs from server
+                            loadTrustedCerts();
 
-                                // reload all certs from server
-                                loadTrustedCerts();
-
-                            } catch (SaveException e) {
-                                if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                } else if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                } else if (ExceptionUtils.causedBy(e, CertificateNotYetValidException.class)) {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.notyetvalid.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                } else {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.save.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                }
-                            } catch (RemoteException e) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.remote.exception"),
+                        } catch (SaveException e) {
+                            if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
                                                               resources.getString("save.error.title"),
                                                               JOptionPane.ERROR_MESSAGE);
-                            } catch (VersionException e) {
-                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.version.error"),
+                            } else if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
                                                               resources.getString("save.error.title"),
                                                               JOptionPane.ERROR_MESSAGE);
-                            } catch (UpdateException e) {
-                                if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                } else if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                } else {
-                                    JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.update.error"),
-                                                                  resources.getString("save.error.title"),
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                }
+                            } else if (ExceptionUtils.causedBy(e, CertificateNotYetValidException.class)) {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.notyetvalid.error"),
+                                                              resources.getString("save.error.title"),
+                                                              JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.save.error"),
+                                                              resources.getString("save.error.title"),
+                                                              JOptionPane.ERROR_MESSAGE);
+                            }
+                        } catch (RemoteException e) {
+                            JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.remote.exception"),
+                                                          resources.getString("save.error.title"),
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } catch (VersionException e) {
+                            JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.version.error"),
+                                                          resources.getString("save.error.title"),
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } catch (UpdateException e) {
+                            if (ExceptionUtils.causedBy(e, CertificateExpiredException.class)) {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.expired.error"),
+                                                              resources.getString("save.error.title"),
+                                                              JOptionPane.ERROR_MESSAGE);
+                            } else if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.duplicate.error"),
+                                                              resources.getString("save.error.title"),
+                                                              JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.update.error"),
+                                                              resources.getString("save.error.title"),
+                                                              JOptionPane.ERROR_MESSAGE);
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
         }
 
@@ -410,8 +396,6 @@ public class CertManagerWindow extends JDialog {
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
-
-        return tca;
+        return Registry.getDefault().getTrustedCertManager();
     }
 }
