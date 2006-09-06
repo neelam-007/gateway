@@ -7,12 +7,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.rbac.AttemptedCreate;
-import com.l7tech.common.security.rbac.EntityType;
+import static com.l7tech.common.security.rbac.EntityType.JMS_ENDPOINT;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
@@ -42,14 +40,16 @@ public class JmsQueuesWindow extends JDialog {
     private JPanel sideButtonPanel;
     private JButton addButton;
     private JButton removeButton;
-    private FormAuthorizationPreparer securityFormAuthorizationPreparer;
+    private final PermissionFlags flags;
 
     private JmsQueuesWindow(Frame owner) {
         super(owner, "Manage JMS Queues", true);
+        flags = PermissionFlags.get(JMS_ENDPOINT);
     }
 
     private JmsQueuesWindow(Dialog owner) {
         super(owner, "Manage JMS Queues", true);
+        flags = PermissionFlags.get(JMS_ENDPOINT);
     }
 
     public static JmsQueuesWindow createInstance(Window owner) {
@@ -65,7 +65,6 @@ public class JmsQueuesWindow extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.JMS_ENDPOINT));
 
         Container p = that.getContentPane();
         p.setLayout(new GridBagLayout());
@@ -306,17 +305,10 @@ public class JmsQueuesWindow extends JDialog {
                 propsEnabled = true;
             }
         }
-        getRemoveButton().setEnabled(removeEnabled);
+        //enable/disable taking into account the permissions that this user has.
+        getAddButton().setEnabled(flags.canCreateSome());
+        getRemoveButton().setEnabled(flags.canDeleteSome() && removeEnabled);
         getPropertiesButton().setEnabled(propsEnabled);
-        applyFormSecurity();
-    }
-
-    private void applyFormSecurity() {
-        // list components that are subject to security (they require the full admin role)
-        securityFormAuthorizationPreparer.prepare(new Component[]{
-            getRemoveButton(),
-            getAddButton()
-        });
     }
 
     private JmsQueueTableModel getJmsQueueTableModel() {
