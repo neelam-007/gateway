@@ -6,7 +6,6 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -139,34 +138,6 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
             serviceCache.removeFromCache(service);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException {
-        try {
-            return serviceCache.getServerPolicy(serviceOid);
-        } catch (InterruptedException e) {
-            throw new FindException("error accessing policy from cache", e);
-        }
-    }
-
-    public PublishedService resolve(Message req) throws ServiceResolutionException {
-        return serviceCache.resolve(req);
-    }
-
-    public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
-         try {
-            return serviceCache.getServiceStatistics(serviceOid);
-        } catch (InterruptedException e) {
-            throw new FindException("error accessing statistics from cache", e);
-        }
-    }
-
-    public Collection<ServiceStatistics> getAllServiceStatistics() throws FindException {
-         try {
-            return serviceCache.getAllServiceStatistics();
-        } catch (InterruptedException e) {
-            throw new FindException("error accessing statistics from cache", e);
         }
     }
 

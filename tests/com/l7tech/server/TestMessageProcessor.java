@@ -10,11 +10,11 @@ import com.l7tech.common.TestLicenseManager;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsManager;
-import com.l7tech.server.audit.AuditContextStub;
 
 import java.io.IOException;
 import java.security.PrivateKey;
@@ -37,15 +37,15 @@ public class TestMessageProcessor extends MessageProcessor {
      * manager, Wss Decorator instance and the server private key.
      * All arguments are required
      *
-     * @param sm           the service manager
+     * @param sc           the service cache
      * @param wssd         the Wss Decorator
      * @param pkey         the server private key
      * @param pkey         the server certificate
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
+    public TestMessageProcessor(ServiceCache sc, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"), new AuditContextStub(), ServerConfig.getInstance(), null);
+        super(sc , wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"), new AuditContextStub(), ServerConfig.getInstance(), null);
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

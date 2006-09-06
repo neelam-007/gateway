@@ -444,7 +444,7 @@
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg>
-            <ref bean="serviceManager"/>
+            <ref bean="serviceCache"/>
         </constructor-arg>
         <constructor-arg>
             <ref bean="wssDecorator"/>
@@ -533,15 +533,9 @@
 
     <!-- server side Status Update Manager -->
     <bean id="statusUpdateManager" class="com.l7tech.cluster.StatusUpdateManagerImpl">
-        <constructor-arg>
-            <ref bean="clusterInfoManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceUsageManager"/>
-        </constructor-arg>
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="serviceUsageManager"/>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -624,6 +618,9 @@
     </bean>
 
     <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
+        <constructor-arg>
+            <ref local="applicationEventProxy"/>
+        </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -773,5 +770,9 @@
     <bean id="entityFinder" class="com.l7tech.server.EntityFinderImpl">
         <constructor-arg ref="identityProviderFactory"/>
         <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy">
+
     </bean>
 </beans>

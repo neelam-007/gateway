@@ -7,14 +7,13 @@ package com.l7tech.cluster;
 
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileNotFoundException;
 import java.util.Collection;
@@ -34,11 +33,14 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
 
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
-    private final ServiceManager serviceManager;
+    private final ServiceCache serviceCache;
 
-    public StatusUpdateManagerImpl(ClusterInfoManager clusterInfoManager, ServiceManager serviceManager, ServiceUsageManager serviceUsageManager) {
+    public StatusUpdateManagerImpl(ClusterInfoManager clusterInfoManager,
+                                   ServiceCache serviceCache,
+                                   ServiceUsageManager serviceUsageManager)
+    {
         this.clusterInfoManager = clusterInfoManager;
-        this.serviceManager = serviceManager;
+        this.serviceCache = serviceCache;
         this.serviceUsageManager = serviceUsageManager;
     }
 
@@ -76,8 +78,8 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
         String ourid = clusterInfoManager.thisNodeId();
         Collection stats = null;
         try {
-            stats = serviceManager.getAllServiceStatistics();
-        } catch (FindException e) {
+            stats = serviceCache.getAllServiceStatistics();
+        } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "could not update service usage");
         }
         if (stats != null) {

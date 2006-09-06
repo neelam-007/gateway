@@ -6,17 +6,13 @@
 
 package com.l7tech.server.service;
 
-import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.resolution.ResolutionManager;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceStatistics;
 import org.springframework.transaction.TransactionStatus;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
@@ -159,39 +155,6 @@ public class ServiceManagerImp
             }
         });
     }
-
-    @Transactional(propagation=SUPPORTS)
-    public ServerPolicyHandle getServerPolicy(long serviceOid) throws FindException {
-        try {
-            return serviceCache.getServerPolicy(serviceOid);
-        } catch (InterruptedException e) {
-            throw new FindException("error accessing policy from cache", e);
-        }
-    }
-
-    @Transactional(propagation=SUPPORTS)
-    public PublishedService resolve(Message req) throws ServiceResolutionException {
-        return serviceCache.resolve(req);
-    }
-
-    @Transactional(propagation=SUPPORTS)
-    public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
-        try {
-            return serviceCache.getServiceStatistics(serviceOid);
-        } catch (InterruptedException e) {
-            throw new FindException("error accessing statistics from cache", e);
-        }
-    }
-
-    @Transactional(propagation=SUPPORTS)
-    public Collection<ServiceStatistics> getAllServiceStatistics() throws FindException {
-        try {
-            return serviceCache.getAllServiceStatistics();
-        } catch (InterruptedException e) {
-            throw new FindException("error accessing statistics from cache", e);
-        }
-    }
-
 
     @Transactional(propagation=SUPPORTS)
     public Class getImpClass() {

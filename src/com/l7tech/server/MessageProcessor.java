@@ -21,11 +21,11 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -33,11 +33,10 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetrics;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.beans.factory.InitializingBean;
@@ -60,7 +59,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
-    private final ServiceManager serviceManager;
+    private final ServiceCache serviceCache;
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
@@ -76,7 +75,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * manager, Wss Decorator instance and the server private key.
      * All arguments are required
      *
-     * @param sm             the service manager
+     * @param sc             the service cache
      * @param wssd           the Wss Decorator
      * @param pkey           the server private key
      * @param pkey           the server certificate
@@ -84,7 +83,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param metricsManager the SSG's ServiceMetricsManager
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public MessageProcessor(ServiceManager sm,
+    public MessageProcessor(ServiceCache sc,
                             WssDecorator wssd,
                             PrivateKey pkey,
                             X509Certificate cert,
@@ -95,7 +94,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             ServerConfig serverConfig,
                             TrafficLogger trafficLogger)
       throws IllegalArgumentException {
-        if (sm == null) throw new IllegalArgumentException("Service Manager is required");
+        if (sc == null) throw new IllegalArgumentException("Service Cache is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
         if (pkey == null) throw new IllegalArgumentException("Server Private Key is required");
         if (cert == null) throw new IllegalArgumentException("Server Certificate is required");
@@ -103,7 +102,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (metricsManager == null) throw new IllegalArgumentException("Service Metrics Manager is required");
         if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
         if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
-        this.serviceManager = sm;
+        this.serviceCache = sc;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
@@ -194,7 +193,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             // Policy Verification Step
-            PublishedService service = serviceManager.resolve(context.getRequest());
+            PublishedService service = serviceCache.resolve(context.getRequest());
             if (service == null) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
                 return AssertionStatus.SERVICE_NOT_FOUND;
@@ -273,8 +272,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             // Get the server policy
             try {
-                serverPolicy = serviceManager.getServerPolicy(service.getOid());
-            } catch (FindException e) {
+                serverPolicy = serviceCache.getServerPolicy(service.getOid());
+            } catch (InterruptedException e) {
                 auditor.logAndAudit(MessageProcessingMessages.CANNOT_GET_POLICY, null, e);
                 serverPolicy = null;
             }
@@ -285,8 +284,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             // Run the policy
             auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
             try {
-                stats = serviceManager.getServiceStatistics(service.getOid());
-            } catch (FindException e) {
+                stats = serviceCache.getServiceStatistics(service.getOid());
+            } catch (InterruptedException e) {
                 auditor.logAndAudit(MessageProcessingMessages.CANNOT_GET_STATS_OBJECT, null, e);
             }
             attemptedRequest = true;
@@ -513,7 +512,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         String propHintingStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_HINTING_ENABLED);
         boolean hintingEnabled = false;
         if(propHintingStr!=null) {
-            hintingEnabled = Boolean.valueOf(propHintingStr.trim()).booleanValue();
+            hintingEnabled = Boolean.valueOf(propHintingStr.trim());
         }
         return hintingEnabled;
     }
@@ -522,7 +521,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         String propStatusStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
         boolean statusEnabled = false;
         if(propStatusStr!=null) {
-            statusEnabled = Boolean.valueOf(propStatusStr.trim()).booleanValue();
+            statusEnabled = Boolean.valueOf(propStatusStr.trim());
         }
         return statusEnabled;
     }

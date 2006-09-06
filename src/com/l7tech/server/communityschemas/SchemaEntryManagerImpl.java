@@ -9,6 +9,7 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.util.ApplicationEventProxy;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -16,6 +17,9 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.TransactionStatus;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -33,12 +37,22 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.SUPPORTS)
 public class SchemaEntryManagerImpl
         extends HibernateEntityManager<SchemaEntry, EntityHeader>
-        implements SchemaEntryManager, ApplicationListener
+        implements SchemaEntryManager
 {
     private static final Logger logger = Logger.getLogger(SchemaEntryManagerImpl.class.getName());
 
     private final Map<Long, String> systemIdsByOid = new HashMap<Long, String>();
     private SchemaManager schemaManager;
+
+    public SchemaEntryManagerImpl(ApplicationEventProxy applicationEventProxy) {
+        if (applicationEventProxy == null) throw new NullPointerException("missing applicationEventProxy");
+
+        applicationEventProxy.addApplicationListener(new ApplicationListener() {
+            public void onApplicationEvent(ApplicationEvent applicationEvent) {
+                doOnApplicationEvent(applicationEvent);
+            }
+        });
+    }
 
     public void setSchemaManager(SchemaManager schemaManager) {
         this.schemaManager = schemaManager;
@@ -189,27 +203,33 @@ public class SchemaEntryManagerImpl
         }
     }
 
-    public void onApplicationEvent(ApplicationEvent event) {
+    private void doOnApplicationEvent(ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eieio = (EntityInvalidationEvent) event;
+            final EntityInvalidationEvent eieio = (EntityInvalidationEvent)event;
             if (SchemaEntry.class.isAssignableFrom(eieio.getEntityClass())) {
-                for (long oid : eieio.getEntityIds()) {
-                    try {
-                        if (!invalidateCompiledSchema(oid)) continue; // We have no record of it, don't care
+                new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                    protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                        
+                        for (long oid : eieio.getEntityIds()) {
+                            try {
+                                if (!invalidateCompiledSchema(oid)) continue; // We have no record of it, don't care
 
-                        // See if it still exists (i.e. it's updated, not deleted)
-                        SchemaEntry entry = findEntity(oid);
-                        if (entry == null) continue; // It's gone, no need to compile
+                                // See if it still exists (i.e. it's updated, not deleted)
 
-                        compileAndCache(oid, entry);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Couldn't find invalidated SchemaEntry", e);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
-                    } catch (SAXException e) {
-                        logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
+                                SchemaEntry entry = findEntity(oid);
+                                if (entry == null) continue; // It's gone, no need to compile
+
+                                compileAndCache(oid, entry);
+                            } catch (FindException e) {
+                                logger.log(Level.WARNING, "Couldn't find invalidated SchemaEntry", e);
+                            } catch (IOException e) {
+                                logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
+                            } catch (SAXException e) {
+                                logger.log(Level.WARNING, "Couldn't compile updated SchemaEntry", e);
+                            }
+                        }
                     }
-                }
+                });
             }
         }
     }
