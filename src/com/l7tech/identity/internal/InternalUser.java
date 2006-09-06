@@ -65,8 +65,8 @@ public class InternalUser extends PersistentUser {
     public void setPassword(String password, boolean hintIsClear) throws InvalidPasswordException {
         if (password == null) throw new InvalidPasswordException("Empty password is not valid");
         if (hintIsClear || !HexUtils.containsOnlyHex(password)) {
-            if (password.length() < 1) throw new InvalidPasswordException("Password must be at least 1 " +
-                                                                          "character long");
+            if (password.length() < 6) throw new InvalidPasswordException("Password must be at least 6 " +
+                                                                          "characters long");
             if (password.length() > 32) throw new InvalidPasswordException("Password must be no longer " +
                                                                            "than 32 characters long");
         }
