@@ -108,8 +108,13 @@ public class InternalUserManagerImpl
                 if (role.getOid() == Role.ADMIN_ROLE_OID) {
                     boolean anybodyElse = false;
                     for (UserRoleAssignment assignment : role.getUserAssignments()) {
-                        if (!user.getId().equals(assignment.getUserId()) || user.getProviderId() != assignment.getProviderId()) {
-                            anybodyElse = true;
+                        long assignedProvider = assignment.getProviderId();
+                        if (assignedProvider == identityProvider.getConfig().getOid()) {
+                            User existingUser = findByPrimaryKey(assignment.getUserId());
+                            if (existingUser == null) continue;
+                            if ((!user.getId().equals(assignment.getUserId()) || user.getProviderId() != assignment.getProviderId())) {
+                                anybodyElse = true;
+                            }
                         }
                     }
                     if (!anybodyElse) throw new DeleteException(RoleManager.ADMIN_REQUIRED);

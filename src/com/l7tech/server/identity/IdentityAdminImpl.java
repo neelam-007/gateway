@@ -299,6 +299,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
             if (user == null) {
                 throw new ObjectNotFoundException(" User " + userId);
             }
+            if (user.equals(JaasUtils.getCurrentUser()))
+                throw new DeleteException("The currently logged-in user cannot be deleted");
             userManager.delete(user);
             logger.info("Deleted User: " + user.getLogin());
         } catch (FindException e) {
