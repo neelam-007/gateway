@@ -37,13 +37,15 @@ public class CaptureProperty extends JDialog {
     private String title;
     private boolean oked = false;
     private Map propertyNamesToDescriptionAndDefault;
+    private boolean isEditable;
 
-    public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Map suggestedValues) {
+    public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Map suggestedValues, boolean isEditable) {
         super(parent, true);
         this.title = title;
         this.description = description;
         this.property = property;
         this.propertyNamesToDescriptionAndDefault = suggestedValues;
+        this.isEditable = isEditable;
         initialize();
     }
 
@@ -100,6 +102,13 @@ public class CaptureProperty extends JDialog {
                 }
             }
         });
+
+        enableReadOnlyIfNeeded();
+    }
+
+    private void enableReadOnlyIfNeeded() {
+        keyComboBox.setEditable(isEditable);
+        valueField.setEditable(isEditable);
     }
 
     private boolean validateUserInput(String key, String value) {

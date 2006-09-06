@@ -11,6 +11,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -49,9 +50,11 @@ public class ClusterPropertyDialog extends JDialog {
     private final ArrayList<ClusterProperty> properties = new ArrayList<ClusterProperty>();
     private final Logger logger = Logger.getLogger(ClusterPropertyDialog.class.getName());
     private Map knownProperties;
+    private final PermissionFlags flags;
 
     public ClusterPropertyDialog(Frame owner) {
         super(owner, true);
+        flags = PermissionFlags.get(EntityType.CLUSTER_PROPERTY);
         initialize();
     }
 
@@ -223,7 +226,7 @@ public class ClusterPropertyDialog extends JDialog {
                 }
             }
 
-            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, new ClusterProperty(), knownProperties);
+            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, new ClusterProperty(), knownProperties, flags.canUpdateSome());
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);
@@ -262,8 +265,12 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property",
-                    prop.getDescription(), prop, null);
+            boolean canEdit = flags.canUpdateSome();
+
+            String title = canEdit ? "Edit Cluster Property" : "View Cluster Property";
+
+            CaptureProperty dlg = new CaptureProperty(this, title,
+                    prop.getDescription(), prop, null, canEdit);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);
@@ -314,13 +321,16 @@ public class ClusterPropertyDialog extends JDialog {
         // get new selection
         int selectedRow = propsTable.getSelectedRow();
         // decide whether or not the remove button should be enabled
-        if (selectedRow < 0) {
-            removeButton.setEnabled(false);
-            editButton.setEnabled(false);
-        } else {
-            removeButton.setEnabled(true);
-            editButton.setEnabled(true);
-        }
+        boolean removeAndEditEnabled = true;
+        removeAndEditEnabled = selectedRow >= 0;
+
+        addButton.setEnabled(flags.canCreateSome());
+        removeButton.setEnabled(flags.canDeleteSome() && removeAndEditEnabled);
+
+        if (flags.canUpdateSome()) editButton.setText("Edit");
+        else editButton.setText("View");
+
+        editButton.setEnabled(removeAndEditEnabled);
     }
 
     private void populate() {
