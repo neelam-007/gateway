@@ -3,20 +3,21 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.*;
-import com.l7tech.common.security.rbac.EntityType;
-import static com.l7tech.common.security.rbac.EntityType.RBAC_ROLE;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.identity.finder.SearchType;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -51,8 +52,6 @@ public class EditRoleDialog extends JDialog {
     private AssignmentListModel assignmentListModel;
     private PermissionTableModel tableModel;
 
-    private FormAuthorizationPreparer formAuthorizationPreparer;
-
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
     private final ActionListener permissionsListener = new ActionListener() {
@@ -67,15 +66,19 @@ public class EditRoleDialog extends JDialog {
 
     private static final String[] COL_NAMES = new String[]{"Operation", "Applies To"};
 
+    private final PermissionFlags flags;
+
     public EditRoleDialog(Role role, Dialog parent) {
         super(parent, true);
         this.role = role;
+        flags = PermissionFlags.get(EntityType.RBAC_ROLE);
         initialize();
     }
 
     public EditRoleDialog(Role role, Frame parent) {
         super(parent, true);
         this.role = role;
+        flags = PermissionFlags.get(EntityType.RBAC_ROLE);
         initialize();
     }
 
@@ -84,8 +87,6 @@ public class EditRoleDialog extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        formAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(RBAC_ROLE));
-
 
         enablePermissionEdits(shouldAllowEdits);
 
@@ -120,11 +121,8 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void applyFormSecurity() {
-        // list components that are subject to security (they require the full admin role)
-        formAuthorizationPreparer.prepare(new Component[]{
-            addAssignment,
-            removeAssignment,
-        });
+        addAssignment.setEnabled(flags.canUpdateSome());
+        removeAssignment.setEnabled(flags.canUpdateSome());
     }
 
     private void enablePermissionEdits(boolean enableRoleEditing) {
