@@ -11,10 +11,13 @@ import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory;
+import com.l7tech.common.util.ExceptionUtils;
 
 import javax.security.auth.Subject;
 import java.net.MalformedURLException;
+import java.net.ConnectException;
 import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -174,12 +177,22 @@ public class LogRecordManager {
                 }
             });
         }
-        catch(Exception e) {
+        catch(PrivilegedActionException e) {
             Throwable cause = e.getCause();
             if(cause instanceof FindException) {
                 throw (FindException) cause;
             }
-            logger.log(Level.WARNING, "Error during retrieval of logs from remote node '"+clusterNodeInfo.getMac()+"'", cause);
+            if(ExceptionUtils.causedBy(cause, ConnectException.class)) {
+                logger.log(Level.INFO, "Unable to connect to remote node '"+clusterNodeInfo.getMac()+"', for retrieval of logs.");            
+            } else {
+                logger.log(Level.WARNING, "Error during retrieval of logs from remote node '"+clusterNodeInfo.getMac()+"'", cause);
+            }
+            synchronized(nodeLogAdmins) {
+                nodeLogAdmins.remove(clusterNodeInfo.getMac()); //remove reference so it is refreshed
+            }
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getMac()+"'", e);
             synchronized(nodeLogAdmins) {
                 nodeLogAdmins.remove(clusterNodeInfo.getMac()); //remove reference so it is refreshed
             }
