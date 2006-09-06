@@ -6,6 +6,8 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.event.AxisChangeEvent;
+import org.jfree.chart.event.AxisChangeListener;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.CombinedDomainXYPlot;
 import org.jfree.chart.plot.PlotOrientation;
@@ -287,6 +289,47 @@ public class MetricsChartPanel extends ChartPanel {
     }
 
     /**
+     * Reset the y-axis ranges based on the currently visible time range.
+     */
+    private synchronized void resetYAxisRanges() {
+        final Range displayedRange = _xAxis.getRange();
+
+        // Response times plot.
+        double maxTime = 0.;
+        for (int i = 0; i < _frontendResponseTimes.getItemCount(); ++ i) {
+            TimePeriodValueWithHighLow value = (TimePeriodValueWithHighLow) _frontendResponseTimes.getDataItem(i);
+            if (value.getPeriod().getEnd().getTime() >= displayedRange.getLowerBound() &&
+                    value.getPeriod().getStart().getTime() <= displayedRange.getUpperBound())
+            {
+                maxTime = Math.max(maxTime, value.getHighValue().doubleValue());
+            }
+        }
+        maxTime *= 1. + _rYAxis.getUpperMargin();
+        final double yMaxTime = Math.max(maxTime, _rYAxis.getAutoRangeMinimumSize());
+        _rYAxis.setRange(new Range(0, yMaxTime));
+
+        // Message rates plot.
+        double maxRate = 0.;
+        for (int i = 0; i < _messageRates.getItemCount(); ++ i) {
+            TimePeriod period = _messageRates.getTimePeriod(i);
+            if (period.getEnd().getTime() >= displayedRange.getLowerBound() &&
+                    period.getStart().getTime() <= displayedRange.getUpperBound())
+            {
+                // Calculates the total message rate by adding up the rates
+                // for success, policy violation and routing failure.
+                double totalRate = 0.;
+                for (int series = 0; series < _messageRates.getSeriesCount(); ++ series) {
+                    totalRate += _messageRates.getYValue(series, i);
+                }
+                maxRate = Math.max(maxRate, totalRate);
+            }
+        }
+        maxRate *= 1. + _mYAxis.getUpperMargin();
+        final double yMaxRate = Math.max(maxRate, _mYAxis.getAutoRangeMinimumSize());
+        _mYAxis.setRange(new Range(0, yMaxRate));
+    }
+
+    /**
      * @param binInterval   nominal bin interval (in milliseconds)
      * @param maxTimeRange  maximum time range of data to keep around
      */
@@ -304,7 +347,7 @@ public class MetricsChartPanel extends ChartPanel {
         _messageRates = new TimeTableXYDataset();
 
         //
-        // Top plot for response time.
+        // Top plot for response times.
         //
 
         _rYAxis = new NumberAxis(RESPONSE_TIME_AXIS_LABEL);
@@ -360,7 +403,7 @@ public class MetricsChartPanel extends ChartPanel {
         iPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
         //
-        // Bottom plot for message rate.
+        // Bottom plot for message rates.
         //
 
         _mYAxis = new NumberAxis(MESSAGE_RATE_AXIS_LABEL);
@@ -389,6 +432,11 @@ public class MetricsChartPanel extends ChartPanel {
         };
         _xAxis.setAutoRange(true);
         _xAxis.setFixedAutoRange(_maxTimeRange);
+        _xAxis.addChangeListener(new AxisChangeListener() {
+            public void axisChanged(AxisChangeEvent axisChangeEvent) {
+                resetYAxisRanges();
+            }
+        });
         final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(_xAxis);
         combinedPlot.setGap(0.);
         combinedPlot.add(rPlot, 35);
@@ -518,6 +566,7 @@ public class MetricsChartPanel extends ChartPanel {
         }
 
         setXAxisRangeIfNoData();
+        restoreAutoRange();
     }
 
     /** Clears all data and updates the plots. */
@@ -526,9 +575,6 @@ public class MetricsChartPanel extends ChartPanel {
         // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
         _chart.setNotify(false);
-
-        restoreAutoRange();
-        resume();
 
         _frontendResponseTimes.delete(0, _frontendResponseTimes.getItemCount() - 1);
         _backendResponseTimes.delete(0, _backendResponseTimes.getItemCount() - 1);
@@ -553,6 +599,8 @@ public class MetricsChartPanel extends ChartPanel {
 
         restoreAutoDomainBounds();
         setXAxisRangeIfNoData();
+        restoreAutoRange();
+        resume();
     }
 
     /** Suspends updating of displayed chart data. */
