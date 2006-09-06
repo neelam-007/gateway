@@ -56,6 +56,8 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         Class eclass;
         if (entity instanceof AnonymousEntityReference) {
             eclass = ((AnonymousEntityReference)entity).getEntityClass();
+        } else if (entity == null) {
+            return false;
         } else {
             eclass = entity.getClass();
         }
