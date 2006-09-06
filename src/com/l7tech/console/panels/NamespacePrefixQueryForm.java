@@ -34,7 +34,7 @@ public class NamespacePrefixQueryForm extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("XML Namespace");
+        setTitle("Add XML Namespace and Prefix");
         okbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
