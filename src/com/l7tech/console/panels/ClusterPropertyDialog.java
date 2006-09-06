@@ -278,16 +278,18 @@ public class ClusterPropertyDialog extends JDialog {
                 return;
             }
 
-            try {
-                reg.getClusterStatusAdmin().saveProperty(prop);
-            }  catch (RemoteException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            } catch (SaveException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            } catch (UpdateException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            } catch (DeleteException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
+            if (canEdit) {
+                try {
+                    reg.getClusterStatusAdmin().saveProperty(prop);
+                }  catch (RemoteException e) {
+                    logger.log(Level.SEVERE, "exception setting property", e);
+                } catch (SaveException e) {
+                    logger.log(Level.SEVERE, "exception setting property", e);
+                } catch (UpdateException e) {
+                    logger.log(Level.SEVERE, "exception setting property", e);
+                } catch (DeleteException e) {
+                    logger.log(Level.SEVERE, "exception setting property", e);
+                }
             }
 
             populate();
