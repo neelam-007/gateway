@@ -375,7 +375,7 @@ public class FederatedUserPanel extends UserPanel {
             firstNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        firstNameTextField.setEnabled(config.isWritable());
+        firstNameTextField.setEnabled(getUserFlags().canUpdateSome() && config.isWritable());
 
         // Return text field
         return firstNameTextField;
@@ -413,7 +413,7 @@ public class FederatedUserPanel extends UserPanel {
             lastNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        lastNameTextField.setEnabled(config.isWritable());
+        lastNameTextField.setEnabled(getUserFlags().canUpdateSome() && config.isWritable());
 
         // Return text field
         return lastNameTextField;
@@ -450,6 +450,7 @@ public class FederatedUserPanel extends UserPanel {
             // Register listeners
             loginTextField.getDocument().addDocumentListener(documentListener);
         }
+        loginTextField.setEnabled(getUserFlags().canUpdateSome() && config.isWritable());
         // Return text field
         return loginTextField;
     }
@@ -485,7 +486,7 @@ public class FederatedUserPanel extends UserPanel {
             x509SubjectNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        x509SubjectNameTextField.setEnabled(config.isWritable());
+        x509SubjectNameTextField.setEnabled(getUserFlags().canUpdateSome() && config.isWritable());
 
         // Return text field
         return x509SubjectNameTextField;
@@ -521,7 +522,7 @@ public class FederatedUserPanel extends UserPanel {
             // Register listeners
             emailTextField.getDocument().addDocumentListener(documentListener);
         }
-        //emailTextField.setEnabled(config.isWritable());
+        emailTextField.setEnabled(getUserFlags().canUpdateSome() && config.isWritable());
 
         // Return text field
         return emailTextField;
