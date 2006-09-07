@@ -64,11 +64,8 @@ public abstract class UserCertPanel extends JPanel {
     }
 
     private void applyFormSecurity() {
-        // list components that are subject to security (they require the full admin role)
-        userPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
-                getImportCertButton(),
-                getRemoveCertButton()
-        });
+        getImportCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome());
+        getRemoveCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome());
     }
 
 
@@ -185,9 +182,9 @@ public abstract class UserCertPanel extends JPanel {
     protected void loadCertificateInfo() {
         try {
             boolean enabled = cert != null;
-            getRemoveCertButton().setEnabled(enabled);
+            getRemoveCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome() && enabled);
             getExportCertButton().setEnabled(enabled);
-            getImportCertButton().setEnabled(!enabled);
+            getImportCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome() && !enabled);
             if (enabled) {
                 certStatusLabel.setText("Certificate Status: Imported");
             } else {

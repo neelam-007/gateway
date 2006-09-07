@@ -8,7 +8,6 @@ import static com.l7tech.common.security.rbac.EntityType.GROUP;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
@@ -73,7 +72,8 @@ public abstract class GroupPanel extends EntityEditorPanel {
     protected IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
-    protected FormAuthorizationPreparer securityFormAuthorizationPreparer;
+
+    protected final PermissionFlags groupFlags;
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -88,7 +88,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(GROUP));
+        groupFlags = PermissionFlags.get(GROUP);
     }
 
     public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
@@ -341,8 +341,6 @@ public abstract class GroupPanel extends EntityEditorPanel {
             descriptionTextField.getDocument().addDocumentListener(documentListener);
         }
 
-        descriptionTextField.setEnabled(config.isWritable());
-
         // Return text field
         return descriptionTextField;
     }
@@ -449,10 +447,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     }
 
     protected void applyFormSecurity() {
-        // list components that are subject to security (they require the full admin role)
-        securityFormAuthorizationPreparer.prepare(new Component[]{
-            getDescriptionTextField()
-        });
+        getDescriptionTextField().setEnabled(config.isWritable() && groupFlags.canUpdateSome());
     }
 
     /**
@@ -614,6 +609,10 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     public boolean wasOKed() {
         return wasoked;
+    }
+
+    protected PermissionFlags getGroupFlags() {
+        return groupFlags;
     }
 }
 

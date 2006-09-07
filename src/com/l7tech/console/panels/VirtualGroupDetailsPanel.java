@@ -27,12 +27,9 @@ public class VirtualGroupDetailsPanel extends JPanel {
     }
 
     private void applyFormSecurity() {
-        virtualGroupPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
-            groupDescTextField,
-            x509SubjectDNTextField,
-            emailTextField
-        });
-
+        groupDescTextField.setEditable(virtualGroupPanel.getGroupFlags().canUpdateSome());
+        x509SubjectDNTextField.setEditable(virtualGroupPanel.getGroupFlags().canUpdateSome());
+        emailTextField.setEditable(virtualGroupPanel.getGroupFlags().canUpdateSome());
     }
 
     /**

@@ -80,7 +80,10 @@ public class GenericUserPanel extends UserPanel {
     private JTextField emailTextField;
     private JButton changePassButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
+
+    private JCheckBox accountNeverExpiresCheckbox;
     private DateField expireDateField;
+    private JPanel expirationPanel;
 
     public GenericUserPanel() {
         super();
@@ -93,7 +96,6 @@ public class GenericUserPanel extends UserPanel {
             certPanel = new NonFederatedUserCertPanel(this, passwordChangeListener);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
-
             applyFormSecurity();
 
         } catch (Exception e) {
@@ -103,13 +105,15 @@ public class GenericUserPanel extends UserPanel {
     }
 
     protected void applyFormSecurity() {
+        boolean enableUpdateUserData = getUserFlags().canUpdateSome();
         // list components that are subject to security (they require the full admin role)
-        securityFormAuthorizationPreparer.prepare(new Component[]{
-                emailTextField,
-                changePassButton,
-                firstNameTextField,
-                lastNameTextField
-              });
+        firstNameTextField.setEditable(enableUpdateUserData);
+        lastNameTextField.setEditable(enableUpdateUserData);
+        emailTextField.setEditable(enableUpdateUserData);
+        
+        changePassButton.setEnabled(enableUpdateUserData);
+        expirationPanel.setEnabled(getUserFlags().canUpdateSome());
+        accountNeverExpiresCheckbox.setEnabled(getUserFlags().canUpdateSome());
     }
 
 
@@ -536,22 +540,22 @@ public class GenericUserPanel extends UserPanel {
     }
 
     private JPanel getExpirationPanel() {
-        JPanel expirationPanel = new JPanel();
+        expirationPanel = new JPanel();
         if (IdentityProviderType.INTERNAL.equals(config.type())) {
             InternalUser iu = (InternalUser)user;
             expirationPanel.setLayout(new GridBagLayout());
-            final JCheckBox cb = new JCheckBox("Account Never Expires");
             GridBagConstraints c = new GridBagConstraints();
             c.anchor = GridBagConstraints.WEST;
-            expirationPanel.add(cb, c);
             final JLabel expiresLabel = new JLabel("Expires on:");
-            cb.addChangeListener(new ChangeListener() {
+            accountNeverExpiresCheckbox = new JCheckBox("Account Never Expires");
+            accountNeverExpiresCheckbox.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
-                    final boolean enable = !cb.isSelected();
+                    final boolean enable = !accountNeverExpiresCheckbox.isSelected();
                     expireDateField.setEnabled(enable);
                     expiresLabel.setEnabled(enable);
                 }
             });
+            expirationPanel.add(accountNeverExpiresCheckbox, c);
             JPanel expireOndatePanel = new JPanel();
             expireOndatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             expireOndatePanel.add(expiresLabel);
@@ -565,9 +569,9 @@ public class GenericUserPanel extends UserPanel {
             if (!neverExpires) {
                 expireDateField.setValue(new Date(iu.getExpiration()));
             }
-            cb.setSelected(neverExpires);
+            accountNeverExpiresCheckbox.setSelected(neverExpires);
 
-            cb.addActionListener(new ActionListener() {
+            accountNeverExpiresCheckbox.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     setModified(true);
                 }
@@ -579,7 +583,6 @@ public class GenericUserPanel extends UserPanel {
                 }
             });
         }
-
         return expirationPanel;
     }
 

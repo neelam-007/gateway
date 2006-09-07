@@ -1,9 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -35,8 +33,9 @@ abstract public class UserPanel extends EntityEditorPanel {
     protected boolean formModified;
     protected IdentityProviderConfig config;
     protected final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
-    protected FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
+    private final PermissionFlags userFlags;
+    private final PermissionFlags groupFlags;
     abstract public boolean certExist();
 
     protected UserPanel() {
@@ -44,7 +43,8 @@ abstract public class UserPanel extends EntityEditorPanel {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.USER));
+        userFlags = PermissionFlags.get(EntityType.USER);
+        groupFlags = PermissionFlags.get(EntityType.GROUP);
     }
 
     /**
@@ -114,6 +114,14 @@ abstract public class UserPanel extends EntityEditorPanel {
             setModified(true);
         }
     };
+
+    protected PermissionFlags getUserFlags() {
+        return userFlags;
+    }
+
+    protected PermissionFlags getGroupFlags() {
+        return groupFlags;
+    }
 
 }
 

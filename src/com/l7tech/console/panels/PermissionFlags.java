@@ -14,25 +14,34 @@ public class PermissionFlags {
     private final boolean createAll;
     private final boolean updateAll;
     private final boolean deleteAll;
+    private final boolean readAll;
 
     private final boolean createSome;
     private final boolean updateSome;
     private final boolean deleteSome;
+    private final boolean readSome;
 
-    private PermissionFlags(boolean createAll, boolean updateAll, boolean deleteAll, boolean createSome, boolean updateSome, boolean deleteSome) {
+    private PermissionFlags(boolean createAll, boolean readAll, boolean updateAll, boolean deleteAll,
+                            boolean createSome, boolean readSome, boolean updateSome, boolean deleteSome) {
         this.createAll = createAll;
+        this.readAll = readAll;
         this.updateAll = updateAll;
         this.deleteAll = deleteAll;
+
         this.createSome = createSome;
+        this.readSome = readSome;
         this.updateSome = updateSome;
         this.deleteSome = deleteSome;
     }
 
     public static PermissionFlags get(EntityType etype) {
         boolean createSome = false;
+        boolean readSome = false;
         boolean updateSome = false;
         boolean deleteSome = false;
+
         boolean createAll = false;
+        boolean readAll = false;
         boolean updateAll = false;
         boolean deleteAll = false;
 
@@ -42,6 +51,10 @@ public class PermissionFlags {
                     case CREATE:
                         createSome = true;
                         if (perm.getScope().isEmpty()) createAll = true;
+                        break;
+                    case READ:
+                        readSome = true;
+                        if (perm.getScope().isEmpty()) readAll = true;
                         break;
                     case UPDATE:
                         updateSome = true;
@@ -55,7 +68,7 @@ public class PermissionFlags {
             }
         }
 
-        return new PermissionFlags(createAll, updateAll, deleteAll, createSome, updateSome, deleteSome);
+        return new PermissionFlags(createAll, readAll, updateAll, deleteAll, createSome, readSome, updateSome, deleteSome);
     }
 
     /**
@@ -80,6 +93,13 @@ public class PermissionFlags {
     }
 
     /**
+     * @return true if the current user can read any object of the specified type
+     */
+    public boolean canReadAll() {
+        return readAll;
+    }
+
+    /**
      * @return true if the current user can create some objects of the specified type
      */
     public boolean canCreateSome() {
@@ -98,5 +118,12 @@ public class PermissionFlags {
      */
     public boolean canDeleteSome() {
         return deleteSome;
+    }
+
+        /**
+     * @return true if the current user can read some objects of the specified type
+     */
+    public boolean canReadSome() {
+        return readSome;
     }
 }

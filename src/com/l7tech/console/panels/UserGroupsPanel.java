@@ -52,7 +52,6 @@ class UserGroupsPanel extends JPanel {
     private final static String USER_GROUP_MEMBER_LABEL = "User Groups:";
     private IdentityProviderConfig ipc;
 
-
     /**
      * The only constructor
      *
@@ -61,6 +60,7 @@ class UserGroupsPanel extends JPanel {
     public UserGroupsPanel(UserPanel panel, IdentityProviderConfig ipc) {
         super();
         this.ipc = ipc;
+
         try {
             this.userPanel = panel;
             layoutComponents();
@@ -134,10 +134,13 @@ class UserGroupsPanel extends JPanel {
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        userPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
-            getGroupAdd(),
-            getGroupRemove()
-        });
+            getGroupAdd().setEnabled(userPanel.getUserFlags().canUpdateSome() &&
+                            userPanel.getGroupFlags().canUpdateSome() &&
+                            userPanel.getGroupFlags().canReadSome());
+
+            getGroupRemove().setEnabled(userPanel.getUserFlags().canUpdateSome() &&
+                            userPanel.getGroupFlags().canUpdateSome() &&
+                            userPanel.getGroupFlags().canReadSome());
     }
 
 
