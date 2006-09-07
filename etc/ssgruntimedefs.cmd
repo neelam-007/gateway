@@ -65,17 +65,6 @@ if %NUMBER_OF_PROCESSORS%==1 (
     set JAVA_OPTS=%JAVA_OPTS% -XX:+DisableExplicitGC -XX:+UseParallelGC
 )
 
-REM 2005-09-13 rmak
-REM Setting of RMI server host name has been moved to etc\conf\system.properties.
-REM
-REM :: Set the fully qualified host name of the RMI server.
-REM for /F "tokens=1" %%i in ('hostname') do set short_hostname=%%i
-REM for /F "tokens=1,2" %%i in ('nslookup %short_hostname%') do if "%%i"=="Name:" set rmi_server_full_hostname=%%j
-REM if exist "%SSG_HOME%\etc\conf\cluster_hostname" (
-REM     for /F "usebackq tokens=1" %%i in ("%SSG_HOME%\etc\conf\cluster_hostname") do set rmi_server_full_hostname=%%i
-REM )
-REM set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%rmi_server_full_hostname%
-
 :: If a JNI DLL is dependent on another DLL, that second DLL must be in a folder
 :: on the Windows PATH environment variable.
 :: Our practice is to put all DLLs in %SSG_HOME%\lib.
