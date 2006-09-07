@@ -81,7 +81,7 @@ public class DeleteAssertionAction extends SecureAction {
         if (node == null) return true;
         try {
             PublishedService svc = node.getService();
-            return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+            return svc == null || canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get current service", e);
         }
