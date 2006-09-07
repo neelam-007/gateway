@@ -56,7 +56,7 @@ public class NewInternalUserDialog extends JDialog {
     /* the user instance */
     private final UserBean user;
 
-    private int MIN_PASSWORD_LENGTH = 1;
+    private int MIN_PASSWORD_LENGTH = 6;
     private EventListenerList listenerList = new EventListenerList();
     private boolean UserIdFieldFilled = false;
     private boolean passwordFieldFilled = false;
