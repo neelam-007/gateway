@@ -103,6 +103,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 w.setSize(850, 500);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             }
         });
     }
