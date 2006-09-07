@@ -11,16 +11,14 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.panels.EntityEditorPanel;
-import com.l7tech.console.panels.EditorDialog;
-import com.l7tech.console.panels.GroupPanel;
-import com.l7tech.console.panels.UserPanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -117,6 +115,7 @@ public class FindIdentitiesDialog extends JDialog {
 
     private Options options = new Options();
     private DeleteEntityAction deleteIdAction;
+    private final PermissionFlags idpFlags;
 
 
     /**
@@ -134,7 +133,7 @@ public class FindIdentitiesDialog extends JDialog {
 
     /**
      * Creates new FindDialog for a given context
-     *
+     *                                                                         `
      * @param parent the Frame from which the dialog is displayed
      * @param modal  true for a modal dialog, false for one that
      *               allows others windows to be active at the
@@ -143,6 +142,7 @@ public class FindIdentitiesDialog extends JDialog {
      */
     public FindIdentitiesDialog(Frame parent, boolean modal, Options options) {
         super(parent, modal);
+        idpFlags = PermissionFlags.get(ID_PROVIDER_CONFIG);
         if (options == null) {
             throw new IllegalArgumentException();
         }
@@ -650,15 +650,18 @@ public class FindIdentitiesDialog extends JDialog {
                */
               public void valueChanged(ListSelectionEvent e) {
                   int row = searchResultTable.getSelectedRow();
+                  boolean hasUpdateIpPermissions = idpFlags.canUpdateSome();
                   if (row == -1) {
                       selectButton.setEnabled(false);
                       deleteButton.setEnabled(false);
                   } else {
                       selectButton.setEnabled(true);
                       IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBox.getSelectedItem();
-                      if (getDeleteAction().isAuthorized()) {
-                        deleteButton.setEnabled(ipc.isWritable());
-                      } else deleteButton.setEnabled(false);
+
+                      deleteButton.setEnabled(
+                                getDeleteAction().isAuthorized() &&
+                                ipc.isWritable() &&
+                                hasUpdateIpPermissions);
                   }
               }
           });
