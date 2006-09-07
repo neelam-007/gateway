@@ -78,15 +78,16 @@ public class PolicyDownloader {
             throw new CausedIOException("Unable to download new policy", e);
         }
 
+        boolean useX509 = false; // true = x.509; false = use saml holder-of-key
         for (int attempts = 0; attempts < 10; ++attempts) {
             // Anonymous download failed; need to try again with credentials.
             try {
                 Policy policy = null;
                 if (ssg.isFederatedGateway()) {
                     // Federated SSG -- use X.509 or a SAML token for authentication.
-                    boolean useX509 = false; // true = x.509; false = use saml holder-of-key
                     log.info("Trying SAML-authenticated policy download from Federated Gateway " + ssg);
                     PrivateKey key = null;
+                    useX509 = false;
                     if (ssg.getTrustedGateway() != null) {
                         request.prepareClientCertificate(); // TODO make client cert work with third-part WS-Trust
                         key = ssg.getClientCertificatePrivateKey();
@@ -156,16 +157,19 @@ public class PolicyDownloader {
                 return policy;
             } catch (BadCredentialsException e) {
                 String msg = "Policy service denies access to this policy with current credentials";
-                if (ssg.isFederatedGateway()) {
+                if (ssg.isFederatedGateway() && !useX509) {
                     msg += "; federated policy download therefore fails.";
                     log.info(msg);
                     throw new ConfigurationException(msg);
                 } else
                     log.info(msg);
 
-                log.info("Prompting for new credentials");
-                request.getNewCredentials();
-                log.info("Retrying policy download with new credentials");
+                if (!useX509) {
+                    // (unless it was a federated download and was trying x509 first)
+                    log.info("Prompting for new credentials");
+                    request.getNewCredentials();
+                    log.info("Retrying policy download with new credentials");
+                }
                 // FALLTHROUGH and retry
             } catch (SSLHandshakeException e) {
                 if (e.getCause() instanceof ServerCertificateUntrustedException)
