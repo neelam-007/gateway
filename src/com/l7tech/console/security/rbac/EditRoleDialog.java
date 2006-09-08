@@ -121,18 +121,21 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void applyFormSecurity() {
+        roleName.setEnabled(flags.canUpdateSome());
         addAssignment.setEnabled(flags.canUpdateSome());
         removeAssignment.setEnabled(flags.canUpdateSome());
     }
 
     private void enablePermissionEdits(boolean enableRoleEditing) {
-        addPermission.setVisible(enableRoleEditing);
-        editPermission.setVisible(enableRoleEditing);
-        removePermission.setVisible(enableRoleEditing);
+        boolean canEdit = flags.canUpdateSome();
 
-        addPermission.setEnabled(enableRoleEditing);
-        editPermission.setEnabled(enableRoleEditing);
-        removePermission.setEnabled(enableRoleEditing);
+        addPermission.setVisible(canEdit && enableRoleEditing);
+        editPermission.setVisible(canEdit && enableRoleEditing);
+        removePermission.setVisible(canEdit && enableRoleEditing);
+
+        addPermission.setEnabled(canEdit && enableRoleEditing);
+        editPermission.setEnabled(canEdit && enableRoleEditing);
+        removePermission.setEnabled(canEdit &&enableRoleEditing);
     }
 
     private void enablePermissionEditDeleteButtons() {
@@ -425,28 +428,32 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void onOK() {
-        role.setName(roleName.getText());
-        Set<Permission> perms = role.getPermissions();
-        perms.clear();
-        for (Permission perm : tableModel.getPermissions()) {
-            perms.add(perm);
-        }
+        if (flags.canUpdateSome()) {
+            role.setName(roleName.getText());
+            Set<Permission> perms = role.getPermissions();
+            perms.clear();
+            for (Permission perm : tableModel.getPermissions()) {
+                perms.add(perm);
+            }
 
-        role.getUserAssignments().clear();
-        for (UserRoleAssignment assignment : assignmentListModel.assignments) {
-            role.getUserAssignments().add(assignment);
-        }
+            role.getUserAssignments().clear();
+            for (UserRoleAssignment assignment : assignmentListModel.assignments) {
+                role.getUserAssignments().add(assignment);
+            }
 
-        try {
-            long oid = Registry.getDefault().getRbacAdmin().saveRole(role);
-            role.setOid(oid);
-        } catch (ObjectModelException se) {
-            JOptionPane.showMessageDialog(this.getParent(),
-                    "The Role could not be saved: " + ExceptionUtils.getMessage(se),
-                    "Error Saving Role",
-                    JOptionPane.ERROR_MESSAGE);
-        } catch (RemoteException re) {
-            throw new RuntimeException(re);
+            try {
+                long oid = Registry.getDefault().getRbacAdmin().saveRole(role);
+                role.setOid(oid);
+            } catch (ObjectModelException se) {
+                JOptionPane.showMessageDialog(this.getParent(),
+                        "The Role could not be saved: " + ExceptionUtils.getMessage(se),
+                        "Error Saving Role",
+                        JOptionPane.ERROR_MESSAGE);
+            } catch (RemoteException re) {
+                throw new RuntimeException(re);
+            }
+        } else {
+            role = null;
         }
         dispose();
     }
