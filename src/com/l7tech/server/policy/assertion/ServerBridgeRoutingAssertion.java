@@ -29,6 +29,7 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -467,23 +468,28 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     }
 
     private void attachSamlSenderVouches(PolicyEnforcementContext context) throws SAXException, IOException, SignatureException, CertificateException{
-        Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-        SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
-        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-        TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-        if (requestTcp != null) {
-            try {
-                InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
-                samlOptions.setClientAddress(clientAddress);
-            } catch (UnknownHostException e) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
+        LoginCredentials svInputCredentials = context.getCredentials();
+        if (svInputCredentials == null) {
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
+        } else {
+            Document document = context.getRequest().getXmlKnob().getDocumentWritable();
+            SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
+            SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+            samlOptions.setAttestingEntity(signerInfo);
+            TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+            if (requestTcp != null) {
+                try {
+                    InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
+                    samlOptions.setClientAddress(clientAddress);
+                } catch (UnknownHostException e) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
+                }
             }
+            samlOptions.setExpiryMinutes(bridgeRoutingAssertion.getSamlAssertionExpiry());
+            samlOptions.setUseThumbprintForSignature(bridgeRoutingAssertion.isUseThumbprintInSamlSignature());
+            SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES, bridgeRoutingAssertion.isUseThumbprintInSamlSubject());
+            ag.attachStatement(document, statement, samlOptions);
         }
-        samlOptions.setExpiryMinutes(bridgeRoutingAssertion.getSamlAssertionExpiry());
-        samlOptions.setUseThumbprintForSignature(bridgeRoutingAssertion.isUseThumbprintInSamlSignature());
-        SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES, bridgeRoutingAssertion.isUseThumbprintInSamlSubject());
-        ag.attachStatement(document, statement, samlOptions);
-
     }
 
     private boolean initCredentials() {
@@ -521,6 +527,15 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
+            public String getUsername() {
+                //TODO [steve] this works but we would probably use initCredentials instead ...
+                return context.getCredentials().getLogin();
+            }
+
+            public char[] getPassword() {
+                return context.getCredentials().getCredentials();
+            }
+
             public HttpCookie[] getSessionCookies() {
                 Set cookies = bridgeRoutingAssertion.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
