@@ -271,38 +271,40 @@ public class GlobalSchemaEntryEditor extends JDialog {
     }
 
     private void ok() {
-        // make sure this is a schema
-        String contents = uiAccessibility.getEditor().getText();
-        String tns;
-        try {
-            tns = XmlUtil.getSchemaTNS(contents);
-        } catch (XmlUtil.BadSchemaException e) {
-            logger.log(Level.WARNING, "problem parsing schema", e);
-            JOptionPane.showMessageDialog(this, "This is not a legal xml schema. Consult log for more details",
-                                                "Illegal Schema",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
+        if (canEdit) {
+            // make sure this is a schema
+            String contents = uiAccessibility.getEditor().getText();
+            String tns;
+            try {
+                tns = XmlUtil.getSchemaTNS(contents);
+            } catch (XmlUtil.BadSchemaException e) {
+                logger.log(Level.WARNING, "problem parsing schema", e);
+                JOptionPane.showMessageDialog(this, "This is not a legal xml schema. Consult log for more details",
+                                                    "Illegal Schema",
+                                                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (tns == null || tns.length() < 1) {
+                JOptionPane.showMessageDialog(this, "This schema does not declare a target namespace.",
+                                                    "Invalid Schema",
+                                                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // make sure there is a name captioned
+            String sustemid = schemanametxt.getText();
+            if (sustemid == null || sustemid.length() < 1) {
+                JOptionPane.showMessageDialog(this, "You must provide a system id (name) for this schema to be referenced by another schema.",
+                                                    "Invalid Schema",
+                                                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // save it
+            subject.setName(sustemid);
+            subject.setSchema(contents);
+            subject.setTns(tns);
+            success = true;
         }
-        if (tns == null || tns.length() < 1) {
-            JOptionPane.showMessageDialog(this, "This schema does not declare a target namespace.",
-                                                "Invalid Schema",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        // make sure there is a name captioned
-        String sustemid = schemanametxt.getText();
-        if (sustemid == null || sustemid.length() < 1) {
-            JOptionPane.showMessageDialog(this, "You must provide a system id (name) for this schema to be referenced by another schema.",
-                                                "Invalid Schema",
-                                                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        // save it
-        subject.setName(sustemid);
-        subject.setSchema(contents);
-        subject.setTns(tns);
         dispose();
-        success = true;
     }
 
     public void setVisible(boolean visible) {
@@ -328,5 +330,6 @@ public class GlobalSchemaEntryEditor extends JDialog {
         schemanametxt.setEditable(canEdit);
         uploadFromFileBut.setEnabled(canEdit);
         uploadFromURLBut.setEnabled(canEdit);
+        xmlContainer.setEditable(canEdit);
     }
 }
