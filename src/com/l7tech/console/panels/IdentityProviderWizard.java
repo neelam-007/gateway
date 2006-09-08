@@ -28,6 +28,7 @@ public class IdentityProviderWizard extends Wizard {
     // setting the buttonTest variable to something here will override the value initialized by the the parent class
     private JButton buttonTest;
     private ResourceBundle resources = null;
+    private boolean readOnly = false;
 
     /**
      * Constructor
@@ -37,6 +38,11 @@ public class IdentityProviderWizard extends Wizard {
      */
     public IdentityProviderWizard(Frame parent, final WizardStepPanel panel) {
         super(parent, panel);
+        initResources();
+    }
+    public IdentityProviderWizard(Frame parent, final WizardStepPanel panel, boolean readOnly) {
+        super(parent, panel);
+        this.readOnly = readOnly;
         initResources();
     }
 
@@ -138,6 +144,13 @@ public class IdentityProviderWizard extends Wizard {
             buttonTest.setEnabled(((IdentityProviderStepPanel)wp).canTest());
         }
         super.updateWizardControls(wp);
+    }
+
+    protected void finish(ActionEvent evt) {
+        if (readOnly) {
+            wizardInput = null;
+        }
+        super.finish(evt);
     }
 
 }

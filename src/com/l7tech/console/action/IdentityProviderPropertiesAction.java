@@ -90,8 +90,9 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                             w = new EditIdentityProviderWizard(f, configPanel, iProvider);
 
                         } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                            configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(null));
-                            w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider);
+                            boolean readOnly = !PermissionFlags.get(com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG).canUpdateSome();
+                            configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(null, readOnly), readOnly);
+                            w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider, readOnly);
 
 
                         } else {

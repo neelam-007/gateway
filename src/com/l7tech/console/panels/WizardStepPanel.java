@@ -22,6 +22,8 @@ public abstract class WizardStepPanel extends JPanel {
     private boolean showDescriptionPanel = true;
     private boolean skipped = false;
 
+    private boolean readOnly = false;
+
     public boolean isSkipped() {
         return skipped;
     }
@@ -43,6 +45,11 @@ public abstract class WizardStepPanel extends JPanel {
      */
     public WizardStepPanel(WizardStepPanel next) {
         this.nextPanel = next;
+    }
+
+    public WizardStepPanel(WizardStepPanel next, boolean readOnly) {
+        this.nextPanel = next;
+        this.readOnly = readOnly;
     }
 
     public void setNextPanel(WizardStepPanel next) {
@@ -189,5 +196,9 @@ public abstract class WizardStepPanel extends JPanel {
      */
     public String getStepLabel() {
         return "implement " + getClass() + ".getStepLabel()";
+    }
+
+    protected boolean isReadOnly() {
+        return readOnly;
     }
 }

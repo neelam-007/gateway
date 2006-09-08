@@ -20,6 +20,15 @@ public abstract class IdentityProviderStepPanel extends WizardStepPanel{
     }
 
     /**
+     * Constructor
+     *
+     * @param next  The reference to the next step panel.
+     * @param readOnly denotes if the editing controls on this form should be disabled - the default is false
+     */public IdentityProviderStepPanel(WizardStepPanel next, boolean readOnly) {
+         super(next, readOnly);
+    }
+
+    /**
      * Test whether the step panel allows testing the settings.
      *
      * @return true if the panel is valid, false otherwis

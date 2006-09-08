@@ -14,7 +14,6 @@ import java.awt.event.ActionEvent;
  * $Id$
  */
 public class EditFederatedIPWizard extends IdentityProviderWizard {
-
     /**
      * Constructor
      *
@@ -24,14 +23,22 @@ public class EditFederatedIPWizard extends IdentityProviderWizard {
      */
      public EditFederatedIPWizard(Frame parent, WizardStepPanel panel, FederatedIdentityProviderConfig iProvider) {
         super(parent, panel);
+        wizardInput = iProvider;
+        setupComponents();
+    }
 
+    public EditFederatedIPWizard(Frame parent, WizardStepPanel panel, FederatedIdentityProviderConfig iProvider, boolean readOnly) {
+        super(parent, panel, readOnly);
+        wizardInput = iProvider;
+        setupComponents();
+    }
+
+    private void setupComponents() {
         setResizable(true);
         setTitle("Edit Federated Identity Provider Wizard");
         setShowDescription(false);
         getButtonTest().setVisible(false);
         Utilities.setEscKeyStrokeDisposes(this);
-
-        wizardInput = iProvider;
 
         pack();
 
@@ -40,7 +47,6 @@ public class EditFederatedIPWizard extends IdentityProviderWizard {
                 Actions.invokeHelp(EditFederatedIPWizard.this);
             }
         });
-
     }
 
 }

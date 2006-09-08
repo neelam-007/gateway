@@ -30,9 +30,22 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         initComponents();
     }
 
+    public FederatedIPGeneralPanel(WizardStepPanel next, boolean readOnly) {
+        super(next, readOnly);
+        initComponents();
+    }
+
     private void initComponents() {
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+        applyFormSecurity();
+    }
+
+    public void applyFormSecurity() {
+        boolean isEnabled = !isReadOnly();
+        providerNameTextField.setEnabled(isEnabled);
+        x509CertCheckbox.setEnabled(isEnabled);
+        samlCheckbox.setEnabled(isEnabled);
     }
 
     public String getDescription() {

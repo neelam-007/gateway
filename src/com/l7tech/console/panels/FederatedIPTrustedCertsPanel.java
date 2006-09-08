@@ -68,6 +68,11 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         initComponents();
     }
 
+    public FederatedIPTrustedCertsPanel(WizardStepPanel next, boolean readOnly) {
+        super(next, readOnly);
+        initComponents();
+    }
+
     /**
      * Get the description of the step
      * @return String The description of the step
@@ -368,22 +373,25 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             }
         });
 
+        applyFormSecurity();
+    }
 
+    private void applyFormSecurity() {
+        boolean canEdit = !isReadOnly();
+        createCertButton.setEnabled(canEdit);
+        addButton.setEnabled(canEdit);
     }
 
     /**
      * Enable or disable the fields based on the current selections.
      */
     private void enableOrDisableButtons() {
-        boolean propsEnabled = false;
-        boolean removeEnabled = false;
+        boolean hasEditPermission = !isReadOnly();
         int row = trustedCertTable.getSelectedRow();
-        if (row >= 0) {
-            removeEnabled = true;
-            propsEnabled = true;
-        }
-        removeButton.setEnabled(removeEnabled);
-        propertiesButton.setEnabled(propsEnabled);
+        boolean removeAndPropertiesEnabled = (row >= 0);
+
+        removeButton.setEnabled(hasEditPermission && removeAndPropertiesEnabled);
+        propertiesButton.setEnabled(removeAndPropertiesEnabled);
     }
 
     /**
