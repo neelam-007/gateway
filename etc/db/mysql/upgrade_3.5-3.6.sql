@@ -225,6 +225,7 @@ INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2');
 INSERT INTO rbac_permission VALUES (-253,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-254,0,-253);
 INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3');
+INSERT INTO rbac_permission VALUES (-255,0,-250,'READ',NULL,'TRUSTED_CERT');
 
 INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups');
 INSERT INTO rbac_permission VALUES (-301,0,-300,'READ',NULL,'USER');
