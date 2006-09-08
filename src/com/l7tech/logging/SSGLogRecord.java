@@ -169,6 +169,10 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         return true;
     }
 
+    public long getOid() {
+        return getSequenceNumber();
+    }
+
     private static final long serialVersionUID = -2234601153074484000L;
 
     protected String requestId;

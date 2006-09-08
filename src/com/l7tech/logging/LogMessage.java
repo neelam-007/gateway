@@ -34,7 +34,7 @@ public class LogMessage {
     }
 
     public long getMsgNumber() {
-        return log.getSequenceNumber();
+        return log.getOid();
     }
 
     public String getTime() {
