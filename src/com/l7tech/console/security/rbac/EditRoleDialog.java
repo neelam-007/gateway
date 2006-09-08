@@ -107,13 +107,17 @@ public class EditRoleDialog extends JDialog {
 
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
+
         if (role.getOid() == Role.DEFAULT_OID) {
             setTitle(resources.getString("editRoleDialog.newTitle"));
         } else {
-            setTitle(MessageFormat.format(resources.getString("editRoleDialog.existingTitle"), role.getName()));
+            if (flags.canUpdateSome())
+                setTitle(MessageFormat.format(resources.getString("editRoleDialog.existingTitle"), role.getName()));
+            else
+                setTitle(MessageFormat.format(resources.getString("editRoleDialog.readOnlyExistingTitle"), role.getName()));
+
             roleName.setText(role.getName());
         }
-
         setupButtonListeners();
         setupActionListeners();
         updateButtonStates();
