@@ -1,17 +1,17 @@
 package com.l7tech.server.service;
 
+import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.io.ByteLimitInputStream;
-import static com.l7tech.common.security.rbac.EntityType.SERVICE;
+import com.l7tech.common.security.rbac.*;
 import static com.l7tech.common.security.rbac.EntityType.*;
 import static com.l7tech.common.security.rbac.OperationType.*;
-import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.JaasUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
@@ -21,17 +21,17 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.PermissionMatchCallback;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.l7tech.service.MetricsBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.MetricsBin;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -234,6 +234,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         newRole.addPermission(READ, CLUSTER_INFO, null); // Prerequisite to viewing audits and metrics
         newRole.addPermission(READ, METRICS_BIN, MetricsBin.ATTR_SERVICE_OID, service.getId());
         newRole.addPermission(READ, AUDIT_MESSAGE, MessageSummaryAuditRecord.ATTR_SERVICE_OID, service.getId());
+        newRole.addPermission(READ, SERVICE_USAGE, ServiceUsage.ATTR_SERVICE_OID, service.getId());
 
         // Search identities (for adding IdentityAssertions)
         newRole.addPermission(READ, ID_PROVIDER_CONFIG, null);
@@ -251,6 +252,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
             omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, READ);
             omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
             omnipotent &= roleManager.isPermittedForAllEntities(currentUser, CLUSTER_INFO, READ);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE_USAGE, READ);
         } catch (FindException e) {
             throw new SaveException("Coudln't get existing permissions", e);
         }
@@ -480,6 +482,9 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 case METRICS_BIN:
                     // Must have an AttributePredicate
                     return pred != null && serviceIdMatchesAttribute(pred, MetricsBin.ATTR_SERVICE_OID);
+                case SERVICE_USAGE:
+                    // Must have an AttributePredicate
+                    return pred != null && serviceIdMatchesAttribute(pred, ServiceUsage.ATTR_SERVICE_OID);
                 case ID_PROVIDER_CONFIG:
                 case USER:
                 case GROUP:

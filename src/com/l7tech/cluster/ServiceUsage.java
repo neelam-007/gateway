@@ -16,6 +16,7 @@ import com.l7tech.service.ServiceStatistics;
  *
  */
 public class ServiceUsage extends NamedEntityImp {
+    public static final String ATTR_SERVICE_OID = "serviceid";
 
     /**
      * Util method to go from ServiceStatistics to ServiceUsage
