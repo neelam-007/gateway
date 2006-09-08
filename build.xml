@@ -874,17 +874,9 @@
         <jar jarfile="${build.dir}/LicenseGenerator.jar" manifest="${src.root}/etc/LicenseGenerator.mf">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/internal/**/*"/>
-                <include name="com/l7tech/common/*License*"/>
-                <include name="com/l7tech/common/util/**/*"/>
-                <include name="com/l7tech/common/BuildInfo.class"/>
-                <include name="com/l7tech/common/gui/**/*"/>
-                <include name="com/l7tech/common/security/xml/DsigUtil*"/>
-                <include name="com/l7tech/common/security/xml/CertificateResolver.class"/>
-                <include name="com/l7tech/common/security/xml/KeyInfoElement*"/>
-                <include name="com/l7tech/common/security/token/ParsedElement*"/>
-                <include name="com/l7tech/common/xml/*Exception.class"/>
-                <include name="com/l7tech/common/security/xml/*Exception.class"/>
-                <include name="com/l7tech/common/security/xml/SimpleCertificateResolver*"/>
+                <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/server/GatewayFeatureSet*.class"/>
 
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/*SoapMessage*"/>
