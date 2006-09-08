@@ -55,7 +55,7 @@ public class AuditRecordManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public Collection find(AuditSearchCriteria criteria) throws FindException {
+    public Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
         Session session = null;
         try {
@@ -101,6 +101,7 @@ public class AuditRecordManagerImpl
 
             if (criteria.nodeId != null) query.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
 
+            //noinspection unchecked
             return query.list();
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);

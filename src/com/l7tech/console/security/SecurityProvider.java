@@ -3,11 +3,15 @@ package com.l7tech.console.security;
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.FindException;
 
 import javax.security.auth.Subject;
+import javax.swing.event.EventListenerList;
+import javax.swing.*;
 import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.util.Collection;
@@ -27,6 +31,7 @@ import java.util.logging.Logger;
 public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
     private static final Logger logger = Logger.getLogger(SecurityProvider.class.getName());
     private final Set<Permission> subjectPermissions = new HashSet<Permission>();
+    private final EventListenerList listeners = new WeakEventListenerList();
 
     /**
      * Return the authentication provider associated with this security provider
@@ -109,6 +114,11 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
                 subjectPermissions.clear();
                 subjectPermissions.addAll(perms);
             }
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    TopComponents.getInstance().getMainWindow().firePermissionRefresh();
+                }
+            });
             return perms;
         } catch (RemoteException e) {
             throw new RuntimeException(e);

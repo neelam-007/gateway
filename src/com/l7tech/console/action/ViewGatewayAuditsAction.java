@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.EnumSet;
+import java.util.logging.Logger;
 
 
 /**
@@ -20,6 +21,8 @@ import java.util.EnumSet;
  * @author mike
  */
 public class ViewGatewayAuditsAction extends SecureAction {
+    private static final Logger logger = Logger.getLogger(ViewGatewayAuditsAction.class.getName());
+
     private GatewayAuditWindow gatewayAuditWindow;
 
     /**
@@ -63,14 +66,11 @@ public class ViewGatewayAuditsAction extends SecureAction {
         gaw.toFront();
     }
 
-    private static final EnumSet<EntityType> ANY_AUDIT_RECORD = EnumSet.copyOf(EnumSet.of(EntityType.AUDIT_MESSAGE, EntityType.AUDIT_ADMIN, EntityType.AUDIT_SYSTEM));
-    static {
-        ANY_AUDIT_RECORD.add(EntityType.ANY);
-        ANY_AUDIT_RECORD.add(EntityType.AUDIT_RECORD);
-    }
+    private static final EnumSet<EntityType> ANY_AUDIT_RECORD = EnumSet.of(EntityType.ANY, EntityType.AUDIT_RECORD, EntityType.AUDIT_MESSAGE, EntityType.AUDIT_ADMIN, EntityType.AUDIT_SYSTEM);
 
     @Override
     public synchronized boolean isAuthorized() {
+        logger.info("isAuthorized()");
         if (!Registry.getDefault().isAdminContextPresent()) return false;
         
         for (Permission perm : getSecurityProvider().getUserPermissions()) {

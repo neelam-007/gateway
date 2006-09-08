@@ -1,17 +1,18 @@
 package com.l7tech.console.panels;
 
-import static com.l7tech.common.Component.fromId;
+import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.common.BuildInfo;
+import static com.l7tech.common.Component.fromId;
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
+import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
@@ -20,63 +21,33 @@ import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.cluster.ClusterProperty;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import net.sf.nachocalendar.CalendarFactory;
 import net.sf.nachocalendar.components.DateField;
 
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.Clipboard;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ItemListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.TextListener;
-import java.awt.event.TextEvent;
+import java.awt.event.*;
+import java.io.*;
+import java.rmi.RemoteException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Date;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.Collections;
-import java.util.Map;
-import java.util.LinkedHashSet;
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.io.File;
-import java.io.OutputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.BufferedOutputStream;
-import java.io.ObjectInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
-import java.rmi.RemoteException;
 
 /*
  * This class creates a log panel.
@@ -429,8 +400,8 @@ public class LogPanel extends JPanel {
 
         long range = ((Integer)lpbc.rangeSpinner.getValue()).intValue();
 
-        Date startDate = null;
-        Date endDate = null;
+        Date startDate;
+        Date endDate;
 
         if(range>=0) {
             startDate = calendar.getTime();
@@ -509,7 +480,7 @@ public class LogPanel extends JPanel {
                 } else if (arec instanceof SystemAuditRecord) {
                     SystemAuditRecord sys = (SystemAuditRecord)arec;
                     com.l7tech.common.Component component = fromId(sys.getComponentId());
-                    boolean isClient = component==null ? false : component.isClientComponent();
+                    boolean isClient = component != null && component.isClientComponent();
                     msg += "Event Type : System Message" + "\n";
                     if(isClient) {
                         msg += "Client IP  : " + arec.getIpAddress() + "\n";
@@ -566,7 +537,7 @@ public class LogPanel extends JPanel {
                 // populate the associated logs
                 Iterator associatedLogsItr = arec.getDetails().iterator();
 
-                List associatedLogs = new ArrayList();
+                List<AssociatedLog> associatedLogs = new ArrayList<AssociatedLog>();
                 while(associatedLogsItr.hasNext()) {
                     AuditDetail ad = (AuditDetail) associatedLogsItr.next();
 
@@ -734,7 +705,7 @@ public class LogPanel extends JPanel {
 
         clearLogCache();
         getMsgDetails().setText("");
-        getAssociatedLogsTable().getTableSorter().setData(Collections.EMPTY_LIST);
+        getAssociatedLogsTable().getTableSorter().setData(new ArrayList<AssociatedLog>());
         getRequestXmlTextArea().setText("");
         getResponseXmlTextArea().setText("");
         unformattedRequestXml.setLength(0);
@@ -822,7 +793,7 @@ public class LogPanel extends JPanel {
             slider = new JSlider(0, 120);
             slider.setMajorTickSpacing(40);
 
-            Dictionary table = new Properties();
+            Dictionary<Integer, JLabel> table = new Hashtable<Integer, JLabel>();
             JLabel aLabel = new JLabel("All");
 
             aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
@@ -876,47 +847,39 @@ public class LogPanel extends JPanel {
     }
 
     private JPanel getFilterNodePane() {
-        JPanel filterNodePane = buildFilterPane("Node:",
+        return buildFilterPane("Node:",
                 new TextListener(){
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterNode(((JTextField)e.getSource()).getText());
                     }
                 });
-
-        return filterNodePane;
     }
 
     private JPanel getFilterServicePane() {
-        JPanel filterServicePane = buildFilterPane("Service:",
+        return buildFilterPane("Service:",
                 new TextListener(){
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterService(((JTextField)e.getSource()).getText());
                     }
                 });
-
-        return filterServicePane;
     }
 
     private JPanel getFilterThreadPane() {
-        JPanel filterThreadPane = buildFilterPane("Thread Id:",
+        return buildFilterPane("Thread Id:",
                 new TextListener(){
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterThreadId(((JTextField)e.getSource()).getText());
                     }
                 });
-
-        return filterThreadPane;
     }
 
     private JPanel getFilterMessagePane() {
-        JPanel filterMessagePane = buildFilterPane("Message:",
+        return buildFilterPane("Message:",
                 new TextListener(){
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterMessage(((JTextField)e.getSource()).getText());
                     }
                 });
-
-        return filterMessagePane;
     }
 
     private JPanel buildFilterPane(String labelText, final TextListener listener) {
@@ -1237,7 +1200,7 @@ public class LogPanel extends JPanel {
      */
     private FilteredLogTableSorter getFilteredLogTableSorter(){
         if(logTableSorter == null) {
-            logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(),
+            logTableSorter = new FilteredLogTableSorter(getLogTableModel(),
                     isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
 
             if(!isAuditType) {
@@ -1551,6 +1514,7 @@ public class LogPanel extends JPanel {
 
             setText((String) value);
 
+            assert table != null;
             if (getFilteredLogTableSorter().getSortedColumn() == table.convertColumnIndexToModel(column)) {
 
                 if (getFilteredLogTableSorter().isAscending()) {
@@ -1609,7 +1573,7 @@ public class LogPanel extends JPanel {
         // process
         JTable table = getMsgTable();
         int rows = table.getRowCount();
-        List data = new ArrayList(rows);
+        List<WriteableLogMessage> data = new ArrayList<WriteableLogMessage>(rows);
         FilteredLogTableSorter logTableSorter = getFilteredLogTableSorter();
         for(int i=0; i<rows; i++) {
             LogMessage rowMessage = logTableSorter.getLogMessageAtRow(i);
@@ -1677,7 +1641,7 @@ public class LogPanel extends JPanel {
                 boolean versionMatch = fileProductVersion.equals(BuildInfo.getProductVersion());
 
                 if(!buildMatch) {
-                    String message = "";
+                    String message;
                     if(!versionMatch) {
                         message = "Cannot import file for product version '"+fileProductVersion+"'.";
                     }
@@ -1688,24 +1652,21 @@ public class LogPanel extends JPanel {
                     return false;
                 }
 
-                List data = (List) read;
+                //noinspection unchecked
+                List<WriteableLogMessage> data = (List) read;
                 if(data.isEmpty()) {
                     logger.info("No data in file! '"+file.getAbsolutePath()+"'.");
                 }
-                Map loadedLogs = new HashMap();
-                for (Iterator iterator = data.iterator(); iterator.hasNext();) {
-                    Object o = iterator.next();
-                    if(o instanceof WriteableLogMessage) {
-                        WriteableLogMessage message = (WriteableLogMessage) o;
-                        Collection logsForNode = (Collection) loadedLogs.get(message.ssgLogRecord.getNodeId());
-                        if(logsForNode==null) {
-                            logsForNode = new LinkedHashSet();
-                            loadedLogs.put(message.ssgLogRecord.getNodeId(), logsForNode);
-                        }
-                        LogMessage lm = new LogMessage(message.ssgLogRecord);
-                        lm.setNodeName(message.nodeName);
-                        logsForNode.add(lm);
+                Map<String, Collection<LogMessage>> loadedLogs = new HashMap<String, Collection<LogMessage>>();
+                for (WriteableLogMessage message : data) {
+                    Collection<LogMessage> logsForNode = loadedLogs.get(message.ssgLogRecord.getNodeId());
+                    if (logsForNode == null) {
+                        logsForNode = new LinkedHashSet<LogMessage>();
+                        loadedLogs.put(message.ssgLogRecord.getNodeId(), logsForNode);
                     }
+                    LogMessage lm = new LogMessage(message.ssgLogRecord);
+                    lm.setNodeName(message.nodeName);
+                    logsForNode.add(lm);
                 }
                 getFilteredLogTableSorter().setLogs(this, loadedLogs);
             }

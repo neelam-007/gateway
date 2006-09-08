@@ -66,7 +66,10 @@ public class PublishNonSoapServiceWizard extends Wizard {
             service.setSoap(false);
             service.setName(panel1.getPublishedServiceName());
             service.setRoutingUri(panel1.getRoutingURI());
+            
             long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+
             EntityHeader header = new EntityHeader();
             header.setType(EntityType.SERVICE);
             header.setName(service.getName());

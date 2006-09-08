@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.logging.Level;
 
 /**
@@ -76,6 +77,11 @@ public interface AuditAdmin extends GenericLogAdmin {
      */
     @Secured(stereotype=DELETE_MULTI)
     void deleteOldAuditRecords() throws RemoteException, DeleteException;
+
+    @Secured(stereotype=FIND_ENTITIES)
+    Collection<AuditRecord> findAuditRecords(String nodeid, long startMsgNumber, long endMsgNumber,
+                                             Date startMsgDate, Date endMsgDate, int size)
+                                      throws RemoteException, FindException;
 
     /**
      * Create a context for downloading audit records.  The context will expire after ten minutes of inactivity.

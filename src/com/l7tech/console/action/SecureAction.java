@@ -4,6 +4,7 @@ import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  * @author emil
  * @version 3-Sep-2004
  */
-public abstract class SecureAction extends BaseAction implements LogonListener, LicenseListener {
+public abstract class SecureAction extends BaseAction implements LogonListener, LicenseListener, PermissionRefreshListener {
     static final Logger logger = Logger.getLogger(SecureAction.class.getName());
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
@@ -83,6 +84,10 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      */
     public boolean isAuthorized() {
         return attemptedOperation == null || canAttemptOperation(attemptedOperation);
+    }
+
+    public void onPermissionRefresh() {
+        setEnabled(isAuthorized());
     }
 
     /**

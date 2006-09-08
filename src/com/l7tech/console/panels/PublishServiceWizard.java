@@ -173,8 +173,9 @@ public class PublishServiceWizard extends Wizard {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
-            long oid =
-              Registry.getDefault().getServiceManager().savePublishedService(saBundle.getService());
+            long oid = Registry.getDefault().getServiceManager().savePublishedService(saBundle.getService());
+            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+            
             EntityHeader header = new EntityHeader();
             header.setType(EntityType.SERVICE);
             header.setName(saBundle.service.getName());

@@ -1,28 +1,19 @@
 package com.l7tech.console.table;
 
+import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.LogRequest;
-import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
-import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.util.*;
 import java.util.logging.Logger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.LinkedHashSet;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
@@ -38,10 +29,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
-    private GenericLogAdmin logAdmin = null;
+    private AuditAdmin auditAdmin = null;
     private int logType;
     private boolean canceled;
-    private LogPanel logPanel;
     private boolean displayingFromFile;
     private long timeOffset = 1000L*60L*60L*3L;
 
@@ -49,11 +39,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
      *
-     * @param logPanel The panel of log browser.
      * @param model  A table model.
      */
-    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, int logType) {
-        this.logPanel = logPanel;
+    public FilteredLogTableSorter(DefaultTableModel model, int logType) {
         this.logType = logType;
         this.displayingFromFile = false;
         setModel(model);
@@ -102,10 +90,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
      */
-    private void appendLogs(Map nodeList) {
-        for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
-            String node = (String) i.next();
-            Collection logs = (Collection) nodeList.get(node);
+    private void appendLogs(Map<String, Collection<LogMessage>> nodeList) {
+        for (String node : nodeList.keySet()) {
+            Collection<LogMessage> logs = nodeList.get(node);
             addLogs(node, logs, false);
         }
     }
@@ -115,10 +102,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
      */
-    private void addLogs(Map nodeList) {
-        for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
-            String node = (String) i.next();
-            Collection logs = (Collection) nodeList.get(node);
+    private void addLogs(Map<String, Collection<LogMessage>> nodeList) {
+        for (String node : nodeList.keySet()) {
+            Collection<LogMessage> logs = nodeList.get(node);
             addLogs(node, logs, true);
         }
     }
@@ -129,18 +115,17 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param nodeId  The Id of the node which is the source of the new logs.
      * @param newLogs  The new logs.
      */
-    private void addLogs(String nodeId, Collection newLogs, boolean front) {
+    private void addLogs(String nodeId, Collection<LogMessage> newLogs, boolean front) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
-
-            Object node = null;
-            Collection gatewayLogs;
-            if ((node = rawLogCache.get(nodeId)) != null) {
-                gatewayLogs = (Collection) node;
+            Collection<LogMessage> gatewayLogs;
+            Collection<LogMessage> cachedLogs;
+            if ((cachedLogs = rawLogCache.get(nodeId)) != null) {
+                gatewayLogs = cachedLogs;
             } else {
                 // create a empty cache for the new node
-                gatewayLogs = new LinkedHashSet();
+                gatewayLogs = new LinkedHashSet<LogMessage>();
             }
 
             Iterator setIter = gatewayLogs.iterator();
@@ -160,7 +145,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     gatewayLogs = newLogs;
                 }
                 else {
-                    gatewayLogs = new LinkedHashSet(newLogs);
+                    gatewayLogs = new LinkedHashSet<LogMessage>(newLogs);
                 }
             } else {
                 gatewayLogs.addAll(newLogs);
@@ -185,8 +170,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
     /**
      * Apply the filter specified.
-     *
-     * @param newFilterLevel  The new filter applied
      */
     public void applyNewMsgFilter(int filterLevel,
                                   String filterNodeName,
@@ -209,7 +192,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     public void sortData(int column, boolean orderToggle) {
 
         if (orderToggle) {
-            ascending = ascending ? false : true;
+            ascending = !ascending;
         }
 
         // always sort in ascending order if the user select a new column
@@ -271,13 +254,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     public LogMessage getLogMessageAtRow(int row) {
-        return (LogMessage) filteredLogCache.get(((Integer) sortedData[row]).intValue());
+        return filteredLogCache.get(((Integer) sortedData[row]).intValue());
     }
 
     /**
      * A class for determining the order of two objects by comparing their values.
      */
-    public class ColumnSorter implements Comparator {
+    public class ColumnSorter implements Comparator<Integer> {
         private boolean ascending;
         private int column;
 
@@ -301,13 +284,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
          * @param b  The other one of the two objects to be compared.
          * @return   -1 if a > b, 0 if a = b, and 1 if a < b.
          */
-        public int compare(Object a, Object b) {
+        public int compare(Integer a, Integer b) {
 
-            String elementA = new String("");
-            String elementB = new String("");
+            String elementA = "";
+            String elementB = "";
 
-            LogMessage logMsgA = (LogMessage) filteredLogCache.get(((Integer) a).intValue());
-            LogMessage logMsgB = (LogMessage) filteredLogCache.get(((Integer) b).intValue());
+            LogMessage logMsgA = filteredLogCache.get(a.intValue());
+            LogMessage logMsgB = filteredLogCache.get(b.intValue());
 
             switch (column) {
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
@@ -360,10 +343,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             }
 
             // Treat empty strains like nulls
-            if (elementA instanceof String && (elementA).length() == 0) {
+            if (elementA != null && (elementA).length() == 0) {
                 elementA = null;
             }
-            if (elementB instanceof String && (elementB).length() == 0) {
+            if (elementB != null && (elementB).length() == 0) {
                 elementB = null;
             }
 
@@ -389,8 +372,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void onConnect() {
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-        logAdmin = Registry.getDefault().getAuditAdmin();
-        currentNodeList = new HashMap();
+        auditAdmin = Registry.getDefault().getAuditAdmin();
+        currentNodeList = new HashMap<String, GatewayStatus>();
 
         clearLogCache();
         canceled = false;
@@ -401,15 +384,15 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void onDisconnect() {
         clusterStatusAdmin = null;
-        logAdmin = null;
+        auditAdmin = null;
         canceled = true;
     }
 
     public int getDelay() {
         int delay = 3;
 
-        if(logAdmin!=null) {
-            delay = logAdmin.getSystemLogRefresh(logType);
+        if (auditAdmin != null) {
+            delay = auditAdmin.getSystemLogRefresh(logType);
         }
 
         return delay;
@@ -428,9 +411,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Clear all caches.
      */
     public void clearLogCache() {
-        rawLogCache = new HashMap();
-        filteredLogCache = new ArrayList();
-        currentNodeList = new HashMap();
+        rawLogCache = new HashMap<String, Collection<LogMessage>>();
+        filteredLogCache = new ArrayList<LogMessage>();
+        currentNodeList = new HashMap<String, GatewayStatus>();
         sortedData = new Object[0];
         realModel.setRowCount(sortedData.length);
         realModel.fireTableDataChanged();
@@ -440,14 +423,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *  Remove the logs of Non-exist nodes from the cache
      */
     private void removeLogsOfNonExistNodes(Map newNodeList) {
-        for (Iterator i = currentNodeList.keySet().iterator();  i.hasNext(); ) {
-
-            Object nodeId = i.next();
-
-            if(newNodeList.get(nodeId) == null) {
+        for (String nodeId : currentNodeList.keySet()) {
+            if (newNodeList.get(nodeId) == null) {
                 // the node has been removed from the cluster, delete the logs of this node from the cache
-
-                removeLogs((String) nodeId);
+                removeLogs(nodeId);
             }
         }
     }
@@ -475,7 +454,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param logPane   The object reference to the LogPanel.
      * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
      * @param nodeId the node to filter requests by (may be null)
-     * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
     public void refreshLogs(final LogPanel logPane, final boolean restartTimer, final String nodeId) {
         // Load the last 3 hours initially
@@ -490,7 +468,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param start The start date for log records.
      * @param end The end date for log records.
      * @param nodeId the node to filter requests by (may be null)
-     * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
     public void refreshLogs(final LogPanel logPane, final Date start, final Date end, final String nodeId) {
         doRefreshLogs(logPane, false, start, end, null, nodeId, true);
@@ -505,37 +482,23 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param logPane   The object reference to the LogPanel.
      * @param logs the data hashtable.
      */
-    public void setLogs(final LogPanel logPane, final Map logs) {
+    public void setLogs(final LogPanel logPane, final Map<String, Collection<LogMessage>> logs) {
         // validate input
         int count = 0;
-        for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
-            Map.Entry me = (Map.Entry) logEntryIter.next();
-            Object key = me.getKey();
-            Object value = me.getValue();
-            if(!(key instanceof String) ||
-               !(value instanceof Collection)) {
-                return;
-            }
-            Collection logMessages = (Collection) value;
+        for (Map.Entry<String, Collection<LogMessage>> me : logs.entrySet()) {
+            Collection<LogMessage> logMessages = me.getValue();
             count += logMessages.size();
-            for (Iterator iterator = logMessages.iterator(); iterator.hasNext();) {
-                Object o = iterator.next();
-                if(!(o instanceof LogMessage)) {
-                    return;
-                }
-            }
         }
         logger.info("Importing "+count+" log/audit records.");
 
         // import
         clearLogCache();
         displayingFromFile = true;
-        for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
-            Map.Entry me = (Map.Entry) logEntryIter.next();
-            String nodeId = (String) me.getKey();
-            Collection logVector = (Collection) me.getValue();
-            if(!logVector.isEmpty()) {
-                LogMessage logMessage = (LogMessage) logVector.iterator().next();
+        for (Map.Entry<String, Collection<LogMessage>> entry : logs.entrySet()) {
+            String nodeId = entry.getKey();
+            Collection<LogMessage> logVector = entry.getValue();
+            if (!logVector.isEmpty()) {
+                LogMessage logMessage = logVector.iterator().next();
                 ClusterNodeInfo cni = new ClusterNodeInfo();
                 cni.setName(logMessage.getNodeName());
                 cni.setMac(logMessage.getNodeId());
@@ -571,7 +534,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param nodeId the node to filter requests by (may be null)
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
-    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, List requests, final String nodeId, final boolean newRefresh) {
+    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, List<LogRequest> requests, final String nodeId, final boolean newRefresh) {
 
         if(displayingFromFile) {
             displayingFromFile = false;
@@ -581,21 +544,19 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         // New request or still working on an old request?
         if (newRefresh) {
             // create request for each node
-            requests = new ArrayList();
-            for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
-                GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
+            requests = new ArrayList<LogRequest>();
+            for (String s : currentNodeList.keySet()) {
+                GatewayStatus gatewayStatus = currentNodeList.get(s);
 
-                Object logCache = null;
+                Collection<LogMessage> logCache;
                 if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
-                    Collection cachevector = (Collection)logCache;
                     long highest = -1;
-                    if (cachevector.size() > 0) {
+                    if (logCache.size() > 0) {
                         // remove any cached logs that are outside of our current range.
-                        purgeOutOfRange(cachevector, start, end);
+                        purgeOutOfRange(logCache, start, end);
 
                         // find limit
-                        for (Iterator cc = cachevector.iterator(); cc.hasNext();) {
-                            LogMessage lm = (LogMessage)cc.next();
+                        for (LogMessage lm : logCache) {
                             if (lm.getMsgNumber() > highest) highest = lm.getMsgNumber();
                         }
                     }
@@ -610,7 +571,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             // create a worker thread to retrieve the cluster info
             final ClusterLogWorker infoWorker = new ClusterLogWorker(
                     clusterStatusAdmin,
-                    logAdmin,
+                    auditAdmin,
                     logType,
                     nodeId,
                     start,
@@ -653,7 +614,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
                             logPane.setSelectedRow(msgNumSelected);
 
-                            final List unfilledRequest = getUnfilledRequest();
+                            final List<LogRequest> unfilledRequest = getUnfilledRequest();
 
                             // if there unfilled requests
                             if (unfilledRequest.size() > 0) {

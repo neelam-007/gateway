@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
@@ -79,6 +80,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     public Action[] getActions() {
         final DeleteEntityAction deleteAction = new DeleteEntityAction(this, config);
         deleteAction.setEnabled(canDelete());
+        TopComponents.getInstance().getMainWindow().addPermissionRefreshListener(deleteAction);
         return new Action[]{deleteAction};
     }
 

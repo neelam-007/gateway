@@ -32,9 +32,6 @@ import java.util.regex.Pattern;
  * This manager will look for a row in the cluster_info that represent this server using mac addresses.
  * If no row is found for this server, the manager will create one.
  *
- * This is a singleton to avoid going through the process of finding which row applies to this server
- * using mac address every time.
- *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
@@ -179,10 +176,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
      * the SSG operated by itself outsides a cluster.
      */
-    public Collection retrieveClusterStatus() throws FindException {
+    public Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException {
         // get all objects from that table
         try {
-            return (List) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            //noinspection unchecked
+            return (List<ClusterNodeInfo>) getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     return session.createQuery(HQL_FIND_ALL).list();
                 }

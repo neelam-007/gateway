@@ -11,8 +11,8 @@ import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -86,9 +86,6 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                 w.setSize(850, 500);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
-
-                // Refresh permission cache so that newly created IdP is usable
-                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             }
         });
 
@@ -115,6 +112,8 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                         header.setType(EntityType.ID_PROVIDER_CONFIG);
                         try {
                             header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
+                            // Refresh permission cache so that newly created IdP is usable
+                            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         } catch (Exception e) {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
                             header = null;

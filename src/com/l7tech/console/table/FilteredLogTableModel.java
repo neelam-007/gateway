@@ -1,16 +1,11 @@
 package com.l7tech.console.table;
 
-import com.l7tech.logging.LogMessage;
-import com.l7tech.console.panels.LogPanel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.console.panels.LogPanel;
+import com.l7tech.logging.LogMessage;
 
-import java.util.Map;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Collection;
+import java.util.*;
 
 /*
  * This class encapsulates the table model for filtered logs.
@@ -25,14 +20,14 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     public static final int MAX_MESSAGE_BLOCK_SIZE = 600;
     public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
 
-    protected Map rawLogCache = new HashMap();
-    protected List filteredLogCache = new ArrayList();
+    protected Map<String, Collection<LogMessage>> rawLogCache = new HashMap<String, Collection<LogMessage>>();
+    protected List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
     private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
     private String filterNodeName = "";
     private String filterService = "";
     private String filterThreadId = "";
     private String filterMessage = "";
-    protected Map currentNodeList;
+    protected Map<String, GatewayStatus> currentNodeList;
 
     /**
      * Set the filter level.
@@ -67,7 +62,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
      */
     private boolean isFilteredMsg(LogMessage logMsg) {
 
-        String logSeverity = logMsg.getSeverity().toString();
+        String logSeverity = logMsg.getSeverity();
 
         if ((((logSeverity.equals("FINEST")) ||
               (logSeverity.equals("FINER")) ||
@@ -159,11 +154,10 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         setMsgFilterMessage(msgFilterMessage);
 
         // initialize the cache
-        filteredLogCache = new ArrayList();
+        filteredLogCache = new ArrayList<LogMessage>();
 
-        for (Iterator i = rawLogCache.keySet().iterator(); i.hasNext(); ) {
-            Object node = i.next();
-            filterData((String) node);
+        for (String node : rawLogCache.keySet()) {
+            filterData(node);
         }
     }
 
@@ -179,23 +173,17 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
      * @param nodeId  The Id of the node whose messages will be filtered.
      */
     private void filterData(String nodeId) {
+        Collection<LogMessage> nodeLogs;
+        GatewayStatus status;
 
-        Object node = null;
-        Collection logs;
-        Object nodeName = null;
-
-        if((nodeName = currentNodeList.get(nodeId)) == null) {
+        if((status = currentNodeList.get(nodeId)) == null) {
             return;
         }
 
-        if ((node = rawLogCache.get(nodeId)) != null) {
-            logs = (Collection) node;
-
-            for (Iterator iterator = logs.iterator(); iterator.hasNext();) {
-                LogMessage logMsg = (LogMessage) iterator.next();
-
+        if ((nodeLogs = rawLogCache.get(nodeId)) != null) {
+            for (LogMessage logMsg : nodeLogs) {
                 if (isFilteredMsg(logMsg) && !filteredLogCache.contains(logMsg)) {
-                    logMsg.setNodeName(((GatewayStatus) nodeName).getName());
+                    logMsg.setNodeName(status.getName());
                     filteredLogCache.add(logMsg);
                 }
             }

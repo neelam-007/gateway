@@ -25,7 +25,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(AssociatedLogsTableSorter.class.getName());
     private boolean ascending = false;
     private int columnToSort = 0;
-    private List<Object> rawdata = new ArrayList<Object>();
+    private List<AssociatedLog> rawdata = new ArrayList<AssociatedLog>();
     private Object[] sortedData = new Object[0];
 
     /**
@@ -46,7 +46,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     }
 
     public void clear() {
-        rawdata = new ArrayList<Object>();
+        rawdata = new ArrayList<AssociatedLog>();
         sortData(columnToSort, false);
     }
 
@@ -55,7 +55,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
-    public void setData(List<Object> data) {
+    public void setData(List<AssociatedLog> data) {
         this.rawdata = data;
         sortData(columnToSort, false);
     }
@@ -65,7 +65,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param rowData The new row to be stored.
      */
-    public void addRow(Object rowData) {
+    public void addRow(AssociatedLog rowData) {
         this.rawdata.add(rowData);
         sortData(columnToSort, false);
     }

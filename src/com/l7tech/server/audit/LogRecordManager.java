@@ -3,6 +3,7 @@ package com.l7tech.server.audit;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterLogin;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
@@ -11,16 +12,14 @@ import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
 import com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory;
-import com.l7tech.common.util.ExceptionUtils;
 
 import javax.security.auth.Subject;
-import java.net.MalformedURLException;
 import java.net.ConnectException;
-import java.security.PrivilegedExceptionAction;
+import java.net.MalformedURLException;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -44,7 +43,7 @@ public class LogRecordManager {
     public LogRecordManager(ClusterInfoManager manager, LogRecordRingBuffer buffer) {
         clusterInfoManager = manager;
         logRecordRingBuffer = buffer;
-        nodeLogAdmins = new HashMap();
+        nodeLogAdmins = new HashMap<String, GenericLogAdmin>();
     }
 
     /**
@@ -54,7 +53,7 @@ public class LogRecordManager {
         if(nodeId==null) throw new FindException("Null node id.");
         if(size<0 || size>Short.MAX_VALUE) throw new FindException("Search with out of bounds result set size '"+size+"'.");
 
-        SSGLogRecord[] ssgLrs = null;
+        SSGLogRecord[] ssgLrs;
 
         if(isThisNodeMe(nodeId)) {
             // Get from our ring buffer.
@@ -95,7 +94,7 @@ public class LogRecordManager {
     // members
     private final ClusterInfoManager clusterInfoManager;
     private final LogRecordRingBuffer logRecordRingBuffer;
-    private final Map nodeLogAdmins; // Map of nodeId (String) -> GenericLogAdmin
+    private final Map<String, GenericLogAdmin> nodeLogAdmins; // Map of nodeId (String) -> GenericLogAdmin
 
     /**
      *
@@ -103,10 +102,9 @@ public class LogRecordManager {
     private ClusterNodeInfo getClusterNodeInfo(final String nodeId) throws FindException {
         ClusterNodeInfo clusterNodeInfo = null;
 
-        Collection ClusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
-        for (Iterator iterator = ClusterNodeInfos.iterator(); iterator.hasNext();) {
-            ClusterNodeInfo currentNodeInfo = (ClusterNodeInfo) iterator.next();
-            if(nodeId.equals(currentNodeInfo.getMac())) {
+        Collection<ClusterNodeInfo> ClusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
+        for (ClusterNodeInfo currentNodeInfo : ClusterNodeInfos) {
+            if (nodeId.equals(currentNodeInfo.getMac())) {
                 clusterNodeInfo = currentNodeInfo;
                 break;
             }
@@ -156,7 +154,7 @@ public class LogRecordManager {
             ssgLrs = (SSGLogRecord[]) Subject.doAs(null, new PrivilegedExceptionAction(){
                 // It saves around 10ms if we don't serialize the subject (which we don't use).
                 public Object run() throws Exception {
-                    GenericLogAdmin gla = (GenericLogAdmin) nodeLogAdmins.get(clusterNodeInfo.getMac());
+                    GenericLogAdmin gla = nodeLogAdmins.get(clusterNodeInfo.getMac());
                     if(gla==null) {
                         NamingURL adminServiceNamingURL = getNamingURLForNode(clusterNodeInfo);
                         ResettableRmiProxyFactoryBean pfb = new ResettableRmiProxyFactoryBean();
@@ -173,7 +171,7 @@ public class LogRecordManager {
                             nodeLogAdmins.put(clusterNodeInfo.getMac(), gla);
                         }
                     }
-                    return gla.getSystemLog(clusterNodeInfo.getMac(), GenericLogAdmin.TYPE_LOG, -1, startOid, null, null, size);
+                    return gla.getSystemLog(clusterNodeInfo.getMac(), -1, startOid, null, null, size);
                 }
             });
         }

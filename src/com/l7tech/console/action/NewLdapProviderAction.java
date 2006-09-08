@@ -83,9 +83,6 @@ public class NewLdapProviderAction extends NewProviderAction {
                 w.setSize(780, 560);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
-
-                // Refresh permission cache so that newly created IdP is usable
-                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             }
         });
 
@@ -112,6 +109,8 @@ public class NewLdapProviderAction extends NewProviderAction {
                         header.setType(EntityType.ID_PROVIDER_CONFIG);
                         try {
                             header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
+                            // Refresh permission cache so that newly created IdP is usable
+                            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         } catch (Exception e) {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
                             header = null;

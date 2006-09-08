@@ -13,7 +13,6 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
@@ -58,7 +57,6 @@ public class PublishNonSoapServiceAction extends SecureAction {
         wiz.addEntityListener(listener);
         wiz.setModal(true);
         wiz.setVisible(true);
-        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
     }
 
     private EntityListener listener = new EntityListenerAdapter() {

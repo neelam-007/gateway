@@ -12,7 +12,6 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -69,8 +68,6 @@ public class PublishServiceAction extends SecureAction {
         dialog.setSize(750, 500);
         Utilities.centerOnScreen(dialog);
         dialog.setVisible(true);
-        // Refresh permission cache so new service is fully usable
-        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
     }
 
     private EntityListener listener = new EntityListenerAdapter() {

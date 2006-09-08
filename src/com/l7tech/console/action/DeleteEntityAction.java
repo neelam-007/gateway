@@ -11,6 +11,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -133,6 +134,7 @@ public class DeleteEntityAction extends SecureAction {
         boolean deleted;
         deleted = Actions.deleteEntity(node, config);
         if (deleted) {
+            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             JTree tree;
             if (node instanceof IdentityProviderNode) {
                 tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);

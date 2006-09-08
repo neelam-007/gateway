@@ -39,7 +39,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
-    private static Map downloadContexts = Collections.synchronizedMap(new HashMap());
+    private static Map<OpaqueId, DownloadContext> downloadContexts = Collections.synchronizedMap(new HashMap<OpaqueId, DownloadContext>());
 
     private AuditRecordManager auditRecordManager;
     private LogRecordManager logRecordManager;
@@ -49,10 +49,9 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
 
     private static TimerTask downloadReaperTask = new TimerTask() {
         public void run() {
-            Collection c = new ArrayList(downloadContexts.values());
+            Collection<DownloadContext> contexts = new ArrayList<DownloadContext>(downloadContexts.values());
             long now = System.currentTimeMillis();
-            for (Iterator i = c.iterator(); i.hasNext();) {
-                DownloadContext downloadContext = (DownloadContext)i.next();
+            for (DownloadContext downloadContext : contexts) {
                 if (now - downloadContext.getLastUsed() > CONTEXT_TIMEOUT) {
                     logger.log(Level.WARNING, "Closing stale audit download context " + downloadContext);
                     downloadContext.close(); // will remove itself from the master set
@@ -211,6 +210,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
 
             final DownloadContext downloadContext = (DownloadContext)o;
 
+            //noinspection RedundantIfStatement
             if (!opaqueId.equals(downloadContext.opaqueId)) return false;
 
             return true;
@@ -250,7 +250,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     }
 
     public DownloadChunk downloadNextChunk(OpaqueId context) throws RemoteException {
-        DownloadContext downloadContext = (DownloadContext)downloadContexts.get(context);
+        DownloadContext downloadContext = downloadContexts.get(context);
         if (downloadContext == null)
             throw new RemoteException("No such download context is pending");
         downloadContext.checkForException();
@@ -261,27 +261,26 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return chunk;
     }
 
+    public Collection<AuditRecord> findAuditRecords(final String nodeid,
+                                                    final long startMsgNumber,
+                                                    final long endMsgNumber,
+                                                    final Date startMsgDate,
+                                                    final Date endMsgDate,
+                                                    final int size)
+                                             throws RemoteException, FindException {
+        logger.finest("Get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
+        return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, startMsgNumber, endMsgNumber, size));
+    }
+
     public SSGLogRecord[] getSystemLog(final String nodeid,
-                                       final int typeId,
                                        final long startMsgNumber,
                                        final long endMsgNumber,
                                        final Date startMsgDate,
                                        final Date endMsgDate,
                                        final int size)
-      throws RemoteException, FindException {
-        long methodTime = System.currentTimeMillis();
-        if(TYPE_AUDIT==typeId) {
-            logger.finest("Get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-            return (SSGLogRecord[])auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, startMsgNumber, endMsgNumber, size)).toArray(new SSGLogRecord[] {});
-        }
-        else if(TYPE_LOG==typeId) {
-            logger.finest("Get logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-            return logRecordManager.find(nodeid, endMsgNumber, size);
-        }
-        else {
-            logger.warning("System logs of an unknown type '"+typeId+"', requested.");
-            return new SSGLogRecord[0];
-        }
+                                throws RemoteException, FindException {
+        logger.finest("Get logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
+        return logRecordManager.find(nodeid, endMsgNumber, size);
     }
 
     public int getSystemLogRefresh(final int typeId) {

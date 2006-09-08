@@ -15,6 +15,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
  * 
  * TODO why doesn't this extend SecureAction?
  */
-public class FindIdentityAction extends BaseAction implements LicenseListener {
+public class FindIdentityAction extends BaseAction implements LicenseListener, PermissionRefreshListener {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
     Options options = new Options();
 
@@ -171,5 +172,9 @@ public class FindIdentityAction extends BaseAction implements LicenseListener {
 
     public void licenseChanged(ConsoleLicenseManager licenseManager) {
         setEnabled(true); // it'll immediately get forced back to false if the license disallows it
+    }
+
+    public void onPermissionRefresh() {
+        setEnabled(true);
     }
 }

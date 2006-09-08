@@ -24,7 +24,7 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, EntityHea
     public static final String PROP_OID = "oid";
     public static final String PROP_NODEID = "nodeId";
 
-    Collection find(AuditSearchCriteria criteria) throws FindException;
+    Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
 
     void deleteOldAuditRecords() throws DeleteException;
 }

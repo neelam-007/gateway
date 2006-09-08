@@ -18,6 +18,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -110,7 +111,7 @@ public class MainWindow extends JFrame {
 
     // actions
     private Action refreshAction = null;
-    private Action findAction = null;
+    private FindIdentityAction findAction = null;
     private Action prefsAction = null;
     private Action removeNodeAction = null;
     private Action connectAction = null;
@@ -212,6 +213,16 @@ public class MainWindow extends JFrame {
      */
     private void addLogonListener(LogonListener listener) {
         listenerList.add(LogonListener.class, listener);
+    }
+
+    public void addPermissionRefreshListener(PermissionRefreshListener listener) {
+        listenerList.add(PermissionRefreshListener.class, listener);
+    }
+
+    public void firePermissionRefresh() {
+        for (PermissionRefreshListener listener : listenerList.getListeners(PermissionRefreshListener.class)) {
+            listener.onPermissionRefresh();
+        }
     }
 
     /**
@@ -406,7 +417,8 @@ public class MainWindow extends JFrame {
         if (validatePolicyAction == null) {
             validatePolicyAction = new ValidatePolicyAction();
             validatePolicyAction.setEnabled(false);
-            MainWindow.this.addLogonListener(validatePolicyAction);
+            addLogonListener(validatePolicyAction);
+            addPermissionRefreshListener(validatePolicyAction);
         }
         return validatePolicyAction;
     }
@@ -448,6 +460,7 @@ public class MainWindow extends JFrame {
         if (importPolicyAction == null) {
             importPolicyAction = new ImportPolicyFromFileAction();
             importPolicyAction.setEnabled(false);
+            addPermissionRefreshListener(importPolicyAction);
         }
         return importPolicyAction;
     }
@@ -488,6 +501,7 @@ public class MainWindow extends JFrame {
         if (savePolicyAction == null) {
             savePolicyAction = new SavePolicyAction();
             savePolicyAction.setEnabled(false);
+            addPermissionRefreshListener(savePolicyAction);
         }
         return savePolicyAction;
     }
@@ -679,6 +693,7 @@ public class MainWindow extends JFrame {
         publishServiceAction = new PublishServiceAction();
         publishServiceAction.setEnabled(false);
         this.addLogonListener(publishServiceAction);
+        addPermissionRefreshListener(publishServiceAction);
         return publishServiceAction;
     }
 
@@ -689,6 +704,7 @@ public class MainWindow extends JFrame {
         publishNonSoapServiceAction = new PublishNonSoapServiceAction();
         publishNonSoapServiceAction.setEnabled(false);
         this.addLogonListener(publishNonSoapServiceAction);
+        addPermissionRefreshListener(publishNonSoapServiceAction);
         return publishNonSoapServiceAction;
     }
 
@@ -703,6 +719,7 @@ public class MainWindow extends JFrame {
         createServiceAction = new CreateServiceWsdlAction();
         createServiceAction.setEnabled(false);
         this.addLogonListener(createServiceAction);
+        addPermissionRefreshListener(createServiceAction);
         return createServiceAction;
     }
 
@@ -716,6 +733,7 @@ public class MainWindow extends JFrame {
         };
         MainWindow.this.addLogonListener(newInernalUserAction);
         newInernalUserAction.setEnabled(false);
+        addPermissionRefreshListener(newInernalUserAction);
         return newInernalUserAction;
     }
 
@@ -728,6 +746,7 @@ public class MainWindow extends JFrame {
         };
         MainWindow.this.addLogonListener(newInernalGroupAction);
         newInernalGroupAction.setEnabled(false);
+        addPermissionRefreshListener(newInernalGroupAction);
         return newInernalGroupAction;
     }
 
@@ -745,6 +764,7 @@ public class MainWindow extends JFrame {
 
         MainWindow.this.addLogonListener(newPKIProviderAction);
         newPKIProviderAction.setEnabled(false);
+        addPermissionRefreshListener(newPKIProviderAction);
         return newPKIProviderAction;
     }
 
@@ -760,6 +780,7 @@ public class MainWindow extends JFrame {
         };
         MainWindow.this.addLogonListener(newLDAPProviderAction);
         newLDAPProviderAction.setEnabled(false);
+        addPermissionRefreshListener(newLDAPProviderAction);
         return newLDAPProviderAction;
     }
 
@@ -935,6 +956,7 @@ public class MainWindow extends JFrame {
         findAction = new FindIdentityAction(options);
         String aDesc = resapplication.getString("Find_MenuItem_text_description");
         findAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
+        addPermissionRefreshListener(findAction);
 
         return findAction;
     }
@@ -1249,6 +1271,7 @@ public class MainWindow extends JFrame {
         manageJmsEndpointsAction = new ManageJmsEndpointsAction();
         manageJmsEndpointsAction.setEnabled(false);
         this.addLogonListener(manageJmsEndpointsAction);
+        addPermissionRefreshListener(manageJmsEndpointsAction);
         return manageJmsEndpointsAction;
     }
 
@@ -1260,6 +1283,7 @@ public class MainWindow extends JFrame {
         manageKerberosAction = new ManageKerberosAction();
         manageKerberosAction.setEnabled(false);
         this.addLogonListener(manageKerberosAction);
+        addPermissionRefreshListener(manageKerberosAction);
         return manageKerberosAction;
     }
 
@@ -1270,6 +1294,7 @@ public class MainWindow extends JFrame {
         manageCertificatesAction = new ManageCertificatesAction();
         manageCertificatesAction.setEnabled(false);
         this.addLogonListener(manageCertificatesAction);
+        addPermissionRefreshListener(manageCertificatesAction);
         return manageCertificatesAction;
     }
 
@@ -1278,6 +1303,7 @@ public class MainWindow extends JFrame {
         manageGlobalSchemasAction = new ManageGlobalSchemasAction();
         manageGlobalSchemasAction.setEnabled(false);
         this.addLogonListener(manageGlobalSchemasAction);
+        addPermissionRefreshListener(manageGlobalSchemasAction);
         return manageGlobalSchemasAction;
     }
 
@@ -1286,6 +1312,7 @@ public class MainWindow extends JFrame {
         manageClusterPropertiesAction = new ManageClusterPropertiesAction();
         manageClusterPropertiesAction.setEnabled(false);
         this.addLogonListener(manageClusterPropertiesAction);
+        addPermissionRefreshListener(manageClusterPropertiesAction);
         return manageClusterPropertiesAction;
     }
 
@@ -1294,6 +1321,7 @@ public class MainWindow extends JFrame {
         showDashboardAction = new ShowDashboardAction();
         showDashboardAction.setEnabled(false);
         this.addLogonListener(showDashboardAction);
+        addPermissionRefreshListener(showDashboardAction);
         return showDashboardAction;
     }
 
@@ -1302,6 +1330,7 @@ public class MainWindow extends JFrame {
         manageClusterLicensesAction = new ManageClusterLicensesAction();
         manageClusterLicensesAction.setEnabled(false);
         this.addLogonListener(manageClusterLicensesAction);
+        addPermissionRefreshListener(manageClusterLicensesAction);
         return manageClusterLicensesAction;
     }
 
@@ -1310,6 +1339,7 @@ public class MainWindow extends JFrame {
         viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction();
         viewGatewayAuditsWindowAction.setEnabled(false);
         this.addLogonListener(viewGatewayAuditsWindowAction);
+        addPermissionRefreshListener(viewGatewayAuditsWindowAction);
         return viewGatewayAuditsWindowAction;
     }
 
@@ -1324,6 +1354,7 @@ public class MainWindow extends JFrame {
         viewClusterStatusAction = new ViewClusterStatusAction();
         viewClusterStatusAction.setEnabled(false);
         this.addLogonListener(viewClusterStatusAction);
+        addPermissionRefreshListener(viewClusterStatusAction);
         return viewClusterStatusAction;
     }
 
@@ -2155,6 +2186,7 @@ public class MainWindow extends JFrame {
             manageRolesAction = new ManageRolesAction();
             manageRolesAction.setEnabled(false);
             this.addLogonListener(manageRolesAction);
+            addPermissionRefreshListener(manageRolesAction);
         }
         return manageRolesAction;
     }

@@ -32,7 +32,7 @@ public interface ClusterInfoManager {
     void updateSelfUptime() throws UpdateException;
 
     @Transactional(readOnly=true)
-    Collection retrieveClusterStatus() throws FindException;
+    Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException;
 
     ClusterNodeInfo getSelfNodeInf();
 }

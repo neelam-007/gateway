@@ -22,15 +22,19 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException, RemoteException {
-        return null;
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
     public Collection find(AuditSearchCriteria criteria) throws FindException, RemoteException {
-        return null;
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
     public void deleteOldAuditRecords() throws RemoteException {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
 
+    public Collection<AuditRecord> findAuditRecords(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
     public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
@@ -41,7 +45,7 @@ public class AuditAdminStub implements AuditAdmin {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
-    public SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException {
+    public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException {
         return new SSGLogRecord[0];
     }
 

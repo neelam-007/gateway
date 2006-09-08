@@ -66,7 +66,6 @@ public interface GenericLogAdmin {
      * call the method {@link com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus}.
      *
      * @param nodeid the id of the node for which the logs should be retrieved.
-     * @param typeId the type of the logs to retrieve.
      * @param startMsgNumber the message number to locate the start point.
      *                       Start from beginning of the SecureSpan Gateway message buffer if it equals to -1.
      * @param endMsgNumber   the message number to locate the end point.
@@ -78,7 +77,7 @@ public interface GenericLogAdmin {
      *
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException;
+    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException;
 
     /**
      * Get the configured refresh period for the log type.

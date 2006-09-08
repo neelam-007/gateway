@@ -103,7 +103,6 @@ public class CreateServiceWsdlAction extends SecureAction {
                 w.setSize(850, 500);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
-                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
             }
         });
     }
@@ -147,6 +146,7 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
                 long oid = serviceManager.savePublishedService(service);
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                 EntityHeader header = new EntityHeader();
                 header.setType(EntityType.SERVICE);
                 header.setName(service.getName());
