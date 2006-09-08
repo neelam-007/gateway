@@ -4,7 +4,6 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.AnonymousEntityReference;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -86,8 +85,8 @@ public class AttributePredicate extends ScopePredicate {
         this.value = value;
     }
 
-    boolean matches(Entity entity) {
-        if (entity instanceof AnonymousEntityReference) return false;
+    boolean matches(Entity entity, Class<? extends Entity> eclass) {
+        if (!permission.getEntityType().getEntityClass().isAssignableFrom(eclass)) return false;
         setupGetter();
         try {
             Object got = getter.invoke(entity);

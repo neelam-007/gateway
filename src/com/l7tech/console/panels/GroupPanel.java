@@ -4,7 +4,9 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import static com.l7tech.common.security.rbac.EntityType.GROUP;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
@@ -12,10 +14,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.PersistentGroup;
+import com.l7tech.identity.*;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.objectmodel.*;
@@ -73,7 +72,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
 
-    protected final PermissionFlags groupFlags;
+    protected boolean canUpdate;
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -88,11 +87,10 @@ public abstract class GroupPanel extends EntityEditorPanel {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        groupFlags = PermissionFlags.get(GROUP);
     }
 
     public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
-        Group g = null;
+        Group g;
         try {
             g = getIdentityAdmin().findGroupByID(config.getOid(), header.getStrId());
 
@@ -170,18 +168,23 @@ public abstract class GroupPanel extends EntityEditorPanel {
             }
 
             boolean isNew = groupHeader.getOid() == 0;
+            AttemptedOperation ao;
             if (isNew) {
                 group = newGroup(groupHeader);
+                ao = new AttemptedCreateSpecific(GROUP, group);
             } else {
                 final IdentityAdmin admin = getIdentityAdmin();
                 Group g = admin.findGroupByID(config.getOid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
+                } else {
+                    ao = new AttemptedUpdate(GROUP, g);
                 }
                 group = g;
                 loadedGroup(g);
             }
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(JaasUtils.getCurrentSubject(), ao);
             initialize();
             // Populate the form for insert/update
             setData(group);
@@ -447,7 +450,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     }
 
     protected void applyFormSecurity() {
-        getDescriptionTextField().setEnabled(config.isWritable() && groupFlags.canUpdateSome());
+        getDescriptionTextField().setEnabled(config.isWritable() && canUpdate);
     }
 
     /**
@@ -609,10 +612,6 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     public boolean wasOKed() {
         return wasoked;
-    }
-
-    protected PermissionFlags getGroupFlags() {
-        return groupFlags;
     }
 }
 

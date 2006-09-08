@@ -15,6 +15,8 @@ import java.security.Principal;
  * For LDAP identities, this will be the DN.
  */
 public interface Identity extends Principal, Entity {
+    public static final String ATTR_PROVIDER_OID = "providerId";
+
     /**
      * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig} to which this User belongs. This is only persisted for {@link com.l7tech.identity.fed.FederatedUser}s.
      * @return the OID of the {@link com.l7tech.identity.IdentityProviderConfig} to which this User belongs.

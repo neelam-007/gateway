@@ -2,9 +2,9 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.Permission;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.util.Registry;
 
@@ -12,7 +12,6 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.EnumSet;
-import java.util.logging.Logger;
 
 
 /**
@@ -21,8 +20,6 @@ import java.util.logging.Logger;
  * @author mike
  */
 public class ViewGatewayAuditsAction extends SecureAction {
-    private static final Logger logger = Logger.getLogger(ViewGatewayAuditsAction.class.getName());
-
     private GatewayAuditWindow gatewayAuditWindow;
 
     /**
@@ -70,7 +67,6 @@ public class ViewGatewayAuditsAction extends SecureAction {
 
     @Override
     public synchronized boolean isAuthorized() {
-        logger.info("isAuthorized()");
         if (!Registry.getDefault().isAdminContextPresent()) return false;
         
         for (Permission perm : getSecurityProvider().getUserPermissions()) {

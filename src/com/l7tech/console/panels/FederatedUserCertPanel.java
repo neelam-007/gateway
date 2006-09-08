@@ -26,8 +26,8 @@ public class FederatedUserCertPanel extends UserCertPanel {
     /**
      * Create a new NonFederatedUserCertPanel
      */
-    public FederatedUserCertPanel(FederatedUserPanel userPanel, EntityListener entityListener) {
-        super(userPanel, entityListener);
+    public FederatedUserCertPanel(FederatedUserPanel userPanel, EntityListener entityListener, boolean canUpdate) {
+        super(userPanel, entityListener, canUpdate);
     }
 
     protected JButton getRemoveCertButton() {

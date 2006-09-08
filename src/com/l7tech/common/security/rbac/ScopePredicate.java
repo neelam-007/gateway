@@ -30,5 +30,11 @@ public abstract class ScopePredicate extends PersistentEntityImp {
         this.permission = permission;
     }
 
-    abstract boolean matches(Entity entity);
+    /**
+     * @param entity the Entity to evaluate against the predicate
+     * @param eclass the "real" class of the entity, which may be different from entity.getClass() if entity is an
+     *        AnonymousEntityReference
+     * @return true if this predicate matches the given entity.
+     */
+    abstract boolean matches(Entity entity, Class<? extends Entity> eclass);
 }

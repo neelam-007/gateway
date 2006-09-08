@@ -14,22 +14,23 @@ public class VirtualGroupDetailsPanel extends JPanel {
     private JTextField groupDescTextField;
     private JTextField x509SubjectDNTextField;
     private JTextField emailTextField;
-    private VirtualGroupPanel virtualGroupPanel;
     private JLabel emailPatternLabel;
+
+    private final boolean canUpdate;
 
     /**
      * Constructor
      */
-    public VirtualGroupDetailsPanel(VirtualGroupPanel p) {
-        virtualGroupPanel = p;
+    public VirtualGroupDetailsPanel(boolean canUpdate) {
+        this.canUpdate = canUpdate;
         initComponents();
         applyFormSecurity();
     }
 
     private void applyFormSecurity() {
-        groupDescTextField.setEditable(virtualGroupPanel.getGroupFlags().canUpdateSome());
-        x509SubjectDNTextField.setEditable(virtualGroupPanel.getGroupFlags().canUpdateSome());
-        emailTextField.setEditable(virtualGroupPanel.getGroupFlags().canUpdateSome());
+        groupDescTextField.setEditable(canUpdate);
+        x509SubjectDNTextField.setEditable(canUpdate);
+        emailTextField.setEditable(canUpdate);
     }
 
     /**

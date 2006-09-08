@@ -27,8 +27,8 @@ class NonFederatedUserCertPanel extends UserCertPanel {
     /**
      * Create a new NonFederatedUserCertPanel
      */
-    public NonFederatedUserCertPanel(UserPanel userPanel, EntityListener l) {
-        super(userPanel, l);
+    public NonFederatedUserCertPanel(UserPanel userPanel, EntityListener l, boolean canUpdate) {
+        super(userPanel, l, canUpdate);
     }
 
     /**

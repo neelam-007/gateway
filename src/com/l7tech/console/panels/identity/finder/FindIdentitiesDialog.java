@@ -1,24 +1,26 @@
 package com.l7tech.console.panels.identity.finder;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
+import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.panels.*;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -29,12 +31,12 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * Find Dialog
@@ -111,7 +113,7 @@ public class FindIdentitiesDialog extends JDialog {
      */
     private SearchInfo searchInfo = new SearchInfo();
     private DefaultComboBoxModel providersComboBoxModel;
-    EntityHeader[] selections = new EntityHeader[]{};
+    IdentityHeader[] selections = new IdentityHeader[]{};
 
     private Options options = new Options();
     private DeleteEntityAction deleteIdAction;
@@ -162,13 +164,13 @@ public class FindIdentitiesDialog extends JDialog {
     }
 
     public static class FindResult {
-        public FindResult(long ipc, EntityHeader[] headers) {
+        public FindResult(long ipc, IdentityHeader[] headers) {
             this.providerConfigOid = ipc;
             this.entityHeaders = headers;
         }
 
         public long providerConfigOid;
-        public EntityHeader[] entityHeaders;
+        public IdentityHeader[] entityHeaders;
     }
 
     /**
@@ -606,7 +608,7 @@ public class FindIdentitiesDialog extends JDialog {
                     principals.add(eh);
                 }
                 if (options.isDisposeOnSelect()) {
-                    selections = principals.toArray(new EntityHeader[]{});
+                    selections = principals.toArray(new IdentityHeader[]{});
                     FindIdentitiesDialog.this.dispose();
                 } else {
                     int row = searchResultTable.getSelectedRow();
@@ -884,6 +886,22 @@ public class FindIdentitiesDialog extends JDialog {
     private DeleteEntityAction getDeleteAction() {
         if (deleteIdAction == null) {
             deleteIdAction = new DeleteEntityAction(null, null) {
+                /**
+                 * @return true if the current user is authorized to delete every selected item
+                 */
+                @Override
+                public synchronized boolean isAuthorized() {
+                    final int rows[] = searchResultTable.getSelectedRows();
+                    config = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+                    for (int i = 0; rows != null && i < rows.length; i++) {
+                        final int row = rows[i];
+                        EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+                        AttemptedDeleteSpecific delete = getAttemptedDelete(eh);
+                        if (!canAttemptOperation(delete)) return false;
+                    }
+                    return true;
+                }
+
                 protected void performAction() {
                     final IdentityProviderConfig ip = (IdentityProviderConfig)providersComboBox.getSelectedItem();
                     final int rows[] = searchResultTable.getSelectedRows();

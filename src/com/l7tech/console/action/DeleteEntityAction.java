@@ -1,8 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
-import static com.l7tech.common.security.rbac.EntityType.GROUP;
-import static com.l7tech.common.security.rbac.EntityType.USER;
 import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -10,11 +8,15 @@ import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.AnonymousIdentityReference;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -44,7 +46,7 @@ public class DeleteEntityAction extends SecureAction {
     }
 
     EntityHeaderNode node;
-    private IdentityProviderConfig config;
+    protected IdentityProviderConfig config;
 
     /**
      * create the acciton that deletes
@@ -61,21 +63,29 @@ public class DeleteEntityAction extends SecureAction {
         if (attemptedDelete == null && node != null) {
             EntityHeader header = node.getEntityHeader();
             if (header == null) return null;
-            
-            com.l7tech.objectmodel.EntityType type = header.getType();
-            com.l7tech.common.security.rbac.EntityType etype;
-            if (type == EntityType.USER) {
-                etype = USER;
-            } else if (type == EntityType.GROUP) {
-                etype = GROUP;
-            } else if (type == EntityType.ID_PROVIDER_CONFIG) {
-                etype = ID_PROVIDER_CONFIG;
-            } else {
-                throw new IllegalArgumentException("EntityHeaderNode is a " + type + ", expecting User or Group");
-            }
-            attemptedDelete = new AttemptedDeleteSpecific(etype, node.getEntityHeader().getStrId());
+
+            attemptedDelete = getAttemptedDelete(header);
         }
         return attemptedDelete;
+    }
+
+    protected AttemptedDeleteSpecific getAttemptedDelete(EntityHeader header) {
+        EntityType type = header.getType();
+        com.l7tech.common.security.rbac.EntityType etype;
+        Entity deleteMe;
+        if (type == EntityType.USER) {
+            etype = USER;
+            deleteMe = new AnonymousIdentityReference(User.class, header.getStrId(), config.getOid(), header.getName());
+        } else if (type == EntityType.GROUP) {
+            etype = GROUP;
+            deleteMe = new AnonymousIdentityReference(Group.class, header.getStrId(), config.getOid(), header.getName());
+        } else if (type == EntityType.ID_PROVIDER_CONFIG) {
+            etype = ID_PROVIDER_CONFIG;
+            deleteMe = config;
+        } else {
+            throw new IllegalArgumentException("EntityHeaderNode is a " + type + ", expecting User or Group");
+        }
+        return new AttemptedDeleteSpecific(etype, deleteMe);
     }
 
 

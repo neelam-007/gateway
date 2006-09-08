@@ -1,12 +1,15 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewGroupDialog;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.console.panels.NewGroupDialog;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -19,9 +22,10 @@ import java.util.logging.Logger;
  */
 public class NewGroupAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewGroupAction.class.getName());
+    private AttemptedCreateSpecific attemptedCreateInternal;
 
-    public NewGroupAction(AbstractTreeNode node) {
-        super(node, MemberOfGroup.class, new AttemptedCreate(EntityType.GROUP));
+    public NewGroupAction(IdentityProviderNode node) {
+        super(node, MemberOfGroup.class, null);
     }
 
     /**
@@ -29,6 +33,31 @@ public class NewGroupAction extends NodeAction {
      */
     public String getName() {
         return "Create Group";
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        AttemptedOperation ao;
+        if (node == null) {
+            // This is the Create Internal Group action in MainWindow
+            ao = getAttemptedCreateInternal();
+        } else {
+            // This probably belongs to a node in the provider tree
+            long providerId = ((IdentityProviderNode)node).getEntityHeader().getOid();
+            if (providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+                ao = getAttemptedCreateInternal();
+            } else {
+                ao = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(providerId, "<new group>"));
+            }
+        }
+        return canAttemptOperation(ao);
+    }
+
+    private AttemptedOperation getAttemptedCreateInternal() {
+        if (attemptedCreateInternal == null) {
+            attemptedCreateInternal = new AttemptedCreateSpecific(EntityType.GROUP, new GroupBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new group>"));
+        }
+        return attemptedCreateInternal;
     }
 
     /**

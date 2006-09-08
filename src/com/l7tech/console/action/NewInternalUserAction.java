@@ -1,11 +1,13 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewInternalUserDialog;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.console.panels.NewInternalUserDialog;
+import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.UserBean;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -18,9 +20,10 @@ import java.util.logging.Logger;
  */
 public class NewInternalUserAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewInternalUserAction.class.getName());
+    private AttemptedCreateSpecific attemptedCreateUser;
 
-    public NewInternalUserAction(AbstractTreeNode node) {
-        super(node, SpecificUser.class, new AttemptedCreate(EntityType.USER));
+    public NewInternalUserAction(IdentityProviderNode node) {
+        super(node, SpecificUser.class, null);
     }
 
     /**
@@ -28,6 +31,14 @@ public class NewInternalUserAction extends NodeAction {
      */
     public String getName() {
         return "Create User";
+    }
+
+    @Override
+    public boolean isAuthorized() {
+        if (attemptedCreateUser == null) {
+            attemptedCreateUser = new AttemptedCreateSpecific(EntityType.USER, new UserBean(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "<new user>"));
+        }
+        return canAttemptOperation(attemptedCreateUser);
     }
 
     /**

@@ -1,28 +1,26 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.rbac.Permission;
-import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.console.panels.EditorDialog;
-import com.l7tech.console.panels.EntityEditorPanel;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
+import com.l7tech.console.security.PermissionRefreshListener;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.util.ConsoleLicenseManager;
+import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.LicenseListener;
-import com.l7tech.console.util.ConsoleLicenseManager;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ResourceBundle;
 import java.util.EnumSet;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -109,13 +107,11 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      *
      * @param header the principal instance to edit
      */
-    private void showEditDialog(long providerId, EntityHeader header) {
-        EntityEditorPanel panel = null;
-
+    private void showEditDialog(long providerId, IdentityHeader header) {
         AbstractTreeNode an = TreeNodeFactory.asTreeNode(header);
         final BaseAction a = (BaseAction)an.getPreferredAction();
         if (a == null) return;
-        IdentityProviderConfig config = null;
+        IdentityProviderConfig config;
         try {
             config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(providerId);
         } catch (Exception e) {
@@ -135,15 +131,6 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
                 a.invoke();
             }
         });
-
-        if (panel == null) return;
-        panel.edit(header);
-        JFrame f = TopComponents.getInstance().getMainWindow();
-
-        EditorDialog dialog = new EditorDialog(f, panel);
-        dialog.pack();
-        Utilities.centerOnScreen(dialog);
-        dialog.setVisible(true);
     }
 
     public void setEnabled(boolean newValue) {

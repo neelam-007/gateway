@@ -2,14 +2,14 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.EditorDialog;
+import com.l7tech.console.panels.FederatedUserPanel;
 import com.l7tech.console.panels.GenericUserPanel;
 import com.l7tech.console.panels.UserPanel;
-import com.l7tech.console.panels.FederatedUserPanel;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
@@ -60,7 +60,7 @@ public class UserPropertiesAction extends NodeAction {
                 if (config == null) {
                     config = getIdentityProviderConfig((EntityHeaderNode) node);
                 }
-                EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
+                IdentityHeader header = (IdentityHeader) ((EntityHeaderNode) node).getEntityHeader();
 
                 UserPanel panel;
                 if (UserPropertiesAction.this instanceof GenericUserPropertiesAction) {

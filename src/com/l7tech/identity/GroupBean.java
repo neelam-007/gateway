@@ -5,6 +5,14 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class GroupBean implements Group, Serializable {
+    public GroupBean(long providerId, String _name) {
+        this.providerId = providerId;
+        this._name = _name;
+    }
+
+    public GroupBean() {
+    }
+
     public String getId() {
         return _uniqueId;
     }

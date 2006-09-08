@@ -1,12 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.NewVirtualGroupDialog;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.console.panels.NewVirtualGroupDialog;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -19,8 +21,12 @@ import java.util.logging.Logger;
 public class NewVirtualGroupAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewVirtualGroupAction.class.getName());
 
-    public NewVirtualGroupAction(AbstractTreeNode node) {
-        super(node, MemberOfGroup.class, new AttemptedCreate(EntityType.GROUP));
+    public NewVirtualGroupAction(IdentityProviderNode node) {
+        super(node,
+            MemberOfGroup.class,
+            new AttemptedCreateSpecific(
+                    EntityType.GROUP,
+                    new VirtualGroup(new GroupBean(node.getEntityHeader().getOid(), "<new virtual group>"))));
     }
 
     /**

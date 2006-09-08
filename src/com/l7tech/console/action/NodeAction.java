@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
@@ -53,7 +52,7 @@ public abstract class NodeAction extends SecureAction {
         this.node = node;
     }
 
-    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedCreate attemptedOperation) {
+    public NodeAction(AbstractTreeNode node, Class allowedAssertionLicenses, AttemptedOperation attemptedOperation) {
         this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
     }
 

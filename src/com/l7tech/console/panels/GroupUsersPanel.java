@@ -52,15 +52,17 @@ class GroupUsersPanel extends JPanel {
 
     private final static String USER_GROUP_MEMBER_LABEL = "Group Membership:";
     private IdentityProviderConfig ipc;
+    private final boolean canUpdate;
 
     /**
      * The only constructor
      *
      * @param groupPanel the parent groupPanel
      */
-    public GroupUsersPanel(GroupPanel groupPanel, IdentityProviderConfig ipc) {
+    public GroupUsersPanel(GroupPanel groupPanel, IdentityProviderConfig ipc, boolean canUpdate) {
         super();
         this.ipc = ipc;
+        this.canUpdate = canUpdate;
         try {
             this.groupPanel = groupPanel;
             layoutComponents();
@@ -72,8 +74,8 @@ class GroupUsersPanel extends JPanel {
     }
 
     private void applyFormSecurity() {
-        groupAdd.setEnabled(groupPanel.getGroupFlags().canUpdateSome());
-        groupRemove.setEnabled(groupPanel.getGroupFlags().canUpdateSome());
+        groupAdd.setEnabled(canUpdate);
+        groupRemove.setEnabled(canUpdate);
     }
 
     /**

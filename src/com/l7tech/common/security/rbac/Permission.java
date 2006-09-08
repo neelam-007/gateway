@@ -53,7 +53,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
      */
     public boolean matches(Entity entity) {
         if (entityType == EntityType.ANY) return true; // No scope is relevant for ANY
-        Class eclass;
+        Class<? extends Entity> eclass;
         if (entity instanceof AnonymousEntityReference) {
             eclass = ((AnonymousEntityReference)entity).getEntityClass();
         } else if (entity == null) {
@@ -64,7 +64,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         
         if (!entityType.getEntityClass().isAssignableFrom(eclass)) return false;
         for (ScopePredicate predicate : scope) {
-            if (!predicate.matches(entity)) return false;
+            if (!predicate.matches(entity, eclass)) return false;
         }
         return true;
     }

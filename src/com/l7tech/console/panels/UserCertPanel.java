@@ -50,22 +50,24 @@ public abstract class UserCertPanel extends JPanel {
     IdentityAdmin identityAdmin = null;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     protected final EntityListener parentListener;
+    private final boolean canUpdate;
 
     /**
      * Create a new NonFederatedUserCertPanel
      */
-    public UserCertPanel(UserPanel userPanel, EntityListener entityListener) {
+    public UserCertPanel(UserPanel userPanel, EntityListener entityListener, boolean canUpdate) {
         this.userPanel = userPanel;
         this.addHierarchyListener(hierarchyListener);
         this.parentListener = entityListener;
+        this.canUpdate = canUpdate;
         initComponents();
         identityAdmin = Registry.getDefault().getIdentityAdmin();
         applyFormSecurity();
     }
 
     private void applyFormSecurity() {
-        getImportCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome());
-        getRemoveCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome());
+        getImportCertButton().setEnabled(canUpdate);
+        getRemoveCertButton().setEnabled(canUpdate);
     }
 
 
@@ -74,7 +76,6 @@ public abstract class UserCertPanel extends JPanel {
      * initialize the dialog.
      */
     private void initComponents() {
-
         certStatusLabel = new JLabel();
         Font f = certStatusLabel.getFont();
         certStatusLabel.setFont(new Font(f.getName(), Font.PLAIN, f.getSize()));
@@ -182,9 +183,9 @@ public abstract class UserCertPanel extends JPanel {
     protected void loadCertificateInfo() {
         try {
             boolean enabled = cert != null;
-            getRemoveCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome() && enabled);
+            getRemoveCertButton().setEnabled(canUpdate && enabled);
             getExportCertButton().setEnabled(enabled);
-            getImportCertButton().setEnabled(userPanel.getUserFlags().canUpdateSome() && !enabled);
+            getImportCertButton().setEnabled(canUpdate && !enabled);
             if (enabled) {
                 certStatusLabel.setText("Certificate Status: Imported");
             } else {

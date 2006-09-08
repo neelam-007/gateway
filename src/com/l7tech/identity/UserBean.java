@@ -15,9 +15,14 @@ public class UserBean implements User, Serializable {
     public UserBean() {
     }
 
-    public UserBean(String login) {
+    public UserBean(long providerId, String login) {
+        this._providerId = providerId;
         this._name = login;
         this._login = login;
+    }
+
+    public UserBean(String login) {
+        this(IdentityProviderConfig.DEFAULT_OID, login);
     }
 
     public String getId() {

@@ -34,7 +34,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         this.targetEntityId = targetEntityId;
     }
 
-    boolean matches(Entity entity) {
+    boolean matches(Entity entity, Class<? extends Entity> eclass) {
         EntityType etype = permission.getEntityType();
         if (etype == null || etype == EntityType.ANY)
             throw new IllegalStateException("Can't evaluate an ObjectIdentityPredicate without a specific EntityType");

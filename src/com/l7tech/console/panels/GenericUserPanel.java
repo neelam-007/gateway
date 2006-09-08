@@ -5,7 +5,9 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import static com.l7tech.common.security.rbac.EntityType.USER;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -18,6 +20,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import net.sf.nachocalendar.components.DateField;
 import net.sf.nachocalendar.components.DefaultDayRenderer;
@@ -84,6 +87,7 @@ public class GenericUserPanel extends UserPanel {
     private JCheckBox accountNeverExpiresCheckbox;
     private DateField expireDateField;
     private JPanel expirationPanel;
+    private boolean canUpdate;
 
     public GenericUserPanel() {
         super();
@@ -92,12 +96,11 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            groupPanel = new UserGroupsPanel(this, config);
-            certPanel = new NonFederatedUserCertPanel(this, passwordChangeListener);
+            groupPanel = new UserGroupsPanel(this, config, canUpdate);
+            certPanel = new NonFederatedUserCertPanel(this, passwordChangeListener, canUpdate);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
             applyFormSecurity();
-
         } catch (Exception e) {
             log.log(Level.SEVERE, "GroupPanel()", e);
             e.printStackTrace();
@@ -105,15 +108,14 @@ public class GenericUserPanel extends UserPanel {
     }
 
     protected void applyFormSecurity() {
-        boolean enableUpdateUserData = getUserFlags().canUpdateSome();
         // list components that are subject to security (they require the full admin role)
-        firstNameTextField.setEditable(enableUpdateUserData);
-        lastNameTextField.setEditable(enableUpdateUserData);
-        emailTextField.setEditable(enableUpdateUserData);
+        firstNameTextField.setEditable(canUpdate);
+        lastNameTextField.setEditable(canUpdate);
+        emailTextField.setEditable(canUpdate);
         
-        changePassButton.setEnabled(enableUpdateUserData);
-        expirationPanel.setEnabled(getUserFlags().canUpdateSome());
-        accountNeverExpiresCheckbox.setEnabled(getUserFlags().canUpdateSome());
+        changePassButton.setEnabled(canUpdate);
+        expirationPanel.setEnabled(canUpdate);
+        accountNeverExpiresCheckbox.setEnabled(canUpdate);
     }
 
 
@@ -133,7 +135,7 @@ public class GenericUserPanel extends UserPanel {
                     + "\nReceived: " + object.getClass().getName());
             }
 
-            userHeader = (EntityHeader)object;
+            userHeader = (IdentityHeader)object;
 
             if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
@@ -146,6 +148,7 @@ public class GenericUserPanel extends UserPanel {
             }
 
             boolean isNew = userHeader.getOid() == 0;
+            AttemptedOperation ao;
             if (isNew) {
                 if (config.type().equals(IdentityProviderType.INTERNAL)) {
                     user = new InternalUser();
@@ -154,15 +157,21 @@ public class GenericUserPanel extends UserPanel {
                 }
                 user.getUserBean().setName(userHeader.getName());
                 userGroups = null;
+                ao = new AttemptedCreateSpecific(USER, new UserBean(config.getOid(), "<new user>"));
             } else {
                 User u = getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
+                } else {
+                    ao = new AttemptedUpdate(USER, u);
                 }
                 user = u;
                 userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getId());
             }
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(
+                    JaasUtils.getCurrentSubject(),
+                    ao);
             // Populate the form for insert/update
             initialize();
             setData(user);

@@ -121,7 +121,7 @@ public class VirtualGroupPanel extends GroupPanel {
         if (virtualGroupDetailsPanel != null) return virtualGroupDetailsPanel;
 
         // create virtual group panel
-        virtualGroupDetailsPanel = new VirtualGroupDetailsPanel(this);
+        virtualGroupDetailsPanel = new VirtualGroupDetailsPanel(canUpdate);
 
         return virtualGroupDetailsPanel;
     }
@@ -150,6 +150,7 @@ public class VirtualGroupPanel extends GroupPanel {
         vGroup.getGroupBean().setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
         vGroup.setSamlEmailPattern(virtualGroupDetailsPanel.getEmailTextField().getText());
         vGroup.setX509SubjectDnPattern(virtualGroupDetailsPanel.getX509SubjectDNTextField().getText());
+        vGroup.setProviderId(config.getOid());
         return group;
     }
 

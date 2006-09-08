@@ -2,6 +2,11 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.JaasUtils;
+import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
@@ -13,6 +18,7 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -79,13 +85,13 @@ public class FederatedUserPanel extends UserPanel {
             SwingUtilities.windowForComponent(FederatedUserPanel.this).dispose();
         }
     };
+    private boolean canUpdate = false;
 
     public void initialize() {
         try {
             // Initialize form components
-            groupPanel = new UserGroupsPanel(this, config);
-
-            certPanel = new FederatedUserCertPanel(this, null);
+            groupPanel = new UserGroupsPanel(this, config, canUpdate);
+            certPanel = new FederatedUserCertPanel(this, null, canUpdate);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
@@ -113,7 +119,7 @@ public class FederatedUserPanel extends UserPanel {
                   + "\nReceived: " + object.getClass().getName());
             }
 
-            userHeader = (EntityHeader)object;
+            userHeader = (IdentityHeader) object;
 
             if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
@@ -125,21 +131,30 @@ public class FederatedUserPanel extends UserPanel {
                 throw new RuntimeException("User edit operation without specified identity provider.");
             }
 
+            AttemptedOperation ao;
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
                 user = new FederatedUser();
                 user.getUserBean().setName(userHeader.getName());
+                user.getUserBean().setProviderId(config.getOid());
                 userGroups = null;
+                ao = new AttemptedCreateSpecific(USER, user);
             } else {
                 IdentityAdmin admin = getIdentityAdmin();
                 User u = admin.findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
+                } else {
+                    ao = new AttemptedUpdate(USER, u);
                 }
                 user = u;
                 userGroups = admin.getGroupHeaders(config.getOid(), u.getId());
             }
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(
+                    JaasUtils.getCurrentSubject(),
+                    ao);
+
             // Populate the form for insert/update
             initialize();
             setData(user);
@@ -699,22 +714,6 @@ public class FederatedUserPanel extends UserPanel {
      */
     private boolean validateForm() {
         return true;
-    }
-
-    // debug
-      public static void main(String[] args) {
-
-        FederatedUserPanel panel = new FederatedUserPanel();
-        EntityHeader eh = new EntityHeader();
-        eh.setName("Test user");
-        eh.setType(EntityType.USER);
-        panel.edit(eh);
-
-        panel.setPreferredSize(new Dimension(600, 300));
-        JFrame frame = new JFrame("Group panel Test");
-        frame.setContentPane(panel);
-        frame.pack();
-        frame.setVisible(true);
     }
 
     // hierarchy listener

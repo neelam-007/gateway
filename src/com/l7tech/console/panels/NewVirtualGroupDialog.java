@@ -15,6 +15,7 @@ import com.l7tech.identity.fed.NoTrustedCertsSaveException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -160,6 +161,7 @@ public class NewVirtualGroupDialog extends JDialog {
         group.setName(groupNameTextField.getText());
         group.setDescription(groupDescriptionTextField.getText());
         final VirtualGroup vGroup = new VirtualGroup(group);
+        vGroup.setProviderId(ipc.getOid());
         vGroup.setX509SubjectDnPattern(x509DNPatternTextField.getText());
         vGroup.setSamlEmailPattern(emailPatternTextField.getText());
         SwingUtilities.invokeLater(
@@ -167,11 +169,8 @@ public class NewVirtualGroupDialog extends JDialog {
                     public void run() {
                         String errorMessage = null;
                         try {
-                            EntityHeader header = new EntityHeader();
-                            header.setType(EntityType.GROUP);
-                            header.setName(group.getName());
+                            IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), group.getDescription());
                             group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getOid(), vGroup, null ));
-                            header.setStrId(group.getId());
                             NewVirtualGroupDialog.this.fireEventGroupAdded(header);
                         } catch (DuplicateObjectException doe) {
                             errorMessage = ExceptionUtils.getMessage(doe);

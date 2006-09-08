@@ -7,7 +7,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -26,7 +26,7 @@ abstract public class UserPanel extends EntityEditorPanel {
     public final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
 
     // user
-    protected EntityHeader userHeader;
+    protected IdentityHeader userHeader;
     protected User user;
     protected Set userGroups;
 
@@ -61,7 +61,7 @@ abstract public class UserPanel extends EntityEditorPanel {
      * @param userHeader
      * @param config
      */
-    public void edit(EntityHeader userHeader, IdentityProviderConfig config) {
+    public void edit(IdentityHeader userHeader, IdentityProviderConfig config) {
         this.config = config;
         edit(userHeader);
     }

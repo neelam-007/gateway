@@ -47,9 +47,9 @@ public class NewGroupDialog extends JDialog {
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
 
-    GroupBean group = new GroupBean();
-    private EventListenerList listenerList = new EventListenerList();
-    IdentityProviderConfig ipc;
+    private final GroupBean group;
+    private final EventListenerList listenerList = new EventListenerList();
+    private final IdentityProviderConfig ipc;
 
     /**
      * Create a new NewGroupDialog fdialog for a given Company
@@ -61,6 +61,8 @@ public class NewGroupDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         this.parent = parent;
         this.ipc = ipc;
+        this.group = new GroupBean();
+        this.group.setProviderId(ipc.getOid());
         initResources();
         initComponents();
         pack();

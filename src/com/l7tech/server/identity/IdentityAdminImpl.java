@@ -122,39 +122,46 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
         Role newRole = new Role();
         newRole.setName(name);
-        // Permissions on this IPC
+        // RUD this IPC
         newRole.addPermission(READ, ID_PROVIDER_CONFIG, config.getId());
         newRole.addPermission(UPDATE, ID_PROVIDER_CONFIG, config.getId());
         newRole.addPermission(DELETE, ID_PROVIDER_CONFIG, config.getId());
         
-        // Permissions on users in this IdP
+        // CRUD users in this IdP
         newRole.addPermission(CREATE, USER, "providerId", config.getId());
         newRole.addPermission(READ, USER, "providerId", config.getId());
         newRole.addPermission(UPDATE, USER, "providerId", config.getId());
         newRole.addPermission(DELETE, USER, "providerId", config.getId());
         
-        // Permissions on groups in this IdP
+        // CRUD groups in this IdP
         newRole.addPermission(CREATE, GROUP, "providerId", config.getId());
         newRole.addPermission(READ, GROUP, "providerId", config.getId());
         newRole.addPermission(UPDATE, GROUP, "providerId", config.getId());
         newRole.addPermission(DELETE, GROUP, "providerId", config.getId());
 
+        // Assignees will need to search TrustedCerts if this is a FIP
+        boolean fip = config.type() == IdentityProviderType.FEDERATED;
+        if (fip) {
+            newRole.addPermission(READ, TRUSTED_CERT, null);
+        }
+
         // Check if current user can already do everything this Role will grant
         boolean omnipotent;
         try {
             omnipotent = roleManager.isPermittedForEntity(currentUser, config, READ, null);
-            omnipotent = omnipotent && roleManager.isPermittedForEntity(currentUser, config, UPDATE, null);
-            omnipotent = omnipotent && roleManager.isPermittedForEntity(currentUser, config, DELETE, null);
+            omnipotent &= roleManager.isPermittedForEntity(currentUser, config, UPDATE, null);
+            omnipotent &= roleManager.isPermittedForEntity(currentUser, config, DELETE, null);
             
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, CREATE);
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, READ);
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, UPDATE);
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, USER, DELETE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, CREATE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, READ);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, UPDATE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, DELETE);
 
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, CREATE);
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, UPDATE);
-            omnipotent = omnipotent && roleManager.isPermittedForAllEntities(currentUser, GROUP, DELETE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, CREATE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, UPDATE);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, DELETE);
+            if (fip) omnipotent &= roleManager.isPermittedForAllEntities(currentUser, TRUSTED_CERT, READ);
         } catch (FindException e) {
             throw new SaveException("Coudln't get existing permissions", e);
         }
@@ -575,10 +582,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
         public boolean matches(Permission permission) {
             com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
             Set<ScopePredicate> scope = permission.getScope();
-            if (scope == null || scope.isEmpty()) return false;
             if (scope.size() > 1) return false;
 
-            ScopePredicate pred = scope.iterator().next();
+            ScopePredicate pred = scope.isEmpty() ? null : scope.iterator().next();
             switch(etype) {
                 case ID_PROVIDER_CONFIG:
                     if (pred instanceof ObjectIdentityPredicate) {
@@ -590,9 +596,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
                 case GROUP:
                     if (pred instanceof AttributePredicate) {
                         AttributePredicate ap = (AttributePredicate) pred;
-                        if (ap.getAttribute().equals("providerId") && ap.getValue().equals(ipc.getId())) return true;
+                        if (ap.getAttribute().equals(Identity.ATTR_PROVIDER_OID) && ap.getValue().equals(ipc.getId())) return true;
                     }
                     return false;
+                case TRUSTED_CERT:
+                    return pred == null && permission.getOperation() == OperationType.READ;
                 default:
                     return false;
             }

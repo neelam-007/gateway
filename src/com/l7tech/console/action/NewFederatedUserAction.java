@@ -1,11 +1,13 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.NewFederatedUserDialog;
-import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.console.panels.NewFederatedUserDialog;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.fed.FederatedUser;
 
 import javax.swing.*;
 import java.util.logging.Logger;
@@ -18,8 +20,12 @@ import java.util.logging.Logger;
 public class NewFederatedUserAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewFederatedUserAction.class.getName());
 
-    public NewFederatedUserAction(AbstractTreeNode node) {
-        super(node, LIC_AUTH_ASSERTIONS, new AttemptedCreate(EntityType.USER));
+    public NewFederatedUserAction(IdentityProviderNode node) {
+        super(node,
+            LIC_AUTH_ASSERTIONS,
+            new AttemptedCreateSpecific(
+                    EntityType.USER,
+                    new FederatedUser(new UserBean(node.getEntityHeader().getOid(), "<new federated user>"))));
     }
 
     /**
