@@ -6,32 +6,34 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.XmlUtil;
+import static com.l7tech.common.security.rbac.EntityType.SCHEMA_ENTRY;
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.*;
-
-import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.table.TableModel;
-import javax.swing.table.AbstractTableModel;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.rmi.RemoteException;
-import java.net.URL;
-import java.net.MalformedURLException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A dialog for the SSM administrator to manage the global schemas loaded on a gateway.
@@ -48,14 +50,17 @@ public class GlobalSchemaDialog extends JDialog {
     private JButton helpbutton;
     private JPanel mainPanel;
     private JButton closebutton;
+    private final PermissionFlags flags;
 
     public GlobalSchemaDialog(Frame owner) {
         super(owner, true);
+        flags = PermissionFlags.get(SCHEMA_ENTRY);
         initialize();
     }
 
     public GlobalSchemaDialog(Dialog owner) {
         super(owner, true);
+        flags = PermissionFlags.get(SCHEMA_ENTRY);
         initialize();
     }
 
@@ -189,13 +194,14 @@ public class GlobalSchemaDialog extends JDialog {
         // get new selection
         int selectedRow = schemaTable.getSelectedRow();
         // decide whether or not the remove button should be enabled
-        if (selectedRow < 0) {
-            removebutton.setEnabled(false);
-            editbutton.setEnabled(false);
-        } else {
-            removebutton.setEnabled(true);
-            editbutton.setEnabled(true);
-        }
+        boolean validSelection = false;
+        validSelection = selectedRow >= 0;
+
+        addbutton.setEnabled(flags.canCreateSome());
+        removebutton.setEnabled(flags.canDeleteSome() && validSelection);
+
+        editbutton.setText(flags.canUpdateSome()?"Edit":"View");
+        editbutton.setEnabled(validSelection);
     }
 
     private void add(String systemid) {
@@ -203,7 +209,7 @@ public class GlobalSchemaDialog extends JDialog {
         if (systemid != null) {
             newEntry.setName(systemid);
         }
-        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry);
+        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry, flags.canUpdateSome());
         dlg.pack();
         Dimension dim = dlg.getSize();
         dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
@@ -321,7 +327,7 @@ public class GlobalSchemaDialog extends JDialog {
 
     private void edit() {
         SchemaEntry toedit = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
-        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit);
+        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome());
         dlg.pack();
         Dimension dim = dlg.getSize();
         dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);

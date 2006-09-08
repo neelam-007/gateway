@@ -6,35 +6,34 @@
  */
 package com.l7tech.console.panels;
 
-import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
-import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Called by the GlobalSchemaDialog, this is used to edit an existing or add a new global schema entry.
@@ -56,16 +55,18 @@ public class GlobalSchemaEntryEditor extends JDialog {
     public boolean success = false;
     private JButton uploadFromURLBut;
     private JButton uploadFromFileBut;
+    private boolean canEdit;
 
-    public GlobalSchemaEntryEditor(JDialog owner, SchemaEntry subject) {
+    public GlobalSchemaEntryEditor(JDialog owner, SchemaEntry subject, boolean canEditEntry) {
         super(owner, true);
-        initialize();
         this.subject = subject;
+        this.canEdit = canEditEntry;
+        initialize();
     }
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("Edit Global Schema");
+        setTitle(canEdit?"Edit Global Schema":"View Global Schema");
 
         // set xml view
         xmlContainer = new XMLContainer(true);
@@ -134,6 +135,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
                                                                     return true;
                                                                 }
                                                             }));
+        enableReadOnlyIfNeeded();
     }
 
     private void uploadFromURL() {
@@ -320,5 +322,11 @@ public class GlobalSchemaEntryEditor extends JDialog {
             uiAccessibility.getEditor().setLineNumber(1);
         }
         dataloaded = true;
+    }
+
+    private void enableReadOnlyIfNeeded() {
+        schemanametxt.setEditable(canEdit);
+        uploadFromFileBut.setEnabled(canEdit);
+        uploadFromURLBut.setEnabled(canEdit);
     }
 }
