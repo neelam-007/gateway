@@ -162,6 +162,10 @@ echo "Kernel \r on an \m" >>/etc/issue.net
 /bin/chown -Rf gateway.gateway /ssg
 chmod -Rf 775 /ssg/configwizard
 chmod -Rf 775 /ssg/sysconfigwizard
+chmod -Rf 775 /ssg/etc/conf
+chmod -Rf 775 /ssg/etc/keys
+chmod -Rf 775 /ssg/tomcat/conf
+chmod -Rf 775 /ssg/jdk/jre/lib/security/
 
 %preun
 # Modifications to handle upgrades properly
