@@ -636,7 +636,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[]{params.getTargetUrl().getPath(), Integer.toString(status)});
 
                                     //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
-                                    params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, getSessionCookiesHeaderValue(context)));
+                                    params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));
 
                                     return doGetResponse(false);
                                 }
@@ -655,26 +655,6 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 };
             }
         };
-    }
-
-    /**
-     * Get the cookies as a string.
-     *
-     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
-     */
-    private String getSessionCookiesHeaderValue(final PolicyEnforcementContext context) {
-        StringBuffer sb = new StringBuffer();
-
-        Set cookies = context.getCookies();
-        if (cookies != null) {
-            for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
-                HttpCookie cook = (HttpCookie) iterator.next();;
-                sb.append(cook.getV0CookieHeaderPart());
-                if (iterator.hasNext()) sb.append("; ");
-            }
-        }
-
-        return sb.toString();
     }
 
     private class HeaderHolder {

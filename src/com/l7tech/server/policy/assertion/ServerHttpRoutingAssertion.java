@@ -592,9 +592,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 // attach and record
                 attached.add(newCookie);
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, newCookie.getCookieValue()));
             }
         }
+
+        if (!attached.isEmpty())
+            routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(attached)));
 
         return attached;
     }

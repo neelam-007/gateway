@@ -10,6 +10,8 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 /**
@@ -368,7 +370,7 @@ public class HttpCookie {
         StringBuffer headerPart = new StringBuffer();
         headerPart.append(cookieName);
         headerPart.append('=');
-        headerPart.append(cookieValue);
+        headerPart.append(quoteIfNeeded(cookieValue));
         return headerPart.toString();
     }
 
@@ -382,7 +384,7 @@ public class HttpCookie {
         StringBuffer headerPart = new StringBuffer();
         headerPart.append(cookieName);
         headerPart.append('=');
-        headerPart.append(cookieValue);
+        headerPart.append(quoteIfNeeded(cookieValue));
         headerPart.append("; $Path=");
         headerPart.append(path);
 
@@ -392,6 +394,32 @@ public class HttpCookie {
         }
 
         return headerPart.toString();
+    }
+
+    /**
+     * Get the cookies as a string (as in a "Cookie:" header).
+     *
+     * NOTE: Since we may have modified the path/domain of the cookie when
+     * proxying it seems safest to drop this from the header (see RFC 2109
+     * section 4.3.4)
+     *
+     * @param cookies The collection of HttpCookie's to add
+     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
+     */
+    public static String getCookieHeader(final Collection cookies) {
+        StringBuffer sb = new StringBuffer();
+
+        if (cookies != null) {
+            for (Iterator cookIter = cookies.iterator(); cookIter.hasNext();) {
+                HttpCookie cook = (HttpCookie) cookIter.next();
+                // always use V0, see note above
+                sb.append(cook.getV0CookieHeaderPart());
+                if (cookIter.hasNext())
+                    sb.append("; ");
+            }
+        }
+
+        return sb.toString();
     }
 
     /** @return the underlying cookie data as a Cookie Spec conformant string in the format:
@@ -428,6 +456,7 @@ public class HttpCookie {
     private static final Pattern WHITESPACE = Pattern.compile(";\\s*");
     private static final Pattern EQUALS = Pattern.compile("=");
     private static final String NETSCAPE_EXPIRES_DATEFORMAT = "EEE, dd-MMM-yyyy HH:mm:ss z";
+    private static final String NON_TOKEN_CHARS = ",; ";
 
     //store the full initial value of the cookie so that it can be regenerated later with ease
     private final String id;
@@ -465,5 +494,67 @@ public class HttpCookie {
         }
 
         return trimmed;
+    }
+
+    /**
+     * Check if the text is a "token" or if it contains any illegal characters.
+     *
+     * NOTE: According to the RFC all the characters below are non-token chars,
+     * Tomcat just checks for ",; " and < 32 >= 127, so we are doing the same.
+     *
+     *    0 - 31, 127
+     *     "(" | ")" | "<" | ">" | "@"
+     *   | "," | ";" | ":" | "\" | <">
+     *   | "/" | "[" | "]" | "?" | "="
+     *   | "{" | "}" | SP | HT
+     */
+    private static boolean isToken(final String text) {
+        boolean token = true;
+        if (text != null && text.length() > 0) {
+            for (int i=0; i<text.length(); i++) {
+                char character = text.charAt(i);
+                if (character < 32 || character >= 127) {
+                    token = false;
+                    break;
+                } else if (NON_TOKEN_CHARS.indexOf(character) > -1) {
+                    token = false;
+                    break;
+                }
+            }
+        }
+        return token;
+    }
+
+    private static String escapeQuotes(final String text) {
+        String escaped = text;
+
+        if (text != null && text.indexOf('"') > -1) {
+            StringBuffer buffer = new StringBuffer(text.length() + 16);
+
+            for (int i=0; i<text.length(); i++) {
+                char character = text.charAt(i);
+                if (character == '"') {
+                    buffer.append("\\\"");
+                } else {
+                    buffer.append(character);
+                }
+            }
+
+            escaped = buffer.toString();
+        }
+
+        return escaped;
+    }
+
+    private static String quoteIfNeeded(final String text) {
+        String quoted = text;
+
+        if (quoted==null) {
+            quoted = "";
+        } else if (!isToken(quoted)) {
+            quoted = "\"" + escapeQuotes(quoted) + "\"";
+        }
+
+        return quoted;
     }
 }
