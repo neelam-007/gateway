@@ -1,12 +1,11 @@
 package com.l7tech.common.audit;
 
+import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.util.JdkLoggerConfigurator;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -111,13 +110,15 @@ public class Auditor {
         }
 
         public String getSourceClassName() {
-            if (needToInferCaller) inferCaller();
-            return sourceClassName;
+            return getLoggerName(); // Use logger name to avoid infer caller expense (Bug #2862)
+//            if (needToInferCaller) inferCaller();
+//            return sourceClassName;
         }
 
         public String getSourceMethodName() {
-            if (needToInferCaller) inferCaller();
-            return sourceMethodName;
+            return null;  // don't infer caller; it'll be bogus in a production build, and causes slowdown (Bug #2862)
+//            if (needToInferCaller) inferCaller();
+//            return sourceMethodName;
         }
     }
 }
