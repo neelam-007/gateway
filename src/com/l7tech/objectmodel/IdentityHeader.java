@@ -15,6 +15,10 @@ public class IdentityHeader extends EntityHeader {
         this.providerOid = providerOid;
     }
 
+    public IdentityHeader(long providerOid, EntityHeader header) {
+        this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription());
+    }
+
     public long getProviderOid() {
         return providerOid;
     }

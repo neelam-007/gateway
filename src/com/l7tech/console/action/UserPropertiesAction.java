@@ -10,6 +10,7 @@ import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
@@ -60,8 +61,13 @@ public class UserPropertiesAction extends NodeAction {
                 if (config == null) {
                     config = getIdentityProviderConfig((EntityHeaderNode) node);
                 }
-                IdentityHeader header = (IdentityHeader) ((EntityHeaderNode) node).getEntityHeader();
-
+                EntityHeader eh = ((EntityHeaderNode) node).getEntityHeader();
+                IdentityHeader header;
+                if (eh instanceof IdentityHeader) {
+                    header = (IdentityHeader) eh;
+                } else {
+                    header = new IdentityHeader(config.getOid(), eh);
+                }
                 UserPanel panel;
                 if (UserPropertiesAction.this instanceof GenericUserPropertiesAction) {
                     panel = new GenericUserPanel();
