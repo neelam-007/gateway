@@ -653,17 +653,26 @@ public class FindIdentitiesDialog extends JDialog {
               public void valueChanged(ListSelectionEvent e) {
                   int row = searchResultTable.getSelectedRow();
                   boolean hasUpdateIpPermissions = idpFlags.canUpdateSome();
+
                   if (row == -1) {
                       selectButton.setEnabled(false);
                       deleteButton.setEnabled(false);
                   } else {
-                      selectButton.setEnabled(true);
-                      IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+                      EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+                      if (eh.getType() != EntityType.USER && eh.getType() !=EntityType.GROUP &&
+                          eh.getType() != EntityType.ID_PROVIDER_CONFIG) {
+                        selectButton.setEnabled(false);
+                        deleteButton.setEnabled(false);
 
-                      deleteButton.setEnabled(
-                                getDeleteAction().isAuthorized() &&
-                                ipc.isWritable() &&
-                                hasUpdateIpPermissions);
+                      } else {
+                          selectButton.setEnabled(true);
+                          IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+
+                          deleteButton.setEnabled(
+                                    getDeleteAction().isAuthorized() &&
+                                    ipc.isWritable() &&
+                                    hasUpdateIpPermissions);
+                      }
                   }
               }
           });
