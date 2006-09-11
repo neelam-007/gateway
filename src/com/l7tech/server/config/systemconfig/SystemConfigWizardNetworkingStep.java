@@ -36,6 +36,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     private static final String CONFIGURE_NAMESERVERS_PROMPT = "Would you like to configure the nameservers for this interface? [no]";
 
     private NetworkingConfigurationBean netBean;
+    private static final Pattern interfaceNamePattern = Pattern.compile("\\S+");
 
     public SystemConfigWizardNetworkingStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -225,7 +226,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         };
 
 
-        return getData(prompts, "", Pattern.compile("^\\S$"), "*** Please specify an interface name ***");
+        return getData(prompts, "", interfaceNamePattern, "*** Please specify an interface name ***");
     }
 
     private String[] getNameServer(String[] currentNameServers, String interfaceName) throws IOException, WizardNavigationException {

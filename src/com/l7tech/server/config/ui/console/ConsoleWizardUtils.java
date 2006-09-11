@@ -1,17 +1,16 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.WizardInputValidator;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-import org.apache.commons.lang.StringUtils;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: megery
@@ -49,7 +48,8 @@ public class ConsoleWizardUtils {
         do {
             isValidInput = true;
             printText(promptLines);
-            input = readLine().trim();
+            input = readLine();
+            input = input.trim();
             handleInput(input, isNavAware);
 
             if (StringUtils.isEmpty(input)) {
