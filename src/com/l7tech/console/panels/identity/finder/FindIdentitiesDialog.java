@@ -349,9 +349,9 @@ public class FindIdentitiesDialog extends JDialog {
         constraints.gridx = 1;
         constraints.gridy = 1;
         constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.NONE;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(12, 12, 0, 12);
         gSearchPanel.add(providersComboBox, constraints);
 
         constraints = new GridBagConstraints();
