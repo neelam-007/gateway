@@ -43,6 +43,7 @@ public class AddRoutingAssertionAdvice implements Advice {
         if (assertions[0] instanceof HttpRoutingAssertion) {
             HttpRoutingAssertion ra = (HttpRoutingAssertion) assertions[0];
             try {
+                ra.setSamlAssertionVersion(2); // default for new routing assertions
                 if (null == ra.getProtectedServiceUrl()) {
                     String url = null;
                     PublishedService service = pc.getService();

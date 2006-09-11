@@ -19,6 +19,7 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     private boolean attachSamlSenderVouches;
     private boolean useThumbprintInSamlSignature;
     private boolean useThumbprintInSamlSubject;
+    private int samlAssertionVersion = 1; // backwards compatible
     private int samlAssertionExpiry = 5;
     private boolean groupMembershipStatement;
     private String xmlSecurityActorToPromote;
@@ -82,6 +83,14 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
      */
     public void setUseThumbprintInSamlSubject(boolean useThumbprintInSamlSubject) {
         this.useThumbprintInSamlSubject = useThumbprintInSamlSubject;
+    }
+
+    public int getSamlAssertionVersion() {
+        return samlAssertionVersion;
+    }
+
+    public void setSamlAssertionVersion(int samlAssertionVersion) {
+        this.samlAssertionVersion = samlAssertionVersion;
     }
 
     public int getSamlAssertionExpiry() {

@@ -16,11 +16,16 @@ public class HttpRoutingSamlAuthPanel extends JPanel {
     private JPanel mainPanel;
     private JSpinner expirySpinner;
     private JLabel expiryLabel;
+    private JComboBox samlVersionComboBox;
+    private JLabel samlVersionLabel;
 
     public HttpRoutingSamlAuthPanel(final HttpRoutingAssertion assertion) {
         this.assertion = assertion;
         expirySpinner.setModel(new SpinnerNumberModel(new Integer(5), new Integer(1), new Integer(120), new Integer(1)));
         expiryLabel.setLabelFor(expirySpinner);
+
+        samlVersionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
+        samlVersionLabel.setLabelFor(samlVersionComboBox);
 
         //memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement()); // Bugzilla 1269
         int expiry = assertion.getSamlAssertionExpiry();
@@ -29,7 +34,9 @@ public class HttpRoutingSamlAuthPanel extends JPanel {
         }
 
         expirySpinner.setValue(new Integer(expiry));
-        
+
+        samlVersionComboBox.setSelectedItem(assertion.getSamlAssertionVersion()==1 ? "1.1" : "2.0");
+
         add(mainPanel);
     }
 
@@ -37,14 +44,13 @@ public class HttpRoutingSamlAuthPanel extends JPanel {
         super.setEnabled(enabled);
         expirySpinner.setEnabled(enabled);
         expiryLabel.setEnabled(enabled);
-    }
-
-    public JSpinner getExpirySpinner() {
-        return expirySpinner;
+        samlVersionComboBox.setEnabled(enabled);
+        samlVersionLabel.setEnabled(enabled);
     }
 
     public void updateModel() {
-        final Integer sv = (Integer)expirySpinner.getValue();
+        final Integer sv = (Integer) expirySpinner.getValue();        
+        assertion.setSamlAssertionVersion("1.1".equals(samlVersionComboBox.getSelectedItem()) ? 1 : 2);
         assertion.setSamlAssertionExpiry(sv.intValue());
     }
 }

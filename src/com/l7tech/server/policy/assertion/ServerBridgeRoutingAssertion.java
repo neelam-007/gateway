@@ -485,6 +485,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
                 }
             }
+            samlOptions.setVersion(bridgeRoutingAssertion.getSamlAssertionVersion());
             samlOptions.setExpiryMinutes(bridgeRoutingAssertion.getSamlAssertionExpiry());
             samlOptions.setUseThumbprintForSignature(bridgeRoutingAssertion.isUseThumbprintInSamlSignature());
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES, bridgeRoutingAssertion.isUseThumbprintInSamlSubject());

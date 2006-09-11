@@ -369,6 +369,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
                 }
             }
+            samlOptions.setVersion(httpRoutingAssertion.getSamlAssertionVersion());
             samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
             samlOptions.setUseThumbprintForSignature(httpRoutingAssertion.isUseThumbprintInSamlSignature());
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES, httpRoutingAssertion.isUseThumbprintInSamlSubject());
