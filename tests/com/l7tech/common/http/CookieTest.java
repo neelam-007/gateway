@@ -195,6 +195,16 @@ public class CookieTest extends TestCase {
         assertEquals("Cookie header", "name=value; name2=value2; name3=\"value with \\\"spaces\"", header3);
     }
 
+    public void testCookieWithEqualsInValue() throws Exception {
+        // Test as though a Set-Cookie
+        HttpCookie cookie1 = new HttpCookie(new URL("http://www.layer7tech.com/"), "iPlanetDirectoryPro=AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#");
+        assertEquals("Value correct", "AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#", cookie1.getCookieValue());
+
+        // Test as though incoming
+        HttpCookie cookie2 = new HttpCookie("iPlanetDirectoryPro", "AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#", 0, null, null);
+        assertEquals("Value correct", "AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#", cookie2.getCookieValue());
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());
