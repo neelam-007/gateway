@@ -239,7 +239,11 @@ public class ServiceAdminImpl implements ServiceAdmin {
         // Search identities (for adding IdentityAssertions)
         newRole.addPermission(READ, ID_PROVIDER_CONFIG, null);
         newRole.addPermission(READ, USER, null);
-        newRole.addPermission(READ, GROUP, null); 
+        newRole.addPermission(READ, GROUP, null);
+
+        // Read JMS queues
+        newRole.addPermission(READ, JMS_CONNECTION, null);
+        newRole.addPermission(READ, JMS_ENDPOINT, null);
 
         boolean omnipotent;
         try {
@@ -253,6 +257,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
             omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
             omnipotent &= roleManager.isPermittedForAllEntities(currentUser, CLUSTER_INFO, READ);
             omnipotent &= roleManager.isPermittedForAllEntities(currentUser, SERVICE_USAGE, READ);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, JMS_CONNECTION, READ);
+            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, JMS_ENDPOINT, READ);
         } catch (FindException e) {
             throw new SaveException("Coudln't get existing permissions", e);
         }
@@ -489,6 +495,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 case USER:
                 case GROUP:
                 case CLUSTER_INFO:
+                case JMS_CONNECTION:
+                case JMS_ENDPOINT:
                     // Must have empty scope
                     return pred == null && permission.getOperation() == OperationType.READ;
                 default:
