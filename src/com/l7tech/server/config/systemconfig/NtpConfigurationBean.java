@@ -43,15 +43,15 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
         return timeServerAddress;
     }
 
+    public void setTimeServerAddress(String timeServerAddress) {
+        this.timeServerAddress = timeServerAddress;
+    }
+
     public String getTimeServerName() {
         return timeServerName;
     }
 
     public void setTimeServerName(String timeServerName) {
         this.timeServerName = timeServerName;
-    }
-
-    public void setTimeServerAddress(String timeServerAddress) {
-        this.timeServerAddress = timeServerAddress;
     }
 }

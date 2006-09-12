@@ -1,14 +1,13 @@
 package com.l7tech.server.config.systemconfig;
 
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -44,8 +43,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             },"y");
 
             if (isYes(shouldConfigureNtp)) {
-                String existingNtpServer = "";
-                doNtpConfigurationPrompts(existingNtpServer);
+                doNtpConfigurationPrompts("");
             }
             storeInput();
         } catch (IOException e) {
