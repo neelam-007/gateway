@@ -1,5 +1,10 @@
 package com.l7tech.server;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -7,15 +12,8 @@ import java.text.MessageFormat;
 import java.util.ListResourceBundle;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.l7tech.common.BuildInfo;
+import java.util.logging.Logger;
 
 /**
  * Servlet for handling server / http errors.
@@ -75,7 +73,7 @@ public class ErrorServlet extends HttpServlet {
     /**
      *
      */
-    private static final String ERROR_MARKUP = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n<html>\n<head><title>{0}</title></head>\n<body>\n{1}<hr/><i><font size=\"-2\">{2}</font></i>\n</body>\n</html>";
+    private static final String ERROR_MARKUP = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n<html>\n<head><title>{0}</title></head>\n<body>\n{1}\n</body>\n</html>";
 
     // These MUST be set by the container
     private static final String REQUEST_ATTR_STATUS_CODE = "javax.servlet.error.status_code";//    java.lang.Integer
@@ -99,7 +97,7 @@ public class ErrorServlet extends HttpServlet {
      *
      */
     private Object[] getFormatArgs(String title, String message) {
-        return new String[]{title, message, BuildInfo.getLongBuildString()};
+        return new String[]{title, message};
     }
 
     /**
