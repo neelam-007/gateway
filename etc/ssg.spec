@@ -89,7 +89,7 @@ if [ `grep ^ssgconfig: /etc/passwd` ]; then
        #  echo "user ssgconfig already exists"
 else
   adduser -g gateway ssgconfig
-  echo "7layer" | passwd ssgconfig --stdin
+  echo "7layer" | passwd ssgconfig --stdin >/dev/null
 fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
@@ -157,7 +157,9 @@ echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
+#add the ssg and the configuration service to chkconfig, but do not enable them
 /sbin/chkconfig --add ssg
+/sbin/chkconfig --add ssgsysconfig
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
 /bin/chown -Rf gateway.gateway /ssg
 chmod -Rf 775 /ssg/configwizard
@@ -203,6 +205,7 @@ if [ "$1" = "0" ] ; then
 	fi
 
 fi
+chkconfig --del ssgsysconfig
 chkconfig --del ssg
 
 %changelog
