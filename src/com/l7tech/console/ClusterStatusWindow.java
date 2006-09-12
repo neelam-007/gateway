@@ -514,13 +514,10 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     private JMenuItem getNodeLogViewMenuItem() {
         if (nodeLogViewMenuItem != null) return nodeLogViewMenuItem;
 
-        final JTable rowholder = getClusterStatusTable();
         nodeLogViewMenuItem = buildMenuItem("Node_ViewLogsMenuItem_text_name", 'L', null,
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    int rowToViewLogOf = rowholder.getSelectedRow();
-                    if (rowToViewLogOf < 0) rowToViewLogOf = 0;
-                    new ViewLogsAction(0, true).performAction();
+                    new ViewLogsAction(-1, true).performAction();
                 }
         });
         nodeLogViewMenuItem.setEnabled(false);
@@ -539,7 +536,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         nodeDeleteMenuItem = buildMenuItem("Node_DeleteMenuItem_text_name", 'D', null,
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    new DeleteNodeEntryAction(0, true).performAction();
+                    new DeleteNodeEntryAction(-1, true).performAction();
                 }
         });
         nodeDeleteMenuItem.setEnabled(false);
@@ -558,7 +555,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         nodeRenameMenuItem = buildMenuItem("Node_RenameMenuItem_text_name", 'R', null,
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    new RenameNodeAction(0).performAction();
+                    new RenameNodeAction(-1).performAction();
                 }
         });
         nodeRenameMenuItem.setEnabled(false);
@@ -1077,7 +1074,11 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         public void performAction() {
 
             // get the selected row index
-            final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
+            int selectedRowIndex = tableRow;
+            if(selectedRowIndex < 0) {
+                selectedRowIndex = getClusterStatusTable().getSelectedRow(); // when called from node menu
+            }
+            final int selectedRowIndexOld = selectedRowIndex;
             final String nodeNameSelected;
 
             // save the number of selected message
@@ -1181,13 +1182,18 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
          */
         public void performAction() {
             // get the selected row index
+            int selectedRow = tableRow;
+            if(selectedRow < 0) {
+                selectedRow = getClusterStatusTable().getSelectedRow(); // when called from node menu
+            }
+
             final String nodeName;
             final String nodeId;
 
             // save the number of selected message
-            if (tableRow >= 0) {
-                nodeName = (String)getClusterStatusTable().getValueAt(tableRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
-                nodeId = (String)getClusterStatusTable().getValueAt(tableRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
+            if (selectedRow >= 0) {
+                nodeName = (String)getClusterStatusTable().getValueAt(selectedRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                nodeId = (String)getClusterStatusTable().getValueAt(selectedRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
                 EditGatewayNameDialog dialog = new EditGatewayNameDialog(ClusterStatusWindow.this, clusterStatusAdmin, nodeId, nodeName);
                 dialog.setVisible(true);
