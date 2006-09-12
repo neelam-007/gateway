@@ -125,7 +125,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         actorComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
-                    String selecteditem = (String)e.getItem();
+                    String selecteditem = (String)actorComboBox.getSelectedItem();
                     X509Certificate selectedcert =
                             (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(selecteditem);
                     if (selectedcert == null) {
@@ -180,8 +180,8 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                         certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
                         locallyDefinedActor = maybeNewActor;
                         ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
-                        ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
-
+                        (actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
+                        xmlSecRecipientsFromOtherAssertions.put(locallyDefinedActor, locallyDefinedRecipient);
                     }
                     public void wizardCanceled(WizardEvent e) {}
                 });
