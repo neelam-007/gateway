@@ -512,11 +512,14 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
      * @return JMenuItem
      */
     private JMenuItem getNodeLogViewMenuItem() {
-        if(nodeLogViewMenuItem != null) return nodeLogViewMenuItem;
+        if (nodeLogViewMenuItem != null) return nodeLogViewMenuItem;
 
+        final JTable rowholder = getClusterStatusTable();
         nodeLogViewMenuItem = buildMenuItem("Node_ViewLogsMenuItem_text_name", 'L', null,
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    int rowToViewLogOf = rowholder.getSelectedRow();
+                    if (rowToViewLogOf < 0) rowToViewLogOf = 0;
                     new ViewLogsAction(0, true).performAction();
                 }
         });
