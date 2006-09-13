@@ -23,11 +23,6 @@ if [ "$old_rel" = 1 ]; then
 fi
 unset old_rel
 
-# The meat
-cpucount=`grep "cpu MHz" /proc/cpuinfo  |wc -l| tr -d \ `
-
-let cpucount="$cpucount*1"; # sanitize
-
 # non-portable to non-english meminfo of which I don't know of any
 # at the moment
 system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
@@ -64,20 +59,11 @@ else
 	JAVA_HOME="/ssg/jdk"
 fi
 
-let gcthreads="$cpucount-1"
-
-if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
-	# default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
-	default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
-	default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
-fi
 
 #
 # Sun's tuning works fine for 1.5.0_05 and above. No need to play with it.
 #
 
-unset gcthreads
-unset cpucount
 
 ulimit -s 2048
 
