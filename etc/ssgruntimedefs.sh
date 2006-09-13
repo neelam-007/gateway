@@ -46,7 +46,7 @@ default_java_opts="-Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxCon
 default_java_opts="$default_java_opts -Dcom.l7tech.common.http.prov.apache.CommonsHttpClient.maxTotalConnections=7500"
 default_java_opts="$default_java_opts -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl"
 default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30"
-default_java_opts="$default_java_opts -server -Djava.awt.headless=true -XX:CompileThreshold=1500"
+default_java_opts="$default_java_opts -server -Djava.awt.headless=true"
 default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger"
 default_java_opts="$default_java_opts -Xmx${java_ram}k -Xms${java_ram}k -Xmn${maxnewsize}k -Xss192k "
 
