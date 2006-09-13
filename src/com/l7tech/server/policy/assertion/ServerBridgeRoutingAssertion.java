@@ -528,15 +528,6 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
-            public String getUsername() {
-                //TODO [steve] this works but we would probably use initCredentials instead ...
-                return context.getCredentials().getLogin();
-            }
-
-            public char[] getPassword() {
-                return context.getCredentials().getCredentials();
-            }
-
             public HttpCookie[] getSessionCookies() {
                 Set cookies = bridgeRoutingAssertion.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
