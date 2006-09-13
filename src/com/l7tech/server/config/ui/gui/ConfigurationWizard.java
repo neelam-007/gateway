@@ -52,7 +52,6 @@ public class ConfigurationWizard extends Wizard {
     private String hostname;
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
-    public static final String LOG_PROPERTIES_NAME = "configuration-logging.properties";
 
     boolean hadFailures = false;
     private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();

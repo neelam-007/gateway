@@ -958,7 +958,7 @@
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${src.root}/etc/ConfigWizard.mf">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
-
+                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
                 <include name="com/l7tech/common/BuildInfo.class"/>
 
                 <include name="com/l7tech/common/util/FileUtils.class"/>
@@ -1033,6 +1033,7 @@
         <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${src.root}/etc/SystemConfigWizard.mf">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
+                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
                 <include name="com/l7tech/server/config/ui/console/ConfigurationWizard.class"/>
                 <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleStep.class"/>
                 <include name="com/l7tech/server/config/ui/console/BaseConsoleStep.class"/>

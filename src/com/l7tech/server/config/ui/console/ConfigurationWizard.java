@@ -54,12 +54,16 @@ public class ConfigurationWizard {
     }
 
     private void init(InputStream in, PrintStream out) {
-        System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
-        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, LOGCONFIG_NAME);
+        initLogging();
         osFunctions = OSDetector.getOSSpecificFunctions();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new HashSet<ConfigurationCommand>();
         manualStepsManager = new ManualStepsManager();
+    }
+
+    private void initLogging() {
+        System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
+        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, LOGCONFIG_NAME);
     }
 
     private void addSteps(List<ConfigWizardConsoleStep> steps) {
