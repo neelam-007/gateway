@@ -23,7 +23,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleDatabaseStep.class.getName());
 
     private SsgDatabaseConfigBean databaseBean;
-    private static final String STEP_INFO = "This step lets you create or setup a connection to the SSG database";
+    private static final String STEP_INFO = "This step lets you create or set up a connection to the SSG database";
     private static final String HEADER_DB_CONN_TYPE = "-- Select Database Connection Type --" + getEolChar();
     private static final String HEADER_NEW_DB_INFO = "-- Information for new database --";
     private static final String HEADER_EXISTING_DB_INFO = "-- Information for existing database --";
@@ -36,7 +36,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private static final String PROMPT_DB_HOSTNAME = "Hostname: ";
 
-    private static final String TITLE = "SSG Database Setup";
+    private static final String TITLE = "SSG Database Set Up";
     private DBActions dbActions;
     private boolean createNewDb;
     private static final String REALLY_CONFIRM_OVERWRITE = "Are you sure you want to overwrite the database? This cannot be undone.";
@@ -156,7 +156,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private String doGetRootPasswordPrompt(String defaultPassword) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-            "Please enter the root database users' password (needed to create a new database): [" + defaultPassword + "] ",
+            "Please enter the password for the root database user (needed to create a new database): [" + defaultPassword + "] ",
         };
         String passwd = getData(prompts, defaultPassword);
         databaseBean.setPrivPassword(passwd);
@@ -165,7 +165,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private String doGetRootUsernamePrompt(String defaultUsername) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-             "Please enter the root database username (needed to create a new database): [" + defaultUsername + "] ",
+             "Please enter the username for the root database user (needed to create a new database): [" + defaultUsername + "] ",
         };
         String username = getData(prompts, defaultUsername);
         databaseBean.setPrivUserName(username);

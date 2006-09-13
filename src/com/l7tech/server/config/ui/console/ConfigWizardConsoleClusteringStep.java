@@ -19,7 +19,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleClusteringStep.class.getName());
 
     ClusteringConfigBean clusterBean;
-    private static final String TITLE = "SSG Clustering Setup";
+    private static final String TITLE = "SSG Clustering Set Up";
 
     public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -65,7 +65,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
 
         String input = getData(new String[] {
             "-- Specify Hostname -- " + getEolChar(),
-            "The hostname will be used to identify the SSG and generate its certificates" + getEolChar(),
+            "The hostname is used to identify the SSG and generate its certificates" + getEolChar(),
             "What hostname would you like to use? [" + defaultClusterHostname + "] : ",
         }, defaultClusterHostname);
 

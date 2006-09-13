@@ -45,7 +45,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         configCommand = new ClusteringConfigCommand(configBean);
 
         clusteringConfigBean = (ClusteringConfigBean) configBean;
-        stepLabel = "Setup SSG Clustering";
+        stepLabel = "Set Up SSG Clustering";
 
         hostnameGroup = new ButtonGroup();
         hostnameGroup.add(useSsgHostnameOption);

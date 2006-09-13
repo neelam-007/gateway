@@ -119,7 +119,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
             createNewDb.setSelected(true);
         }
 
-        stepLabel = "Setup The SSG Database";
+        stepLabel = "Set Up The SSG Database";
 
         errorMessagePane.setBackground(mainPanel.getBackground());
         errorMessagePane.setForeground(Color.RED);
@@ -326,7 +326,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     public boolean getOverwriteConfirmationFromUser(String dbName) {
         String errorMsg = "The database named \"" + dbName + "\" already exists. Would you like to overwrite it?";
         boolean isOkToOverwrite = false;
-        int response = JOptionPane.showConfirmDialog(this,errorMsg, "Database already exists", JOptionPane.YES_NO_OPTION);
+        int response = JOptionPane.showConfirmDialog(this,errorMsg, "Database Already Exists", JOptionPane.YES_NO_OPTION);
         if (response == JOptionPane.OK_OPTION) {
             response = showReallyConfirmOverwriteMessage(dbName);
             if (response == CONFIRM_OVERWRITE_YES) {
@@ -387,7 +387,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     }
 
     public Map<String, String> getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {
-        CredentialsDialog dlg = new CredentialsDialog(getParentWizard(), "Enter Credentials for Priveleged user", true);
+        CredentialsDialog dlg = new CredentialsDialog(getParentWizard(), "Enter Credentials for Privileged User", true);
 
         if (StringUtils.isNotEmpty(description)) dlg.setDescription(description);
         if (StringUtils.isNotEmpty(defaultUsername)) dlg.setUsername(defaultUsername);

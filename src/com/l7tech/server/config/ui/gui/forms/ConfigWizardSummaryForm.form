@@ -72,16 +72,16 @@
       </vspacer>
       <component id="51648" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="67" width="408" height="15"/>
+          <xy x="20" y="67" width="410" height="16"/>
           <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="The following changes will be made to this SSG. Press next to continue"/>
+          <text value="The following changes will be made to this SSG. Press [Next] to continue."/>
         </properties>
       </component>
       <component id="38570" class="javax.swing.JLabel">
         <constraints>
-          <xy x="20" y="22" width="137" height="15"/>
+          <xy x="20" y="22" width="139" height="16"/>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>

@@ -109,7 +109,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                 kstypes.add(type);
         }
         keystoreType.setModel(new DefaultComboBoxModel(kstypes.toArray(new KeystoreType[0])));
-        stepLabel = "Setup SSG Keystore";
+        stepLabel = "Set Up SSG Keystore";
         configBean = new KeystoreConfigBean();
         configCommand = new KeystoreConfigCommand(configBean);
 
