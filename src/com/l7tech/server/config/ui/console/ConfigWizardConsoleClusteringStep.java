@@ -89,7 +89,8 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         //get clustering type preference
         int i = 1;
         for (ClusteringType clusterType : ClusteringType.values()) {
-            clusterPromptMapper.put(String.valueOf(i++), clusterType);
+            if (clusterType != ClusteringType.UNDEFINED)
+                clusterPromptMapper.put(String.valueOf(i++), clusterType);
         }
 
         Set<String> keys = clusterPromptMapper.keySet();
