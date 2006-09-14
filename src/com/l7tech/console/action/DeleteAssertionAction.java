@@ -71,6 +71,8 @@ public class DeleteAssertionAction extends SecureAction {
 
         if (nodes == null) {
             delete(node);
+        } else if (nodes.length < 2) {
+            delete(nodes[0]);
         } else {
             delete(nodes);
         }
