@@ -254,7 +254,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             return;
         }
         SecurityProvider sp = Registry.getDefault().getSecurityProvider();
-
+        if (rootAssertionNode == null) return;
         boolean canUpdateService;
         try {
             PublishedService svc = rootAssertionNode.getService();
