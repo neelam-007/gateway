@@ -451,7 +451,7 @@ public class Wizard extends JDialog {
         }
 
         buttonFinish.setEnabled(finishEnabled);
-        
+
         */
         buttonFinish.setEnabled(wp.canFinish());
         buttonNext.setEnabled(wp.canAdvance() && wizardIterator.hasNext());
@@ -686,7 +686,7 @@ public class Wizard extends JDialog {
          */
         public void setSelected(boolean b) {
             selected = b;
-            setFont(initialFont.deriveFont(selected ? Font.BOLD : Font.PLAIN, 12));
+            setFont(initialFont.deriveFont(selected ? Font.BOLD : Font.PLAIN));
         }
 
         /**
