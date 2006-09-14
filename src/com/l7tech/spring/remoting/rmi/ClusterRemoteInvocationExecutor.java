@@ -60,10 +60,6 @@ public final class ClusterRemoteInvocationExecutor implements RemoteInvocationEx
 
         try {
             InetAddress remoteHost = InetAddress.getByName(context.getRemoteHost());
-            if(!remoteHost.isSiteLocalAddress()) {
-                throw new IllegalAccessException("Cluster invocation denied from for non-local ip '"+remoteHost+"'.");
-            }
-
             boolean isClusterNode = false;
             Collection clusterNodes = clusterInfoManager.retrieveClusterStatus();
             for ( Iterator i = clusterNodes.iterator(); i.hasNext(); ) {
