@@ -68,7 +68,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
 
                 if (Boolean.FALSE.equals(o) && Boolean.TRUE.equals(n)) {
                     event = new ServiceEvent.Disabled(updated.getEntity(), changes);
-                } else {
+                } else if (Boolean.TRUE.equals(o) && Boolean.FALSE.equals(n)) {
                     event = new ServiceEvent.Enabled(updated.getEntity(), changes);
                 }
             }
