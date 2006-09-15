@@ -60,7 +60,12 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         int numKids = getChildCount();
         for (int i = 0; i < numKids; ++i) {
             TreeNode kid = getChildAt(i);
-            if (kid instanceof AbstractAssertionPaletteNode) {
+            if (kid instanceof CustomAccessControlNode) {
+                // Have to check for CustomAccessControlNode specially, since it doesn't extend AbstractAssertionPaletteNode.
+                Assertion ass = ((CustomAccessControlNode)kid).asAssertion();
+                if (ass != null && !Registry.getDefault().getLicenseManager().isAssertionEnabled(ass))
+                    continue; // Skip adding this kid
+            } else if (kid instanceof AbstractAssertionPaletteNode) {
                 AbstractAssertionPaletteNode palKid = (AbstractAssertionPaletteNode)kid;
                 if (!palKid.isEnabledByLicense()) continue; // Skip adding this kid
             }
