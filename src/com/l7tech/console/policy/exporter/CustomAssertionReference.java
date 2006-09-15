@@ -14,6 +14,7 @@ import com.l7tech.console.util.Registry;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
@@ -41,8 +42,21 @@ public class CustomAssertionReference extends ExternalReference {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         CustomAssertionReference output = new CustomAssertionReference();
-        output.customAssertionName = getParamFromEl(el, ASSNAME_EL_NAME);
+        output.customAssertionName = fixWhitespace(getParamFromEl(el, ASSNAME_EL_NAME));
         return output;
+    }
+
+    private static final Pattern FIX_WS = Pattern.compile("\\s+");
+
+    /**
+     * Fold repeated whitespace in s into a single space character.
+     * Works around extra spaces introduced when the exported policy XML is reformatted (Bug #2916)
+     *
+     * @param s  the string to fold.  Must not be null.
+     * @return the folded string.  Never null.
+     */
+    private static String fixWhitespace(String s) {
+        return FIX_WS.matcher(s).replaceAll(" ");        
     }
 
     public String getCustomAssertionName() {
