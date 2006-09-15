@@ -25,6 +25,8 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<UserRoleAssignment> userAssignments = new HashSet<UserRoleAssignment>();
 
+    private String description;
+
     public Set<Permission> getPermissions() {
         return permissions;
     }
@@ -84,5 +86,13 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
             return 0;
         
         return this.getName().compareTo(that.getName());
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
