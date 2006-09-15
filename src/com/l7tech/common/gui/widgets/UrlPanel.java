@@ -6,20 +6,14 @@ package com.l7tech.common.gui.widgets;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.variable.ExpandVariables;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author alex
  */
 public class UrlPanel extends TextEntryPanel {
-    private static final Logger logger = Logger.getLogger(UrlPanel.class.getName());
-
     public UrlPanel() {
         this("URL:", null);
     }
@@ -35,20 +29,13 @@ public class UrlPanel extends TextEntryPanel {
         if (tmp != null && tmp.length > 0) {
             return null;
         }
-        InputStream readme = null;
         try {
-            URLConnection conn = new URL(model.toString()).openConnection();
-            conn.connect();
-            readme = conn.getInputStream();
+            URL url = new URL(model.toString());
+            //noinspection ResultOfMethodCallIgnored
+            InetAddress.getByName(url.getHost());
             return null;
         } catch (Exception e) {
             return ExceptionUtils.getMessage(e);
-        } finally {
-            try {
-                if (readme != null) readme.close();
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Couldn't close URL stream", e);
-            }
         }
     }
 
