@@ -508,27 +508,13 @@
         </constructor-arg>
     </bean>
 
-
-    <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
-        <property name="proxyInterfaces"><value>com.l7tech.common.audit.AuditContext</value></property>
-        <property name="targetSource">
-            <ref local="auditContextTargetSource"/>
-        </property>
+    <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
+        <property name="targetId" value="auditContextImpl"/>
     </bean>
 
-    <bean id="auditContextTarget" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
-        <constructor-arg>
-            <ref bean="serverConfig"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="auditRecordManager"/>
-        </constructor-arg>
-    </bean>
-
-    <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
-        <property name="targetBeanName">
-            <value>auditContextTarget</value>
-        </property>
+    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="auditRecordManager"/>
     </bean>
 
     <!-- server side Status Update Manager -->
