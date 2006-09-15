@@ -2,6 +2,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DocumentSizeFilter;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.PermissionFlags;
@@ -21,6 +22,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -41,6 +43,7 @@ public class EditRoleDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JTextField roleName;
+    private JTextArea roleDescription;
     private JButton addPermission;
     private JButton editPermission;
     private JButton removePermission;
@@ -88,8 +91,6 @@ public class EditRoleDialog extends JDialog {
             throw new IllegalStateException("Could not instantiate security provider");
         }
 
-        enablePermissionEdits(shouldAllowEdits);
-
         try {
             EntityHeader[] hs = identityAdmin.findAllIdentityProviderConfig();
             for (EntityHeader h : hs) {
@@ -108,53 +109,59 @@ public class EditRoleDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
 
+        ((AbstractDocument)roleDescription.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
         if (role.getOid() == Role.DEFAULT_OID) {
             setTitle(resources.getString("editRoleDialog.newTitle"));
         } else {
-            if (flags.canUpdateSome())
-                setTitle(MessageFormat.format(resources.getString("editRoleDialog.existingTitle"), role.getName()));
-            else
-                setTitle(MessageFormat.format(resources.getString("editRoleDialog.readOnlyExistingTitle"), role.getName()));
-
+            setTitle(MessageFormat.format(resources.getString(flags.canUpdateSome()?"editRoleDialog.existingTitle":"editRoleDialog.readOnlyExistingTitle"), role.getName()));
             roleName.setText(role.getName());
+            roleDescription.setText(RbacUtilities.getDescriptionString(role, false));
+            roleDescription.getCaret().setDot(0);
         }
         setupButtonListeners();
         setupActionListeners();
         updateButtonStates();
+        applyFormSecurity();
         pack();
     }
 
     private void applyFormSecurity() {
-        roleName.setEnabled(flags.canUpdateSome());
+        boolean canEdit = flags.canUpdateSome();
+
+        addPermission.setVisible(shouldAllowEdits);
+        editPermission.setVisible(shouldAllowEdits);
+        removePermission.setVisible(shouldAllowEdits);
+
+        roleName.setEnabled(canEdit && shouldAllowEdits);
+        roleDescription.setEnabled(canEdit && shouldAllowEdits);
+        addPermission.setEnabled(canEdit && shouldAllowEdits);
+        editPermission.setEnabled(canEdit && shouldAllowEdits);
+        removePermission.setEnabled(canEdit &&shouldAllowEdits);
         addAssignment.setEnabled(flags.canUpdateSome());
         removeAssignment.setEnabled(flags.canUpdateSome());
     }
 
-    private void enablePermissionEdits(boolean enableRoleEditing) {
-        boolean canEdit = flags.canUpdateSome();
-
-        addPermission.setVisible(canEdit && enableRoleEditing);
-        editPermission.setVisible(canEdit && enableRoleEditing);
-        removePermission.setVisible(canEdit && enableRoleEditing);
-
-        addPermission.setEnabled(canEdit && enableRoleEditing);
-        editPermission.setEnabled(canEdit && enableRoleEditing);
-        removePermission.setEnabled(canEdit &&enableRoleEditing);
-    }
-
     private void enablePermissionEditDeleteButtons() {
-        boolean enabled = permissionsTable.getModel().getRowCount() != 0 &&
+        boolean validRowSelected = permissionsTable.getModel().getRowCount() != 0 &&
                 getSelectedPermission() != null;
 
-        editPermission.setEnabled(enabled);
-        removePermission.setEnabled(enabled);
+        boolean hasEditPermission = flags.canUpdateSome();
+
+        //we should only enable the permission edit/remove buttons if a valid row is selected AND if we are allowing
+        // edits because of the mode AND if the user has permission in the first place.
+        editPermission.setEnabled(validRowSelected && hasEditPermission && shouldAllowEdits);
+        removePermission.setEnabled(validRowSelected && hasEditPermission && shouldAllowEdits);
     }
 
     private void enableAssignmentDeleteButton() {
-        boolean enabled = assignmentListModel.getSize() != 0 &&
+        boolean validRowSelected = assignmentListModel.getSize() != 0 &&
                 userAssignmentList.getSelectedIndex() < userAssignmentList.getModel().getSize();
 
-        removeAssignment.setEnabled(enabled);
+        boolean hasEditPermission = flags.canUpdateSome();
+
+        //we should only enable the assignment remove button if a valid row is selected AND if the user has permission
+        //in the first place.
+        removeAssignment.setEnabled(validRowSelected && hasEditPermission);
     }
 
     private class PermissionTableModel extends AbstractTableModel {
@@ -434,6 +441,7 @@ public class EditRoleDialog extends JDialog {
     private void onOK() {
         if (flags.canUpdateSome()) {
             role.setName(roleName.getText());
+            role.setDescription(roleDescription.getText());
             Set<Permission> perms = role.getPermissions();
             perms.clear();
             for (Permission perm : tableModel.getPermissions()) {

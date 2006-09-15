@@ -7,6 +7,8 @@ package com.l7tech.common.security.rbac;
 
 import org.apache.commons.lang.StringUtils;
 
+import java.text.MessageFormat;
+
 /**
  * User: megery
  * Date: Jul 31, 2006
@@ -18,5 +20,15 @@ public class RbacUtilities {
 
     public static boolean isEnableRoleEditing() {
         return StringUtils.equalsIgnoreCase(System.getProperty(SYSTEM_PROP_ENABLEROLEEDIT), "true");
+    }
+
+    public static String getDescriptionString(Role role, boolean asHtml) {
+
+        String name = role.getName();
+        String description = role.getDescription();
+        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(description))
+            return "";
+
+        return MessageFormat.format(description, asHtml?"<strong>" + name + "</strong>":name);
     }
 }

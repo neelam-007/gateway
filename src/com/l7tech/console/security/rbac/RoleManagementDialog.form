@@ -164,7 +164,7 @@
             <properties>
               <focusable value="false"/>
             </properties>
-            <border type="etched" title="Role Properties"/>
+            <border type="etched" title="Properties"/>
             <children>
               <scrollpane id="da377" binding="propertyScroller">
                 <constraints>
@@ -173,14 +173,16 @@
                     <minimum-size width="300" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <horizontalScrollBarPolicy value="31"/>
+                </properties>
                 <border type="none"/>
                 <children>
-                  <component id="ac5af" class="javax.swing.JTextArea" binding="propertiesPane">
+                  <component id="49e6d" class="javax.swing.JTextPane" binding="propertiesPane">
                     <constraints/>
                     <properties>
+                      <contentType value="text/html"/>
                       <editable value="false"/>
-                      <focusable value="false"/>
                     </properties>
                   </component>
                 </children>

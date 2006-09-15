@@ -3,7 +3,9 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.objectmodel.FindException;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -31,7 +33,9 @@ public class RoleManagementDialog extends JDialog {
     private JButton removeRole;
 
     private JPanel mainPanel;
-    private JTextArea propertiesPane;
+    private JTextPane propertiesPane;
+
+    private final PermissionFlags flags;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
@@ -50,18 +54,18 @@ public class RoleManagementDialog extends JDialog {
 
     public RoleManagementDialog(Dialog parent) throws HeadlessException {
         super(parent, resources.getString("manageRoles.title"));
+        flags = PermissionFlags.get(EntityType.RBAC_ROLE);
         initialize();
     }
 
     public RoleManagementDialog(Frame parent) throws HeadlessException {
         super(parent, resources.getString("manageRoles.title"));
+        flags = PermissionFlags.get(EntityType.RBAC_ROLE);
         initialize();
     }
 
     private void initialize() {
         enableRoleManagmentButtons(RbacUtilities.isEnableRoleEditing());
-        propertiesPane.setEditable(false);
-        propertiesPane.setLineWrap(false);
 
         populateList();
         setupButtonListeners();
@@ -78,8 +82,8 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void enableRoleManagmentButtons(boolean enable) {
-        addRole.setVisible(enable);
-        removeRole.setVisible(enable);
+        addRole.setVisible(flags.canCreateSome() && enable);
+        removeRole.setVisible(flags.canDeleteSome() && enable);
     }
 
     private void setupActionListeners() {
@@ -127,22 +131,35 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void updatePropertiesSummary() throws RemoteException {
-        Role role = getSelectedRole();
         String message = null;
+
+        Role role = getSelectedRole();
         if (role != null) {
+            String roleName = role.getName();
+            String roleDescription = role.getDescription();
+
             StringBuilder sb = new StringBuilder();
-            sb.append("Role Name:\n").append("   ").append(role.getName()).append("\n\n");
-            sb.append("Permissions:\n");
-            for (String s : getPermissionList(role)) {
-                sb.append(s).append("\n");
-            }
-            sb.append("\n");
+            sb.append("<html>");
 
-            sb.append("Assignments:\n");
+            if (StringUtils.isNotEmpty(roleDescription)) {
+                sb.append(RbacUtilities.getDescriptionString(role, true));
+                sb.append("<br>");
+            } else {
+                sb.append("<strong>Permissions:</strong><br>");
+                for (String s : getPermissionList(role)) {
+                    sb.append(MessageFormat.format("&nbsp&nbsp&nbsp{0}<br>\n", s));
+                }
+            }
+
+            sb.append("<br>");
+
+            sb.append("<strong>Assignments:</strong><br>");
+
             for (String u : getAssignmentList(role)) {
-                sb.append(u).append("\n");
+                sb.append(MessageFormat.format("&nbsp&nbsp&nbsp{0}<br>\n", u));
             }
 
+            sb.append("</html>");
             message = sb.toString();
         }
         propertiesPane.setText(message);
@@ -162,20 +179,20 @@ public class RoleManagementDialog extends JDialog {
                     EntityType etype = permission.getEntityType();
                     switch(permission.getScope().size()) {
                         case 0:
-                            sb.append("<Any");
+                            sb.append("[Any");
                             if (etype == EntityType.ANY)
                                 sb.append(" Object");
                             else {
                                 sb.append(" ").append(etype.getName());
                             }
-                            sb.append(">");
+                            sb.append("]");
                             break;
                         case 1:
                             sb.append(etype.getName()).append(" ").append(
                                     permission.getScope().iterator().next().toString());
                             break;
                         default:
-                            sb.append("<Complex Scope>");
+                            sb.append("[Complex Scope]");
                     }
                     sorted.add(sb.toString());
                 }
@@ -187,7 +204,6 @@ public class RoleManagementDialog extends JDialog {
     private Set<String> getAssignmentList(Role role) throws RemoteException {
         Set<String> sorted = new TreeSet<String>();
 
-//        java.util.List<String> list = new ArrayList<String>();
         if (role != null) {
             Set<UserRoleAssignment> users = role.getUserAssignments();
             if (users == null || users.isEmpty()) {
@@ -228,11 +244,14 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private void enableEditRemoveButtons() {
-        boolean enabled = roleList.getModel().getSize() != 0 &&
+        boolean validRowSelected = roleList.getModel().getSize() != 0 &&
                 roleList.getSelectedValue() != null;
 
-        removeRole.setEnabled(enabled);
-        editRole.setEnabled(enabled);
+        boolean hasUpdatePermissions = flags.canUpdateSome();
+        boolean canRemovePermissions = flags.canDeleteSome();
+
+        removeRole.setEnabled(canRemovePermissions && validRowSelected);
+        editRole.setEnabled(validRowSelected);
     }
 
     private void doUpdateRoleAction(ActionEvent e) throws RemoteException {

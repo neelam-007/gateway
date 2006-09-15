@@ -10,6 +10,7 @@
         <version name="version" column="version" type="integer"/>
 
         <property name="name" type="string" length="128" unique="true" not-null="true"/>
+        <property name="description" type="string" length="255" unique="false" not-null="false"/>
 
         <set name="permissions" inverse="true" cascade="all-delete-orphan" lazy="false">
             <key column="role_oid" not-null="true"/>
