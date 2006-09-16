@@ -97,15 +97,26 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion implement
         }
 
         long window = expires - created;
+        boolean constrain = false;
+        long originalExpires = expires;
         if (window > assertion.getMaxExpiryMilliseconds()) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE);
+            constrain = true;
             expires = created + assertion.getMaxExpiryMilliseconds();
         }
 
         if (expires + expiresPastFuzz < now) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRED);
-            return AssertionStatus.BAD_REQUEST;
+            if (constrain && (!(originalExpires + expiresPastFuzz < now))) {
+                // then this only expired because we constrained the expiry time so audit that
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRED_TRUNC);
+                return AssertionStatus.BAD_REQUEST;
+            } else {
+                // the timestamp as it came in was expired so just audit that
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRED);
+                return AssertionStatus.BAD_REQUEST;
+            }
         }
+
         return AssertionStatus.NONE;
     }
 

@@ -434,8 +434,9 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in the request, but Created time was too far in the future");
     public static final M REQUEST_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in the request, but expired too long ago");
     public static final M REQUEST_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in the request, but has no Expires time");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.INFO, "Timestamp found in the request and is not expired, but lifetime exceeds configured maximum; will constrain to maximum");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.FINE, "Timestamp found in the request exceeds maximimum allowed lifetime, constraining to maximum");
     public static final M REQUEST_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in the request, but has no Created time");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED_TRUNC   = m(7809, Level.WARNING, "Timestamp found in the request, but is expired when constrained to maximum allowed lifetime");
 
     public static final M RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported Security Token Type: {0}");
     public static final M RESPONSE_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");
