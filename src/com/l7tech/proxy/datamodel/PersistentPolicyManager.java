@@ -22,7 +22,6 @@ public class PersistentPolicyManager extends LocalPolicyManager {
 
     public void setPolicy(PolicyAttachmentKey key, Policy policy ) throws PolicyLockedException {
         key.setPersistent(true);
-        policy.setVersion(null);
         policy.setAlwaysValid(true); // statically-configured policies must never be ignored
         super.setPolicy(key, policy);
     }
@@ -33,7 +32,6 @@ public class PersistentPolicyManager extends LocalPolicyManager {
         // Double-check flags just in case ssgs.xml was hand-edited to insert a policy
         if (policy != null) {
             policyAttachmentKey.setPersistent(true);
-            policy.setVersion(null);
             policy.setAlwaysValid(true); // statically-configured policies must never be ignored
         }
 

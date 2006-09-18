@@ -561,8 +561,10 @@ class SsgPoliciesPanel extends JPanel {
                     if (newPak == null)
                         return;
                     policyCache.flushPolicy(pak);
-                    if (!newPak.isPersistent())
+                    if (!newPak.isPersistent()) {
                         policyCache.flushPolicy(newPak); // avoid trying to overwrite persistent with transient
+                        policy.setAlwaysValid(false);
+                    }
                     try {
                         policyCache.setPolicy(newPak, policy);
                     } catch (PolicyLockedException e1) {
@@ -666,8 +668,10 @@ class SsgPoliciesPanel extends JPanel {
                         Policy policy = policyCache.getPolicy(pak);
                         if (policy != null) {
                             pak.setPersistent(p.booleanValue());
-                            if (!pak.isPersistent())
+                            if (!pak.isPersistent()) {
                                 policyCache.flushPolicy(pak);
+                                policy.setAlwaysValid(false);                                
+                            }
                             try {
                                 policyCache.setPolicy(pak, policy);
                             } catch (PolicyLockedException e) {

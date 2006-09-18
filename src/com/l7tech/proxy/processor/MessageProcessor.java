@@ -606,7 +606,7 @@ public class MessageProcessor {
 
             // Let the Gateway know what policy version we used for the request.
             Policy policy = context.getActivePolicy();
-            if (policy != null && policy.getVersion() != null)
+            if (policy != null && policy.getVersion() != null && !policy.isAlwaysValid())
                 params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion()));
 
             final Document decoratedDocument = request.getXmlKnob().getDocumentReadOnly();
