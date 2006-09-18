@@ -139,6 +139,7 @@ CREATE TABLE client_cert (
   thumbprint_sha1 varchar(64),
   ski varchar(64),
   PRIMARY KEY  (objectid),
+  unique key i_identity (provider, user_id),
   INDEX i_thumb (thumbprint_sha1),
   INDEX i_ski (ski)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;

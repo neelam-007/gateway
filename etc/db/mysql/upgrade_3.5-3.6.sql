@@ -56,6 +56,9 @@ alter table service_resolution modify column uri mediumtext character set latin1
 --alter table service_resolution modify column digested varchar(32) NOT NULL;
 --CREATE UNIQUE INDEX digested ON service_resolution (digested);
 
+--  bgzla #2923
+alter table client_cert add unique key i_identity (provider, user_id);
+
 ------------------------
 -- META-GROUP SUPPORT --
 ------------------------
