@@ -34,7 +34,7 @@ public class AddRequestWssSamlAdvice implements Advice {
           new IntroductionWizardStepPanel(
             new VersionWizardStepPanel(
               new SelectStatementWizardStepPanel(
-                new AuthenticationMethodsWizardStepPanel(
+                new AuthenticationMethodsNewWizardStepPanel(
                   new AuthorizationStatementWizardStepPanel(
                     new AttributeStatementWizardStepPanel(
                       new SubjectConfirmationWizardStepPanel(

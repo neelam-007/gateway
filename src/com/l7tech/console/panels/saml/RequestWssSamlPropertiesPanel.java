@@ -74,7 +74,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         tabbedPane.add(versionWizardStepPanel.getStepLabel(), versionWizardStepPanel);        
 
         if (assertion.getAuthenticationStatement() != null) {
-            AuthenticationMethodsWizardStepPanel authenticationMethodsWizardStepPanel = new AuthenticationMethodsWizardStepPanel(null, false, this);
+            AuthenticationMethodsNewWizardStepPanel authenticationMethodsWizardStepPanel = new AuthenticationMethodsNewWizardStepPanel(null, false, this);
             authenticationMethodsWizardStepPanel.setBorder(emptyBorder);
             panels.add(authenticationMethodsWizardStepPanel);
             tabbedPane.add(authenticationMethodsWizardStepPanel.getStepLabel(), authenticationMethodsWizardStepPanel);
