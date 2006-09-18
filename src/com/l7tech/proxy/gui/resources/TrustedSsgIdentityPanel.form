@@ -100,12 +100,12 @@
                       </component>
                       <component id="7e0e8" class="javax.swing.JCheckBox" binding="useKerberosCredentialsCheckBox">
                         <constraints>
-                          <xy x="0" y="56" width="82" height="23"/>
+                          <xy x="0" y="56" width="173" height="23"/>
                           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                         </constraints>
                         <properties>
                           <selected value="false"/>
-                          <text value="Use Kerberos Credentials"/>
+                          <text value="Use Windows Domain Login"/>
                         </properties>
                       </component>
                     </children>
