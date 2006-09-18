@@ -14,6 +14,7 @@ if ($logFile->open(">>/ssg/sysconfigwizard/ssgsysconfig.log")) {
 }
 
 my @commandArray;
+my @dhcpInterfaces;
 my $hostnameToUse = undef;
 my $ntpServerToUse = undef;
 my @filesToDelete;
@@ -37,16 +38,18 @@ my %outputFiles = (
 
 my @netConfigFiles = glob($netConfigPattern);
 for my $configFile(@netConfigFiles) {
-	if($inputFh->open("<$configFile")) {
-		my $params = " ";
-		while(my $line = <$inputFh>) {
+    if($inputFh->open("<$configFile")) {
+        my (undef, $ifName) = split("_", $configFile);
+        my $params = " ";
+        while(my $line = <$inputFh>) {
             chomp($line);
             $params = $params."$line ";
+            if ($line =~ /bootproto=dhcp/) {push(@dhcpInterfaces,$ifName);}
         }
         push(@commandArray, $params);
         push (@filesToDelete, $configFile);
-		$inputFh->close();
-	}
+        $inputFh->close();
+    }
 }
 
 if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
@@ -90,6 +93,14 @@ if (defined($hostnameToUse)) {
 	   $logFile->print("$timestamp: Wrote $outputFiles{'NETFILE'} with:\n");
 	   $logFile->print("\tNETWORKING=yes\n");
 	   $logFile->print("\tHOSTNAME=$hostnameToUse\n");
+
+        for my $whichInterface(@dhcpInterfaces){
+            if ($outputFh->open(">>/etc/sysconfig/network-scripts/ifcfg-$whichInterface")) {
+                $outputFh->print("DHCP_HOSTNAME=$hostnameToUse\n");
+                $outputFh->close();
+            }
+        }
+
 	} else {
 		$logFile->print("$timestamp: Couldn't open $outputFiles{'NETFILE'}. Skipping Network configuration\n");
 	}
@@ -120,7 +131,6 @@ if (defined($ntpServerToUse)) {
 	}
 }
 
-#my $backupFilename = "configfiles/sysconfigsettings.tgz";
 unlink(@filesToDelete);
 $logFile->close();
 
