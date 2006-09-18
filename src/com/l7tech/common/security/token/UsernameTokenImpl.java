@@ -24,19 +24,32 @@ import java.util.Date;
  */
 public class UsernameTokenImpl implements UsernameToken {
     private Element element;
-    private PasswordAuthentication passwordAuth;
+    private String username; // username to include, must not be null
+    private PasswordAuthentication passwordAuth; // password to include, or null to not include one
     private String elementId;
 
-    /** Create a UsernameTokenImpl from the given credentials, which must be cleartext. */
+    /**
+     * Create a UsernameTokenImpl from the given credentials, which must be cleartext.
+     * @param pc a PasswordAuthentication, which must not be null, containing a non-null username and a non-null (but possibly empty) password.
+     */
     public UsernameTokenImpl(PasswordAuthentication pc) {
         this.element = null;
         this.elementId = null;
+        this.username = pc.getUserName();
         this.passwordAuth = pc;
     }
 
-    /** Create a UsernameTokenImpl from the given username and password. */
+    /**
+     * Create a UsernameTokenImpl from the given username and password.
+     * @param username the username to include.  Must not be null.
+     * @param password the password to include, or null to omit the password.
+     */
     public UsernameTokenImpl(String username, char[] password) {
-        this(new PasswordAuthentication(username, password));
+        if (username == null) throw new IllegalArgumentException("A username is required to create a UsernameToken");
+        this.element = null;
+        this.elementId = null;
+        this.username = username;
+        this.passwordAuth = password == null ? null : new PasswordAuthentication(username, password);
     }
 
     /** Create a UsernameTokenImpl from the given Element.  The Element will be parsed during the construction. */
@@ -75,12 +88,14 @@ public class UsernameTokenImpl implements UsernameToken {
         }
         // Remember this as a security token
         this.element = usernameTokenElement;
+        this.username = username;
         this.passwordAuth = new PasswordAuthentication(username, passwd == null ? null : passwd.toCharArray());
         this.elementId = null;
     }
 
+    /** @return the username.  Never null. */
     public String getUsername() {
-        return passwordAuth.getUserName();
+        return username;
     }
 
     public SecurityTokenType getType() {
@@ -102,11 +117,11 @@ public class UsernameTokenImpl implements UsernameToken {
         // attach them
         untokEl.appendChild(usernameEl);
         // fill in username value
-        Text txtNode = XmlUtil.createTextNode(nodeFactory, passwordAuth.getUserName());
+        Text txtNode = XmlUtil.createTextNode(nodeFactory, this.username);
         usernameEl.appendChild(txtNode);
         // fill in password value and type
-        char[] pass = passwordAuth.getPassword();
-        if (pass != null) {
+        if (passwordAuth != null) {
+            char[] pass = passwordAuth.getPassword();
             Element passwdEl = nodeFactory.createElementNS(securityNs, "Password");
             passwdEl.setPrefix(untokEl.getPrefix());
             untokEl.appendChild(passwdEl);
@@ -145,10 +160,11 @@ public class UsernameTokenImpl implements UsernameToken {
     }
 
     public String toString() {
-        return "UsernameToken: " + passwordAuth.getUserName();
+        return "UsernameToken: " + username;
     }
 
+    /** @return the password, or null if there wasn't one. */
     public char[] getPassword() {
-        return passwordAuth.getPassword();
+        return passwordAuth == null ? null : passwordAuth.getPassword();
     }
 }

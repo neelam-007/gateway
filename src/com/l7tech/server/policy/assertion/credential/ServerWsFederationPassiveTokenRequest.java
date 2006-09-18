@@ -168,6 +168,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             } else {
                 throw new InvalidTokenException("Input token wasn't username/password");
             }
+            if (pass == null) throw new InvalidTokenException("Input token didn't contain a password");
 
             GenericHttpRequestParams params = new GenericHttpRequestParams(ipStsUrl);
             initParams(params);
