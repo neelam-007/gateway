@@ -233,6 +233,10 @@ public final class SamlAssertionV2 extends SamlAssertion {
         return SecurityTokenType.SAML2_ASSERTION;
     }
 
+    public int getVersionId() {
+        return VERSION_2_0;
+    }
+
     public boolean isHolderOfKey() {
         return HOLDER_OF_KEY.equals(confirmationMethod);
     }

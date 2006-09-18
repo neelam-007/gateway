@@ -17,6 +17,10 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
     ConfirmationMethod HOLDER_OF_KEY = new ConfirmationMethod("Holder-of-key");
     ConfirmationMethod SENDER_VOUCHES = new ConfirmationMethod("Sender-vouches");
     ConfirmationMethod BEARER_TOKEN = new ConfirmationMethod("Bearer token");
+    int VERSION_1_1 = 1;
+    int VERSION_2_0 = 2;
+
+    int getVersionId();
 
     X509Certificate getSubjectCertificate();
 

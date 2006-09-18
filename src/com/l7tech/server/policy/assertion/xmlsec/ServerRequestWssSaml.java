@@ -112,7 +112,17 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
                     samlAssertion = samlToken;
                 }
             }
-            if (samlAssertion == null) {
+            boolean correctVersion = false;
+            boolean requestIsVersion1 = samlAssertion != null && samlAssertion.getVersionId()==SamlSecurityToken.VERSION_1_1;
+            boolean anyVersionAllowed = requestWssSaml.getVersion() != null && requestWssSaml.getVersion().intValue()==0;
+            boolean requireVersion1 = requestWssSaml.getVersion() == null || requestWssSaml.getVersion().intValue()==1;
+            boolean requireVersion2 = requestWssSaml.getVersion() != null && requestWssSaml.getVersion().intValue()==2;
+            if (requestIsVersion1 &&  (anyVersionAllowed || requireVersion1) ) {
+                correctVersion = true;
+            } else if (!requestIsVersion1 && (anyVersionAllowed || requireVersion2)) {
+                correctVersion = true;
+            }
+            if (samlAssertion==null || !correctVersion) {
                 auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION);
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
