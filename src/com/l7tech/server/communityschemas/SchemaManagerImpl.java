@@ -184,10 +184,11 @@ public class SchemaManagerImpl implements SchemaManager {
         // then, we'll grab the write lock and do it.
         Map<String, SchemaHandle> urlsToRemove = new HashMap<String, SchemaHandle>();
 
-        long maxCacheEntries = this.maxCacheEntries + globalSchemasByUrl.size();
+        final long maxCacheEntries;
 
         try {
             cacheLock.readLock().acquire();
+            maxCacheEntries = this.maxCacheEntries + globalSchemasByUrl.size();
 
             // First, if the cache is too big, throw out the least-recently-used schemas until it isn't.
             long extras = schemasBySystemId.size() - maxCacheEntries;
@@ -693,8 +694,14 @@ public class SchemaManagerImpl implements SchemaManager {
 
                     SchemaHandle handle = schemasBySystemId.get(lsi.getSystemId());
 
-                    // Have to compile a new one
-                    if (handle == null) handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData());
+                    if (handle == null) {
+                        // Have to compile a new one
+                        handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData());
+                    } else {
+                        // Can't give it away while it remains in the cache -- need to dupe it (Bug #2926)
+                        handle = handle.getCompiledSchema().ref();
+                    }
+                    
                     directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
                     return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
                 } catch (IOException e) {

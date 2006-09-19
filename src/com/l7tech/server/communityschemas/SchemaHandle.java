@@ -15,8 +15,13 @@ import java.io.IOException;
  * Public handle to a schema obtained from SchemaManager.compile().
  */
 public final class SchemaHandle extends Handle<CompiledSchema> {
+    private final String systemId;
+    private final String tns;
+
     SchemaHandle(CompiledSchema cs) {
         super(cs);
+        this.systemId = cs.getSystemId();
+        this.tns = cs.getTargetNamespace();
     }
 
     /** Validate the entire message against this schema. */
@@ -42,7 +47,7 @@ public final class SchemaHandle extends Handle<CompiledSchema> {
      */
     CompiledSchema getCompiledSchema() {
         CompiledSchema target = getTarget();
-        if (target == null) throw new IllegalStateException("Unable to validate schema -- SchemaHandle has already been closed");
+        if (target == null) throw new IllegalStateException("Unable to validate schema -- SchemaHandle has already been closed (systemId=" + systemId + "   tns=" + tns + ")");
         return target;
     }
 }
