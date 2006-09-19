@@ -85,10 +85,10 @@ public class SchemaEntryManagerImpl
     }
 
     private boolean containsSoapEnv(Collection<SchemaEntry> schemaEntries) {
-        return containsShemaWithName(schemaEntries, SOAP_SCHEMA_NAME);
+        return containsSchemaWithName(schemaEntries, SOAP_SCHEMA_NAME);
     }
 
-    private boolean containsShemaWithName(Collection<SchemaEntry> schemaEntries, String schemaName) {
+    private boolean containsSchemaWithName(Collection<SchemaEntry> schemaEntries, String schemaName) {
         boolean contains = false;
 
         for (SchemaEntry schemaEntry : schemaEntries) {
