@@ -184,7 +184,11 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         printText("Select the Interface you wish to configure." + getEolChar());
         printText("Current configurations are shown in ()" + getEolChar());
 
-        String whichChoice = getData(promptList, "1");
+        String[] allowedEntries = new String[x];
+        for (int index=1; index <= x; ++index) {
+            allowedEntries[index-1] = String.valueOf(index);
+        }
+        String whichChoice = getData(promptList, "1", allowedEntries);
 
         int choiceNum = Integer.parseInt(whichChoice);
         NetworkingConfigurationBean.NetworkConfig theConfig;
