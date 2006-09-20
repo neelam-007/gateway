@@ -40,7 +40,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     protected void populateExplanations() {
         for (NetworkConfig networkConfig : networkingConfigs) {
-            if (networkConfig != null) {
+            if (networkConfig != null && networkConfig.isDirtyFlag()) {
                 explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
                 explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
                 if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
@@ -168,6 +168,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         private String netMask;
         private String gateway;
         private String[] nameservers;
+        private boolean dirtyFlag;
 
         public NetworkConfig(String interfaceName, String bootProto) {
             this.interfaceName = interfaceName;
@@ -246,6 +247,14 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
         public String[] getNameServers() {
             return nameservers;
+        }
+
+        public boolean isDirtyFlag() {
+            return dirtyFlag;
+        }
+
+        public void setDirtyFlag(boolean dirtyFlag) {
+            this.dirtyFlag = dirtyFlag;
         }
     }
 

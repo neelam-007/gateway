@@ -1,13 +1,14 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.server.config.commands.BaseConfigurationCommand;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.server.config.commands.BaseConfigurationCommand;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
-import java.util.Set;
-import java.util.Map;
 import java.util.logging.Logger;
-import java.io.*;
 
 /**
  * User: megery
@@ -36,7 +37,7 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
 
 
         for (NetworkingConfigurationBean.NetworkConfig networkConfig : netConfigs) {
-            if (networkConfig != null) {
+            if (networkConfig != null && networkConfig.isDirtyFlag()) {
                 String interfaceName = networkConfig.getInterfaceName();
                 logger.info("Configuring \"" + interfaceName + "\" interface");
                 File netConfigFile = new File(configDir, "netconfig_" + interfaceName);

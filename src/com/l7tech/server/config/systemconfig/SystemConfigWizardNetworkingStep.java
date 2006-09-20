@@ -199,7 +199,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         } else {
             theConfig = networkConfigs.get(choiceNum -1);
         }
-
+        theConfig.setDirtyFlag(true);
         return theConfig;
     }
 
