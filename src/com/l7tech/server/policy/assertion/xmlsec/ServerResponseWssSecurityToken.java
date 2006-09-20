@@ -31,12 +31,12 @@ public class ServerResponseWssSecurityToken extends ServerResponseWssSignature {
     protected int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq) throws PolicyAssertionException {
         if (assertion.getTokenType() == SecurityTokenType.WSS_USERNAME) {
             LoginCredentials creds = context.getCredentials();
-            String name = creds.getLogin();
+            String name = creds == null ? null : creds.getLogin();
             char[] pass = null;
-            if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
+            if (creds != null && creds.getFormat() == CredentialFormat.CLEARTEXT) {
                 pass = creds.getCredentials();
             } else {
-                Object payload = creds.getPayload();
+                Object payload = creds == null ? null : creds.getPayload();
                 if (payload instanceof X509Certificate) {
                     X509Certificate x509Certificate = (X509Certificate) payload;
                     name = x509Certificate.getSubjectDN().getName();
