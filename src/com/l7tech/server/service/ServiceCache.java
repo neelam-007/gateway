@@ -163,7 +163,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             read.acquire();
             ServerPolicyHandle handle = serverPolicies.get(serviceOid);
             if (handle == null) return null;
-            return handle.getTarget().ref();
+            ServerPolicy target = handle.getTarget();
+            return target == null ? null : target.ref();
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
