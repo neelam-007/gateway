@@ -207,7 +207,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 HEADER_DB_CONN_TYPE,
                 PROMPT_MAKE_NEW_DB,
                 PROMPT_USE_EXISTING_DB,
-                "please make a selection: [" + defaultValue + "] ",
+                "Please make a selection: [" + defaultValue + "] ",
         };
 
         String input = null;
