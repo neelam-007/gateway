@@ -169,7 +169,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new AddCertificateWizard(f, panel1);
-                w.setTitle("Add WSS Recipient Wizard");
+                w.setTitle("New WSS Recipient Wizard");
 
                 w.addWizardListener(new WizardListener() {
                     public void wizardSelectionChanged(WizardEvent e) {}
@@ -257,6 +257,9 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 }
                 certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
                 ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
+                if (!xmlSecRecipientsFromOtherAssertions.containsKey(locallyDefinedActor)) {
+                    xmlSecRecipientsFromOtherAssertions.put(locallyDefinedActor, locallyDefinedRecipient);
+                }
                 ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
             } else {
                 setFirstExistingRecipient();
