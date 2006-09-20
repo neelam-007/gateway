@@ -278,7 +278,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 serverPolicy = null;
             }
             if (serverPolicy == null) {
-                throw new ServiceResolutionException("service is resolved but no corresponding policy available.");
+                throw new ServiceResolutionException("service is resolved the corresponding policy is invalid");
             }
 
             // Run the policy
