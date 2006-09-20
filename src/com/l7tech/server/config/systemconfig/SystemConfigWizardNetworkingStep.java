@@ -230,7 +230,19 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
         };
 
 
-        return getData(prompts, "", interfaceNamePattern, "*** Please specify an interface name ***");
+        boolean duplicateName;
+        String name = "";
+        do {
+            duplicateName = false;
+            name = getData(prompts, "", interfaceNamePattern, "*** Please specify an interface name ***");
+            List<NetworkingConfigurationBean.NetworkConfig> existingConfigs = getInterfaces();
+            for (NetworkingConfigurationBean.NetworkConfig networkConfig : existingConfigs) {
+                if (StringUtils.equals(name, networkConfig.getInterfaceName()))
+                    duplicateName = true;
+            }
+            if (duplicateName) printText("*** The interface \"" + name + "\" already exists, please choose a different name ***\n");
+        } while (duplicateName);
+        return name;
     }
 
     private String[] getNameServer(String[] currentNameServers, String interfaceName) throws IOException, WizardNavigationException {
