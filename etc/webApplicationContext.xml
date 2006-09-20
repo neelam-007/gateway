@@ -32,6 +32,17 @@
     <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory"></bean>
+
+
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+    </bean>
+
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer">
         <property name="identityProviderFactory">
@@ -42,6 +53,9 @@
         </property>
         <property name="transactionManager">
             <ref bean="transactionManager"/>
+        </property>
+        <property name="roleManager">
+            <ref bean="roleManager"/>
         </property>
     </bean>
 
@@ -190,6 +204,7 @@
             <ref bean="trustedCertManager"/>
         </property>
     </bean>
+
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar">
         <property name="serviceCache">
@@ -203,6 +218,9 @@
         </property>
         <property name="transactionManager">
             <ref bean="transactionManager"/>
+        </property>
+        <property name="roleManager">
+            <ref bean="roleManager"/>
         </property>
     </bean>
     <!-- server side resolution manager -->
@@ -636,6 +654,11 @@
         </property>
     </bean>
 
+    <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="clusterPropertyManager"/>
+    </bean>
+
     <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="trustedCertManager"/>
@@ -733,15 +756,6 @@
     <bean id="uddiAgentFactory" class="com.l7tech.server.service.uddi.UddiAgentFactory">
         <property name="serverConfig">
             <ref bean="serverConfig"/>
-        </property>
-    </bean>
-
-    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl">
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
-        <property name="transactionManager">
-            <ref bean="transactionManager"/>
         </property>
     </bean>
 

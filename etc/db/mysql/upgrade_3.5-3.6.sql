@@ -323,6 +323,13 @@ alter table rbac_assignment change objectid objectid bigint(20) not null;
 alter table audit_detail_params modify column value MEDIUMTEXT NOT NULL;
 
 --
+-- Flag an upgrade task to create any needed roles on next SSG reboot
+--
+insert into cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-300600, 0, "upgrade.task.300600", "com.l7tech.server.upgrade.Upgrade35To36AddRoles");
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

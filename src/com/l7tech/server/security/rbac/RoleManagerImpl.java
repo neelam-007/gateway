@@ -108,28 +108,23 @@ public class RoleManagerImpl
     }
 
 
-    public void deleteEntitySpecificRole(Entity entity, PermissionMatchCallback callback) throws DeleteException {
-        try {
-            for (Role role : findAll()) {
-                boolean match = !role.getPermissions().isEmpty();
-                for (Permission perm : role.getPermissions()) {
-                    match = match && callback.matches(perm);
-                    if (!match) break;
-                }
-
-                if (match) {
-                    logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
-                    delete(role);
-                    break;
-                }
+    public Role findEntitySpecificRole(PermissionMatchCallback callback) throws FindException {
+        for (Role role : findAll()) {
+            boolean match = !role.getPermissions().isEmpty();
+            for (Permission perm : role.getPermissions()) {
+                match = match && callback.matches(perm);
+                if (!match) break;
             }
-        } catch (FindException e) {
-            throw new DeleteException("Couldn't find Roles for this Entity", e);
+
+            if (match) return role;
         }
+
+        return null;
     }
 
-    public void deleteEntitySpecificRole(final Entity entity) throws DeleteException {
-        deleteEntitySpecificRole(entity, new PermissionMatchCallback() {
+
+    public Role findEntitySpecificRole(final Entity entity) throws FindException {
+        return findEntitySpecificRole(new PermissionMatchCallback() {
             public boolean matches(Permission permission) {
                 if (!permission.getEntityType().getEntityClass().isAssignableFrom(entity.getClass()))
                     return false;
@@ -145,5 +140,29 @@ public class RoleManagerImpl
                 return false;
             }
         });
+    }
+
+
+    public void deleteEntitySpecificRole(PermissionMatchCallback callback) throws DeleteException {
+        try {
+            Role role = findEntitySpecificRole(callback);
+            if (role == null) return;
+            logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+            delete(role);
+        } catch (FindException e) {
+            throw new DeleteException("Couldn't find Roles for this Entity", e);
+        }
+    }
+
+
+    public void deleteEntitySpecificRole(final Entity entity) throws DeleteException {
+        try {
+            Role role = findEntitySpecificRole(entity);
+            if (role == null) return;
+            logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+            delete(role);
+        } catch (FindException e) {
+            throw new DeleteException("Couldn't find Roles for this Entity", e);
+        }
     }
 }

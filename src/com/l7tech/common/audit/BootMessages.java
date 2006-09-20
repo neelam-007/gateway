@@ -20,6 +20,10 @@ public class BootMessages extends Messages {
     public static final M CRYPTO_INIT           = m(1005, Level.INFO,    "Initializing cryptography subsystem");
     public static final M CRYPTO_ASYMMETRIC     = m(1006, Level.INFO,    "Using asymmetric cryptography provider: {0}");
     public static final M CRYPTO_SYMMETRIC      = m(1007, Level.INFO,    "Using symmetric cryptography provider: {0}");
-    public static final M COMPONENT_INIT_FAILED = m(1008, Level.WARNING,  "Couldn''t initialize server component ''{0}''");
+    public static final M COMPONENT_INIT_FAILED = m(1008, Level.WARNING, "Couldn''t initialize server component ''{0}''");
+    public static final M UPGRADE_TASK_IGNORED  = m(1009, Level.WARNING, "Ignoring upgrade task: {0}");
+    public static final M UPGRADE_TASK_NONFATAL = m(1010, Level.WARNING, "Upgrade task failed, but will attempt to boot anyway: {0}");
+    public static final M UPGRADE_TASK_FATAL    = m(1011, Level.SEVERE,  "Upgrade task failed; unable to proceed: {0}");
+    public static final M UPGRADE_TASK_WARNING  = m(1012, Level.WARNING, "Upgrade task warning: {0}");
     // MAX -                                      m(1999
 }

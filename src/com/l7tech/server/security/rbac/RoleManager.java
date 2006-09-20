@@ -25,19 +25,38 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
     boolean isPermittedForAllEntities(User user, com.l7tech.common.security.rbac.EntityType type, OperationType operation) throws FindException;
 
     /**
+     * Finds the first role in which every {@link com.l7tech.common.security.rbac.Permission}
+     * matches the provided callback.
+     *
+     * @param callback callback that determines if a candidate Permission matches
+     * @return the Role in question, or null if none was found.
+     * @throws FindException if there was a problem accessing the database
+     */
+    Role findEntitySpecificRole(PermissionMatchCallback callback) throws FindException;
+
+    /**
+     * Finds the first role in which every {@link com.l7tech.common.security.rbac.Permission} is scoped to the single
+     * provided {@link Entity}.
+     *
+     * @param entity the Entity that is being sought.  must not be null.
+     * @return the Role in question, or null if none was found.
+     * @throws FindException if there was a problem accessing the database
+     */
+    Role findEntitySpecificRole(Entity entity) throws FindException;
+
+    /**
      * Deletes any roles in which every {@link com.l7tech.common.security.rbac.Permission} matches the provided callback.
-     * @param entity the Entity that is being deleted
-     * @param callback 
-     * @throws com.l7tech.objectmodel.FindException if
+     *
+     * @param callback   callback that determines if a candidate Permission matches.
      * @throws com.l7tech.objectmodel.DeleteException
      */
-    void deleteEntitySpecificRole(Entity entity, PermissionMatchCallback callback) throws DeleteException;
+    void deleteEntitySpecificRole(PermissionMatchCallback callback) throws DeleteException;
 
     /**
      * Deletes any roles in which every {@link com.l7tech.common.security.rbac.Permission} is scoped to the single
-     * provided {@link Entity} (which is presumably being deleted)
+     * provided {@link Entity} (which is presumably being deleted).
+     *
      * @param entity the Entity that is being deleted
-     * @throws com.l7tech.objectmodel.FindException if
      * @throws com.l7tech.objectmodel.DeleteException
      */
     void deleteEntitySpecificRole(Entity entity) throws DeleteException;

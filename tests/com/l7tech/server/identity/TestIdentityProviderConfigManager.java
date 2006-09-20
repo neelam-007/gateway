@@ -50,6 +50,10 @@ public class TestIdentityProviderConfigManager
     public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
     }
 
+    public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
+        // No-op for stub mode
+    }
+
     public Collection findAll() throws FindException {
         Collection output = new ArrayList();
         output.add(idprovider.getConfig());

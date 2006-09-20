@@ -3,8 +3,6 @@ package com.l7tech.server.identity;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import static com.l7tech.common.security.rbac.EntityType.*;
-import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
@@ -102,7 +100,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             } else {
                 logger.info("Saving IDProviderConfig: " + identityProviderConfig.getOid());
                 oid = getIdProvCfgMan().save(identityProviderConfig);
-                addManageProviderRole(identityProviderConfig);
+                getIdProvCfgMan().addManageProviderRole(identityProviderConfig);
             }
 
             return oid;
@@ -110,68 +108,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException("This object cannot be found (it no longer exist?).", e);
         }
-    }
-
-    private void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
-        User currentUser = JaasUtils.getCurrentUser();
-        if (currentUser == null) throw new IllegalStateException("Couldn't get current user");
-
-        String name = "Manage " + config.getName() + " Identity Provider (#" + config.getOid() + ")";
-
-        logger.info("Creating new Role: " + name);
-
-        Role newRole = new Role();
-        newRole.setName(name);
-        // RUD this IPC
-        newRole.addPermission(READ, ID_PROVIDER_CONFIG, config.getId());
-        newRole.addPermission(UPDATE, ID_PROVIDER_CONFIG, config.getId());
-        newRole.addPermission(DELETE, ID_PROVIDER_CONFIG, config.getId());
-        
-        // CRUD users in this IdP
-        newRole.addPermission(CREATE, USER, "providerId", config.getId());
-        newRole.addPermission(READ, USER, "providerId", config.getId());
-        newRole.addPermission(UPDATE, USER, "providerId", config.getId());
-        newRole.addPermission(DELETE, USER, "providerId", config.getId());
-        
-        // CRUD groups in this IdP
-        newRole.addPermission(CREATE, GROUP, "providerId", config.getId());
-        newRole.addPermission(READ, GROUP, "providerId", config.getId());
-        newRole.addPermission(UPDATE, GROUP, "providerId", config.getId());
-        newRole.addPermission(DELETE, GROUP, "providerId", config.getId());
-
-        // Assignees will need to search TrustedCerts if this is a FIP
-        boolean fip = config.type() == IdentityProviderType.FEDERATED;
-        if (fip) {
-            newRole.addPermission(READ, TRUSTED_CERT, null);
-        }
-
-        // Check if current user can already do everything this Role will grant
-        boolean omnipotent;
-        try {
-            omnipotent = roleManager.isPermittedForEntity(currentUser, config, READ, null);
-            omnipotent &= roleManager.isPermittedForEntity(currentUser, config, UPDATE, null);
-            omnipotent &= roleManager.isPermittedForEntity(currentUser, config, DELETE, null);
-            
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, CREATE);
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, READ);
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, UPDATE);
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, DELETE);
-
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, CREATE);
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, READ);
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, UPDATE);
-            omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, DELETE);
-            if (fip) omnipotent &= roleManager.isPermittedForAllEntities(currentUser, TRUSTED_CERT, READ);
-        } catch (FindException e) {
-            throw new SaveException("Coudln't get existing permissions", e);
-        }
-
-        if (!omnipotent) {
-            logger.info("Assigning current User to new Role");
-            newRole.addAssignedUser(currentUser);
-        }
-        
-        roleManager.save(newRole);
     }
 
     /**
@@ -246,7 +182,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
             manager.delete(ipc);
 
-            roleManager.deleteEntitySpecificRole(ipc, new DeleteProviderCallback(ipc));
+            roleManager.deleteEntitySpecificRole(new DeleteProviderCallback(ipc));
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);

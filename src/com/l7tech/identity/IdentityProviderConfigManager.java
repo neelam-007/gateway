@@ -4,6 +4,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 
 import java.util.Collection;
 
@@ -34,4 +35,12 @@ public interface IdentityProviderConfigManager extends EntityManager<IdentityPro
      * @param identityProviderConfig the new config object (not yet saved)
      */
     void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException;
+
+    /**
+     * Create a new Role for the specified IdentityProviderConfig.
+     *
+     * @param config  the config for which a new Role is to be created.  Must not be null, and must not already have a Role.
+     * @throws com.l7tech.objectmodel.SaveException if there was a problem saving the new Role.
+     */
+    public void addManageProviderRole(IdentityProviderConfig config) throws SaveException;
 }

@@ -99,6 +99,10 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     public void initiateServiceCache() {
     }
 
+    public void addManageServiceRole(PublishedService service) throws SaveException {
+        // No-op for stub mode
+    }
+
     /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
