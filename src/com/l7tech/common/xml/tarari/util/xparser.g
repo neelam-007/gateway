@@ -78,7 +78,7 @@ pathsteps	returns [String s]
     String ss = "";
 }
 	:
-	(  SLASH { s += "/"; } ss=stepExpr { s += ss; }
+	( ( SLASH { s += "/"; } || DOUBLESLASH { s += "//"; } ) ss=stepExpr { s += ss; }
 	)+
 	;
 	exception
@@ -194,7 +194,7 @@ abbrevForwardStep	returns [PrefixedName ret]
 	ret = new PrefixedName();
 	ret.pass = "";
 }
-	:	( AT { ret.pass += "@";  } | SLASH { ret.pass += "/"; } )? n=nodeTest
+	:	( AT { ret.pass += "@";  } )? n=nodeTest
 	{
 	    if (n != null) {
 	        ret.localName = n.localName;
@@ -415,6 +415,9 @@ SEMI    :   ';'
         ;
 
 SLASH   : '/'
+        ;
+
+DOUBLESLASH   : {getColumn()==1}? SLASH SLASH
         ;
 
 AT     : '@'

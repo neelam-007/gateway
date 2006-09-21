@@ -117,20 +117,45 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt5=0;
-			_loop5:
+			int _cnt6=0;
+			_loop6:
 			do {
-				if ((LA(1)==SLASH)) {
-					match(SLASH);
-					s += "/";
+				if ((_tokenSet_0.member(LA(1)))) {
+					{
+					switch ( LA(1)) {
+					case SLASH:
+					{
+						match(SLASH);
+						s += "/";
+						break;
+					}
+					case AT:
+					case LITERAL_text:
+					case STAR:
+					case ID:
+					{
+						break;
+					}
+					case DOUBLESLASH:
+					{
+						match(DOUBLESLASH);
+						s += "//";
+						break;
+					}
+					default:
+					{
+						throw new NoViableAltException(LT(1), getFilename());
+					}
+					}
+					}
 					ss=stepExpr();
 					s += ss;
 				}
 				else {
-					if ( _cnt5>=1 ) { break _loop5; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt6>=1 ) { break _loop6; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt5++;
+				_cnt6++;
 			} while (true);
 			}
 		}
@@ -184,7 +209,12 @@ public XprParser(ParserSharedInputState state) {
 			}
 			case NL:
 			case SLASH:
+			case DOUBLESLASH:
+			case AT:
+			case LITERAL_text:
+			case STAR:
 			case SQRIGHT:
+			case ID:
 			{
 				break;
 			}
@@ -308,7 +338,7 @@ public XprParser(ParserSharedInputState state) {
 				n = "position() = "+y.getText() ;
 				
 			}
-			else if ((_tokenSet_0.member(LA(1)))) {
+			else if ((_tokenSet_1.member(LA(1)))) {
 				ss=stepExpr();
 				
 					   n = ss;
@@ -346,12 +376,6 @@ public XprParser(ParserSharedInputState state) {
 			{
 				match(AT);
 				ret.pass += "@";
-				break;
-			}
-			case SLASH:
-			{
-				match(SLASH);
-				ret.pass += "/";
 				break;
 			}
 			case LITERAL_text:
@@ -472,8 +496,13 @@ public XprParser(ParserSharedInputState state) {
 				}
 				case NL:
 				case SLASH:
+				case DOUBLESLASH:
+				case AT:
+				case LITERAL_text:
+				case STAR:
 				case SQLEFT:
 				case SQRIGHT:
+				case ID:
 				{
 					break;
 				}
@@ -524,8 +553,13 @@ public XprParser(ParserSharedInputState state) {
 				}
 				case NL:
 				case SLASH:
+				case DOUBLESLASH:
+				case AT:
+				case LITERAL_text:
+				case STAR:
 				case SQLEFT:
 				case SQRIGHT:
+				case ID:
 				{
 					break;
 				}
@@ -617,29 +651,29 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt24=0;
-			_loop24:
+			int _cnt25=0;
+			_loop25:
 			do {
 				if (((LA(1) >= ID && LA(1) <= PARENRIGHT))) {
 					ss=simplepredicatenoint();
 					n+=ss;
 				}
 				else {
-					if ( _cnt24>=1 ) { break _loop24; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt25>=1 ) { break _loop25; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt24++;
+				_cnt25++;
 			} while (true);
 			}
 			{
-			_loop26:
+			_loop27:
 			do {
-				if ((_tokenSet_1.member(LA(1)))) {
+				if ((_tokenSet_2.member(LA(1)))) {
 					ss=simplepredicateint();
 					n+=ss;
 				}
 				else {
-					break _loop26;
+					break _loop27;
 				}
 				
 			} while (true);
@@ -647,7 +681,7 @@ public XprParser(ParserSharedInputState state) {
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
-			recover(ex,_tokenSet_2);
+			recover(ex,_tokenSet_3);
 		}
 		return n;
 	}
@@ -668,8 +702,8 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt32=0;
-			_loop32:
+			int _cnt33=0;
+			_loop33:
 			do {
 				if ((LA(1)==ID)) {
 					a = LT(1);
@@ -707,16 +741,16 @@ public XprParser(ParserSharedInputState state) {
 					n+=g.getText();
 				}
 				else {
-					if ( _cnt32>=1 ) { break _loop32; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt33>=1 ) { break _loop33; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt32++;
+				_cnt33++;
 			} while (true);
 			}
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
-			recover(ex,_tokenSet_3);
+			recover(ex,_tokenSet_4);
 		}
 		return n;
 	}
@@ -738,8 +772,8 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt29=0;
-			_loop29:
+			int _cnt30=0;
+			_loop30:
 			do {
 				if ((LA(1)==ID)) {
 					a = LT(1);
@@ -782,16 +816,16 @@ public XprParser(ParserSharedInputState state) {
 					n+=h.getText();
 				}
 				else {
-					if ( _cnt29>=1 ) { break _loop29; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt30>=1 ) { break _loop30; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt29++;
+				_cnt30++;
 			} while (true);
 			}
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
-			recover(ex,_tokenSet_3);
+			recover(ex,_tokenSet_4);
 		}
 		return n;
 	}
@@ -827,6 +861,7 @@ public XprParser(ParserSharedInputState state) {
 		"NULL_TREE_LOOKAHEAD",
 		"NL",
 		"SLASH",
+		"DOUBLESLASH",
 		"AT",
 		"\"text\"",
 		"LPAREN",
@@ -846,24 +881,29 @@ public XprParser(ParserSharedInputState state) {
 	};
 	
 	private static final long[] mk_tokenSet_0() {
-		long[] data = { 34016L, 0L};
+		long[] data = { 68064L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_0 = new BitSet(mk_tokenSet_0());
 	private static final long[] mk_tokenSet_1() {
-		long[] data = { 4169728L, 0L};
+		long[] data = { 67968L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_1 = new BitSet(mk_tokenSet_1());
 	private static final long[] mk_tokenSet_2() {
-		long[] data = { 16384L, 0L};
+		long[] data = { 8339456L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_2 = new BitSet(mk_tokenSet_2());
 	private static final long[] mk_tokenSet_3() {
-		long[] data = { 4186112L, 0L};
+		long[] data = { 32768L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_3 = new BitSet(mk_tokenSet_3());
+	private static final long[] mk_tokenSet_4() {
+		long[] data = { 8372224L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_4 = new BitSet(mk_tokenSet_4());
 	
 	}

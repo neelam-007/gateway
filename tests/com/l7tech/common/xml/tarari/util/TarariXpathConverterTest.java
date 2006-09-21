@@ -170,6 +170,20 @@ public class TarariXpathConverterTest extends TestCase {
         }
     }
 
+    public void testNonRootDescendantOrSelfXpath() throws Exception {
+        Map m = new HashMap();
+        String gave;
+        String got;
+
+        try {
+            gave = "/foo//bar";
+            got = TarariXpathConverter.convertToTarariXpath(m, gave);
+            fail("Expected exception was not thrown.  got=" + got);
+        } catch (ParseException e) {
+            // Ok
+        }
+    }
+
     public void testBadSyntax() throws Exception {
         Map m = new HashMap();
         String gave;
