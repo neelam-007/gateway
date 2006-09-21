@@ -458,12 +458,13 @@ public class WssProcessorImpl implements WssProcessor {
                                                             SoapUtil.REFERENCE_EL_NAME);
 
         final XmlSecurityToken derivationSource;
+        String ref = null;
         if (refEl == null) {
             // Check for an EncryptedKeySHA1 reference
             Element keyIdEl = XmlUtil.findFirstChildElementByName(sTokrefEl,
                                                                   SoapUtil.SECURITY_URIS_ARRAY,
                                                                   "KeyIdentifier");
-            String keyIdB64 = XmlUtil.getTextValue(keyIdEl);
+            ref = XmlUtil.getTextValue(keyIdEl);
 
             String valueType = keyIdEl.getAttribute("ValueType");
             if (valueType == null)
@@ -472,35 +473,33 @@ public class WssProcessorImpl implements WssProcessor {
             if (SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1.equals(valueType)) {
                 if (cntx.securityTokenResolver == null)
                     throw new ProcessorException("Unable to process DerivedKeyToken - it references an EncryptedKeySha1, but no security token resolver is available");
-                derivationSource = cntx.securityTokenResolver.getEncryptedKeyBySha1(keyIdB64);
+                derivationSource = cntx.securityTokenResolver.getEncryptedKeyBySha1(ref);
             } else if (SoapUtil.VALUETYPE_KERBEROS_APREQ_SHA1.equals(valueType)) {
                 if (cntx.securityTokenResolver == null)
                     throw new ProcessorException("Unable to process DerivedKeyToken - it references a Kerberosv5APREQSHA1, but no security token resolver is available");
-                XmlSecurityToken xst = cntx.securityTokenResolver.getKerberosTokenBySha1(keyIdB64);
+                XmlSecurityToken xst = cntx.securityTokenResolver.getKerberosTokenBySha1(ref);
 
                 if(xst==null) {
-                    xst = findSecurityContextTokenBySessionId(cntx, KerberosUtils.getSessionIdentifier(keyIdB64));
+                    xst = findSecurityContextTokenBySessionId(cntx, KerberosUtils.getSessionIdentifier(ref));
                 }
 
                 derivationSource = xst;
             } else
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to unsupported ValueType " + valueType);
 
-            if(derivationSource==null) {
-                throw new InvalidDocumentFormatException("Invalid DerivedKeyToken reference target " + keyIdB64);
-            }
         } else {
-            String refUri = refEl.getAttribute("URI");
-            if (refUri == null || refUri.length() < 1)
+            ref = refEl.getAttribute("URI");
+            if (ref == null || ref.length() < 1)
                 throw new InvalidDocumentFormatException("DerivedKeyToken's SecurityTokenReference lacks URI parameter");
-            if (refUri.startsWith("#"))
-                derivationSource = findXmlSecurityTokenById(cntx, refUri);
+            if (ref.startsWith("#"))
+                derivationSource = findXmlSecurityTokenById(cntx, ref);
             else
-                derivationSource = findSecurityContextTokenBySessionId(cntx, refUri);
+                derivationSource = findSecurityContextTokenBySessionId(cntx, ref);
+        }
 
-            if(derivationSource==null) {
-                throw new InvalidDocumentFormatException("Invalid DerivedKeyToken reference target " + refUri);
-            }
+        if(derivationSource==null) {
+            logger.info("Invalid DerivedKeyToken reference target '" + ref + "', ignoring this derived key.");
+            return;
         }
 
         if (derivationSource instanceof SecurityContextTokenImpl) {
@@ -517,8 +516,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                                  (KerberosSecurityToken)derivationSource));
             cntx.isDerivedKeySeen = true;
         } else
-            throw new InvalidDocumentFormatException("Unsupported DerivedKeyToken reference target " + derivationSource.getType());
-
+            logger.info("Unsupported DerivedKeyToken reference target '" + derivationSource.getType() + "', ignoring this derived key.");
     }
 
     private XmlSecurityToken findSecurityContextTokenBySessionId(ProcessingStatusHolder cntx, String refUri) {

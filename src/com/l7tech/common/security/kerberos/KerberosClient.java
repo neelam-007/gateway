@@ -205,7 +205,7 @@ public class KerberosClient {
         KerberosServiceTicket ticket = null;
         try {
             if (!KerberosConfig.hasKeytab()) {
-                throw new KerberosException("No Keytab (Kerberos not configured)");
+                throw new KerberosConfigException("No Keytab (Kerberos not configured)");
             }
 
             LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(KerberosUtils.toGssName(servicePrincipalName)));
