@@ -5,7 +5,7 @@ Release: 1
 Group: Applications/Internet
 License: Copyright Layer7 Technologies 2003-2005
 URL: http://www.layer7tech.com
-Packager: Layer7 Technologies, <support@layer7tech.com> 
+Packager: Layer7 Technologies, <support@layer7tech.com>
 Source0: ~/rpm/SOURCES/ssg.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
 provides: ssg
@@ -16,7 +16,7 @@ provides: ssg
 %description
 Secure Span Gateway software package
 
-%clean 
+%clean
 rm -fr %{buildroot}
 
 %prep
@@ -142,24 +142,35 @@ fi
 connt=`grep "options ip_conntrack" /etc/modprobe.conf`
 
 if [ "$connt" ]; then
-	echo -n "" 
+	echo -n ""
 	# connection tracking already set
 else
 	echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
 	# add in larger hash size. final conntrack size will be 8* hashsize
 	# This allows larger number of in-flight connections
-fi	
+fi
 
 
 %post
 
-echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v3.6" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
-echo "Layer 7 SecureSpan(tm) Gateway v3.6m4c-1" >/etc/issue.net
-echo "Kernel \r on an \m" >>/etc/issue.net
-#add the ssg and the configuration service to chkconfig, but do not enable them
-/sbin/chkconfig --add ssg
-/sbin/chkconfig --add ssgsysconfig
+#add the ssg and the configuration service to chkconfig if they are not already there
+SSGEXISTS=`/sbin/chkconfig --list | grep "ssg\b"`
+if [ "${SSGEXISTS}" ]; then
+    echo -n ""
+    #if we find a ssg entry in chkconfig, leave it alone
+else
+    /sbin/chkconfig --add ssg
+fi
+
+SSGCONFIGEXISTS=`/sbin/chkconfig --list | grep "ssgsysconfig\b"`
+if [ "${SSGCONFIGEXISTS}" ]; then
+    echo -n ""
+    #if we find a ssgsysconfig entry in chkconfig, leave it alone
+else
+    /sbin/chkconfig --add ssgsysconfig
+fi
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
 /bin/chown -Rf gateway.gateway /ssg
 chmod -Rf 775 /ssg/configwizard
@@ -173,29 +184,29 @@ chmod -Rf 775 /ssg/jdk/jre/lib/security/
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then 
 	# last uninstall
-        if [ `grep ^gateway: /etc/passwd` ]; then
-            userdel -r gateway
-        else
-            echo -n ""
-        fi
+    if [ `grep ^gateway: /etc/passwd` ]; then
+        userdel -r gateway
+    else
+        echo -n ""
+    fi
 
-        if [ `grep ^ssgconfig: /etc/passwd` ]; then
-            userdel -r ssgconfig
-        else
-            echo -n ""
-        fi
+    if [ `grep ^ssgconfig: /etc/passwd` ]; then
+        userdel -r ssgconfig
+    else
+        echo -n ""
+    fi
 
-        if [ `grep ^gateway: /etc/group` ]; then
-            groupdel gateway
-        else
-            echo -n ""
-        fi
+    if [ `grep ^gateway: /etc/group` ]; then
+        groupdel gateway
+    else
+        echo -n ""
+    fi
 
-        SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
-        if [ -n "${SSGCONFIGENTRY}" ]; then
-            #remove the sudoers entry for ssgconfig
-            perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
-        fi
+    SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
+    if [ -n "${SSGCONFIGENTRY}" ]; then
+        #remove the sudoers entry for ssgconfig
+        perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
+    fi
 
 	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
 
@@ -204,9 +215,9 @@ if [ "$1" = "0" ] ; then
 		perl -pi.bak -e 's/ttyS0//' /etc/securetty
 	fi
 
+    chkconfig --del ssgsysconfig
+    chkconfig --del ssg
 fi
-chkconfig --del ssgsysconfig
-chkconfig --del ssg
 
 %changelog
 * Mon Aug 21 2006 CY
