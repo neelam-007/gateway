@@ -171,6 +171,14 @@ if [ "${SSGCONFIGEXISTS}" ]; then
 else
     /sbin/chkconfig --add ssgsysconfig
 fi
+
+SYSLOGENTRY=`grep ^java.*/dev/null$ /etc/syslog.conf`
+if [ -n "${SYSLOGENTRY}" ]; then
+    echo -n ""
+else
+    echo -n "java.*                     /dev/null" >> /etc/syslog.conf
+fi
+
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
 /bin/chown -Rf gateway.gateway /ssg
 chmod -Rf 775 /ssg/configwizard
@@ -206,6 +214,13 @@ if [ "$1" = "0" ] ; then
     if [ -n "${SSGCONFIGENTRY}" ]; then
         #remove the sudoers entry for ssgconfig
         perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
+    fi
+
+	SYSLOGENTRY=`grep ^java.*/dev/null$ /etc/syslog.conf`
+	if [ -n "${SYSLOGENTRY}" ]; then
+        perl -pi.bak -e 's/^java.*\/dev\/null$//g' /etc/syslog.conf
+    else
+        echo -n ""
     fi
 
 	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
