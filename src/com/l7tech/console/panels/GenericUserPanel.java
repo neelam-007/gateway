@@ -114,8 +114,10 @@ public class GenericUserPanel extends UserPanel {
         emailTextField.setEditable(config.isWritable() && canUpdate);
         
         changePassButton.setEnabled(config.isWritable() && canUpdate);
-        expirationPanel.setEnabled(config.isWritable() && canUpdate);
-        accountNeverExpiresCheckbox.setEnabled(config.isWritable() && canUpdate);
+        if (expirationPanel != null) {
+            expirationPanel.setEnabled(config.isWritable() && canUpdate);
+            accountNeverExpiresCheckbox.setEnabled(config.isWritable() && canUpdate);
+        }
     }
 
 
