@@ -72,7 +72,8 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
                 logger.info("editing file \"" + hostnameFile.getAbsolutePath() + "\"");
 
             hostnameWriter = new PrintWriter(new FileOutputStream(hostnameFile));
-            hostnameWriter.println(netBean.getHostname());
+            hostnameWriter.println("hostname=" + netBean.getHostname());
+            hostnameWriter.println("domain=" + netBean.getDomain());
         } catch (IOException e) {
             logger.severe("Error while creating file " + hostnameFile.getAbsoluteFile() + "\"" + e.getMessage() + "\"");
             success = false;

@@ -15,7 +15,7 @@ if ($logFile->open(">>/ssg/sysconfigwizard/ssgsysconfig.log")) {
 
 my @commandArray;
 my @dhcpInterfaces;
-my $hostnameToUse = undef;
+my %hostnameInfo = ();
 my $ntpServerToUse = undef;
 my @filesToDelete;
 
@@ -53,11 +53,16 @@ for my $configFile(@netConfigFiles) {
 }
 
 if ($inputFh->open("<$inputFiles{'HOSTNAMEFILE'}")) {
-	my @hostnames = $inputFh->getlines();
-	$hostnameToUse = $hostnames[0];
-	chomp($hostnameToUse);
-	push (@filesToDelete, $inputFiles{'HOSTNAMEFILE'});
-	$logFile->print("$timestamp: hostname found: $hostnameToUse\n");
+	my $fileContent = do { local( $/ ) ; <$inputFh> } ;
+    %hostnameInfo = $fileContent =~ /^(\w+)=(.+)$/mg ;
+    push (@filesToDelete, $inputFiles{'HOSTNAMEFILE'});
+	my $hostnameToUse = $hostnameInfo{'hostname'};
+	if ($hostnameToUse ne "") {
+	   $logFile->print("$timestamp: hostname found: $hostnameToUse\n");
+	} else {
+	   $logFile->print("$timestamp: no hostname found. Hostname will not be set\n");
+	   %hostnameInfo = undef;
+	}
 	$inputFh->close();
 } else {
 	$logFile->print("$timestamp: $inputFiles{'HOSTNAMEFILE'} not found. The hostname will not be changed.\n");
@@ -82,21 +87,26 @@ for my $command (@commandArray) {
 }
 
 #enable networking and setup hostname
-if (defined($hostnameToUse)) {
+if (defined($hostnameInfo{'hostname'}) && $hostnameInfo{'hostname'} ne "") {
 	if ($outputFh->open(">$outputFiles{'NETFILE'}")) {
+       my ($hostname, $domain) = ($hostnameInfo{'hostname'}, $hostnameInfo{'domain'});
+       if (defined($domain) && $domain ne "") {
+           $hostname .= ".$domain";
+       }
+
 	   $outputFh->print("NETWORKING=yes\n");
-	   $outputFh->print("HOSTNAME=$hostnameToUse\n");
+	   $outputFh->print("HOSTNAME=$hostname\n");
 	   $outputFh->close();
 
-	   system("hostname $hostnameToUse");
+	   system("hostname $hostnameInfo{'hostname'}");
 
 	   $logFile->print("$timestamp: Wrote $outputFiles{'NETFILE'} with:\n");
 	   $logFile->print("\tNETWORKING=yes\n");
-	   $logFile->print("\tHOSTNAME=$hostnameToUse\n");
+	   $logFile->print("\tHOSTNAME=$hostname\n");
 
-        for my $whichInterface(@dhcpInterfaces){
+       for my $whichInterface(@dhcpInterfaces){
             if ($outputFh->open(">>/etc/sysconfig/network-scripts/ifcfg-$whichInterface")) {
-                $outputFh->print("DHCP_HOSTNAME=$hostnameToUse\n");
+                $outputFh->print("DHCP_HOSTNAME=$hostnameInfo{'hostname'}\n");
                 $outputFh->close();
             }
         }
@@ -117,7 +127,7 @@ if (defined($ntpServerToUse)) {
 	    $logFile->print("\tserver $ntpServerToUse\n");
 	    $logFile->print("\trestrict $ntpServerToUse mask 255.255.255.255 nomodify notrap noquery\n");
 	} else {
-		$logFile->print("$timestamp: Couldn't open $outputFiles{'NTPCONFGILE'}. Skipping NTP configuration\n");
+		$logFile->print("$timestamp: Couldn't open $outputFiles{'NTPCONFFILE'}. Skipping NTP configuration\n");
 	}
 
 	if ($outputFh->open(">$outputFiles{'STEPTICKERSFILE'}")) {

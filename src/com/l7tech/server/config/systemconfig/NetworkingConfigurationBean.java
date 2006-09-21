@@ -20,6 +20,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     public static final String STATIC_BOOT_PROTO = "static";
 
     private String hostname;
+    private String domain = "";
 
     private List<NetworkConfig> networkingConfigs;
 
@@ -160,6 +161,13 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         return theNetConfig;
     }
 
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
 
     public static class NetworkConfig {
         private String interfaceName;

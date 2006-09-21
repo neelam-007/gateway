@@ -27,7 +27,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
     private static final String NETBEANNAME = "Network Interface Configuration";
 
-    private static final String HOSTNAME_PROMPT = "Enter the hostname for this SSG: ";
+    private static final String HOSTNAME_PROMPT = "Enter the fully qualified hostname for this SSG: ";
     private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
     private static final String MISSING_NETMASK_MSG = "Missing Netmask.";
     private static final String MISSING_GATEWAY_MSG = "Missing Gateway.";
@@ -76,12 +76,21 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
     }
 
     private void doHostnamePrompt() throws IOException, WizardNavigationException {
-        String newHostname = getData(
+        String fqdn = getData(
                 new String[] {HOSTNAME_PROMPT},
                 ""
         );
+        int firstDotPos = fqdn.indexOf(".");
+        String justHostname = fqdn;
+        String domainPart = "";
 
-        netBean.setHostname(newHostname);
+        if (firstDotPos > 0) {
+            justHostname = fqdn.substring(0, firstDotPos);
+            domainPart = fqdn.substring(firstDotPos+1);
+        }
+
+        netBean.setHostname(justHostname);
+        netBean.setDomain(domainPart);
     }
 
     private List<String> validateIpAddress(String ipAddress) {
