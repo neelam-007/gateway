@@ -96,8 +96,8 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            groupPanel = new UserGroupsPanel(this, config, canUpdate);
-            certPanel = new NonFederatedUserCertPanel(this, passwordChangeListener, canUpdate);
+            groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
+            certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
             applyFormSecurity();
@@ -109,13 +109,13 @@ public class GenericUserPanel extends UserPanel {
 
     protected void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        firstNameTextField.setEditable(canUpdate);
-        lastNameTextField.setEditable(canUpdate);
-        emailTextField.setEditable(canUpdate);
+        firstNameTextField.setEditable(config.isWritable() && canUpdate);
+        lastNameTextField.setEditable(config.isWritable() && canUpdate);
+        emailTextField.setEditable(config.isWritable() && canUpdate);
         
-        changePassButton.setEnabled(canUpdate);
-        expirationPanel.setEnabled(canUpdate);
-        accountNeverExpiresCheckbox.setEnabled(canUpdate);
+        changePassButton.setEnabled(config.isWritable() && canUpdate);
+        expirationPanel.setEnabled(config.isWritable() && canUpdate);
+        accountNeverExpiresCheckbox.setEnabled(config.isWritable() && canUpdate);
     }
 
 

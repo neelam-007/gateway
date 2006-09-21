@@ -66,7 +66,8 @@ class NonFederatedUserCertPanel extends UserCertPanel {
                             eh.setStrId(user.getId());
                             eh.setName(user.getName());
                             eh.setType(EntityType.USER);
-                            parentListener.entityUpdated(new EntityEvent(this, eh));
+                            if (parentListener != null)
+                                parentListener.entityUpdated(new EntityEvent(this, eh));
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         } catch (ObjectNotFoundException e) {

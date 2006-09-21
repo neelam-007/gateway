@@ -121,7 +121,7 @@ public class PhysicalGroupPanel extends GroupPanel {
     protected JPanel getMembershipPanel() {
         if(usersPanel != null) return usersPanel;
 
-        usersPanel = new GroupUsersPanel(this, config, canUpdate);
+        usersPanel = new GroupUsersPanel(this, config, config.isWritable() && canUpdate);
 
         return usersPanel;
     }
