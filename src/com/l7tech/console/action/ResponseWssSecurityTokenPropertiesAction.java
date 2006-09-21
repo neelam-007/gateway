@@ -51,7 +51,6 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        //ResponseWssSecurityToken ass = (ResponseWssSecurityToken) node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
         ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone());
         Utilities.setEscKeyStrokeDisposes(dlg);
@@ -60,9 +59,9 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
         dlg.setVisible(true);
         if (dlg.wasOKed()) {
             ResponseWssSecurityToken newAss = (ResponseWssSecurityToken)dlg.getValue();
+            if (newAss == null) return;
             ResponseWssSecurityToken oldAss = (ResponseWssSecurityToken)node.asAssertion();
             oldAss.copyFrom(newAss);
-            if (newAss == null) return;
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
                 PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
