@@ -63,7 +63,7 @@ public class SamlStatementValidator implements AssertionValidator {
                     }
                 }
                 if (!hasSslAsCrendentialSource) {
-                    String message = "SSL with Client Certificates must be used when No Proof Of Posession specified for Holder-Of-Key.";
+                    String message = "SSL with Client Certificates must be used when No Proof Of Possession specified for Holder-Of-Key.";
                     result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
                 }
             }
@@ -79,7 +79,7 @@ public class SamlStatementValidator implements AssertionValidator {
                     }
                 }
                 if (!hasSslAsCrendentialSource) {
-                    String message = "SSL with Client Certificates must be used when No Proof Of Posession specified for Sender-Vouches.";
+                    String message = "SSL with Client Certificates must be used when No Proof Of Possession specified for Sender-Vouches.";
                     result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
                 }
             }
