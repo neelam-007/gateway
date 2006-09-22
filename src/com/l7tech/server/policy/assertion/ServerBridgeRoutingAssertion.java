@@ -292,7 +292,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     static {
         try {
-            DEFAULT_ORIG_URL = new URL("http://layer7tech.com/no-original-uri");
+            DEFAULT_ORIG_URL = new URL("http://no-original-uri.layer7tech.com/");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e); // can't happen
         }
