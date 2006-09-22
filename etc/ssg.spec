@@ -176,7 +176,7 @@ SYSLOGENTRY=`grep ^java.*/dev/null$ /etc/syslog.conf`
 if [ -n "${SYSLOGENTRY}" ]; then
     echo -n ""
 else
-    echo -n "java.*                     /dev/null" >> /etc/syslog.conf
+    echo "java.*                     /dev/null" >> /etc/syslog.conf
 fi
 
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
@@ -190,7 +190,7 @@ chmod -Rf 775 /ssg/jdk/jre/lib/security/
 
 %preun
 # Modifications to handle upgrades properly
-if [ "$1" = "0" ] ; then 
+if [ "$1" = "0" ] ; then
 	# last uninstall
     if [ `grep ^gateway: /etc/passwd` ]; then
         userdel -r gateway
@@ -254,6 +254,6 @@ fi
 * Tue Aug 04 2005 JWT
 - Build 3200 Serial line console modifications
 * Mon May 02 2005 JWT
-- Build 3133 Modifies Issue files to show SSG id 
-* Thu Oct 28 2004 JWT 
+- Build 3133 Modifies Issue files to show SSG id
+* Thu Oct 28 2004 JWT
 - Build 3028 First version
