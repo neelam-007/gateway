@@ -19,7 +19,8 @@ import java.text.SimpleDateFormat;
 public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     public static final int ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX = 0;
     public static final int ASSOCIATED_LOG_SECURITY_COLUMN_INDEX = 1;
-    public static final int ASSOCIATED_LOG_MSG_COLUMN_INDEX = 2;
+    public static final int ASSOCIATED_LOG_DETAIL_COLUMN_INDEX = 2;
+    public static final int ASSOCIATED_LOG_MSG_COLUMN_INDEX = 3;
 
 
     static Logger logger = Logger.getLogger(AssociatedLogsTableSorter.class.getName());
@@ -145,6 +146,9 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
             case ASSOCIATED_LOG_SECURITY_COLUMN_INDEX:
                 return log.getSeverity();
 
+            case ASSOCIATED_LOG_DETAIL_COLUMN_INDEX:
+                return log.getException();
+
             case ASSOCIATED_LOG_MSG_COLUMN_INDEX:
                 return log.getMessage();
 
@@ -195,6 +199,11 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
                 case ASSOCIATED_LOG_SECURITY_COLUMN_INDEX:
                         elementA = ((AssociatedLog) a).getSeverity();
                         elementB = ((AssociatedLog) b).getSeverity();
+                    break;
+
+                case ASSOCIATED_LOG_DETAIL_COLUMN_INDEX:
+                    elementA = ((AssociatedLog) a).getException();
+                    elementB = ((AssociatedLog) b).getException();
                     break;
 
                 case ASSOCIATED_LOG_MSG_COLUMN_INDEX:

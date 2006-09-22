@@ -7,15 +7,17 @@ package com.l7tech.common.audit;
  */
 public class AssociatedLog {
 
-    long timeStamp;
-    String message;
-    String severity;
-    int ordinal;
+    private final long timeStamp;
+    private final String message;
+    private final String severity;
+    private final String exception;
+    private final int ordinal;
 
-    public AssociatedLog(long timeStamp, String severity, String message, int ordinal) {
+    public AssociatedLog(long timeStamp, String severity, String message, String exception, int ordinal) {
         this.timeStamp = timeStamp;
         this.severity = severity;
         this.message = message;
+        this.exception = exception;
         this.ordinal = ordinal;
     }
 
@@ -25,6 +27,10 @@ public class AssociatedLog {
 
     public String getMessage() {
         return message;
+    }
+
+    public String getException() {
+        return exception;
     }
 
     public String getSeverity() {

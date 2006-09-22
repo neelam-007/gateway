@@ -552,7 +552,7 @@ public class LogPanel extends JPanel {
                         MessageFormat mf = new MessageFormat(associatedLogMessage);
                         mf.format(ad.getParams(), result, new FieldPosition(0));
                     }
-                    AssociatedLog al = new AssociatedLog(ad.getTime(), associatedLogLevel, result.toString(), ad.getOrdinal());
+                    AssociatedLog al = new AssociatedLog(ad.getTime(), associatedLogLevel, result.toString(), ad.getException(), ad.getOrdinal());
                     associatedLogs.add(al);
                 }
                 getAssociatedLogsTable().getTableSorter().setData(associatedLogs);
