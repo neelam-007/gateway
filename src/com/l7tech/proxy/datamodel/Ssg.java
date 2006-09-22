@@ -87,7 +87,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     private static Set headersToCopy = new TreeSet(String.CASE_INSENSITIVE_ORDER);
     static {
-        headersToCopy.add("Cooke");
+        headersToCopy.add("Cookie");
         headersToCopy.add("Set-Cookie");
     }
 
