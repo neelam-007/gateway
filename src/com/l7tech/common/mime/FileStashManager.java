@@ -138,11 +138,6 @@ public class FileStashManager implements StashManager {
         stashed.clear();
     }
 
-    protected void finalize() throws Throwable {
-        super.finalize();
-        close0(); // doesn't need sync version
-    }
-
     private static class FileInfo {
         private File file;
         private Long size = null;
@@ -247,8 +242,8 @@ public class FileStashManager implements StashManager {
         }
 
         protected void finalize() throws Throwable {
-            super.finalize();
             close0(); // doesn't need sync
+            super.finalize();
         }
     }
 }

@@ -191,9 +191,4 @@ public class HybridStashManager implements StashManager {
         }
         size = 0;
     }
-
-    protected void finalize() throws Throwable {
-        super.finalize();
-        close();
-    }
 }

@@ -87,9 +87,9 @@ public final class Message {
      * @throws IOException if there is a problem reading the initial boundary from a multipart/related body
      */
     public void initialize(StashManager sm,
-                                  ContentTypeHeader outerContentType, 
-                                  InputStream body) 
-            throws NoSuchPartException, IOException 
+                                  ContentTypeHeader outerContentType,
+                                  InputStream body)
+            throws NoSuchPartException, IOException
     {
         HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
         HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
@@ -143,20 +143,20 @@ public final class Message {
     /**
      * Get the knob for the MIME facet of this Message, which must already be attached
      * to an InputStream.
-     *  
+     *
      * @return the MimeKnob for this Message.  Never null.
      * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
-     */ 
+     */
     public MimeKnob getMimeKnob() throws IllegalStateException {
         MimeKnob mimeKnob = (MimeKnob)getKnob(MimeKnob.class);
         if (mimeKnob == null) throw new IllegalStateException("This Message has not yet been attached to an InputStream");
         return mimeKnob;
     }
-    
+
     /**
      * Get the knob for the XML facet of this Message, creating one if necessary and possible.
      * If no XML facet is currently installed, one will be created if there is a MIME facet whose
-     * first part's content type is text/xml. 
+     * first part's content type is text/xml.
      *
      * @return the XmlKnob for this Message.  Never null.
      * @throws SAXException if the first part's content type is not text/xml.
@@ -276,7 +276,7 @@ public final class Message {
         if (hrk != null && !"post".equalsIgnoreCase(hrk.getMethod())) {
             return false;
         }
-        
+
         if (getKnob(SoapKnob.class) != null)
             return true;
         if (!isXml())
@@ -510,13 +510,4 @@ public final class Message {
             invalidateCachedKnobs();
         }
     }
-
-    protected void finalize() throws Throwable {
-        try {
-            close(); // Someone has been bad!
-        } finally {
-            super.finalize();
-        }
-    }
-
 }

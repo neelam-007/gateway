@@ -186,6 +186,7 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
     }
 
     public int read() throws IOException {
+        if (firstBlock == null) throw new IllegalStateException("ByteOrderMarkInputStream has already been closed");
         if (pendingBytes < 1) {
             if (pendingEof) return -1;
             return super.read();
@@ -195,6 +196,7 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
     }
 
     public int read(byte b[], int off, int len) throws IOException {
+        if (firstBlock == null) throw new IllegalStateException("ByteOrderMarkInputStream has already been closed");
         if (pendingBytes < 1) {
             if (pendingEof) return -1;
             return super.read(b, off, len);
@@ -222,5 +224,13 @@ UTF-16                  Sixteen-bit Unicode Transformation Format, byte order sp
 
     public boolean markSupported() {
         return false;
+    }
+
+    public void close() throws IOException {
+        if (firstBlock != null) {
+            BufferPool.returnBuffer(firstBlock);
+            firstBlock = null;
+        }
+        super.close();
     }
 }

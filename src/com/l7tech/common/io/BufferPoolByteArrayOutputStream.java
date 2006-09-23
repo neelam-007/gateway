@@ -142,7 +142,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
 
     /**
      * Returns a peek at the actual backing byte array used by this stream.  This should not be kept
-     * since it may be returned to the pool next time this instance is written, closed, or finalized.
+     * since it may be returned to the pool next time this instance is written or closed.
      * <p/>
      * If you want to keep a copy of this data, you must copy it elsewhere yourself.
      *

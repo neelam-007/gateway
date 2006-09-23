@@ -99,12 +99,4 @@ public class TarariKnob implements MessageKnob, Closeable {
         if (knob != null)
             knob.close();
     }
-
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } catch (Throwable t) {
-            super.finalize();
-        }
-    }
 }

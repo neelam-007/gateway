@@ -121,14 +121,6 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         }
     }
 
-    protected void finalize() throws Throwable {
-        try {
-            super.finalize();
-        } finally {
-            close();
-        }
-    }
-
     /** @return the RaxDocument.  Never null. */
     public RaxDocument getRaxDocument() {
         return raxDocument;

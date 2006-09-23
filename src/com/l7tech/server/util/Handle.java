@@ -19,8 +19,7 @@ public class Handle<T extends ReferenceCounted> extends AbstractCloseable implem
 
     /**
      * Report that noone will ever again try to use this handle. This may cause the underlying object to
-     * be immediately unloaded/destroyed/etc, without waiting for the finalizer to get around to it,
-     * if this was the last handle using it.
+     * be immediately unloaded/destroyed/etc.
      */
     public void close() {
         super.close();

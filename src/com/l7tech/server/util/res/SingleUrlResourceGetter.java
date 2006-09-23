@@ -45,7 +45,7 @@ class SingleUrlResourceGetter<R> extends UrlResourceGetter<R> {
     }
 
     public void close() {
-        // Nothing we can do except wait for the finalizer -- userObject(s) may be in use
+        // Nothing we can do -- userObject(s) may be in use
     }
 
     public R getResource(ElementCursor message, Map vars) throws IOException, ResourceParseException, GeneralSecurityException, ResourceIOException, MalformedResourceUrlException {

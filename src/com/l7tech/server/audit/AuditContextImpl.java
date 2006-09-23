@@ -185,17 +185,6 @@ public class AuditContextImpl implements AuditContext {
         return Collections.unmodifiableMap(details);
     }
 
-    protected void finalize() throws Throwable {
-        try {
-            if (currentRecord != null || !details.isEmpty()) {
-                logger.warning("AuditContext finalized before being flushed");
-                flush();
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
     private Level getSystemMessageThreshold() {
         if (currentMessageThreshold == null) {
             String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);

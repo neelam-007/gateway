@@ -12,8 +12,13 @@ package com.l7tech.server.util;
  * This class does not formally implement {@link com.l7tech.common.util.Closeable} because not all subclasses
  * necessarily want to make their close() method public.
  * <p/>
- * If doClose() has not been invoked by the time the finalize() method is invoked,
- * doClose() will be invoked at that time (on the Finalizer thread).
+ * This superclass does not provide a finalize method.  The presence of a finalize method, especially on an
+ * object whose lifecycle is within a single request, can cause objects to pile up on the finalizer queue
+ * (to the point of filling up memory and crashing, in some circumstances -- see Bug #2953).  Implementors
+ * can of course provide their own finalize method if it is really, truly, absolutely necessary (to free
+ * hardware resources, for example).
+ * <p/>
+ * Note that you do NOT need a finalize method just because you keep a reference to an object that has its own.
  */
 public abstract class AbstractCloseable {
     private boolean closed = false;
@@ -42,13 +47,5 @@ public abstract class AbstractCloseable {
     protected void close() {
         if (setClosed()) return;
         doClose();
-    }
-
-    protected void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
     }
 }

@@ -80,17 +80,6 @@ public class JmsBag {
         }
     }
 
-    protected void finalize() throws Throwable {
-        try {
-            if ( !_closed ) {
-                _logger.warning( "JmsBag finalized" );
-                close();
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
     private static final Logger _logger = Logger.getLogger(JmsBag.class.getName());
     private ConnectionFactory _connectionFactory;
     private Connection _connection;
