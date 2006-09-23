@@ -333,11 +333,13 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     public String getUsername() throws OperationCanceledException, HttpChallengeRequiredException {
-        return getCredentialsForTrustedSsg().getUserName();
+        PasswordAuthentication pa = getCredentialsForTrustedSsg();
+        return pa==null ? null : pa.getUserName();
     }
 
     public char[] getPassword() throws OperationCanceledException, HttpChallengeRequiredException {
-        return getCredentialsForTrustedSsg().getPassword();
+        PasswordAuthentication pa = getCredentialsForTrustedSsg();
+        return pa==null ? null : pa.getPassword();
     }
 
     public long getNonce() {

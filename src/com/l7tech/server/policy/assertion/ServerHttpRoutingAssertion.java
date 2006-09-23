@@ -9,7 +9,6 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
@@ -340,7 +339,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (chainId != null && chainId.length() > 0) {
                 routedRequestParams.addExtraHeader(new GenericHttpHeader(IV_USER, chainId));
                 HttpCookie ivUserCookie = new HttpCookie(IV_USER, chainId, 0, url.getPath(), url.getHost());
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, ivUserCookie.toExternalForm()));
+                Collection cookies = Collections.singletonList(ivUserCookie);
+                routedRequestParams.addExtraHeader(
+                        new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
+                                              HttpCookie.getCookieHeader(cookies)));
 
                 // there is no defined quoting or escape mechanism for HTTP cookies so we'll use URLEncoding
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, new String[] {IV_USER});

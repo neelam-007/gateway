@@ -57,28 +57,33 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         final String username = context.getUsername();
         final char[] password = context.getPassword();
 
-        context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context)
-                                                        throws PolicyAssertionException, IOException {
-                DecorationRequirements wssReqs;
-                if (data.getRecipientContext().localRecipient()) {
-                    wssReqs = context.getDefaultWssRequirements();
-                } else {
-                    try {
-                        wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
-                    } catch (CertificateException e) {
-                        throw new PolicyAssertionException(data, "cannot initialize recipient", e);
+        if (username != null) {
+            context.getPendingDecorations().put(this, new ClientDecorator() {
+                public AssertionStatus decorateRequest(PolicyApplicationContext context)
+                                                            throws PolicyAssertionException, IOException {
+                    DecorationRequirements wssReqs;
+                    if (data.getRecipientContext().localRecipient()) {
+                        wssReqs = context.getDefaultWssRequirements();
+                    } else {
+                        try {
+                            wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
+                        } catch (CertificateException e) {
+                            throw new PolicyAssertionException(data, "cannot initialize recipient", e);
+                        }
                     }
+
+                    wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
+                    if (!context.getClientSidePolicy().isPlaintextAuthAllowed())
+                        context.setSslRequired(true); // force SSL when using WSS basic
+                    return AssertionStatus.NONE;
                 }
+            });
 
-                wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
-                if (!context.getClientSidePolicy().isPlaintextAuthAllowed())
-                    context.setSslRequired(true); // force SSL when using WSS basic
-                return AssertionStatus.NONE;
-            }
-        });
-
-        return AssertionStatus.NONE;
+            return AssertionStatus.NONE;
+        } else {
+            context.setAuthenticationMissing();
+            return AssertionStatus.FAILED;            
+        }
     }
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
