@@ -185,18 +185,18 @@ CREATE TABLE rbac_predicate_oid (
 -- Create Administrator role
 -- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
 
-INSERT INTO rbac_role VALUES (-100,0,'Administrator', null,-1, 'Users assigned to the {0} role have full access to the gateway.');
+INSERT INTO rbac_role VALUES (-100,0,'Administrator', null,null, 'Users assigned to the {0} role have full access to the gateway.');
 INSERT INTO rbac_permission VALUES (-101, 0, -100, 'CREATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-102, 0, -100, 'READ',   null, 'ANY');
 INSERT INTO rbac_permission VALUES (-103, 0, -100, 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission VALUES (-104, 0, -100, 'DELETE', null, 'ANY');
 
 -- Create Operator role
-INSERT INTO rbac_role VALUES (-150,0,'Operator', null,-1, 'Users assigned to the {0} role have read only access to the gateway.');
+INSERT INTO rbac_role VALUES (-150,0,'Operator', null,null, 'Users assigned to the {0} role have read only access to the gateway.');
 INSERT INTO rbac_permission VALUES (-151, 0, -150, 'READ', null, 'ANY');
 
 -- Create other canned roles
-INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,-1, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.');
+INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.');
 INSERT INTO rbac_permission VALUES (-201,0,-200,'READ',NULL,'USER');
 INSERT INTO rbac_predicate VALUES (-202,0,-201);
 INSERT INTO rbac_predicate_attribute VALUES (-202,'providerId','-2');
@@ -225,7 +225,7 @@ INSERT INTO rbac_permission VALUES (-217,0,-200,'UPDATE',NULL,'GROUP');
 INSERT INTO rbac_predicate VALUES (-218,0,-217);
 INSERT INTO rbac_predicate_attribute VALUES (-218,'providerId','-2');
 
-INSERT INTO rbac_role VALUES (-250,0,'Publish External Identity Providers', null,-1, 'Users assigned to the {0} role have the ability to create new external identity providers.');
+INSERT INTO rbac_role VALUES (-250,0,'Publish External Identity Providers', null,null, 'Users assigned to the {0} role have the ability to create new external identity providers.');
 INSERT INTO rbac_permission VALUES (-251,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_predicate VALUES (-252,0,-251);
 INSERT INTO rbac_predicate_attribute VALUES (-252,'typeVal','2');
@@ -234,18 +234,18 @@ INSERT INTO rbac_predicate VALUES (-254,0,-253);
 INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3');
 INSERT INTO rbac_permission VALUES (-255,0,-250,'READ',NULL,'TRUSTED_CERT');
 
-INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,-1, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.');
+INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.');
 INSERT INTO rbac_permission VALUES (-301,0,-300,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-302,0,-300,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-303,0,-300,'READ',NULL,'GROUP');
 
-INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices', null,-1, 'Users assigned to the {0} role have the ability to publish new web services.');
+INSERT INTO rbac_role VALUES (-350,0,'Publish Webservices', null,null, 'Users assigned to the {0} role have the ability to publish new web services.');
 INSERT INTO rbac_permission VALUES (-351,0,-350,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-353,0,-350,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-354,0,-350,'CREATE',NULL,'SERVICE');
 
-INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,-1, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
+INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-402,0,-400,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-403,0,-400,'READ',NULL,'USER');
@@ -260,28 +260,28 @@ INSERT INTO rbac_permission VALUES (-411,0,-400,'READ',NULL,'AUDIT_MESSAGE');
 INSERT INTO rbac_permission VALUES (-412,0,-400,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-413,0,-400,'READ',NULL,'JMS_ENDPOINT');
 
-INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,-1, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
+INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-452,0,-450,'READ',NULL,'AUDIT_RECORD');
 
-INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics', null,-1, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.');
+INSERT INTO rbac_role VALUES (-500,0,'View Service Metrics', null,null, 'Users assigned to the {0} role have the ability to monitor service metrics in the manager.');
 INSERT INTO rbac_permission VALUES (-501,0,-500,'READ',NULL,'METRICS_BIN');
 INSERT INTO rbac_permission VALUES (-502,0,-500,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-503,0,-500,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-504,0,-500,'READ',NULL,'SERVICE_USAGE');
 
-INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,-1, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.');
+INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.');
 INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
 
-INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,-1, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates.');
+INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates.');
 INSERT INTO rbac_permission VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-602,0,-600,'READ',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-603,0,-600,'DELETE',NULL,'TRUSTED_CERT');
 INSERT INTO rbac_permission VALUES (-604,0,-600,'CREATE',NULL,'TRUSTED_CERT');
 
-INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,-1, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.');
+INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.');
 INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
@@ -291,7 +291,7 @@ INSERT INTO rbac_permission VALUES (-656,1,-650,'DELETE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-657,1,-650,'UPDATE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
 
-INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,-1, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
+INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-702,0,-700,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_permission VALUES (-703,0,-700,'UPDATE',NULL,'CLUSTER_PROPERTY');
