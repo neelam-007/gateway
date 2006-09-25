@@ -11,14 +11,14 @@ import java.util.logging.Level;
 public class AssertionMessages extends Messages {
 
     // ServerHttpRoutingAssertion messages
-    public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Couldn't initialize SSL Context");
+    public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Couldn''t initialize SSL Context");
     public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP routing assertion");
     public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, true, false, "This option is not supported for non-SOAP messages. This message is supposed to be SOAP but does not appear to be.");
     public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "This option is not supported for non-SOAP messages. Something is wrong with this policy.");
     public static final M HTTPROUTE_PROMOTING_ACTOR         = m(4004, Level.FINE, "promoting actor {0}");
     public static final M HTTPROUTE_NO_SECURITY_HEADER      = m(4005, Level.INFO, "Routing assertion requested that the security header with actor {0} be promoted, but no such security header was present in the message.");
     public static final M HTTPROUTE_ERROR_READING_RESPONSE  = m(4006, Level.WARNING, true, false, "Error reading response");
-    public static final M HTTPROUTE_CANT_RESOLVE_IP         = m(4007, Level.WARNING, "Couldn't resolve client IP address");
+    public static final M HTTPROUTE_CANT_RESOLVE_IP         = m(4007, Level.WARNING, "Couldn''t resolve client IP address");
     public static final M HTTPROUTE_TAI_NOT_AUTHENTICATED   = m(4008, Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
     public static final M HTTPROUTE_TAI_CHAIN_USERNAME      = m(4009, Level.FINE, "TAI credential chaining requested; will chain username {0}");
     public static final M HTTPROUTE_TAI_NO_USER_ID          = m(4010, Level.WARNING, "TAI credential chaining requested, but request User did not have a unique identifier: id is {0}");
@@ -56,13 +56,13 @@ public class AssertionMessages extends Messages {
     public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
     public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.WARNING, "No credentials found!");
     public static final M ALREADY_AUTHENTICATED                   = m(4202, Level.FINEST, "Request already authenticated");
-    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.WARNING, "Can't call checkRequest() when no valid identityProviderOid has been set!");
-    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Couldn't find identity provider!");
+    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.WARNING, "Can''t call checkRequest() when no valid identityProviderOid has been set!");
+    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Couldn''t find identity provider!");
     public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "id assertion refers to an id provider which does not exist anymore");
     public static final M AUTHENTICATED                           = m(4206, Level.FINEST, "Authenticated {0}");
     public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client cert for {0}");
     public static final M AUTHENTICATION_FAILED                   = m(4208, Level.INFO, "Authentication failed for {0}");
-    public static final M IDASS_NOLOGIN_NOOID                     = m(4209, Level.WARNING, "This assertion is not configured properly. The login and uid can't both be null.");
+    public static final M IDASS_NOLOGIN_NOOID                     = m(4209, Level.WARNING, "This assertion is not configured properly. The login and uid can''t both be null.");
     public static final M IDPROV_MISMATCH                         = m(4210, Level.FINE, "Authentication failed because providers id did not match ({0} instead of {1}).");
     public static final M USERID_MISMATCH                         = m(4211, Level.FINE, "Authentication failed because the user id did not match.");
     public static final M LOGIN_MISMATCH                          = m(4212, Level.FINE, "Authentication failed because the login did not match.");
@@ -121,8 +121,8 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_REQUEST_NOT_XML                   = m(4700, Level.WARNING, true, false, "Request not XML; cannot evaluate XPath expression");
     public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, false, true, "Response not XML; cannot evaluate XPath expression");
     public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "Cannot evaluate XPath expression: XPath pattern is invalid");
-    public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "XPath pattern didn't match request; assertion therefore fails." );
-    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "XPath pattern didn't match response; assertion therefore fails." );
+    public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "XPath pattern didn''t match request; assertion therefore fails." );
+    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails." );
     public static final M XPATH_RESULT_TRUE                       = m(4705, Level.FINE, "XPath pattern returned true");
     public static final M XPATH_RESULT_FALSE                      = m(4706, Level.INFO, "XPath pattern returned false");
     public static final M XPATH_TEXT_NODE_FOUND                   = m(4707, Level.FINE, "XPath pattern found a text node");
@@ -276,7 +276,7 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");
     public static final M WSTRUST_RSTR_BAD_TYPE           = m(6201, Level.WARNING, "WS-Trust response did not contain a security token of a supported type");
     public static final M WSTRUST_RSTR_STATUS_NON_200     = m(6202, Level.WARNING, "WS-Trust response had non-200 status");
-    public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can't replace security token in non-XML message");
+    public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can''t replace security token in non-XML message");
     public static final M WSTRUST_DECORATION_FAILED       = m(6204, Level.WARNING, "Unable to replace security token");
     public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.INFO, "Original security token was not XML; cannot remove from request");
     public static final M WSTRUST_MULTI_TOKENS            = m(6206, Level.WARNING, "Multiple exchangeable Security Tokens found in request");
@@ -295,7 +295,7 @@ public class AssertionMessages extends Messages {
     // SAML Browser General
     public static final M SAMLBROWSER_LOGINFORM_NON_200               = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
     public static final M SAMLBROWSER_LOGINFORM_NOT_HTML              = m(6401, Level.WARNING, "HTTP GET for login form resulted in non-HTML response");
-    public static final M SAMLBROWSER_LOGINFORM_IOEXCEPTION           = m(6402, Level.WARNING, "Couldn't read login form HTML");
+    public static final M SAMLBROWSER_LOGINFORM_IOEXCEPTION           = m(6402, Level.WARNING, "Couldn''t read login form HTML");
     public static final M SAMLBROWSER_LOGINFORM_PARSEEXCEPTION        = m(6403, Level.WARNING, "Unable to parse login form HTML");
     public static final M SAMLBROWSER_LOGINFORM_CANT_FIND_FIELDS      = m(6404, Level.WARNING, "Unable to find login and/or password field(s) in login form HTML");
     public static final M SAMLBROWSER_LOGINFORM_MULTIPLE_FIELDS       = m(6405, Level.WARNING, "Login form contained multiple username or password fields");
@@ -311,8 +311,8 @@ public class AssertionMessages extends Messages {
     public static final M SAMLBROWSERARTIFACT_RESPONSE_NON_302        = m(6500, Level.WARNING, "HTTP GET for login resulted in non-302 status");
     public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_QUERY       = m(6501, Level.WARNING, "Redirect from login contained no query string");
     public static final M SAMLBROWSERARTIFACT_REDIRECT_BAD_QUERY      = m(6502, Level.WARNING, "Redirect query string could not be parsed");
-    public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT    = m(6503, Level.WARNING, "Couldn't find SAML artifact in redirect query string");
-    public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn't login");
+    public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT    = m(6503, Level.WARNING, "Couldn''t find SAML artifact in redirect query string");
+    public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn''t login");
 
     // XPath Credential Source
     public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not valid XML");
@@ -320,13 +320,13 @@ public class AssertionMessages extends Messages {
     public static final M XPATHCREDENTIAL_LOGIN_XPATH_NOT_FOUND    = m(6602, Level.WARNING, "Login XPath evaluation failed to find any result");
     public static final M XPATHCREDENTIAL_LOGIN_FOUND_MULTI        = m(6603, Level.WARNING, "Login XPath evaluation found multiple results");
     public static final M XPATHCREDENTIAL_LOGIN_XPATH_WRONG_RESULT = m(6604, Level.WARNING, "Login XPath evaluation found content of an unsupported type");
-    public static final M XPATHCREDENTIAL_LOGIN_PARENT_NOT_ELEMENT = m(6605, Level.WARNING, "Can't remove login element; parent is not an Element");
+    public static final M XPATHCREDENTIAL_LOGIN_PARENT_NOT_ELEMENT = m(6605, Level.WARNING, "Can''t remove login element; parent is not an Element");
 
     public static final M XPATHCREDENTIAL_PASS_XPATH_FAILED       = m(6611, Level.WARNING, "Password XPath evaluation failed");
     public static final M XPATHCREDENTIAL_PASS_XPATH_NOT_FOUND    = m(6612, Level.WARNING, "Password XPath evaluation failed to find any result");
     public static final M XPATHCREDENTIAL_PASS_FOUND_MULTI        = m(6613, Level.WARNING, "Login XPath evaluation found multiple results");
     public static final M XPATHCREDENTIAL_PASS_XPATH_WRONG_RESULT = m(6614, Level.WARNING, "Password XPath evaluation found content of an unsupported type");
-    public static final M XPATHCREDENTIAL_PASS_PARENT_NOT_ELEMENT = m(6615, Level.WARNING, "Can't remove password element; parent is not an Element");
+    public static final M XPATHCREDENTIAL_PASS_PARENT_NOT_ELEMENT = m(6615, Level.WARNING, "Can''t remove password element; parent is not an Element");
 
     // Email and SNMP alerts
     public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
@@ -377,7 +377,7 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
     public static final M WSFEDPASS_RSTR_BAD_TYPE           = m(7301, Level.WARNING, "WS-Federation response did not contain a security token of a supported type");
     public static final M WSFEDPASS_RSTR_STATUS_NON_200     = m(7302, Level.WARNING, "WS-Federation response had non-200 status");
-    public static final M WSFEDPASS_NON_XML_MESSAGE         = m(7303, Level.INFO, "Can't replace security token in non-XML message");
+    public static final M WSFEDPASS_NON_XML_MESSAGE         = m(7303, Level.INFO, "Can''t replace security token in non-XML message");
     public static final M WSFEDPASS_DECORATION_FAILED       = m(7304, Level.WARNING, "Unable to replace security token");
     public static final M WSFEDPASS_ORIGINAL_TOKEN_NOT_XML  = m(7305, Level.INFO, "Original security token was not XML; cannot remove from request");
     public static final M WSFEDPASS_MULTI_TOKENS            = m(7306, Level.WARNING, true, false, "Multiple Security Tokens found in request");
