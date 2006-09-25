@@ -38,10 +38,11 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
         methodGroup.add(basicAuthRadioButton);
         methodGroup.add(formAuthRadioButton);
 
-        listModel = new DefaultComboBoxModel();
+        listModel = new DefaultListModel();
         fieldList.setModel(listModel);
         fieldList.setPrototypeCellValue("asdfasdfasdfasdf = asdfasdfasdf");
         fieldList.setBorder(new LineBorder(Color.BLACK, 1));
+        fieldList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         if(!AuthenticationProperties.METHOD_FORM.equals(authProps.getMethod())) {
             basicAuthRadioButton.setSelected(true);
@@ -134,13 +135,16 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
 
         fieldModifyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                edit((FieldInfo)listModel.getSelectedItem());
+                edit((FieldInfo)fieldList.getSelectedValue());
             }
         });
 
         fieldRemoveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                listModel.removeElement(listModel.getSelectedItem());
+                FieldInfo fieldInfo = (FieldInfo) fieldList.getSelectedValue();
+                if (fieldInfo != null) {
+                    listModel.removeElement(fieldInfo);
+                }
                 updateButtons();
             }
         });
@@ -177,7 +181,7 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
     private JButton fieldModifyButton;
     private JButton fieldAddButton;
     private JList fieldList;
-    private DefaultComboBoxModel listModel;
+    private DefaultListModel listModel;
     private JTextField formTargetTextfield;
     private JTextField passwordTextfield;
     private JTextField usernameTextfield;
@@ -189,8 +193,6 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
     private JPanel formAuthPanel;
 
     private void updateButtons() {
-        boolean ok = false;
-
         boolean formSelected = formAuthRadioButton.isSelected();
         doEnable(formAuthPanel, formSelected);
 
@@ -215,16 +217,18 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
     }
 
     private void edit(FieldInfo fieldInfo) {
-        SamlBrowserArtifactFieldDialog fieldDialog = new SamlBrowserArtifactFieldDialog(this, true);
-        Utilities.centerOnScreen(fieldDialog);
-        fieldDialog.getNameField().setText(fieldInfo.name);
-        fieldDialog.getValueField().setText(fieldInfo.value);
-        fieldDialog.pack();
-        fieldDialog.setVisible(true);
-        if (fieldDialog.isModified()) {
-            listModel.removeElement(fieldInfo);
-            listModel.addElement(new FieldInfo(fieldDialog.getNameField().getText(), fieldDialog.getValueField().getText()));
-            updateButtons();
+        if (fieldInfo != null) {
+            SamlBrowserArtifactFieldDialog fieldDialog = new SamlBrowserArtifactFieldDialog(this, true);
+            Utilities.centerOnScreen(fieldDialog);
+            fieldDialog.getNameField().setText(fieldInfo.name);
+            fieldDialog.getValueField().setText(fieldInfo.value);
+            fieldDialog.pack();
+            fieldDialog.setVisible(true);
+            if (fieldDialog.isModified()) {
+                listModel.removeElement(fieldInfo);
+                listModel.addElement(new FieldInfo(fieldDialog.getNameField().getText(), fieldDialog.getValueField().getText()));
+                updateButtons();
+            }
         }
     }
 
