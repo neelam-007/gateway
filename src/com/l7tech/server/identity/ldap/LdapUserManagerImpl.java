@@ -112,16 +112,17 @@ public class LdapUserManagerImpl implements LdapUserManager {
             for (UserMappingConfig userType : userTypes) {
                 filter.append("(");
                 filter.append(userType.getLoginAttrName());
-                filter.append("=");
-                filter.append(login);
-                filter.append(")");
+                filter.append("={0})");
             }
             filter.append(")");
 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             NamingEnumeration answer;
-            answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter.toString(), sc);
+            answer = context.search(ldapIdentityProviderConfig.getSearchBase(),
+                                    filter.toString(),
+                                    new String[]{login},
+                                    sc);
 
             String dn = null;
             try {
