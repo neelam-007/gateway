@@ -15,6 +15,7 @@ import com.l7tech.console.panels.LicenseDialog;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
@@ -2022,19 +2023,30 @@ public class MainWindow extends JFrame {
     }
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
+    private long lastActivityTime = System.currentTimeMillis();
+
     final Timer
       inactivityTimer =
       new Timer(60 * 1000 * 20,
         new ActionListener() {
-            long lastStamp = System.currentTimeMillis();
-
             /**
              * Invoked when an action occurs.
              */
             public void actionPerformed(ActionEvent e) {
 
+                // Don't timeout as long as any monitoring window is displaying.
+                for (Frame frame : JFrame.getFrames()) {
+                    if (frame instanceof ClusterStatusWindow ||
+                        frame instanceof GatewayAuditWindow ||
+                        frame instanceof DashboardWindow) {
+                        if (frame.isVisible()) {
+                            return;
+                        }
+                    }
+                }
+
                 long now = System.currentTimeMillis();
-                double inactive = (now - lastStamp);
+                double inactive = (now - lastActivityTime);
                 if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
                     inactivityTimer.stop(); // stop timer
                     MainWindow.this.getStatusMsgRight().
@@ -2063,7 +2075,7 @@ public class MainWindow extends JFrame {
             AWTEventListener listener =
               new AWTEventListener() {
                   public void eventDispatched(AWTEvent e) {
-                      lastStamp = System.currentTimeMillis();
+                      lastActivityTime = System.currentTimeMillis();
                   }
               };
             // all events we know about
@@ -2091,6 +2103,10 @@ public class MainWindow extends JFrame {
                   addAWTEventListener(listener, mask);
             }
         });
+
+    public void updateLastActivityTime() {
+        lastActivityTime = System.currentTimeMillis();
+    }
 
     // -------------- inactivitiy timeout end (open your eyes) -------------------
 

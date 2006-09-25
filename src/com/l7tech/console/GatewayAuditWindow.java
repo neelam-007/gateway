@@ -404,6 +404,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
             if(startConnected) {
                 getLogPane().onConnect();
             }
+        } else {
+            // Let inactivity timeout start counting after this window is closed.
+            TopComponents.getInstance().getMainWindow().updateLastActivityTime();
         }
     }
 

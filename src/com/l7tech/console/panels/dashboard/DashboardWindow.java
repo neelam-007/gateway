@@ -12,6 +12,7 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
@@ -261,6 +262,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
             currentRange.getMetricsChartPanel().resume();           // In case chart was suspended when closed.
         } else {
             refreshTimer.stop();
+
+            // Let inactivity timeout start counting after this window is closed.
+            TopComponents.getInstance().getMainWindow().updateLastActivityTime();
         }
         super.setVisible(vis);
     }

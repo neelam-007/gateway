@@ -856,6 +856,14 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         statsWorker.start();
     }
 
+    public void setVisible(boolean vis) {
+        if (!vis) {
+            // Let inactivity timeout start counting after this window is closed.
+            TopComponents.getInstance().getMainWindow().updateLastActivityTime();
+        }
+        super.setVisible(vis);
+    }
+
     /**
      * Clean up the resources of the cluster status window when the window is closed.
      */
