@@ -154,8 +154,10 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                 GT group = gman.findByPrimaryKey(groupHeader.getStrId());
                 gman.deleteMembership(group, user);
             }
-            getHibernateTemplate().delete(userImp);
+
+            // Revoke cert before deleting user (Bug #2963)
             revokeCert(userImp);
+            getHibernateTemplate().delete(userImp);
         } catch (DeleteException e) {
             throw e;
         } catch (ObjectModelException e) {
