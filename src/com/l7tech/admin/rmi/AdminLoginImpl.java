@@ -69,11 +69,12 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             // TODO is holding any CRUD permission sufficient?
             Collection<Role> roles = roleManager.getAssignedRoles(user);
             Set<Permission> perms = new HashSet<Permission>();
-            for (Role role : roles) {
+            roles: for (Role role : roles) {
                 perms.addAll(role.getPermissions());
                 for (Permission perm : role.getPermissions()) {
                     if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
                         ok = true;
+                        break roles;
                     }
                 }
             }

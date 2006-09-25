@@ -4,6 +4,7 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.rbac.*;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
@@ -182,7 +183,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
             manager.delete(ipc);
 
-            roleManager.deleteEntitySpecificRole(new DeleteProviderCallback(ipc));
+            roleManager.deleteEntitySpecificRole(ID_PROVIDER_CONFIG, ipc);
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);

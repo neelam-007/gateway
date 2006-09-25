@@ -5,10 +5,11 @@
 
 package com.l7tech.server.upgrade;
 
-import com.l7tech.common.audit.Auditor;
+import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.security.rbac.Role;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -25,7 +26,6 @@ import java.util.logging.Logger;
 public class Upgrade35To36AddRoles implements UpgradeTask {
     private static final Logger logger = Logger.getLogger(Upgrade35To36AddRoles.class.getName());
     private ApplicationContext applicationContext;
-    private Auditor auditor;
 
     /**
      * Get a bean safely.
@@ -43,7 +43,6 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
 
     public void upgrade(ApplicationContext applicationContext) throws FatalUpgradeException, NonfatalUpgradeException {
         this.applicationContext = applicationContext;
-        this.auditor = new Auditor(this, applicationContext, logger);
 
         ServiceManager serviceManager = (ServiceManager)getBean("serviceManager");
         RoleManager roleManager = (RoleManager)getBean("roleManager");
@@ -68,7 +67,7 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
         // If any of them doesn't have a role, try to create it
         Collection<PublishedService> services = serviceManager.findAll();
         for (PublishedService service : services) {
-            Role role = roleManager.findEntitySpecificRole(service);
+            Role role = roleManager.findEntitySpecificRole(SERVICE, service);
             if (role == null) {
                 logger.info("Auto-creating missing admin Role for service " + service.getName() + " (#" + service.getOid() + ")");
                 serviceManager.addManageServiceRole(service);
@@ -85,7 +84,7 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
         for (IdentityProviderConfig ipc : ipcs) {
             if (ipc.getOid() <= 0) continue;  // Don't mess with built-in ones
             
-            Role role = roleManager.findEntitySpecificRole(ipc);
+            Role role = roleManager.findEntitySpecificRole(ID_PROVIDER_CONFIG, ipc);
             if (role == null) {
                 logger.info("Auto-creating missing admin Role for identity provider " + ipc.getName() + " (#" + ipc.getOid() + ")");
                 ipcManager.addManageProviderRole(ipc);

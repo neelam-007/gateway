@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.security.rbac;
 
+import com.l7tech.common.security.rbac.EntityType;
 import static com.l7tech.common.security.rbac.EntityType.ANY;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.identity.User;
@@ -122,26 +123,16 @@ public class RoleManagerImpl
         return null;
     }
 
-
-    public Role findEntitySpecificRole(final Entity entity) throws FindException {
-        return findEntitySpecificRole(new PermissionMatchCallback() {
-            public boolean matches(Permission permission) {
-                if (!permission.getEntityType().getEntityClass().isAssignableFrom(entity.getClass()))
-                    return false;
-
-                Set<ScopePredicate> scope = permission.getScope();
-                if (scope == null || scope.isEmpty()) return false;
-                if (scope.size() > 1) return false;
-                ScopePredicate pred = scope.iterator().next();
-                if (pred instanceof ObjectIdentityPredicate) {
-                    ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
-                    if (oip.getTargetEntityId().equals(entity.getId())) return true;
-                }
-                return false;
+    public Role findEntitySpecificRole(final EntityType etype, final PersistentEntity entity) throws FindException {
+        return (Role) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Criteria crit = session.createCriteria(Role.class);
+                crit.add(Restrictions.eq("entityTypeName", etype.name()));
+                crit.add(Restrictions.eq("entityOid", entity.getOid()));
+                return crit.uniqueResult();
             }
         });
     }
-
 
     public void deleteEntitySpecificRole(PermissionMatchCallback callback) throws DeleteException {
         try {
@@ -155,9 +146,9 @@ public class RoleManagerImpl
     }
 
 
-    public void deleteEntitySpecificRole(final Entity entity) throws DeleteException {
+    public void deleteEntitySpecificRole(EntityType etype, final PersistentEntity entity) throws DeleteException {
         try {
-            Role role = findEntitySpecificRole(entity);
+            Role role = findEntitySpecificRole(etype, entity);
             if (role == null) return;
             logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
             delete(role);

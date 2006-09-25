@@ -9,6 +9,7 @@ import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.common.security.rbac.*;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
@@ -179,26 +180,30 @@ public class IdProvConfManagerServer
         Role newRole = new Role();
         newRole.setName(name);
         // RUD this IPC
-        newRole.addPermission(OperationType.READ, com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG, config.getId());
-        newRole.addPermission(OperationType.UPDATE, com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG, config.getId());
-        newRole.addPermission(OperationType.DELETE, com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG, config.getId());
+        newRole.addPermission(OperationType.READ, ID_PROVIDER_CONFIG, config.getId());
+        newRole.addPermission(OperationType.UPDATE, ID_PROVIDER_CONFIG, config.getId());
+        newRole.addPermission(OperationType.DELETE, ID_PROVIDER_CONFIG, config.getId());
 
         // CRUD users in this IdP
-        newRole.addPermission(OperationType.CREATE, com.l7tech.common.security.rbac.EntityType.USER, "providerId", config.getId());
-        newRole.addPermission(OperationType.READ, com.l7tech.common.security.rbac.EntityType.USER, "providerId", config.getId());
-        newRole.addPermission(OperationType.UPDATE, com.l7tech.common.security.rbac.EntityType.USER, "providerId", config.getId());
-        newRole.addPermission(OperationType.DELETE, com.l7tech.common.security.rbac.EntityType.USER, "providerId", config.getId());
+        newRole.addPermission(OperationType.CREATE, USER, "providerId", config.getId());
+        newRole.addPermission(OperationType.READ, USER, "providerId", config.getId());
+        newRole.addPermission(OperationType.UPDATE, USER, "providerId", config.getId());
+        newRole.addPermission(OperationType.DELETE, USER, "providerId", config.getId());
 
         // CRUD groups in this IdP
-        newRole.addPermission(OperationType.CREATE, com.l7tech.common.security.rbac.EntityType.GROUP, "providerId", config.getId());
-        newRole.addPermission(OperationType.READ, com.l7tech.common.security.rbac.EntityType.GROUP, "providerId", config.getId());
-        newRole.addPermission(OperationType.UPDATE, com.l7tech.common.security.rbac.EntityType.GROUP, "providerId", config.getId());
-        newRole.addPermission(OperationType.DELETE, com.l7tech.common.security.rbac.EntityType.GROUP, "providerId", config.getId());
+        newRole.addPermission(OperationType.CREATE, GROUP, "providerId", config.getId());
+        newRole.addPermission(OperationType.READ, GROUP, "providerId", config.getId());
+        newRole.addPermission(OperationType.UPDATE, GROUP, "providerId", config.getId());
+        newRole.addPermission(OperationType.DELETE, GROUP, "providerId", config.getId());
+        newRole.setEntityType(ID_PROVIDER_CONFIG);
+        newRole.setEntityOid(config.getOid());
+        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the " +
+                config.getName() + " provider, and create, search, update and delete its users and groups.");
 
         // Assignees will need to search TrustedCerts if this is a FIP
         boolean fip = config.type() == IdentityProviderType.FEDERATED;
         if (fip) {
-            newRole.addPermission(OperationType.READ, com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT, null);
+            newRole.addPermission(OperationType.READ, TRUSTED_CERT, null);
         }
 
         if (currentUser != null) {
@@ -209,16 +214,16 @@ public class IdProvConfManagerServer
                 omnipotent &= roleManager.isPermittedForEntity(currentUser, config, OperationType.UPDATE, null);
                 omnipotent &= roleManager.isPermittedForEntity(currentUser, config, OperationType.DELETE, null);
 
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.USER, OperationType.CREATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.USER, OperationType.READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.USER, OperationType.UPDATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.USER, OperationType.DELETE);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.CREATE);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.READ);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.UPDATE);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, USER, OperationType.DELETE);
 
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.GROUP, OperationType.CREATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.GROUP, OperationType.READ);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.GROUP, OperationType.UPDATE);
-                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.GROUP, OperationType.DELETE);
-                if (fip) omnipotent &= roleManager.isPermittedForAllEntities(currentUser, com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT, OperationType.READ);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.CREATE);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.READ);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.UPDATE);
+                omnipotent &= roleManager.isPermittedForAllEntities(currentUser, GROUP, OperationType.DELETE);
+                if (fip) omnipotent &= roleManager.isPermittedForAllEntities(currentUser, TRUSTED_CERT, OperationType.READ);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }

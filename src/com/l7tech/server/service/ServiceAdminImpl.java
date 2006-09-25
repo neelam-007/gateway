@@ -1,10 +1,8 @@
 package com.l7tech.server.service;
 
-import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.security.rbac.*;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UddiAgentException;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.util.ExceptionUtils;
@@ -17,14 +15,12 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.security.rbac.PermissionMatchCallback;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
-import com.l7tech.service.MetricsBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
@@ -42,7 +38,10 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -218,7 +217,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
             checkLicense();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
-            roleManager.deleteEntitySpecificRole(new DeleteServiceCallback(service));
+            roleManager.deleteEntitySpecificRole(SERVICE, service);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
@@ -401,56 +400,4 @@ public class ServiceAdminImpl implements ServiceAdmin {
         return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
     }
 
-    private static class DeleteServiceCallback implements PermissionMatchCallback {
-        private final PublishedService service;
-
-        public DeleteServiceCallback(PublishedService service) {
-            this.service = service;
-        }
-
-        public boolean matches(Permission permission) {
-            com.l7tech.common.security.rbac.EntityType etype = permission.getEntityType();
-            Set<ScopePredicate> scope = permission.getScope();
-            if (scope.size() > 1) return false; // Complex scope
-
-            ScopePredicate pred = scope.isEmpty() ? null : scope.iterator().next();
-            switch(etype) {
-                case SERVICE:
-                    // Must have an OIP
-                    if (pred == null) return false;
-                    if (pred instanceof ObjectIdentityPredicate) {
-                        ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
-                        return oip.getTargetEntityId().equals(service.getId());
-                    }
-                    return false;
-                case AUDIT_MESSAGE:
-                    // Must have an AttributePredicate
-                    return pred != null && serviceIdMatchesAttribute(pred, MessageSummaryAuditRecord.ATTR_SERVICE_OID);
-                case METRICS_BIN:
-                    // Must have an AttributePredicate
-                    return pred != null && serviceIdMatchesAttribute(pred, MetricsBin.ATTR_SERVICE_OID);
-                case SERVICE_USAGE:
-                    // Must have an AttributePredicate
-                    return pred != null && serviceIdMatchesAttribute(pred, ServiceUsage.ATTR_SERVICE_OID);
-                case ID_PROVIDER_CONFIG:
-                case USER:
-                case GROUP:
-                case CLUSTER_INFO:
-                case JMS_CONNECTION:
-                case JMS_ENDPOINT:
-                    // Must have empty scope
-                    return pred == null && permission.getOperation() == OperationType.READ;
-                default:
-                    return false;
-            }
-        }
-
-        private boolean serviceIdMatchesAttribute(ScopePredicate pred, String attrName) {
-            if (pred instanceof AttributePredicate) {
-                AttributePredicate attributePredicate = (AttributePredicate) pred;
-                return attributePredicate.getAttribute().equals(attrName) && attributePredicate.getValue().equals(service.getId());
-            }
-            return false;
-        }
-    }
 }

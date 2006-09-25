@@ -5,6 +5,7 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.Role;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,11 +39,11 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * Finds the first role in which every {@link com.l7tech.common.security.rbac.Permission} is scoped to the single
      * provided {@link Entity}.
      *
-     * @param entity the Entity that is being sought.  must not be null.
-     * @return the Role in question, or null if none was found.
+     * @param etype
+     * @param entity the Entity that is being sought.  must not be null. @return the Role in question, or null if none was found.
      * @throws FindException if there was a problem accessing the database
      */
-    Role findEntitySpecificRole(Entity entity) throws FindException;
+    Role findEntitySpecificRole(EntityType etype, PersistentEntity entity) throws FindException;
 
     /**
      * Deletes any roles in which every {@link com.l7tech.common.security.rbac.Permission} matches the provided callback.
@@ -56,8 +57,8 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * Deletes any roles in which every {@link com.l7tech.common.security.rbac.Permission} is scoped to the single
      * provided {@link Entity} (which is presumably being deleted).
      *
-     * @param entity the Entity that is being deleted
-     * @throws com.l7tech.objectmodel.DeleteException
+     * @param etype
+     * @param entity the Entity that is being deleted @throws com.l7tech.objectmodel.DeleteException
      */
-    void deleteEntitySpecificRole(Entity entity) throws DeleteException;
+    void deleteEntitySpecificRole(EntityType etype, PersistentEntity entity) throws DeleteException;
 }

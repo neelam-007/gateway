@@ -3,8 +3,8 @@
  */
 package com.l7tech.common.security.rbac;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -24,8 +24,9 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<UserRoleAssignment> userAssignments = new HashSet<UserRoleAssignment>();
-
     private String description;
+    private EntityType entityType;
+    private Long entityOid;
 
     public Set<Permission> getPermissions() {
         return permissions;
@@ -94,5 +95,43 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /**
+     * If this Role is scoped to a particular entity, this property will contain the type of that entity.
+     * Otherwise, it will be null.
+     * @return
+     */
+    public EntityType getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(EntityType entityType) {
+        this.entityType = entityType;
+    }
+
+    /** @deprecated only here to hide enums from Hibernate */
+    protected String getEntityTypeName() {
+        if (entityType == null) return null;
+        return entityType.name();
+    }
+
+    /** @deprecated only here to hide enums from Hibernate */
+    protected void setEntityTypeName(String typeName) {
+        if (typeName == null) return;
+        entityType = EntityType.valueOf(typeName);
+    }
+
+    /**
+     * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
+     * Otherwise, it will be null.
+     * @return
+     */
+    public Long getEntityOid() {
+        return entityOid;
+    }
+
+    public void setEntityOid(Long entityOid) {
+        this.entityOid = entityOid;
     }
 }
