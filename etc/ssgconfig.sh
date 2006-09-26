@@ -8,9 +8,20 @@ popd > /dev/null
 
 JAVA_HOME=${SSG_ROOT}/jdk
 
+#check if we're root
 if [ $UID -eq 0 ]; then
-    xhost +local: > /dev/null
-    su ssgconfig -c "DISPLAY=:0.0 ${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
+    #check if xhost exists
+    if [ -e /usr/bin/xhost ]; then
+        #set the display to local 0.0 if there isn't already one
+        if [ -z "${DISPLAY}" ]; then
+            export DISPLAY=:0.0
+        fi
+        xhost +local: > /dev/null
+        su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
+    else
+        #if there's no xhosts, then there's no X so force the console mode
+        su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar -console $*"
+    fi
 else
     ${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*
 fi
