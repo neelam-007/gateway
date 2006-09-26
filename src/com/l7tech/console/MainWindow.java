@@ -1128,10 +1128,11 @@ public class MainWindow extends JFrame {
                     description = can.getDescriptionText();
                 }
 
-                if (description != null) {
-                    descriptionText.setText(description);
-                    descriptionText.getCaret().setDot(0);
+                if (description == null) {
+                    description = ""; // clear currently displayed description
                 }
+                descriptionText.setText(description);
+                descriptionText.getCaret().setDot(0);
             }
         });
         TopComponents.getInstance().registerComponent(AssertionsTree.NAME, tree);
