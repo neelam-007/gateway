@@ -528,7 +528,9 @@ CREATE TABLE rbac_role (
   description varchar(255),
   PRIMARY KEY (objectid),
   UNIQUE KEY name (name),
-  UNIQUE KEY entity_info (entity_type, entity_oid)
+  UNIQUE KEY entity_info (entity_type, entity_oid),
+  INDEX i_rbacrole_etype (entity_type),
+  INDEX i_rbacrole_eoid (entity_oid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -543,7 +545,9 @@ CREATE TABLE rbac_assignment (
   user_id varchar(255) NOT NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
-  FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE
+  FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE,
+  INDEX i_rbacassign_poid (provider_oid),
+  INDEX i_rbacassign_uid (user_id)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
