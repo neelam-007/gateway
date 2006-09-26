@@ -46,6 +46,7 @@ public abstract class TextEntryPanel extends ValidatedPanel {
 
         TextComponentPauseListenerManager.registerPauseListener(textField, new PauseListener() {
             public void textEntryPaused(JTextComponent component, long msecs) {
+                checkSyntax();
                 checkSemantic();
             }
 
