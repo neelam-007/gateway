@@ -220,14 +220,14 @@ class PathValidator {
                 // if the credential source is not HTTP Basic
                 if (!haveSeen(ASSERTION_HTTPBASIC) && !haveSeen(ASSERTION_COOKIECREDS)){
                     result.addWarning(new PolicyValidatorResult.
-                      Warning(a, assertionPath, "HTTP Basic Authentication (or HTTP Cookie session token) is usually used as the authentication " +
+                      Warning(a, assertionPath, "HTTP Basic authentication (or HTTP Cookie session token) is usually used as the authentication " +
                         "scheme when a policy contains a Custom Assertion.", null));
                 }
             }
 
             if (seenAccessControl && !haveSeen(ASSERTION_CUSTOM)) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is " +
-                  "allowed when a Custom Assertion is used.", null));
+                  "permitted when a Custom Assertion is present.", null));
             }
 
             if (haveSeen(ASSERTION_CUSTOM)) {
@@ -258,8 +258,8 @@ class PathValidator {
         }
 
         if (haveSeen(ASSERTION_CUSTOM)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions is allowed when " +
-              "a Custom Assertion is used.", null));
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions is permitted when " +
+              "a Custom Assertion is present.", null));
         }
 
         seenAccessControl = true;
@@ -308,7 +308,7 @@ class PathValidator {
         if (a instanceof SecureConversation) {
             if (haveSeen(ASSERTION_SECURECONVERSATION)) {
                 result.addError(new PolicyValidatorResult.
-                  Error(a,assertionPath,"WS Secure Conversation already specified.", null));
+                  Error(a,assertionPath,"Secure Conversation already specified.", null));
             }
         }
 
@@ -368,13 +368,13 @@ class PathValidator {
                 String actor = assertionToActor(a);
                 String msg;
                 if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
-                    msg = "This assertion should be preceded by a WSS Signature assertion, " +
-                          "a WS Secure Conversation assertion, a SAML assertion, " +
+                    msg = "This assertion should be preceeded by a WSS Signature assertion, " +
+                          "a Secure Conversation assertion, a SAML Security assertion, " +
                           "an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.";
                 } else {
-                    msg = "This assertion should be preceded by a WSS Signature assertion," +
+                    msg = "This assertion should be preceeded by a WSS Signature assertion," +
                           "an Encrypted UsernameToken assertion, a WSS Kerberos assertion, or a " +
-                          "SAML assertion (for actor " + actor + ").";
+                          "SAML Security assertion (for actor " + actor + ").";
                 }
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
             }
@@ -396,45 +396,45 @@ class PathValidator {
         } else if (a instanceof ResponseXpathAssertion) {
             if (!seenRouting) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion will never work because there is no response yet. This assertion should be moved " +
-                  "after the routing assertion.", null));
+                  "This assertion will not work because there is no response yet. " +
+                  "Move this assertion after the routing assertion.", null));
             }
         } else if (a instanceof RequestWssReplayProtection) {
             if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
                     !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a WSS Signature assertion, " +
-                  "a WS Secure Conversation assertion, or a SAML assertion.", null));
+                  "This assertion should be preceeded by a WSS Signature assertion, " +
+                  "a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
         } else if(a instanceof WsTrustCredentialExchange) {
             if(!seenUsernamePasswordCredentials()
             && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a credential assertion (HTTP, XPath Credentials, WSS UsernameToken Basic or SAML).", null));
+                  "This assertion should be preceeded by a credential assertion (HTTP Basic, XPath Credentials, WSS UsernameToken Basic or SAML).", null));
             }
         } else if(a instanceof WsFederationPassiveTokenRequest) {
             if(!seenUsernamePasswordCredentials()) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a credential assertion (HTTP, XPath Credentials or WSS UsernameToken Basic).", null));
+                  "This assertion should be preceeded by a credential assertion (HTTP Basic, XPath Credentials or WSS UsernameToken Basic).", null));
             }
         } else if(a instanceof WsFederationPassiveTokenExchange) {
             if(!seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a SAML assertion.", null));
+                  "This assertion should be preceeded by a SAML Security assertion.", null));
             }
         } else if (a instanceof WssBasic) {
             // bugzilla 2518
             if (!(a instanceof EncryptedUsernameTokenAssertion)) {
                 if (!haveSeen(SslAssertion.class)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "This assertion should be preceded by a TLS/SSL assertion.", null));
+                      "This assertion should be preceded by a SSL or TLS Transport assertion.", null));
                 }
             }
         } else if (a instanceof ResponseWssSecurityToken) {
             // bugzilla 2753
             if (!haveSeen(WssBasic.class)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a WSS UsernameToken Basic assertion.", null));
+                  "This assertion should be preceeded by a WSS Basic authentication assertion.", null));
             }
         }
 
@@ -445,7 +445,8 @@ class PathValidator {
                 String var = vars[i];
                 if (!(BuiltinVariables.isSupported(var) || seenVariable(var.toLowerCase()))) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                            "This assertion refers to the variable '" + var + "', which is neither built-in nor set in the policy.", null));
+                            "This assertion refers to the variable '" + var + "', which is neither predefined " +
+                            "nor set in the policy.", null));
                 }
             }
         }
@@ -519,14 +520,14 @@ class PathValidator {
         if (url == null) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
               "The assertion might not work as configured." +
-              " The protected service url is empty.", null));
+              " The protected service URL is empty.", null));
         } else {
             try {
                 new URL(url);
             } catch (MalformedURLException e) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "The assertion might not work as configured." +
-                  " The protected service url is malformed.", null));
+                  " The protected service URL is malformed.", null));
             }
         }
     }
@@ -586,7 +587,7 @@ class PathValidator {
         if (service != null) {
             if (!service.isSoap()) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "This assertion only works with soap services.", null));
+                  "This assertion only works with SOAP services.", null));
             }
         }
     }
