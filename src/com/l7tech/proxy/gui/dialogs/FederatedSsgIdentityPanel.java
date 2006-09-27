@@ -6,8 +6,6 @@ package com.l7tech.proxy.gui.dialogs;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.gui.util.RunOnChangeListener;
@@ -53,11 +51,13 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
         if (!ssg.isFederatedGateway())
             throw new RuntimeException("Internal error - can't use Federated property pane on non-Federated Gateway");
 
+        // Not currently used for any federation scenario
+        clientCertButton.setVisible(false);
+
         if (ssg.isFederatedTrusted()) {
             trustedGatewayPanel.setVisible(true);
             wsTrustPanel.setVisible(false);
             wsFedPanel.setVisible(false);
-            clientCertButton.setVisible(true);
             trustedSsgLabel.setText(ssg.getTrustedGateway().toString());
             imageIcon = IconManager.getSmallFederatedSsgDiagram();
         } else {
@@ -72,7 +72,6 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
                 wsFedPanel.setVisible(true);
                 imageIcon = IconManager.getSmallFederatedSsgWithFederationServiceDiagram();
             }
-            clientCertButton.setVisible(false);
 
             RunOnChangeListener rocl = new RunOnChangeListener(new Runnable(){
                 public void run() {
