@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public class HexUtils {
     private static final int DEFAULT_LOCAL_BUFFER_SIZE = 256 * 1024;
     private static final int MIN_LOCAL_BUFFER_SIZE = 32 * 1024; // contract guarantees at least 32k
-    private static final int CFG_LOCAL_BUFFER_SIZE = Integer.getInteger("com.l7tech.common.util.localBufferSize",
+    private static final int CFG_LOCAL_BUFFER_SIZE = SyspropUtil.getInteger("com.l7tech.common.util.localBufferSize",
                                                                         DEFAULT_LOCAL_BUFFER_SIZE).intValue();
 
     /** The size of the thread-local buffer returned by getBuffer() and used by slurpStreamLimited. */

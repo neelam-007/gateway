@@ -1,27 +1,26 @@
 package com.l7tech.console.tree.policy;
 
 
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.action.*;
+import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.console.policy.exporter.PolicyImporter;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.util.JaasUtils;
-import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.EntityType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -221,7 +220,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
         try {
             PublishedService svc = getService();
-            if (Registry.getDefault().getSecurityProvider().hasPermission(JaasUtils.getCurrentSubject(), new AttemptedUpdate(EntityType.SERVICE, svc))) {
+            if (Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc))) {
                 Action da = new DeleteAssertionAction(this);
                 da.setEnabled(canDelete());
                 list.add(da);

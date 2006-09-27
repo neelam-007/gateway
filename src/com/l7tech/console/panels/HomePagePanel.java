@@ -17,11 +17,9 @@ import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -83,10 +81,6 @@ public class HomePagePanel extends JPanel {
     }
 
     private boolean isAdmin() {
-        final Subject subject = Subject.getSubject(AccessController.getContext());
-        if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
-            return false;
-        }
         Collection<Permission> perms = Registry.getDefault().getSecurityProvider().getUserPermissions();
         return !perms.isEmpty();
     }

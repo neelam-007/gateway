@@ -7,6 +7,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 
 import java.io.*;
@@ -17,7 +18,7 @@ import java.io.*;
 public class HybridStashManager implements StashManager {
     private static final int DEFAULT_MAX_INITIAL_BUFFER = 8192;
     private static final String MAX_INITIAL_BUFFER_PROPERTY = HybridStashManager.class.getName() + ".maxInitialBuffer";
-    private static final int MAX_INITIAL_BUFFER = Integer.getInteger(MAX_INITIAL_BUFFER_PROPERTY,
+    private static final int MAX_INITIAL_BUFFER = SyspropUtil.getInteger(MAX_INITIAL_BUFFER_PROPERTY,
                                                                      DEFAULT_MAX_INITIAL_BUFFER).intValue();
 
     private final int limit;

@@ -1,11 +1,10 @@
 package com.l7tech.console.security;
 
 import com.l7tech.common.VersionException;
+import com.l7tech.identity.UserBean;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.security.cert.X509Certificate;
-import java.rmi.RemoteException;
 
 /**
  * The client credential manager stub mode. Just collect the credentials and
@@ -19,6 +18,6 @@ public class SecurityProviderStub extends SecurityProvider {
      */
     public void login(PasswordAuthentication creds, String host, boolean validateHost)
       throws LoginException, VersionException {
-        setCredentials(creds.getUserName(), creds.getPassword());
+        this.user = new UserBean(creds.getUserName());
     }
 }

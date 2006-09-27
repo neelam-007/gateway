@@ -4,7 +4,6 @@ import com.l7tech.console.action.ActionVetoException;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -173,8 +172,7 @@ public class WorkSpacePanel extends JPanel {
           };
 
         UIManager.addPropertyChangeListener(l);
-        Preferences pref = Preferences.getPreferences();
-      
+
 
         tabbedPane.addContainerListener(new ContainerAdapter() {
 

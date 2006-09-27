@@ -13,7 +13,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -78,6 +78,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     //private Assertion detachedPolicyRoot;
     private PolicyEditorSubject subject;
     private String subjectName;
+    private final SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
+    private final boolean applet;
 
     public interface PolicyEditorSubject {
         /**
@@ -111,6 +113,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         this.subject = subject;
         subjectName = subject.getName();
         this.policyTree = pt;
+        this.applet = TopComponents.getInstance().getMainWindow().isApplet();
         policyTree.setWriteAccess(subject.hasWriteAccess());
         layoutComponents();
 
@@ -128,6 +131,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
         }
+    }
+
+    public boolean isApplet() {
+        return applet;
     }
 
     /**
@@ -213,7 +220,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setLayout(new BorderLayout());
         add(getToolBar(), BorderLayout.NORTH);
         add(getSplitPane(), BorderLayout.CENTER);
-        setMessageAreaVisible(Preferences.getPreferences().isPolicyMessageAreaVisible());
+        setMessageAreaVisible(preferences.isPolicyMessageAreaVisible());
     }
 
     private JSplitPane getSplitPane() {
@@ -227,7 +234,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
           new PropertyChangeListener() {
               public void propertyChange(PropertyChangeEvent evt) {
-                  Preferences prefs = Preferences.getPreferences();
+                  SsmPreferences prefs = preferences;
                   int l = splitPane.getDividerLocation();
                   prefs.putProperty(MESSAGE_AREA_DIVIDER_KEY, Integer.toString(l));
               }
@@ -239,7 +246,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     if (!messagePane.isShowing()) return;
                 }
                 try {
-                    Preferences prefs = Preferences.getPreferences();
+                    SsmPreferences prefs = preferences;
                     String s = prefs.getString(MESSAGE_AREA_DIVIDER_KEY);
                     if (s != null) {
                         int l = Integer.parseInt(s);
@@ -837,7 +844,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getSaveAction() {
         if (saveAction == null) {
             if (subject.getServiceNode() == null) {
-                saveAction = new ExportPolicyToFileAction() {
+                saveAction = new ExportPolicyToFileAction(isApplet() ? null : preferences.getHomePath()) {
                     public String getName() {
                         return "Save Policy";
                     }
@@ -881,7 +888,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getExportAction() {
         if (exportPolicyAction == null) {
-            exportPolicyAction = new ExportPolicyToFileAction() {
+            exportPolicyAction = new ExportPolicyToFileAction(isApplet() ? null : preferences.getHomePath()) {
                 protected void performAction() {
                     this.node = rootAssertion;
                     super.performAction();
@@ -927,7 +934,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getImportAction() {
         if (importPolicyAction == null) {
             if (subject.getServiceNode() != null) {
-                importPolicyAction = new ImportPolicyFromFileAction(getPublishedService()) {
+                importPolicyAction = new ImportPolicyFromFileAction(isApplet() ? null : preferences.getHomePath()) {
                     protected void performAction() {
                         super.performAction();
                         if (policyImportSuccess) {

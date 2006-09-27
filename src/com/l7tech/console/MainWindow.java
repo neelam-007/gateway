@@ -8,7 +8,6 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LicenseDialog;
@@ -186,6 +185,7 @@ public class MainWindow extends JFrame {
     /* child windows */
     private Window helpWindow;
     private Window modalHelpWindow;
+    private final SsmPreferences preferences;
 
     /**
      * MainWindow constructor comment.
@@ -193,6 +193,8 @@ public class MainWindow extends JFrame {
     public MainWindow(SsmApplication app) {
         super(TITLE);
         ssmApplication = app;
+        this.preferences = (SsmPreferences)app.getApplicationContext().getBean("preferences");
+        if (preferences == null) throw new IllegalStateException("Internal error: no preferences bean");
         initialize();
     }
 
@@ -231,7 +233,7 @@ public class MainWindow extends JFrame {
      * notification on this event type (connection event).
      */
     private void fireConnected() {
-        User u = JaasUtils.getCurrentUser();
+        User u = Registry.getDefault().getSecurityProvider().getUser();
         if (u == null) throw new IllegalStateException("Logon apparently worked, but no User is available");
         Set<Permission> perms;
         try {
@@ -384,15 +386,17 @@ public class MainWindow extends JFrame {
             menu.setText(resapplication.getString("File"));
             //menu.add(getNewPolicyMenuItem());
             menu.add(getSaveMenuItem());
-            menu.add(getExportMenuItem());
-            menu.add(getImportMenuItem());
+            if (!isApplet()) {
+                menu.add(getExportMenuItem());
+                menu.add(getImportMenuItem());
+            }
             menu.add(getValidateMenuItem());
 
             menu.addSeparator();
 
             menu.add(getConnectMenuItem());
             menu.add(getDisconnectMenuItem());
-            if (!ssmApplication.isApplet()) {
+            if (!isApplet()) {
                 menu.add(getMenuItemPreferences());
                 menu.add(getExitMenuItem());
             }
@@ -449,9 +453,14 @@ public class MainWindow extends JFrame {
         return exportMenuItem;
     }
 
+    /** @return the preferences bean. never null. */
+    public SsmPreferences getPreferences() {
+        return preferences;
+    }
+
     private BaseAction getExportPolicyAction() {
         if (exportPolicyAction == null) {
-            exportPolicyAction = new ExportPolicyToFileAction();
+            exportPolicyAction = new ExportPolicyToFileAction(isApplet() ? null : preferences.getHomePath());
             exportPolicyAction.setEnabled(false);
         }
         return exportPolicyAction;
@@ -459,7 +468,7 @@ public class MainWindow extends JFrame {
 
     private BaseAction getImportPolicyAction() {
         if (importPolicyAction == null) {
-            importPolicyAction = new ImportPolicyFromFileAction();
+            importPolicyAction = new ImportPolicyFromFileAction(isApplet() ? null : preferences.getHomePath());
             importPolicyAction.setEnabled(false);
             addPermissionRefreshListener(importPolicyAction);
         }
@@ -574,14 +583,13 @@ public class MainWindow extends JFrame {
         //viewMenu.setFocusable(false);
         menu.setText(resapplication.getString("View"));
         JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getPolicyMessageAreaToggle());
-        final Preferences preferences = Preferences.getPreferences();
 
-        boolean policyMessageAreaVisible = preferences.isPolicyMessageAreaVisible();
+        boolean policyMessageAreaVisible = getPreferences().isPolicyMessageAreaVisible();
         jcm.setSelected(policyMessageAreaVisible);
         menu.add(jcm);
 
         jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
-        jcm.setSelected(preferences.isStatusBarBarVisible());
+        jcm.setSelected(getPreferences().isStatusBarBarVisible());
         menu.add(jcm);
 
         menu.addSeparator();
@@ -887,7 +895,7 @@ public class MainWindow extends JFrame {
                   final boolean selected = item.isSelected();
                   getStatusBarPane().setVisible(selected);
                   try {
-                      Preferences p = Preferences.getPreferences();
+                      SsmPreferences p = preferences;
                       p.seStatusBarVisible(selected);
                       p.store();
                   } catch (IOException e) {
@@ -928,7 +936,7 @@ public class MainWindow extends JFrame {
                       pe.setMessageAreaVisible(selected);
                   }
                   try {
-                      Preferences p = Preferences.getPreferences();
+                      SsmPreferences p = preferences;
                       p.setPolicyMessageAreaVisible(selected);
                       p.store();
                   } catch (IOException e) {
@@ -1193,7 +1201,7 @@ public class MainWindow extends JFrame {
 
         String rootTitle = "Services @ ";
         rootTitle +=
-          Preferences.getPreferences().getString(Preferences.SERVICE_URL);
+          preferences.getString(SsmPreferences.SERVICE_URL);
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         servicesRootNode = new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
         servicesTreeModel.setRoot(servicesRootNode);
@@ -1445,7 +1453,7 @@ public class MainWindow extends JFrame {
 
             // rightPanel.add(progressBar, BorderLayout.EAST);
             getStatusBarPane().add(rightPanel, BorderLayout.EAST);
-            Preferences p = Preferences.getPreferences();
+            SsmPreferences p = preferences;
             statusBarPane.setVisible(p.isStatusBarBarVisible());
         }
         return statusBarPane;
@@ -1519,7 +1527,7 @@ public class MainWindow extends JFrame {
 
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
-        if (!ssmApplication.isApplet()) {
+        if (!isApplet()) {
             b = toolBarPane.add(getPreferencesAction());
             b.setFont(new Font("Dialog", 1, 10));
             b.setText((String)getPreferencesAction().getValue(Action.NAME));
@@ -1533,6 +1541,10 @@ public class MainWindow extends JFrame {
         return toolBarPane;
     }
 
+    /** @return true if we are running as an Applet */
+    public boolean isApplet() {
+        return ssmApplication.isApplet();
+    }
 
     /**
      * Return the ToolBarPane property value.
@@ -1578,7 +1590,7 @@ public class MainWindow extends JFrame {
     }
 
     private double setSplitLocation(String propertyName, double splitLocation, JSplitPane splitPane) {
-        Preferences prefs = Preferences.getPreferences();
+        SsmPreferences prefs = preferences;
         String s = prefs.getString(propertyName);
 
         if (s != null) {
@@ -1771,7 +1783,7 @@ public class MainWindow extends JFrame {
         String maximized = Boolean.toString(getExtendedState()==Frame.MAXIMIZED_BOTH);
         this.setVisible(false);
         try {
-            Preferences prefs = Preferences.getPreferences();
+            SsmPreferences prefs = preferences;
             prefs.putProperty("last.window.maximized", maximized);
             prefs.putProperty("tree.split.divider.location", Double.toString(preferredVerticalSplitLocation));
             prefs.putProperty("main.split.divider.location", Double.toString(preferredHorizontalSplitLocation));
@@ -1903,7 +1915,7 @@ public class MainWindow extends JFrame {
         boolean posWasSet = false;
         Dimension curScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
         try {
-            Preferences prefs = Preferences.getPreferences();
+            SsmPreferences prefs = preferences;
             Boolean maximized = Boolean.valueOf(prefs.getString("last.window.maximized", "false"));
             if(maximized.booleanValue()) {
                 maximizeOnStart = true;
@@ -2026,82 +2038,88 @@ public class MainWindow extends JFrame {
     // -------------- inactivitiy timeout (close your eyes) -------------------
     private long lastActivityTime = System.currentTimeMillis();
 
+    private void installInactivityTimerEventListener() {
+        if (ssmApplication.isApplet()) return; // no inactivity timer on applet
+
+        // AWT event listener
+        final
+        AWTEventListener listener =
+          new AWTEventListener() {
+              public void eventDispatched(AWTEvent e) {
+                  lastActivityTime = System.currentTimeMillis();
+              }
+          };
+        // all events we know about
+        long mask =
+          AWTEvent.COMPONENT_EVENT_MASK |
+          AWTEvent.CONTAINER_EVENT_MASK |
+          AWTEvent.FOCUS_EVENT_MASK |
+          AWTEvent.KEY_EVENT_MASK |
+          AWTEvent.MOUSE_EVENT_MASK |
+          AWTEvent.MOUSE_MOTION_EVENT_MASK |
+          AWTEvent.WINDOW_EVENT_MASK |
+          AWTEvent.ACTION_EVENT_MASK |
+          AWTEvent.ADJUSTMENT_EVENT_MASK |
+          AWTEvent.ITEM_EVENT_MASK |
+          AWTEvent.TEXT_EVENT_MASK |
+          AWTEvent.INPUT_METHOD_EVENT_MASK |
+          AWTEvent.PAINT_EVENT_MASK |
+          AWTEvent.INVOCATION_EVENT_MASK |
+          AWTEvent.HIERARCHY_EVENT_MASK |
+          AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
+
+        // dynamic initializer, register listener
+        {
+            MainWindow.this.getToolkit().
+                addAWTEventListener(listener, mask);
+        }
+    }
+
+    private void onInactivityTimerTick() {
+        if (ssmApplication.isApplet()) return;  // timer disabled on applet
+
+        // Don't timeout as long as any monitoring window is displaying.
+        for (Frame frame : JFrame.getFrames()) {
+            if (frame instanceof ClusterStatusWindow ||
+                frame instanceof GatewayAuditWindow ||
+                frame instanceof DashboardWindow) {
+                if (frame.isVisible()) {
+                    return;
+                }
+            }
+        }
+
+        long now = System.currentTimeMillis();
+        double inactive = (now - lastActivityTime);
+        if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
+            inactivityTimer.stop(); // stop timer
+            MainWindow.this.getStatusMsgRight().
+              setText("inactivity timeout expired; disconnecting...");
+            // make sure it is invoked on event dispatching thread
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        getWorkSpacePanel().clearWorkspace();  // vetoable
+                        MainWindow.this.disconnectFromGateway();
+                        // add a top level dlg that indicates the connection was closed
+                        JOptionPane.showMessageDialog(MainWindow.this,
+                                                      "The SecureSpan Manager connection has been closed due\n" +
+                                                      "to timeout. Any unsaved work will be lost.",
+                                                      "Connection Timeout", JOptionPane.WARNING_MESSAGE);
+                    } catch (ActionVetoException e1) {
+                        // swallow, cannot happen from here
+                    }
+                }
+            });
+        }
+    }
+
     final Timer
       inactivityTimer =
       new Timer(60 * 1000 * 20,
         new ActionListener() {
-            /**
-             * Invoked when an action occurs.
-             */
             public void actionPerformed(ActionEvent e) {
-
-                // Don't timeout as long as any monitoring window is displaying.
-                for (Frame frame : JFrame.getFrames()) {
-                    if (frame instanceof ClusterStatusWindow ||
-                        frame instanceof GatewayAuditWindow ||
-                        frame instanceof DashboardWindow) {
-                        if (frame.isVisible()) {
-                            return;
-                        }
-                    }
-                }
-
-                long now = System.currentTimeMillis();
-                double inactive = (now - lastActivityTime);
-                if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
-                    inactivityTimer.stop(); // stop timer
-                    MainWindow.this.getStatusMsgRight().
-                      setText("inactivity timeout expired; disconnecting...");
-                    // make sure it is invoked on event dispatching thread
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            try {
-                                getWorkSpacePanel().clearWorkspace();  // vetoable
-                                MainWindow.this.disconnectFromGateway();
-                                // add a top level dlg that indicates the connection was closed
-                                JOptionPane.showMessageDialog(MainWindow.this,
-                                                              "The SecureSpan Manager connection has been closed due\n" +
-                                                              "to timeout. Any unsaved work will be lost.",
-                                                              "Connection Timeout", JOptionPane.WARNING_MESSAGE);
-                            } catch (ActionVetoException e1) {
-                                // swallow, cannot happen from here
-                            }
-                        }
-                    });
-                }
-            }
-
-            // AWT event listener
-            private final
-            AWTEventListener listener =
-              new AWTEventListener() {
-                  public void eventDispatched(AWTEvent e) {
-                      lastActivityTime = System.currentTimeMillis();
-                  }
-              };
-            // all events we know about
-            long mask =
-              AWTEvent.COMPONENT_EVENT_MASK |
-              AWTEvent.CONTAINER_EVENT_MASK |
-              AWTEvent.FOCUS_EVENT_MASK |
-              AWTEvent.KEY_EVENT_MASK |
-              AWTEvent.MOUSE_EVENT_MASK |
-              AWTEvent.MOUSE_MOTION_EVENT_MASK |
-              AWTEvent.WINDOW_EVENT_MASK |
-              AWTEvent.ACTION_EVENT_MASK |
-              AWTEvent.ADJUSTMENT_EVENT_MASK |
-              AWTEvent.ITEM_EVENT_MASK |
-              AWTEvent.TEXT_EVENT_MASK |
-              AWTEvent.INPUT_METHOD_EVENT_MASK |
-              AWTEvent.PAINT_EVENT_MASK |
-              AWTEvent.INVOCATION_EVENT_MASK |
-              AWTEvent.HIERARCHY_EVENT_MASK |
-              AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
-
-            // dynamic initializer, register listener
-            {
-                MainWindow.this.getToolkit().
-                  addAWTEventListener(listener, mask);
+                onInactivityTimerTick();
             }
         });
 
@@ -2120,6 +2138,12 @@ public class MainWindow extends JFrame {
     public void setInactivitiyTimeout(int newTimeout) {
         int inactivityTimeout = newTimeout * 60 * 1000;
         if (!isConnected()) return;
+
+        if (ssmApplication.isApplet()) {
+            inactivityTimer.stop();
+            log.log(Level.INFO, "inactivity timeout disabled for applet");
+            return;
+        }
 
         if (inactivityTimeout == 0) {
             if (inactivityTimer.isRunning()) {
@@ -2304,14 +2328,15 @@ public class MainWindow extends JFrame {
               connectionContext = "";
 
               /* init rmi cl */
-              RMIClassLoader.getDefaultProviderInstance();
+              if (!isApplet())
+                RMIClassLoader.getDefaultProviderInstance();
 
               /* set the preferences */
               try {
-                  Preferences prefs = Preferences.getPreferences();
-                  connectionContext = " @ " + prefs.getString(Preferences.SERVICE_URL);
+                  SsmPreferences prefs = preferences;
+                  connectionContext = " @ " + prefs.getString(SsmPreferences.SERVICE_URL);
                   if (prefs.rememberLoginId()) {
-                      prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
+                      prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
                       prefs.store();
                   }
               } catch (IOException e) {
@@ -2351,8 +2376,10 @@ public class MainWindow extends JFrame {
 
               getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
+              int timeout = 0;
+              timeout = preferences.getInactivityTimeout();
 
-              final int fTimeout = Preferences.getPreferences().getInactivityTimeout();
+              final int fTimeout = timeout;
               SwingUtilities.invokeLater(new Runnable() {
                   public void run() {
                       MainWindow.this.
@@ -2384,8 +2411,10 @@ public class MainWindow extends JFrame {
         // enable the items that make sense to show when a policy is being edited
         getValidateMenuItem().setAction(policyPanel.getValidateAction());
         getSaveMenuItem().setAction(policyPanel.getSaveAction());
-        getExportMenuItem().setAction(policyPanel.getExportAction());
-        getImportMenuItem().setAction(policyPanel.getImportAction());
+        if (!TopComponents.getInstance().getMainWindow().isApplet()) {
+            getExportMenuItem().setAction(policyPanel.getExportAction());
+            getImportMenuItem().setAction(policyPanel.getImportAction());
+        }
     }
 
     public void showLicenseWarning(boolean invalidLicense) {
@@ -2402,7 +2431,7 @@ public class MainWindow extends JFrame {
                 int retval = JOptionPane.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION);
 
                 if (retval == JOptionPane.YES_OPTION) {
-                    LicenseDialog dlg = new LicenseDialog(MainWindow.this, Preferences.getPreferences().getString(Preferences.SERVICE_URL));
+                    LicenseDialog dlg = new LicenseDialog(MainWindow.this, preferences.getString(SsmPreferences.SERVICE_URL));
                     dlg.pack();
                     Utilities.centerOnScreen(dlg);
                     dlg.setModal(true);

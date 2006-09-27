@@ -7,15 +7,16 @@ import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.security.InvalidHostNameException;
 import com.l7tech.console.security.InvalidHostCertificateException;
+import com.l7tech.console.security.InvalidHostNameException;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
@@ -29,11 +30,7 @@ import java.io.IOException;
 import java.net.*;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
-import java.util.EventListener;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -100,7 +97,7 @@ public class LogonDialog extends JDialog {
 
     private Frame parentFrame;
     private History serverUrlHistory;
-    private Preferences preferences;
+    private SsmPreferences preferences;
     private LogonListener logonListener;
 
     /**
@@ -110,7 +107,8 @@ public class LogonDialog extends JDialog {
      */
     public LogonDialog(Frame parent) {
         super(parent, true);
-        this.setAlwaysOnTop(true);
+        if (!TopComponents.getInstance().getMainWindow().isApplet())
+            this.setAlwaysOnTop(true);
         this.parentFrame = parent;
         setTitle("");
         initResources();
@@ -241,9 +239,9 @@ public class LogonDialog extends JDialog {
         // last ID logic
         String lastID = null;
         rememberUser = false;
-        preferences = Preferences.getPreferences();
+        preferences = TopComponents.getInstance().getMainWindow().getPreferences();
         lastID = preferences.rememberLoginId() ?
-                 preferences.getString(Preferences.LAST_LOGIN_ID) :
+                 preferences.getString(SsmPreferences.LAST_LOGIN_ID) :
                  null;
 
         if (preferences.rememberLoginId()) {
@@ -342,7 +340,7 @@ public class LogonDialog extends JDialog {
         constraints.insets = new Insets(20, 5, 0, 10);
         contents.add(serverComboBox, constraints);
 
-        serverUrlHistory = preferences.getHistory(Preferences.SERVICE_URL);
+        serverUrlHistory = preferences.getHistory(SsmPreferences.SERVICE_URL);
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -619,7 +617,8 @@ public class LogonDialog extends JDialog {
           throws HeadlessException {
             super(owner, true);
             setTitle("Logon in progress");
-            setAlwaysOnTop(true);
+            if (!TopComponents.getInstance().getMainWindow().isApplet())
+                setAlwaysOnTop(true);
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
             setResizable(false);
             serviceUrl = url;

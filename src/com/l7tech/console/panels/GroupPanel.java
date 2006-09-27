@@ -2,11 +2,10 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import static com.l7tech.common.security.rbac.EntityType.GROUP;
-import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
@@ -14,7 +13,10 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.*;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.objectmodel.*;
@@ -184,7 +186,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
                 group = g;
                 loadedGroup(g);
             }
-            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(JaasUtils.getCurrentSubject(), ao);
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(ao);
             initialize();
             // Populate the form for insert/update
             setData(group);

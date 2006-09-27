@@ -2,11 +2,10 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.JaasUtils;
-import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
-import static com.l7tech.common.security.rbac.EntityType.*;
+import static com.l7tech.common.security.rbac.EntityType.USER;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
@@ -17,8 +16,8 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,10 +25,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.security.cert.X509Certificate;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
@@ -151,9 +150,7 @@ public class FederatedUserPanel extends UserPanel {
                 user = u;
                 userGroups = admin.getGroupHeaders(config.getOid(), u.getId());
             }
-            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(
-                    JaasUtils.getCurrentSubject(),
-                    ao);
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(ao);
 
             // Populate the form for insert/update
             initialize();

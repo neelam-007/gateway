@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.TopComponents;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -28,8 +28,6 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-        String homePath = null;
-        homePath = Preferences.getPreferences().getHomePath();
         List nodeList = new LinkedList();
         nodeList.add(new AccessControlFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());
@@ -40,7 +38,8 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         nodeList.add(new AuditFolderNode());
         nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new ThreatProtectionFolderNode());
-        nodeList.add(new PoliciesFolderNode(homePath));
+        if (!TopComponents.getInstance().getMainWindow().isApplet())
+            nodeList.add(new PoliciesFolderNode());
 
         for (Iterator i = nodeList.iterator(); i.hasNext();) {
             AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();

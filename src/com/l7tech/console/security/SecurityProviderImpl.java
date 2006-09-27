@@ -14,6 +14,7 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.schema.SchemaAdmin;
@@ -34,16 +35,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.remoting.RemoteAccessException;
-import sun.security.x509.X500Name;
 
 import javax.security.auth.login.LoginException;
-import javax.security.auth.Subject;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
-import java.security.AccessController;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -69,7 +66,7 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     public SecurityProviderImpl() {
         hostBuffer = new StringBuffer();
-        certsByHost = new HashMap();
+        certsByHost = new HashMap<String, X509Certificate>();
         permissiveSSLTrustFailureHandler = getTrustFailureHandler(hostBuffer);
     }
 
@@ -83,7 +80,6 @@ public class SecurityProviderImpl extends SecurityProvider
         boolean authenticated = false;
         serverCertificateChain = null;
         resetCredentials();
-        setCredentials(creds.getUserName(), creds.getPassword());
 
         try {
             setPermissiveSslTrustHandler(host, validate);
@@ -95,13 +91,13 @@ public class SecurityProviderImpl extends SecurityProvider
             if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
             // check cert if new
-            X509Certificate serverCertificate = null;
+            X509Certificate serverCertificate;
             if(serverCertificateChain != null) {
                 serverCertificate = serverCertificateChain[0];
                 certsByHost.put(host, serverCertificate);
             }
             else {
-                serverCertificate = (X509Certificate) certsByHost.get(host);
+                serverCertificate = certsByHost.get(host);
             }
 
             if (serverCertificate != null) {
@@ -113,13 +109,8 @@ public class SecurityProviderImpl extends SecurityProvider
 
             AdminLoginResult result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
             // Update the principal with the actual internal user
-            User user = result.getUser();
 
-            synchronized (SecurityProvider.class) {
-                Subject subject = Subject.getSubject(AccessController.getContext());
-                subject.getPrincipals().clear();
-                subject.getPrincipals().add(user);
-            }
+            resetCredentials();
 
             SecureHttpInvokerRequestExecutor secureInvoker =
                     (SecureHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");
@@ -131,6 +122,7 @@ public class SecurityProviderImpl extends SecurityProvider
             if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
                 throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
             }
+
             String remoteSoftwareVersion = result.getAdminContext().getSoftwareVersion();
             if (!BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
                 throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
@@ -150,6 +142,11 @@ public class SecurityProviderImpl extends SecurityProvider
                             (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
                             (RbacAdmin) applicationContext.getBean("rbacAdmin"),
                             "", "");
+
+            User user = result.getUser();
+            synchronized (this) {
+                this.user = user;
+            }
 
             LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON, result.getPermissions());
             applicationContext.publishEvent(le);
@@ -226,7 +223,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
     private final SSLTrustFailureHandler permissiveSSLTrustFailureHandler;
     private final StringBuffer hostBuffer;
-    private final Map certsByHost;
+    private final Map<String, X509Certificate> certsByHost;
     private ApplicationContext applicationContext;
     private X509Certificate[] serverCertificateChain;
 
@@ -260,14 +257,7 @@ public class SecurityProviderImpl extends SecurityProvider
                 if (chain == null || chain.length == 0) {
                     return false;
                 }
-                String peerHost = null;
-                try {
-                    peerHost = new X500Name(chain[0].getSubjectX500Principal().getName()).getCommonName();
-                }
-                catch (IOException e1) {
-                    logger.log(Level.WARNING, "Could not obtain the CN from X500 Name in cert", e);
-                    throw new RuntimeException(e1);
-                }
+                final String peerHost = CertUtils.getCn(chain[0]);
 
                 if(e!=null) serverCertificateChain = chain;
 

@@ -9,18 +9,17 @@ import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.SplashScreen;
+import com.l7tech.console.util.SsmPreferences;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,18 +50,17 @@ public class Main {
                 Logger log = Logger.getLogger(getClass().getName());
 
                 ensureNoSecurityManager();
-                SsmApplication.installEventQueue();
 
                 initializeUIPreferences();
 
 
                 /* load user preferences and merge them with system props */
-                Preferences prefs = Preferences.getPreferences();
+                HeavySsmPreferences prefs = HeavySsmPreferences.getPreferences();
                 prefs.updateFromProperties(System.getProperties(), false);
                 /* so it is visible in help/about */
                 prefs.updateSystemProperties();
                 // ensure trust store exists
-                prefs.getTrustStore();
+                prefs.initializeSsgCertStorage();
                 try {
                     copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
                 } catch (IOException e) {
@@ -101,8 +99,8 @@ public class Main {
         if (!SsmApplication.isSuppressAutoLookAndFeel())
             return; // Will choose auto look-and-feel
 
-        Preferences prefs = Preferences.getPreferences();
-        String lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
+        HeavySsmPreferences prefs = HeavySsmPreferences.getPreferences();
+        String lfName = prefs.getString(SsmPreferences.LOOK_AND_FEEL);
         LookAndFeel lf = null;
         if (lfName == null) {
             lf = new Plastic3DLookAndFeel();
@@ -210,11 +208,6 @@ public class Main {
      * @param args an array of command-line arguments
      */
     public static void main(final String[] args) {
-        Subject.doAsPrivileged(new Subject(), new PrivilegedAction() {
-            public Object run() {
-                new Main().run(args);
-                return null;
-            }
-        }, null);
+        new Main().run(args);
     }
 }

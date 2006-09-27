@@ -9,11 +9,9 @@ import com.l7tech.common.Authorizer;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.console.util.FormPreparer;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.security.AccessController;
 
 /**
  * The <code>FormAuthorizationPreparer</code> authorizes the the form or given form
@@ -59,8 +57,7 @@ public class FormAuthorizationPreparer extends FormPreparer {
         }
 
         protected boolean hasPermission() {
-            Subject subject = Subject.getSubject(AccessController.getContext());
-            return subject != null && authorizer.hasPermission(subject, attemptedOperation);
+            return authorizer.hasPermission(attemptedOperation);
         }
     }
 }

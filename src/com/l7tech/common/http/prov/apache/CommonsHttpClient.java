@@ -10,6 +10,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
@@ -74,17 +75,17 @@ public class CommonsHttpClient implements GenericHttpClient {
     }
 
     public static int getDefaultMaxConnectionsPerHost() {
-        int maxConnPerHost = Integer.getInteger(PROP_MAX_CONN_PER_HOST, 200).intValue();
+        int maxConnPerHost = SyspropUtil.getInteger(PROP_MAX_CONN_PER_HOST, 200).intValue();
         return maxConnPerHost;
     }
 
     public static int getDefaultMaxTotalConnections() {
-        int maxTotalConnections = Integer.getInteger(PROP_MAX_TOTAL_CONN, 2000).intValue();
+        int maxTotalConnections = SyspropUtil.getInteger(PROP_MAX_TOTAL_CONN, 2000).intValue();
         return maxTotalConnections;
     }
 
     public static int getDefaultStaleCheckCount() {
-        int maxTotalConnections = Integer.getInteger(PROP_STALE_CHECKS, 1).intValue();
+        int maxTotalConnections = SyspropUtil.getInteger(PROP_STALE_CHECKS, 1).intValue();
         return maxTotalConnections;
     }
 

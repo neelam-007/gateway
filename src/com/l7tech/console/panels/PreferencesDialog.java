@@ -3,8 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.SsmApplication;
 
@@ -128,7 +128,7 @@ public class PreferencesDialog extends JDialog {
 
                 if (lookAndFeel.isSupportedLookAndFeel()) {
                     lfComboBox.addItem(lookAndFeels[i].getName());
-                    String lnf = getPreferences().getProperty(Preferences.LOOK_AND_FEEL);
+                    String lnf = getPreferences().getProperty(SsmPreferences.LOOK_AND_FEEL);
                     if (lnf != null) {
                         if (lookAndFeels[i].getClassName().equals(lnf))
                             lfComboBox.setSelectedItem(lookAndFeels[i].getName());
@@ -196,7 +196,7 @@ public class PreferencesDialog extends JDialog {
         constraints.insets = new Insets(11, 7, 0, 11);
         contents.add(rememberLastIdCheckBox, constraints);
         try {
-            String sb = getPreferences().getProperty(Preferences.SAVE_LAST_LOGIN_ID);
+            String sb = getPreferences().getProperty(SsmPreferences.SAVE_LAST_LOGIN_ID);
             boolean b = Boolean.valueOf(sb).booleanValue();
 
             rememberLastIdCheckBox.setSelected(b);
@@ -212,7 +212,7 @@ public class PreferencesDialog extends JDialog {
               public void actionPerformed(ActionEvent e) {
                   try {
                       getPreferences().
-                        setProperty(Preferences.SAVE_LAST_LOGIN_ID,
+                        setProperty(SsmPreferences.SAVE_LAST_LOGIN_ID,
                           (new Boolean(((JCheckBox) e.getSource()).isSelected())).toString());
                   } catch (IOException ex) {
                       ; // swallow
@@ -341,7 +341,7 @@ public class PreferencesDialog extends JDialog {
               lookAndFeels = UIManager.getInstalledLookAndFeels();
             for (int i = 0; lookAndFeels != null && i < lookAndFeels.length; i++) {
                 if (lookAndFeels[i].getName().equals(lfComboBox.getSelectedItem())) {
-                    getPreferences().setProperty(Preferences.LOOK_AND_FEEL,
+                    getPreferences().setProperty(SsmPreferences.LOOK_AND_FEEL,
                       lookAndFeels[i].getClassName());
                 }
             }
@@ -363,7 +363,7 @@ public class PreferencesDialog extends JDialog {
                 return false;
             }
 
-            getPreferences().setProperty(Preferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
+            getPreferences().setProperty(SsmPreferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
             MainWindow mainWindow = TopComponents.getInstance().getMainWindow();            
             if (mainWindow != null) {
                 mainWindow.setInactivitiyTimeout(timeout);
@@ -381,7 +381,7 @@ public class PreferencesDialog extends JDialog {
     private void savePreferences() {
         try {
             // update & append
-            Preferences prefs = Preferences.getPreferences();
+            SsmPreferences prefs = TopComponents.getInstance().getMainWindow().getPreferences();
             prefs.updateFromProperties(getPreferences(), true);
             prefs.store();
             prefs.updateSystemProperties();
@@ -393,7 +393,7 @@ public class PreferencesDialog extends JDialog {
     /** load preferences into the form fields */
     private void loadPreferences() {
         try {
-            String sTimeout = getPreferences().getProperty(Preferences.INACTIVITY_TIMEOUT);
+            String sTimeout = getPreferences().getProperty(SsmPreferences.INACTIVITY_TIMEOUT);
             int timeout = DEFAULT_INACTIVITY_TIMEOUT;
             try {
                 timeout = Integer.parseInt(sTimeout);
@@ -415,7 +415,7 @@ public class PreferencesDialog extends JDialog {
      */
     private Properties getPreferences() throws IOException {
         if (props == null) {
-            props = Preferences.getPreferences().asProperties();
+            props = TopComponents.getInstance().getMainWindow().getPreferences().asProperties();
         }
         return props;
     }

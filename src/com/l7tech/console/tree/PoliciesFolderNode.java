@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyExporter;
+import com.l7tech.console.util.TopComponents;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -40,10 +41,8 @@ public class PoliciesFolderNode extends AbstractPaletteFolderNode {
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given home path
      */
-    public PoliciesFolderNode(String path) {
-        super(NAME, path+File.separator+TEMPLATES_DIR, FILENAME_COMPARATOR);
-        if (path == null)
-            throw new IllegalArgumentException();
+    public PoliciesFolderNode() {
+        super(NAME, TopComponents.getInstance().getMainWindow().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
     }
 
 

@@ -52,7 +52,7 @@ public class CertUtils {
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static final String PROPBASE = CertUtils.class.getName();
-    private static final int CERT_VERIFY_CACHE_MAX = Integer.getInteger(PROPBASE + ".certVerifyCacheSize", 500).intValue();
+    private static final int CERT_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".certVerifyCacheSize", 500).intValue();
     private static CertificateFactory certFactory;
 
     public static final String ALG_MD5 = "MD5";

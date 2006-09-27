@@ -3,11 +3,10 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import static com.l7tech.common.security.rbac.EntityType.USER;
-import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -26,7 +25,6 @@ import net.sf.nachocalendar.components.DateField;
 import net.sf.nachocalendar.components.DefaultDayRenderer;
 import net.sf.nachocalendar.components.DefaultHeaderRenderer;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -36,7 +34,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.security.AccessController;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.NoSuchElementException;
@@ -171,9 +168,7 @@ public class GenericUserPanel extends UserPanel {
                 user = u;
                 userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getId());
             }
-            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(
-                    JaasUtils.getCurrentSubject(),
-                    ao);
+            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(ao);
             // Populate the form for insert/update
             initialize();
             setData(user);
@@ -751,14 +746,13 @@ public class GenericUserPanel extends UserPanel {
         protected void performAction() {
             if (user instanceof PersistentUser) {
                 PersistentUser puser = (PersistentUser) user;
-                Subject subject = Subject.getSubject(AccessController.getContext());
                 AttemptedOperation ao;
                 if (puser.getOid() == PersistentUser.DEFAULT_OID) {
                     ao = new AttemptedCreate(USER);
                 } else {
                     ao = new AttemptedUpdate(USER, puser);
                 }
-                if (config.isWritable() && Registry.getDefault().getSecurityProvider().hasPermission(subject, ao)) {
+                if (config.isWritable() && Registry.getDefault().getSecurityProvider().hasPermission(ao)) {
                     // Apply changes if possible
                     if (!collectAndSaveChanges()) {
                         // Error - just return

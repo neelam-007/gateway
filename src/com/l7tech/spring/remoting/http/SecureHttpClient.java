@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.AccessControlException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -79,7 +80,13 @@ public class SecureHttpClient extends HttpClient {
 
     private TrustManager[] getTrustManagers() {
         try {
-            String tmalg = System.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+            String tmalg = TrustManagerFactory.getDefaultAlgorithm();
+            try {
+                System.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+            } catch (AccessControlException e) {
+                // Probably running as applet.  Ignore it and use the default.
+            }
+
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
             tmf.init((KeyStore)null);
             TrustManager[] trustManagers = tmf.getTrustManagers();

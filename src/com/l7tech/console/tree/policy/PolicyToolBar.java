@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.JaasUtils;
 import com.l7tech.console.action.AddAssertionAction;
 import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AssertionMoveUpAction;
@@ -258,7 +257,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         boolean canUpdateService;
         try {
             PublishedService svc = rootAssertionNode.getService();
-            canUpdateService = sp.hasPermission(JaasUtils.getCurrentSubject(), new AttemptedUpdate(EntityType.SERVICE, svc));
+            canUpdateService = sp.hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get current service", e);
         }

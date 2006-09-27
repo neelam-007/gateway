@@ -1,15 +1,14 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.PoliciesFolderNode;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.EntityType;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -31,17 +30,20 @@ import java.util.logging.Logger;
 public class ImportPolicyFromFileAction extends SecureAction {
     static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
     protected PublishedService pubService;
+    private final String homePath;
 
-    public ImportPolicyFromFileAction() {
-        super(null);
+    public ImportPolicyFromFileAction(String path) {
+        super(path == null ? NOT_ALLOWED : null);
+        this.homePath = path;
     }
 
-    public ImportPolicyFromFileAction(PublishedService svc) {
-        super(null);
+    public ImportPolicyFromFileAction(PublishedService svc, String path) {
+        super(path == null ? NOT_ALLOWED : null);
         if (svc == null) {
             throw new IllegalArgumentException();
         }
         this.pubService = svc;
+        this.homePath = path;
     }
 
     /**
@@ -85,7 +87,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
         // get file from user
         File templateDir = null;
         try {
-            templateDir = new File(Preferences.getPreferences().getHomePath() +
+            templateDir = new File(homePath +
                                    File.separator + PoliciesFolderNode.TEMPLATES_DIR);
             if (!templateDir.exists()) {
                 if (!templateDir.mkdir()) {

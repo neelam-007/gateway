@@ -1,23 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Preferences;
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
+import org.systinet.uddi.InvalidParameterException;
+import org.systinet.uddi.client.v3.UDDIException;
+import org.systinet.uddi.client.v3.UDDISecurityStub;
+import org.systinet.uddi.client.v3.UDDI_Security_PortType;
+import org.systinet.uddi.client.v3.struct.Get_authToken;
 
 import javax.swing.*;
 import javax.xml.soap.SOAPException;
 import java.awt.*;
-import java.net.URL;
 import java.net.MalformedURLException;
-import java.util.logging.Logger;
+import java.net.URL;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
-import java.io.IOException;
-
-import org.systinet.uddi.client.v3.UDDIException;
-import org.systinet.uddi.client.v3.UDDI_Security_PortType;
-import org.systinet.uddi.client.v3.UDDISecurityStub;
-import org.systinet.uddi.client.v3.struct.Get_authToken;
-import org.systinet.uddi.InvalidParameterException;
+import java.util.logging.Logger;
 
 /**
  * Wizard step in the PublishPolicyToUDDIWizard wizard pertaining
@@ -39,6 +37,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     public static final String UDDI_URL = "UDDI.URL";
     private String panelDescription = "Provide the UDDI registry URL and account information to publish this policy";
     private JLabel descLabel;
+    private final SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
 
     public UDDITargetWizardStep(WizardStepPanel next) {
         super(next);
@@ -65,9 +64,9 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
-        String tmp = Preferences.getPreferences().getString(UDDI_ACCOUNT_NAME, "");
+        String tmp = preferences.getString(UDDI_ACCOUNT_NAME, "");
         uddiAccountNameField.setText(tmp);
-        tmp = Preferences.getPreferences().getString(UDDI_URL, "");
+        tmp = preferences.getString(UDDI_URL, "");
         uddiURLField.setText(tmp);
     }
 
@@ -87,7 +86,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
         }
         String url = normalizeURL(tmp);
         uddiURLField.setText(url);
-        Preferences.getPreferences().putProperty(UDDI_URL, url);
+        preferences.putProperty(UDDI_URL, url);
 
         tmp = uddiAccountNameField.getText();
         if (tmp == null || tmp.length() < 1) {
@@ -95,7 +94,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
             return false;
         }
         String name = tmp;
-        Preferences.getPreferences().putProperty(UDDI_ACCOUNT_NAME, name);
+        preferences.putProperty(UDDI_ACCOUNT_NAME, name);
 
         tmp = uddiAccountPasswdField.getText();
         if (tmp == null || tmp.length() < 1) {

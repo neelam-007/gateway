@@ -1,34 +1,18 @@
 package com.l7tech.console.jnlp;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.OutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import com.l7tech.console.util.HeavySsmPreferences;
+
+import javax.jnlp.UnavailableServiceException;
 import java.io.FileNotFoundException;
-
-
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.net.URLStreamHandler;
-import java.net.URLStreamHandlerFactory;
-
-import java.util.List;
-import java.util.Iterator;
+import java.io.IOException;
 import java.util.Properties;
-import java.security.Security;
-import javax.jnlp.*;
-
-import com.l7tech.console.util.Preferences;
 
 /**
  * The <code>JNLPPreferencs</code> class extends the default
  * PMC property manager <code>Preferencse</code>.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class JNLPPreferences extends Preferences {
+public class JNLPPreferences extends HeavySsmPreferences {
 
 
   /** default constructor */
@@ -44,7 +28,7 @@ public class JNLPPreferences extends Preferences {
    */
   public void store() throws IOException {
     try {
-      PersistenceStorage pstor = 
+      PersistenceStorage pstor =
         Services.getInstance().getPersistenceStorage();
       pstor.write(STORE, props);
     } catch (UnavailableServiceException e) {
@@ -56,15 +40,15 @@ public class JNLPPreferences extends Preferences {
    * initialize the properties from the user properties ifrom JNLP
    * properties.
    * Note that this method is protected since it is invoked from
-   * com.l7tech.console.util.Preferences
+   * com.l7tech.console.util.HeavySsmPreferences
    * 
    * @exception IOException
    *                   thrown if an io error occurred
-   * @see com.l7tech.console.util.Preferences
+   * @see com.l7tech.console.util.SsmPreferences
    */
   protected void initialize() throws IOException {
     try {
-      PersistenceStorage pstor = 
+      PersistenceStorage pstor =
         Services.getInstance().getPersistenceStorage();
       // warning!!! NPE thrown if empty store
       Object store = null;

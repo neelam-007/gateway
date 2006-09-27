@@ -8,6 +8,7 @@ package com.l7tech.common.xml;
 
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 
@@ -63,7 +64,7 @@ public class TarariLoader {
         if (tarariPresent == null) {
             synchronized (TarariLoader.class) {
                 if (tarariPresent == null) {
-                    if (Boolean.getBoolean(ENABLE_PROPERTY)) {
+                    if (SyspropUtil.getBoolean(ENABLE_PROPERTY)) {
                         try {
                             logger.fine("Tarari hardware XML acceleration probe is starting...");
 

@@ -10,11 +10,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
-import javax.security.auth.Subject;
 import java.awt.*;
 import java.net.URL;
 import java.util.logging.Logger;
-import java.security.PrivilegedAction;
 
 /**
  * Entry point for applet-based version of SSM.
@@ -29,14 +27,7 @@ public class AppletMain extends JApplet {
 
     public void init() {
         super.init();
-        if (System.getSecurityManager() != null)
-            System.setSecurityManager(null);
-        Subject.doAs(new Subject(), new PrivilegedAction() {
-            public Object run() {
-                SsmApplication.installEventQueue();
-                return null;
-            }
-        });
+
         configureCredentials();
         getApplication().setAutoLookAndFeel();
         getApplication().run();

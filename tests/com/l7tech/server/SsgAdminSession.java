@@ -11,7 +11,8 @@ import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.console.util.History;
-import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.UserBean;
 import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
@@ -64,7 +65,7 @@ public class SsgAdminSession {
         }
         JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
         // initialize preferences
-        Preferences preferences = Preferences.getPreferences();
+        SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
         preferences.updateFromProperties(System.getProperties(), false);
         preferences.updateSystemProperties();
         // application context
@@ -113,9 +114,9 @@ public class SsgAdminSession {
     private String hostPort = defaultHostPort();
 
     private String defaultHostPort() {
-        Preferences preferences = Preferences.getPreferences();
+        SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
 
-        History serverUrlHistory = preferences.getHistory(Preferences.SERVICE_URL);
+        History serverUrlHistory = preferences.getHistory(SsmPreferences.SERVICE_URL);
         Object[] urls = serverUrlHistory.getEntries();
         for (int i = 0; i < urls.length; i++) {
             String surl = urls[i].toString();

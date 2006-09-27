@@ -694,6 +694,10 @@
             </zipfileset>
 
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
+
+            <!-- Include the manager jars in the Gateway, for the applet admin mode.  TODO include only needed libs here! -->
+            <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssg/webadmin"/>
+            <zipfileset dir="${build.dir}/lib" includes="*.jar" prefix="ssg/webadmin/lib"/>
         </war>
 
         <jar jarfile="${build.dir}/l7valve.jar">
@@ -866,6 +870,13 @@
                 <exclude name="com/l7tech/spring/remoting/http/SecureRemoteInvocationExecutor*.class"/>
             </fileset>
         </jar>
+
+<!--  TODO uncomment to sign the manager applet
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+            <fileset dir="${build.dir}" includes="Manager.jar"/>
+        </signjar>
+-->
+
     </target>
 
     <!-- Build LicenseGenerator package.  Always invoked by hand. -->

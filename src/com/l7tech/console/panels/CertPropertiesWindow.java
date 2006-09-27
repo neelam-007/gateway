@@ -5,21 +5,22 @@ import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.security.rbac.AttemptedCreate;
+import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -90,14 +91,13 @@ public class CertPropertiesWindow extends JDialog {
         if (authorizer == null) {
             throw new IllegalStateException("Could not instantiate authorization provider");
         }
-        final Subject subject = Subject.getSubject(AccessController.getContext());
         AttemptedOperation ao;
         if (tc.getOid() == TrustedCert.DEFAULT_OID) {
             ao = new AttemptedCreate(EntityType.TRUSTED_CERT);
         } else {
             ao = new AttemptedUpdate(EntityType.TRUSTED_CERT, tc);
         }
-        editable = editable && authorizer.hasPermission(subject, ao);
+        editable = editable && authorizer.hasPermission(ao);
         trustedCert = tc;
         initialize(editable, options);
         pack();

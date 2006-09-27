@@ -4,4 +4,8 @@
 <beans>
     <bean id="ssmApplication" class="com.l7tech.console.SsmApplicationApplet">
     </bean>
+
+    <bean id="preferences" class="com.l7tech.console.util.AppletSsmPreferences" factory-method="getPreferences">
+    </bean>
+
 </beans>

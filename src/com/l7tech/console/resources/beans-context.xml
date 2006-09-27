@@ -8,9 +8,6 @@
     <bean id="registry" class="com.l7tech.console.util.registry.RegistryImpl">
     </bean>
 
-    <bean id="preferences" class="com.l7tech.console.util.Preferences" factory-method="getPreferences">
-    </bean>
-
     <bean id="httpClient" class="com.l7tech.spring.remoting.http.SecureHttpClient"/>
 
     <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor">

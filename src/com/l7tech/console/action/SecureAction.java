@@ -2,19 +2,19 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.security.LogonListener;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.security.PermissionRefreshListener;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
-import javax.security.auth.Subject;
 import java.awt.event.ActionEvent;
 import java.security.AccessControlException;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,6 +31,13 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =
             Arrays.asList(new Class[] { SpecificUser.class, MemberOfGroup.class });
+
+    /** Flag value meaning "This action should never be enabled." */
+    protected static final AttemptedOperation NOT_ALLOWED = new AttemptedOperation(EntityType.ANY) {
+        public OperationType getOperation() {
+            return OperationType.NONE;
+        }
+    };
 
     private final Set<String> assertionLicenseClassnames = new HashSet<String>();
     private final AttemptedOperation attemptedOperation;
@@ -109,7 +116,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public final boolean canAttemptOperation(AttemptedOperation ao) {
         if (ao == null) return true;
         if (!Registry.getDefault().isAdminContextPresent()) return false;
-        return getSecurityProvider().hasPermission(Subject.getSubject(AccessController.getContext()), ao);
+        return getSecurityProvider().hasPermission(ao);
     }
 
     /**

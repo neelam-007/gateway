@@ -5,8 +5,10 @@
  */
 package com.l7tech.console;
 
-import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.PreferencesChangedEvent;
+import com.l7tech.console.util.HeavySsmPreferences;
+import com.l7tech.console.util.TopComponents;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -34,6 +36,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         }
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
+        TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
         // Window listener
         mainWindow.setVisible(true);
         mainWindow.toFront();
@@ -51,9 +54,9 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
 
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof PreferencesChangedEvent) {
-            final Preferences prefs = (Preferences)getApplicationContext().getBean("preferences");
+            final HeavySsmPreferences prefs = (HeavySsmPreferences)getApplicationContext().getBean("preferences");
             log.finest("preferences have been updated");
-            setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
+            setLookAndFeel(prefs.getString(SsmPreferences.LOOK_AND_FEEL));
             MainWindow mainWindow = getMainWindow();
             if (mainWindow !=null) {
                 mainWindow.setInactivitiyTimeout(prefs.getInactivityTimeout());

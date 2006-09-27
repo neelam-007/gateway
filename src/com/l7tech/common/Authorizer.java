@@ -8,7 +8,6 @@ package com.l7tech.common;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.objectmodel.Entity;
 
-import javax.security.auth.Subject;
 import java.util.Collection;
 
 /**
@@ -20,7 +19,7 @@ import java.util.Collection;
  * @version Sep 2, 2004
  */
 public abstract class Authorizer {
-    public boolean hasPermission(Subject subject, AttemptedOperation attempted) {
+    public boolean hasPermission(AttemptedOperation attempted) {
         Collection<Permission> perms = getUserPermissions();
         if (perms == null || perms.isEmpty()) return false;
 

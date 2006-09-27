@@ -1,7 +1,7 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -50,7 +50,7 @@ public class CustomAssertionsRegistrarClientTest extends TestCase {
                     public void checkPermission(Permission perm, Object context) {}
                 });
                 System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/console/resources/services.properties");
-                Preferences.getPreferences().updateSystemProperties();
+                TopComponents.getInstance().getMainWindow().getPreferences().updateSystemProperties();
             }
 
             protected void tearDown() throws Exception {

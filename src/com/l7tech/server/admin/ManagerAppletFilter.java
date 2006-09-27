@@ -6,26 +6,27 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.cluster.ClusterPropertyManager;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.message.Message;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.identity.IdProvConfManagerServer;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
@@ -34,8 +35,8 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Authentication filter for the Manager applet servlet (and serving the manager applet jarfiles).
@@ -69,7 +70,7 @@ public class ManagerAppletFilter implements Filter {
 
         CompositeAssertion dogfood = new AllAssertion();
         dogfood.addChild(new HttpBasic());
-        dogfood.addChild(new MemberOfGroup(-2, "admin", "2"));
+        dogfood.addChild(new AuthenticationAssertion(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID));
         fakeDoc = XmlUtil.createEmptyDocument("placeholder", "l7", "http://www.l7tech.com/ns/placeholder");
 
         try {

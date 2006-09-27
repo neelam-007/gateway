@@ -41,6 +41,9 @@ public class TopComponents {
      * @return the applicaiton Main Window
      */
     public MainWindow getMainWindow() {
+        Component c = getComponent("mainWindow");
+        if (c instanceof MainWindow) return (MainWindow)c;
+
         Frame[] frames = JFrame.getFrames();
         for (int i = 0; i < frames.length; i++) {
             Frame frame = frames[i];
@@ -58,6 +61,9 @@ public class TopComponents {
      * @return true if the main  Window has initialized,false otherwise
      */
     public boolean hasMainWindow() {
+        Component c = getComponent("mainWindow");
+        if (c instanceof MainWindow) return true;
+
         Frame[] frames = JFrame.getFrames();
         for (int i = 0; i < frames.length; i++) {
             Frame frame = frames[i];

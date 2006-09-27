@@ -19,7 +19,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.service.PublishedService;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
@@ -35,7 +34,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -170,7 +168,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             } catch (Exception e) {
                 throw new RuntimeException("Couldn't get current service", e);
             }
-            if (!Registry.getDefault().getSecurityProvider().hasPermission(Subject.getSubject(AccessController.getContext()), new AttemptedUpdate(EntityType.SERVICE, svc))) return false;
+            if (!Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc))) return false;
             boolean delete = false;
 
             if (nodes == null) {

@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml.processor;
 import com.ibm.xml.dsig.SignatureMethod;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.util.SyspropUtil;
 import com.whirlycott.cache.Cache;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERInputStream;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
 public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
     private static final Logger logger = Logger.getLogger(MemoizedRsaSha1SignatureMethod.class.getName());
     private static final String PROPBASE = MemoizedRsaSha1SignatureMethod.class.getName();
-    private static final int SIG_VERIFY_CACHE_MAX = Integer.getInteger(PROPBASE + ".sigVerifyCacheSize", 1000).intValue();
+    private static final int SIG_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".sigVerifyCacheSize", 1000).intValue();
 
     private static final ThreadLocal tlSha1 = new ThreadLocal() {
         protected Object initialValue() {

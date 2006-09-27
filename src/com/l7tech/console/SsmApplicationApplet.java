@@ -6,6 +6,7 @@
 package com.l7tech.console;
 
 import org.springframework.context.ApplicationEvent;
+import com.l7tech.console.util.TopComponents;
 
 /**
  * Disables some SsmApplication features when running as Applet.
@@ -25,6 +26,7 @@ public class SsmApplicationApplet extends SsmApplication {
         if (running) return;
 
         mainWindow = new MainWindow(this);
+        TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
         running = true;
     }
 

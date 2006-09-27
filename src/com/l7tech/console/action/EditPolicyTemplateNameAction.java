@@ -1,23 +1,20 @@
 package com.l7tech.console.action;
 
 
-import com.l7tech.console.tree.PoliciesFolderNode;
-import com.l7tech.console.tree.PolicyTemplateNode;
-import com.l7tech.console.tree.AssertionsTree;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Preferences;
-
-import com.l7tech.console.panels.EditPolicyTemplateNameDialog;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.EditPolicyTemplateNameDialog;
+import com.l7tech.console.tree.AssertionsTree;
+import com.l7tech.console.tree.PolicyTemplateNode;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * This class handles the action of editing policy template name.
@@ -89,9 +86,9 @@ public class EditPolicyTemplateNameAction extends SecureAction {
           public void actionPerformed(final ActionEvent ev) {
               SwingUtilities.invokeLater(new Runnable() {
                   public void run() {
-                      File templateDir = null;
-                      templateDir = new File(Preferences.getPreferences().getHomePath() +
-                        File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+                      File templateFile = node.getFile();
+                      File templateDir = templateFile.getParentFile();
+                      if (templateDir == null) throw new IllegalStateException("Policy node does not name absolute path: " + templateFile.toString());
 
                       final File newName = new File(templateDir.getPath() + File.separator + ev.getActionCommand());
                       boolean success = node.getFile().renameTo(newName);

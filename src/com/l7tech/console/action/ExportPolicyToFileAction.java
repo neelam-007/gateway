@@ -4,7 +4,6 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyExporter;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import org.xml.sax.SAXException;
 
@@ -34,17 +33,20 @@ public class ExportPolicyToFileAction extends SecureAction {
     protected AssertionTreeNode node;
     protected String dialogTitle = "Export Policy";
     protected File lastSavedFile;
+    private final String homePath;
 
-    public ExportPolicyToFileAction() {
-        super(null);
+    public ExportPolicyToFileAction(String homePath) {
+        super(homePath == null ? NOT_ALLOWED : null);
+        this.homePath = homePath;
     }
 
-    public ExportPolicyToFileAction(AssertionTreeNode node) {
-        super(null);
+    public ExportPolicyToFileAction(AssertionTreeNode node, String homePath) {
+        super(homePath == null ? NOT_ALLOWED : null);
         if (node == null) {
             throw new IllegalArgumentException();
         }
         this.node = node;
+        this.homePath = homePath;
     }
 
     /**
@@ -75,6 +77,8 @@ public class ExportPolicyToFileAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
+        if (homePath == null) return; // disabled
+
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }
@@ -82,7 +86,7 @@ public class ExportPolicyToFileAction extends SecureAction {
         lastSavedFile = null;
         File templateDir = null;
         try {
-            templateDir = new File(Preferences.getPreferences().getHomePath() +
+            templateDir = new File(homePath +
                                    File.separator + PoliciesFolderNode.TEMPLATES_DIR);
             if (!templateDir.exists()) {
                 if (!templateDir.mkdir()) {

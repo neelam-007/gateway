@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.util.SyspropUtil;
+
 /**
  * A simple policy that the client side can enforce.  At the moment the only policy we support on the client
  * side is "require link level encryption if plaintext authentication is requested."
@@ -18,7 +20,7 @@ public class ClientSidePolicy {
     public static final String PROPERTY_DISALLOWPLAINTEXT = "com.l7tech.proxy.disallowPlaintextPassword";
 
     private static class Defaults {
-        private static boolean plaintextAuthDisallowed = Boolean.getBoolean(PROPERTY_DISALLOWPLAINTEXT);
+        private static boolean plaintextAuthDisallowed = SyspropUtil.getBoolean(PROPERTY_DISALLOWPLAINTEXT);
     }
 
     private ClientSidePolicy() {

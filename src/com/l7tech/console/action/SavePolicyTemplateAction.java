@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -30,17 +29,20 @@ import java.util.logging.Logger;
 public class SavePolicyTemplateAction extends SecureAction {
     static final Logger log = Logger.getLogger(SavePolicyTemplateAction.class.getName());
     protected AssertionTreeNode node;
+    private final String homePath;
 
-    public SavePolicyTemplateAction() {
+    public SavePolicyTemplateAction(String path) {
         super(null);
+        this.homePath = path;
     }
 
-    public SavePolicyTemplateAction(AssertionTreeNode node) {
+    public SavePolicyTemplateAction(AssertionTreeNode node, String path) {
         super(null);
         if (node == null) {
             throw new IllegalArgumentException();
         }
         this.node = node;
+        this.homePath = path;
     }
 
     /**
@@ -78,7 +80,7 @@ public class SavePolicyTemplateAction extends SecureAction {
         File templateDir = null;
         try {
             templateDir = new File(
-              Preferences.getPreferences().getHomePath() +
+              homePath +
               File.separator + PoliciesFolderNode.TEMPLATES_DIR);
             if (!templateDir.exists()) {
                 if (!templateDir.mkdir())

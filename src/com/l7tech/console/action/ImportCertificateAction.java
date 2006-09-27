@@ -2,14 +2,14 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
@@ -123,34 +123,7 @@ public class ImportCertificateAction extends SecureAction {
     public static void importSsgCertificate(X509Certificate cert, String hostName)
             throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException
     {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        Preferences preferences = Preferences.getPreferences();
-        char[] trustStorPassword = preferences.getTrustStorePassword().toCharArray();
-        String trustStoreFile = preferences.getTrustStoreFile();
-        try {
-            FileInputStream ksfis = new FileInputStream(trustStoreFile);
-            try {
-                ks.load(ksfis, trustStorPassword);
-            } finally {
-                ksfis.close();
-            }
-        } catch (FileNotFoundException e) {
-            // Create a new one.
-            ks.load(null, trustStorPassword);
-        }
-
-        log.info("Adding certificate: " + cert);
-        ks.setCertificateEntry(hostName, cert);
-
-        FileOutputStream ksfos = null;
-        try {
-            ksfos = new FileOutputStream(trustStoreFile);
-            ks.store(ksfos, trustStorPassword);
-        } finally {
-            if (ksfos != null)
-                ksfos.close();
-        }
-
+        TopComponents.getInstance().getMainWindow().getPreferences().importSsgCert(cert, hostName);
     }
 
     /**
