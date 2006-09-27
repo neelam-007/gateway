@@ -14,11 +14,13 @@ import com.l7tech.service.PublishedService;
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import java.io.StringReader;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,7 +64,14 @@ public class ServiceNode extends EntityHeaderNode {
                 JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
                 if (tree !=null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    Enumeration kids = this.getParent().children();
+                    while (kids.hasMoreElements()) {
+                        TreeNode node = (TreeNode) kids.nextElement();
+                        if (node == this) {
                     model.removeNodeFromParent(this);
+                            break;
+                }
+                    }
                 }
                 throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
             }
