@@ -11,6 +11,8 @@
 
 <beans>
 
+    <bean id="rmiConfigCheck" class="com.l7tech.spring.remoting.rmi.RmiConfigCheck"/>
+
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener">
         <property name="serverConfig">
