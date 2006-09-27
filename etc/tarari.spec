@@ -47,9 +47,11 @@ mv %{buildroot}/etc/tarari-initd %{buildroot}/etc/init.d/tarari
 if [ -e "/etc/init.d/tarari" ]; then
     /bin/chmod -f +x /etc/init.d/tarari
 fi
+cp /usr/local/Tarari/lib/tarari_raxj.jar /ssg/tomcat/shared/lib/
+
 %preun
 
-%changelog 
-* Thu Mar 9 2006 JWT 
+%changelog
+* Thu Mar 9 2006 JWT
 - Build First version - for 2.6.9-34 and Tarari build 64
 - ME: build for any kernels contained in tarari-kernel-drivers.tar.gz. Change descriptions and chmod the startup script
