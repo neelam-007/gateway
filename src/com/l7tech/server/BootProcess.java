@@ -270,6 +270,7 @@ public class BootProcess
 
         // Set default properties
         props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(30 * 1000));
+        props.setProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain ssl");
 
         InputStream is = null;
         try {
