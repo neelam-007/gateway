@@ -35,11 +35,16 @@ tar -xzf /tmp/tarari-kernel-drivers.tar.gz
 mkdir %{buildroot}/etc/init.d/
 
 mv %{buildroot}/etc/tarari-initd %{buildroot}/etc/init.d/tarari
+mkdir -p %{buildroot}/ssg/tomcat/shared/lib
+cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/ssg/tomcat/shared/lib/
 
-%files 
+%files
 %defattr(-,root,root)
 /etc/init.d/tarari
 /usr/local/Tarari/*
+
+%defattr(-,gateway,gateway)
+/ssg/tomcat/shared/lib/tarari_raxj.jar
 
 %pre
 
@@ -47,7 +52,6 @@ mv %{buildroot}/etc/tarari-initd %{buildroot}/etc/init.d/tarari
 if [ -e "/etc/init.d/tarari" ]; then
     /bin/chmod -f +x /etc/init.d/tarari
 fi
-cp /usr/local/Tarari/lib/tarari_raxj.jar /ssg/tomcat/shared/lib/
 
 %preun
 
