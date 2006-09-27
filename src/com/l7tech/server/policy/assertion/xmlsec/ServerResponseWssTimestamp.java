@@ -25,8 +25,12 @@ public class ServerResponseWssTimestamp extends ServerResponseWssSignature {
     }
 
     protected int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq) throws PolicyAssertionException {
-        if (assertion.isSignatureRequired()) wssReq.setSignTimestamp();
+        int signElements = 0;
+        if (assertion.isSignatureRequired()) {
+            wssReq.setSignTimestamp();
+            signElements = 1;
+        }
         wssReq.setTimestampTimeoutMillis(assertion.getExpiryMilliseconds());
-        return 1;
+        return signElements;
     }
 }

@@ -18,7 +18,11 @@ public class ResponseWssTimestampPolicyNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "Add Signed Timestamp to Response";
+        String qualifier = "";
+        if (((ResponseWssTimestamp)this.getUserObject()).isSignatureRequired()) {
+            qualifier = "Signed ";
+        }
+        return "Add " + qualifier + "Timestamp to Response";
     }
 
     public boolean canDelete() {

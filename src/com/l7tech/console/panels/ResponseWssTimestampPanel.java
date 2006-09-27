@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.gui.widgets.ValidatedPanel;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssTimestamp;
 
 import javax.swing.*;
@@ -23,7 +24,9 @@ import java.text.DecimalFormat;
 public class ResponseWssTimestampPanel extends ValidatedPanel {
     private JPanel mainPanel;
     private JFormattedTextField expiryTimeField;
+    private JCheckBox signatureRequiredCheckBox;
     private JComboBox expiryTimeUnitCombo;
+    private JPanel signingOptionsPanel;
     private JRadioButton bstRadio;
     private JRadioButton strRadio;
 
@@ -76,22 +79,27 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
             }
         });
 
+        ActionListener modelUpdateActionListener = new ActionListener(){
+            public void actionPerformed(ActionEvent e) {
+                updateComponents();
+                updateModel();
+            }
+        };
+        signatureRequiredCheckBox.addActionListener(modelUpdateActionListener);
+        signatureRequiredCheckBox.setSelected(assertion.isSignatureRequired());
+
         boolean bst = KeyReference.BST.getName().equals(assertion.getKeyReference());
         bstRadio.setSelected(bst);
         strRadio.setSelected(!bst);
-        bstRadio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                updateModel();
-            }
-        });
-
-        strRadio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                updateModel();
-            }
-        });
+        bstRadio.addActionListener(modelUpdateActionListener);
+        strRadio.addActionListener(modelUpdateActionListener);
 
         add(mainPanel, BorderLayout.CENTER);
+        updateComponents();
+    }
+
+    private void updateComponents() {
+        Utilities.setEnabled(signingOptionsPanel, signatureRequiredCheckBox.isSelected());
     }
 
     private void updateModel() {
@@ -99,6 +107,7 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
         Double num = (Double)expiryTimeField.getValue();
         assertion.setTimeUnit(tu);
         assertion.setExpiryMilliseconds((int)(num.doubleValue() * tu.getMultiplier()));
+        assertion.setSignatureRequired(signatureRequiredCheckBox.isSelected());
         if (bstRadio.isSelected()) {
             assertion.setKeyReference(KeyReference.BST.getName());
         } else if (strRadio.isSelected()) {
