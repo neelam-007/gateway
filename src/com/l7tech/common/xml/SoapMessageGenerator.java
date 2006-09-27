@@ -202,6 +202,10 @@ public class SoapMessageGenerator {
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
+        setPrefix("soapenv", envelope);
+        envelope.removeNamespaceDeclaration("SOAP-ENV");
+        setPrefix("soapenv", envelope.getBody());
+        setPrefix("soapenv", envelope.getHeader());
         verifyNamespaces(envelope);
         String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
 
@@ -223,6 +227,12 @@ public class SoapMessageGenerator {
             }
         }
         return new Object[]{soapMessage, targetNameSpace};
+    }
+
+    private void setPrefix(String prefix, SOAPElement element) {
+        if (element instanceof Node) {
+            ((Node)element).setPrefix(prefix);   
+        }
     }
 
     /**
