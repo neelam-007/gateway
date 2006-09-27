@@ -23,6 +23,8 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -640,11 +642,16 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             chainToImport = ks.getCertificateChain(alias);
             if (chainToImport == null || chainToImport.length < 1)
                 throw new AliasNotFoundException("The specified file does not contain a certificate chain for alias " + alias);
+            ((X509Certificate)chainToImport[0]).checkValidity();
             key = ks.getKey(alias, pass);
             if (key == null || !(key instanceof PrivateKey))
                 throw new AliasNotFoundException("The specified alias does not contain a private key.");
         } catch (KeyStoreException e) {
             throw new CausedIOException("Unable to read aliases from keystore", e);
+        } catch (CertificateExpiredException cee) {
+            throw new GeneralSecurityException("The certificate has expired: " + cee.getMessage(), cee);
+        } catch (CertificateNotYetValidException cnyve) {
+            throw new GeneralSecurityException("The certificate is not yet valid: " + cnyve.getMessage(), cnyve);
         }
 
         saveClientCertificate((PrivateKey)key, (X509Certificate)chainToImport[0], ssgPassword);
