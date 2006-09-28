@@ -73,6 +73,7 @@ class PathValidator {
     private Map seenVariables = new HashMap();
     private Map assertionFeatureName = new HashMap();
     private boolean seenSpecificUserAssertion = false;
+    private boolean seenCustomAuth = false;
     private final AssertionLicense assertionLicense;
 
     boolean seenAccessControl = false;
@@ -220,19 +221,18 @@ class PathValidator {
                 // if the credential source is not HTTP Basic
                 if (!haveSeen(ASSERTION_HTTPBASIC) && !haveSeen(ASSERTION_COOKIECREDS)){
                     result.addWarning(new PolicyValidatorResult.
-                      Warning(a, assertionPath, "HTTP Basic authentication (or HTTP Cookie session token) is usually used as the authentication " +
+                      Warning(a, assertionPath, "HTTP Basic Authentication (or HTTP Cookie session token) is usually used as the authentication " +
                         "scheme when a policy contains a Custom Assertion.", null));
                 }
             }
 
-            if (seenAccessControl && !haveSeen(ASSERTION_CUSTOM)) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is " +
-                  "permitted when a Custom Assertion is present.", null));
-            }
 
-            if (haveSeen(ASSERTION_CUSTOM)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a Custom " +
+            if (seenCustomAuth) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have an access control Custom " +
                   "Assertion in this path.", null));
+            } else if (seenAccessControl) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is " +
+                  "allowed when an access control Custom Assertion is used.", null));
             }
 
             if (seenRouting) {
@@ -240,6 +240,7 @@ class PathValidator {
                   "route.", null));
             }
             seenAccessControl = true;
+            seenCustomAuth = true;
         }
     }
 
@@ -257,9 +258,9 @@ class PathValidator {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath, "More than one identity in path.", null));
         }
 
-        if (haveSeen(ASSERTION_CUSTOM)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions is permitted when " +
-              "a Custom Assertion is present.", null));
+        if (seenCustomAuth) {
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions are allowed when " +
+              "an access control Custom Assertion is used.", null));
         }
 
         seenAccessControl = true;

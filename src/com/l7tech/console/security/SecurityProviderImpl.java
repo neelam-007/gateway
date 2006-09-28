@@ -17,6 +17,7 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.identity.IdentityAdmin;
@@ -58,6 +59,7 @@ import java.util.logging.Logger;
  */
 public class SecurityProviderImpl extends SecurityProvider
   implements ApplicationContextAware, ApplicationListener {
+    private static final Boolean suppressVersionCheck = SyspropUtil.getBoolean("com.l7tech.console.suppressVersionCheck");
 
     //- PUBLIC
 
@@ -124,7 +126,7 @@ public class SecurityProviderImpl extends SecurityProvider
             }
 
             String remoteSoftwareVersion = result.getAdminContext().getSoftwareVersion();
-            if (!BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
+            if (!Boolean.TRUE.equals(suppressVersionCheck) && !BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
                 throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
             }
 
