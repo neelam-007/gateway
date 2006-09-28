@@ -548,22 +548,20 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             for (String s : currentNodeList.keySet()) {
                 GatewayStatus gatewayStatus = currentNodeList.get(s);
 
-                Collection<LogMessage> logCache;
-                if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
-                    long highest = -1;
-                    if (logCache.size() > 0) {
-                        // remove any cached logs that are outside of our current range.
-                        purgeOutOfRange(logCache, start, end);
+                Collection<LogMessage> logCache = rawLogCache.get(gatewayStatus.getNodeId());
+                long highest = -1;
+                if (logCache != null && logCache.size() > 0) {
+                    // remove any cached logs that are outside of our current range.
+                    purgeOutOfRange(logCache, start, end);
 
-                        // find limit
-                        for (LogMessage lm : logCache) {
-                            if (lm.getMsgNumber() > highest) highest = lm.getMsgNumber();
-                        }
+                    // find limit
+                    for (LogMessage lm : logCache) {
+                        if (lm.getMsgNumber() > highest) highest = lm.getMsgNumber();
                     }
-
-                    // add the request for retrieving logs from the node
-                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest, start, end));
                 }
+
+                // add the request for retrieving logs from the node
+                requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest, start, end));
             }
         }
 
