@@ -100,19 +100,18 @@ public class NonSoapServicePanel extends WizardStepPanel {
         }
         downstreamURL = targetURL.getText();
         if (downstreamURL == null || downstreamURL.length() < 1) {
-            String msg = "Downstream target is missing.";
-            logger.info(msg);
-            bark(targetURL, msg);
-            return false;
-        }
-        // check that this is a valid url
-        try {
-            new URL(downstreamURL);
-        } catch (MalformedURLException e) {
-            String msg = downstreamURL + " is not a valid url. " + e.getMessage();
-            logger.info(msg);
-            bark(targetURL, msg);
-            return false;
+            // empty is ok
+            downstreamURL = null;
+        } else {
+            // check that this is a valid url
+            try {
+                new URL(downstreamURL);
+            } catch (MalformedURLException e) {
+                String msg = downstreamURL + " is not a valid url. " + e.getMessage();
+                logger.info(msg);
+                bark(targetURL, msg);
+                return false;
+            }
         }
         return true;
     }

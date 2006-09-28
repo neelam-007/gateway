@@ -59,7 +59,8 @@ public class PublishNonSoapServiceWizard extends Wizard {
             // get the assertions from the all assertion
             panel2.readSettings(allAssertions);
             AllAssertion policy = new AllAssertion(allAssertions);
-            policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
+            if (panel1.getDownstreamURL() != null)
+                policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
             service.setPolicyXml(bo.toString());
