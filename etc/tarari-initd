@@ -27,7 +27,7 @@ RELEASE=`grep label /usr/local/Tarari/config/raxj.config | cut -f 2 -d_ | cut -f
 if [ "$RELEASE" = "4.3" ]; then
         CARD_ID="0203"
 elif [ "$RELEASE = "4.2 ]; then
-        CARD_ID="0201";
+        CARD_ID="0103";
 else
         CARD_ID="NOT SUPPORTED";
 fi
