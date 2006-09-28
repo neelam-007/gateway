@@ -1122,8 +1122,6 @@ public class MainWindow extends JFrame {
         tree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) finalTree.getLastSelectedPathComponent();
-                if (selectedNode == null) return;
-                if (!(selectedNode instanceof AbstractAssertionPaletteNode) && !(selectedNode instanceof CustomAccessControlNode) ) return;
 
                 String description = null;
                 if (selectedNode instanceof AbstractAssertionPaletteNode) {
