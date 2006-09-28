@@ -22,6 +22,26 @@ tarariStart="/usr/local/Tarari/bin/load_xmlcp"
 tarariStop="/usr/local/Tarari/bin/unload_xmlcp"
 USER=`whoami`
 
+RELEASE=`grep label /usr/local/Tarari/config/raxj.config | cut -f 2 -d_ | cut -f 1-2 -d .`
+
+if [ "$RELEASE" = "4.3" ]; then
+        CARD_ID="0203"
+elif [ "$RELEASE = "4.2 ]; then
+        CARD_ID="0201";
+else
+        CARD_ID="NOT SUPPORTED";
+fi
+# FIXME: need to add other card ID's if we get new ones
+
+CARD=`lspci -nv |grep Subsystem |grep 1863 |grep ${CARD_ID}`
+
+if [ -z "${CARD}" ]; then
+        echo "This release (${RELEASE}) does not support this card (${CARD_ID})"
+        exit 32
+fi
+
+
+
 start() {
         echo -n $"Starting Tarari: "
 	if [ "$USER" = "root" ]; then
