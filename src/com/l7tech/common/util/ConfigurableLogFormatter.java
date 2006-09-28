@@ -6,7 +6,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.Handler;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.IllegalFormatException;
 import java.util.Formattable;
@@ -138,34 +137,36 @@ public class ConfigurableLogFormatter extends Formatter {
      * Read the configuration for the format
      */
     private void initConfig() {
-        configured = true;
-        LogManager manager = LogManager.getLogManager();
-        Enumeration nameEnum = manager.getLoggerNames();
-        boolean found = false;
-        // Loop through the Loggers
-        while(nameEnum.hasMoreElements() && !found) {
-            String loggerName = (String) nameEnum.nextElement();
-            Logger logger = manager.getLogger(loggerName);
+        if (!configured) {
+            configured = true;
+            LogManager manager = LogManager.getLogManager();
+            Enumeration nameEnum = manager.getLoggerNames();
+            boolean found = false;
+            // Loop through the Loggers
+            while(nameEnum.hasMoreElements() && !found) {
+                String loggerName = (String) nameEnum.nextElement();
+                Logger logger = manager.getLogger(loggerName);
 
-            // Check Handlers for this Logger
-            Handler[] handlers = logger.getHandlers();
-            for (int i = 0; i < handlers.length; i++) {
-                Handler handler = handlers[i];
-                String className = handler.getClass().getName();
+                // Check Handlers for this Logger
+                Handler[] handlers = logger.getHandlers();
+                for (int i = 0; i < handlers.length; i++) {
+                    Handler handler = handlers[i];
+                    String className = handler.getClass().getName();
 
-                // See if we are the formatter for this Handler
-                Formatter formatter = handler.getFormatter();
-                if(formatter == this) {
-                    // Check for customized format pattern for exceptions and std messages
-                    String prefix = className + ".formatter";
-                    String configFormat = manager.getProperty(prefix + ".format");
-                    String configExceptFormat = manager.getProperty(prefix + ".exceptionFormat");
+                    // See if we are the formatter for this Handler
+                    Formatter formatter = handler.getFormatter();
+                    if(formatter == this) {
+                        // Check for customized format pattern for exceptions and std messages
+                        String prefix = className + ".formatter";
+                        String configFormat = manager.getProperty(prefix + ".format");
+                        String configExceptFormat = manager.getProperty(prefix + ".exceptionFormat");
 
-                    if(configFormat!=null) format = configFormat;
-                    if(configExceptFormat!=null) exceptFormat = configExceptFormat;
+                        if(configFormat!=null) format = configFormat;
+                        if(configExceptFormat!=null) exceptFormat = configExceptFormat;
 
-                    found = true;
-                    break;
+                        found = true;
+                        break;
+                    }
                 }
             }
         }
@@ -182,7 +183,14 @@ public class ConfigurableLogFormatter extends Formatter {
 
         if(t!=null) {
             StringWriter stackWriter = new StringWriter(512);
-            t.printStackTrace(new PrintWriter(stackWriter));
+            PrintWriter printWriter = null;
+            try {
+                printWriter = new PrintWriter(stackWriter);
+                t.printStackTrace(printWriter);
+            } finally {
+                if(printWriter != null) printWriter.close();
+            }
+
             formatted = stackWriter.toString();
         }
 
