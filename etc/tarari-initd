@@ -33,11 +33,11 @@ else
 fi
 # FIXME: need to add other card ID's if we get new ones
 
-CARD=`lspci -nv |grep Subsystem |grep 1863 |grep ${CARD_ID}`
+CARD=`/sbin/lspci -nv |grep Subsystem |grep 1863 |grep ${CARD_ID}`
 
 if [ -z "${CARD}" ]; then
         echo "This release (${RELEASE}) does not support this card (${CARD_ID})"
-        exit 32
+        exit 
 fi
 
 
