@@ -132,8 +132,8 @@ public class EditRoleDialog extends JDialog {
         editPermission.setVisible(shouldAllowEdits);
         removePermission.setVisible(shouldAllowEdits);
 
-        roleName.setEnabled(canEdit && shouldAllowEdits);
-        roleDescription.setEnabled(canEdit && shouldAllowEdits);
+        roleName.setEditable(canEdit && shouldAllowEdits);
+        roleDescription.setEditable(canEdit && shouldAllowEdits);
         addPermission.setEnabled(canEdit && shouldAllowEdits);
         editPermission.setEnabled(canEdit && shouldAllowEdits);
         removePermission.setEnabled(canEdit &&shouldAllowEdits);
