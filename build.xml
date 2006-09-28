@@ -983,6 +983,7 @@
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
                 <include name="com/l7tech/common/util/WhirlycacheFactory*.class"/>
                 <include name="com/l7tech/common/util/ExceptionUtils.class"/>
+                <include name="com/l7tech/common/util/SyspropUtil.class"/>
                 <include name="com/l7tech/common/gui/util/Utilities*.class"/>
                 <include name="com/l7tech/common/gui/util/ImageCache.class"/>
                 <include name="com/l7tech/common/gui/widgets/PleaseWaitDialog.class"/>
