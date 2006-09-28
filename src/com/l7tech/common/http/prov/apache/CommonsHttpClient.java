@@ -12,14 +12,18 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ConnectionTimeoutSocketFactory;
+
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.SocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
@@ -36,14 +40,18 @@ public class CommonsHttpClient implements GenericHttpClient {
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
     public static final String PROP_STALE_CHECKS = CommonsHttpClient.class.getName() + ".staleCheckCount";
 
+    public static final int DEFAULT_CONNECT_TIMEOUT = 30000;
+    public static final int DEFAULT_READ_TIMEOUT = 60000;
+
+    private static final Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
+    private static final ThreadLocalNumber threadLocalTimeout = new ThreadLocalNumber(Integer.valueOf(DEFAULT_CONNECT_TIMEOUT));
+    private static Protocol httpProtocol;
+
     private final HttpConnectionManager cman;
     private final int connectionTimeout;
     private final int timeout;
     private final Object identity;
     private final boolean isBindingManager;
-
-    public static final int DEFAULT_CONNECT_TIMEOUT = 30000;
-    public static final int DEFAULT_READ_TIMEOUT = 60000;
 
     public CommonsHttpClient(HttpConnectionManager cman) {
         this(cman, -1, -1, null); // default timeouts
@@ -103,10 +111,15 @@ public class CommonsHttpClient implements GenericHttpClient {
             } else
                 hconf = null;
         } else
-            hconf = null;
+            hconf = getHostConfig(targetUrl);
 
         final HttpClient client = new HttpClient(cman);
-        client.setConnectionTimeout(connectionTimeout);
+        //
+        // NOTE: HttpClient starts an extra Thread to manage connection timeout.
+        //       For this reason we do connection timeouts with a custom socket
+        //       factory instead of using the built in functionality.
+        //
+        //client.setConnectionTimeout(connectionTimeout);
         client.setTimeout(timeout);
 
         final HttpState state = getHttpState(client, params);
@@ -177,6 +190,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                     throw new IllegalStateException("This request has already been closed");
 
                 stampBindingIdentity();
+                threadLocalTimeout.set(Integer.valueOf(connectionTimeout));
                 final int status;
                 final ContentTypeHeader contentType;
                 final Long contentLength;
@@ -316,7 +330,34 @@ public class CommonsHttpClient implements GenericHttpClient {
 
     }
 
-    private static Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
+    private Protocol getHttpProtocol(){
+        Protocol protocol = httpProtocol;
+        if (protocol == null) {
+            protocol = new Protocol("http", getTimeoutProtocolSocketFactory(), 80);
+            httpProtocol = protocol;
+        }
+        return protocol;
+    }
+
+    private ProtocolSocketFactory getTimeoutProtocolSocketFactory() {
+        return new ProtocolSocketFactory() {
+            private final SocketFactory socketFactory = new ConnectionTimeoutSocketFactory(SocketFactory.getDefault(), threadLocalTimeout);
+
+            public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                return socketFactory.createSocket(host, port);
+            }
+
+            public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort) throws IOException, UnknownHostException {
+                return socketFactory.createSocket(host, port, clientHost, clientPort);
+            }
+        };
+    }
+
+    private HostConfiguration getHostConfig(final URL targetUrl) {
+        HostConfiguration hconf = new HostConfiguration();
+        hconf.setHost(targetUrl.getHost(), targetUrl.getPort(), getHttpProtocol());
+        return hconf;
+    }
 
     private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac) {
         HostConfiguration hconf;
@@ -329,11 +370,28 @@ public class CommonsHttpClient implements GenericHttpClient {
                 }
 
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
-                    return sockFac.createSocket(host, port, clientAddress, clientPort);
+                    return wrap(getHttpProtocol().getSocketFactory().createSocket(host, port, clientAddress, clientPort), host, port);
                 }
 
                 public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                    return sockFac.createSocket(host, port);
+                    return wrap(getHttpProtocol().getSocketFactory().createSocket(host, port), host, port);
+                }
+
+                private Socket wrap(Socket socket, String host, int port) throws IOException, UnknownHostException {
+                    Socket secure = null;
+                    try {
+                        secure = sockFac.createSocket(socket, host, port, true);
+                        socket = null;
+                    } finally {
+                        if (socket != null) {
+                            try {
+                                socket.close();
+                            } catch (IOException ioe) {
+                                // ok
+                            }
+                        }
+                    }
+                    return secure;
                 }
             }, 443);
             protoBySockFac.put(sockFac, protocol);
@@ -341,5 +399,55 @@ public class CommonsHttpClient implements GenericHttpClient {
         hconf = new HostConfiguration();
         hconf.setHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
         return hconf;
+    }
+
+    private static class ThreadLocalNumber extends Number {
+        private final Number number;
+        private final ThreadLocal localValue;
+
+        private ThreadLocalNumber(Number initialValue) {
+            number = initialValue;
+            localValue = new ThreadLocal(){
+                protected Object initialValue() {
+                    return number;
+                }
+            };
+        }
+
+        protected Object initialValue() {
+            return number;
+        }
+
+        private void set(Number value) {
+            localValue.set(value);
+        }
+
+        private Number getNumber() {
+            return (Number) localValue.get();
+        }
+
+        public byte byteValue() {
+            return getNumber().byteValue();
+        }
+
+        public double doubleValue() {
+            return getNumber().doubleValue();
+        }
+
+        public float floatValue() {
+            return getNumber().floatValue();
+        }
+
+        public int intValue() {
+            return getNumber().intValue();
+        }
+
+        public long longValue() {
+            return getNumber().longValue();
+        }
+
+        public short shortValue() {
+            return getNumber().shortValue();
+        }
     }
 }
