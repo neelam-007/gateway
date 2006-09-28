@@ -8,6 +8,7 @@ import com.l7tech.console.policy.exporter.IdProviderReference;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -111,7 +112,9 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
 
         });
 
-        populateIdProviders();
+        populateIdProviders(unresolvedRef.getIdProviderTypeVal());
+        if (providerSelector.getModel().getSize() == 0)
+            manualResolvRadio.setEnabled(false);
         populatePropsTable();
     }
 
@@ -122,7 +125,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         // update the list once the provide is created
         EntityListener updateProviderListCallback = new EntityListener() {
             public void entityAdded(EntityEvent ev) {
-                populateIdProviders();
+                populateIdProviders(unresolvedRef.getIdProviderTypeVal());
             }
             public void entityUpdated(EntityEvent ev) {}
             public void entityRemoved(EntityEvent ev) {}
@@ -161,7 +164,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         }
     }
 
-    private void populateIdProviders() {
+    private void populateIdProviders(int requiredProviderType) {
         // populate provider selector
         IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         if (admin == null) {
@@ -181,7 +184,15 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         }
         DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel();
         for (EntityHeader entityHeader : providerHeaders) {
-            idprovidermodel.addElement(entityHeader.getName());
+            try {
+                IdentityProviderConfig ipc = admin.findIdentityProviderConfigByID(entityHeader.getOid());
+                if (ipc != null && ipc.getTypeVal() == requiredProviderType) {
+                    idprovidermodel.addElement(entityHeader.getName());
+                }
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Cannot get id provider config.", e);
+                return;
+            }
         }
         providerSelector.setModel(idprovidermodel);
     }
