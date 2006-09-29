@@ -89,7 +89,7 @@ public class UsernameTokenImpl implements UsernameToken {
         // Remember this as a security token
         this.element = usernameTokenElement;
         this.username = username;
-        this.passwordAuth = new PasswordAuthentication(username, passwd == null ? null : passwd.toCharArray());
+        this.passwordAuth = passwd == null ? null : new PasswordAuthentication(username, passwd.toCharArray());
         this.elementId = null;
     }
 
