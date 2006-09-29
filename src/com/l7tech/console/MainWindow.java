@@ -25,11 +25,11 @@ import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.*;
 import com.l7tech.identity.User;
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.BrowserLauncherRunner;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-import javax.help.DefaultHelpBroker;
-import javax.help.HelpBroker;
-import javax.help.HelpSet;
-import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
@@ -50,7 +50,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.URL;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
 import java.util.*;
@@ -71,9 +70,13 @@ public class MainWindow extends JFrame {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     /**
-     * the path to JavaHelp helpset file
+     * the path to WebHelp start file, relative to the working dir.
      */
-    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/SecureSpan_Manager_Help_System.hs";
+    public static final String HELP_FILE_NAME = "help/!_start_!.htm";
+
+    //the property name for the current applications home directory. If not set, this is defaulted to null by code
+    // that uses it
+    private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
 
     public static final String CONNECTION_PREFIX = " [connected to node: ";
     /**
@@ -182,10 +185,9 @@ public class MainWindow extends JFrame {
     private double preferredHorizontalSplitLocation = 0.27;
     private boolean maximizeOnStart = false;
 
-    /* child windows */
-    private Window helpWindow;
-    private Window modalHelpWindow;
     private final SsmPreferences preferences;
+
+    private BrowserLauncher browserLauncher;
 
     /**
      * MainWindow constructor comment.
@@ -1957,80 +1959,34 @@ public class MainWindow extends JFrame {
      * This procedure adds the JavaHelp to PMC application.
      */
     public void showHelpTopics(ActionEvent e) {
-        Object source = e.getSource();
+        String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
+        if (!applicationHome.endsWith("/")) applicationHome += "/";
+        String helpUrl = "file://" + applicationHome + HELP_FILE_NAME;
 
-        boolean modalHelp = false;
-        if (source instanceof Dialog && ((Dialog)source).isModal()) {
-            modalHelp = true;
-        }
-        Window window = modalHelp ? modalHelpWindow : helpWindow;
-
-        if (window != null) {
-            if(window instanceof Frame) {
-                ((Frame)window).setState(Frame.NORMAL);
-            }
-            window.toFront();
-        }
-        else {
-            HelpSet hs;
-            URL url = null;
-            HelpBroker javaHelpBroker;
-            String helpsetName = "SSG Help";
-
-            try {
-                // Find the helpSet URL file.
-                url = cl.getResource(HELP_PATH);
-                hs = new HelpSet(cl, url);
-                javaHelpBroker = hs.createHelpBroker();
-                if (source instanceof Window) {
-                    // ensure help can work when invoked from a modal dialog
-                    ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
-                }
-                javaHelpBroker.setDisplayed(true);
-
-                // Have to set the icon after setDisplayed (else window is null)
-                window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
-                if(window instanceof Frame) {
-                    ((Frame)window).setIconImage(getIconImage());
-                }
-                if (modalHelp) {
-                    window.addWindowListener(new WindowAdapter() {
-                        public void windowClosed(final WindowEvent e) {
-                            modalHelpWindow = null;
-                        }
-                        public void windowClosing(final WindowEvent e) {
-                            modalHelpWindow = null;
-                        }
-                    });
-                    modalHelpWindow = window;
-                }
-                else {
-                    window.addWindowListener(new WindowAdapter() {
-                        public void windowClosed(final WindowEvent e) {
-                            helpWindow = null;
-                        }
-                        public void windowClosing(final WindowEvent e) {
-                            helpWindow = null;
-                        }
-                    });
-                    helpWindow = window;
-                }
-            } catch (MissingResourceException ex) {
-                //Make sure the URL exists.
-                if (url == null) {
-                    JOptionPane.showMessageDialog(MainWindow.this,
-                      "Help URL is missing",
-                      "Bad HelpSet Path ",
-                      JOptionPane.WARNING_MESSAGE);
-                }
-            } catch (HelpSetException hex) {
-                JOptionPane.showMessageDialog(MainWindow.this,
-                  helpsetName + " is not available",
-                  "Warning",
+        try {
+            BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), helpUrl, null);
+            Thread launcherThread = new Thread(runner);
+            launcherThread.start();
+        } catch (BrowserLaunchingInitializingException e1) {
+            log.warning("Unable to launch browser for webhelp " + e1);
+            JOptionPane.showMessageDialog(MainWindow.this,
+                  "Unable to open the help system. To view the help system, open the following URL in your preferred browser",
+                  "Cannot Open Help",
                   JOptionPane.WARNING_MESSAGE);
-                log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
-            }
+        } catch (UnsupportedOperatingSystemException e1) {
+            log.warning("Unable to launch browser for webhelp " + e1);
+            JOptionPane.showMessageDialog(MainWindow.this,
+                  "Unable to open the help system. To view the help system, open the following URL in your preferred browser",
+                  "Cannot Open Help",
+                  JOptionPane.WARNING_MESSAGE);
         }
+    }
+
+    private BrowserLauncher getBrowserLauncher() throws BrowserLaunchingInitializingException, UnsupportedOperatingSystemException {
+        if (browserLauncher == null) {
+            browserLauncher = new BrowserLauncher(null);
+        }
+        return browserLauncher;
     }
 
     // -------------- inactivitiy timeout (close your eyes) -------------------

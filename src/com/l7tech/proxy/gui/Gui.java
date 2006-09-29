@@ -5,25 +5,25 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.JavaVersionChecker;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.dialogs.AboutBox;
 import com.l7tech.proxy.gui.util.IconManager;
-import com.l7tech.common.util.JavaVersionChecker;
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.BrowserLauncherRunner;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 import snoozesoft.systray4j.*;
 
-import javax.help.DefaultHelpBroker;
-import javax.help.HelpBroker;
-import javax.help.HelpSet;
-import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.URL;
-import java.util.MissingResourceException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * Encapsulates the Client Proxy's user interface.
@@ -31,7 +31,17 @@ import java.util.logging.Logger;
 public class Gui {
     private static final Logger log = Logger.getLogger( Gui.class.getName() );
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
-    public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/SecureSpan_Bridge_Help_System.hs";
+//    public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/SecureSpan_Bridge_Help_System.hs";
+
+    /**
+     * the path to WebHelp start file, relative to the working dir.
+     */
+    public static final String HELP_FILE_NAME = "help/!_start_!.htm";
+
+    //the property name for the current applications home directory. If not set, this is defaulted to null by code
+    // that uses it
+    private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
+
     public static final String APP_NAME = "SecureSpan Bridge";
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
@@ -64,6 +74,7 @@ public class Gui {
     private final boolean hideMenus;
     private final String bigQuitButtonLabel;
     private SysTrayMenu sysTrayMenu = null;
+    private BrowserLauncher browserLauncher;
 
     /**
      * Get the singleton Gui.
@@ -560,61 +571,33 @@ public class Gui {
      * This procedure adds the JavaHelp to PMC application.
      */
     public void showHelpTopics(ActionEvent e) {
-        Window window = helpWindow;
-        if (window != null) {
-            if(window instanceof Frame) {
-                ((Frame)window).setState(Frame.NORMAL);
-            }
-            window.toFront();
-        } else {
-            final HelpSet hs;
-            URL url = null;
-            final HelpBroker javaHelpBroker;
-            String helpsetName = "SSB Help";
+        String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
+        if (!applicationHome.endsWith("/")) applicationHome += "/";
+        String helpUrl = "file://" + applicationHome + HELP_FILE_NAME;
 
-            try {
-                // Find the helpSet URL file.
-                ClassLoader cl = getClass().getClassLoader();
-                url = cl.getResource(HELP_PATH);
-                hs = new HelpSet(cl, url);
-                javaHelpBroker = hs.createHelpBroker();
-                Object source = e.getSource();
-
-                if (source instanceof Window) {
-                    ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
-                }
-                javaHelpBroker.setDisplayed(true);
-
-                // Have to set the icon after setDisplayed (else window is null)
-                window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
-                if(window instanceof Frame) {
-                    ((Frame)window).setIconImage(frame.getIconImage());
-                }
-
-                window.addWindowListener(new WindowAdapter() {
-                    public void windowClosed(final WindowEvent e) {
-                        helpWindow = null;
-                    }
-                    public void windowClosing(final WindowEvent e) {
-                        helpWindow = null;
-                    }
-                });
-                helpWindow = window;
-            } catch (MissingResourceException ex) {
-                //Make sure the URL exists.
-                if (url == null) {
-                    JOptionPane.showMessageDialog(frame,
-                      "Help URL is missing",
-                      "Bad HelpSet Path ",
-                      JOptionPane.WARNING_MESSAGE);
-                }
-            } catch (HelpSetException hex) {
-                JOptionPane.showMessageDialog(frame,
-                  helpsetName + " is not available",
-                  "Warning",
+        try {
+            BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), helpUrl, null);
+            Thread launcherThread = new Thread(runner);
+            launcherThread.start();
+        } catch (BrowserLaunchingInitializingException e1) {
+            log.warning("Unable to launch browser for webhelp " + e1);
+            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                  "Unable to open the help system. To view the help system, open the following URL in your preferred browser",
+                  "Cannot Open Help",
                   JOptionPane.WARNING_MESSAGE);
-                log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
-            }
+        } catch (UnsupportedOperatingSystemException e1) {
+            log.warning("Unable to launch browser for webhelp " + e1);
+            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                  "Unable to open the help system. To view the help system, open the following URL in your preferred browser",
+                  "Cannot Open Help",
+                  JOptionPane.WARNING_MESSAGE);
         }
+    }
+
+    private BrowserLauncher getBrowserLauncher() throws BrowserLaunchingInitializingException, UnsupportedOperatingSystemException {
+        if (browserLauncher == null) {
+            browserLauncher = new BrowserLauncher(null);
+        }
+        return browserLauncher;
     }
 }
