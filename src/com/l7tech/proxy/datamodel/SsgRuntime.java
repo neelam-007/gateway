@@ -61,7 +61,7 @@ public class SsgRuntime {
 
     private MultiThreadedHttpConnectionManager httpConnectionManager;
 
-    private PolicyManager rootPolicyManager = null; // policy store that is not saved to disk
+    private SsgNotifyPolicyManager ssgNotifyPolicyManager = null; // policy store that is not saved to disk
     private char[] password = null;
     private boolean promptForUsernameAndPassword = true;
     private KeyStore keyStore = null;
@@ -133,14 +133,14 @@ public class SsgRuntime {
      * @return the root PolicyManager for this SSG.  Never null.
      */
     public PolicyManager getPolicyManager() {
-        if (rootPolicyManager == null) {
+        if (ssgNotifyPolicyManager == null) {
             synchronized (ssg) {
-                if (rootPolicyManager == null) {
-                    rootPolicyManager = new TransientPolicyManager(ssg.getPersistentPolicyManager());
+                if (ssgNotifyPolicyManager == null) {
+                    ssgNotifyPolicyManager = new SsgNotifyPolicyManager(ssg, new TransientPolicyManager(ssg.getPersistentPolicyManager()));
                 }
             }
         }
-        return rootPolicyManager;
+        return ssgNotifyPolicyManager;
     }
 
     /**
@@ -150,7 +150,7 @@ public class SsgRuntime {
      * and the {@link com.l7tech.proxy.SecureSpanBridge} implementation, when a hardcoded policy is selected.
      */
     public void setPolicyManager(PolicyManager p) {
-        rootPolicyManager = p;
+        ssgNotifyPolicyManager = new SsgNotifyPolicyManager(ssg, p);
     }
 
     /**

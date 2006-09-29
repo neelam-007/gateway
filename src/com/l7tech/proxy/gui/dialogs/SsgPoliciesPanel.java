@@ -114,15 +114,6 @@ class SsgPoliciesPanel extends JPanel {
                 updatePolicyPanel();
             }
         });
-        JButton buttonRefreshPolicies = new JButton("Refresh Policy Cache");
-        buttonRefreshPolicies.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                updatePolicyPanel();
-            }
-        });
-        Utilities.equalizeButtonSizes(new AbstractButton[] { buttonFlushPolicies,
-                                                             buttonRefreshPolicies });
-
         pane.add(Box.createGlue(),
                  new GridBagConstraints(1, y, 1, 1, 0.0, 0.0,
                                         GridBagConstraints.EAST,
@@ -133,12 +124,6 @@ class SsgPoliciesPanel extends JPanel {
                                         GridBagConstraints.EAST,
                                         GridBagConstraints.NONE,
                                         new Insets(14, 6, 0, 6), 0, 0));
-
-        pane.add(buttonRefreshPolicies,
-                 new GridBagConstraints(2, y++, 2, 1, 0.0, 0.0,
-                                        GridBagConstraints.EAST,
-                                        GridBagConstraints.NONE,
-                                        new Insets(0, 6, 0, 6), 0, 0));
 
         pane.add(new JLabel("Services with Cached Policies:"),
                  new GridBagConstraints(0, y, 2, 1, 0.0, 0.0,

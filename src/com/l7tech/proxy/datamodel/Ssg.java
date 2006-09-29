@@ -630,6 +630,11 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         }
     }
 
+    public void notifyPolicyUpdate(Policy policy) {
+        if (policy != null)
+            firePolicyAttachedEvent(policy);    
+    }
+
     /**
      * Add a listener to be notified of changes to this Ssg's state, including policy changes.
      * Adding a listener requires that a Gui be available, since event delivery is done on the Swing
@@ -689,6 +694,11 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     /** Fire a new DATA_CHANGED event. */
     private void fireDataChangedEvent() {
         fireSsgEvent(SsgEvent.createDataChangedEvent(this));
+    }
+
+    /** Fire a new POLICY_ATTACHED event. */
+    private void firePolicyAttachedEvent(Policy policy) {
+        fireSsgEvent(SsgEvent.createPolicyAttachedEvent(this, policy));
     }
 
     /** @return This Ssg's server cert, or null if it is not currently known or configured. */

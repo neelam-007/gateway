@@ -90,6 +90,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         pack();
     }
 
+    public void finalize() throws Throwable {
+        ssg.removeSsgListener(this);
+        super.finalize();
+    }
+
     /**
      * Attempt to build an "edit properties" dialog box for the given Ssg.
      * @param ssg The ssg whose properties we intend to edit
