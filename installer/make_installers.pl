@@ -26,6 +26,13 @@ my $MANIFEST_PATH = "../etc/";
 my $MANIFEST_EXT = ".mf";
 my $INCLUDES_EXT = ".installer.include";
 
+# List of known webhelp sets
+# (in a file named help.zip, that when unzipped, produces subdirectory named "help" containing !_Start_!.htm)
+my %helpzips = (
+Bridge => "../webhelp/ssb/help.tgz",
+Manager => "../webhelp/ssm/help.tgz",
+);
+
 my %opt = ();
 
 # Returns a list of jar files from the class path in the manifest.
@@ -114,6 +121,7 @@ sub nsi_file_replace {
 
 sub dosystem {
 	my ($prog, @args) = @_;
+	print "Running command: " . $prog . " " . join(" ", @args) . "\n";
 	my $ret = system $prog, @args;
 	my $exit_value = $ret >> 8;
 	die "FATAL: $prog exited $exit_value" if $exit_value;
@@ -190,6 +198,19 @@ sub make_tar_file {
 
 	foreach my $include (@$includes) {
 		docopy("$BUILD_PATH/$include", "./$dir");
+	}
+
+	# Check for help files
+	my $path = $helpzips{$file};
+	if ($path && -f $path) {
+	    # Unzip it into the build dir
+	    chdir $dir;
+	    eval {
+            dosystem("tar", "xzf", "../" . $path);
+        };
+        my $e = $@;
+	    chdir "..";
+	    die $e if $e;
 	}
 
         # default options for both manager and bridge.
@@ -278,8 +299,10 @@ foreach my $file (@FILES) {
 	die "No NSI path for $file" unless $nsi;
 	print "Replacing NSI info for $nsi ...\n";
 	my $newnsi = nsi_file_replace($file, $nsi, \@jars, \@includes);
+
+	make_tar_file($file, \@jars, \@includes);
+
 	print "Building installer for $nsi ...\n";
 	build_installer($newnsi);
 
-	make_tar_file($file, \@jars, \@includes);
 }

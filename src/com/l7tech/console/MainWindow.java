@@ -4,6 +4,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.gui.util.HelpUtil;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.Permission;
@@ -25,10 +26,6 @@ import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.*;
 import com.l7tech.identity.User;
-import edu.stanford.ejalbert.BrowserLauncher;
-import edu.stanford.ejalbert.BrowserLauncherRunner;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 import javax.swing.*;
 import javax.swing.Timer;
@@ -186,8 +183,6 @@ public class MainWindow extends JFrame {
     private boolean maximizeOnStart = false;
 
     private final SsmPreferences preferences;
-
-    private BrowserLauncher browserLauncher;
 
     /**
      * MainWindow constructor comment.
@@ -1956,37 +1951,11 @@ public class MainWindow extends JFrame {
 
     /**
      * The "Help Topics".
-     * This procedure adds the JavaHelp to PMC application.
+     * This procedure displays the WebHelp contents in the preferred browser for the system on which the SSM is running.
      */
     public void showHelpTopics(ActionEvent e) {
         String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
-        if (!applicationHome.endsWith("/")) applicationHome += "/";
-        String helpUrl = "file://" + applicationHome + HELP_FILE_NAME;
-
-        try {
-            BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), helpUrl, null);
-            Thread launcherThread = new Thread(runner);
-            launcherThread.start();
-        } catch (BrowserLaunchingInitializingException e1) {
-            log.warning("Unable to launch browser for webhelp " + e1);
-            JOptionPane.showMessageDialog(MainWindow.this,
-                  "Unable to open the help system. To view the help system, open the following URL in your preferred browser",
-                  "Cannot Open Help",
-                  JOptionPane.WARNING_MESSAGE);
-        } catch (UnsupportedOperatingSystemException e1) {
-            log.warning("Unable to launch browser for webhelp " + e1);
-            JOptionPane.showMessageDialog(MainWindow.this,
-                  "Unable to open the help system. To view the help system, open the following URL in your preferred browser",
-                  "Cannot Open Help",
-                  JOptionPane.WARNING_MESSAGE);
-        }
-    }
-
-    private BrowserLauncher getBrowserLauncher() throws BrowserLaunchingInitializingException, UnsupportedOperatingSystemException {
-        if (browserLauncher == null) {
-            browserLauncher = new BrowserLauncher(null);
-        }
-        return browserLauncher;
+        HelpUtil.showHelpTopics(applicationHome, MainWindow.this);
     }
 
     // -------------- inactivitiy timeout (close your eyes) -------------------

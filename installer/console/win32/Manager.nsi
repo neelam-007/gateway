@@ -125,6 +125,7 @@ Section "Policy Editor" SecCopyUI
   File /r "${J2RE_PATH}"
   Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
   File "${BUILD_DIR}\..\src\com\l7tech\console\resources\logging.properties"
+  File /r "${BUILD_DIR}\..\installer\Manager-${MUI_VERSION}\help"
 
   SetOutPath "$INSTDIR/lib"
   ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
@@ -190,6 +191,7 @@ Section "Uninstall"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%INCLUDE_DELETE_LINES%%%
   RMDir "$INSTDIR\lib"
   RMDir /r "$INSTDIR\jre"
+  RMDir /r "$INSTDIR\help"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\logging.properties"
 

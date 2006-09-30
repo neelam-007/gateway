@@ -135,6 +135,7 @@ Section "SecureSpan Bridge" SecCopyUI
   File "${BUILD_DIR}\..\installer\proxy\win32\SSBService.exe"
   File "${BUILD_DIR}\..\installer\proxy\win32\enableKerberos.reg"
   File "${BUILD_DIR}\..\src\com\l7tech\proxy\resources\logging.properties"
+  File /r "${BUILD_DIR}\..\installer\Bridge-${MUI_VERSION}\help"
 
   SetOutPath "$INSTDIR/lib"
   ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
@@ -238,6 +239,7 @@ Section "Uninstall"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
   RMDir "$INSTDIR\lib"
   RMDir /r "$INSTDIR\jre"
+  RMDir /r "$INSTDIR\help"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\SSBService.exe"
   Delete "$INSTDIR\logging.properties"
