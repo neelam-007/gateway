@@ -12,6 +12,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -23,6 +24,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,15 +36,18 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion im
     private final Auditor auditor;
 
     private final String message;
+    private final byte[] messageBytesNoVar;
     private final int status;
     private final ContentTypeHeader contentType;
     private final String[] variablesUsed;
 
-    public ServerHardcodedResponseAssertion(HardcodedResponseAssertion ass, ApplicationContext springContext) {
+    public ServerHardcodedResponseAssertion(HardcodedResponseAssertion ass, ApplicationContext springContext)
+            throws PolicyAssertionException
+    {
         super(ass);
         auditor = new Auditor(this, springContext, logger);
+
         ContentTypeHeader ctype;
-        variablesUsed = ass.getVariablesUsed();
         try {
             ctype = ContentTypeHeader.parseValue(ass.getResponseContentType());
         } catch (IOException e) {
@@ -50,18 +55,22 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion im
             // as warning and fallback on a safe value
             logger.log(Level.WARNING, "Error parsing content type. Falling back on text/plain", e);
             try {
-                contentType = ContentTypeHeader.parseValue("text/plain");
+                ctype = ContentTypeHeader.parseValue("text/plain");
             } catch (IOException e1) {
                 // can't happen
                 throw new RuntimeException(e);
             }
-            message = ass.responseBodyString();
-            status = ass.getResponseStatus();
-            return;
         }
-        contentType = ctype;
-        message = ass.responseBodyString();
-        status = ass.getResponseStatus();
+        this.contentType = ctype;
+
+        variablesUsed = ass.getVariablesUsed();
+        this.message = ass.responseBodyString();
+        this.status = ass.getResponseStatus();
+        try {
+            messageBytesNoVar = this.message.getBytes(contentType.getEncoding());
+        } catch (UnsupportedEncodingException e) {
+            throw new PolicyAssertionException(assertion, "Invalid encoding for hardcoded response: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -85,11 +94,15 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion im
         hrk.setStatus(status);
         response.close();
         try {
-            String msg = message;
+            final byte[] bytes;
             if (variablesUsed.length > 0) {
+                String msg = message;
                 msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor));
+                bytes = msg.getBytes(contentType.getEncoding());
+            } else {
+                bytes = this.messageBytesNoVar;
             }
-            response.initialize(stashManager, contentType, new ByteArrayInputStream(msg.getBytes(contentType.getEncoding())));
+            response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
             response.attachHttpResponseKnob(hrk);
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
