@@ -26,11 +26,20 @@ public interface UpgradeTask {
      * To signal a warning, but allow the Gateway to continue startup anyway, implementors of this method should
      * throw NonfatalUpgradeException.  The Gateway will roll back the upgrade transaction and continue.
      * <p/>
-     * If this method returns, the Gateway will commit the  
+     * If this method returns, the Gateway will commit the transaction.
+     * <p/>
+     * <b>Auditing note:</b> if this method throws, the result rollback will include audit messages as well
+     * (except for any logging component, of course).  If you want any information to make it into the audit log
+     * and stay there you'll need to wrap it up in whichever UpgradeException you throw to signal failure.
      *
      * @param applicationContext Spring application context from which to get whatever admin beans are needed to
      *                           perform the configuration upgrade.  Never null.
-     * @throws
+     * @throws NonfatalUpgradeException if this upgrade task failed and should be retried on next bootup,
+     *                                  other upgrade tasks should still be attempted, and SSG startup should
+     *                                  still attempt to continue.
+     * @throws FatalUpgradeException if this upgrade task failed and should be retried on next bootup,
+     *                               and the SSG should immediately halt without attempting any further
+     *                               upgrade tasks or continuing to start up.
      */
     void upgrade(ApplicationContext applicationContext) throws NonfatalUpgradeException, FatalUpgradeException;
 }
