@@ -79,11 +79,6 @@ public class BootProcess
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         serverConfig = config;
-        try {
-            setSystemProperties(config);
-        } catch (IOException e) {
-            throw new LifecycleException("Couldn't set system properties", e);
-        }
     }
 
     public void start() throws LifecycleException {
@@ -260,37 +255,6 @@ public class BootProcess
         }
 
         logger.info("Initialized server");
-    }
-
-    private void setSystemProperties(ServerConfig config) throws IOException {
-        // Set system properties
-        String sysPropsPath = config.getPropertyCached(ServerConfig.PARAM_SYSTEMPROPS);
-        File propsFile = new File(sysPropsPath);
-        Properties props = new Properties();
-
-        // Set default properties
-        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(30 * 1000));
-        props.setProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain ssl");
-
-        InputStream is = null;
-        try {
-            if (propsFile.exists()) {
-                is = new FileInputStream(propsFile);
-            } else {
-                is = BootProcess.class.getResourceAsStream("system.properties");
-            }
-
-            if (is != null) props.load(is);
-
-            for (Object o : props.keySet()) {
-                String name = (String) o;
-                String value = (String) props.get(name);
-                logger.info("Setting system property " + name + "=" + value);
-                System.setProperty(name, value);
-            }
-        } finally {
-            if (is != null) is.close();
-        }
     }
 
     /**

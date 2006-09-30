@@ -13,14 +13,18 @@
 
     <bean id="rmiConfigCheck" class="com.l7tech.spring.remoting.rmi.RmiConfigCheck"/>
 
+    <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
     <!-- SSG boot process -->
-    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener">
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties">
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
     </bean>
 
-    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess">
+    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="jmsConnectionManager"/>
@@ -161,7 +165,7 @@
     <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
           class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"></bean>
     <!-- server side Cluster Info manager -->
-    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl">
+    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl" depends-on="systemProperties">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>

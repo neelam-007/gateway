@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
  *
  */
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
+    private static final String PROP_MAC_ADDRESS = "com.l7tech.cluster.macAddress";
     private KeystoreUtils keystore;
 
     private final String HQL_FIND_ALL =
@@ -322,20 +323,33 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      */
     private Collection getMacs() {
         ArrayList<String> output = new ArrayList<String>();
-        output.addAll(getIfconfigMac());
+
+        // try to get mac from system property
+        String macproperty = System.getProperty(PROP_MAC_ADDRESS);
+        if (macproperty != null && macproperty.length() > 0) {
+            output.add(macproperty);
+        } else {
+            logger.fine("Cannot get mac address from system property ('"+PROP_MAC_ADDRESS+"').");
+        }
+
+        // try to get mac from ifconfig
         if (output.isEmpty()) {
-            logger.finest("cannot get mac from ifconfig, trying to get from global property");
-            // try to get mac from global property
-            String macproperty = System.getProperty("com.l7tech.cluster.macAddress");
-            if (macproperty != null && macproperty.length() > 0) {
-                output.add(macproperty);
-                return output;
+            output.addAll(getIfconfigMac());
+            if (output.isEmpty()) {
+                logger.fine("Cannot get mac address from ifconfig.");
             }
         }
+
+        // try to get mac from ipconfig
         if (output.isEmpty()) {
-            logger.finest("cannot get mac either from ifconfig nor global property, trying with ipconfig.");
             output.addAll(getIpconfigMac());
+            if (output.isEmpty()) {
+                logger.fine("Cannot get mac address from ipconfig.");
+            }
         }
+
+        logger.config("Using mac addresses: " + output);
+
         return output;
     }
 
