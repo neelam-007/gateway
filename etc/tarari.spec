@@ -1,6 +1,6 @@
 Summary: Tarari Support for SecureSpan Gateway
 Name: ssg-tarari
-Version: 3.6
+Version: 3.7
 Release: 1
 Group: Applications/Internet
 License: Copyright Layer7 Technologies. Portions copyright Tarari 2003-2006
