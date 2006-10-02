@@ -573,13 +573,15 @@ public class LogPanel extends JPanel {
         String output = cachedAuditMessages.get(id);
         if (output == null) {
             Registry reg = Registry.getDefault();
-            try {
-                ClusterProperty prop = reg.getClusterStatusAdmin().findPropertyByName(Messages.OVERRIDE_PREFIX + id);
-                if (prop != null) output = prop.getValue();
-            } catch (RemoteException e) {
-                logger.log(Level.WARNING, "cannot get property", e);
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "cannot get property", e);
+            if (reg.isAdminContextPresent()) {
+                try {
+                    ClusterProperty prop = reg.getClusterStatusAdmin().findPropertyByName(Messages.OVERRIDE_PREFIX + id);
+                    if (prop != null) output = prop.getValue();
+                } catch (RemoteException e) {
+                    logger.log(Level.WARNING, "cannot get property", e);
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "cannot get property", e);
+                }
             }
             if (output == null) {
                 output = Messages.getMessageById(id);
