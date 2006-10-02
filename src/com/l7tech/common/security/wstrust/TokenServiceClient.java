@@ -249,7 +249,7 @@ public class TokenServiceClient {
                                                                 appliesToAddress,
                                                                 wstIssuerAddress,
                                                                 timestampCreatedDate);
-        requestDoc.getDocumentElement().setAttribute("xmlns:saml", tokenType.getWstPrototypeElementNs());
+        requestDoc.getDocumentElement().setAttribute("xmlns:saml", (tokenType == null ? SecurityTokenType.SAML_ASSERTION : tokenType).getWstPrototypeElementNs());
         Object result = obtainResponse(clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, httpBasicCredentials, requireWssSignedResponse);
 
         if (!(result instanceof SamlAssertion))
