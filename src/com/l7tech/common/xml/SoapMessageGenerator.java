@@ -35,6 +35,8 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SoapMessageGenerator {
+
+    public static final String PREFIX_SOAP = "soapenv";
     private MessageInputGenerator messageInputGenerator;
     private Wsdl wsdl;
 
@@ -202,10 +204,10 @@ public class SoapMessageGenerator {
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
-        setPrefix("soapenv", envelope);
+        setPrefix(PREFIX_SOAP, envelope);
         envelope.removeNamespaceDeclaration("SOAP-ENV");
-        setPrefix("soapenv", envelope.getBody());
-        setPrefix("soapenv", envelope.getHeader());
+        setPrefix(PREFIX_SOAP, envelope.getBody());
+        setPrefix(PREFIX_SOAP, envelope.getHeader());
         verifyNamespaces(envelope);
         String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
 
@@ -251,7 +253,8 @@ public class SoapMessageGenerator {
 
         String requirePrefixes[][] = {
             {NamespaceConstants.NSPREFIX_SCHEMA_XSD, NamespaceConstants.NSURI_SCHEMA_XSD},
-            {NamespaceConstants.NSPREFIX_SCHEMA_XSI, NamespaceConstants.NSURI_SCHEMA_XSI}
+            {NamespaceConstants.NSPREFIX_SCHEMA_XSI, NamespaceConstants.NSURI_SCHEMA_XSI},
+            {PREFIX_SOAP, SOAPConstants.URI_NS_SOAP_ENVELOPE},
         };
 
         for (int i = 0; i < requirePrefixes.length; i++) {
