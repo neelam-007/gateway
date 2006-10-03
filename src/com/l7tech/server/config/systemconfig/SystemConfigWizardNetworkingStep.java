@@ -391,7 +391,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
 
         printText(getEolChar() + HEADER_BOOTPROTO);
 
-        String input = getData(prompts, defaultValue);
+        String input = getData(prompts, defaultValue, new String[]{"1","2"});
         bootProto = StringUtils.equals("1", input)?NetworkingConfigurationBean.STATIC_BOOT_PROTO:NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO;
         return bootProto;
     }
