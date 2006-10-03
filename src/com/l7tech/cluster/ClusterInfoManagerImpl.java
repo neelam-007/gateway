@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.*;
@@ -210,8 +212,19 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                 anymac = mac;
                 ClusterNodeInfo output = getNodeStatusFromDB(mac);
                 if (output != null) {
-                    logger.finest("Using server " + output.getName() + " (" + output.getMac() + ")");
+                    if (!isValidIPAddress(output.getAddress())) {
+                        String newIpAddress = getIPAddress();
+                        output.setAddress(newIpAddress);
+                        try {
+                            recordNodeInDB(output);
+                        } catch (HibernateException e) {
+                            String msg = "Error saving node's new ip '"+newIpAddress+"'.";
+                            logger.log(Level.WARNING, msg, e);
+                        }
+                    }
+                    logger.config("Using server " + output.getName() + " (" + output.getMac() + ")");
                     selfId = mac;
+
                     return output;
                 }
             }
@@ -221,7 +234,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                 return selfPopulateClusterDB(anymac);
             }
 
-            logger.severe("should not get here. this server has no mac?");
+            logger.severe("Should not get here. this server has no mac?");
             return null;
         }
     }
@@ -521,6 +534,47 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             }
         }
         return thisNodeIPAddress;
+    }
+
+    /**
+     * Check if the given IP address is a valid IP address for this system.
+     */
+    private boolean isValidIPAddress(String address) {
+        boolean valid = true;
+
+        if (address == null) {
+            valid = false;
+        } else {
+            InetAddress hostAddress = null;
+            try {
+                hostAddress = InetAddress.getByName(address);
+            }
+            catch(UnknownHostException uhe) {
+                logger.log(Level.WARNING, "Cannot resolve address '"+address+"'", uhe);
+            }
+
+            if (hostAddress != null) {
+                try {
+                    boolean found = false;
+                    done:
+                    for(NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                        for(InetAddress inetAddress : Collections.list(networkInterface.getInetAddresses())) {
+                            if (inetAddress.equals(hostAddress)) {
+                                found = true;
+                                break done;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        valid = false;
+                        logger.log(Level.WARNING, "Address does not resolve to any local address '"+address+"'.");
+                    }
+                } catch(SocketException se) {
+                    logger.log(Level.WARNING, "Cannot get network interfaces to address.", se);
+                }
+            }
+        }
+        return valid;
     }
 
     public static String generateMulticastAddress() {
