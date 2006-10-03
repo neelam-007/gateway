@@ -459,6 +459,7 @@ CREATE TABLE community_schemas (
   name varchar(128) default '',
   tns varchar(128) default '',
   schema_xml mediumtext default '',
+  system tinyint(1) NOT NULL default 0,
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

@@ -289,6 +289,7 @@
         <property name="schema" column="schema_xml" type="string"/>
         <property name="name" column="name" type="string"/>
         <property name="tns" column="tns" type="string"/>
+        <property name="system" column="system" type="boolean"/>
     </class>
 
     <class name="com.l7tech.cluster.ClusterProperty" table="cluster_properties" lazy="false">

@@ -35,10 +35,19 @@ public class SchemaEntry extends NamedEntityImp {
         this.tns = tns;
     }
 
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
+    }
+
     public String toString() {
         return "SchemaEntry oid:" + getOid() + " schema: " + schema;
     }
 
     private String schema;
     private String tns;
+    private boolean system;
 }

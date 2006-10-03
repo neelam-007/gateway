@@ -114,6 +114,15 @@ public class SchemaEntryManagerImpl
         return completeList;
     }
 
+    private void updateSystem(SchemaEntry schemaEntry) {
+        if (schemaEntry != null) {
+            if (SOAP_SCHEMA_NAME.equals(schemaEntry.getName())) {
+                schemaEntry.setSystem(true);
+            } else {
+                schemaEntry.setSystem(false);
+            }
+        }
+    }
 
     /**
      * Find a schema from it's name (name column in community schema table)
@@ -165,6 +174,8 @@ public class SchemaEntryManagerImpl
             invalidateCompiledSchema(newSchema.getOid());
         }
 
+        updateSystem(newSchema);
+
         long res = super.save(newSchema);
 
         try {
@@ -182,6 +193,8 @@ public class SchemaEntryManagerImpl
         if (schemaEntry.getOid() != SchemaEntry.DEFAULT_OID) {
             invalidateCompiledSchema(schemaEntry.getOid());
         }
+
+        updateSystem(schemaEntry);
 
         super.update(schemaEntry);
 
@@ -239,6 +252,7 @@ public class SchemaEntryManagerImpl
         defaultEntry.setSchema(SOAP_SCHEMA);
         defaultEntry.setName(SOAP_SCHEMA_NAME);
         defaultEntry.setTns(SOAP_SCHEMA_TNS);
+        defaultEntry.setSystem(true);
         return defaultEntry;
     }
 

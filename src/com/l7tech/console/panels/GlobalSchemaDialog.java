@@ -43,10 +43,11 @@ import java.util.logging.Logger;
 public class GlobalSchemaDialog extends JDialog {
     private final Logger logger = Logger.getLogger(GlobalSchemaDialog.class.getName());
     private JTable schemaTable;
+    private JButton resetbutton;
     private JButton removebutton;
     private JButton editbutton;
     private JButton addbutton;
-    private ArrayList globalSchemas = new ArrayList();
+    private ArrayList<SchemaEntry> globalSchemas = new ArrayList<SchemaEntry>();
     private JButton helpbutton;
     private JPanel mainPanel;
     private JButton closebutton;
@@ -150,6 +151,12 @@ public class GlobalSchemaDialog extends JDialog {
             }
         });
 
+        resetbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                remove();
+            }
+        });
+
         removebutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 remove();
@@ -198,8 +205,16 @@ public class GlobalSchemaDialog extends JDialog {
         validSelection = selectedRow >= 0;
 
         addbutton.setEnabled(flags.canCreateSome());
-        removebutton.setEnabled(flags.canDeleteSome() && validSelection);
-
+        removebutton.setEnabled(false);
+        resetbutton.setEnabled(false);
+        if (flags.canDeleteSome() && validSelection) {
+            SchemaEntry schemaEntry = globalSchemas.get(schemaTable.getSelectedRow());
+            if (schemaEntry.isSystem()) {
+                resetbutton.setEnabled(true);
+            } else {
+                removebutton.setEnabled(true);                
+            }
+        }
         editbutton.setText(flags.canUpdateSome()?"Edit":"View");
         editbutton.setEnabled(validSelection);
     }
