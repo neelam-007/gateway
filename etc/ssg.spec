@@ -1,9 +1,9 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.6m4d
+Version: 3.7m1
 Release: 1
 Group: Applications/Internet
-License: Copyright Layer7 Technologies 2003-2005
+License: Copyright Layer7 Technologies 2003-2006
 URL: http://www.layer7tech.com
 Packager: Layer7 Technologies, <support@layer7tech.com>
 Source0: ~/rpm/SOURCES/ssg.tar.gz
@@ -172,13 +172,6 @@ else
     /sbin/chkconfig --add ssgsysconfig
 fi
 
-SYSLOGENTRY=`grep ^java.*/dev/null$ /etc/syslog.conf`
-if [ -n "${SYSLOGENTRY}" ]; then
-    echo -n ""
-else
-    echo "java.*                     /dev/null" >> /etc/syslog.conf
-fi
-
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
 /bin/chown -Rf gateway.gateway /ssg
 chmod -Rf 775 /ssg/configwizard
@@ -216,14 +209,7 @@ if [ "$1" = "0" ] ; then
         perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
     fi
 
-	SYSLOGENTRY=`grep ^java.*/dev/null$ /etc/syslog.conf`
-	if [ -n "${SYSLOGENTRY}" ]; then
-        perl -pi.bak -e 's/^java.*\/dev\/null$//g' /etc/syslog.conf
-    else
-        echo -n ""
-    fi
-
-	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
+    gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
 
 	if [ "$gettys" ]; then
 		perl -pi.bak -e 's/^s0.*agetty.*//' /etc/inittab
@@ -235,6 +221,8 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog
+* Mon Sep 25 2006 CY
+- 3.6rc4
 * Mon Aug 21 2006 CY
 - 3.6m4d-1
 * Mon Aug 14 2006 CY
