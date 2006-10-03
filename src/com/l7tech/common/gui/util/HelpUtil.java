@@ -26,7 +26,7 @@ public class HelpUtil {
     /**
      * the path to WebHelp start file, relative to the working dir.
      */
-    public static final String HELP_FILE_NAME = "help/!_start_!.htm";
+    public static final String HELP_FILE_NAME = "help/_start.htm";
     private static BrowserLauncher browserLauncher;
 
     /**
