@@ -226,8 +226,10 @@ public class JmsBootProcess implements InitializingBean, DisposableBean, Applica
      */
     // todo make this idempotent?
     private void stop() {
-        connectionChecker.cancel();
-        endpointChecker.cancel();
+        if (connectionChecker != null)
+            connectionChecker.cancel();
+        if (endpointChecker != null)
+            endpointChecker.cancel();
         for (JmsReceiver receiver : activeReceivers) {
             logger.info("Stopping and closing JMS receiver '" + receiver.toString() + "'");
             stopAndClose(receiver);
