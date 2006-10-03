@@ -3,38 +3,33 @@
 <project name="modules" default="package">
 
     <description>
-    Builds all modules.
+        Builds all modules.
     </description>
 
-    <!-- Extra Ant tasks definitions -->
-    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
-        <classpath>
-            <pathelement location="../lib/ant-contrib.jar"/>
-        </classpath>
-    </taskdef>
+    <target name="OFFICIAL-package-init-version" unless="build.version">
+        <!-- Prompt for version number if not already supplied by a calling build file. -->
+        <input message="Enter a version number:" addproperty="build.version"/>
+    </target>
 
     <target name="OFFICIAL-package"
-            description="Creates the distributables after prompting for a version number.">
-        <!-- Prompt for version number if not already supplied by a calling build file. -->
-        <if>
-            <not>
-                <isset property="build.version"/>
-            </not>
-            <then>
-                <input message="Enter a version number:" addproperty="build.version"/>
-            </then>
-        </if>
-        <ant dir="ca_wsdm" target="OFFICIAL-package" inheritAll="false">
+            description="Creates the distributables after prompting for a version number."
+            depends="OFFICIAL-package-init-version">
+        <subant target="OFFICIAL-package" inheritAll="false" verbose="true">
             <property name="build.version" value="${build.version}"/>
-        </ant>
+            <fileset dir="."  includes="*/build.xml"/>
+        </subant>
     </target>
 
     <target name="package" description="Creates the distributables.">
-        <ant dir="ca_wsdm" target="package" inheritAll="false"/>
+        <subant genericantfile="build.xml" target="package" inheritAll="false" verbose="true">
+            <fileset dir="." includes="*/build.xml"/>
+        </subant>
     </target>
 
     <target name="clean" description="Deletes all generated files.">
-        <ant dir="ca_wsdm" target="clean" inheritAll="false"/>
+        <subant target="clean" inheritAll="false" verbose="true">
+            <fileset dir="." includes="*/build.xml"/>
+        </subant>
     </target>
 
 </project>

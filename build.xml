@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Ant build file for UneasyRooster
--->
 <project name="UneasyRooster" default="dev" basedir=".">
-<!-- Uncomment for jikes/emacs to be used
-    <property name="build.compiler" value="jikes"/>
-    <property name="build.compiler.emacs" value="true"/> -->
+    <description>
+        Ant build file for UneasyRooster
+    </description>
+
+    <!-- override configuration with user properties -->
+    <property file="${user.home}/build.properties"/>
 
     <!-- Set src.root to ${basedir} if not already set -->
     <property name="src.root" location="${basedir}"/>
@@ -13,17 +13,12 @@
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
 
-    <!-- override configuration with user properties -->
-    <property file="${user.home}/build.properties"/>
-
-<!--
-      ** Set default build properties
-      ** Properties that were not specified in user properties
+    <!--
+      Set default build properties
+      Properties that were not specified in user properties
+      Mainly DB info, compiler settings, etc.
     -->
     <property file="${src.root}/etc/default_build.properties"/>
-
-    <!-- where the builds go -->
-    <property name="dev.build.home" value="${src.root}/build"/>
 
     <!-- distribution archive names -->
     <property name="war" value="ROOT.war"/>
@@ -32,29 +27,35 @@
     <path id="project.classpath">
         <pathelement location="src"/>
         <fileset dir="lib">
-            <include name="**/*.jar"/>
-            <include name="**/*.zip"/>
-<!--
-               * Issue with multiple parsers.
-               * JDK 1.4 ships it's own parses and contributes to the
-               * overall parser mess. java.beans.XmlEncoder and other
-               * classes  do not like xerces so excluded it from project
-               * classpath.
-               * It is not throughly tested to see if this breaks other things.
-
-           fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
-           <exclude name="*xerces*"/>
-           <exclude name="*xml-api*"/>
-           -->
-           <!-- Exclude since this is not necessary to compile and it includes old
-                versions of some of the xml-apis.jar classes -->
-           <exclude name="xml4j.jar"/>
-           <!-- Exclude build related classes -->
-           <exclude name="ant.jar"/>
-           <exclude name="optional.jar"/>
+            <!--
+              include bc provider before tarari_jce_provider since that
+              contains old copies of the bc classes.
+            -->
+            <include name="crypto/bc/**/*.jar"/>
         </fileset>
         <fileset dir="lib">
-            <include name="*.zip"/>
+            <include name="**/*.jar"/>
+            <include name="**/*.zip"/>
+
+            <!--
+               Issue with multiple parsers.
+               JDK 1.4 ships it's own parses and contributes to the
+               overall parser mess. java.beans.XmlEncoder and other
+               classes  do not like xerces so excluded it from project
+               classpath.
+               fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
+            <exclude name="*xerces*"/>
+            <exclude name="*xml-api*"/>
+            -->
+            <!--
+              Exclude since this is not necessary to compile and it includes old
+              versions of some of the xml-apis.jar classes
+            -->
+            <exclude name="xml4j.jar"/>
+
+            <!-- Exclude build related classes -->
+            <exclude name="ant.jar"/>
+            <exclude name="optional.jar"/>
         </fileset>
     </path>
 
@@ -73,9 +74,33 @@
     <!--
       Task definition for Idea form compiler
     -->
-    <taskdef name="javac2"
+    <taskdef name="javac2t"
              classname="com.intellij.ant.Javac2"
              classpathref="uidesigner.classpath"/>
+
+    <macrodef name="javac2">
+        <attribute name="srcdir"/>
+        <attribute name="destdir"/>
+        <attribute name="debug" default="on"/>
+        <attribute name="target" default="1.4"/>
+        <attribute name="source" default="1.4"/>
+        <attribute name="optimize" default="on"/>
+        <attribute name="classpathref" default="project.classpath"/>
+        <attribute name="include" default="**/*.form"/>
+        <sequential>
+            <javac2t
+                    srcdir="@{srcdir}"
+                    destdir="@{destdir}"
+                    debug="@{debug}"
+                    target="@{target}"
+                    optimize="@{optimize}"
+                    source="@{source}"
+                    classpathref="@{classpathref}">
+                <include name="@{include}"/>
+            </javac2t>
+        </sequential>
+    </macrodef>
+
 
     <!--
       Classpath for obfuscation
@@ -101,19 +126,190 @@
     </taskdef>
 
     <!--
-      ** init dev target The "dev" target depends on this target.
-      -->
-    <target name="init-dev">
-        <property name="build.dir" value="${dev.build.home}"/>
+      Patternset used for Layer 7 API compilation/javadoc
+    -->
+    <patternset id="layer7api.sources">
+        <include name="com/l7tech/policy/assertion/Assertion.java"/>
+        <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
+        <include name="com/l7tech/policy/assertion/composite/**"/>
+        <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
+        <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
+        <include name="com/l7tech/policy/assertion/ext/Category.java"/>
+        <include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>
+        <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
+        <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
+        <include name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>
+        <include name="com/l7tech/policy/assertion/ext/EditListener.java"/>
+        <include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>
+        <include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>
+        <include name="com/l7tech/policy/assertion/ext/ServiceResponse.java"/>
+        <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
+    </patternset>
+
+    <!--
+      License Generator library patternset (also ".")
+    -->
+    <patternset id="licensegenerator.libs">
+        <include name="**/kunststoff.jar"/>
+        <include name="**/xercesImpl.jar"/>
+        <include name="**/xml-apis.jar"/>
+        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-discovery.jar"/>
+        <include name="**/qname.jar"/>
+        <include name="**/forms_rt.jar"/>
+        <include name="**/xmlpad.jar"/>
+        <include name="**/xmlpad-res.jar"/>
+        <include name="**/xss4j.jar"/>
+        <include name="**/log4j.jar"/>
+        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/xalan-2.5.2.jar"/>
+        <include name="**/saaj.jar"/>
+    </patternset>
+
+    <!--
+      Configuration Wizard library patternset (also ".")
+    -->
+    <patternset id="configurationwizard.libs">
+        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/forms_rt.jar"/>
+        <include name="**/mysql-connector-java-3.0.14-stable-bin.jar"/>
+        <include name="**/xss4j.jar"/>
+        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/kunststoff.jar"/>
+        <include name="**/whirlycache-0.7.1.jar"/>
+        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/oswego-concurrent.jar"/>
+        <include name="**/commons-collections-2.1.1.jar"/>
+    </patternset>
+
+    <!--
+      System Configuration Wizard library patternset  (also ".")
+    -->
+    <patternset id="systemconfigurationwizard.libs">
+        <include name="**/lib/commons-lang-1.0.1.jar"/>
+        <include name="**/lib/commons-logging-1.0.4.jar"/>
+    </patternset>
+
+    <!--
+      Bridge library patterset
+    -->
+    <patternset id="bridge.libs">
+        <include name="**/BrowserLauncher2-10rc4.jar"/>
+        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/jaxrpc.jar"/>
+        <include name="**/kunststoff.jar"/>
+        <include name="**/saaj.jar"/>
+        <include name="**/0500-wsdl4j.jar"/>
+        <include name="**/xercesImpl.jar"/>
+        <include name="**/xml-apis.jar"/>
+        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/xss4j.jar"/>
+        <include name="**/org.mortbay.jetty.jar"/>
+        <include name="**/commons-httpclient-2.0.2.jar"/>
+        <include name="**/servlet-api.jar"/>
+        <include name="**/systray4j.jar"/>
+        <include name="**/jaxen-1.1-beta-2-l7.jar"/>
+        <include name="**/saxpath.jar"/>
+        <include name="**/xbean.jar"/>
+        <include name="**/jsr173_1.0_api.jar"/>
+        <include name="**/xbean-saml1_1.jar"/>
+        <include name="**/xbean-saml2_0.jar"/>
+        <include name="**/xbean-xenc-xmldsig.jar"/>
+        <include name="**/forms_rt.jar"/>
+        <include name="**/xml4j.jar"/>
+        <include name="**/are.jar"/>
+        <include name="**/mailapi-1.3.2.jar"/>
+        <include name="**/activation.jar"/>
+        <include name="**/spring-context.jar"/>
+        <include name="**/xalan-2.5.2.jar"/>
+        <include name="**/nekohtml.jar"/>
+        <include name="**/commons-discovery.jar"/>
+        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/whirlycache-0.7.1.jar"/>
+        <include name="**/oswego-concurrent.jar"/>
+        <include name="**/policy-1.0.jar"/>
+    </patternset>
+
+    <!--
+      Manager library patternset
+    -->
+    <patternset id="manager.libs">
+        <include name="**/BrowserLauncher2-10rc4.jar"/>
+        <include name="**/jnlp.jar"/>
+        <include name="**/looks-1.1.3.jar"/>
+        <include name="**/hibernate3.jar"/>
+        <include name="**/nachocalendar.jar"/>
+        <include name="**/kunststoff.jar"/>
+        <include name="**/oswego-concurrent.jar"/>
+        <include name="**/0500-wsdl4j.jar"/>
+        <include name="**/xercesImpl.jar"/>
+        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-collections-2.1.1.jar"/>
+        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-discovery.jar"/>
+        <include name="**/qname.jar"/>
+        <include name="**/forms_rt.jar"/>
+        <include name="**/xmlpad.jar"/>
+        <include name="**/xmlpad-res.jar"/>
+        <include name="**/jaxen-1.1-beta-2-l7.jar"/>
+        <include name="**/saxpath.jar"/>
+        <include name="**/jaxrpc.jar"/>
+        <include name="**/saaj.jar"/>
+        <include name="**/saaj-impl.jar"/>
+        <include name="**/dom4j-1.6.1.jar"/>
+        <include name="**/xss4j.jar"/>
+        <include name="**/spring-aop.jar"/>
+        <include name="**/spring-core.jar"/>
+        <include name="**/spring-context.jar"/>
+        <include name="**/spring-dao.jar"/>
+        <include name="**/spring-beans.jar"/>
+        <include name="**/spring-remoting.jar"/>
+        <include name="**/aopalliance.jar"/>
+        <include name="**/mailapi-1.3.2.jar"/>
+        <include name="**/antlr-2.7.6rc1.jar"/>
+        <include name="**/log4j.jar"/>
+        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/jsr173_1.0_api.jar"/>
+        <include name="**/xalan-2.5.2.jar"/>
+        <include name="**/xstream-1.1.3.jar"/>
+        <include name="**/jcommon-1.0.0.jar"/>
+        <include name="**/jfreechart-1.0.1.jar"/>
+        <include name="**/whirlycache-0.7.1.jar"/>
+        <include name="**/policy-1.0.jar"/>
+        <include name="**/commons-httpclient-2.0.2.jar"/>
+        <include name="**/activation.jar"/>
+        <include name="**/systinet-uddiclient_api_v3.jar"/>
+        <include name="**/systinet-uddiclient_core.jar"/>
+        <include name="**/systinet-jaxm.jar"/>
+        <include name="**/systinet-saaj.jar"/>
+        <include name="**/systinet-wasp.jar"/>
+        <include name="**/systinet-jaxrpc.jar"/>
+    </patternset>
+
+    <!--
+      Gateway library patternset (not used but needed for nsis task)
+    -->
+    <patternset id="gateway.libs">
+    </patternset>
+
+    <!--
+      Initialize build properties
+    -->
+    <target name="init">
+        <property name="build.dir" value="${src.root}/build"/>
         <property name="build.classes" value="${build.dir}/classes"/>
         <property name="build.test.classes" value="${build.dir}/test-classes"/>
         <property name="doc.root" value="${build.dir}/htdocs"/>
         <property name="build.lib" value="${build.dir}/lib"/>
         <property name="build.etc" value="${build.dir}/etc"/>
+        <property name="build.installer" value="${src.root}/installer"/>
 
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
         <property name="app.name" value="Layer 7 SecureSpan Suite"/>
+        <property name="vendor.name" value="Layer 7 Technologies Inc."/>
 
         <condition property="db.mysql">
             <equals arg1="${database.type}" arg2="mysql"/>
@@ -141,26 +337,39 @@
             <pathelement location="${build.classes}"/>
         </path>
 
+        <available property="makensis.available" file="${build.install.compiler}"/>
     </target>
 
+    <!--
+      Shortcut target for clean dev
+    -->
     <target name="cleandev" depends="clean, dev"/>
+
+    <!--
+      Shortcut target for clean undeploy deploy
+    -->
     <target name="redeploy" depends="undeploy, deploy"/>
 
-    <target name="dev.properties">
+    <!--
+      Initialization for a dev build.
+    -->
+    <target name="init-dev">
         <property name="dev.build" value="true"/>
         <property file="build.number"/>
     </target>
 
     <!--
-      ** configure and invoke developer's build
+      Configure and invoke developer's build
       -->
-    <target name="dev" description="Developer build (does not package)" depends="init-dev, dev.properties, compile-tests"/>
+    <target name="dev"
+            description="Developer build (does not package)"
+            depends="init-dev, compile-tests"/>
 
     <!--
-      ** configure and invoke developer's build for source files
-      ** that match the pattern passed as -Dcompile.pattern
-      -->
-    <target name="compile-one" depends="init-dev" if="compile.pattern">
+      Configure and invoke developer's build for source files
+      that match the pattern passed as -Dcompile.pattern
+    -->
+    <target name="compile-one" depends="init" if="compile.pattern">
         <echo message="Compiling **/*${compile.pattern}* in ${src.root}."/>
         <javac srcdir="src" destdir="${build.classes}" debug="on"
                optimize="off" includes="**/*${compile.pattern}*"
@@ -169,22 +378,32 @@
         </javac>
     </target>
 
-    <target name="undeploy" depends="init-dev, properties.check" if="tomcat.home">
+    <!--
+      Undeploy from Tomcat
+    -->
+    <target name="undeploy" depends="init">
+        <fail unless="tomcat.home">Property is not defined: 'tomcat.home'</fail>
+
         <delete dir="${tomcat.home}/webapps/ROOT"/>
         <delete file="${war}"/>
     </target>
 
-    <target name="deploy.properties">
+    <!--
+      Deploy target initialization
+    -->
+    <target name="deploy-init">
         <property name="dev.build" value="true"/>
         <property name="ssg.only" value="true"/>
     </target>
 
     <!--
-      ** developer's 'deploy' target.
-      ** compile and package the application.
-      ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
-      -->
-    <target name="deploy" depends="init-dev, properties.check, deploy.properties, package" if="tomcat.home">
+      Developer's 'deploy' target.
+      Compile and package the application and then deploy
+      the WAR into ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
+    -->
+    <target name="deploy" depends="deploy-init, package">
+        <fail unless="tomcat.home">Property is not defined: 'tomcat.home'</fail>
+
         <copy todir="${tomcat.home}/webapps">
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
@@ -214,35 +433,27 @@
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${tomcat.home}/conf/server.xml"/>
         <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${tomcat.home}/conf/truststore.ks"/>
         <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties" tofile="${tomcat.home}/conf/SsgSSLImplementation.properties"/>
-
     </target>
 
     <!--
       Display information on a Jar file
     -->
-    <target name="jarinfo" if="file">
+    <target name="jarinfo">
+        <fail unless="file">You must specify a JAR file [-Dfile=...]</fail>
         <echo level="info">Listing Jar file: ${file}</echo>
+        <!-- This just stops idea showing an error for the undefined property -->
+        <property name="file" value=""/>
         <jarlib-display file="${file}"/>
         <echo level="info">Listing complete (if theres no output you can try unzip -p ${file} META-INF/MANIFEST.MF)</echo>
-    </target>
-
-    <!-- Print a list of available unit tests (or things that may be tests) -->
-    <target name="summary" unless="test">
-        <echo level="info">Possible test classes are: </echo>
-        <pathconvert property="x" targetos="unix" pathsep="${line.separator}">
-            <map from="${build.test.classes}/" to=""/>
-            <path>
-                <fileset dir="${build.test.classes}" includes="**/*Test.class **/*Tests.class"/>
-            </path>
-        </pathconvert>
-        <echo>${x}</echo>
-        <echo level="info">NOTE: ** you will need to convert to a class name **</echo>
     </target>
 
     <!--
       Run a single JUnit test
     -->
-    <target name="test-one" description="Run an individual unit test. (e.g. ./build.sh testcase -Dtest=com.l7tech.MyTest.class)" depends="clean.test, dev, summary" if="test">
+    <target name="test-one"
+            description="Run an individual unit test. (e.g. ./build.sh testcase -Dtest=com.l7tech.MyTest.class)"
+            depends="clean.test, dev, summary"
+            if="test">
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
                 <path refid="project.test.classpath"/>
@@ -257,9 +468,27 @@
     </target>
 
     <!--
-      ** configure and invoke unit tests
-      -->
-    <target name="test" description="Run JUnit 'quick' tests" depends="test.work, test.report, checkfail"/>
+      Print a list of available unit tests (or things that may be tests)
+    -->
+    <target name="summary" unless="test">
+        <echo level="info">Possible test classes are: (use -Dtest=...)</echo>
+        <pathconvert property="x" targetos="unix" pathsep="${line.separator}">
+            <map from="${build.test.classes}/" to=""/>
+            <path>
+                <fileset dir="${build.test.classes}" includes="**/*Test.class **/*Tests.class"/>
+            </path>
+        </pathconvert>
+        <echo>${x}</echo>
+        <echo level="info">NOTE: ** you will need to convert to a class name **</echo>
+    </target>
+
+    <!--
+      Configure and invoke unit tests
+    -->
+    <target name="test" description="Run JUnit 'quick' tests" depends="test.work, test.report">
+        <checkfail/>
+    </target>
+
     <target name="test.work" depends="clean.test, dev">
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
@@ -288,32 +517,38 @@
             <test name="com.l7tech.common.util.EncryptionUtilTest" haltonfailure="no"/>
             <test name="com.l7tech.server.GatewayFeatureSetsTest" haltonfailure="no"/>
 
-            <!-- Move these WS-SecurityPolicy tests to test.intensive after a release or so, when it's no longer so new. -->
+            <!--
+              Move these WS-SecurityPolicy tests to test.intensive after a release
+              or so, when it's no longer so new.
+            -->
             <test name="com.l7tech.policy.wssp.WsspReaderTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.wssp.WsspWriterTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.wssp.WsspRoundTripTest" haltonfailure="no"/>
 
-<!--
-             ** add policy tests into the com.l7tech.policy.AllPolicyTests class
+            <!--
+              Add policy tests into the com.l7tech.policy.AllPolicyTests class
             -->
             <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no" fork="yes"/>
-<!--
 
-            ** Tomcat config. When done enable the tests below.
-            **
-           <test name="com.l7tech.logging.LogCLientTest" haltonfailure="no"/>
-           <test name="com.l7tech.identity.ClientTest" haltonfailure="no"/>
-           <test name="com.l7tech.service.ServiceAdminTest" haltonfailure="no"/>
-           -->
-<!--
-              ** add fast precheckin tests here **
-              -->
+            <!--
+              Tomcat config. When done enable the tests below.
+              <test name="com.l7tech.logging.LogCLientTest" haltonfailure="no"/>
+              <test name="com.l7tech.identity.ClientTest" haltonfailure="no"/>
+              <test name="com.l7tech.service.ServiceAdminTest" haltonfailure="no"/>
+            -->
+
+            <!--
+              Add fast precheckin tests here **
+            -->
         </junit>
     </target>
 
     <target name="test.intensive"
             description="Run intensive JUnit tests."
-            depends="clean.test, test.work, test.intensive.work, test.report, checkfail"/>
+            depends="clean.test, test.work, test.intensive.work, test.report">
+        <checkfail/>
+    </target>
+
     <target name="test.intensive.work" depends="clean.test, dev">
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
@@ -359,14 +594,19 @@
             <test name="com.l7tech.common.security.saml.Saml2ValidationTest" haltonfailure="no" />
             <test name="com.l7tech.common.xml.ElementCursorTest" haltonfailure="no"/>
 
-<!--
-** add possibly-slow intensive nightly tests here **
--->
+            <!--
+              Add possibly-slow intensive nightly tests here **
+            -->
         </junit>
     </target>
 
-    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, testpackage.work, test.report, testpackage.report, checkfail"/>
+    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, testpackage.work, test.report, testpackage.report">
+        <checkfail/>
+    </target>
 
+    <!--
+      Targets to optionally print failure warnings
+    -->
     <target name="test.report" depends="test.report.error, test.report.failure"/>
     <target name="test.report.error" if="test.error">
         <echo level="warning">One or more JUnit tests exited due to error.</echo>
@@ -380,7 +620,7 @@
     <!--
       Clean data from running tests.
     -->
-    <target name="clean.test" depends="init-dev">
+    <target name="clean.test" depends="init">
         <delete>
             <fileset dir="${src.root}/">
                 <include name="TEST*"/>
@@ -392,20 +632,12 @@
                 <include name="stubdata*"/>
             </fileset>
         </delete>
-        <!-- Not really feasible to delete all the test classes (leaving other classes)
-        <delete>
-            <fileset dir="${src.root}">
-                <include name="build/classes/**/*Test.class"/>
-            </fileset>
-        </delete>
-        -->
     </target>
 
     <!--
-      ** Clean the directory structure.
-      ** This is used only by developer's build.
-      -->
-    <target name="clean" depends="init-dev,clean.test" description="Delete all build output.">
+      Remove any build artifacts
+    -->
+    <target name="clean" depends="init,clean.test,clean.modules" description="Delete all build output.">
         <delete dir="${build.classes}"/>
         <delete dir="${build.test.classes}"/>
         <delete dir="${doc.root}"/>
@@ -436,8 +668,10 @@
         <property name="buildinfo.update" value="true"/>
     </target>
 
-    <!-- javadoc target -->
-    <target name="javadoc" depends="init-dev,prepare" description="Generates Javadoc.">
+    <!--
+        Javadoc target
+    -->
+    <target name="javadoc" depends="init,prepare" description="Generates Javadoc.">
         <delete includeEmptyDirs="true" quiet="true">
             <fileset dir="${javadoc.home}" includes="**/*"/>
         </delete>
@@ -474,7 +708,10 @@
         </javadoc>
     </target>
 
-    <target name="compile.main" depends="init-dev, prepare, configure_properties.dev, compile13, compile14">
+    <!--
+      Perform compilation of the main sources
+    -->
+    <target name="compile.main" depends="init, prepare, compile13, compile14">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
                deprecation="on" verbose="no" target="1.5" source="1.5">
             <compilerarg value="-Xlint" compiler="modern"/>
@@ -499,8 +736,8 @@
     </target>
 
     <!--
-      ** main compile target
-      -->
+      Compile target
+    -->
     <target name="compile"
             description="Compile the Java code and UI forms."
             depends="compile.forms"
@@ -508,25 +745,79 @@
     </target>
 
     <!--
-      ** 'package' target.
-      ** package the application ( both client and server) in their
-      ** respective archives (war, jar).
-      ** This target is invoked by other targets such as deploy and dist.
-      -->
+      Package target.
+      Package the application (gateway, manager, bridge) into their
+      Respective archives (war, jar).
+      This target is invoked by other targets such as deploy and dist.
+    -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz, package.systemconfigwiz, package.modules"/>
+            depends="package.readversion, package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz.all, package.modules"/>
 
+
+    <!--
+      Build the windows installers without any dependencies.
+
+      This target is a direct replacement for the old perl "make_installers.pl -b"
+    -->
+    <target name="make_installers"
+            description="Create the SSG WAR file and SSB/SSM Win32 installers (was make_installers.pl -b)."
+            depends="package.installbridge.work, package.installmanager.work, package.installgateway.work">
+    </target>
+
+    <!--
+      Get the version for this build from the BuildInfo util.
+    -->
+    <target name="package.readversion" unless="build.version" depends="compile">
+        <java output="${build.etc}/build.version" classname="com.l7tech.common.BuildInfo">
+            <classpath>
+                <pathelement path="${build.classes}"/>
+            </classpath>
+        </java>
+        <replaceregexp file="${build.etc}/build.version" flags="s">
+            <regexp pattern=".* ([a-zA-Z0-9\-\._]{1,20}) build .*"/>
+            <substitution expression="build.version=\1"/>
+        </replaceregexp>
+        <property file="${build.etc}/build.version"/>
+        <echo level="info">BuildInfo reports version: "${build.version}"</echo>
+    </target>
+
+    <!--
+      Get the version for this build from the BuildInfo util.
+    -->
+    <target name="package.readversion.unsafe" unless="build.version" depends="init">
+        <java output="${build.etc}/build.version" classname="com.l7tech.common.BuildInfo">
+            <classpath>
+                <pathelement path="${build.classes}"/>
+            </classpath>
+        </java>
+        <replaceregexp file="${build.etc}/build.version" flags="s">
+            <regexp pattern=".* ([a-zA-Z0-9\-\._]{1,20}) build .*"/>
+            <substitution expression="build.version=\1"/>
+        </replaceregexp>
+        <property file="${build.etc}/build.version"/>
+        <echo level="info">BuildInfo reports version: "${build.version}"</echo>
+    </target>
+
+    <!--
+      Compile and package the SSB
+    -->
     <target name="bridge" description="Build and package the SSB" depends="package.installbridge"/>
+
+    <!--
+      Compile and package the SSM
+    -->
     <target name="manager" description="Build and package the SSM" depends="package.installmanager"/>
+
+    <!--
+      Compile and package the SSG
+    -->
     <target name="gateway" description="Build and package the SSG" depends="package.gateway"/>
 
-<!--
-      ** Non 'build' targets from this point; just various helper targets.
-      ** Please do not invoke below targets as main targets.
+    <!--
+      Package the SSG (WAR).
     -->
-
-    <target name="package.gateway" depends="compile">
+    <target name="package.gateway" depends="compile, configure_properties.dev">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
@@ -535,9 +826,6 @@
                 <include name="jboss-*.jar"/>
                 <include name="commons-logging-1.0.4.jar"/>
 
-                <!--<include name="tarari_xcx.jar"/>-->
-                <!--<include name="tarari_xpath.jar"/>-->
-                <!--<include name="tarari_raxj.jar"/>-->
                 <include name="activation.jar"/>
                 <include name="mailapi-1.3.2.jar"/>
                 <include name="smtp-1.3.2.jar"/>
@@ -596,7 +884,7 @@
                 <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
                 <include name="snmp4j.jar"/>
-                <include name="log4j.jar"/> <!-- todo find a way to use snmp4j without log4j -->
+                <include name="log4j.jar"/>
 
                 <include name="systinet-*.jar" if="include.systinet"/>
                 <include name="jaxrpc.jar" unless="include.systinet"/>
@@ -613,8 +901,10 @@
                 <include name="xml-apis.jar"/>
                 <include name="xss4j.jar"/>
 
-
                 <include name="xstream-1.1.2.jar"/>
+
+                <include name="ftpserver-dev.jar"/>
+                <include name="commons-net-1.4.1.jar"/>
 
                 <!-- Include OpenJMS on dev builds -->
                 <include name="openjms-client-0.7.6.jar" if="include.jms.openjms"/>
@@ -701,14 +991,14 @@
         </war>
 
         <jar jarfile="${build.dir}/l7valve.jar">
-            <fileset dir="${build.dir}/classes">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/tomcat/*.class"/>
                 <exclude name="com/l7tech/server/tomcat/ClientTrusting*.class"/>
             </fileset>
         </jar>
 
         <jar jarfile="${build.dir}/l7provider.jar">
-            <fileset dir="${build.dir}/classes">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/tomcat/ClientTrusting*.class"/>
             </fileset>
         </jar>
@@ -719,16 +1009,50 @@
                 <include name="activation.jar"/>
             </zipfileset>
             <zipfileset dir="${src.root}/etc/services/uddi-systinet" prefix="META-INF/services"/>
-            <fileset dir="${build.dir}/classes">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/service/uddi/impl/systinet/**"/>
             </fileset>
         </jar>
     </target>
 
+    <!--
+      Task to generate JAR file manifests with classpaths.
+    -->
+    <macrodef name="generate-manifest">
+        <attribute name="propertyPrefix"/>
+        <attribute name="filename"/>
+        <attribute name="pathPrefix" default=""/>
+        <element name="section" optional="yes"/>
+        <sequential>
+            <fileset id="@{propertyPrefix}.lib.fileset" dir="${src.root}/lib" casesensitive="yes">
+                <patternset refid="@{propertyPrefix}.libs"/>
+            </fileset>
+            <pathconvert property="@{propertyPrefix}.libs.path" targetos="unix" pathsep=" " refid="@{propertyPrefix}.lib.fileset">
+                <mapper type="regexp" from=".*/(.*)\.jar" to="lib/\1.jar"/>
+            </pathconvert>
+            <copy file="${src.root}/etc/@{filename}" tofile="${build.etc}/@{filename}" failonerror="false"/>
+            <manifest file="${build.etc}/@{filename}" mode="update">
+                <attribute name="Implementation-Title" value="${app.name}"/>
+                <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
+                <attribute name="Implementation-Vendor" value="${vendor.name}"/>
+                <attribute name="Class-Path" value="@{pathPrefix} ${@{propertyPrefix}.libs.path}"/>
+                <section/>
+            </manifest>
+        </sequential>
+    </macrodef>
+
+    <!--
+      Package the SSB (JAR)
+    -->
     <target name="package.bridge" unless="ssg.only" depends="compile">
         <!-- the client proxy jar -->
-        <jar jarfile="${build.dir}/Bridge.jar" manifest="${src.root}/etc/Bridge.mf">
-            <fileset dir="${build.dir}/classes">
+        <generate-manifest propertyPrefix="bridge" filename="Bridge.mf">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.proxy.gui.Main"/>
+            </section>
+        </generate-manifest>
+        <jar jarfile="${build.dir}/Bridge.jar" manifest="${build.etc}/Bridge.mf">
+            <fileset dir="${build.classes}">
                 <exclude name="**/*.form"/>
                 <exclude name="com/l7tech/internal/**/*"/>
 
@@ -784,9 +1108,17 @@
         </jar>
     </target>
 
+    <!--
+      Package the SSM (JAR)
+    -->
     <target name="package.manager" unless="ssg.only" depends="compile">
-        <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
-            <fileset dir="${build.dir}/classes">
+        <generate-manifest propertyPrefix="manager" filename="Manager.mf">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.console.Main"/>
+            </section>
+        </generate-manifest>
+        <jar jarfile="${build.dir}/Manager.jar" manifest="${build.etc}/Manager.mf">
+            <fileset dir="${build.classes}">
                 <exclude name="**/*.form"/>
                 <include name="**/*.xsd"/>
                 <include name="**/*.dtd"/>
@@ -879,11 +1211,28 @@
 
     </target>
 
-    <!-- Build LicenseGenerator package.  Always invoked by hand. -->
-    <target name="package.licensegenerator" unless="ssg.only"
-            depends="init-dev, compile">
-        <jar jarfile="${build.dir}/LicenseGenerator.jar" manifest="${src.root}/etc/LicenseGenerator.mf">
-            <fileset dir="${build.dir}/classes">
+    <!--
+      Package the LicenseGenerator (Aways invoked by hand)
+    -->
+    <target name="package.licensegenerator"
+            description="Compile and packate the License Generator (also testpackage.licensegenerator)"
+            depends="init, compile">
+        <property name="licensegenerator.lib.dir" value="${src.root}/installer/LicenseGenerator-HEAD/lib"/>
+        <mkdir dir="${licensegenerator.lib.dir}"/>
+
+        <copy todir="${licensegenerator.lib.dir}">
+            <fileset dir="${src.root}/lib">
+                <patternset refid="licensegenerator.libs"/>
+            </fileset>
+        </copy>
+
+        <generate-manifest propertyPrefix="licensegenerator" filename="LicenseGenerator.mf" pathPrefix=". ">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.internal.license.gui.LicenseGeneratorMain"/>
+            </section>
+        </generate-manifest>
+        <jar jarfile="${build.dir}/LicenseGenerator.jar" manifest="${build.etc}/LicenseGenerator.mf">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/internal/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
@@ -898,61 +1247,234 @@
                 <exclude name="com/l7tech/common/util/*SoapFaultUtil*"/>
             </fileset>
         </jar>
+        <copy file="${build.dir}/LicenseGenerator.jar" todir="${src.root}/installer/LicenseGenerator-HEAD/"/>
+        <copy file="${src.root}/etc/LicenseGenerator.sh" todir="${src.root}/installer/LicenseGenerator-HEAD/"/>
+        <chmod file="${src.root}/installer/LicenseGenerator-HEAD/LicenseGenerator.sh" perm="555"/>
 
-        <exec executable="perl" failonerror="true" dir="installer">
-            <env key="JAVA_HOME" value="$(java.home}"/>
-            <arg line="make_zip.pl"/>
-            <arg line="LicenseGenerator"/>
+        <tar destfile="${src.root}/installer/LicenseGenerator-HEAD.tar.gz"
+             basedir="${src.root}/installer/"
+             includes="LicenseGenerator-HEAD/**/*"
+             compression="gzip"/>
+    </target>
+
+    <!--
+      Build the windows installers
+    -->
+    <target name="package.installclients" unless="ssg.only" depends="package.installbridge, package.installmanager">
+    </target>
+
+    <!--
+      Task to create an NSI file with the correct libs / version
+    -->
+    <macrodef name="generate-nsi">
+        <attribute name="nsiFile"/>
+        <attribute name="nsiPath"/>
+        <attribute name="propertyPrefix"/>
+        <sequential>
+            <copy file="${build.installer}/@{nsiPath}@{nsiFile}"
+                  tofile="${build.etc}/@{nsiFile}"
+                  overwrite="true"/>
+            <fileset id="@{propertyPrefix}.build.lib.fileset" dir="${build.lib}" casesensitive="yes">
+                <patternset refid="@{propertyPrefix}.libs"/>
+            </fileset>
+            <pathconvert property="@{propertyPrefix}.add.nsi.libs.path"
+                         targetos="unix"
+                         pathsep="&#x0A;  File "
+                         refid="@{propertyPrefix}.build.lib.fileset">
+                <mapper type="regexp" from=".*/(.*)\.jar" to="&quot;\$\{BUILD_DIR}\\lib\\\1.jar&quot;"/>
+            </pathconvert>
+            <pathconvert property="@{propertyPrefix}.del.nsi.libs.path"
+                         targetos="unix"
+                         pathsep="&#x0A;  Delete "
+                         refid="@{propertyPrefix}.build.lib.fileset">
+                <mapper type="regexp" from=".*/(.*)\.jar" to="&quot;\$INSTDIR\\lib\\\1.jar&quot;"/>
+            </pathconvert>
+            <replace file="${build.etc}/@{nsiFile}">
+                <replacefilter token="%%%BUILD_VERSION%%%"
+                               value="${build.version}"/>
+                <replacefilter token="%%%JARFILE_FILE_LINES%%%"
+                               value="%%%JARFILE_FILE_LINES%%%&#x0A;  File ${@{propertyPrefix}.add.nsi.libs.path}"/>
+                <replacefilter token="%%%JARFILE_DELETE_LINES%%%"
+                               value="%%%JARFILE_DELETE_LINES%%%&#x0A;  Delete ${@{propertyPrefix}.del.nsi.libs.path}"/>
+            </replace>
+        </sequential>
+    </macrodef>
+
+    <!--
+      Build the SSB windows installer
+    -->
+    <target name="package.installbridge" depends="package.bridge, package.installbridge.work"/>
+    <target name="package.installbridge.work" depends="package.installbridge.work.main, package.installbridge.work.nsis"/>
+    <target name="package.installbridge.work.main" depends="package.readversion.unsafe">
+        <!-- Copy Bridge JAR and its lib JARs -->
+        <delete dir="${build.installer}/Bridge-${build.version}" failonerror="false"/>
+        <delete file="${build.installer}/Bridge-${build.version}.tar.gz" failonerror="false"/>
+        <mkdir dir="${build.installer}/Bridge-${build.version}/lib"/>
+        <copy todir="${build.installer}/Bridge-${build.version}/lib" preservelastmodified="true" granularity="2000">
+            <fileset dir="${build.lib}">
+                <patternset refid="bridge.libs"/>
+            </fileset>
+        </copy>
+        <copy file="${build.dir}/Bridge.jar"
+              tofile="${build.installer}/Bridge-${build.version}/Bridge.jar"
+              preservelastmodified="true"
+              granularity="2000"/>
+
+        <!-- Start script -->
+        <copy file="${src.root}/etc/Bridge.sh"
+              tofile="${build.installer}/Bridge-${build.version}/Bridge.sh"
+              preservelastmodified="true"
+              granularity="2000"/>
+        <chmod file="${build.installer}/Bridge-${build.version}/Bridge.sh" perm="555"/>
+
+        <!-- Help files -->
+        <untar src="${src.root}/webhelp/ssb/help.tgz" 
+               dest="${build.installer}/Bridge-${build.version}"
+               compression="gzip"/>
+
+        <!-- Create distro TAR -->
+        <tar destfile="${build.installer}/Bridge-${build.version}.tar.gz"
+             compression="gzip">
+            <tarfileset dir="${build.installer}" mode="555" username="build" group="build">
+                <include name="Bridge-${build.version}/Bridge.sh"/>
+            </tarfileset>
+            <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
+                <include name="Bridge-${build.version}/**/*"/>
+            </tarfileset>
+        </tar>
+    </target>
+    <target name="package.installbridge.work.nsis" if="makensis.available">
+        <!-- Update NSI file -->
+        <generate-nsi nsiFile="Bridge.nsi"
+                      nsiPath="proxy/win32/"
+                      propertyPrefix="bridge"/>
+
+        <!-- Run makensis -->
+        <exec executable="${build.install.compiler}"
+              dir="${build.installer}/proxy/win32/"
+              failonerror="true">
+            <arg value="/NOCD"/>
+            <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
+            <arg value="/XSetCompressor bzip2"/>
+            <arg value="../../../build/etc/Bridge.nsi"/>
+        </exec>
+
+    </target>
+
+    <!--
+      Build the SSM windows installer
+      - Copy required JAR files
+      - Update NSI (with jars)
+      - Generate start script from template
+      - Run makensis (wine?)
+      - Create distribution TAR
+    -->
+    <target name="package.installmanager" depends="package.manager, package.installmanager.work"/>
+    <target name="package.installmanager.work" depends="package.installmanager.work.main, package.installmanager.work.nsis"/>
+    <target name="package.installmanager.work.main" depends="package.readversion.unsafe">
+        <!-- Copy Manager JAR and its lib JARs -->
+        <delete dir="${build.installer}/Manager-${build.version}" failonerror="false"/>
+        <delete file="${build.installer}/Manager-${build.version}.tar.gz" failonerror="false"/>
+        <mkdir dir="${build.installer}/Manager-${build.version}/lib"/>
+        <copy todir="${build.installer}/Manager-${build.version}/lib" preservelastmodified="true" granularity="2000">
+            <fileset dir="${build.lib}">
+                <patternset refid="manager.libs"/>
+            </fileset>
+        </copy>
+        <copy file="${build.dir}/Manager.jar"
+              tofile="${build.installer}/Manager-${build.version}/Manager.jar"
+              preservelastmodified="true"
+              granularity="2000"/>
+
+        <!-- Start script -->
+        <copy file="${src.root}/etc/Manager.sh"
+              tofile="${build.installer}/Manager-${build.version}/Manager.sh"
+              preservelastmodified="true"
+              granularity="2000"/>
+        <chmod file="${build.installer}/Manager-${build.version}/Manager.sh" perm="555"/>
+
+        <!-- Help files -->
+        <untar src="${src.root}/webhelp/ssm/help.tgz" 
+               dest="${build.installer}/Manager-${build.version}"
+               compression="gzip"/>
+
+        <!-- Create distro TAR -->
+        <tar destfile="${build.installer}/Manager-${build.version}.tar.gz"
+             compression="gzip">
+            <tarfileset dir="${build.installer}" mode="555" username="build" group="build">
+                <include name="Manager-${build.version}/Manager.sh"/>
+            </tarfileset>
+            <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
+                <include name="Manager-${build.version}/**/*"/>
+            </tarfileset>
+        </tar>
+    </target>
+    <target name="package.installmanager.work.nsis" if="makensis.available">
+        <!-- Update NSI file -->
+        <generate-nsi nsiFile="Manager.nsi"
+                      nsiPath="console/win32/"
+                      propertyPrefix="manager"/>
+
+        <!-- Run makensis -->
+        <exec executable="${build.install.compiler}"
+              dir="${build.installer}/console/win32/"
+              failonerror="true">
+            <arg value="/NOCD"/>
+            <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
+            <arg value="/XSetCompressor bzip2"/>
+            <arg value="../../../build/etc/Manager.nsi"/>
         </exec>
     </target>
 
-    <target name="package.installclients" unless="ssg.only" depends="compile">
-        <exec executable="perl" failonerror="true" dir="installer">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="make_installers.pl"/>
-            <arg line="-N"/>
-        </exec>
-        <!-- invoke the dssm webstart target (conditional) -->
-    </target>
+    <!--
+      Build the SSG windows installer
+      - Update NSI (with jars)
+      - Generate start script from template
+      - Run makensis (wine?)
+    -->
+    <target name="package.installgateway.work" depends="package.readversion.unsafe"  if="makensis.available">
+        <!-- Update NSI file -->
+        <generate-nsi nsiFile="SSG.nsi"
+                      nsiPath="server/win32/"
+                      propertyPrefix="gateway"/>
 
-    <target name="package.installbridge" depends="package.bridge">
-        <exec executable="perl" failonerror="true" dir="installer">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="make_installers.pl"/>
-            <arg line="-N"/>
-            <arg line="Bridge"/>
-        </exec>
-    </target>
-
-    <target name="package.installmanager" depends="package.manager">
-        <exec executable="perl" failonerror="true" dir="installer">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="make_installers.pl"/>
-            <arg line="-N"/>
-            <arg line="Manager"/>
+        <!-- Run makensis -->
+        <exec executable="${build.install.compiler}"
+              dir="${build.installer}/console/win32/"
+              failonerror="true">
+            <arg value="/NOCD"/>
+            <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
+            <arg value="/XSetCompressor bzip2"/>
+            <arg value="../../../build/etc/SSG.nsi"/>
         </exec>
     </target>
 
+    <!--
+      Build the Luna provider (JAR)
+    -->
     <target name="package.bcluna-jce" depends="compile">
         <jar jarfile="${build.dir}/bcluna-jce.jar" manifest="${src.root}/etc/bcluna-jce.mf">
-            <fileset dir="${build.dir}/classes">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/common/security/prov/luna/BouncyCastleToLunaProvider.class"/>
             </fileset>
         </jar>
     </target>
 
+    <!--
+      Package all configuration wizards
+    -->
+    <target name="package.configwiz.all" depends="package.configwiz, package.systemconfigwiz"/>
+
+    <!--
+      Package the main configuration wizard (JAR)
+    -->
     <target name="package.configwiz" unless="ssg.only" depends="compile">
         <mkdir dir="${build.dir}/configwizard"/>
         <mkdir dir="${build.dir}/configwizard/lib"/>
 
         <copy todir="${build.dir}/configwizard/lib">
-            <fileset dir="${build.dir}/lib">
-                <include name="commons-lang-1.0.1.jar"/>
-                <include name="forms_rt.jar"/>
-                <include name="mysql-connector-java-3.0.14-stable-bin.jar"/>
-                <include name="xss4j.jar"/>
-                <include name="bcprov-jdk15-127.jar"/>
-                <include name="kunststoff.jar"/>
+            <fileset dir="${build.lib}">
+                <patternset refid="configurationwizard.libs"/>
             </fileset>
         </copy>
 
@@ -966,12 +1488,17 @@
 
         <replace file="${build.dir}/configwizard/configlogging.properties" token="LOGFILE_NAME" value="ssgconfig%g.log"/>
 
-        <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${src.root}/etc/ConfigWizard.mf">
-            <fileset dir="${build.dir}/classes">
+        <generate-manifest propertyPrefix="configurationwizard" filename="ConfigWizard.mf" pathPrefix=". ">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.server.config.ConfigurationWizardLauncher"/>
+            </section>
+        </generate-manifest>
+        <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${build.etc}/ConfigWizard.mf">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
-                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
                 <include name="com/l7tech/common/BuildInfo.class"/>
 
+                <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
                 <include name="com/l7tech/common/util/FileUtils.class"/>
                 <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/util/XmlUtil*.class"/>
@@ -1021,14 +1548,16 @@
         </jar>
     </target>
 
+    <!--
+      Package the system configuration wizard (JAR)
+    -->
     <target name="package.systemconfigwiz" unless="ssg.only" depends="compile">
         <mkdir dir="${build.dir}/sysconfigwizard"/>
         <mkdir dir="${build.dir}/sysconfigwizard/lib"/>
 
         <copy todir="${build.dir}/sysconfigwizard/lib">
-            <fileset dir="${build.dir}/lib">
-                <include name="commons-lang-1.0.1.jar"/>
-                <include name="commons-logging-1.0.4.jar"/>
+            <fileset dir="${build.lib}">
+                <patternset refid="systemconfigurationwizard.libs"/>
             </fileset>
         </copy>
 
@@ -1042,10 +1571,15 @@
 
         <replace file="${build.dir}/sysconfigwizard/configlogging.properties" token="LOGFILE_NAME" value="ssg_networkingconfig_log.txt"/>
 
-        <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${src.root}/etc/SystemConfigWizard.mf">
-            <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
+        <generate-manifest propertyPrefix="systemconfigurationwizard" filename="SystemConfigWizard.mf" pathPrefix=". ">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher"/>
+            </section>
+        </generate-manifest>
+        <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${build.etc}/SystemConfigWizard.mf">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
+                <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
                 <include name="com/l7tech/server/config/ui/console/ConfigurationWizard.class"/>
                 <include name="com/l7tech/server/config/ui/console/ConfigWizardConsoleStep.class"/>
                 <include name="com/l7tech/server/config/ui/console/BaseConsoleStep.class"/>
@@ -1063,12 +1597,15 @@
         </jar>
     </target>
 
+    <!--
+      Package the signed Layer 7 API (JAR)
+    -->
     <target name="package.api" depends="compile">
-<!--
+        <!--
            ** Layer7 API jar, pack and sign
-         -->
+        -->
         <jar jarfile="${build.dir}/layer7-api.jar" manifest="${src.root}/etc/layer7-api.mf">
-            <fileset dir="${build.dir}/classes">
+            <fileset dir="${build.classes}">
                 <include name="com/l7tech/policy/assertion/Assertion*.class"/>
                 <include name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
                 <include name="com/l7tech/policy/assertion/composite/**"/>
@@ -1091,60 +1628,71 @@
             <fileset dir="${build.dir}" includes="layer7-api.jar"/>
         </signjar>
 
-        <mkdir dir="${build.dir}/docs">
+        <mkdir dir="${build.dir}/docs"/>
 
-        </mkdir>
-
-        <!--produce accompanying javadoc for layer7-api-->
+        <!--
+          Accompanying javadoc for layer7-api
+        -->
         <javadoc
                 destdir="${build.dir}/docs/layer7-api"
                 version="true"
                 author="false"
                 use="true"
+                public="true"
                 windowtitle="Layer 7 External API">
 
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
-                <!-- Leave some classes undocumented; they appear in the api jar, but aren't supposed to be used by 3rd party devlopers-->
-                <!--<include name="com/l7tech/policy/assertion/Assertion.java"/> -->
-                <!--<include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>-->
-                <!--<include name="com/l7tech/policy/assertion/composite/CompositeAssertion.java"/>-->
-                <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
-                <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
-                <include name="com/l7tech/policy/assertion/ext/Category.java"/>
-                <include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>
-                <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
-                <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
-                <include name="com/l7tech/policy/assertion/ext/EditListener.java"/>
-                <include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>
-                <include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>
-                <include name="com/l7tech/policy/assertion/ext/ServiceResponse.java"/>
-                <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
+                <patternset refid="layer7api.sources"/>
+                <!--
+                  Leave some classes undocumented; they appear in the api jar,
+                  but aren't supposed to be used by 3rd party devlopers
+                -->
+                <exclude name="com/l7tech/policy/assertion/Assertion.java"/>
+                <exclude name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
+                <exclude name="com/l7tech/policy/assertion/composite/**.java"/>
+                <exclude name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>
             </fileset>
         </javadoc>
     </target>
 
-    <!-- Builds all the modules. -->
+    <!--
+      Builds all the modules.
+    -->
     <target name="package.modules" unless="ssg.only" depends="compile">
-        <!-- Passes down the version number if set (by OFFICIAL-build);
-             otherwise let the modules build files determine it themselves. -->
-        <if>
-            <isset property="build.version"/>
-            <then>
-                <ant dir="modules" target="package" inheritAll="false">
-                    <property name="build.version" value="${build.version}"/>
-                </ant>
-            </then>
-            <else>
-                <ant dir="modules" target="package" inheritAll="false"/>
-            </else>
-        </if>
+        <echo level="info">Building modules</echo>
+        <!--
+          NOTE: using subant here because if we use ant it can mess up the
+          base directory for the modules (which also use subant)
+        -->
+        <subant target="package" inheritAll="false" verbose="true">
+            <fileset dir="." includes="modules/build.xml"/>
+            <propertyset>
+                <propertyref name="build.version"/>
+            </propertyset>
+        </subant>
     </target>
 
     <!--
-      ** Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
-      ** contains only the jars and their declared dependency jars.
-      -->
-    <target name="testpackage" description="Test classpaths for packages." depends="testpackage.work, testpackage.report, checkfail"/>
+      Cleans all the modules.
+    -->
+    <target name="clean.modules" unless="ssg.only">
+        <echo level="info">Cleaning modules</echo>
+        <!--
+          NOTE: using subant here because if we use ant it can mess up the
+          base directory for the modules (which also use subant)
+        -->
+        <subant target="clean" inheritAll="false" verbose="true">
+            <fileset dir="." includes="modules/build.xml"/>
+        </subant>
+    </target>
+
+    <!--
+      Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
+      contains only the jars and their declared dependency jars.
+    -->
+    <target name="testpackage" description="Test classpaths for packages." depends="testpackage.work, testpackage.report">
+        <checkfail/>
+    </target>
     <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard"/>
     <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
         <echo level="warning">Bridge package test failed.</echo>
@@ -1158,38 +1706,70 @@
         <echo level="warning">ConfigWizard package test failed.</echo>
         <property name="fail" value="true"/>
     </target>
+
+    <macrodef name="checkdeps">
+        <attribute name="libfilesetref"/>
+        <attribute name="jarfile"/>
+        <attribute name="resultproperty"/>
+        <attribute name="ignoreclasses" default=""/>
+        <sequential>
+            <java classname="com.l7tech.tools.JarChecker" fork="true" resultproperty="@{resultproperty}">
+                <classpath>
+                    <pathelement path="tools"/>
+                    <fileset refid="@{libfilesetref}"/>
+                    <pathelement location="@{jarfile}"/>
+                </classpath>
+                <sysproperty key="java.awt.headless" value="true"/>
+                <arg value="@{jarfile}"/>
+                <arg line="@{ignoreclasses}"/>
+            </java>
+        </sequential>
+    </macrodef>
+
     <target name="testpackage.work" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" verbose="no"/>
-        <exec executable="perl" failonerror="false" resultproperty="testpackage.manager.result">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="tools/checkjar.pl"/>
-            <arg line="build/Manager.jar"/>
-            <arg line="etc/Manager.mf"/>
-        </exec>
+        <!-- Testpackage for SecureSpan Manager -->
+        <fileset id="manager.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="manager.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/Manager.jar"
+                   libfilesetref="manager.testpackage.fileset"
+                   resultproperty="testpackage.manager.result"/>
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.manager.result" value=""/>
         <condition property="testpackage.manager.fail">
             <not>
                 <equals arg1="0" arg2="${testpackage.manager.result}"/>
             </not>
         </condition>
-        <exec executable="perl" failonerror="false" resultproperty="testpackage.bridge.result">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="tools/checkjar.pl"/>
-            <arg line="build/Bridge.jar"/>
-            <arg line="etc/Bridge.mf"/>
-        </exec>
+
+        <!-- Testpackage for SecureSpan Bridge -->
+        <fileset id="bridge.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="bridge.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/Bridge.jar"
+                   libfilesetref="bridge.testpackage.fileset"
+                   resultproperty="testpackage.bridge.result"/>
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.bridge.result" value=""/>
         <condition property="testpackage.bridge.fail">
             <not>
                 <equals arg1="0" arg2="${testpackage.bridge.result}"/>
             </not>
         </condition>
-        <exec executable="perl" failonerror="false" resultproperty="testpackage.configwizard.result">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="tools/checkjar.pl"/>
-            <arg line="build/configwizard/ConfigWizard.jar"/>
-            <arg line="etc/ConfigWizard.mf"/>
-            <arg line="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
-        </exec>
+
+        <!-- Testpackage for Configuration Wizard -->
+        <fileset id="configwizard.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="configurationwizard.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/configwizard/ConfigWizard.jar"
+                   libfilesetref="configwizard.testpackage.fileset"
+                   resultproperty="testpackage.configwizard.result"
+                   ignoreclasses="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
+
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.configwizard.result" value=""/>
         <condition property="testpackage.configwizard.fail">
             <not>
                 <equals arg1="0" arg2="${testpackage.configwizard.result}"/>
@@ -1197,60 +1777,32 @@
         </condition>
     </target>
 
-    <!-- Test LicenseGenerator package.  Always invoked by hand. -->
+    <!--
+      Test LicenseGenerator package.  Always invoked by hand.
+    -->
     <target name="testpackage.licensegenerator" depends="package.licensegenerator">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" verbose="no"/>
-        <exec executable="perl" failonerror="true">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="tools/checkjar.pl"/>
-            <arg line="build/LicenseGenerator.jar"/>
-            <arg line="etc/LicenseGenerator.mf"/>
-        </exec>
+
+        <fileset id="licensegenerator.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="licensegenerator.libs"/>
+        </fileset>
+
+        <checkdeps jarfile="build/LicenseGenerator.jar"
+                   libfilesetref="licensegenerator.testpackage.fileset"
+                   resultproperty="testpackage.licensegenerator.result"/>
     </target>
 
-    <target name="checkfail">
-        <fail if="fail">Exiting due to build failures.</fail>
-    </target>
+    <!--
+      Task to check if the build should be failed
+    -->
+    <macrodef name="checkfail">
+        <sequential>
+            <fail if="fail">Exiting due to build failures.</fail>
+        </sequential>
+    </macrodef>
 
-    <target name="properties.check" depends="properties.check.tomcathome">
-    </target>
-
-    <target name="properties.check.tomcathome" unless="tomcat.home">
-        <echo level="warning">Property is not defined: 'tomcat.home'</echo>
-    </target>
-
-<!--
-      ** The SSM Webstart target. Signs the SSM components, and adds the bundle into the applicaiton (war)
-      ** The target is conditional, set the ssm.webstart property to enable it.
-      -->
-    <target name="ssm-webstart" if="ssm.webstart">
-        <!-- sign the ssm jar  -->
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
-            <fileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
-                                                       looks-1.1.3.jar,odmg.jar,hibernate3.jar,oswego-concurrent.jar,0500-wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
-                                                       commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
-                                                       jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j-1.6.1.jar, commons-discovery.jar, lib/jcommon-1.0.0.jar, lib/jfreechart-1.0.1.jar"/>
-        </signjar>
-        <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer"
-                 storepass="password"/>
-
-        <war warfile="${build.dir}/${war}" update="true">
-            <!-- SSM webstart -->
-            <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
-            <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif"
-                        prefix="ssm/images"/>
-            <zipfileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
-                                                         looks-1.1.3.jar,odmg.jar,hibernate3.jar,oswego-concurrent.jar,0500-wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
-                                                         commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
-                                                         jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j-1.6.1.jar,commons-discovery.jar, lib/jcommon-1.0.0.jar, lib/jfreechart-1.0.1.jar"
-                        prefix="ssm/lib"/>
-            <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
-        </war>
-    </target>
-
-
-    <target name="prepare.jms" if="dev.build" depends="prepare.jms.openjms, prepare.jms.mqseries, prepare.jms.tibco"/>
+    <target name="prepare.jms" if="dev.build" depends="prepare.jms.mqseries, prepare.jms.tibco"/>
 
     <target name="prepare.db" depends="
         prepare.db.oracle8,
@@ -1260,97 +1812,61 @@
         prepare.db.postgres
     "/>
 
-    <target name="prepare.jms.openjms" if="include.jms.openjms">
-        <echo>Copying OpenJMS jars from ${src.root}/lib/gateway/jms/openjms to ${build.lib}...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jms/openjms">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
-    </target>
+    <!--
+      Task to copy jars from the given path to the build/lib directory
+    -->
+    <macrodef name="prepare-named-libs">
+        <attribute name="name"/>
+        <attribute name="dir"/>
+        <sequential>
+            <echo level="info">Copying @{name} Jars from @{dir} to ${build.lib}</echo>
+            <copy todir="${build.lib}">
+                <fileset dir="@{dir}">
+                    <include name="*.jar"/>
+                    <include name="*.zip"/>
+                </fileset>
+            </copy>
+        </sequential>
+    </macrodef>
 
     <target name="prepare.jms.mqseries" if="include.jms.mqseries">
-        <echo>Copying MQSeries jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jms/mqseries">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="MQSeries" dir="${src.root}/lib/gateway/jms/mqseries"/>
     </target>
 
     <target name="prepare.jms.tibco" if="include.jms.tibco">
-        <echo>Copying Tibco EMS jars from ${src.root}/lib/gateway/jms/tibco to ${build.lib}...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jms/tibco">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="Tibco EMS" dir="${src.root}/lib/gateway/jms/tibco"/>
     </target>
 
     <target name="prepare.db.mysql" if="db.mysql">
-        <echo>Copying MySQL jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/mysql">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="MySQL" dir="${src.root}/lib/gateway/jdbc/mysql"/>
     </target>
 
     <target name="prepare.db.postgres" if="db.postgres">
-        <echo>Copying PostgreSQL jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/postgres">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="PostgreSQL" dir="${src.root}/lib/gateway/jdbc/postgres"/>
     </target>
 
     <target name="prepare.db.oracle8" if="db.oracle8">
-        <echo>Copying Oracle 8 jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/oracle8">
-                <include name="*.jar"/>
-                <include name="*.zip"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="Oracle 8" dir="${src.root}/lib/gateway/jdbc/oracle8"/>
     </target>
 
     <target name="prepare.db.oracle9" if="db.oracle9">
-        <echo>Copying Oracle 9 jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/oracle9">
-                <include name="*.jar"/>
-                <include name="*.zip"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="Oracle 9" dir="${src.root}/lib/gateway/jdbc/oracle9"/>
     </target>
 
     <target name="prepare.db.oracle10" if="db.oracle10">
-        <echo>Copying Oracle 10 jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/oracle10">
-                <include name="*.jar"/>
-                <include name="*.zip"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="Oracle 10" dir="${src.root}/lib/gateway/jdbc/oracle10"/>
     </target>
-
 
     <!--
-    <target name="prepare.systinet" if="include.systinet">
-    this is causing problems with including these jars through Manager.mf
-    and is redundant anyway since the package.gateway will test
-    include.systinet before including in war anyway.
+      NOTE: Don't use if="include.systinet" here since the JARs are required for the SSM.
     -->
     <target name="prepare.systinet">
-        <echo>Copying Systinet jars...</echo>
-        <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/uddi/systinet">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
+        <prepare-named-libs name="Systinet" dir="${src.root}/lib/gateway/uddi/systinet"/>
     </target>
 
+    <!--
+      Core prepare target
+    -->
     <target name="prepare.base">
         <!-- time stamp -->
         <tstamp/>
@@ -1364,36 +1880,23 @@
         <mkdir dir="${javadoc.home}"/>
 
         <!-- lib -->
-        <copy todir="${build.lib}">
+        <copy todir="${build.lib}" flatten="true" preservelastmodified="true">
             <fileset dir="${src.root}/lib">
                 <include name="*.jar"/>
                 <include name="*.zip"/>
+                <!-- the default crypto provider -->
+                <include name="crypto/bc/bcprov*.jar"/>
+                <include name="gateway/cluster/*.jar"/>
+                <include name="gateway/snmp/*.jar"/>
+                <include name="gateway/adminws/*.jar"/>
+                <include name="gateway/ftp/*.jar"/>
+
+
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/ant.jar"/>
                 <exclude name="**/ant-contrib.jar"/>
                 <exclude name="**/optional.jar"/>
                 <exclude name="**/*junit.jar"/>
-            </fileset>
-
-            <!-- the default crypto provider -->
-            <fileset dir="${src.root}/lib/crypto/bc">
-                <include name="bcprov*.jar"/>
-            </fileset>
-
-            <fileset dir="${src.root}/lib/gateway/cluster">
-                <include name="*.jar"/>
-            </fileset>
-
-            <!--<fileset dir="${src.root}/lib/gateway/tarari">-->
-                <!--<include name="*.jar"/>-->
-            <!--</fileset>-->
-
-            <fileset dir="${src.root}/lib/gateway/snmp">
-                <include name="*.jar"/>
-            </fileset>
-
-            <fileset dir="${src.root}/lib/gateway/adminws">
-                <include name="*.jar"/>
             </fileset>
         </copy>
 
@@ -1422,7 +1925,6 @@
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties" if="dev.build"/>
                 <include name="uddi.properties"/>
-                <include name="spring.xml"/>
                 <include name="treecache-service.xml"/>
             </fileset>
 
@@ -1432,9 +1934,10 @@
             </fileset>
 
             <fileset dir="${src.root}/src">
-                <include name="com/l7tech/server/**/*.properties"/>
                 <include name="com/l7tech/console/**/*.properties"/>
                 <include name="com/l7tech/console/resources/helpset/**/*"/>
+                <include name="com/l7tech/proxy/resources/**"/>
+                <include name="com/l7tech/server/**/*.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/tests">
@@ -1448,11 +1951,6 @@
                 <include name="**/resources/*" if="dev.build"/>
                 <include name="**/resources/**/*" if="dev.build"/>
             </fileset>
-
-
-            <fileset dir="${src.root}/src">
-                <include name="com/l7tech/proxy/resources/**"/>
-            </fileset>
         </copy>
 
         <!-- set up build number -->
@@ -1460,24 +1958,21 @@
     </target>
 
     <!--
-      ** Create the directory structure, copy the resources, libs and
-      ** update version tokens
-      -->
+      Create the directory structure, copy the resources, libs and
+      update version tokens
+    -->
     <target name="prepare"
             depends="prepare.base, prepare.jms, prepare.db, prepare.systinet, keystore.properties, INTERNAL-buildinfo">
 
         <!-- set up build number if it isn't already set -->
         <property file="build.number"/>
-
-        <!-- html and other static web files -->
-        <copy todir="${doc.root}">
-            <fileset dir="${src.root}/web" includes="**/*"
-                     excludes="**/CVS/*"/>
-        </copy>
     </target>
 
+    <!--
+      Set key store related properties
+    -->
     <target name="keystore.properties" if="dev.build">
-        <echo>Keystore directory is ${keystoredir}</echo>
+        <echo level="info">Keystore directory is ${keystoredir}</echo>
         <propertyfile file="${build.classes}/keystore.properties">
             <entry key="keystoredir" value="${keystoredir}"/>
             <entry key="rootcakspasswd" value="${ca.keystore.password}"/>
@@ -1486,41 +1981,22 @@
     </target>
 
     <!--
-     ** 1.3 compile target - the files that require 1.3 source/target flags
-     ** This is required by custom assertion library to support integration with components
-     ** such as Tivoli that require 1.3 VM
+      1.3 compile target - the files that require 1.3 source/target flags
+      This is required by custom assertion library to support integration with components
+      such as Tivoli that require 1.3 VM
     -->
-    <target name="compile13" depends="prepare, configure_properties.dev" unless="compile.pattern">
+    <target name="compile13" depends="prepare" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
                deprecation="on" verbose="no" target="1.3" source="1.3">
-            <!--
-                This has to bee in sinch with layer7-api jar package.
-                todo: find some better way to manage this centrally (ant 'references' or similar)
-            -->
-            <include name="com/l7tech/policy/assertion/Assertion.java"/>
-            <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
-            <include name="com/l7tech/policy/assertion/composite/**"/>
-            <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
-            <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
-            <include name="com/l7tech/policy/assertion/ext/Category.java"/>
-            <include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>
-            <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
-            <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
-            <include name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>
-            <include name="com/l7tech/policy/assertion/ext/EditListener.java"/>
-            <include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>
-            <include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>
-            <include name="com/l7tech/policy/assertion/ext/ServiceResponse.java"/>
-            <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
-
+            <patternset refid="layer7api.sources"/>
             <classpath refid="project.classpath"/>
         </javac>
     </target>
 
     <!--
-     ** 1.4 compile target - the files that require 1.4 source/target flags
+      1.4 compile target - the files that require 1.4 source/target flags
     -->
-    <target name="compile14" depends="prepare, configure_properties.dev" unless="compile.pattern">
+    <target name="compile14" depends="prepare" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="on" verbose="off" target="1.4" source="1.4">
             <classpath refid="project.classpath"/>
@@ -1562,71 +2038,95 @@
         </javac>
     </target>
 
+    <!--
+      Compile IntelliJ IDEA Forms
+    -->
     <target name="compile.forms" depends="compile.main">
-        <javac2 srcdir="src" destdir="${build.classes}" debug="on" target="1.4" optimize="on" source="1.4"
-                classpathref="project.classpath">
-            <include name="**/*.form"/>
-        </javac2>
+        <javac2 srcdir="src" destdir="${build.classes}"/>
     </target>
 
+    <!--
+      Set database properties for configured DB
+    -->
     <target name="db.properties"
             depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
 
+    <macrodef name="set-db-properties">
+        <attribute name="driver"/>
+        <attribute name="url"/>
+        <attribute name="user"/>
+        <attribute name="password"/>
+        <attribute name="pingstmt"/>
+        <sequential>
+            <property name="database.driver" value="@{driver}"/>
+            <property name="database.url" value="@{url}"/>
+            <property name="database.user" value="@{user}"/>
+            <property name="database.password" value="@{password}"/>
+            <property name="database.pingstmt" value="@{pingstmt}"/>
+        </sequential>
+    </macrodef>
+
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
-        <property name="database.driver" value="${my.database.driver}"/>
-        <property name="database.url" value="${my.database.url}"/>
-        <property name="database.user" value="${my.database.user}"/>
-        <property name="database.password" value="${my.database.password}"/>
-        <property name="database.pingstmt" value="${my.database.pingstmt}"/>
+        <set-db-properties
+                driver="${my.database.driver}"
+                url="${my.database.url}"
+                user="${my.database.user}"
+                password="${my.database.password}"
+                pingstmt="${my.database.pingstmt}"/>
     </target>
 
     <target name="db.properties.postgres" if="db.postgres">
         <echo>Setting database properties for PostgreSQL...</echo>
-        <property name="database.driver" value="${pg.database.driver}"/>
-        <property name="database.url" value="${pg.database.url}"/>
-        <property name="database.user" value="${pg.database.user}"/>
-        <property name="database.password" value="${pg.database.password}"/>
-        <property name="database.pingstmt" value="${pg.database.pingstmt}"/>
+        <set-db-properties
+                driver="${pg.database.driver}"
+                url="${pg.database.url}"
+                user="${pg.database.user}"
+                password="${pg.database.password}"
+                pingstmt="${pg.database.pingstmt}"/>
     </target>
 
     <target name="db.properties.oracle8" if="db.oracle8">
         <echo>Setting database properties for Oracle 8...</echo>
-        <property name="database.driver" value="${oracle8.database.driver}"/>
-        <property name="database.url" value="${oracle8.database.url}"/>
-        <property name="database.user" value="${oracle8.database.user}"/>
-        <property name="database.password" value="${oracle8.database.password}"/>
-        <property name="database.pingstmt" value="${oracle8.database.pingstmt}"/>
+        <set-db-properties
+                driver="${oracle8.database.driver}"
+                url="${oracle8.database.url}"
+                user="${oracle8.database.user}"
+                password="${oracle8.database.password}"
+                pingstmt="${oracle8.database.pingstmt}"/>
     </target>
 
     <target name="db.properties.oracle9" if="db.oracle9">
         <echo>Setting database properties for Oracle 9...</echo>
-        <property name="database.driver" value="${oracle9.database.driver}"/>
-        <property name="database.url" value="${oracle9.database.url}"/>
-        <property name="database.user" value="${oracle9.database.user}"/>
-        <property name="database.password" value="${oracle9.database.password}"/>
-        <property name="database.pingstmt" value="${oracle9.database.pingstmt}"/>
+        <set-db-properties
+                driver="${oracle9.database.driver}"
+                url="${oracle9.database.url}"
+                user="${oracle9.database.user}"
+                password="${oracle9.database.password}"
+                pingstmt="${oracle9.database.pingstmt}"/>
     </target>
 
     <target name="db.properties.oracle10" if="db.oracle10">
         <echo>Setting database properties for Oracle 10...</echo>
-        <property name="database.driver" value="${oracle10.database.driver}"/>
-        <property name="database.url" value="${oracle10.database.url}"/>
-        <property name="database.user" value="${oracle10.database.user}"/>
-        <property name="database.password" value="${oracle10.database.password}"/>
-        <property name="database.pingstmt" value="${oracle10.database.pingstmt}"/>
+        <set-db-properties
+                driver="${oracle10.database.driver}"
+                url="${oracle10.database.url}"
+                user="${oracle10.database.user}"
+                password="${oracle10.database.password}"
+                pingstmt="${oracle10.database.pingstmt}"/>
     </target>
 
-<!--
-     ** token replacement target.
-     ** This should be done ONLY for non distribution builds.
+    <!--
+        Hibernate properties token replacement target.
+        This should be done ONLY for non distribution builds.
      -->
     <target name="configure_properties.dev" depends="db.properties" if="dev.build">
-
-        <echo message="database.driver   = '${database.driver}'"/>
-        <echo message="database.url      = '${database.url}'"/>
-        <echo message="database.user     = '${database.user}'"/>
-        <echo message="database.pingstmt = '${database.pingstmt}'"/>
+        <echo level="info">
+            database.driver   = '${database.driver}'
+            database.url      = '${database.url}'
+            database.user     = '${database.user}'
+            database.pingstmt = '${database.pingstmt}'
+        </echo>
 
         <replace file="${build.classes}/hibernate.properties"
                  token="DB_DRIVER" value="${database.driver}"/>
@@ -1638,20 +2138,11 @@
                  token="DB_PASSWORD" value="${database.password}"/>
         <replace file="${build.classes}/hibernate.properties"
                  token="DB_PINGSTMT" value="${database.pingstmt}"/>
-        <!--
-        <replace file="${build.etc}/web.xml"
-                 token="TOMCAT_HOME" value="${tomcat.home}"/>
-        -->
     </target>
 
-<!--
-     ** token replacement target.
-     ** This should be done ONLY for non distribution builds.
-     -->
-    <target name="configure_properties.install" unless="dev.build">
-    </target>
-
-    <!-- ** tests compilation target -->
+    <!--
+      Test compilation target
+    -->
     <target name="compile-tests" depends="compile">
         <javac srcdir="tests" destdir="${build.test.classes}" debug="on" optimize="off"
                deprecation="on" verbose="no">
@@ -1664,77 +2155,27 @@
         </copy>
     </target>
 
-    <!-- ** test forms compilation target (skunkworks testing apps) -->
+    <!--
+      Test IntelliJ IDEA forms compilation target (for skunkworks testing apps)
+    -->
     <target name="compile-test-forms" depends="compile-tests">
-        <javac2 srcdir="tests" destdir="${build.test.classes}" debug="on" target="1.4" optimize="on" source="1.4"
-                classpathref="project.test.classpath">
-            <include name="**/*.form"/>
-        </javac2>
+        <javac2 srcdir="tests" destdir="${build.test.classes}" classpathref="project.test.classpath"/>
     </target>
 
-
-    <target name="test-ssg">
-        <parallel>
-            <antcall target="start-tomcat"/>
-            <sequential>
-                <waitfor maxwait="20" maxwaitunit="second" checkevery="500">
-                    <http url="http://localhost:8080/"/>
-                </waitfor>
-
-                <!-- Do some tests -->
-
-                <antcall target="stop-tomcat"/>
-            </sequential>
-        </parallel>
+    <!--
+      Official build
+    -->
+    <target name="ssg-install-full"
+            description="Offical build target [optionally use with obfuscate]"
+            depends="INTERNAL-ssg-install">
     </target>
 
-    <target name="start-tomcat" if="tomcat.home" depends="properties.check">
-        <!-- depends="deploy" -->
-        <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
-            <arg line="-Dcatalina.home=${tomcat.home}"/>
-            <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
-            <arg line="start"/>
-        </exec>
-    </target>
-
-    <target name="stop-tomcat" if="tomcat.home" depends="properties.check">
-        <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
-            <arg line="-Dcatalina.home=${tomcat.home}"/>
-            <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
-            <arg line="stop"/>
-        </exec>
-    </target>
-
-    <target name="make-install-image">
-        <echo>Please use ssg-install-full or ssg-install-upgrade instead!</echo>
-    </target>
-
-    <target name="ssg-install-full">
-        <antcall target="INTERNAL-ssg-install">
-            <param name="install.full" value="true"/>
-        </antcall>
-    </target>
-
-    <target name="ssg-install-upgrade" depends="INTERNAL-ssg-install"/>
-
-    <target name="INTERNAL-ssg-install-optional-1" depends="INTERNAL-ssg-install-properties-full"/>
-    <target name="INTERNAL-ssg-install-optional-2"
-            depends="INTERNAL-ssg-install-war, INTERNAL-ssg-install-keystores, INTERNAL-ssg-install-properties-upgrade"/>
-
-    <target name="INTERNAL-ssg-install-war">
-        <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
-        <echo>Expanding ${install.src.war}...</echo>
-        <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
-    </target>
-
-    <target name="INTERNAL-ssg-install-properties-full" if="install.full" depends="db.properties">
+    <!--
+      Process configuration files for the full install
+    -->
+    <target name="INTERNAL-ssg-install-properties" depends="db.properties">
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
-<!--
-                <property name="database.driver" value="${my.database.driver}"/>
-                <property name="database.url" value="${my.database.url}"/>
-        -->
-
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties"
               tofile="${install.src.hibernate.properties}"/>
 
@@ -1767,45 +2208,10 @@
         <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>
     </target>
 
-    <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
-        <!-- Delete stock server.xml, hibernate.properties so as not to replace in-place ones -->
-        <delete file="${install.src.tomcat}/conf/server.xml"/>
-        <delete file="${install.src.conf}/hibernate.properties"/>
-
-        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml-dist"/>
-
-        <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}-dist"/>
-        <replaceregexp file="${install.src.keystore.properties}-dist">
-            <regexp pattern="keystoredir=.*"/>
-            <substitution expression="keystoredir=${install.target.keys}"/>
-        </replaceregexp>
-
-        <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}-dist"/>
-        <copy file="${src.root}/etc/uddi.properties" tofile="${install.src.uddi.properties}-dist"/>
-        <echo>Patching ${install.src.ssglog.properties}-dist...</echo>
-        <replaceregexp file="${install.src.ssglog.properties}-dist">
-            <regexp pattern="java.util.logging.FileHandler.pattern=.*"/>
-            <substitution expression="java.util.logging.FileHandler.pattern=${install.target.logs}//ssg_%g_%u.log"/>
-        </replaceregexp>
-
-        <!-- Copy hibernate.properties -->
-        <property name="install.src.hibernate.properties.dist" value="${install.src.conf}/hibernate.properties-dist"/>
-        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties"
-              tofile="${install.src.hibernate.properties.dist}"/>
-
-        <!-- Copy cluster_hostname -->
-        <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>
-    </target>
-
-    <target name="INTERNAL-ssg-install-keystores" if="install.full">
-        <!-- Copy server configuration -->
-        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml"/>
-        <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${install.src.tomcat}/conf/truststore.ks"/>
-        <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties" 
-              tofile="${install.src.tomcat}/conf/SsgSSLImplementation.properties"/>
-    </target>
-
-    <target name="INTERNAL-ssg-install" depends="init-dev">
+    <!--
+      Initialize full install
+    -->
+    <target name="INTERNAL-ssg-install-init" depends="clean, package, init">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
         <property file="etc/install.properties"/>
@@ -1894,18 +2300,16 @@
         <mkdir dir="${install.src.var}"/>
         <mkdir dir="${install.src.var.attachments}"/>
         <mkdir dir="${install.src.configwizard}"/>
+    </target>
 
-        <antcall target="INTERNAL-ssg-install-optional-1"/>
-
+    <!--
+      Full install main work
+    -->
+    <target name="INTERNAL-ssg-install-main" depends="INTERNAL-ssg-install-properties">
         <!-- Extract Tomcat & JDK tarballs -->
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
-        <!--
-        i'm not sure whether those special jars exist here
-        it depends of the order in which the targets get called
-        clara, you may want to verify this
-        -->
         <copy todir="${install.src.base}/tomcat/common/endorsed">
             <fileset dir="${build.dir}">
                 <include name="l7provider.jar"/>
@@ -1922,19 +2326,19 @@
             </fileset>
         </copy>
 
-	<!--copy the config wizard -->
-	<copy todir="${install.src.configwizard}">
-		<fileset dir="${build.dir}/configwizard">
-			<include name="**/*"/>
-		</fileset>
-	</copy>
+        <!--copy the config wizard -->
+        <copy todir="${install.src.configwizard}">
+            <fileset dir="${build.dir}/configwizard">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
 
-    <!--copy the system config wizard -->
-    <copy todir="${install.src.sysconfigwizard}">
-        <fileset dir="${build.dir}/sysconfigwizard">
-			<include name="**/*"/>
-		</fileset>
-    </copy>
+        <!--copy the system config wizard -->
+        <copy todir="${install.src.sysconfigwizard}">
+            <fileset dir="${build.dir}/sysconfigwizard">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
 
         <!-- Copy WAR file into position -->
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
@@ -1947,8 +2351,21 @@
             <fileset dir="${src.root}/etc/ldapTemplates" includes="**/*.xml"/>
         </copy>
 
-        <antcall target="INTERNAL-ssg-install-optional-2"/>
+        <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
+        <echo>Expanding ${install.src.war}...</echo>
+        <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
 
+        <!-- Copy keystore configuration files -->
+        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml"/>
+        <copy file="${src.root}/etc/tomcat/truststore.ks" tofile="${install.src.tomcat}/conf/truststore.ks"/>
+        <copy file="${src.root}/etc/tomcat/SsgSSLImplementation.properties"
+              tofile="${install.src.tomcat}/conf/SsgSSLImplementation.properties"/>
+    </target>
+
+    <!--
+      Top level work target for official builds
+    -->
+    <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main">
         <!-- Copy misc. stuff -->
         <copy todir="${install.src.sql}">
             <fileset dir="${src.root}/etc/db/${database.type}">
@@ -1967,7 +2384,6 @@
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
-                <!--<include name="tarari.sh"/>-->
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="tarari-initd"/>
@@ -1977,16 +2393,15 @@
                 <include name="snmpd.conf"/>
                 <include name="configuser_bashrc"/>
                 <include name="sysconfigscript-initd"/>
-
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
-		<include name="my.ini"/>
+		        <include name="my.ini"/>
             </fileset>
         </copy>
 
         <!-- Make scripts executable -->
-        <echo>Setting execute permissions on scripts...</echo>
+        <echo level="info">Setting execute permissions on scripts...</echo>
         <chmod perm="0755">
             <fileset dir="${install.src.bin}">
                 <include name="*.sh"/>
@@ -2004,15 +2419,18 @@
 
         <!-- Create tarball -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
-        <echo>Creating ${tarball}...</echo>
+        <echo level="info">Creating ${tarball}...</echo>
         <exec executable="tar" dir="${build.dir}/install">
             <arg line="-czf ${tarball}"/>
             <arg line="."/>
         </exec>
-        <echo>BUILD COMPLETE - Produced ${tarball}!</echo>
+        <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
     </target>
 
-    <target name="OFFICIAL-build.init" depends="init-dev">
+    <!--
+      Initialization for the pre-official build (set versions, etc)
+    -->
+    <target name="OFFICIAL-build.init" depends="init">
         <condition property="rightdir">
             <equals arg1="${user.dir}" arg2="${src.root}"/>
         </condition>
@@ -2033,7 +2451,7 @@
 
         <input message="Enter a version number" addproperty="build.version"/>
 
-        <echo>Running cvs update -A -C build.number</echo>
+        <echo level="info">Running cvs update -A -C build.number</echo>
         <cvs command="update -A -C build.number"/>
 
         <buildnumber/>
@@ -2041,15 +2459,38 @@
         <property name="buildinfo.update" value="true"/>
     </target>
 
-    <target name="OFFICIAL-build" depends="OFFICIAL-build.init, clean, testpackage">
-        <echo>commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number</echo>
+    <!--
+      Pre-official build (sets version, buildnumber)
+    -->
+    <target name="OFFICIAL-build"
+            description="Set the official buildnumber and product version."
+            depends="OFFICIAL-build.init, clean, testpackage">
+        <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number</echo>
         <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
     </target>
+
+    <!--
+      Substitute values in the BuildInfo.java file
+    -->
+    <macrodef name="buildinforeplace">
+        <attribute name="token"/>
+        <attribute name="value"/>
+        <sequential>
+            <echo>Replacing @{token} with @{value}</echo>
+            <replaceregexp match='@{token} = ".*"' replace='@{token} = "@{value}"'>
+                <fileset dir="${src.root}/src">
+                    <include name="com/l7tech/common/BuildInfo.java"/>
+                </fileset>
+            </replaceregexp>
+        </sequential>
+    </macrodef>
 
     <!--
       Target that only runs if build.version if being re-defined
     -->
     <target name="INTERNAL-buildinfo-version" if="build.version">
+        <buildinforeplace token="PRODUCT_VERSION" value="${build.version}"/>
+
         <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
         <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
             <fileset dir="${src.root}">
@@ -2058,13 +2499,11 @@
                 <include name="installer/server/win32/SSG.nsi"/>
             </fileset>
         </replaceregexp>
-
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="PRODUCT_VERSION"/>
-            <param name="param_value" value="${build.version}"/>
-        </antcall>
     </target>
 
+    <!--
+      Set the build info for the build
+    -->
     <target name="INTERNAL-buildinfo" depends="INTERNAL-buildinfo-version, INTERNAL-buildinfo-uptodate">
         <property name="hostname" value="buildmachine.l7tech.com"/>
 
@@ -2073,56 +2512,28 @@
             <format property="build.time" pattern="HHmmss"/>
         </tstamp>
 
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="BUILD_NUMBER"/>
-            <param name="param_value" value="${build.number}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="PRODUCT_VERSION_MAJOR"/>
-            <param name="param_value" value="${build.version.major}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="PRODUCT_VERSION_MINOR"/>
-            <param name="param_value" value="${build.version.minor}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="PRODUCT_NAME"/>
-            <param name="param_value" value="${app.name}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="BUILD_DATE"/>
-            <param name="param_value" value="${build.date}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="BUILD_TIME"/>
-            <param name="param_value" value="${build.time}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="BUILD_USER"/>
-            <param name="param_value" value="${user.name}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="BUILD_MACHINE"/>
-            <param name="param_value" value="${hostname}"/>
-        </antcall>
+        <buildinforeplace token="BUILD_NUMBER"          value="${build.number}"/>
+        <buildinforeplace token="PRODUCT_VERSION_MAJOR" value="${build.version.major}"/>
+        <buildinforeplace token="PRODUCT_VERSION_MINOR" value="${build.version.minor}"/>
+        <buildinforeplace token="PRODUCT_NAME"  value="${app.name}"/>
+        <buildinforeplace token="BUILD_DATE"    value="${build.date}"/>
+        <buildinforeplace token="BUILD_TIME"    value="${build.time}"/>
+        <buildinforeplace token="BUILD_USER"    value="${user.name}"/>
+        <buildinforeplace token="BUILD_MACHINE" value="${hostname}"/>
     </target>
 
+    <!--
+      Check if build information needs to be set
+    -->
     <target name="INTERNAL-buildinfo-uptodate" unless="buildinfo.update">
         <uptodate property="buildinfo.uptodate" targetfile="${src.root}/src/com/l7tech/common/BuildInfo.java" >
             <srcfiles dir="${src.root}" includes="src/**/*, build.version, build.number" excludes="src/com/l7tech/common/BuildInfo.java"/>
         </uptodate>
     </target>
 
-    <target name="INTERNAL-buildinfo-replace" unless="buildinfo.uptodate">
-        <echo>Replacing ${param_name} with ${param_value}</echo>
-        <replaceregexp match='${param_name} = ".*"' replace='${param_name} = "${param_value}"'>
-            <fileset dir="${src.root}/src">
-                <include name="com/l7tech/common/BuildInfo.java"/>
-            </fileset>
-        </replaceregexp>
-    </target>
-
-    <!-- invoked by obfuscate -->
+    <!--
+      SecureSpan Bridge obfuscation target
+    -->
     <target name="obfuscate.bridge" depends="obfuscate.init">
         <echo>Obfuscating Bridge.jar</echo>
         <Zelix scriptFileName="etc/obfuscation/bridge_new.zkm"
@@ -2134,7 +2545,9 @@
         <copy tofile="build/Bridge.jar" file="build/obfuscation/Bridge.jar" overwrite="true"/>
     </target>
 
-    <!-- invoked by obfuscate -->
+    <!--
+      SecureSpan Manager obfuscation target
+    -->
     <target name="obfuscate.manager" depends="obfuscate.init">
         <echo>Obfuscating Manager.jar</echo>
         <Zelix scriptFileName="etc/obfuscation/manager_new.zkm"
@@ -2146,7 +2559,9 @@
         <copy tofile="build/Manager.jar" file="build/obfuscation/Manager.jar" overwrite="true"/>
     </target>
 
-    <!-- invoked by obfuscate -->
+    <!--
+      SecureSpan Gateway obfuscation target
+    -->
     <target name="obfuscate.gateway" depends="obfuscate.init">
         <echo>Obfuscating war classes</echo>
         <Zelix scriptFileName="etc/obfuscation/ssg_new.zkm"
@@ -2168,6 +2583,9 @@
         <copy tofile="build/ROOT.war" file="build/obfuscation/ROOT.war" overwrite="true"/>
     </target>
 
+    <!--
+      Initialization for obfuscation
+    -->
     <target name="obfuscate.init">
         <echo>Extracting classes from ROOT.war</echo>
         <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
@@ -2179,65 +2597,59 @@
     </target>
 
     <!--
-    meant to be used as part of official build
-    this will create an obfuscated version of the following files:
-    . build/Bridge.jar
-    . build/Manager.jar
-    . build/ROOT.war
-    . installer/Bridge-VERSION.tar.gz
-    . installer/Manager-VERSION.tar.gz
+      Meant to be used as part of official build this will create an obfuscated version
+      of the following files:
 
-    when followed by ssg-install-full, the resulting build/ssg-bBUILDNUMBER.tar.gz will
-    also be obfuscated
-    when followed by a call to ./make_installers.pl -b, the resulting windows installers
-    for bridge, manager and ssg will also be obfuscated
+      . build/Bridge.jar
+      . build/Manager.jar
+      . build/ROOT.war
+      . installer/Bridge-VERSION.tar.gz
+      . installer/Manager-VERSION.tar.gz
+
+      When followed by ssg-install-full, the resulting build/ssg-bBUILDNUMBER.tar.gz will
+      also be obfuscated.
+
+      When followed by a call to ./make_installers.pl -b, the resulting windows installers
+      for bridge, manager and ssg will also be obfuscated
     -->
     <target name="obfuscate"
-            depends="package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
-        <exec executable="find" outputproperty="bridge.tar.filename">
-            <arg line="."/>
-            <arg line="-name"/>
-            <arg line="Bridge*.tar.gz"/>
-        </exec>
-        <propertyregex property="build.number.regexed"
-              input="${bridge.tar.filename}"
-              regexp="\./installer/Bridge-(.*)\.tar\.gz"
-              select="\1"
-              casesensitive="false" />
-        <untar src="installer/Bridge-${build.number.regexed}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
-        <untar src="installer/Manager-${build.number.regexed}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
-        <copy file="build/obfuscation/Bridge.jar" tofile="build/obfuscation/Bridge-${build.number.regexed}/Bridge.jar" overwrite="true"/>
-        <copy file="build/obfuscation/Manager.jar" tofile="build/obfuscation/Manager-${build.number.regexed}/Manager.jar" overwrite="true"/>
+            depends="clean, package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
+        <echo level="info">Expecting obfuscation version ${build.version}</echo>
 
-        <tar destfile="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz" compression="gzip">
-            <tarfileset dir="build/obfuscation/Bridge-${build.number.regexed}" prefix="Bridge-${build.number.regexed}">
+        <untar src="installer/Bridge-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
+        <untar src="installer/Manager-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
+        <copy file="build/obfuscation/Bridge.jar" tofile="build/obfuscation/Bridge-${build.version}/Bridge.jar" overwrite="true"/>
+        <copy file="build/obfuscation/Manager.jar" tofile="build/obfuscation/Manager-${build.version}/Manager.jar" overwrite="true"/>
+
+        <tar destfile="build/obfuscation/Bridge-${build.version}_obfuscated.tar.gz" compression="gzip">
+            <tarfileset dir="build/obfuscation/Bridge-${build.version}" prefix="Bridge-${build.version}">
                 <include name="**"/>
                 <exclude name="*.sh"/>
             </tarfileset>
-            <tarfileset dir="build/obfuscation/Bridge-${build.number.regexed}" prefix="Bridge-${build.number.regexed}" mode="755">
+            <tarfileset dir="build/obfuscation/Bridge-${build.version}" prefix="Bridge-${build.version}" mode="755">
                 <include name="*.sh"/>
             </tarfileset>
         </tar>
 
-        <tar destfile="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz" compression="gzip">
-            <tarfileset dir="build/obfuscation/Manager-${build.number.regexed}" prefix="Manager-${build.number.regexed}">
+        <tar destfile="build/obfuscation/Manager-${build.version}_obfuscated.tar.gz" compression="gzip">
+            <tarfileset dir="build/obfuscation/Manager-${build.version}" prefix="Manager-${build.version}">
                 <include name="**"/>
                 <exclude name="*.sh"/>
             </tarfileset>
-            <tarfileset dir="build/obfuscation/Manager-${build.number.regexed}" prefix="Manager-${build.number.regexed}" mode="755">
+            <tarfileset dir="build/obfuscation/Manager-${build.version}" prefix="Manager-${build.version}" mode="755">
                 <include name="*.sh"/>
             </tarfileset>
         </tar>
 
-        <delete dir="build/obfuscation/Bridge-${build.number.regexed}"/>
-        <delete dir="build/obfuscation/Manager-${build.number.regexed}"/>
+        <delete dir="build/obfuscation/Bridge-${build.version}"/>
+        <delete dir="build/obfuscation/Manager-${build.version}"/>
 
-        <copy file="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz"
-              tofile="installer/Bridge-${build.number.regexed}.tar.gz"
+        <copy file="build/obfuscation/Bridge-${build.version}_obfuscated.tar.gz"
+              tofile="installer/Bridge-${build.version}.tar.gz"
               overwrite="true"/>
 
-        <copy file="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz"
-              tofile="installer/Manager-${build.number.regexed}.tar.gz"
+        <copy file="build/obfuscation/Manager-${build.version}_obfuscated.tar.gz"
+              tofile="installer/Manager-${build.version}.tar.gz"
               overwrite="true"/>
     </target>
 </project>

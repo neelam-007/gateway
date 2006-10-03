@@ -1,20 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Ant build file for the Observer for CA Unicenter WSDM module. -->
-<project name="module.ca_wsdm" default="package">
+<project name="module.ca_wsdm" default="package" basedir=".">
 
     <description>
-    Builds the Observer for CA Unicenter WSDM module.
+      Builds the Observer for CA Unicenter WSDM module.
     </description>
 
     <property name="UneasyRooster.dir" location="../.."/>
-
-    <!-- Extra Ant tasks definitions -->
-    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
-        <classpath>
-            <pathelement location="${UneasyRooster.dir}/lib/ant-contrib.jar"/>
-        </classpath>
-    </taskdef>
-
     <property name="build.classes" location="build/classes"/>
 
     <path id="compile.classpath">
@@ -30,43 +22,24 @@
     </path>
 
     <!-- Initializes the ssg.home property. -->
-    <target name="-common.init.ssg.home">
-        <if>
-            <os family="unix"/>
-            <then>
-                <property name="ssg.home" value="/ssg"/>
-            </then>
-            <elseif>
-                <os family="windows"/>
-                <then>
-                    <property name="ssg.home" value="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
-                </then>
-            </elseif>
-        </if>
+    <target name="-common.init.ssg.home.init">
+        <available property="is.windows" file="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
+        <available property="is.linux" file="/ssg"/>
+    </target>
+    <target name="-common.init.ssg.home.linux" depends="-common.init.ssg.home.init" unless="is.windows">
+        <property name="ssg.home" value="/ssg"/>
+    </target>
+    <target name="-common.init.ssg.home" depends="-common.init.ssg.home.linux">
+        <!-- Set to win home if linux home not already set-->
+        <property name="ssg.home" value="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
+        <available property="is.home.available" file="${ssg.home}"/>
+        <fail unless="is.home.available">SSG home directory is invalid "${ssg.home}".</fail>
     </target>
 
-    <!-- Tests if the SSG home folder exists. 
-         Side effect: Initializes the ssg.home property. -->
-    <target name="-common.test.ssg.home" depends="-common.init.ssg.home">
-        <if>
-            <not>
-                <available file="${ssg.home}"/>
-            </not>
-            <then>
-                <fail message="SSG home folder not found: ${ssg.home}"/>
-            </then>
-        </if>
-    </target>
-
+    <!-- Compile java src -->
     <target name="-compile">
-        <if>
-            <not>
-                <available file="${UneasyRooster.dir}/build/classes"/>
-            </not>
-            <then>
-                <fail message="UneasyRooster does not seem to have been built yet."/>
-            </then>
-        </if>
+        <available property="classes.available" file="${UneasyRooster.dir}/build/classes"/>
+        <fail unless="classes.available">UneasyRooster does not seem to have been built yet (missing ${UneasyRooster.dir}/build/classes).</fail>
         <mkdir dir="${build.classes}"/>
         <javac srcdir="src"
                destdir="${build.classes}"
@@ -74,16 +47,23 @@
         </javac>
     </target>
 
+    <!-- Create JAR file -->
     <target name="-jar" depends="-compile">
         <mkdir dir="build/ssg/tomcat/webapps/ROOT/WEB-INF/lib"/>
         <jar destfile="build/ssg/tomcat/webapps/ROOT/WEB-INF/lib/ca_wsdm_observer.jar"
              basedir="build/classes"/>
     </target>
 
+    <!-- Create distribution package -->
     <target name="package" depends="-jar"
             description="Creates the distributable ZIP file.">
         <!-- Compose the version number; if not already assigned. -->
         <property file="${UneasyRooster.dir}/build.version"/>
+        <fail unless="build.version.major">Missing build version property "build.version.major"</fail>
+        <fail unless="build.version.minor">Missing build version property "build.version.minor"</fail>
+        <!-- Declare props to keep idea happy -->
+        <property name="build.version.major" value=""/>
+        <property name="build.version.minor" value=""/>
         <property name="build.version" value="${build.version.major}.${build.version.minor}"/>
 
         <zip destfile="build/ca_wsdm_observer-${build.version}.zip">
@@ -96,21 +76,17 @@
         </zip>
     </target>
 
-    <target name="OFFICIAL-package"
-            description="Creates the distributable ZIP file after prompting for a version number.">
+    <target name="OFFICIAL-package-version-check" unless="build.version">
         <!-- Prompt for version number if not already supplied by a calling build file. -->
-        <if>
-            <not>
-                <isset property="build.version"/>
-            </not>
-            <then>
-                <input message="Enter a version number:" addproperty="build.version"/>
-            </then>
-        </if>
-        <antcall target="package"/>
+        <input message="Enter a version number:" addproperty="build.version"/>
     </target>
 
-    <target name="deploy" depends="-jar,-common.test.ssg.home"
+    <target name="OFFICIAL-package"
+            description="Creates the distributable ZIP file after prompting for a version number."
+            depends="OFFICIAL-package-version-check,package">
+    </target>
+
+    <target name="deploy" depends="-jar,-common.init.ssg.home"
             description="Deploys to SSG at ${ssg.home}. (For developer use)">
         <echo>Deploying to ${ssg.home}.</echo>
         <copy overwrite="true" todir="${ssg.home}" verbose="true">
@@ -132,7 +108,7 @@
         </copy>
     </target>
 
-    <target name="undeploy" depends="-common.test.ssg.home"
+    <target name="undeploy" depends="-common.init.ssg.home"
             description="Undeploys from SSG at ${ssg.home}. Deletes all deployed files. (For developer use)">
         <delete verbose="true">
             <fileset dir="${ssg.home}">
