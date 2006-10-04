@@ -11,7 +11,8 @@ JAVA_HOME=${SSG_ROOT}/jdk
 #check if we're root
 if [ $UID -eq 0 ]; then
     #check if xhost exists
-    if [ -e /usr/bin/xhost ]; then
+    which xhost &> /dev/null
+    if [ $? -eq 0 ]; then
         #set the display to local 0.0 if there isn't already one
         if [ -z "${DISPLAY}" ]; then
             export DISPLAY=:0.0
