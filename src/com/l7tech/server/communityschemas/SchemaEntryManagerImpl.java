@@ -5,21 +5,22 @@
 
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -181,9 +182,9 @@ public class SchemaEntryManagerImpl
         try {
             compileAndCache(res, newSchema);
         } catch (IOException e) {
-            throw new SaveException("Schema document imports remote document that is missing or invalid", e);
+            throw new SaveException("Schema document imports remote document that is missing or invalid: " + ExceptionUtils.getMessage(e), e);
         } catch (SAXException e) {
-            throw new SaveException("Invalid schema document", e);
+            throw new SaveException("Invalid schema document: " + ExceptionUtils.getMessage(e), e);
         }
         return res;
     }

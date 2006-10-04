@@ -646,7 +646,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         invalidateParentsOfRecentlySupersededSchemas();
 
-        return compileAndCacheRecursive(systemId, schemadoc);
+        return compileAndCacheRecursive(systemId, schemadoc, new HashSet<String>());
     }
 
     /** Caller must hold the write lock. */
@@ -680,7 +680,10 @@ public class SchemaManagerImpl implements SchemaManager {
      * @return a SchemaHandle to a new CompiledSchema instance, already duplicated for the caller.  Caller must close
      *         this handle when they are finished with it.
      */
-    private SchemaHandle compileAndCacheRecursive(String systemId, String schemadoc) throws SAXException, IOException {
+    private SchemaHandle compileAndCacheRecursive(String systemId, String schemadoc, final Set<String> seenSystemIds) throws SAXException, IOException {
+        if (seenSystemIds.contains(systemId))
+            throw new SAXException("Circular imports detected.  Schema sets with circular imports are not currently supported.");
+        seenSystemIds.add(systemId);
 
         // Reparse, building up CompiledSchema instances as needed from the bottom up
         SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
@@ -696,12 +699,12 @@ public class SchemaManagerImpl implements SchemaManager {
 
                     if (handle == null) {
                         // Have to compile a new one
-                        handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData());
+                        handle = compileAndCacheRecursive(lsi.getSystemId(), lsi.getStringData(), seenSystemIds);
                     } else {
                         // Can't give it away while it remains in the cache -- need to dupe it (Bug #2926)
                         handle = handle.getCompiledSchema().ref();
                     }
-                    
+
                     directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
                     return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
                 } catch (IOException e) {

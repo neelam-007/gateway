@@ -9,6 +9,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
 import static com.l7tech.common.security.rbac.EntityType.SCHEMA_ENTRY;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.schema.SchemaEntry;
@@ -239,19 +240,43 @@ public class GlobalSchemaDialog extends JDialog {
                 return;
             }
             checkEntryForUnresolvedImports(newEntry);
+            Throwable err = null;
             try {
                 reg.getSchemaAdmin().saveSchemaEntry(newEntry);
             } catch (RemoteException e) {
-                logger.log(Level.WARNING, "error saving schema entry", e);
+                err = e;
             } catch (SaveException e) {
-                logger.log(Level.WARNING, "error saving schema entry", e);
+                err = e;
             } catch (UpdateException e) {
-                logger.log(Level.WARNING, "error saving schema entry", e);
+                err = e;
             }
+
+            if (err != null) {
+                String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
+                logger.log(Level.WARNING, text, err);
+                showErrorMessage(text);
+            }
+
             // pickup all changes from gateway
             populate();
             TableUtil.adjustColumnWidth(schemaTable, 1);
         }
+    }
+
+    private void showErrorMessage(String text) {
+        JTextPane tp = new JTextPane();
+        JLabel proto = new JLabel(" ");
+        tp.setBackground(proto.getBackground());
+        tp.setForeground(proto.getForeground());
+        tp.setFont(proto.getFont());
+        tp.setEditable(false);
+        tp.setText(text);
+        JScrollPane sp = new JScrollPane(tp);
+        sp.setPreferredSize(new Dimension(800, -1));
+        JOptionPane.showMessageDialog(GlobalSchemaDialog.this,
+                                      sp,
+                                      "Unable to save schema entry",
+                                      JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -356,16 +381,23 @@ public class GlobalSchemaDialog extends JDialog {
                 logger.warning("No access to registry. Cannot save.");
                 return;
             }
+            Throwable err = null;
             try {
                 checkEntryForUnresolvedImports(toedit);
                 reg.getSchemaAdmin().saveSchemaEntry(toedit);
                 populate();
             } catch (RemoteException e) {
-                logger.log(Level.WARNING, "error saving schema entry", e);
+                err = e;
             } catch (SaveException e) {
-                logger.log(Level.WARNING, "error saving schema entry", e);
+                err = e;
             } catch (UpdateException e) {
-                logger.log(Level.WARNING, "error saving schema entry", e);
+                err = e;
+            }
+
+            if (err != null) {
+                String mess = "Unable to save edited schema: " + ExceptionUtils.getMessage(err);
+                logger.log(Level.WARNING, mess, err);
+                showErrorMessage(mess);
             }
         }
     }

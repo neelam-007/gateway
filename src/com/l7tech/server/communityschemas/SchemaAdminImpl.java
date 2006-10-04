@@ -70,7 +70,7 @@ public class SchemaAdminImpl implements SchemaAdmin {
             try {
                 schemaEntryManager.update(entry);
             } catch (ObjectModelException e) {
-                throw new SaveException("Couldn't save Schema", e);
+                throw new SaveException("Couldn't save Schema: " + ExceptionUtils.getMessage(e), e);
             }
             return entry.getOid();
         } else {
