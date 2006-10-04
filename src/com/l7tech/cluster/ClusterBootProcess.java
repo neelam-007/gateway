@@ -24,7 +24,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class ClusterBootProcess implements ServerComponentLifecycle, ApplicationContextAware {
-    private ServerConfig serverConfig;
 
     public static class AddressAlreadyInUseException extends Exception {
         public AddressAlreadyInUseException(String address) {
@@ -44,7 +43,6 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
     }
 
     public void setServerConfig( ServerConfig config ) throws LifecycleException {
-        this.serverConfig = config;
         clusterInfoManager = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
         distributedMessageIdManager = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
         multicastAddress = config.getPropertyCached(ServerConfig.PARAM_MULTICAST_ADDRESS);
@@ -104,6 +102,10 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
     }
 
     public void close() throws LifecycleException {
+    }
+
+    public String toString() {
+        return "Cluster Boot Process";
     }
 
     public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";
