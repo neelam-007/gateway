@@ -1028,7 +1028,7 @@
                 <patternset refid="@{propertyPrefix}.libs"/>
             </fileset>
             <pathconvert property="@{propertyPrefix}.libs.path" targetos="unix" pathsep=" " refid="@{propertyPrefix}.lib.fileset">
-                <mapper type="regexp" from=".*/(.*)\.jar" to="lib/\1.jar"/>
+                <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
             </pathconvert>
             <copy file="${src.root}/etc/@{filename}" tofile="${build.etc}/@{filename}" failonerror="false"/>
             <manifest file="${build.etc}/@{filename}" mode="update">
