@@ -1281,13 +1281,13 @@
                          targetos="unix"
                          pathsep="&#x0A;  File "
                          refid="@{propertyPrefix}.build.lib.fileset">
-                <mapper type="regexp" from=".*/(.*)\.jar" to="&quot;\$\{BUILD_DIR}\\lib\\\1.jar&quot;"/>
+                <mapper type="regexp" from=".*[/\\](.*)\.jar" to="&quot;\$\{BUILD_DIR}\\lib\\\1.jar&quot;"/>
             </pathconvert>
             <pathconvert property="@{propertyPrefix}.del.nsi.libs.path"
                          targetos="unix"
                          pathsep="&#x0A;  Delete "
                          refid="@{propertyPrefix}.build.lib.fileset">
-                <mapper type="regexp" from=".*/(.*)\.jar" to="&quot;\$INSTDIR\\lib\\\1.jar&quot;"/>
+                <mapper type="regexp" from=".*[/\\](.*)\.jar" to="&quot;\$INSTDIR\\lib\\\1.jar&quot;"/>
             </pathconvert>
             <replace file="${build.etc}/@{nsiFile}">
                 <replacefilter token="%%%BUILD_VERSION%%%"
