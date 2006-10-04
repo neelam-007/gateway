@@ -136,7 +136,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                                                         null,
                                                         null,
                                                         CredentialFormat.KERBEROSTICKET,
-                                                        KerberosSecurityToken.class,
+                                                        RequestWssKerberos.class,
                                                         null,
                                                         kerberosServiceTicket);
             context.setCredentials(loginCreds);

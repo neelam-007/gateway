@@ -467,6 +467,9 @@ public class LogPanel extends JPanel {
                     msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
                     msg += "User ID    : " + fixUserId(sum.getUserId()) + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
+                    if (sum.getAuthenticationType() != null) {
+                        msg += "Auth Method: " + sum.getAuthenticationType().getName() + "\n";
+                    }
 
                     if (sum.getRequestXml() != null) {
                         reqXmlVisible = true;

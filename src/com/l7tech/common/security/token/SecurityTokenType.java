@@ -20,6 +20,21 @@ public class SecurityTokenType implements Serializable {
     public static final String SAML_ELEMENT = "Assertion";
     public static final String SECURECONVESATIONTOKEN_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
 
+    /**
+     * Get a SecurityTokenType by its num.
+     *
+     * @param num The num to get.
+     * @return The SecurityTokenType or null if not found
+     */
+    public static SecurityTokenType getByNum(int num) {
+        SecurityTokenType securityTokenType = null;
+
+        if (num >=0 && num < VALUES.length)
+            securityTokenType = VALUES[num];
+
+        return securityTokenType;
+    }
+
     public int getNum() {
         return num;
     }
@@ -86,9 +101,18 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType SAML2_ASSERTION =
             new SecurityTokenType(n++, "SAML2 Assertion", SecurityTokenType.SAML2_NS + "#Assertion", SAML2_NS, SAML_ELEMENT, SamlSecurityToken.class);
 
+    public static final SecurityTokenType XPATH_CREDENTIALS =
+            new SecurityTokenType(n++, "XPath Credentials", null, null, null, UsernameToken.class);
+
+    public static final SecurityTokenType HTTP_KERBEROS =
+            new SecurityTokenType(n++, "Windows Integrated", null, null, null, KerberosSecurityToken.class);
+
+    /**
+     * NOTE: Order MUST equal declaration order above (see readResolve/getByNum)
+     *       DO NOT reorder, these numbers must be the same between releases.
+     */
     private static final SecurityTokenType[] VALUES = {
         SAML_ASSERTION,
-        SAML2_ASSERTION,
         WSSC_CONTEXT,
         WSSC_DERIVED_KEY,
         WSS_USERNAME,
@@ -98,7 +122,10 @@ public class SecurityTokenType implements Serializable {
         HTTP_BASIC,
         HTTP_DIGEST,
         HTTP_CLIENT_CERT,
-        UNKNOWN
+        UNKNOWN,
+        SAML2_ASSERTION,
+        XPATH_CREDENTIALS,
+        HTTP_KERBEROS,
     };
 
     private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class interfaceClass) {

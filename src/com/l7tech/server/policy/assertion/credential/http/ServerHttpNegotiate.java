@@ -117,7 +117,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
                                                         null,
                                                         null,
                                                         CredentialFormat.KERBEROSTICKET,
-                                                        KerberosSecurityToken.class,
+                                                        HttpNegotiate.class,
                                                         null,
                                                         kerberosServiceTicket);
 

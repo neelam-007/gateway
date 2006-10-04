@@ -11,6 +11,7 @@
 
 <hibernate-mapping>
     <typedef class="com.l7tech.objectmodel.CompressedStringType" name="ziptext"/>
+    <typedef class="com.l7tech.objectmodel.SecurityTokenUserType" name="securitytoken"/>
 
     <class name="com.l7tech.common.audit.AuditRecord" table="audit_main" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
@@ -40,6 +41,7 @@
             <property name="serviceOid" column="service_oid" type="long"/>
             <property name="operationName" column="operation_name" type="string"/>
             <property name="authenticated" column="authenticated" type="boolean"/>
+            <property name="authenticationType" column="authenticationType" type="securitytoken"/>
             <property name="requestXml" column="request_zipxml" type="ziptext"/>
             <property name="requestContentLength" column="request_length" type="int"/>
             <property name="responseXml" column="response_zipxml" type="ziptext"/>

@@ -14,6 +14,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -53,6 +54,7 @@ public class MessageSummaryAuditFactory {
         long serviceOid = -1;
         String serviceName = null;
         boolean authenticated;
+        SecurityTokenType authType = null;
         String userId = null;
 
         // Service info
@@ -76,6 +78,7 @@ public class MessageSummaryAuditFactory {
                 userName = u.getName();
                 if (userName == null) userName = u.getLogin();
             }
+            authType = authType(context);
         }
 
         // Request info
@@ -142,7 +145,7 @@ public class MessageSummaryAuditFactory {
                                              responseHttpStatus,
                                              routingLatency,
                                              serviceOid, serviceName, operationNameHaver,
-                                             authenticated, identityProviderOid, userName, userId);
+                                             authenticated, authType, identityProviderOid, userName, userId);
     }
 
     public AuditDetail makeEvent(PolicyEnforcementContext context, String faultMessage) {
@@ -155,6 +158,14 @@ public class MessageSummaryAuditFactory {
         return detail;
     }
 
+    private SecurityTokenType authType(PolicyEnforcementContext context) {
+        SecurityTokenType authType = null;
+        LoginCredentials creds = context.getCredentials();
+        if (creds != null) {
+            authType = creds.getType();
+        }
+        return authType;
+    }
 
     private String getOperationName(PolicyEnforcementContext context) {
         String operationName = null;

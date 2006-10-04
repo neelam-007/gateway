@@ -379,6 +379,7 @@ CREATE TABLE audit_message (
   service_oid bigint(20),
   operation_name varchar(255),
   authenticated tinyint(1) default '0',
+  authenticationType int(11),
   request_length int(11) NOT NULL,
   response_length int(11),
   request_zipxml mediumblob,

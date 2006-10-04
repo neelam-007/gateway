@@ -7,3 +7,6 @@
 -- Track which community schema entries are system managed
 alter table community_schemas add column system tinyint(1) NOT NULL default 0;
 update community_schemas set system=1 where name = 'soapenv';
+
+-- Record authentication type in audit log
+alter table audit_message add column authenticationType int(11);

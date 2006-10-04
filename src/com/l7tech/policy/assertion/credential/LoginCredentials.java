@@ -10,11 +10,16 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Stores a reference to a User and its associated credentials (i.e. password).
@@ -166,19 +171,28 @@ public class LoginCredentials implements SecurityToken {
     }
 
     public SecurityTokenType getType() {
-        if (format == CredentialFormat.CLIENTCERT) {
-            return SecurityTokenType.HTTP_CLIENT_CERT;
-        } else if (format == CredentialFormat.SAML) {
-            return SecurityTokenType.SAML_ASSERTION;
-        } else if (format == CredentialFormat.DIGEST) {
-            return SecurityTokenType.HTTP_DIGEST;
-        } else if (format == CredentialFormat.CLEARTEXT) {
-            return SecurityTokenType.HTTP_BASIC;
-        } else if (format == CredentialFormat.KERBEROSTICKET) {
-            return SecurityTokenType.WSS_KERBEROS_BST;
-        } else {
-            return SecurityTokenType.UNKNOWN;
+        // Check for specific type based on source assertion
+        SecurityTokenType securityTokenType =
+                (SecurityTokenType) CREDENTIAL_SOURCE_TO_TOKEN_TYPE.get(credentialSourceAssertion);
+
+        // Else use default type for format
+        if (securityTokenType == null) {
+            if (format == CredentialFormat.CLIENTCERT) {
+                securityTokenType = SecurityTokenType.HTTP_CLIENT_CERT;
+            } else if (format == CredentialFormat.SAML) {
+                securityTokenType = SecurityTokenType.SAML_ASSERTION;
+            } else if (format == CredentialFormat.DIGEST) {
+                securityTokenType = SecurityTokenType.HTTP_DIGEST;
+            } else if (format == CredentialFormat.CLEARTEXT) {
+                securityTokenType = SecurityTokenType.HTTP_BASIC;
+            } else if (format == CredentialFormat.KERBEROSTICKET) {
+                securityTokenType = SecurityTokenType.WSS_KERBEROS_BST;
+            } else {
+                securityTokenType = SecurityTokenType.UNKNOWN;
+            }
         }
+
+        return securityTokenType;
     }
 
     public boolean equals(Object o) {
@@ -251,6 +265,14 @@ public class LoginCredentials implements SecurityToken {
             return null;
         }
     }
+
+    // Mappings from assertions to token types
+    private static final Map CREDENTIAL_SOURCE_TO_TOKEN_TYPE = ArrayUtils.asMap(new Object[][]{
+            {RequestWssX509Cert.class, SecurityTokenType.WSS_X509_BST},
+            {WssBasic.class, SecurityTokenType.WSS_USERNAME},
+            {XpathCredentialSource.class, SecurityTokenType.XPATH_CREDENTIALS},
+            {HttpNegotiate.class, SecurityTokenType.HTTP_KERBEROS},
+    }, true);
 
     private final String login;
     private final String realm;

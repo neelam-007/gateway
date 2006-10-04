@@ -10,6 +10,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.security.token.SecurityTokenType;
 
 import java.util.logging.Level;
 import java.util.Set;
@@ -49,6 +50,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * @param serviceName the name of the {@link PublishedService} this request was resolved to, or null if it could not be resolved.
      * @param operationNameHaver an Object on which toString() will be called if the operation name is needed, or null if one will not be provided.
      * @param authenticated true if the request was authenticated, false otherwise
+     * @param authenticationType the authentication type for the request (may be null)
      * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
@@ -57,7 +59,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      String clientAddr, String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
                                      long serviceOid, String serviceName, Object operationNameHaver,
-                                     boolean authenticated, long identityProviderOid, String userName, String userId)
+                                     boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid, String userName, String userId)
     {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
@@ -86,6 +88,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.operationNameHaver = operationNameHaver;
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
+        this.authenticationType = authenticationType;
     }
 
     /**
@@ -126,6 +129,14 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      */
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    /**
+     * Gets the authentication type for this request (if authenticated)
+     * @return the SecurityTokenType or null
+     */
+    public SecurityTokenType getAuthenticationType() {
+        return authenticationType;
     }
 
     /**
@@ -213,6 +224,11 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setAuthenticationType(SecurityTokenType authenticationType) {
+        this.authenticationType = authenticationType;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
     protected void setRequestContentLength( int requestContentLength ) {
         this.requestContentLength = requestContentLength;
     }
@@ -246,6 +262,9 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** <code>true</code> indicates that the request was successfully authenticated, or <code>false</code> otherwise. */
     protected boolean authenticated;
+
+    /** If authenticated, this is the authentication type / method */
+    protected SecurityTokenType authenticationType;
 
     /** Length of the request */
     protected int requestContentLength = -1;
