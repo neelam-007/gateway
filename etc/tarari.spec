@@ -41,6 +41,7 @@ cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/ssg/tomcat/sha
 %files
 %defattr(-,root,root)
 /etc/init.d/tarari
+/usr/local/Tarari/
 /usr/local/Tarari/*
 
 %defattr(-,gateway,gateway)
