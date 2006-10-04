@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Calendar;
 
 /**
  * Shared code used by various SAML token strategies.
@@ -49,6 +50,8 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
 
         }
         SamlAssertion newone = acquireSamlAssertion(ssg);
+        if (newone != null)
+            checkForWackyIssueInstant(newone.getIssueInstant());
         synchronized (lock) {
             return cachedAssertion = newone;
         }
@@ -61,6 +64,34 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
         }
     }
 
+    /**
+     * Check for clock skew (Bug #1473) and issue a warning if necessary.  This assumes that IssueInstant is right now
+     * (ie that old tokens wont be reused by the token service).  If the issueInstant is off by more than 30 seconds
+     * from the local clock, a warning is sent to the logger.
+     *
+     * @param issueInstant the issue instant of the token to check.  If null, no action will be taken.
+     */
+    protected void checkForWackyIssueInstant(Calendar issueInstant) {
+        if (issueInstant == null)
+            return;
+
+        Calendar tooLate = Calendar.getInstance();
+        tooLate.add(Calendar.SECOND, 30);
+        Calendar tooEarly = Calendar.getInstance();
+        tooEarly.add(Calendar.SECOND, -30);
+
+        if (issueInstant.after(tooLate) || issueInstant.before(tooEarly)) {
+            Calendar now = Calendar.getInstance();
+            long diff = (issueInstant.getTimeInMillis() - now.getTimeInMillis()) / 1000;
+            tokenClockSkewWarning(diff);
+        }
+    }
+
+    /** Override to change the warning when clock skew is detected.  THis method just calls logger.warning. */
+    protected void tokenClockSkewWarning(long diff) {
+        log.warning("Token server clock skew is over 30 seconds (" + diff + ") -- the resulting tokens may be considered stale by the target service");
+    }
+    
     /**
      * Flush cached assertion if it has expired (or will expire soon).
      */

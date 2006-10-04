@@ -66,6 +66,13 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
 
     boolean isOneTimeUse();
 
+    /** @return the IssueInstant, or null if there wasn't one. */
+    Calendar getIssueInstant();
+
+    /** @return the NotBefore date in the Conditions, or null if there wasn't one. */
+    Calendar getStarts();
+
+    /** @return the NotOnOrAfter date in the Conditions, or null if there wasn't one. */
     Calendar getExpires();
 
     /**

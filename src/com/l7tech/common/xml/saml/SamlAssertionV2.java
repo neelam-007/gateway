@@ -1,54 +1,42 @@
 package com.l7tech.common.xml.saml;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.SignatureException;
-import java.security.PublicKey;
-import java.security.NoSuchAlgorithmException;
-import java.util.Calendar;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import com.ibm.xml.dsig.IDResolver;
+import com.ibm.xml.dsig.SignatureContext;
+import com.ibm.xml.dsig.Transform;
+import com.ibm.xml.dsig.Validity;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.KeyInfoElement;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
+import org.w3.x2000.x09.xmldsig.KeyInfoType;
+import org.w3.x2000.x09.xmldsig.SignatureType;
+import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+import x0Assertion.oasisNamesTcSAML2.*;
+
+import javax.xml.XMLConstants;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-
-import javax.xml.XMLConstants;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlException;
-import org.xml.sax.SAXException;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
-import org.w3.x2000.x09.xmldsig.X509DataType;
-import org.w3.x2000.x09.xmldsig.SignatureType;
-
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.common.security.xml.SecurityTokenResolver;
-import com.l7tech.common.security.xml.KeyInfoElement;
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.token.SecurityTokenType;
-
-import com.ibm.xml.dsig.SignatureContext;
-import com.ibm.xml.dsig.IDResolver;
-import com.ibm.xml.dsig.Validity;
-import com.ibm.xml.dsig.Transform;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import x0Assertion.oasisNamesTcSAML2.AssertionType;
-import x0Assertion.oasisNamesTcSAML2.AssertionDocument;
-import x0Assertion.oasisNamesTcSAML2.SubjectType;
-import x0Assertion.oasisNamesTcSAML2.NameIDType;
-import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
-import x0Assertion.oasisNamesTcSAML2.AuthnContextType;
-import x0Assertion.oasisNamesTcSAML2.ConditionsType;
-import x0Assertion.oasisNamesTcSAML2.SubjectConfirmationType;
-import x0Assertion.oasisNamesTcSAML2.KeyInfoConfirmationDataType;
-import x0Assertion.oasisNamesTcSAML2.SubjectConfirmationDataType;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Saml Assertion for version 1.x
@@ -70,6 +58,8 @@ public final class SamlAssertionV2 extends SamlAssertion {
     private String uniqueId = null;
     private String subjectId = null;
     private boolean oneTimeUse = false;
+    private Calendar issueInstant = null;
+    private Calendar starts = null;
     private Calendar expires = null;
     private String nameIdentifierFormat;
     private String nameQualifier;
@@ -127,8 +117,10 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 throw new SAXException(msg);
             }
 
+            issueInstant = assertion.getIssueInstant();
             ConditionsType conditions = assertion.getConditions();
             if (conditions != null) {
+                starts = conditions.getNotBefore();
                 expires = conditions.getNotOnOrAfter();
                 if (conditions.getOneTimeUseArray() != null &&
                     conditions.getOneTimeUseArray().length > 0) {
@@ -394,6 +386,14 @@ public final class SamlAssertionV2 extends SamlAssertion {
 
     public boolean isOneTimeUse() {
         return oneTimeUse;
+    }
+
+    public Calendar getIssueInstant() {
+        return issueInstant;
+    }
+
+    public Calendar getStarts() {
+        return starts;
     }
 
     public Calendar getExpires() {
