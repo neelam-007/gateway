@@ -38,8 +38,6 @@ mv %{buildroot}/etc/tarari-initd %{buildroot}/etc/init.d/tarari
 mkdir -p %{buildroot}/ssg/tomcat/shared/lib
 cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/ssg/tomcat/shared/lib/
 
-rm -rf %{buildroot}/usr/local/Tarari/lib/*ssl*
-rm -rf %{buildroot}/usr/local/Tarari/bin/*crypto*
 rm -rf %{buildroot}/usr/local/Tarari/test/
 rm -rf %{buildroot}/usr/local/Tarari/src
 rm -rf %{buildroot}/usr/local/Tarari/include
@@ -66,5 +64,4 @@ fi
 %changelog
 * Thu Mar 9 2006 JWT
 - Build First version - for 2.6.9-34 and Tarari build 64
-- ME: build for any kernels contained in tarari-kernel-drivers.tar.gz. Change descriptions and chmod the startup script=======
 - ME: build for any kernels contained in tarari-kernel-drivers.tar.gz. Change descriptions and chmod the startup script
