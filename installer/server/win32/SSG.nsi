@@ -2,13 +2,27 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
+!ifndef J2RE
+  !define J2RE "jdk1.5.0_07-windows-i586-p-redist"  ;Name of directory containing JRE to copy from
+!endif
+!ifndef J2RE_DIR
+  ;Windows mapped to drive X:
+  !define J2RE_DIR "X:\"
+!endif
+
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "SecureSpan Gateway" ;Define your own software name here
 
-; Edit this to set the version number in the build (is auto-edited by build.xml's OFFICIAL-build target)
-!define MUI_VERSION "HEAD"
+!ifndef MUI_VERSION
+  ; Do not edit this version number
+  ; If you want to build a different version use a flag:
+  ;  /DMUI_VERSION=XXX
+  !define MUI_VERSION "%%%BUILD_VERSION%%%"
+!endif
 
-!define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
+!ifndef BUILD_DIR
+  !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
+!endif
 
 !include "MUI.nsh"
 
@@ -135,8 +149,8 @@ Section "SecureSpan Gateway" SecCopyUI
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
   ;Windows mapped drive X:
-  File /r "X:\jdk1.5.0_07-windows-i586-p-redist"
-  Rename "$INSTDIR\jdk1.5.0_07-windows-i586-p-redist" "$INSTDIR\jdk"
+  File /r "${J2RE_DIR}${J2RE}"
+  Rename "$INSTDIR\${J2RE}" "$INSTDIR\jdk"
   ;etc/install.properties not having version as suffix to jdk 
   ;File /r "${BUILD_DIR}\install\ssg\jdk" this would include the linux jvm
   ; Windows installer has to remove the tarari_raxj.jar file

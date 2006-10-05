@@ -2,15 +2,26 @@
 ;based on Basic Example Script, which was Written by Joost Verburg
 
 !define J2RE "jre1.5.0_07"  ;Name of directory containing JRE to copy from
-;Windows mapped drive X:
-!define J2RE_PATH "X:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
+!ifndef J2RE_DIR
+  ;Windows mapped to drive X:
+  !define J2RE_DIR "X:\"
+!endif
+!ifndef J2RE_PATH
+  !define J2RE_PATH "${J2RE_DIR}${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
+!endif
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "SecureSpan Bridge" ;Define your own software name here
 
-; Edit this to set the version number in the build (is auto-edited by build.xml's OFFICIAL-build target)
-!define MUI_VERSION "HEAD"
+!ifndef MUI_VERSION
+  ; Do not edit this version number
+  ; If you want to build a different version use a flag:
+  ;  /DMUI_VERSION=XXX
+  !define MUI_VERSION "%%%BUILD_VERSION%%%"
+!endif
 
-!define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
+!ifndef BUILD_DIR
+  !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
+!endif
 
 !include "MUI.nsh"
 
