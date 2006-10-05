@@ -5,8 +5,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.RemoteException;
-import java.util.logging.LogManager;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.springframework.remoting.rmi.RmiRegistryFactoryBean;
 
@@ -45,15 +45,21 @@ public class RmiRegistryInitializer extends RmiRegistryFactoryBean {
 				Registry reg = LocateRegistry.getRegistry(null, registryPort, clientSocketFactory);
 				testRegistry(reg);
 
-                logger.error("RMI registry already exists!");
+                // we expect the above to throw
+                logger.severe("RMI registry already exists!");
 
                 return reg;
 			}
 			catch (RemoteException ex) {
-				logger.debug("RMI registry access threw exception", ex);
+                // it is expected that the registry does not yet exist
+                logger.log(Level.FINEST, "RMI registry access threw exception", ex);
 			}
 		}
 
         return super.getRegistry(registryPort, clientSocketFactory, serverSocketFactory);
 	}
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(RmiRegistryInitializer.class.getName());
 }
