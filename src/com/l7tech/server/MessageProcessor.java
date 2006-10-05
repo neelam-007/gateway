@@ -196,6 +196,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             PublishedService service = serviceCache.resolve(context.getRequest());
             if (service == null) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
+                status = AssertionStatus.SERVICE_NOT_FOUND;
                 return AssertionStatus.SERVICE_NOT_FOUND;
             }
 
