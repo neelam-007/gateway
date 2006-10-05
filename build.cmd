@@ -12,10 +12,14 @@ set JDK_CLASSES=%JAVA_HOME%\jre\lib\rt.jar;%JAVA_HOME%\lib\tools.jar
 set CLASSPATH=%JDK_CLASSES%;%CLASSPATH%
 :antclasspath
 set CLASSPATH=%SRC_ROOT%\lib\ant.jar;%CLASSPATH%
-set CLASSPATH=%SRC_ROOT%\lib\optional.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\ant-launcher.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\ant-nodeps.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xercesImpl.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xml-apis.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\junit.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\ant-junit.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\ant-contrib.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\xalan-2.5.2.jar;%CLASSPATH%
 rem echo %CLASSPATH%
 rem Execute ANT to perform the requested build target
 java org.apache.tools.ant.Main -Dsrc.root="%SRC_ROOT%" -Dtomcat.home="%TOMCAT_HOME%" %1 %2 %3 %4 %5
