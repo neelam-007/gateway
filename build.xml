@@ -304,6 +304,7 @@
         <property name="doc.root" value="${build.dir}/htdocs"/>
         <property name="build.lib" value="${build.dir}/lib"/>
         <property name="build.etc" value="${build.dir}/etc"/>
+        <property name="build.reports" value="${build.dir}/reports"/>
         <property name="build.installer" value="${src.root}/installer"/>
 
         <!-- javadoc home -->
@@ -496,7 +497,8 @@
                 <pathelement location="${build.test.classes}"/>
             </classpath>
 
-            <formatter type="plain"/>
+            <formatter type="plain" unless="build.junit.xmlformat"/>
+            <formatter type="xml" if="build.junit.xmlformat"/>
             <sysproperty key="src.root" value="${src.root}"/>
 
             <!--
@@ -556,7 +558,8 @@
                 <pathelement location="${build.test.classes}"/>
             </classpath>
 
-            <formatter type="plain"/>
+            <formatter type="plain" unless="build.junit.xmlformat"/>
+            <formatter type="xml" if="build.junit.xmlformat"/>
             <sysproperty key="src.root" value="${src.root}"/>
 
             <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no" fork="yes"/>
@@ -607,7 +610,16 @@
     <!--
       Targets to optionally print failure warnings
     -->
-    <target name="test.report" depends="test.report.error, test.report.failure"/>
+    <target name="test.report" depends="test.report.summary, test.report.error, test.report.failure"/>
+    <target name="test.report.summary" if="build.junit.xmlformat">
+        <mkdir dir="${build.reports}"/>
+        <junitreport todir="${build.reports}">
+            <fileset dir="${src.root}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${build.reports}/html"/>
+        </junitreport>
+    </target>
     <target name="test.report.error" if="test.error">
         <echo level="warning">One or more JUnit tests exited due to error.</echo>
         <property name="fail" value="true"/>
