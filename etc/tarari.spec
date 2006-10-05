@@ -62,6 +62,7 @@ fi
 %preun
 
 %changelog
+* Thu Oct 5 2006 MJE
+- build for any kernels contained in tarari-kernel-drivers.tar.gz. Change descriptions and chmod the startup script
 * Thu Mar 9 2006 JWT
 - Build First version - for 2.6.9-34 and Tarari build 64
-- ME: build for any kernels contained in tarari-kernel-drivers.tar.gz. Change descriptions and chmod the startup script
