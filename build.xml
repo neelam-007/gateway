@@ -43,19 +43,18 @@
                overall parser mess. java.beans.XmlEncoder and other
                classes  do not like xerces so excluded it from project
                classpath.
-               fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
+               fla note: xercesImpl.jar is required by xss4j for xml-enc features.
             <exclude name="*xerces*"/>
-            <exclude name="*xml-api*"/>
             -->
             <!--
               Exclude since this is not necessary to compile and it includes old
-              versions of some of the xml-apis.jar classes
+              versions of some of the xml api classes
             -->
             <exclude name="xml4j.jar"/>
 
             <!-- Exclude build related classes -->
-            <exclude name="ant.jar"/>
-            <exclude name="optional.jar"/>
+            <exclude name="**/ant.jar"/>
+            <exclude name="**/ant-*.jar"/>
         </fileset>
     </path>
 
@@ -152,7 +151,6 @@
     <patternset id="licensegenerator.libs">
         <include name="**/kunststoff.jar"/>
         <include name="**/xercesImpl.jar"/>
-        <include name="**/xml-apis.jar"/>
         <include name="**/commons-lang-1.0.1.jar"/>
         <include name="**/commons-collections-2.1.1.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
@@ -203,7 +201,6 @@
         <include name="**/saaj.jar"/>
         <include name="**/0500-wsdl4j.jar"/>
         <include name="**/xercesImpl.jar"/>
-        <include name="**/xml-apis.jar"/>
         <include name="**/bcprov-jdk15-127.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/org.mortbay.jetty.jar"/>
@@ -910,7 +907,6 @@
                 <include name="xbean-saml1_1.jar"/>
                 <include name="xbean-saml2_0.jar"/>
                 <include name="xercesImpl.jar"/>
-                <include name="xml-apis.jar"/>
                 <include name="xss4j.jar"/>
 
                 <include name="xstream-1.1.2.jar"/>
