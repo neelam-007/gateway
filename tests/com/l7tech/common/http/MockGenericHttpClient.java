@@ -1,9 +1,11 @@
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * Mock implementation of the GenericHttpClient. Used for testing.
@@ -51,6 +53,18 @@ public class MockGenericHttpClient implements GenericHttpClient {
         return new MockGenericHttpRequest();
     }
 
+    public byte[] getRequestBody() {
+        return requestBody;
+    }
+
+    public GenericHttpMethod getMethod() {
+        return method;
+    }
+
+    public GenericHttpRequestParams getParams() {
+        return params;
+    }
+
     public void setResponseBody(byte[] responseBody) {
         this.responseBody = responseBody;
     }
@@ -77,6 +91,14 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
     public synchronized void clearResponseCount() {
         responseCount = 0;
+    }
+
+    public Object getIdentity() {
+        return identity;
+    }
+
+    public void setIdentity(Object identity) {
+        this.identity = identity;
     }
 
     /**
@@ -110,6 +132,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
     //- PRIVATE
 
     private volatile boolean holdResponses = false;
+    private byte[] requestBody;
     private byte[] responseBody;
     private int responseStatus;
     private HttpHeaders headers;
@@ -118,10 +141,20 @@ public class MockGenericHttpClient implements GenericHttpClient {
     private GenericHttpMethod method;
     private GenericHttpRequestParams params;
     private int responseCount = 0;
+    private Object identity;
 
     private class MockGenericHttpRequest implements GenericHttpRequest
     {
+        private InputStream in;
+
         public GenericHttpResponse getResponse() throws GenericHttpException {
+            try {
+                requestBody = in == null ? null : HexUtils.slurpStream(in);
+            }
+            catch(IOException ioe) {
+                requestBody = null;    
+            }
+
             // If configured to wait, hold responses until we are released
             synchronized (MockGenericHttpClient.this) {
                 while (holdResponses) {
@@ -142,7 +175,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
 
         public void setInputStream(InputStream bodyInputStream) {
-            // mock ...
+            in = bodyInputStream;
         }
     }
 

@@ -14,15 +14,25 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.Map;
 import java.util.List;
+import java.util.LinkedHashSet;
 
 /**
  * An AuditContext stub implementation. Does absolutely nothing except manage minimal internal state.
  */
-public class AuditContextStub implements AuditContext {
+public class AuditContextStub implements AuditContextStubInt {
+
+    //- PUBLIC
+
+    public AuditContextStub() {
+        details = new LinkedHashSet<AuditDetail>();
+    }
+
     public void setCurrentRecord(AuditRecord record) {
+        this.record = record;
     }
 
     public void addDetail(AuditDetail detail, Object source) {
+        details.add(detail);
     }
 
     public Set<AuditDetailMessage.Hint> getHints() {
@@ -30,9 +40,30 @@ public class AuditContextStub implements AuditContext {
     }
 
     public void flush() {
+        if (record != null) {
+            for (AuditDetail detail : details) {
+                detail.setAuditRecord(record);
+            }
+
+            record.setDetails(details);
+            lastRecord = record;
+        }
+
+        record = null;
+        details = new LinkedHashSet<AuditDetail>();
     }
 
     public Map<Object, List<AuditDetail>> getDetails() {
         return Collections.emptyMap();
     }
+
+    public AuditRecord getLastRecord() {
+        return lastRecord;
+    }
+
+    //- PRIVATE
+
+    private AuditRecord lastRecord;
+    private AuditRecord record;
+    private Set<AuditDetail> details;
 }

@@ -45,7 +45,18 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
     }
 
     public GenericHttpClient createHttpClient() {
-        return new CommonsHttpClient(connectionManager) {
+        return createHttpClient(-1, -1, -1, -1, null);
+    }
+
+    /**
+     * @param hostConnections IGNORED this factory uses 100
+     * @param totalConnections IGNORED this factory uses 1000
+     * @param connectTimeout -1 for default
+     * @param timeout -1 for default
+     * @param identity IGNORED this factory does not support identity binding
+     */
+    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+        return new CommonsHttpClient(connectionManager, connectTimeout, timeout) {
             public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 final String proto = params.getTargetUrl().getProtocol();
                 if ("https".equalsIgnoreCase(proto)) {

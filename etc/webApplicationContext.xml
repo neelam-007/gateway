@@ -210,6 +210,10 @@
             <ref bean="trustedCertManager"/>
         </property>
     </bean>
+    <!-- server side HTTP routing HTTP client factory -->
+    <bean id="httpRoutingHttpClientFactory"
+          class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
+          singleton="false"/>
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar">

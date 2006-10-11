@@ -48,4 +48,8 @@ public final class GenericHttpHeader implements HttpHeader {
     public static HttpHeader makeDateHeader(String name, Date date) {
         return new GenericHttpHeader(name, ((SimpleDateFormat)httpHeaderDateFormat.get()).format(date));
     }
+
+    public String toString() {
+        return super.toString()+"["+ name + "=" + value + "]";
+    }
 }

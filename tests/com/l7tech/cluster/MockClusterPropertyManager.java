@@ -21,11 +21,11 @@ public class MockClusterPropertyManager
     }
 
     public ClusterProperty getCachedEntityByName(String name, int maxAge) throws FindException {
-        throw new FindException("Not implemented");
+        return null;
     }
 
     public ClusterProperty findByUniqueName(String name) throws FindException {
-        throw new FindException("Not implemented");
+        return null;
     }
 
     public Class getImpClass() {

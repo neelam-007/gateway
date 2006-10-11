@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap:Body>
+        <listProductsResponse xmlns="http://warehouse.acme.com/ws">
+            <listProductsResult>
+                <ProductListHeader>
+                    <productName>White board</productName>
+                    <productId>111111113</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Wall Clock</productName>
+                    <productId>111111112</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>PhoneBook</productName>
+                    <productId>111111111</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Civic</productName>
+                    <productId>111111119</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>BMW</productName>
+                    <productId>111111118</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Camcorder</productName>
+                    <productId>111111117</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Plasma TV</productName>
+                    <productId>111111116</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Speakers</productName>
+                    <productId>111111115</productId>
+                </ProductListHeader>
+                <ProductListHeader>
+                    <productName>Digital camera</productName>
+                    <productId>111111114</productId>
+                </ProductListHeader>
+            </listProductsResult>
+        </listProductsResponse>
+    </soap:Body>
+</soap:Envelope>

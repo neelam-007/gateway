@@ -102,6 +102,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (metricsManager == null) throw new IllegalArgumentException("Service Metrics Manager is required");
         if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
         if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
+        if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
         this.serviceCache = sc;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;

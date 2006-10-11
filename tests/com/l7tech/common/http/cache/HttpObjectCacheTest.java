@@ -77,6 +77,9 @@ public class HttpObjectCacheTest extends TestCase {
             public GenericHttpClient createHttpClient() {
                 return hc;
             }
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
+            }
         };
 
 
@@ -281,6 +284,9 @@ public class HttpObjectCacheTest extends TestCase {
         GenericHttpClientFactory clientFactory = new GenericHttpClientFactory() {
             public GenericHttpClient createHttpClient() {
                 return hc;
+            }
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return createHttpClient();
             }
         };
 

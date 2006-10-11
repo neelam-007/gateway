@@ -11,7 +11,13 @@ package com.l7tech.common.http;
 public interface GenericHttpClientFactory {
     /**
      * @return a new GenericHttpClient instance ready to make outgoing requests, possibly already including any
-     *         SSL setup required for the current environment. 
+     *         SSL setup required for the current environment.
      */
     GenericHttpClient createHttpClient();
+    
+    GenericHttpClient createHttpClient(int hostConnections,
+                                       int totalConnections,
+                                       int connectTimeout,
+                                       int timeout,
+                                       Object identity);
 }

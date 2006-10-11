@@ -189,7 +189,7 @@
 
 
     <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
-        <property name="proxyInterfaces"><value>com.l7tech.common.audit.AuditContext</value></property>
+        <property name="proxyInterfaces"><value>com.l7tech.server.audit.AuditContextStubInt</value></property>
         <property name="targetSource">
             <ref local="auditContextTargetSource"/>
         </property>
@@ -225,4 +225,8 @@
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
+    <!-- server side HTTP routing HTTP client factory -->
+    <bean id="httpRoutingHttpClientFactory"
+          class="com.l7tech.server.util.TestingHttpClientFactory"/>
+
 </beans>

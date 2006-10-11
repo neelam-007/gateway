@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <tns:listProducts xmlns:tns="http://warehouse.acme.com/ws">
+            <tns:delay>exec sp_acommand</tns:delay>
+        </tns:listProducts>
+    </soapenv:Body>
+</soapenv:Envelope>

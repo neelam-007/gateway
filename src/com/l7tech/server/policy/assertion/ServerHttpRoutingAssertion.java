@@ -9,8 +9,6 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -35,12 +33,12 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
-import org.apache.commons.httpclient.HttpConnectionManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -55,6 +53,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -66,11 +65,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private final SignerInfo senderVouchesSignerInfo;
 
     private final Auditor auditor;
+    private final GenericHttpClientFactory httpClientFactory;
     private final FailoverStrategy failoverStrategy;
     private final String[] varNames;
     private final int maxFailoverAttempts;
     private final HttpRoutingAssertion httpRoutingAssertion;
-    private final HttpConnectionManager connectionManager;
     private final SSLContext sslContext;
     private static final String IV_USER = "IV_USER";
     private final boolean urlUsesVariables;
@@ -78,13 +77,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx);
         this.httpRoutingAssertion = assertion;
-
-        int hmax = httpRoutingAssertion.getMaxConnections();
-        int tmax = hmax * 10;
-        if (hmax <= 0) {
-            hmax = CommonsHttpClient.getDefaultMaxConnectionsPerHost();
-            tmax = CommonsHttpClient.getDefaultMaxTotalConnections();
-        }
 
         // remember if we need to resolve the url at runtime
         String tmp = httpRoutingAssertion.getProtectedServiceUrl();
@@ -94,12 +86,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             logger.info("this http routing assertion has null url");
             urlUsesVariables = false;
         }
-
-        IdentityBindingHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
-        connectionManager.setMaxConnectionsPerHost(hmax);
-        connectionManager.setMaxTotalConnections(tmax);
-        connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
-        this.connectionManager = connectionManager;
 
         auditor = new Auditor(this, applicationContext, logger);
         try {
@@ -114,6 +100,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
             throw new RuntimeException(e);
         }
+
+        GenericHttpClientFactory factory = null;
+        try {
+            factory = (GenericHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Could not create HTTP client factory.", e);
+            factory = new IdentityBindingHttpClientFactory();
+        }
+        httpClientFactory = factory;
 
         final String[] addrs = httpRoutingAssertion.getCustomIpAddresses();
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
@@ -415,7 +410,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (httpRoutingAssertion.isCopyCookies())
                 cookiesToSend = copyCookiesOutbound(routedRequestParams, context, url.getHost());
 
-            CommonsHttpClient httpClient = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout(), connectionId);
+            GenericHttpClient httpClient = httpClientFactory.createHttpClient(
+                                                                 httpRoutingAssertion.getMaxConnections(),
+                                                                 httpRoutingAssertion.getMaxConnections() * 10,
+                                                                 getConnectionTimeout(),
+                                                                 getTimeout(),
+                                                                 connectionId);
             routedRequest = httpClient.createRequest(GenericHttpClient.POST, routedRequestParams);
             final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
             routedRequest.setInputStream(bodyInputStream);
@@ -621,8 +621,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, new String[]{setCookieValue});
             }
         }
-
-        newCookies.removeAll(originalCookies);
 
         for (HttpCookie routedCookie : newCookies) {
             HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(), routedCookie.getCookieValue(), routedCookie.getVersion(), null, null);

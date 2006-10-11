@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Header>
+        <user>user</user>
+        <pass>pass</pass>
+    </soapenv:Header>
+    <soapenv:Body>
+        <tns:listProducts xmlns:tns="http://warehouse.acme.com/ws">
+            <tns:delay>0</tns:delay>
+        </tns:listProducts>
+    </soapenv:Body>
+</soapenv:Envelope>

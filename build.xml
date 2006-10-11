@@ -593,6 +593,7 @@
             <test name="com.l7tech.server.identity.AuthenticationResultTest" haltonfailure="no" />
             <test name="com.l7tech.common.security.saml.Saml2ValidationTest" haltonfailure="no" />
             <test name="com.l7tech.common.xml.ElementCursorTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.PolicyProcessingTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
