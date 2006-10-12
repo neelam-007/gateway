@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public abstract class ServerRoutingAssertion extends AbstractServerAssertion implements ServerAssertion {
+public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> extends AbstractServerAssertion<RAT> implements ServerAssertion {
 
     //- PUBLIC
 
@@ -44,12 +44,12 @@ public abstract class ServerRoutingAssertion extends AbstractServerAssertion imp
 
     // instance
     protected final ApplicationContext applicationContext;
-    protected final RoutingAssertion data;
+    protected final RAT data;
 
     /**
      *
      */
-    protected ServerRoutingAssertion(RoutingAssertion data, ApplicationContext applicationContext) {
+    protected ServerRoutingAssertion(RAT data, ApplicationContext applicationContext) {
         super(data);
         this.applicationContext = applicationContext;
         this.data = data;

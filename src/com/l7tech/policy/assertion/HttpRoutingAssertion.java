@@ -35,6 +35,8 @@ public class HttpRoutingAssertion
     protected String[] customIpAddresses = null;
     protected String failoverStrategyName = "ordered";
     private boolean taiCredentialChaining = false;
+    protected Integer connectionTimeout;
+    protected Integer timeout;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -86,6 +88,22 @@ public class HttpRoutingAssertion
 
     public void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
+    }
+
+    public Integer getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(Integer connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public Integer getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(Integer timeout) {
+        this.timeout = timeout;
     }
 
     public boolean isCopyCookies() {
@@ -195,6 +213,8 @@ public class HttpRoutingAssertion
         this.setUserAgent(source.getUserAgent());
         this.setTaiCredentialChaining(source.isTaiCredentialChaining());
         this.setNtlmHost(source.getNtlmHost());
+        this.setConnectionTimeout(source.getConnectionTimeout());
+        this.setTimeout(source.getTimeout());
     }
 
     public String[] getVariablesUsed() {

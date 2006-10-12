@@ -7,11 +7,20 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.*;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.FailoverHttpClient;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.GenericHttpRequest;
+import com.l7tech.common.http.GenericHttpException;
+import com.l7tech.common.http.RerunnableHttpRequest;
+import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.HttpHeaders;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -19,9 +28,6 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
@@ -29,7 +35,6 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -47,7 +52,6 @@ import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
@@ -63,7 +67,7 @@ import java.util.logging.Logger;
 /**
  * SSG implementation of a routing assertion that uses the SSB.
  */
-public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
+public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutingAssertion<BridgeRoutingAssertion> {
 
     private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
             new Managers.BridgeStashManagerFactory() {
@@ -79,9 +83,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     //- PUBLIC
 
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
-        super(assertion, ctx);
-        this.bridgeRoutingAssertion = assertion;
-        this.auditor = new Auditor(this, ctx, logger);
+        super(assertion, ctx, logger);
 
         final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         try {
@@ -123,7 +125,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
         // Configure failover if enabled
         String addrs[] = assertion.getCustomIpAddresses();
-        if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs, auditor)) {
+        if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
             ssg.setOverrideIpAddresses(addrs);
             ssg.setUseOverrideIpAddresses(true);
         }
@@ -141,7 +143,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         messageProcessor = new MessageProcessor();
     }
 
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException {
         context.routingStarted();
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
@@ -160,15 +162,15 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
                 handleProcessedSecurityHeader(context,
-                                              bridgeRoutingAssertion.getCurrentSecurityHeaderHandling(),
-                                              bridgeRoutingAssertion.getXmlSecurityActorToPromote());
+                                              data.getCurrentSecurityHeaderHandling(),
+                                              data.getXmlSecurityActorToPromote());
 
-                if (bridgeRoutingAssertion.isTaiCredentialChaining()) {
+                if (data.isTaiCredentialChaining()) {
                     throw new PolicyAssertionException(data, "BridgeRoutingAssertion unable to support TAI credential chaining");
                 }
 
-                if (bridgeRoutingAssertion.isAttachSamlSenderVouches()) {
-                    attachSamlSenderVouches(context);
+                if (data.isAttachSamlSenderVouches()) {
+                    doAttachSamlSenderVouches(context, signerInfo);
                 }
 
                 try {
@@ -298,17 +300,15 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         }
     }
 
-    private final BridgeRoutingAssertion bridgeRoutingAssertion;
     private final SignerInfo signerInfo;
     private final Ssg ssg;
     private final MessageProcessor messageProcessor;
     private X509Certificate serverCert;
-    private final Auditor auditor;
     private final boolean useClientCert;
 
     private URL getUrl() {
         try {
-            return new URL(bridgeRoutingAssertion.getProtectedServiceUrl());
+            return new URL(data.getProtectedServiceUrl());
         } catch (MalformedURLException e) {
             throw new IllegalStateException(" URL is invalid; assertion is therefore nonfunctional.");
         }
@@ -317,7 +317,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     private Policy getHardCodedPolicy() {
         Policy hardcodedPolicy = null;
 
-        String policyXml = bridgeRoutingAssertion.getPolicyXml();
+        String policyXml = data.getPolicyXml();
         if (policyXml != null) {
             try {
                 Assertion a = WspReader.parsePermissively(policyXml);
@@ -331,22 +331,9 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         return hardcodedPolicy;
     }
 
-    private boolean areValidUrlHostnames(String[] addrs, Auditor auditor) {
-        for (int i = 0; i < addrs.length; i++) {
-            String addr = addrs[i];
-            try {
-                new URL("http", addr, 777, "/foo/bar");
-            } catch (MalformedURLException e) {
-                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] { addr });
-                return false;
-            }
-        }
-        return true;
-    }
-
     private Ssg newSSG(String gatewayHostname) {
         return new Ssg(1, gatewayHostname) {
-            public synchronized String getKeyStorePath() {
+            public String getKeyStorePath() {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
             }
 
@@ -360,7 +347,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             /**
              * @deprecated
              */
-            public synchronized String getTrustStorePath() {
+            public String getTrustStorePath() {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a trust store path");
             }
 
@@ -433,8 +420,8 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     private SimpleHttpClient newHttpClient() {
         // Set up HTTP client (use commons client)
-        int hmax = bridgeRoutingAssertion.getMaxConnections();
-        int tmax = hmax * 10;
+        int hmax = getMaxConnectionsPerHost();
+        int tmax = getMaxConnectionsAllHosts();
         if (hmax <= 0) {
             hmax = CommonsHttpClient.getDefaultMaxConnectionsPerHost();
             tmax = CommonsHttpClient.getDefaultMaxTotalConnections();
@@ -456,7 +443,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             FailoverStrategy strategy;
             String[] addrs = ssg.getOverrideIpAddresses();
             try {
-                strategy = FailoverStrategyFactory.createFailoverStrategy(bridgeRoutingAssertion.getFailoverStrategyName(), addrs);
+                strategy = FailoverStrategyFactory.createFailoverStrategy(data.getFailoverStrategyName(), addrs);
             } catch (IllegalArgumentException e) {
                 strategy = new StickyFailoverStrategy(addrs);
             }
@@ -467,39 +454,13 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         return new SimpleHttpClient(client);
     }
 
-    private void attachSamlSenderVouches(PolicyEnforcementContext context) throws SAXException, IOException, SignatureException, CertificateException{
-        LoginCredentials svInputCredentials = context.getCredentials();
-        if (svInputCredentials == null) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
-        } else {
-            Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-            SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
-            SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-            samlOptions.setAttestingEntity(signerInfo);
-            TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-            if (requestTcp != null) {
-                try {
-                    InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
-                    samlOptions.setClientAddress(clientAddress);
-                } catch (UnknownHostException e) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
-                }
-            }
-            samlOptions.setVersion(bridgeRoutingAssertion.getSamlAssertionVersion());
-            samlOptions.setExpiryMinutes(bridgeRoutingAssertion.getSamlAssertionExpiry());
-            samlOptions.setUseThumbprintForSignature(bridgeRoutingAssertion.isUseThumbprintInSamlSignature());
-            SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES, bridgeRoutingAssertion.isUseThumbprintInSamlSubject());
-            ag.attachStatement(document, statement, samlOptions);
-        }
-    }
-
     private boolean initCredentials() {
         boolean useClientCert;
-        String username = bridgeRoutingAssertion.getLogin();
+        String username = data.getLogin();
         char[] password = null;
 
         if (username != null) {
-            String pass = bridgeRoutingAssertion.getPassword();
+            String pass = data.getPassword();
             password = pass == null ? null : pass.toCharArray();
         }
 
@@ -516,7 +477,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     private URL getProtectedServiceUrl(PublishedService service) throws WSDLException, MalformedURLException {
         URL url;
-        String psurl = bridgeRoutingAssertion.getProtectedServiceUrl();
+        String psurl = data.getProtectedServiceUrl();
         if (psurl == null) {
             URL wsdlUrl = service.serviceUrl();
             url = wsdlUrl;
@@ -529,12 +490,12 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
             public HttpCookie[] getSessionCookies() {
-                Set cookies = bridgeRoutingAssertion.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
+                Set cookies = data.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
             }
 
             public void setSessionCookies(HttpCookie[] cookies) {
-                if(bridgeRoutingAssertion.isCopyCookies()) {
+                if(data.isCopyCookies()) {
                     //add or replace cookies
                     for (int i = 0; i < cookies.length; i++) {
                         HttpCookie cookie = cookies[i];
@@ -556,7 +517,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
      */
     private SimpleHttpClient newRRLSimpleHttpClient(final PolicyEnforcementContext context, final SimpleHttpClient client, final RoutingResultListener rrl, final HeaderHolder hh) {
         return new SimpleHttpClient(client) {
-            public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params) throws GenericHttpException {
+            public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)  {
                 return new RerunnableHttpRequest() {
                     private RerunnableHttpRequest.InputStreamFactory isf = null;
                     private InputStream is = null;
@@ -585,8 +546,9 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
                     private RerunnableHttpRequest.InputStreamFactory getInputStreamFactory() throws GenericHttpException {
                         if(isf==null) {
-                            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                            BufferPoolByteArrayOutputStream baos = null;
                             try {
+                                baos = new BufferPoolByteArrayOutputStream();
                                 HexUtils.copyStream(is, baos);
                                 final byte[] data = baos.toByteArray();
                                 isf = new RerunnableHttpRequest.InputStreamFactory() {
@@ -598,7 +560,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                             catch(IOException ioe) {
                                 throw new GenericHttpException("Cannot read request data.", ioe);
                             } finally {
-                                baos.close();
+                                if (baos != null) baos.close();
                             }
                         }
                         return isf;
@@ -732,7 +694,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         }
 
         public void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException {
-            if (bridgeRoutingAssertion.getServerCertBase64() == null) {
+            if (data.getServerCertBase64() == null) {
                 super.installSsgServerCertificate(ssg, credentials);
                 return;
             }

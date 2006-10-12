@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.HttpRoutingAssertionDialog">
-  <grid id="83deb" binding="mainPanel" layout-manager="GridLayoutManager" row-count="9" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="83deb" binding="mainPanel" row-count="10" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="52" y="32" width="865" height="813"/>
+      <xy x="52" y="32" width="568" height="726"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="bff49" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="bff49" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <xy x="20" y="265" width="528" height="64"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="etched" title-resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" title-key="cookiePolicyPanel.title"/>
         <children>
           <component id="40ddb" class="javax.swing.JCheckBox" binding="cookiePropagationCheckBox">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <xy x="6" y="21" width="150" height="37"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <inheritsPopupMenu value="true"/>
@@ -29,17 +32,19 @@
           </component>
         </children>
       </grid>
-      <grid id="71323" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="71323" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <xy x="20" y="20" width="528" height="41"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="4fd69" class="javax.swing.JButton" binding="defaultUrlButton">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+              <xy x="425" y="0" width="103" height="25"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="1" fill="1"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="defaultUrlButton.text"/>
@@ -47,7 +52,8 @@
           </component>
           <component id="c2b89" class="com.l7tech.common.gui.widgets.UrlPanel" binding="urlPanel">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <xy x="0" y="0" width="415" height="41"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1"/>
             </constraints>
             <properties>
               <text value=""/>
@@ -55,17 +61,19 @@
           </component>
         </children>
       </grid>
-      <grid id="e9c06" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="e9c06" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <xy x="20" y="522" width="528" height="134"/>
+          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="etched" title-resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" title-key="wssHeaderPanel.title"/>
         <children>
           <component id="f0cb5" class="javax.swing.JRadioButton" binding="wssRemoveRadio">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <xy x="6" y="21" width="395" height="23"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="wssRemoveRadio.text"/>
@@ -73,7 +81,8 @@
           </component>
           <component id="b65a0" class="javax.swing.JRadioButton" binding="wssLeaveRadio">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <xy x="6" y="49" width="346" height="23"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="wssLeaveRadio.text"/>
@@ -81,7 +90,8 @@
           </component>
           <component id="f9801" class="javax.swing.JRadioButton" binding="wssPromoteRadio">
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <xy x="6" y="77" width="349" height="23"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="wssPromoteRadio.text"/>
@@ -89,7 +99,8 @@
           </component>
           <component id="5010c" class="javax.swing.JComboBox" binding="wssPromoteActorCombo">
             <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+              <xy x="6" y="105" width="516" height="23"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
             </constraints>
             <properties>
               <editable value="true"/>
@@ -97,17 +108,19 @@
           </component>
         </children>
       </grid>
-      <grid id="787b0" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="787b0" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <xy x="20" y="681" width="528" height="25"/>
+          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="7157d" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+              <xy x="370" y="0" width="53" height="25"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="okButton.text"/>
@@ -115,7 +128,8 @@
           </component>
           <component id="1811" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+              <xy x="453" y="0" width="75" height="25"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0"/>
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="cancelButton.text"/>
@@ -123,12 +137,14 @@
           </component>
           <hspacer id="6ede">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <xy x="0" y="7" width="370" height="11"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
           <hspacer id="56f46">
             <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
+              <xy x="433" y="7" width="20" height="11"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
                 <minimum-size width="12" height="-1"/>
               </grid>
             </constraints>
@@ -137,66 +153,75 @@
       </grid>
       <hspacer id="1f708">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
+          <xy x="0" y="35" width="20" height="11"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="12" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <hspacer id="7c9a1">
         <constraints>
-          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
+          <xy x="548" y="35" width="20" height="11"/>
+          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="12" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <vspacer id="ccb6b">
         <constraints>
-          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+          <xy x="278" y="0" width="11" height="20"/>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
       </vspacer>
       <vspacer id="b651e">
         <constraints>
-          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+          <xy x="278" y="661" width="11" height="20"/>
+          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
       </vspacer>
       <vspacer id="62820">
         <constraints>
-          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+          <xy x="278" y="706" width="11" height="20"/>
+          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
       </vspacer>
-      <grid id="e1dc2" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="e1dc2" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <xy x="20" y="334" width="528" height="183"/>
+          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="etched" title-resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" title-key="authPanel.title"/>
         <children>
           <component id="2d605" class="javax.swing.JSeparator">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <xy x="260" y="21" width="2" height="156"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="0" fill="2"/>
             </constraints>
             <properties>
               <orientation value="1"/>
             </properties>
           </component>
-          <grid id="cff3" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="cff3" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <xy x="6" y="21" width="235" height="156"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="f186c" class="javax.swing.JRadioButton" binding="authTaiRadio">
                 <constraints>
-                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <xy x="0" y="112" width="125" height="23"/>
+                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authTaiRadio.text"/>
@@ -205,7 +230,8 @@
               </component>
               <component id="38910" class="javax.swing.JRadioButton" binding="authSamlRadio">
                 <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <xy x="0" y="84" width="196" height="23"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authSamlRadio.text"/>
@@ -214,7 +240,8 @@
               </component>
               <component id="42d08" class="javax.swing.JRadioButton" binding="authPassthroughRadio">
                 <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <xy x="0" y="56" width="235" height="23"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authPassthroughRadio.text"/>
@@ -223,7 +250,8 @@
               </component>
               <component id="d207d" class="javax.swing.JRadioButton" binding="authPasswordRadio">
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <xy x="0" y="28" width="172" height="23"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authPasswordRadio.text"/>
@@ -232,7 +260,8 @@
               </component>
               <component id="5fdd0" class="javax.swing.JRadioButton" binding="authNoneRadio">
                 <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <xy x="0" y="0" width="135" height="23"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authNoneRadio.text"/>
@@ -241,15 +270,17 @@
               </component>
               <vspacer id="ccf7b">
                 <constraints>
-                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <xy x="112" y="135" width="11" height="21"/>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
             </children>
           </grid>
-          <grid id="b4e88" binding="authDetailsPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="b4e88" binding="authDetailsPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <xy x="281" y="21" width="241" height="156"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -259,10 +290,88 @@
       </grid>
       <component id="d06b8" class="com.l7tech.common.gui.widgets.IpListPanel" binding="ipListPanel">
         <constraints>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <xy x="20" y="66" width="410" height="133"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties/>
       </component>
+      <grid id="82225" row-count="2" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="2" left="0" bottom="2" right="0"/>
+        <constraints>
+          <xy x="20" y="204" width="528" height="55"/>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="fe9bf" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="0" y="6" width="122" height="15"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="timeoutConnectLabel.text"/>
+            </properties>
+          </component>
+          <component id="fad37" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="0" y="35" width="89" height="15"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="timeoutLabel.text"/>
+            </properties>
+          </component>
+          <hspacer id="b3685">
+            <constraints>
+              <xy x="338" y="8" width="190" height="11"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+            </constraints>
+          </hspacer>
+          <component id="3aae9" class="javax.swing.JCheckBox" binding="connectTimeoutDefaultCheckBox">
+            <constraints>
+              <xy x="202" y="2" width="136" height="23"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="timeoutRadioDefaultLabel.text"/>
+            </properties>
+          </component>
+          <component id="9664d" class="javax.swing.JCheckBox" binding="readTimeoutDefaultCheckBox">
+            <constraints>
+              <xy x="202" y="31" width="136" height="23"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="timeoutRadioDefaultLabel.text"/>
+            </properties>
+          </component>
+          <component id="5af00" class="javax.swing.JSpinner" binding="readTimeoutSpinner">
+            <constraints>
+              <xy x="132" y="31" width="60" height="24"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1">
+                <minimum-size width="60" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <enabled value="false"/>
+            </properties>
+          </component>
+          <component id="91560" class="javax.swing.JSpinner" binding="connectTimeoutSpinner">
+            <constraints>
+              <xy x="132" y="2" width="60" height="24"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1">
+                <minimum-size width="60" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <enabled value="false"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
     </children>
   </grid>
 </form>

@@ -66,6 +66,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
     private JButton okButton;
     private JButton cancelButton;
+    private JSpinner connectTimeoutSpinner;
+    private JCheckBox connectTimeoutDefaultCheckBox;
+    private JSpinner readTimeoutSpinner;
+    private JCheckBox readTimeoutDefaultCheckBox;
 
     /**
      * Creates new form ServicePanel
@@ -128,6 +132,17 @@ public class HttpRoutingAssertionDialog extends JDialog {
      */
     private void initComponents() {
         add(mainPanel);
+
+        connectTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));  // 1 day in seconds
+        readTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));
+        ActionListener enableSpinners = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
+                readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
+            }
+        };
+        connectTimeoutDefaultCheckBox.addActionListener(enableSpinners);
+        readTimeoutDefaultCheckBox.addActionListener(enableSpinners);
 
         ButtonGroup methodGroup = new ButtonGroup();
         methodGroup.add(this.authNoneRadio);
@@ -264,6 +279,15 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
             }
 
+            if (connectTimeoutDefaultCheckBox.isSelected())
+                assertion.setConnectionTimeout(null);
+            else
+                assertion.setConnectionTimeout((Integer)connectTimeoutSpinner.getValue()*1000);
+            if (readTimeoutDefaultCheckBox.isSelected())
+                assertion.setTimeout(null);
+            else
+                assertion.setTimeout((Integer)readTimeoutSpinner.getValue()*1000);
+
             if (wssPromoteRadio.isSelected()) {
                 String currentVal = (String)wssPromoteActorCombo.getSelectedItem();
                 if (currentVal != null && currentVal.length() > 0) {
@@ -313,13 +337,32 @@ public class HttpRoutingAssertionDialog extends JDialog {
         ipListPanel.setAddresses(assertion.getCustomIpAddresses());
         ipListPanel.setFailoverStrategyName(assertion.getFailoverStrategyName());
 
+        Integer connectTimeout = assertion.getConnectionTimeout();
+        if (connectTimeout == null) {
+            connectTimeoutSpinner.setValue(30);
+            connectTimeoutDefaultCheckBox.setSelected(true);
+        } else {
+            connectTimeoutSpinner.setValue(connectTimeout / 1000);
+            connectTimeoutDefaultCheckBox.setSelected(false);
+        }
+        connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
+        Integer readTimeout = assertion.getTimeout();
+        if (readTimeout == null) {
+            readTimeoutSpinner.setValue(60);
+            readTimeoutDefaultCheckBox.setSelected(true);
+        } else {
+            readTimeoutSpinner.setValue(readTimeout / 1000);
+            readTimeoutDefaultCheckBox.setSelected(false);
+        }
+        readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
+
         // read actor promotion information
         java.util.List existingActors = listExistingXmlSecurityRecipientContextFromPolicy();
         for (Iterator iterator = existingActors.iterator(); iterator.hasNext();) {
             String s = (String) iterator.next();
             ((DefaultComboBoxModel)wssPromoteActorCombo.getModel()).addElement(s);
         }
-        // todo set initial values based on new routing setting
+
         if (assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
             wssPromoteRadio.setSelected(false);
             wssPromoteActorCombo.setEnabled(false);
