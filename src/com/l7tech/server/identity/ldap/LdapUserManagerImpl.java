@@ -281,9 +281,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
             //todo: sasl is not supported by all directories, we could also use ssl to avoid
             //todo: sending anything in clear env.put(Context.SECURITY_PROTOCOL, "ssl");
             env.put(Context.SECURITY_CREDENTIALS, passwd);
-            env.put("com.sun.jndi.ldap.connect.pool", "true");
             env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT);
-            env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT);
             env.lock();
 
             DirContext userCtx;
