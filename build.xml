@@ -947,6 +947,9 @@
                 <exclude name="com/l7tech/test/**/*"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
                 <exclude name="com/l7tech/proxy/gui/**"/>
+                <exclude name="com/l7tech/proxy/ClientProxy*.class"/>
+                <exclude name="com/l7tech/proxy/Main*.class"/>
+                <exclude name="com/l7tech/proxy/RequestHandler*.class"/>
                 <exclude name="com/l7tech/server/config/**"/>
 
                 <!-- Tomcat classes -->
@@ -2545,7 +2548,7 @@
     -->
     <target name="obfuscate.bridge" depends="obfuscate.init">
         <echo>Obfuscating Bridge.jar</echo>
-        <Zelix scriptFileName="etc/obfuscation/bridge_new.zkm"
+        <Zelix scriptFileName="build/etc/bridge.zkm"
                logFileName="build/obfuscation/bridgeobfuscation.log"
                trimLogFileName="build/obfuscation/bridgeobfuscation.log"
                isParseOnly="false"
@@ -2559,7 +2562,7 @@
     -->
     <target name="obfuscate.manager" depends="obfuscate.init">
         <echo>Obfuscating Manager.jar</echo>
-        <Zelix scriptFileName="etc/obfuscation/manager_new.zkm"
+        <Zelix scriptFileName="build/etc/manager.zkm"
                logFileName="build/obfuscation/managerobfuscation.log"
                trimLogFileName="build/obfuscation/managerobfuscation.log"
                isParseOnly="false"
@@ -2573,7 +2576,7 @@
     -->
     <target name="obfuscate.gateway" depends="obfuscate.init">
         <echo>Obfuscating war classes</echo>
-        <Zelix scriptFileName="etc/obfuscation/ssg_new.zkm"
+        <Zelix scriptFileName="build/etc/ssg.zkm"
                logFileName="build/obfuscation/ssgobfuscation.log"
                trimLogFileName="build/obfuscation/ssgobfuscation.log"
                isParseOnly="false"
@@ -2593,16 +2596,46 @@
     </target>
 
     <!--
+      Task to update ZKM files with classpaths.
+    -->
+    <macrodef name="build-zkm">
+        <attribute name="propertyPrefix"/>
+        <attribute name="filename"/>
+        <attribute name="pathExtra" default=""/>
+        <attribute name="libDir" default="lib"/>
+        <sequential>
+            <fileset id="@{propertyPrefix}.lib.fileset" dir="${src.root}/@{libDir}" casesensitive="yes">
+                <patternset refid="@{propertyPrefix}.libs"/>
+            </fileset>
+            <pathconvert property="@{propertyPrefix}.zkm.libs.path" targetos="unix" pathsep="${line.separator}" refid="@{propertyPrefix}.lib.fileset">
+                <mapper type="regexp" from=".*[/\\](.*)\.jar" to="    &quot;build/lib/\1.jar&quot;"/>
+            </pathconvert>
+            <copy file="${src.root}/etc/obfuscation/@{filename}" tofile="${build.etc}/@{filename}">
+                <filterset>
+                  <filter token="JARFILE_FILE_LINES" value="classpath${line.separator}${@{propertyPrefix}.zkm.libs.path}${line.separator}@{pathExtra};"/>
+                </filterset>
+            </copy>
+        </sequential>
+    </macrodef>
+
+    <!--
       Initialization for obfuscation
     -->
     <target name="obfuscate.init">
         <echo>Extracting classes from ROOT.war</echo>
         <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
+        <!--
+            Patternset used for gateway libs
+        -->
+        <patternset id="gateway.libs">
+            <include name="*"/>
+        </patternset>
+
         <echo>Setting classpaths in zkm scripts</echo>
-        <exec executable="perl" failonerror="true" dir=".">
-            <arg line="etc/obfuscation/substjars.pl"/>
-            <arg line="-N"/>
-        </exec>
+        <build-zkm filename="bridge.zkm" propertyPrefix="bridge"/>
+        <build-zkm filename="manager.zkm" propertyPrefix="manager"/>
+        <build-zkm filename="ssg.zkm" propertyPrefix="gateway" libDir="build/ROOT_exploded/WEB-INF/lib"
+                   pathExtra="    &quot;build/lib/servlet-api.jar&quot;${line.separator}    &quot;build/lib/catalina.jar&quot;${line.separator}    &quot;build/layer7-api.jar&quot;${line.separator}    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
     </target>
 
     <!--

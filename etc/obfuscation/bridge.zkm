@@ -5,8 +5,8 @@
 // Layer 7 Technologies 2005
 //
 // this is setup to be invoked indirectly through the ant task "obfuscate.bridge"
-// the line below is replaced by the actual jar list read from the mf through substjars.pl
-%%%JARFILE_FILE_LINES%%%
+// the line below is replaced by the actual jar list by ANT
+@JARFILE_FILE_LINES@
 
 // this is the jar file to process
 // this could also be a directory containing .class files

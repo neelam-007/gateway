@@ -23,7 +23,7 @@
 // java -jar ZKM.jar ssg.zkm
 //
 //
-%%%JARFILE_FILE_LINES%%%
+@JARFILE_FILE_LINES@
 
 // this is the jar file to process
 // this could also be a directory containing .class files
