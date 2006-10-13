@@ -52,7 +52,7 @@ public class LunaCmu {
             throw new LunaCmuException("Unable to find Luna Certificate Management Utility (cmu): System property " + PROPERTY_CMU_PATH + " is not valid");
         cmuFile = new File(cmuPath);
         if (!cmuFile.exists() || !cmuFile.isFile())
-            throw new LunaCmuException("Unable to find Luna Certificate Management Utility (cmu): can't cmu at path: "
+            throw new LunaCmuException("Unable to find Luna Certificate Management Utility (cmu) at path: "
                                                + cmuPath + ".  Set system property " + PROPERTY_CMU_PATH + " to override.");
 
         probe();
