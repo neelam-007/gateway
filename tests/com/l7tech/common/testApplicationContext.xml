@@ -85,6 +85,15 @@
             <ref bean="trustedCertManager"/>
         </property>
     </bean>
+    <!-- server side HTTP routing hostname verifier -->
+    <bean id="httpRoutingAssertionHostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
+        <constructor-arg>
+            <ref local="serverConfig"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="trustedCertManager"/>
+        </constructor-arg>
+    </bean>
 
     <!-- create test keys -->
     <bean id="testKeys" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
