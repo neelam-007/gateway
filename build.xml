@@ -2546,7 +2546,7 @@
     <!--
       SecureSpan Bridge obfuscation target
     -->
-    <target name="obfuscate.bridge" depends="obfuscate.init">
+    <target name="obfuscate.bridge" depends="obfuscate.init" if="obfuscate">
         <echo>Obfuscating Bridge.jar</echo>
         <Zelix scriptFileName="build/etc/bridge.zkm"
                logFileName="build/obfuscation/bridgeobfuscation.log"
@@ -2560,7 +2560,7 @@
     <!--
       SecureSpan Manager obfuscation target
     -->
-    <target name="obfuscate.manager" depends="obfuscate.init">
+    <target name="obfuscate.manager" depends="obfuscate.init" if="obfuscate">
         <echo>Obfuscating Manager.jar</echo>
         <Zelix scriptFileName="build/etc/manager.zkm"
                logFileName="build/obfuscation/managerobfuscation.log"
@@ -2574,7 +2574,7 @@
     <!--
       SecureSpan Gateway obfuscation target
     -->
-    <target name="obfuscate.gateway" depends="obfuscate.init">
+    <target name="obfuscate.gateway" depends="obfuscate.init" if="obfuscate">
         <echo>Obfuscating war classes</echo>
         <Zelix scriptFileName="build/etc/ssg.zkm"
                logFileName="build/obfuscation/ssgobfuscation.log"
@@ -2621,7 +2621,7 @@
     <!--
       Initialization for obfuscation
     -->
-    <target name="obfuscate.init">
+    <target name="obfuscate.init" if="obfuscate">
         <echo>Extracting classes from ROOT.war</echo>
         <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
         <!--
