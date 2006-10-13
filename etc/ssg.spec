@@ -153,7 +153,7 @@ fi
 
 %post
 
-echo "Layer 7 SecureSpan(tm) Gateway v3.6" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v3.7" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
 SSGEXISTS=`/sbin/chkconfig --list | grep "ssg\b"`
@@ -221,6 +221,8 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog
+* Fri Oct 13 2006 CY
+- 3.7m1
 * Mon Sep 25 2006 CY
 - 3.6rc4
 * Mon Aug 21 2006 CY
