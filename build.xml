@@ -762,7 +762,7 @@
     -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.readversion, package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz.all, package.modules"/>
+            depends="package.readversion, package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz.all, package.modules, obfuscate.work"/>
 
 
     <!--
@@ -2638,6 +2638,11 @@
                    pathExtra="    &quot;build/lib/servlet-api.jar&quot;${line.separator}    &quot;build/lib/catalina.jar&quot;${line.separator}    &quot;build/layer7-api.jar&quot;${line.separator}    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
     </target>
 
+    <target name="obfuscate" description="Enable obfuscated build (when packaging)">
+        <echo level="info">Enabling obfuscation for build.</echo>
+        <property name="obfuscate" value="true"/>
+    </target>
+
     <!--
       Meant to be used as part of official build this will create an obfuscated version
       of the following files:
@@ -2654,8 +2659,9 @@
       When followed by a call to ./make_installers.pl -b, the resulting windows installers
       for bridge, manager and ssg will also be obfuscated
     -->
-    <target name="obfuscate"
-            depends="clean, package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
+    <target name="obfuscate.work"
+            if="obfuscate"
+            depends="package.bridge, package.manager, package.gateway, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
         <echo level="info">Expecting obfuscation version ${build.version}</echo>
 
         <untar src="installer/Bridge-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
