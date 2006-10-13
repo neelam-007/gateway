@@ -26,6 +26,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         this.trustedForSigningServerCerts = cert.trustedForSigningServerCerts;
         this.trustedAsSamlIssuer = cert.trustedAsSamlIssuer;
         this.trustedAsSamlAttestingEntity = cert.trustedAsSamlAttestingEntity;
+        this.verifyHostname = cert.verifyHostname;
         this.thumbprintSha1 = cert.thumbprintSha1;
     }
 
@@ -153,6 +154,24 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     }
 
     /**
+     * Should hostname verification be used with this certificate.
+     *
+     * @return The hostname verification flag
+     */
+    public boolean isVerifyHostname() {
+        return verifyHostname;
+    }
+
+    /**
+     * Should hostname verification be used with this certificate.
+     *
+     * @param verifyHostname True to verify hostnames
+     */
+    public void setVerifyHostname(boolean verifyHostname) {
+        this.verifyHostname = verifyHostname;
+    }
+
+    /**
      * Gets the cert subject's DN (distinguished name)
      * @return the cert subject's DN (distinguished name)
      */
@@ -180,6 +199,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         if ( trustedAsSamlAttestingEntity != trustedCert.trustedAsSamlAttestingEntity ) return false;
         if ( trustedForSigningServerCerts != trustedCert.trustedForSigningServerCerts ) return false;
         if ( trustedForSsl != trustedCert.trustedForSsl ) return false;
+        if ( verifyHostname != trustedCert.verifyHostname ) return false;
         if ( subjectDn != null ? !subjectDn.equals( trustedCert.subjectDn ) : trustedCert.subjectDn != null ) return false;
 
         return true;
@@ -194,6 +214,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         result = 29 * result + (trustedForSigningServerCerts ? 1 : 0);
         result = 29 * result + (trustedAsSamlIssuer ? 1 : 0);
         result = 29 * result + (trustedAsSamlAttestingEntity ? 1 : 0);
+        result = 29 * result + (verifyHostname ? 1 : 0);
         return result;
     }
 
@@ -203,4 +224,5 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     private boolean trustedForSigningServerCerts;
     private boolean trustedAsSamlIssuer;
     private boolean trustedAsSamlAttestingEntity;
+    private boolean verifyHostname;
 }

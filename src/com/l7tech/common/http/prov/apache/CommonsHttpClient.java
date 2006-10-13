@@ -13,6 +13,7 @@ import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ConnectionTimeoutSocketFactory;
+import com.l7tech.common.util.CausedIOException;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
@@ -23,6 +24,8 @@ import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocket;
 import javax.net.SocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
@@ -106,8 +109,9 @@ public class CommonsHttpClient implements GenericHttpClient {
         final String targetProto = targetUrl.getProtocol();
         if ("https".equals(targetProto)) {
             final SSLSocketFactory sockFac = params.getSslSocketFactory();
+            final HostnameVerifier hostVerifier = params.getHostnameVerifier();
             if (sockFac != null) {
-                hconf = getHostConfig(targetUrl, sockFac);
+                hconf = getHostConfig(targetUrl, sockFac, hostVerifier);
             } else
                 hconf = null;
         } else
@@ -359,14 +363,14 @@ public class CommonsHttpClient implements GenericHttpClient {
         return hconf;
     }
 
-    private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac) {
+    private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier) {
         HostConfiguration hconf;
         Protocol protocol = (Protocol)protoBySockFac.get(sockFac);
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
             protocol = new Protocol("https", new SecureProtocolSocketFactory() {
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-                    return sockFac.createSocket(socket, host, port, autoClose);
+                    return verify(sockFac.createSocket(socket, host, port, autoClose), host);
                 }
 
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
@@ -391,7 +395,20 @@ public class CommonsHttpClient implements GenericHttpClient {
                             }
                         }
                     }
-                    return secure;
+                    return verify(secure, host);
+                }
+
+                private Socket verify(Socket socket, String host) throws IOException {
+                    if (hostVerifier != null && socket instanceof SSLSocket) {
+                        SSLSocket sslSocket = (SSLSocket) socket;
+                        if(!hostVerifier.verify(host, sslSocket.getSession())) {
+                            try{
+                                socket.close();
+                            } catch (IOException ioe) { }
+                            throw new CausedIOException("Host name does not match certificate '" + host + "'.");
+                        }
+                    }
+                    return socket;
                 }
             }, 443);
             protoBySockFac.put(sockFac, protocol);

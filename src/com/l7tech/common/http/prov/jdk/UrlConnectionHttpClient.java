@@ -45,6 +45,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 httpsConn = (HttpsURLConnection)conn;
                 if (params.getSslSocketFactory() != null)
                     httpsConn.setSSLSocketFactory(params.getSslSocketFactory());
+                if (params.getHostnameVerifier() != null)
+                    httpsConn.setHostnameVerifier(params.getHostnameVerifier());
             } else {
                 if (params.getTargetUrl().getProtocol().equalsIgnoreCase("https"))
                     throw new GenericHttpException("HttpURLConnection was using SSL but was not an HttpsURLConnection");

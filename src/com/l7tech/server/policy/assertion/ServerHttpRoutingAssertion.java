@@ -48,6 +48,7 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,6 +71,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
     private final SignerInfo senderVouchesSignerInfo;
     private final GenericHttpClientFactory httpClientFactory;
+    private final HostnameVerifier hostnameVerifier;
     private final FailoverStrategy failoverStrategy;
     private final String[] varNames;
     private final int maxFailoverAttempts;
@@ -91,6 +93,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
+            hostnameVerifier = (HostnameVerifier)applicationContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
             final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
             sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
@@ -195,6 +198,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         try {
             GenericHttpRequestParams routedRequestParams = new GenericHttpRequestParams(url);
             routedRequestParams.setSslSocketFactory(sslContext.getSocketFactory());
+            routedRequestParams.setHostnameVerifier(hostnameVerifier);
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             handleProcessedSecurityHeader(context,
                                           data.getCurrentSecurityHeaderHandling(),

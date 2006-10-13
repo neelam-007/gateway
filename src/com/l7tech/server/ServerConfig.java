@@ -66,6 +66,7 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_IO_FRONT_SLOW_READ_RATE = "ioInSlowReadRate";
     public static final String PARAM_IO_BACK_CONNECTION_TIMEOUT = "ioOutConnectionTimeout";
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
+    public static final String PARAM_IO_BACK_HTTPS_HOST_CHECK = "ioHttpsHostVerify";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
 
     public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";

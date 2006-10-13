@@ -9,6 +9,7 @@ package com.l7tech.common.http;
 import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.HostnameVerifier;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.*;
@@ -22,6 +23,7 @@ public class GenericHttpRequestParams {
     private PasswordAuthentication passwordAuthentication = null;
     private NtlmAuthentication ntlmAuthentication = null;
     private SSLSocketFactory sslSocketFactory = null;
+    private HostnameVerifier hostnameVerifier = null;
     private ContentTypeHeader contentType = null;
     private Long contentLength = null;
     private ArrayList extraHeaders = null;
@@ -166,6 +168,24 @@ public class GenericHttpRequestParams {
      */
     public void setSslSocketFactory(SSLSocketFactory sslSocketFactory) {
         this.sslSocketFactory = sslSocketFactory;
+    }
+
+    /**
+     * Get the hostname verifier to use.
+     *
+     * @return The hostname verifier or null if not set.
+     */
+    public HostnameVerifier getHostnameVerifier() {
+        return hostnameVerifier;
+    }
+
+    /**
+     * Set the hostname verifier to use.
+     *
+     * @param hostnameVerifier The verifier (may be null)
+     */
+    public void setHostnameVerifier(HostnameVerifier hostnameVerifier) {
+        this.hostnameVerifier = hostnameVerifier;
     }
 
     /**

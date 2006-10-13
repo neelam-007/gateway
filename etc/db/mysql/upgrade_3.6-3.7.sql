@@ -10,3 +10,7 @@ update community_schemas set system=1 where name = 'soapenv';
 
 -- Record authentication type in audit log
 alter table audit_message add column authenticationType int(11);
+
+-- Add hostname verification flag for trusted certs.
+alter table trusted_cert add column verify_hostname tinyint(1) default 0;
+

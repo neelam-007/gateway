@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,6 +72,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
         try {
            sslContext = SSLContext.getInstance("SSL");
            final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
+           hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
            sslContext.getClientSessionContext().setSessionTimeout(timeout);
@@ -109,6 +111,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
 
     private final GenericHttpClient httpClient;
     private final SSLContext sslContext;
+    private final HostnameVerifier hostnameVerifier;
 
     /**
      *
@@ -121,6 +124,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
         httpState.setStateObject(state);
         GenericHttpRequestParams loginParams = new GenericHttpRequestParams(loginUrl, httpState);
         loginParams.setSslSocketFactory(sslContext.getSocketFactory());
+        loginParams.setHostnameVerifier(hostnameVerifier);
         loginParams.setFollowRedirects(false);
 
         GenericHttpRequest loginRequest = null;
@@ -337,6 +341,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
         try {
             GenericHttpRequestParams getLoginFormParams = new GenericHttpRequestParams(loginUrl, httpState);
             getLoginFormParams.setSslSocketFactory(sslContext.getSocketFactory());
+            getLoginFormParams.setHostnameVerifier(hostnameVerifier);
             getLoginFormParams.setFollowRedirects(false);
             loginFormRequest = httpClient.createRequest(GenericHttpClient.GET, getLoginFormParams);
             loginFormResponse = loginFormRequest.getResponse();

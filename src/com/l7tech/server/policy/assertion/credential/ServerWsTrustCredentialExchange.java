@@ -44,6 +44,7 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -61,6 +62,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
     private final SimpleHttpClient httpClient = new SimpleHttpClient(new UrlConnectionHttpClient());
     private final URL tokenServiceUrl;
     private final SSLContext sslContext;
+    private final HostnameVerifier hostnameVerifier;
     private final WssProcessor trogdor = new WssProcessorImpl();
     private final SecurityTokenResolver securityTokenResolver;
 
@@ -82,7 +84,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
+            hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);
@@ -163,6 +165,8 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 params = new GenericHttpRequestParams(tokenServiceUrl);
                 params.setContentType(ContentTypeHeader.XML_DEFAULT);
                 params.setSslSocketFactory(sslContext.getSocketFactory());
+                params.setHostnameVerifier(hostnameVerifier);
+
                 params.setExtraHeaders(new HttpHeader[] { new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\"") });
 
                 // Get RSTR

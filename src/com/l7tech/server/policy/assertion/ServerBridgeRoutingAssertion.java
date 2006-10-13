@@ -55,6 +55,7 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
+import javax.net.ssl.HostnameVerifier;
 import java.io.*;
 import java.net.*;
 import java.security.*;
@@ -85,6 +86,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
 
+        hostnameVerifier = (HostnameVerifier)applicationContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
         final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         try {
             signerInfo = ku.getSslSignerInfo();
@@ -303,6 +305,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private final SignerInfo signerInfo;
     private final Ssg ssg;
     private final MessageProcessor messageProcessor;
+    private final HostnameVerifier hostnameVerifier;
     private X509Certificate serverCert;
     private final boolean useClientCert;
 
@@ -436,7 +439,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         // Attach SSL support
         client = new SslPeerHttpClient(client,
                                        ssg,
-                                       new SslPeerLazyDelegateSocketFactory(ssg));
+                                       new SslPeerLazyDelegateSocketFactory(ssg),
+                                       hostnameVerifier);
 
         if (ssg.isUseOverrideIpAddresses()) {
             // Attach failover client

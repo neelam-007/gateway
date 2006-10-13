@@ -29,6 +29,7 @@ import org.w3c.dom.Document;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -60,6 +61,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager) springContext.getBean("httpRoutingAssertionTrustManager");
+            hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
@@ -108,6 +110,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     protected void initParams(GenericHttpRequestParams params) {
         params.setSslSocketFactory(sslContext.getSocketFactory());
+        params.setHostnameVerifier(hostnameVerifier);
     }
 
     /**
@@ -217,6 +220,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
 
     private final Auditor auditor;
     private final SSLContext sslContext;
+    private final HostnameVerifier hostnameVerifier;
     private final WssProcessor trogdor;
     private final SecurityTokenResolver securityTokenResolver;
     private final Set authCookieSet;

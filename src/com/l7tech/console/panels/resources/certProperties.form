@@ -3,7 +3,7 @@
   <grid id="8cd72" binding="mainPanel" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="90" y="63" width="551" height="442"/>
+      <xy x="90" y="63" width="551" height="410"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
@@ -12,7 +12,7 @@
       <grid id="153db" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="407" width="531" height="25"/>
+          <xy x="10" y="375" width="531" height="25"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -59,7 +59,7 @@
       </grid>
       <tabbedpane id="5f53c" binding="tabPane">
         <constraints>
-          <xy x="10" y="10" width="531" height="392"/>
+          <xy x="10" y="10" width="531" height="360"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
             <preferred-size width="200" height="200"/>
           </grid>
@@ -122,7 +122,7 @@
               </component>
               <vspacer id="88aec">
                 <constraints>
-                  <xy x="314" y="119" width="11" height="237"/>
+                  <xy x="314" y="119" width="11" height="205"/>
                   <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
@@ -178,7 +178,7 @@
                   <grid id="eb7bc" binding="certPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <xy x="5" y="5" width="20" height="356"/>
+                      <xy x="5" y="5" width="20" height="324"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
@@ -187,7 +187,7 @@
                   </grid>
                   <hspacer id="edf16">
                     <constraints>
-                      <xy x="25" y="177" width="495" height="11"/>
+                      <xy x="25" y="161" width="495" height="11"/>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                     </constraints>
                   </hspacer>
@@ -195,94 +195,20 @@
               </grid>
             </children>
           </scrollpane>
-          <grid id="b0e3f" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="10" bottom="10" right="10"/>
+          <grid id="b0e3f" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="Options"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="e195d" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="10" left="10" bottom="10" right="10"/>
+              <scrollpane id="1628">
                 <constraints>
-                  <xy x="10" y="0" width="505" height="200"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="50386" class="javax.swing.JCheckBox" binding="outboundSSLConnCheckBox">
-                    <constraints>
-                      <xy x="10" y="55" width="182" height="23"/>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Outbound SSL Connections "/>
-                    </properties>
-                  </component>
-                  <grid id="3813a" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="10" left="0" bottom="10" right="0"/>
-                    <constraints>
-                      <xy x="10" y="10" width="485" height="40"/>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="167df" class="javax.swing.JLabel">
-                        <constraints>
-                          <xy x="0" y="12" width="150" height="15"/>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
-                        </constraints>
-                        <properties>
-                          <text value="Certificate usage options:"/>
-                        </properties>
-                      </component>
-                    </children>
+                  <xy x="10" y="238" width="505" height="86"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3">
+                    <minimum-size width="-1" height="80"/>
                   </grid>
-                  <component id="76f7b" class="javax.swing.JCheckBox" binding="signingServerCertCheckBox">
-                    <constraints>
-                      <xy x="10" y="83" width="310" height="23"/>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Signing Certificates for Outbound SSL Connections"/>
-                    </properties>
-                  </component>
-                  <component id="38108" class="javax.swing.JCheckBox" binding="signingSAMLTokenCheckBox">
-                    <constraints>
-                      <xy x="10" y="139" width="146" height="23"/>
-                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Signing SAML Tokens"/>
-                    </properties>
-                  </component>
-                  <component id="ac7a5" class="javax.swing.JCheckBox" binding="signingClientCertCheckBox">
-                    <constraints>
-                      <xy x="10" y="111" width="170" height="23"/>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Signing Client Certificates"/>
-                    </properties>
-                  </component>
-                  <component id="4a23a" class="javax.swing.JCheckBox" binding="samlAttestingEntityCheckBox">
-                    <constraints>
-                      <xy x="10" y="167" width="433" height="23"/>
-                      <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="SAML Attesting Entity (applies to Sender Vouches Subject Confirmation)"/>
-                    </properties>
-                  </component>
-                </children>
-              </grid>
-              <scrollpane id="1628" binding="descriptionPane">
-                <constraints>
-                  <xy x="10" y="205" width="505" height="151"/>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                 </constraints>
                 <properties>
                   <autoscrolls value="false"/>
@@ -300,6 +226,83 @@
                   </component>
                 </children>
               </scrollpane>
+              <grid id="3813a" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="4">
+                <margin top="2" left="10" bottom="2" right="10"/>
+                <constraints>
+                  <xy x="10" y="10" width="505" height="162"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
+                </constraints>
+                <properties/>
+                <border type="none" title="Certificate usage options"/>
+                <children>
+                  <component id="80216" class="javax.swing.JCheckBox" binding="outboundSSLConnCheckBox">
+                    <constraints>
+                      <xy x="16" y="23" width="182" height="23"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Outbound SSL Connections "/>
+                    </properties>
+                  </component>
+                  <component id="76f7b" class="javax.swing.JCheckBox" binding="signingServerCertCheckBox">
+                    <constraints>
+                      <xy x="16" y="50" width="310" height="23"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Signing Certificates for Outbound SSL Connections"/>
+                    </properties>
+                  </component>
+                  <component id="ac7a5" class="javax.swing.JCheckBox" binding="signingClientCertCheckBox">
+                    <constraints>
+                      <xy x="16" y="77" width="170" height="23"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Signing Client Certificates"/>
+                    </properties>
+                  </component>
+                  <component id="38108" class="javax.swing.JCheckBox" binding="signingSAMLTokenCheckBox">
+                    <constraints>
+                      <xy x="16" y="104" width="146" height="23"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Signing SAML Tokens"/>
+                    </properties>
+                  </component>
+                  <component id="4a23a" class="javax.swing.JCheckBox" binding="samlAttestingEntityCheckBox">
+                    <constraints>
+                      <xy x="16" y="131" width="433" height="23"/>
+                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="SAML Attesting Entity (applies to Sender Vouches Subject Confirmation)"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="7f47a" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="2" left="10" bottom="2" right="10"/>
+                <constraints>
+                  <xy x="10" y="177" width="505" height="56"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+                </constraints>
+                <properties/>
+                <border type="none" title="Other options"/>
+                <children>
+                  <component id="9506" class="javax.swing.JCheckBox" binding="verifySslHostnameCheckBox">
+                    <constraints>
+                      <xy x="16" y="23" width="301" height="23"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <selected value="false"/>
+                      <text value="Verify Hostnames for Outbound SSL connections"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
             </children>
           </grid>
         </children>

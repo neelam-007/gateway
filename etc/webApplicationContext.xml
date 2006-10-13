@@ -210,6 +210,15 @@
             <ref bean="trustedCertManager"/>
         </property>
     </bean>
+    <!-- server side HTTP routing hostname verifier -->
+    <bean id="httpRoutingAssertionHostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
+        <constructor-arg>
+            <ref local="serverConfig"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="trustedCertManager"/>
+        </constructor-arg>
+    </bean>
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.IdentityBindingHttpClientFactory"

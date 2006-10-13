@@ -262,6 +262,7 @@ CREATE TABLE trusted_cert (
   trusted_for_server tinyint(1) default '0',
   trusted_for_saml tinyint(1) default '0',
   trusted_as_saml_attesting_entity tinyint(1) default '0',
+  verify_hostname tinyint(1) default '0',
   thumbprint_sha1 varchar(64),
   ski varchar(64),
   primary key(objectid),

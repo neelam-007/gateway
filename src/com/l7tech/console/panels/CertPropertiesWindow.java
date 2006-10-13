@@ -53,8 +53,9 @@ public class CertPropertiesWindow extends JDialog {
     private JCheckBox signingClientCertCheckBox;
     private JCheckBox outboundSSLConnCheckBox;
     private JCheckBox samlAttestingEntityCheckBox;
-    private JScrollPane descriptionPane;
+    private JCheckBox verifySslHostnameCheckBox;
     private JTabbedPane tabPane;
+    private JTextPane descriptionText;
     private JButton saveButton;
     private JButton cancelButton;
     private JButton exportButton;
@@ -113,7 +114,6 @@ public class CertPropertiesWindow extends JDialog {
     private void initialize(boolean editable, boolean options) {
 
         JRootPane rp = this.getRootPane();
-        rp.setPreferredSize(new Dimension(550, 350));
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
@@ -125,6 +125,14 @@ public class CertPropertiesWindow extends JDialog {
         // disable the fields if the properties should not be modified
         if (!editable) {
             disableAll();
+        } else {
+            ActionListener sslOptionListener = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    verifySslHostnameCheckBox.setEnabled(signingServerCertCheckBox.isSelected() || outboundSSLConnCheckBox.isSelected());
+                }
+            };
+            signingServerCertCheckBox.addActionListener(sslOptionListener);
+            outboundSSLConnCheckBox.addActionListener(sslOptionListener);
         }
 
         // disable the options tab if not required
@@ -134,6 +142,9 @@ public class CertPropertiesWindow extends JDialog {
         }
 
         populateData();
+
+        verifySslHostnameCheckBox.setEnabled(editable &&
+                (signingServerCertCheckBox.isSelected() || outboundSSLConnCheckBox.isSelected()));
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -218,6 +229,7 @@ public class CertPropertiesWindow extends JDialog {
         });
 
         descriptionText.setText(resources.getString("usage.desc"));
+        descriptionText.getCaret().setDot(0);
     }
 
     /**
@@ -234,6 +246,7 @@ public class CertPropertiesWindow extends JDialog {
         signingClientCertCheckBox.setEnabled(false);
         outboundSSLConnCheckBox.setEnabled(false);
         samlAttestingEntityCheckBox.setEnabled(false);
+        verifySslHostnameCheckBox.setEnabled(false);
         // all buttons except the Export/Cancel button
         saveButton.setEnabled(false);
         cancelButton.setText(resources.getString("closeButton.label"));
@@ -308,6 +321,8 @@ public class CertPropertiesWindow extends JDialog {
         outboundSSLConnCheckBox.setSelected(trustedCert.isTrustedForSsl());
 
         samlAttestingEntityCheckBox.setSelected(trustedCert.isTrustedAsSamlAttestingEntity());
+
+        verifySslHostnameCheckBox.setSelected(trustedCert.isVerifyHostname());
     }
 
     /**
@@ -341,6 +356,7 @@ public class CertPropertiesWindow extends JDialog {
             tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
             tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
             tc.setTrustedAsSamlAttestingEntity(samlAttestingEntityCheckBox.isSelected());
+            tc.setVerifyHostname(verifySslHostnameCheckBox.isSelected() && verifySslHostnameCheckBox.isEnabled());
         }
     }
 
@@ -354,8 +370,5 @@ public class CertPropertiesWindow extends JDialog {
         TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
-
-
-    private JTextPane descriptionText;
 
 }
