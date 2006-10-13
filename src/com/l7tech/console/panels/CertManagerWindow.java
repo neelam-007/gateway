@@ -331,6 +331,9 @@ public class CertManagerWindow extends JDialog {
             if (o instanceof TrustedCert) {
 
                 final TrustedCert tc = (TrustedCert)o;
+                if (tc.isTrustedForSsl() || tc.isTrustedForSigningServerCerts()) {
+                    tc.setVerifyHostname(true);
+                }
 
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
