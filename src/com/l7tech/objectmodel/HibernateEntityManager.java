@@ -567,6 +567,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, EHT ex
                     cacheInfoByName.put(((NamedEntity)thing).getName(), info);
                 }
                 write.release(); write = null;
+            } else {
+                write = null; // prevent release without acquire
             }
 
             info.entity = thing;
