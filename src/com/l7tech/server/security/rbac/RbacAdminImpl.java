@@ -15,8 +15,8 @@ import com.l7tech.server.GatewayFeatureSets;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -72,6 +72,11 @@ public class RbacAdminImpl implements RbacAdmin {
             }
         }
         return perms;
+    }
+
+    public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
+        if (user == null) throw new IllegalArgumentException("User cannot be null.");
+        return roleManager.getAssignedRoles(user);
     }
 
     private Role attachHeaders(Role theRole) {

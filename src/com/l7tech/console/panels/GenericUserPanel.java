@@ -63,6 +63,7 @@ public class GenericUserPanel extends UserPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
+    private UserRoleAssignmentsPanel rolesPanel;
     private UserGroupsPanel groupPanel; // membership
     private UserCertPanel certPanel; //certificate
     // Apply/Revert buttons
@@ -71,7 +72,8 @@ public class GenericUserPanel extends UserPanel {
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
-    private static final String MEMBERSHIP_LABEL = "Membership";
+    private static final String MEMBERSHIP_LABEL = "Groups";
+    private static final String ROLES_LABEL = "Assigned Roles";
     private static final String CERTIFICATE_LABEL = "Certificate";
 
     private static final String CANCEL_BUTTON = "Cancel";
@@ -93,6 +95,7 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
+            rolesPanel = new UserRoleAssignmentsPanel(user);
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             layoutComponents();
@@ -243,6 +246,7 @@ public class GenericUserPanel extends UserPanel {
 
         // Add all tabs
         tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
+        tabbedPane.add(rolesPanel, ROLES_LABEL);
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
         tabbedPane.add(certPanel, CERTIFICATE_LABEL);
 

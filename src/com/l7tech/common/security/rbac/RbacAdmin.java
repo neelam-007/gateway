@@ -5,6 +5,7 @@ package com.l7tech.common.security.rbac;
 
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.identity.User;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,14 @@ public interface RbacAdmin {
     @Transactional(readOnly=true)
     Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException;
 
+    /**
+     * Gets the roles assigned to the given user.  This is unsecured, so that anyone running
+     * the SSM can find out what functionality they can access.
+     *
+     * The User cannot be null.
+     */
+    @Transactional(readOnly=true)
+    Collection<Role> findRolesForUser(User user) throws FindException, RemoteException;
     /**
      * Saves the specified Role.
      * @return the OID of the role that was saved
