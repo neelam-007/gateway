@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
  * User: flascell<br/>
  * Date: Feb 23, 2004<br/>
  */
-public class RemoteIpRange extends Assertion {
+public class RemoteIpRange extends Assertion implements UsesVariables {
 
     public RemoteIpRange() {
         startIp = "192.168.1.0";
@@ -133,4 +133,10 @@ public class RemoteIpRange extends Assertion {
 
     private final static int MIN_IP_VALUE = 0;
     private final static int MAX_IP_VALUE = 255;
+
+    public String[] getVariablesUsed() {
+        if (ipSourceContextVariable == null || ipSourceContextVariable.length() < 1) {
+            return new String[0];
+        } else return new String[] {ipSourceContextVariable};
+    }
 }
