@@ -90,12 +90,21 @@ public class TrafficLogger implements ApplicationContextAware {
     private String[] varsUsed = ExpandVariables.getReferencedNames(detail);
     private static final Logger logger = Logger.getLogger(TrafficLogger.class.getName());
     private ServerConfig serverConfig;
-    private final Timer checker = new Timer(true);
+    private final Timer checker;
     private Auditor auditor;
     private SoapFaultManager soapFaultManager;
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private FileHandler lastAssignedHandler = null;
+
+    /**
+     *
+     */
+    public TrafficLogger(Timer timer) {
+        if (timer == null)
+            timer = new Timer("Traffic logger config refresh", true);
+        checker = timer;
+    }
 
     /**
      * Logs request to the traffic logger as per server setting. By default, this functionality is

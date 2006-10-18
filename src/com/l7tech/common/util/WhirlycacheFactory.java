@@ -5,6 +5,13 @@
 
 package com.l7tech.common.util;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import com.whirlycott.cache.policy.FIFOMaintenancePolicy;
 import com.whirlycott.cache.policy.LRUMaintenancePolicy;
 import com.whirlycott.cache.policy.LFUMaintenancePolicy;
@@ -15,6 +22,9 @@ import com.whirlycott.cache.impl.ConcurrentHashMapImpl;
  * Creates a whirlycache.
  */
 public class WhirlycacheFactory {
+
+    //- PUBLIC
+
     public static final String POLICY_FIFO = FIFOMaintenancePolicy.class.getName();
     public static final String POLICY_LRU  = LRUMaintenancePolicy.class.getName();
     public static final String POLICY_LFU  = LFUMaintenancePolicy.class.getName();
@@ -71,6 +81,54 @@ public class WhirlycacheFactory {
         maintenancePolicy.setCache(managedCache);
         maintenancePolicy.setConfiguration(cc);
 
-        return new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
+        Cache cache = null;
+        synchronized(cacheMap) {
+            if (!shutdown) {
+                cache = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
+                cacheMap.put(name, cache);
+            }
+        }
+
+        if (cache == null) // if we are shutting down we can't create new CacheDecorator's so return the dummy cache 
+            cache = NullCache;
+
+        return cache;
     }
+
+    /**
+     * Shutdown cache tuning thread.
+     */
+    public static void shutdown() {
+        synchronized(cacheMap) {
+            shutdown = true;
+            for (Iterator cacheIter = cacheMap.entrySet().iterator(); cacheIter.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) cacheIter.next();
+                String name = (String) entry.getKey();
+                CacheDecorator cacheDecorator = (CacheDecorator) entry.getValue();
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "Shutting down cache ''{0}''.", name);
+                cacheDecorator.shutdown();
+            }
+        }
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(WhirlycacheFactory.class.getName());
+
+    private static final Cache NullCache = new Cache() {
+        public void clear() {}
+        public Object remove(Cacheable key) { return null; }
+        public Object remove(Object key) { return null; }
+        public Object retrieve(Cacheable key) { return null; }
+        public Object retrieve(Object key) { return null; }
+        public int size() { return 0; }
+        public void store(Cacheable key, Object value) {}
+        public void store(Cacheable key, Object value, long expireTime) {}
+        public void store(Object key, Object value) {}
+        public void store(Object key, Object value, long expireTime) {}
+    };
+
+    private static final Map cacheMap = Collections.synchronizedMap(new HashMap());
+    private static boolean shutdown = false;
 }

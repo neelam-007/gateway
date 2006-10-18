@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  */
 public class BootServlet extends HttpServlet {
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private ServerComponentLifecycle _boot;
+    private BootProcess _boot;
 
     public void init() throws ServletException {
         try {
@@ -35,7 +35,7 @@ public class BootServlet extends HttpServlet {
             if (acx == null) {
                 throw new ServletException("Configuration error; could not get application context");
             }
-            _boot = (ServerComponentLifecycle)acx.getBean("ssgBoot");
+            _boot = (BootProcess)acx.getBean("ssgBoot", BootProcess.class);
             _boot.start();
             logger.fine("Boot process completed");
         } catch ( Throwable e ) {

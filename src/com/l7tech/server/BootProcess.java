@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public class BootProcess
     extends ApplicationObjectSupport
-    implements ServerComponentLifecycle, DisposableBean, InitializingBean
+    implements DisposableBean, InitializingBean
 {
     private static final Logger logger;
 
@@ -91,6 +91,12 @@ public class BootProcess
             component.start();
         }
 
+        logger.info("Starting discovered server components...");
+        for (ServerComponentLifecycle component : getDiscoveredComponents()) {
+            logger.info("Starting component " + component);
+            component.start();
+        }
+
         getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, ipAddress));
         logger.info("Boot process complete.");
     }
@@ -106,6 +112,17 @@ public class BootProcess
 
         for (ServerComponentLifecycle component : stnenopmoc) {
             logger.info("Stopping component " + component);
+            component.stop();
+        }
+
+        logger.info("Stopping discovered server components");
+
+        List<ServerComponentLifecycle> stnenopmocDerevocsid = new ArrayList<ServerComponentLifecycle>();
+        stnenopmocDerevocsid.addAll(getDiscoveredComponents());
+        Collections.reverse(stnenopmocDerevocsid);
+
+        for (ServerComponentLifecycle component : stnenopmocDerevocsid) {
+            logger.info("Stopping discovered component " + component);
             component.stop();
         }
 
@@ -126,6 +143,18 @@ public class BootProcess
             logger.info("Closing component " + component);
             component.close();
         }
+
+        logger.info("Closing discovered server components");
+
+        List<ServerComponentLifecycle> stnenopmocDerevocsid = new ArrayList<ServerComponentLifecycle>();
+        stnenopmocDerevocsid.addAll(getDiscoveredComponents());
+        Collections.reverse(stnenopmocDerevocsid);
+
+        for (ServerComponentLifecycle component : stnenopmocDerevocsid) {
+            logger.info("Closing discovered component " + component);
+            component.close();
+        }
+
         getApplicationContext().publishEvent(new Closed(this, Component.GW_SERVER, ipAddress));
         logger.info("Closed.");
     }
@@ -332,9 +361,22 @@ public class BootProcess
         }
     }
 
+    private Collection<ServerComponentLifecycle> getDiscoveredComponents() {
+        Collection<ServerComponentLifecycle> comps = discoveredComponents;
+
+        if (comps == null) {
+            comps = (Collection<ServerComponentLifecycle>)
+                    getApplicationContext().getBeansOfType(ServerComponentLifecycle.class, false, false).values();
+            discoveredComponents = comps;
+        }
+
+        return comps;
+    }
+
     public static final String LOCALHOST_IP = "127.0.0.1";
 
     private List<ServerComponentLifecycle> _components;
+    private Collection<ServerComponentLifecycle> discoveredComponents;
     private ServerConfig serverConfig;
     private Auditor auditor;
     private String ipAddress;

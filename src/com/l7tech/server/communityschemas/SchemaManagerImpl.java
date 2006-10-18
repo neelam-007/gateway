@@ -123,7 +123,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
     private final Timer maintenanceTimer;
 
-    public SchemaManagerImpl(HttpClientFactory httpClientFactory) {
+    public SchemaManagerImpl(HttpClientFactory httpClientFactory, Timer timer) {
         if (httpClientFactory == null) throw new NullPointerException();
 
         HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
@@ -139,7 +139,9 @@ public class SchemaManagerImpl implements SchemaManager {
                                                       userObjectFactory,
                                                       HttpObjectCache.WAIT_LATEST);
 
-        maintenanceTimer = new Timer("Schema cache maintenance", true);
+        if (timer == null)
+            timer = new Timer("Schema cache maintenance", true);
+        maintenanceTimer = timer;
         TimerTask cacheCleanupTask = new TimerTask() {
             public void run() {
                 cacheCleanup();

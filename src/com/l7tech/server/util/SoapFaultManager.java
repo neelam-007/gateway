@@ -50,10 +50,12 @@ public class SoapFaultManager implements ApplicationContextAware {
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
 
-    private final Timer checker = new Timer(true);
+    private final Timer checker;
 
-    public SoapFaultManager(ServerConfig serverConfig) {
+    public SoapFaultManager(ServerConfig serverConfig, Timer timer) {
+        if (timer == null) timer = new Timer("Soap fault manager refresh", true);
         this.serverConfig = serverConfig;
+        this.checker = timer;
     }
 
     /**

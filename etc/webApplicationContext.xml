@@ -24,11 +24,12 @@
         </property>
     </bean>
 
-    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess" depends-on="systemAuditListener">
+    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="jmsConnectionManager"/>
         <constructor-arg ref="jmsEndpointManager"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
     <!--
@@ -202,6 +203,11 @@
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
         <constructor-arg>
             <ref bean="policyFactory"/>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Service cache refresh"/>
+            </bean>
         </constructor-arg>
     </bean>
     <!-- server side HTTP routing client trust manager -->
@@ -638,6 +644,11 @@
         <constructor-arg>
             <ref local="httpClientFactory"/>
         </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Schema cache maintenance"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl">
@@ -746,6 +757,24 @@
         <constructor-arg>
             <ref bean="clusterNodeId"/>
         </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="ServiceMetricsManager.fineTimer"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="ServiceMetricsManager.hourlyTimer"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="ServiceMetricsManager.dailyTimer"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg>
+            <ref local="managedBackgroundTimer"/>
+        </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -764,11 +793,21 @@
                 <ref bean="roleManager"/>
             </list>
         </property>
+        <property name="timer">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="EntityVersionChecker"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
         <constructor-arg>
             <ref bean="serverConfig"/>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Soap fault manager refresh"/>
+            </bean>
         </constructor-arg>
     </bean>
 
@@ -781,6 +820,11 @@
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory"/>
 
     <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Traffic logger config refresh"/>
+            </bean>
+        </constructor-arg>
         <property name="serverConfig">
             <ref bean="serverConfig"/>
         </property>
@@ -794,4 +838,12 @@
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy">
 
     </bean>
+
+    <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="Background timer"/>
+    </bean>
+
+    <bean id="whirlyLife" class="com.l7tech.server.WhirlyLifecycle"/>
+
+    <bean id="timerLife" class="com.l7tech.server.ManagedTimerLifecycle"/>
 </beans>

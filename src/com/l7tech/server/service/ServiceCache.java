@@ -60,11 +60,14 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     /**
      * Constructor for bean usage via subclassing.
      */
-    public ServiceCache(ServerPolicyFactory policyFactory) {
+    public ServiceCache(ServerPolicyFactory policyFactory, Timer timer) {
         if (policyFactory == null) {
             throw new IllegalArgumentException("Policy Factory is required");
         }
+        if (timer == null) timer = new Timer("Service cache refresh", true);
+
         this.policyFactory = policyFactory;
+        this.checker = timer;
     }
 
     public synchronized void initiateIntegrityCheckProcess() {
@@ -607,6 +610,6 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
     // TODO replace with Jgroups notifications
-    private final Timer checker = new Timer(true); // Don't use Background since this is high priority
+    private final Timer checker; // Don't use Background since this is high priority
     private boolean running = false;
 }

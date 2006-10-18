@@ -1,7 +1,6 @@
 package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
-import com.l7tech.common.util.Background;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
@@ -38,8 +37,18 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     //- PUBLIC
 
-    public ServiceMetricsManager(String clusterNodeId) {
+    public ServiceMetricsManager(String clusterNodeId, Timer fineTimer, Timer hourlyTimer, Timer dailyTimer, Timer timer) {
         this._clusterNodeId = clusterNodeId;
+
+        if (fineTimer == null) fineTimer = new Timer("ServiceMetricsManager.fineTimer" /* name */, true /* isDaemon */);
+        if (hourlyTimer == null) hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer" /* name */, true /* isDaemon */);
+        if (dailyTimer == null) dailyTimer = new Timer("ServiceMetricsManager.dailyTimer" /* name */, true /* isDaemon */);
+        if (timer == null) timer = new Timer("ServiceMetricsManager.background" /* name */, true /* isDaemon */);
+
+        this.fineTimer = fineTimer;
+        this.hourlyTimer = hourlyTimer;
+        this.dailyTimer = dailyTimer;
+        this.backgroundTimer = timer;
     }
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
@@ -206,15 +215,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                        DEF_DAILY_AGE);
 
         fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
-        Background.scheduleRepeated(fineDeleter, MINUTE, 5 * MINUTE);
+        backgroundTimer.schedule(fineDeleter, MINUTE, 5 * MINUTE);
         logger.config("Scheduled first fine deletion task for " + new Date(System.currentTimeMillis() + MINUTE));
 
         hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
-        Background.scheduleRepeated(hourlyDeleter, 15 * MINUTE, 12 * HOUR);
+        backgroundTimer.schedule(hourlyDeleter, 15 * MINUTE, 12 * HOUR);
         logger.config("Scheduled first hourly deletion task for " + new Date(System.currentTimeMillis() + 15 * MINUTE));
 
         dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
-        Background.scheduleRepeated(dailyDeleter, HOUR, 24 * HOUR);
+        backgroundTimer.schedule(dailyDeleter, HOUR, 24 * HOUR);
         logger.config("Scheduled first daily deletion task for " + new Date(System.currentTimeMillis() + HOUR));
 
         // Populate initial bins
@@ -252,9 +261,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     //- PRIVATE
 
-    private final Timer fineTimer = new Timer("ServiceMetricsManager.fineTimer" /* name */, true /* isDaemon */);
-    private final Timer hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer" /* name */, true /* isDaemon */);
-    private final Timer dailyTimer = new Timer("ServiceMetricsManager.dailyTimer" /* name */, true /* isDaemon */);
+    private final Timer fineTimer;
+    private final Timer hourlyTimer;
+    private final Timer dailyTimer;
+    private final Timer backgroundTimer;
 
     private Thread flusherThread;
     private final Flusher flusher = new Flusher();

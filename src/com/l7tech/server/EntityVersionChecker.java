@@ -55,11 +55,21 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     }
 
     /**
+     * Set the timer.
+     *
+     * @param timer The timer to use.
+     */
+    public void setTimer(Timer timer) {
+        this.timer = timer;
+    }
+
+    /**
      * Initialize the component.
      */
     public void afterPropertiesSet() throws Exception {
         if(btt!=null) {
-            timer = new Timer();
+            if (timer == null)
+                timer = new Timer("EntityVersionChecker");
             timer.schedule(btt, interval, interval);
         }
         else {
