@@ -23,6 +23,11 @@ public class VariableMetadata implements Serializable {
         this.settable = settable;
     }
 
+
+    public VariableMetadata(String name) {
+        this(name, true, true, name, true);        
+    }
+
     /**
      * The name of the variable. If {@link #isPrefixed} is true, this name is just a prefix:
      * the names of the actual variables are accessible using this prefix followed by a period
