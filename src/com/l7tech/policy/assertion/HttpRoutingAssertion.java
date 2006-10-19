@@ -19,6 +19,7 @@ public class HttpRoutingAssertion
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
+    public static final String VAR_SERVICE_URL = "service.url";
     public static final String PROP_SSL_SESSION_TIMEOUT =
             HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
@@ -223,7 +224,8 @@ public class HttpRoutingAssertion
 
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-            new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false)
+            new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false),
+            new VariableMetadata(VAR_SERVICE_URL, false, false, VAR_SERVICE_URL, false)
         };
     }
 
