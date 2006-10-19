@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * The custom assertion holder is a placeholder <code>Assertion</code>
@@ -19,7 +20,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
  * @version 1.0
  * @see CustomAssertion
  */
-public class CustomAssertionHolder extends Assertion {
+public class CustomAssertionHolder extends Assertion implements UsesVariables, SetsVariables{
     /**
      * Serialization id, maintain to indicate serialization compatibility
      * with a previous versions of the  class.
@@ -83,5 +84,20 @@ public class CustomAssertionHolder extends Assertion {
     private Category category;
     private String descriptionText;
 
+    public String[] getVariablesUsed() {
+        if (customAssertion == null || !(customAssertion instanceof UsesVariables) ) {
+            return new String[0];
+        }
+        UsesVariables usesVariables = (UsesVariables) customAssertion;
+        return usesVariables.getVariablesUsed();
+    }
+
+    public VariableMetadata[] getVariablesSet() {
+        if (customAssertion == null || !(customAssertion instanceof SetsVariables) ) {
+            return new VariableMetadata[0];
+        }
+        SetsVariables setsVariables = (SetsVariables) customAssertion;
+        return setsVariables.getVariablesSet();
+    }
 }
 

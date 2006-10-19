@@ -1624,6 +1624,9 @@
                 <include name="com/l7tech/policy/assertion/Assertion*.class"/>
                 <include name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
                 <include name="com/l7tech/policy/assertion/composite/**"/>
+                <include name="com/l7tech/policy/assertion/UsesVariables.class"/>
+                <include name="com/l7tech/policy/assertion/SetsVariables.class"/>
+                <include name="com/l7tech/policy/variable/VariableMetadata.class"/>
                 <include name="com/l7tech/policy/assertion/ext/AssertionEditor.class"/>
                 <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.class"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
