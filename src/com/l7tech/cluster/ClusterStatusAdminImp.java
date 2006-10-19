@@ -4,10 +4,10 @@ import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.MethodStereotype;
+import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -20,12 +20,7 @@ import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsBin;
 
 import java.rmi.RemoteException;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -148,6 +143,10 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return Calendar.getInstance().getTime();
     }
 
+    public TimeZone getCurrentClusterTimeZone() throws RemoteException {
+        return TimeZone.getDefault();
+    }
+
     /**
      * gets the name of node that handles the admin request.
      *
@@ -207,6 +206,16 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         checkLicense();
         return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
+    }
+
+    public List findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+        checkLicense();
+        if (duration == null) {
+            return serviceMetricsManager.findBins(nodeId, null, null, resolution, serviceOid);
+        } else {
+            final long now = System.currentTimeMillis();
+            return serviceMetricsManager.findBins(nodeId, now - duration, now, resolution, serviceOid);
+        }
     }
 
     public MetricsBin getLastestMetricsSummary(final String clusterNodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException {

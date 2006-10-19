@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.jfree.*;
+import com.l7tech.console.util.Registry;
 import com.l7tech.service.MetricsBin;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -28,6 +29,7 @@ import java.io.InvalidObjectException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.rmi.RemoteException;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -80,6 +82,7 @@ public class MetricsChartPanel extends ChartPanel {
     /** Shape for alert indicators (routing failure and policy violation). */
     private static final Rectangle2D.Double INDICATOR_SHAPE = new Rectangle2D.Double(-3., -3., 6., 6.);
 
+    private static final String TIME_AXIS_LABEL = _resources.getString("timeAxisLabel");
     private static final String MESSAGE_RATE_AXIS_LABEL = _resources.getString("messageRateAxisLabel");
     private static final String RESPONSE_TIME_AXIS_LABEL = _resources.getString("responseTimeAxisLabel");
 
@@ -124,6 +127,9 @@ public class MetricsChartPanel extends ChartPanel {
     /** Maximum time range of data to keep around (in milliseconds). */
     private long _maxTimeRange;
 
+    /** Time zone for the time axis. */
+    private TimeZone _timeZone;
+
     /**
      * Data structure containing frontend and backend response times.
      * The response time plot rely on the series order:
@@ -154,7 +160,7 @@ public class MetricsChartPanel extends ChartPanel {
     private final TimeTableXYDataset _messageRates;
 
     /** The shared time (x-) axis. */
-    private final DateAxis _xAxis;
+    private DateAxis _xAxis;
 
     /** Y-axis for the response time plot. */
     private final NumberAxis _rYAxis;
@@ -423,7 +429,13 @@ public class MetricsChartPanel extends ChartPanel {
         // Now combine all plots to share the same time (x-)axis.
         //
 
-        _xAxis = new DateAxis(null) {
+        try {
+            _timeZone = Registry.getDefault().getClusterStatusAdmin().getCurrentClusterTimeZone();
+        } catch (RemoteException e) {
+            // Falls back to use local time zone.
+            _timeZone = TimeZone.getDefault();
+        }
+        _xAxis = new DateAxis(TIME_AXIS_LABEL /* effective time zone to be appended later */, _timeZone) {
             public void setRange(Range range, boolean turnOffAutoRange, boolean notify) {
                 // Do not zoom in any smaller than the nominal bin interval.
                 if ((range.getUpperBound() - range.getLowerBound()) >= _binInterval)
@@ -530,7 +542,8 @@ public class MetricsChartPanel extends ChartPanel {
 
         // Now that the overall time range has change, remove data older than
         // our maximum allowed time range.
-        final long newLowerBound = (long) _responseTimes.getDomainUpperBound(true) - _maxTimeRange;
+        final long newUpperBound = (long) _responseTimes.getDomainUpperBound(true);
+        final long newLowerBound = newUpperBound - _maxTimeRange;
 
         int deleteStart = -1;
         int deleteEnd = -1;
@@ -553,6 +566,10 @@ public class MetricsChartPanel extends ChartPanel {
                 _messageRates.remove(period, SERIES_ROUTING_FAILURE, false);
             }
         }
+
+        // Appends current effective time zone to time axis label.
+        final boolean inDST = _timeZone.inDaylightTime(new Date(newUpperBound));
+        _xAxis.setLabel(TIME_AXIS_LABEL + " (" + _timeZone.getDisplayName(inDST, TimeZone.SHORT) + ")");
 
         // Re-enable notification now that all dataset change is done.
         _chart.setNotify(true);

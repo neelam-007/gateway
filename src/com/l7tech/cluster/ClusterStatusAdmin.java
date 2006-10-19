@@ -81,6 +81,15 @@ public interface ClusterStatusAdmin {
     java.util.Date getCurrentClusterSystemTime() throws RemoteException;
 
     /**
+     * Get the current system time zone on the gateway.
+     *
+     * @return the current system time zone on the gateway
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    java.util.TimeZone getCurrentClusterTimeZone() throws RemoteException;
+
+    /**
      * Get the name of node that handles the admin request.
      *
      * @return String  The node name
@@ -176,6 +185,24 @@ public interface ClusterStatusAdmin {
     @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
     List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart,
                          Integer resolution, Long serviceOid) throws RemoteException, FindException;
+
+    /**
+     * Finds the latest metrics bins in the database using the given criteria.
+     *
+     * @param nodeId        the MAC address of the cluster node to query for; <code>null</code> means all
+     * @param duration      time duration (in milliseconds) into the past; based on gateway clock; <code>null</code> means all
+     * @param resolution    the metric bin resolution ({@link com.l7tech.service.MetricsBin#RES_FINE},
+     *                      {@link com.l7tech.service.MetricsBin#RES_HOURLY} or
+     *                      {@link com.l7tech.service.MetricsBin#RES_DAILY}) value;
+     *                      <code>null</code> means all
+     * @param serviceOid    the OID of the {@link com.l7tech.service.PublishedService};
+     *                      <code>null</code> means all
+     * @return a {@link List} of {@link com.l7tech.service.MetricsBin} found
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
+    List findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid)
+            throws RemoteException, FindException;
 
     /**
      * Summarizes the latest metrics bins in the database for the given criteria.

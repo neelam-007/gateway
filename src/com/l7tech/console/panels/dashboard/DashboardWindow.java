@@ -419,8 +419,20 @@ public class DashboardWindow extends JFrame implements LogonListener {
     }
 
     private void findNewBins(Range range) throws RemoteException, FindException {
+        List newBins = null;
         long last = range.getLastPeriodDownloaded();
-        List newBins = getClusterStatusAdmin().findMetricsBins(null, new Long(last + 1), null, new Integer(range.getResolution()), null);
+        if (last == -1) {
+            newBins = getClusterStatusAdmin().findLatestMetricsBins(null,
+                                                                    new Long(range.getChartRange()),
+                                                                    new Integer(range.getResolution()),
+                                                                    null);
+        } else {
+            newBins = getClusterStatusAdmin().findMetricsBins(null,
+                                                              new Long(last + 1),
+                                                              null,
+                                                              new Integer(range.getResolution()),
+                                                              null);
+        }
         if (newBins.size() > 0)
             logger.info("Found " + newBins.size() + " MetricsBins for range " + range.toString());
 

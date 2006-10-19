@@ -23,6 +23,7 @@ class Range {
     private final Set chartedPeriods = new HashSet();
     private final TreeMap allPeriods = new TreeMap();
 
+    /** End time of last metrics bin downloaded; -1 to mean no data downloaded yet. */
     private volatile long lastPeriodDownloaded;
 
     Range(int resolution, long chartRange, long rightPanelRange, String name, String rightPanelTitle) {
@@ -31,7 +32,7 @@ class Range {
         this.rightPanelRange = rightPanelRange;
         this.name = name;
         this.metricsChartPanel = new MetricsChartPanel(rightPanelRange, chartRange);
-        this.lastPeriodDownloaded = System.currentTimeMillis() - chartRange;
+        this.lastPeriodDownloaded = -1;
         this.rightPanelTitle = rightPanelTitle;
         clear();
     }
@@ -77,6 +78,7 @@ class Range {
         return rightPanelTitle;
     }
 
+    /** @return End time of last metrics bin downloaded; -1 to mean none downloaded yet */
     long getLastPeriodDownloaded() {
         return lastPeriodDownloaded;
     }
