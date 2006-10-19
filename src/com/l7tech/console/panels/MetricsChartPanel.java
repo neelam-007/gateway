@@ -430,10 +430,14 @@ public class MetricsChartPanel extends ChartPanel {
         //
 
         try {
-            _timeZone = Registry.getDefault().getClusterStatusAdmin().getCurrentClusterTimeZone();
+            Registry registry = Registry.getDefault();
+            if (registry.isAdminContextPresent())
+                _timeZone = registry.getClusterStatusAdmin().getCurrentClusterTimeZone();
         } catch (RemoteException e) {
             // Falls back to use local time zone.
-            _timeZone = TimeZone.getDefault();
+        } finally {
+            if (_timeZone == null)
+                _timeZone = TimeZone.getDefault();
         }
         _xAxis = new DateAxis(TIME_AXIS_LABEL /* effective time zone to be appended later */, _timeZone) {
             public void setRange(Range range, boolean turnOffAutoRange, boolean notify) {
