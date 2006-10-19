@@ -14,6 +14,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -24,6 +25,10 @@ import java.util.Map;
 
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     private static License license = null;
+
+    public TimeZone getCurrentClusterTimeZone() throws RemoteException {
+        throw new UnsupportedOperationException();
+    }
 
     public ClusterNodeInfo[] getClusterStatus() {
 
@@ -145,6 +150,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     }
 
     public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public List findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
