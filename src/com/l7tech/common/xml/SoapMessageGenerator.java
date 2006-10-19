@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
+import javax.wsdl.extensions.schema.Schema;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import javax.xml.rpc.NamespaceConstants;
@@ -550,12 +551,17 @@ public class SoapMessageGenerator {
             Iterator iter = eeList.iterator();
             Element elem = null;
             while (iter.hasNext()) {
-                ExtensibilityElement el = (ExtensibilityElement)iter.next();
+                ExtensibilityElement el = (ExtensibilityElement) iter.next();
                 if (el.getElementType().getLocalPart().equals("schema")) {
-                    UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
-
-                    elem = uee.getElement();
-                    return getSchemaParameterElements(elem, elementName, targetNamespace);
+                    if (el instanceof UnknownExtensibilityElement) {
+                        UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
+                        elem = uee.getElement();
+                    } else if (el instanceof Schema) {
+                        Schema schema = (Schema)el;
+                        elem = schema.getElement();
+                    }
+                    if (elem != null)
+                        return getSchemaParameterElements(elem, elementName, targetNamespace);
                 }
             }
         }

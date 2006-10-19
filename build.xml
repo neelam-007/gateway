@@ -160,8 +160,8 @@
         <include name="**/xmlpad.jar"/>
         <include name="**/xmlpad-res.jar"/>
         <include name="**/xss4j.jar"/>
-        <include name="**/log4j.jar"/>
-        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/log4j-1.2.14.jar"/>
+        <include name="**/bcprov-jdk15-134.jar"/>
         <include name="**/xalan-2.5.2.jar"/>
         <include name="**/saaj.jar"/>
     </patternset>
@@ -172,13 +172,13 @@
     <patternset id="configurationwizard.libs">
         <include name="**/commons-lang-1.0.1.jar"/>
         <include name="**/forms_rt.jar"/>
-        <include name="**/mysql-connector-java-3.0.14-stable-bin.jar"/>
+        <include name="**/mysql-connector-java-3.0.17-ga-bin.jar"/>
         <include name="**/xss4j.jar"/>
-        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/bcprov-jdk15-134.jar"/>
         <include name="**/kunststoff.jar"/>
-        <include name="**/whirlycache-0.7.1.jar"/>
+        <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
-        <include name="**/oswego-concurrent.jar"/>
+        <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/commons-collections-2.1.1.jar"/>
     </patternset>
 
@@ -201,13 +201,13 @@
         <include name="**/saaj.jar"/>
         <include name="**/0500-wsdl4j.jar"/>
         <include name="**/xercesImpl.jar"/>
-        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/bcprov-jdk15-134.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/org.mortbay.jetty.jar"/>
         <include name="**/commons-httpclient-2.0.2.jar"/>
         <include name="**/servlet-api.jar"/>
         <include name="**/systray4j.jar"/>
-        <include name="**/jaxen-1.1-beta-2-l7.jar"/>
+        <include name="**/jaxen-1.1-beta-10.jar"/>
         <include name="**/saxpath.jar"/>
         <include name="**/xbean.jar"/>
         <include name="**/jsr173_1.0_api.jar"/>
@@ -224,8 +224,8 @@
         <include name="**/nekohtml.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/commons-collections-2.1.1.jar"/>
-        <include name="**/whirlycache-0.7.1.jar"/>
-        <include name="**/oswego-concurrent.jar"/>
+        <include name="**/whirlycache-1.0.1.jar"/>
+        <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/policy-1.0.jar"/>
     </patternset>
 
@@ -234,12 +234,11 @@
     -->
     <patternset id="manager.libs">
         <include name="**/BrowserLauncher2-10rc4.jar"/>
-        <include name="**/jnlp.jar"/>
         <include name="**/looks-1.1.3.jar"/>
         <include name="**/hibernate3.jar"/>
-        <include name="**/nachocalendar.jar"/>
+        <include name="**/nachocalendar-0.23.jar"/>
         <include name="**/kunststoff.jar"/>
-        <include name="**/oswego-concurrent.jar"/>
+        <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/0500-wsdl4j.jar"/>
         <include name="**/xercesImpl.jar"/>
         <include name="**/commons-lang-1.0.1.jar"/>
@@ -250,7 +249,7 @@
         <include name="**/forms_rt.jar"/>
         <include name="**/xmlpad.jar"/>
         <include name="**/xmlpad-res.jar"/>
-        <include name="**/jaxen-1.1-beta-2-l7.jar"/>
+        <include name="**/jaxen-1.1-beta-10.jar"/>
         <include name="**/saxpath.jar"/>
         <include name="**/jaxrpc.jar"/>
         <include name="**/saaj.jar"/>
@@ -266,14 +265,14 @@
         <include name="**/aopalliance.jar"/>
         <include name="**/mailapi-1.3.2.jar"/>
         <include name="**/antlr-2.7.6rc1.jar"/>
-        <include name="**/log4j.jar"/>
-        <include name="**/bcprov-jdk15-127.jar"/>
+        <include name="**/log4j-1.2.14.jar"/>
+        <include name="**/bcprov-jdk15-134.jar"/>
         <include name="**/jsr173_1.0_api.jar"/>
         <include name="**/xalan-2.5.2.jar"/>
-        <include name="**/xstream-1.1.3.jar"/>
-        <include name="**/jcommon-1.0.0.jar"/>
-        <include name="**/jfreechart-1.0.1.jar"/>
-        <include name="**/whirlycache-0.7.1.jar"/>
+        <include name="**/xstream-1.2.jar"/>
+        <include name="**/jcommon-1.0.5.jar"/>
+        <include name="**/jfreechart-1.0.2.jar"/>
+        <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/policy-1.0.jar"/>
         <include name="**/commons-httpclient-2.0.2.jar"/>
         <include name="**/activation.jar"/>
@@ -831,7 +830,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
-                <include name="bcprov-jdk15-127.jar"/>
+                <include name="bcprov-jdk15-134.jar"/>
                 <include name="jgroups.jar"/>
                 <include name="jboss-*.jar"/>
                 <include name="commons-logging-1.0.4.jar"/>
@@ -839,7 +838,7 @@
                 <include name="activation.jar"/>
                 <include name="mailapi-1.3.2.jar"/>
                 <include name="smtp-1.3.2.jar"/>
-                <include name="whirlycache-0.7.1.jar"/>
+                <include name="whirlycache-1.0.1.jar"/>
                 <include name="policy-1.0.jar"/>
                 <include name="commons-collections-2.1.1.jar"/>
                 <include name="commons-dbcp-1.2.1.jar"/>
@@ -852,7 +851,7 @@
                 <include name="antlr-2.7.6rc1.jar"/>
                 <include name="asm.jar"/>
                 <include name="asm-attrs.jar"/>
-                <include name="c3p0-0.9.0.jar"/>
+                <include name="c3p0-0.9.0.4.jar"/>
                 <include name="dom4j-1.6.1.jar"/>
                 <include name="cglib-2.1.3.jar"/>
                 <include name="ehcache-1.1.jar"/>
@@ -877,24 +876,22 @@
                   <include name="stax-api-1.0.jar"/>
                 -->
                 <include name="jdom.jar"/>
-                <include name="wstx-asl-2.9.jar"/>
-                <include name="xfire-aegis-1.0.jar"/>
-                <include name="xfire-core-1.0.jar"/>
-                <include name="xfire-spring-1.0.jar"/>
+                <include name="wstx-asl-3.0.1.jar"/>
+                <include name="xfire-aegis-1.2.2.jar"/>
+                <include name="xfire-core-1.2.2.jar"/>
+                <include name="xfire-spring-1.2.2.jar"/>
                 <include name="spring-webmvc.jar"/>
                 <include name="0500-wsdl4j.jar"/>
 
                 <include name="velocity-1.4.jar"/>
-                <include name="jaxen-1.1-beta-2-l7.jar"/>
+                <include name="jaxen-1.1-beta-10.jar"/>
                 <include name="jms-1.1.jar"/>
-                <include name="jnlp.jar"/>
-                <include name="jnlp-servlet.jar"/>
                 <include name="jta.jar"/>
                 <include name="odmg.jar"/>
-                <include name="oswego-concurrent.jar"/>
+                <include name="concurrent-1.3.4.jar"/>
                 <include name="qname.jar"/>
                 <include name="snmp4j.jar"/>
-                <include name="log4j.jar"/>
+                <include name="log4j-1.2.14.jar"/>
 
                 <include name="systinet-*.jar" if="include.systinet"/>
                 <include name="jaxrpc.jar" unless="include.systinet"/>
@@ -910,7 +907,7 @@
                 <include name="xercesImpl.jar"/>
                 <include name="xss4j.jar"/>
 
-                <include name="xstream-1.1.2.jar"/>
+                <include name="xstream-1.2.jar"/>
 
                 <include name="ftpserver-dev.jar"/>
                 <include name="commons-net-1.4.1.jar"/>
@@ -936,7 +933,7 @@
                 <include name="ojdbc14.jar" if="db.oracle9"/>
                 <include name="ojdbc14.jar" if="db.oracle10"/>
 
-                <include name="mysql-connector-java-3.0.14-stable-bin.jar" if="db.mysql"/>
+                <include name="mysql-connector-java-3.0.17-ga-bin.jar" if="db.mysql"/>
                 <include name="postgresql.jar" if="db.postgres"/>
             </lib>
 

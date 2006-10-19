@@ -45,6 +45,7 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
+import org.jaxen.NamespaceContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -422,6 +423,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 Map newMap = nseditor.newNSMap();
                 if (newMap != null) {
                     namespaces = newMap;
+
+                    // update feedback for new namespaces
+                    JTextField xpathTextField = messageViewerToolBar.getxpathField();
+                    xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
                 }
             }
         });
@@ -511,7 +516,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         // initialize the test evaluator
         try {
             testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
-                                                        new HashMap());
+                                                        new NamespaceContext(){
+                                                            public String translateNamespacePrefixToUri(String prefix) {
+                                                                return namespaces.get(prefix);
+                                                            }
+                                                        });
         } catch (Exception e) {
             final String msg = "cannot setup test evaluator";
             log.log(Level.WARNING, msg, e);

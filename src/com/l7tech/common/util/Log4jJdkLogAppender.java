@@ -10,7 +10,6 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Category;
 import org.apache.log4j.Layout;
 import org.apache.log4j.LogManager;
-import org.apache.log4j.Priority;
 import org.apache.log4j.spi.ErrorHandler;
 import org.apache.log4j.spi.Filter;
 import org.apache.log4j.spi.LocationInfo;
@@ -104,9 +103,9 @@ public class Log4jJdkLogAppender implements Appender
      *
      */
     public void doAppend(final LoggingEvent loggingEvent) {
-        String name = loggingEvent.categoryName==null ? "" : loggingEvent.categoryName;
+        String name = loggingEvent.getLoggerName()==null ? "" : loggingEvent.getLoggerName();
         Logger logger = Logger.getLogger(name);
-        Level level = getLevel(loggingEvent.level==null ? Priority.INFO : loggingEvent.level);
+        Level level = getLevel(loggingEvent.getLevel()==null ? org.apache.log4j.Level.INFO : loggingEvent.getLevel());
         if(logger.isLoggable(level)) {
             logger.log(getLogRecord(level, loggingEvent));
         }
@@ -169,27 +168,27 @@ public class Log4jJdkLogAppender implements Appender
     /**
      * Translate from a Log4j priority to a JDK level.
      */
-    private static Level getLevel(final Priority priority) {
+    private static Level getLevel(final org.apache.log4j.Level priority) {
         Level level = null;
 
         switch(priority.toInt()) {
-            case Priority.DEBUG_INT:
+            case org.apache.log4j.Level.DEBUG_INT:
                 level = Level.FINE;
                 break;
-            case Priority.INFO_INT:
+            case org.apache.log4j.Level.INFO_INT:
                 level = Level.INFO;
                 break;
-            case Priority.WARN_INT:
+            case org.apache.log4j.Level.WARN_INT:
                 level = Level.WARNING;
                 break;
-            case Priority.ERROR_INT:
+            case org.apache.log4j.Level.ERROR_INT:
                 level = Level.SEVERE;
                 break;
             default:
-                if(priority.toInt()<Priority.DEBUG_INT) {
+                if(priority.toInt()<org.apache.log4j.Level.DEBUG_INT) {
                     level = Level.FINER;
                 }
-                else if(priority.toInt()>Priority.ERROR_INT) {
+                else if(priority.toInt()>org.apache.log4j.Level.ERROR_INT) {
                     level = Level.SEVERE;
                 }
                 else {
@@ -239,7 +238,7 @@ public class Log4jJdkLogAppender implements Appender
      */
     private static LogRecord getLogRecord(final Level level, final LoggingEvent loggingEvent) {
         LogRecord logRecord = new LogRecord(level, loggingEvent.getRenderedMessage());
-        logRecord.setLoggerName(loggingEvent.categoryName);
+        logRecord.setLoggerName(loggingEvent.getLoggerName());
         LocationInfo locationInfo = loggingEvent.getLocationInformation();
         if(locationInfo!=null) {
             if(locationInfo.getClassName()!=null) logRecord.setSourceClassName(locationInfo.getClassName());

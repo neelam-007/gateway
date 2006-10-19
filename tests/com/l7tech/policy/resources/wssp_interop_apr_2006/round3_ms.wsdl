@@ -246,6 +246,7 @@
             </wsp:All>
         </wsp:ExactlyOne>
     </wsp:Policy>
+    <!--
     <wsdl:types>
         <xsd:schema targetNamespace="http://example.com/ws/2004/09/policy/Imports">
             <xsd:import schemaLocation="http://131.107.72.15/WSPolicy_Service_Indigo/EchoService.svc?xsd=xsd1"
@@ -254,6 +255,7 @@
                         namespace="http://schemas.microsoft.com/2003/10/Serialization/"/>
         </xsd:schema>
     </wsdl:types>
+    -->
     <wsdl:message name="EchoRequest">
         <wsdl:part name="EchoRequest" element="tns:EchoRequest"/>
     </wsdl:message>

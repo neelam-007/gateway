@@ -84,11 +84,11 @@ public class RequestXpathAssertionTest extends TestCase {
 
     private String[] passingXpaths =
     {
-        "//", // sanity
+        "//*", // sanity
         "/soap:Envelope/soap:Body/ware:placeOrder/productid", // contains a value
         "/soap:Envelope/soap:Body/ware:placeOrder/productid='-9206260647417300294'", // works with proper namespaces
         "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='placeOrder']/productid='-9206260647417300294'", // works with no-namespace hack
-        "/soap:Envelope[@*[local-name()=\"soapenv\"]]",
+        "/soap:Envelope[namespace::*[local-name()=\"soapenv\"]]",
         "//*[@sesyn:encodingStyle]",
         "/soap:Envelope[3=3]",
         "soap:Envelope/soap:Body", // relative match should match against document element

@@ -111,7 +111,7 @@ public class XpathEvaluatorTest extends TestCase {
     public void testBasicXmlMessage() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, (Map)null);
-        List nodes = xe.select("//");
+        List nodes = xe.select("//*");
         assertTrue("Size should have been >0", nodes.size() > 0);
     }
 
@@ -252,7 +252,7 @@ public class XpathEvaluatorTest extends TestCase {
         HashMap namesapces = new HashMap();
         namesapces.put("s0", "http://grrr.com/nsblah");
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namesapces);
-        List nodes = xe.select("count(//*/@*[string-length() > 20) > 0");
+        List nodes = xe.select("count(//*/@*[string-length() > 20]) > 0");
         System.out.println(nodes.size());
 
         for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
@@ -261,7 +261,7 @@ public class XpathEvaluatorTest extends TestCase {
         }
         doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\" foo=\"blahblahblahblahblahblahblahblahblahblahblahblahblah\">123</s0:blah>");
         xe = XpathEvaluator.newEvaluator(doc, namesapces);
-        nodes = xe.select("count(//*/@*[string-length() > 20) > 0");
+        nodes = xe.select("count(//*/@*[string-length() > 20]) > 0");
 
         for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
             Boolean bool = (Boolean)iterator.next();
@@ -270,7 +270,7 @@ public class XpathEvaluatorTest extends TestCase {
 
         doc = XmlUtil.stringToDocument("<blah blahblahblahblahblahblahblahblahblahblahblahblahblah=\"foo\">123</blah>");
         xe = XpathEvaluator.newEvaluator(doc, namesapces);
-        nodes = xe.select("count(//*/@*[string-length() > 20) > 0");
+        nodes = xe.select("count(//*/@*[string-length() > 20]) > 0");
 
         for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
             Boolean bool = (Boolean)iterator.next();
