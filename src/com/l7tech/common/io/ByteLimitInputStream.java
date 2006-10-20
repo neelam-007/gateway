@@ -9,6 +9,8 @@ import java.io.PushbackInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 
+import com.l7tech.common.util.BufferPool;
+
 /**
  * An InputStream wrapper that will pass through to another InputStream until at most a certain number of bytes
  * have been read, at which point it will start throwing IOExceptions.
@@ -17,17 +19,51 @@ public class ByteLimitInputStream extends PushbackInputStream {
     private long sizeLimit = 0;
     private long bytesRead = 0;
 
+
+    /**
+     * Note that the actual pushbackSize may be larger than requested.
+     */
     public ByteLimitInputStream(InputStream in, int pushbackSize, long limit) {
-        super(in, pushbackSize);
+        this(in, pushbackSize);
         sizeLimit = limit;
     }
 
+    /**
+     * Note that the actual pushbackSize may be larger than requested.
+     */
     public ByteLimitInputStream(InputStream in, int pushbackSize) {
-        super(in, pushbackSize);
+        this(in);
+        buf = BufferPool.getBuffer(pushbackSize);
+        pos = buf.length;
     }
 
     public ByteLimitInputStream(InputStream in) {
         super(in);
+    }
+
+    /**
+     * Release resources without closing the underlying stream.
+     *
+     * Don't use this stream after calling dispose ...
+     */
+    public void dispose() {
+        byte[] buffer = buf;
+        buf = null;
+        BufferPool.returnBuffer(buffer);
+    }
+
+    /**
+     * Closes the underlying stream and disposes of any resources.
+     *
+     * @throws IOException if an error occurs.
+     */
+    public synchronized void close() throws IOException {
+        try {
+            super.close();
+        }
+        finally {
+            dispose();
+        }
     }
 
     /**

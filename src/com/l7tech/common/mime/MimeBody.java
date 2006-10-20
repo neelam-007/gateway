@@ -727,6 +727,7 @@ public class MimeBody {
      */
     public void close() {
         stashManager.close();
+        if(mainInputStream!=null) mainInputStream.dispose();        
     }
 
     /**
