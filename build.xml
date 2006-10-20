@@ -1000,9 +1000,11 @@
 
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
 
-            <!-- Include the manager jars in the Gateway, for the applet admin mode.  TODO include only needed libs here! -->
+            <!-- Include the manager jars in the Gateway, for the applet admin mode. -->
             <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssg/webadmin"/>
-            <zipfileset dir="${build.dir}/lib" includes="*.jar" prefix="ssg/webadmin/lib"/>
+            <zipfileset dir="${build.dir}/lib" prefix="ssg/webadmin/lib">
+                <patternset refid="manager.libs"/>
+            </zipfileset>
         </war>
 
         <jar jarfile="${build.dir}/l7valve.jar">
