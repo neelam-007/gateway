@@ -89,12 +89,18 @@ public class ExpandVariables {
                 logger.warning("Variable '" + name + "' is a " + value.getClass().getName() + ", not a String; using .toString() instead");
                 replacement = value.toString();
             }
-
+            replacement = makeDollarExplicit(replacement); // bugzilla 3022
             matcher.appendReplacement(sb, replacement);
         }
         matcher.appendTail(sb);
 
         return sb.toString();
+    }
+
+    private static String makeDollarExplicit(String in) {
+        if (in == null) return null;
+        if (in.indexOf('$') < 0) return in;
+        return in.replace("$", "\\$");
     }
 
     private ExpandVariables() {
