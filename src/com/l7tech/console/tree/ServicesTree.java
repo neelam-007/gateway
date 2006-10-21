@@ -53,6 +53,9 @@ public class ServicesTree extends JTree implements Refreshable {
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
+
+        // Suppress cut/copy/paste
+        setTransferHandler(null);
     }
 
     public void refresh() {

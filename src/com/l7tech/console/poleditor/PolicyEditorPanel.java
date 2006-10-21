@@ -12,10 +12,7 @@ import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
-import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -31,6 +28,7 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.tree.*;
 import java.awt.*;
@@ -363,17 +361,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         scrollPane.setBorder(null);
         messagesTab.addTab("Policy Validation Messages", scrollPane);
         messagesTab.setTabPlacement(JTabbedPane.TOP);
-        messagesTextPane.addMouseListener(new PopUpMouseListener() {
-            protected void popUpMenuHandler(MouseEvent mouseEvent) {
-                JPopupMenu menu = new JPopupMenu();
+        messagesTextPane.addMouseListener(Utilities.createContextMenuMouseListener(messagesTextPane, new Utilities.DefaultContextMenuFactory() {
+            public JPopupMenu createContextMenu(final JTextComponent tc) {
+                JPopupMenu menu = super.createContextMenu(tc);
                 menu.add(new ClearMessageAreaAction());
-                if (menu != null) {
-                    Utilities.removeToolTipsFromMenuItems(menu);
-                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
-                }
+                Utilities.removeToolTipsFromMenuItems(menu);
+                return menu;
             }
-
-        });
+        }));
         return messagesTab;
     }
 

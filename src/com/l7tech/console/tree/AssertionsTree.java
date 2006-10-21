@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 import com.l7tech.console.action.SecureAction;
+import com.l7tech.console.policy.PolicyTransferable;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
@@ -16,7 +17,6 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
@@ -35,21 +35,6 @@ import java.util.logging.Logger;
  */
 public class AssertionsTree extends JTree implements DragGestureListener {
     static final Logger log = Logger.getLogger(AssertionsTree.class.getName());
-    /**
-     * assertion data flavor for DnD
-     */
-
-    public static final DataFlavor ASSERTION_DATAFLAVOR;
-
-    static {
-        DataFlavor df;
-        try {
-            df = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=" + AbstractTreeNode.class.getName());
-        } catch (ClassNotFoundException e) {
-            df = null;
-        }
-        ASSERTION_DATAFLAVOR = df;
-    }
 
     /**
      * component name
@@ -91,6 +76,8 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         addTreeExpansionListener(new AssertionsTreeExpansionListener());
 
         ToolTipManager.sharedInstance().registerComponent(this);
+
+        setTransferHandler(new PaletteTransferHandler());
     }
 
     public void dragGestureRecognized(DragGestureEvent dge) {
@@ -111,7 +98,7 @@ public class AssertionsTree extends JTree implements DragGestureListener {
             AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
             if (!node.isLeaf()) return null;
             if (node instanceof IdentityProviderNode) return null;
-            return new AssertionTransferable(node);
+            return new PolicyTransferable(node);
         }
         return null;
     }
@@ -221,29 +208,6 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         }
     }
 
-    class AssertionTransferable implements Transferable {
-        private AbstractTreeNode node;
-
-        public AssertionTransferable(AbstractTreeNode an) {
-            this.node = an;
-        }
-
-        public DataFlavor[] getTransferDataFlavors() {
-            return new DataFlavor[]{ASSERTION_DATAFLAVOR};
-        }
-
-        public boolean isDataFlavorSupported(DataFlavor flavor) {
-            return flavor.equals(ASSERTION_DATAFLAVOR);
-        }
-
-        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
-            if (isDataFlavorSupported(flavor)) {
-                return node;
-            }
-            throw new UnsupportedFlavorException(flavor);
-        }
-    }
-
     private class AssertionsTreeWillExpandListener implements TreeWillExpandListener {
         public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -262,4 +226,25 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         }
     }
 
+    private class PaletteTransferHandler extends TreeNodeHidingTransferHandler {
+
+        protected Transferable createTransferable(JComponent c) {
+            AssertionsTree paletteTree = c instanceof AssertionsTree ? (AssertionsTree)c : AssertionsTree.this;
+            return paletteTree.createTransferable(paletteTree.getSelectionPath());
+        }
+
+        public boolean importData(JComponent comp, Transferable t) {
+            // Pastes not accepted
+            return false;
+        }
+
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            // Pastes not accepted
+            return false;
+        }
+
+        public int getSourceActions(JComponent c) {
+            return COPY;
+        }
+    }
 }

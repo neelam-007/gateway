@@ -88,6 +88,7 @@ public class MainWindow extends JFrame {
     private JMenuBar mainJMenuBar = null;
     private JMenu fileMenu = null;
     private JMenu editMenu = null;
+    private JMenu tasksMenu = null;
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
     private JMenu newProviderSubMenu = null;
@@ -513,16 +514,39 @@ public class MainWindow extends JFrame {
         return savePolicyAction;
     }
 
-    /**
-     * Return the editMenu property value.
-     *
-     * @return JMenu
-     */
     private JMenu getEditMenu() {
         if (editMenu == null) {
             JMenu menu = new JMenu();
-            //editMenu.setFocusable(false);
             menu.setText(resapplication.getString("Edit"));
+            menu.setMnemonic(KeyEvent.VK_E);
+
+            ClipboardActions.CUT_ACTION.putValue(Action.NAME, resapplication.getString("Cut_MenuItem_text"));
+            JMenuItem mi = new JMenuItem(ClipboardActions.CUT_ACTION);
+            //menu.add(mi); // TODO  Cut is disabled because it's problematic to have Cut without Undo
+
+            ClipboardActions.COPY_ACTION.putValue(Action.NAME, resapplication.getString("Copy_MenuItem_text"));
+            mi = new JMenuItem(ClipboardActions.COPY_ACTION);
+            menu.add(mi);
+
+            ClipboardActions.PASTE_ACTION.putValue(Action.NAME, resapplication.getString("Paste_MenuItem_text"));
+            mi = new JMenuItem(ClipboardActions.PASTE_ACTION);
+            menu.add(mi);
+
+            editMenu = menu;
+        }
+        return editMenu;
+    }
+
+    /**
+     * Return the tasksMenu property value.
+     *
+     * @return JMenu
+     */
+    private JMenu getTasksMenu() {
+        if (tasksMenu == null) {
+            JMenu menu = new JMenu();
+            //tasksMenu.setFocusable(false);
+            menu.setText(resapplication.getString("Tasks"));
 
             menu.add(getNewProviderSubMenu());
             menu.add(getNewInternalUserAction());
@@ -549,9 +573,9 @@ public class MainWindow extends JFrame {
             int mnemonic = menu.getText().toCharArray()[0];
             menu.setMnemonic(mnemonic);
 
-            editMenu = menu;
+            tasksMenu = menu;
         }
-        return editMenu;
+        return tasksMenu;
     }
 
     private JMenu getNewProviderSubMenu() {
@@ -1259,6 +1283,7 @@ public class MainWindow extends JFrame {
             //mainJMenuBar.setFocusable(false);
             mainJMenuBar.add(getFileMenu());
             mainJMenuBar.add(getEditMenu());
+            mainJMenuBar.add(getTasksMenu());
             mainJMenuBar.add(getViewMenu());
             //           mainJMenuBar.add(getWindowMenu());
             mainJMenuBar.add(getHelpMenu());
@@ -1701,6 +1726,7 @@ public class MainWindow extends JFrame {
             descriptionText.setEditable(false);
             descriptionText.setMaximumSize(new Dimension(descriptionText.getMaximumSize().width, 100));
             descriptionText.setBorder(null);
+            Utilities.attachDefaultContextMenu(descriptionText);
         }
         return descriptionText;
     }

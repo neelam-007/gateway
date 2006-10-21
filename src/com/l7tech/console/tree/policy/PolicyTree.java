@@ -3,31 +3,34 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.action.EditServicePolicyAction;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.policy.PolicyTransferable;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.TransferableTreePath;
+import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.datatransfer.*;
 import java.awt.dnd.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -114,6 +117,89 @@ public class PolicyTree extends JTree implements DragSourceListener,
         setCellRenderer(new PolicyTreeCellRenderer());
 
         ToolTipManager.sharedInstance().registerComponent(this);
+
+
+        TreeSelectionListener tsl = new TreeSelectionListener() {
+            ClipboardOwner owner = new ClipboardOwner() {
+                public void lostOwnership(Clipboard clipboard, Transferable contents) {
+                    // No action required
+                }
+            };
+
+            public void valueChanged(TreeSelectionEvent e) {
+                Clipboard sel = Toolkit.getDefaultToolkit().getSystemSelection();
+                if (sel == null) return;
+                sel.setContents(createTransferable(e.getPath()), owner);
+            }
+        };
+        if (Toolkit.getDefaultToolkit().getSystemSelection() != null)
+            getSelectionModel().addTreeSelectionListener(tsl);
+
+        ActionMap map = this.getActionMap();
+        map.put(TransferHandler.getCutAction().getValue(Action.NAME),
+                TransferHandler.getCutAction());
+        map.put(TransferHandler.getCopyAction().getValue(Action.NAME),
+                TransferHandler.getCopyAction());
+        map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
+                TransferHandler.getPasteAction());
+        
+        setTransferHandler(new PolicyTreeTransferHandler());
+    }
+
+    private Transferable createTransferable(TreePath path) {
+        if (path != null) {
+            Object node = path.getLastPathComponent();
+            if (node == null) return null;
+            if (node instanceof AbstractTreeNode)
+                return new PolicyTransferable((AbstractTreeNode)node);
+            else
+                log.fine("Unable to create transferable for non-AbstractTreeNode: " + node.getClass().getName());
+        }
+        return null;
+    }
+
+
+    /**
+     * Import the specified assertion subtree into this policy.  Attempt to insert it at the current selection,
+     * if possible; otherwise, insert it at the end.
+     * @param ass
+     * @return true if the assertion subtree was imported successfully; false if nothing was done.
+     */
+    private boolean importAssertion(Assertion ass) {
+        TreePath path = getSelectionPath();
+        if (path == null) {
+            AbstractTreeNode atn = (AbstractTreeNode)getModel().getRoot();
+            path = new TreePath(atn.getPath());
+        }
+
+        if (!(path.getLastPathComponent() instanceof AssertionTreeNode)) {
+            // todo is this possible?
+            log.warning("Rejecting paste -- paste target is not an AssertionTreeNode");
+            return false;
+        }
+        AssertionTreeNode targetTreeNode = (AssertionTreeNode)path.getLastPathComponent();
+        AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(ass);
+        boolean dropAsFirstContainerChild = true; // TODO not really any way to change this.. test and see what feels better
+        PolicyTreeModel model = (PolicyTreeModel)getModel();
+
+        if (targetTreeNode.getAllowsChildren()) {
+            int targetIndex = 0;
+            if (!dropAsFirstContainerChild && targetTreeNode == model.getRoot()) {
+                targetIndex = targetTreeNode.getChildCount();
+            }
+            model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+            return true;
+        } else {
+            final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)targetTreeNode.getParent();
+
+            int index = parent.getIndex(targetTreeNode);
+            if (index != -1) {
+                model.insertNodeInto(assertionTreeNodeCopy, parent, index + 1);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void setPolicyEditor(PolicyEditorPanel pe) {
@@ -340,7 +426,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     public void dragOver(DragSourceDragEvent dsde) {
-        log.entering(this.getClass().getName(), "dragOver");
+        //log.entering(this.getClass().getName(), "dragOver");  // very spammy trace
     }
 
     public void dropActionChanged(DragSourceDragEvent dsde) {
@@ -560,7 +646,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
                     treePathdragOver(e);
                     break;
-                } else if (AssertionsTree.ASSERTION_DATAFLAVOR.equals(flavor)) {
+                } else if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flavor)) {
                     assertionDragOver(e);
                 }
             }
@@ -665,7 +751,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
                     dropTreePath(e);
                     break;
-                } else if (AssertionsTree.ASSERTION_DATAFLAVOR.equals(flavor)) {
+                } else if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flavor)) {
                     dropAssertion(e);
                 }
             }
@@ -674,7 +760,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         private void dropAssertion(DropTargetDropEvent e) {
             try {
-                final Object transferData = e.getTransferable().getTransferData(AssertionsTree.ASSERTION_DATAFLAVOR);
+                final Object transferData = e.getTransferable().getTransferData(PolicyTransferable.ASSERTION_DATAFLAVOR);
                 boolean dropAsFirstContainerChild = false;
                 log.fine("DROPPING: " + transferData);
                 AbstractTreeNode node = (AbstractTreeNode)transferData;
@@ -825,7 +911,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     return false;
                 }
                 return true;
-            } else if (e.isDataFlavorSupported(AssertionsTree.ASSERTION_DATAFLAVOR)) {
+            } else if (e.isDataFlavorSupported(PolicyTransferable.ASSERTION_DATAFLAVOR)) {
                 return true;
             }
             log.log(Level.INFO, "not supported dataflavor " + e.getCurrentDataFlavors());
@@ -1096,4 +1182,80 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         };
     }
+
+    private class PolicyTreeTransferHandler extends TreeNodeHidingTransferHandler {
+
+        protected Transferable createTransferable(JComponent c) {
+            PolicyTree policyTree = c instanceof PolicyTree ? (PolicyTree)c : PolicyTree.this;
+            return policyTree.createTransferable(policyTree.getSelectionPath());
+        }
+
+        public boolean importData(JComponent comp, Transferable t) {
+            PolicyTree policyTree = comp instanceof PolicyTree ? (PolicyTree)comp : PolicyTree.this;
+
+            String maybePolicyXml = null;
+            if (t instanceof PolicyTransferable) {
+                PolicyTransferable policyTransferable = (PolicyTransferable)t;
+                maybePolicyXml = policyTransferable.getPolicyXml();
+            } else if (t.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                try {
+                    Object dat = t.getTransferData(DataFlavor.stringFlavor);
+                    if (dat instanceof String) {
+                        maybePolicyXml = (String)dat;
+                    }
+                } catch (UnsupportedFlavorException e) {
+                    log.log(Level.FINE, "Paste rejected: " + ExceptionUtils.getMessage(e), e);
+                    return false;
+                } catch (IOException e) {
+                    log.log(Level.FINE, "Paste rejected: " + ExceptionUtils.getMessage(e), e);
+                    return false;
+                }
+            }
+
+            if (maybePolicyXml == null) {
+                log.fine("Paste of unrecognized transferable: " + t.getClass().getName());
+                return false;
+            }
+
+            try {
+
+                Assertion ass = WspReader.parsePermissively(maybePolicyXml);
+                if (ass == null) {
+                    log.fine("Paste of null policy; ignoring");
+                    return false;
+                }
+
+                // Now we have an assertion tree to import into this location in the policy tree.
+                return policyTree.importAssertion(ass);
+
+            } catch (IOException e) {
+                log.log(Level.FINE, "Paste rejected: " + ExceptionUtils.getMessage(e), e);
+                return false;
+            }
+        }
+
+        protected void exportDone(JComponent source, Transferable data, int action) {
+            if (action == TransferHandler.MOVE) {
+                PolicyTree policyTree = source instanceof PolicyTree ? (PolicyTree)source : PolicyTree.this;
+                TreePath path = policyTree.getSelectionPath();
+                if (path != null) {
+                    PolicyTreeModel model = (PolicyTreeModel)policyTree.getModel();
+                    model.removeNodeFromParent((MutableTreeNode)path.getLastPathComponent());
+                }
+            }
+        }
+
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            for (DataFlavor flav : transferFlavors) {
+                if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flav) || flav != null && DataFlavor.stringFlavor.equals(flav))
+                    return true;
+            }
+            return false;
+        }
+
+        public int getSourceActions(JComponent c) {
+            return COPY_OR_MOVE;
+        }
+    }
+
 }
