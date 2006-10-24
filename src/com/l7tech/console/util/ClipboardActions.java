@@ -49,6 +49,16 @@ public class ClipboardActions {
                                                             KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK));
 
     /**
+     * Global "copyAll" action, enabled if current focus owner has a transfer handler allowing copy and
+     * has specifically added "copyAll" to its actionMap.
+     * <p/>
+     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
+     */
+    public static final Action COPY_ALL_ACTION = new ClipboardMutatingProxyAction("copyAll",
+                                                            KeyEvent.VK_L,
+                                                            KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK));
+
+    /**
      * Global "paste" action, enabled if current focus owner has a transfer handler that will accept paste of
      * any dataflavor currently on the clipboard.
      * <p/>
@@ -68,12 +78,13 @@ public class ClipboardActions {
     private static DataFlavor[] clipboardFlavors = null;
     private static final String cutName = (String)CUT_ACTION.getValue(Action.NAME);
     private static final String copyName = (String)COPY_ACTION.getValue(Action.NAME);
+    private static final String copyAllName = (String)COPY_ALL_ACTION.getValue(Action.NAME);
     private static final String pasteName = (String)PASTE_ACTION.getValue(Action.NAME);
 
     /**
      * Set up our static focus and clipboard listeners, if we haven't already done so.
      */
-    private static void maybeInstallGLobalListeners() {
+    private static void maybeInstallGlobalListeners() {
         if (!focusListenerInstalled) {
             KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
             kfm.addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
@@ -130,6 +141,7 @@ public class ClipboardActions {
     private static void updateClipboardActions() {
         boolean acceptCut = false;
         boolean acceptCopy = false;
+        boolean acceptCopyAll = false;
         boolean acceptPaste = false;
 
         try {
@@ -147,12 +159,14 @@ public class ClipboardActions {
 
             int actions = th.getSourceActions(jc);
             acceptCopy = am.get(copyName) != null && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
+            acceptCopyAll = am.get(copyAllName) != null && acceptCopy;
             acceptCut = am.get(cutName) != null && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
             acceptPaste = am.get(pasteName) != null && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
             logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (am.get(pasteName) != null) + "  clipboard=" + getClipboard() + "  flavors:" + clipboardFlavors);
         } finally {
             CUT_ACTION.setEnabled(acceptCut);
             COPY_ACTION.setEnabled(acceptCopy);
+            COPY_ALL_ACTION.setEnabled(acceptCopyAll);
             PASTE_ACTION.setEnabled(acceptPaste);
         }
     }
@@ -213,12 +227,16 @@ public class ClipboardActions {
     private static class ProxyAction extends AbstractAction {
         private final String actionCommand;
 
-        public ProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
-            super((String)actionToRun.getValue(Action.NAME));
-            actionCommand = (String)actionToRun.getValue(Action.NAME);
+        public ProxyAction(String actionCommand, int mnemonic, KeyStroke accelerator) {
+            super(actionCommand);
+            this.actionCommand = actionCommand;
             if (mnemonic > 0) putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
             if (accelerator != null) putValue(Action.ACCELERATOR_KEY, accelerator);
-            maybeInstallGLobalListeners();
+            maybeInstallGlobalListeners();
+        }
+
+        public ProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
+            this((String)actionToRun.getValue(Action.NAME), mnemonic, accelerator);
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -232,6 +250,10 @@ public class ClipboardActions {
     }
 
     private static class ClipboardMutatingProxyAction extends ProxyAction {
+        public ClipboardMutatingProxyAction(String actionCommand, int mnemonic, KeyStroke accelerator) {
+            super(actionCommand, mnemonic, accelerator);
+        }
+
         public ClipboardMutatingProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
             super(actionToRun, mnemonic, accelerator);
         }

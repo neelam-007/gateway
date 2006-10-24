@@ -139,6 +139,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 TransferHandler.getCopyAction());
         map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
                 TransferHandler.getPasteAction());
+
+        // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
+        map.put("copyAll", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                getSelectionModel().clearSelection();
+                TransferHandler.getCopyAction().actionPerformed(e);
+            }
+        });
         
         setTransferHandler(new PolicyTreeTransferHandler());
     }
@@ -146,6 +154,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private Transferable createTransferable(TreePath path) {
         if (path != null) {
             Object node = path.getLastPathComponent();
+            if (node == null) return null;
+            if (node instanceof AbstractTreeNode)
+                return new PolicyTransferable((AbstractTreeNode)node);
+            else
+                log.fine("Unable to create transferable for non-AbstractTreeNode: " + node.getClass().getName());
+        } else {
+            // No selection, so copy entire policy
+            Object node = getModel().getRoot();
             if (node == null) return null;
             if (node instanceof AbstractTreeNode)
                 return new PolicyTransferable((AbstractTreeNode)node);
@@ -413,6 +429,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
             pm.add(new JPopupMenu.Separator());
             pm.add(ClipboardActions.COPY_ACTION);
             empty = false;
+            if (ClipboardActions.COPY_ALL_ACTION.isEnabled())
+                pm.add(ClipboardActions.COPY_ALL_ACTION);
             // To prevent obvious UI tragedy, we never add Paste as first item unless Copy is safely above it
             if (ClipboardActions.PASTE_ACTION.isEnabled())
                 pm.add(ClipboardActions.PASTE_ACTION);

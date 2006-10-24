@@ -528,6 +528,10 @@ public class MainWindow extends JFrame {
             mi = new JMenuItem(ClipboardActions.COPY_ACTION);
             menu.add(mi);
 
+            ClipboardActions.COPY_ALL_ACTION.putValue(Action.NAME, resapplication.getString("CopyAll_MenuItem_text"));
+            mi = new JMenuItem(ClipboardActions.COPY_ALL_ACTION);
+            menu.add(mi);
+
             ClipboardActions.PASTE_ACTION.putValue(Action.NAME, resapplication.getString("Paste_MenuItem_text"));
             mi = new JMenuItem(ClipboardActions.PASTE_ACTION);
             menu.add(mi);
