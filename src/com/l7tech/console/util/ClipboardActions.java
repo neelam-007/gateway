@@ -28,12 +28,14 @@ import java.util.logging.Level;
  * The actions exported from this class are not thread safe and must be used only on the Swing thread.
  */
 public class ClipboardActions {
+    private static final Logger logger = Logger.getLogger(ClipboardActions.class.getName());
+
     /**
      * Global "cut" action, enabled if current focus owner has a transfer handler allowing cut.
      * <p/>
      * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
      */
-    public static final Action CUT_ACTION = new ProxyAction(TransferHandler.getCutAction(),
+    public static final Action CUT_ACTION = new ClipboardMutatingProxyAction(TransferHandler.getCutAction(),
                                                             KeyEvent.VK_T,
                                                             KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
 
@@ -42,7 +44,7 @@ public class ClipboardActions {
      * <p/>
      * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
      */
-    public static final Action COPY_ACTION = new ProxyAction(TransferHandler.getCopyAction(),
+    public static final Action COPY_ACTION = new ClipboardMutatingProxyAction(TransferHandler.getCopyAction(),
                                                             KeyEvent.VK_C,
                                                             KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK));
 
@@ -59,10 +61,8 @@ public class ClipboardActions {
                                                             KeyEvent.VK_P,
                                                             KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
 
-    private static final Logger logger = Logger.getLogger(ClipboardActions.class.getName());
     private static boolean focusListenerInstalled = false;
     private static WeakReference<JComponent> focusOwner = null;
-    private static Clipboard clipboard = null;
     private static boolean noClipAccess = false;
     private static boolean checkedClipboard = false;
     private static DataFlavor[] clipboardFlavors = null;
@@ -79,8 +79,10 @@ public class ClipboardActions {
             kfm.addPropertyChangeListener("permanentFocusOwner", new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     Object fo = evt.getNewValue();
-                    focusOwner = fo instanceof JComponent ? new WeakReference<JComponent>((JComponent)fo) : null;
-                    updateClipboardActions();
+                    if (fo instanceof JComponent) {
+                        focusOwner = new WeakReference<JComponent>((JComponent)fo);
+                        updateClipboardActions();
+                    }
                 }
             });
 
@@ -89,29 +91,35 @@ public class ClipboardActions {
                 clip.addFlavorListener(new FlavorListener() {
                     public void flavorsChanged(FlavorEvent e) {
                         final Clipboard clip = (Clipboard)e.getSource();
-                        try {
-                            clipboardFlavors = clip == null ? null : clip.getAvailableDataFlavors();
-                            updateClipboardActions();
-                        } catch (IllegalStateException es) {
-                            // Windows clipboard is busy (or maybe just non-reentrant).  Do it later.
-                            SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    try {
-                                        clipboardFlavors = clip == null ? null : clip.getAvailableDataFlavors();
-                                        updateClipboardActions();
-                                    } catch (IllegalStateException e) {
-                                        // Well, at least we tried (and retried, even)
-                                        clipboardFlavors = null;
-                                        updateClipboardActions();
-                                    }
-                                }
-                            });
-                        }
+                        updateClipboardFlavors(clip);
+                        updateClipboardActions();
                     }
                 });
+                updateClipboardFlavors(clip);
             }
 
             focusListenerInstalled = true;
+        }
+    }
+
+    private static void updateClipboardFlavors(final Clipboard clip) {
+        try {
+            clipboardFlavors = clip == null ? null : clip.getAvailableDataFlavors();
+            logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors);
+        } catch (IllegalStateException es) {
+            // Windows clipboard is busy (or maybe just non-reentrant).  Do it later.
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        clipboardFlavors = clip == null ? null : clip.getAvailableDataFlavors();
+                        logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors);
+                    } catch (IllegalStateException e) {
+                        // Well, at least we tried (and retried, even)
+                        clipboardFlavors = null;
+                        logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors + " (gave up - system clipboard was too busy)");
+                    }
+                }
+            });
         }
     }
 
@@ -141,7 +149,7 @@ public class ClipboardActions {
             acceptCopy = am.get(copyName) != null && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
             acceptCut = am.get(cutName) != null && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
             acceptPaste = am.get(pasteName) != null && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
-            logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (am.get(pasteName) != null) + "  clipboard=" + clipboard + "  flavors:" + clipboardFlavors);
+            logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (am.get(pasteName) != null) + "  clipboard=" + getClipboard() + "  flavors:" + clipboardFlavors);
         } finally {
             CUT_ACTION.setEnabled(acceptCut);
             COPY_ACTION.setEnabled(acceptCopy);
@@ -153,9 +161,10 @@ public class ClipboardActions {
      * @return the system Clipboard, if accessible; otherwise null.
      */
     private static Clipboard getClipboard() {
-        if (checkedClipboard) return clipboard;
+        if (noClipAccess) return null;
+        if (checkedClipboard) return Toolkit.getDefaultToolkit().getSystemClipboard();
         checkedClipboard = true;
-        clipboard = null;
+
         if (GraphicsEnvironment.isHeadless()) {
             // (Of course, nothing else in the SSM is likely to work, either..)
             noClipAccess = true;
@@ -170,7 +179,7 @@ public class ClipboardActions {
                 return null;
             }
         }
-        return clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        return Toolkit.getDefaultToolkit().getSystemClipboard();
     }
 
     /**
@@ -215,6 +224,21 @@ public class ClipboardActions {
         public void actionPerformed(ActionEvent e) {
             if (logger.isLoggable(Level.FINE)) logger.fine("Dispatching action command: " + actionCommand);
             runActionCommandOnFocusedComponent(actionCommand);
+            afterActionPerformed();
+        }
+
+        protected void afterActionPerformed() {
+        }
+    }
+
+    private static class ClipboardMutatingProxyAction extends ProxyAction {
+        public ClipboardMutatingProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
+            super(actionToRun, mnemonic, accelerator);
+        }
+
+        protected void afterActionPerformed() {
+            updateClipboardFlavors(getClipboard());
+            updateClipboardActions();
         }
     }
 }

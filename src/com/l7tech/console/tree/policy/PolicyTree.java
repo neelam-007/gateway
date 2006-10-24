@@ -13,10 +13,7 @@ import com.l7tech.console.policy.PolicyTransferable;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
-import com.l7tech.console.util.ArrowImage;
-import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.util.Refreshable;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -410,6 +407,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 pm.add(action);
                 empty = false;
             }
+        }
+
+        if (ClipboardActions.COPY_ACTION.isEnabled()) {
+            pm.add(new JPopupMenu.Separator());
+            pm.add(ClipboardActions.COPY_ACTION);
+            empty = false;
+            // To prevent obvious UI tragedy, we never add Paste as first item unless Copy is safely above it
+            if (ClipboardActions.PASTE_ACTION.isEnabled())
+                pm.add(ClipboardActions.PASTE_ACTION);
         }
 
         if (empty) { // no items have been added
