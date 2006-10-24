@@ -55,6 +55,17 @@ public class ServerVariables {
         return null;
     }
 
+    private static String[] getParamValues(String prefix, String name, PolicyEnforcementContext context) {
+        HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+        if (hrk == null) return new String[0];
+
+        if (!name.startsWith(prefix)) throw new IllegalArgumentException("HTTP Param Getter can't handle variable named '" + name + "'!");
+        String suffix = name.substring(prefix.length());
+        if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
+        String hname = name.substring(prefix.length()+1);
+        return hrk.getParameterValues(hname);
+    }
+
     private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) {
         // TODO what about response headers?
         HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
@@ -66,7 +77,6 @@ public class ServerVariables {
         String hname = name.substring(prefix.length()+1);
         return hrk.getHeaderValues(hname);
     }
-
 
     public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
         Variable var = getVariable(name);
@@ -195,6 +205,13 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 String[] vals = getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, name, context);
+                if (vals.length > 0) return vals[0];
+                return null;
+            }
+        }),
+        new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                String[] vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
                 if (vals.length > 0) return vals[0];
                 return null;
             }

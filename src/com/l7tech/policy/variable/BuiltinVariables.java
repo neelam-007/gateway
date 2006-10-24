@@ -17,6 +17,8 @@ public class BuiltinVariables {
     public static final String PREFIX_RESPONSE_HTTP_HEADER = "response.http.header";
     public static final String PREFIX_RESPONSE_HTTP_HEADER_VALUES = "response.http.headerValues";
 
+    public static final String PREFIX_REQUEST_HTTP_PARAM = "request.http.parameter";
+
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE_URL = "service.url";
@@ -80,6 +82,8 @@ public class BuiltinVariables {
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
+
+        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, true, false, null, false),
 
         new VariableMetadata("response.http.status", false, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),
