@@ -88,7 +88,7 @@ public class HybridStashManager implements StashManager {
                 newSize += got;
                 if (newSize > limit) {
                     // reached limit.  move it to the filestash
-                    getFilestash().stash(ordinal, new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), in));
+                    getFilestash().stash(ordinal, new SequenceInputStream(new ByteArrayInputStream(baos.getPooledByteArray(), 0, baos.size()), in));
                     size += getFilestash().getSize(ordinal);
                     return;
                 }
@@ -96,7 +96,9 @@ public class HybridStashManager implements StashManager {
 
             // didn't hit limit yet.  Move it to the ram stash
             size = newSize;
-            ramstash.stash(ordinal, baos.toByteArray());
+            int length = baos.size();
+            byte[] data = baos.detachPooledByteArray();
+            ramstash.stash(ordinal, data, 0, length);
         } finally {
             baos.close();
         }

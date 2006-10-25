@@ -155,6 +155,30 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
     }
 
     /**
+     * Remove the backing array from this stream.
+     *
+     * <p>You can not use this stream after calling this method, this stream
+     * will not use the array after this method is called.</p>
+     *
+     * <p>It is safe (but not necessary) to call {@link #close} after calling
+     * this method.</p>
+     *
+     * <p>The caller is responsible for the returned array.</p>
+     *
+     * <p>Call {@link #size} before calling this method to determine how much
+     * data is in the array.</p>
+     *
+     * @return The backing array
+     * @see BufferPool#returnBuffer(byte[]) BufferPool.returnBuffer(byte[] buffer)
+     */
+    public byte[] detachPooledByteArray() {
+        byte[] buffer = buf;
+        buf = null;
+        count = 0;
+        return buffer;
+    }
+
+    /**
      * Returns the current size of the buffer.
      *
      * @return  the value of the <code>count</code> field, which is the number
