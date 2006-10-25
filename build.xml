@@ -1050,7 +1050,9 @@
             <pathconvert property="@{propertyPrefix}.libs.path" targetos="unix" pathsep=" " refid="@{propertyPrefix}.lib.fileset">
                 <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
             </pathconvert>
-            <copy file="${src.root}/etc/@{filename}" tofile="${build.etc}/@{filename}" failonerror="false"/>
+            <copy todir="${build.etc}">
+                <fileset dir="${src.root}/etc" includes="@{filename}"/>
+            </copy>
             <manifest file="${build.etc}/@{filename}" mode="update">
                 <attribute name="Implementation-Title" value="${app.name}"/>
                 <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
