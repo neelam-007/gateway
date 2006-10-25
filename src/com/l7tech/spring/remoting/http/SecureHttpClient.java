@@ -3,14 +3,21 @@ package com.l7tech.spring.remoting.http;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.AccessControlException;
@@ -33,11 +40,11 @@ public class SecureHttpClient extends HttpClient {
         MultiThreadedHttpConnectionManager connectionManager =
                 (MultiThreadedHttpConnectionManager) getHttpConnectionManager();
 
-        connectionManager.setMaxTotalConnections(20);
-        connectionManager.setMaxConnectionsPerHost(20);
-
-        setConnectionTimeout(30000);
-        setTimeout(60000);
+        HttpConnectionManagerParams params = connectionManager.getParams();
+        params.setMaxTotalConnections(20);
+        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, 20);
+        params.setConnectionTimeout(30000);
+        params.setSoTimeout(60000);
 
         getHostConfiguration().setHost("127.0.0.1", 80, getProtocol(getSSLSocketFactory()));
     }
@@ -146,7 +153,7 @@ public class SecureHttpClient extends HttpClient {
     }
 
     private Protocol getProtocol(final SSLSocketFactory sockFac) {
-        return new Protocol("https", new SecureProtocolSocketFactory() {
+        return new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
             public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
                 return sockFac.createSocket(socket, host, port, autoClose);
             }
@@ -157,6 +164,22 @@ public class SecureHttpClient extends HttpClient {
 
             public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
                 return sockFac.createSocket(host, port);
+            }
+
+            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+                Socket socket = sockFac.createSocket();
+                int connectTimeout = httpConnectionParams.getConnectionTimeout();
+
+                socket.bind(new InetSocketAddress(clientAddress, clientPort));
+
+                try {
+                    socket.connect(new InetSocketAddress(host, port), connectTimeout);
+                }
+                catch(SocketTimeoutException ste) {
+                    throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
+                }
+
+                return socket;
             }
         }, 443);
     }

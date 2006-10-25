@@ -53,6 +53,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 
 import javax.wsdl.WSDLException;
 import javax.net.ssl.HostnameVerifier;
@@ -336,26 +337,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private Ssg newSSG(String gatewayHostname) {
         return new Ssg(1, gatewayHostname) {
-            public String getKeyStorePath() {
-                throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
-            }
-
-            /**
-             * @deprecated
-             */
-            public void setKeyStorePath(String keyStorePath) {
-                throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
-            }
-
-            /**
-             * @deprecated
-             */
-            public String getTrustStorePath() {
+            public void setTrustStoreFile(File file) {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a trust store path");
             }
 
-            public void setTrustStorePath(String trustStorePath) {
-                throw new IllegalStateException("BridgeRoutingAssertion does not have a trust store path");
+            public void setKeyStoreFile(File file) {
+                throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
             }
 
             public X509Certificate getServerCertificate() {
@@ -431,8 +418,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         }
 
         StaleCheckingHttpConnectionManager connectionManager = new StaleCheckingHttpConnectionManager();
-        connectionManager.setMaxConnectionsPerHost(hmax);
-        connectionManager.setMaxTotalConnections(tmax);
+        HttpConnectionManagerParams params = connectionManager.getParams();
+        params.setDefaultMaxConnectionsPerHost(hmax);
+        params.setMaxTotalConnections(tmax);
         connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
         GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout());
 

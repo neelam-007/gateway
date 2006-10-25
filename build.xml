@@ -210,7 +210,8 @@
         <include name="**/bcprov-jdk15-134.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/org.mortbay.jetty.jar"/>
-        <include name="**/commons-httpclient-2.0.2.jar"/>
+        <include name="**/commons-httpclient-3.0.1.jar"/>
+        <include name="**/commons-codec-1.2.jar"/>
         <include name="**/servlet-api.jar"/>
         <include name="**/systray4j.jar"/>
         <include name="**/jaxen-1.1-beta-10.jar"/>
@@ -280,7 +281,8 @@
         <include name="**/jfreechart-1.0.2.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/policy-1.0.jar"/>
-        <include name="**/commons-httpclient-2.0.2.jar"/>
+        <include name="**/commons-httpclient-3.0.1.jar"/>
+        <include name="**/commons-codec-1.2.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/systinet-uddiclient_api_v3.jar"/>
         <include name="**/systinet-uddiclient_core.jar"/>
@@ -849,7 +851,8 @@
                 <include name="commons-collections-2.1.1.jar"/>
                 <include name="commons-dbcp-1.2.1.jar"/>
                 <include name="commons-discovery.jar"/>
-                <include name="commons-httpclient-2.0.2.jar"/>
+                <include name="commons-httpclient-3.0.1.jar"/>
+                <include name="commons-codec-1.2.jar"/>
                 <include name="commons-lang-1.0.1.jar"/>
                 <include name="commons-pool-1.2.jar"/>
 

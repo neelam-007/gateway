@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -33,8 +35,9 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
 
     private static final MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
     static {
-        connectionManager.setMaxConnectionsPerHost(100);
-        connectionManager.setMaxTotalConnections(1000);
+        HttpConnectionManagerParams params = connectionManager.getParams();
+        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, 100);
+        params.setMaxTotalConnections(1000);
     }
 
     private ThreadLocal<GenericHttpClient> localHttpClient = new ThreadLocal<GenericHttpClient>() {

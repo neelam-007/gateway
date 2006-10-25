@@ -21,7 +21,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.cyberneko.html.parsers.DOMParser;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
@@ -120,7 +119,6 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
         AuthenticationProperties ap = assertion.getAuthenticationProperties();
         GenericHttpState httpState = new GenericHttpState();
         HttpState state = new HttpState();
-        state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
         httpState.setStateObject(state);
         GenericHttpRequestParams loginParams = new GenericHttpRequestParams(loginUrl, httpState);
         loginParams.setSslSocketFactory(sslContext.getSocketFactory());
@@ -191,7 +189,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
                         loginRequest = null;
                         try {
                             // then we need to get the URL of the page we are being redirected to
-                            URL targetUrl = processRedirect(httpState, loginParams, redirectRequest);
+                            URL targetUrl = processRedirect(loginParams, redirectRequest);
                             loginParams.setTargetUrl(targetUrl);
                             loginParams.setContentType(null);
 
@@ -465,7 +463,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
     /**
      * This modifies the given loginParams on success so the target url is the redirection.
      */
-    private URL processRedirect(GenericHttpState httpState, GenericHttpRequestParams loginParams, GenericHttpRequest formPostRequest) throws IOException, AssertionException {
+    private URL processRedirect(GenericHttpRequestParams loginParams, GenericHttpRequest formPostRequest) throws IOException, AssertionException {
         GenericHttpResponse formRedirectResponse = null;
         try {
             formRedirectResponse = formPostRequest.getResponse();

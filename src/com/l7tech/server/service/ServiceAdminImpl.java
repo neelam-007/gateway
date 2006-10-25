@@ -25,9 +25,13 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -35,6 +39,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -101,13 +108,15 @@ public class ServiceAdminImpl implements ServiceAdmin {
             checkLicense();
             URL urltarget = new URL(url);
             HttpClient client = new HttpClient();
-            get = new GetMethod(url);
+            HttpClientParams clientParams = client.getParams();
+            HostConfiguration hconf = getHostConfigurationWithTrustManager(urltarget);
             // bugfix for 1857 (next 3 lines)
-            get.setHttp11(true);
+            clientParams.setVersion(HttpVersion.HTTP_1_1);
             String hostval = urltarget.getHost();
             if (urltarget.getPort() > 0) {
                 hostval = hostval + ":" + urltarget.getPort();
             }
+            get = hconf == null ? new GetMethod(url) : new GetMethod(urltarget.getFile());
             get.setRequestHeader("HOST", hostval);
 
             // support for passing username and password in the url from the ssm
@@ -117,11 +126,10 @@ public class ServiceAdminImpl implements ServiceAdmin {
                 String passwd = userinfo.substring(userinfo.indexOf(':')+1, userinfo.length());
                 HttpState state = client.getState();
                 get.setDoAuthentication(true);
-                state.setAuthenticationPreemptive(true);
-                state.setCredentials(null, null, new UsernamePasswordCredentials(login, passwd));
+                clientParams.setAuthenticationPreemptive(true);
+                state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(login, passwd));
             }
 
-            HostConfiguration hconf = getHostConfigurationWithTrustManager(urltarget);
             int ret;
             if (hconf != null) {
                 ret = client.executeMethod(hconf, get);
@@ -374,7 +382,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         if ("https".equals(url.getProtocol())) {
             final int port = url.getPort() == -1 ? 443 : url.getPort();
             hconf = new HostConfiguration();
-            Protocol protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
+            Protocol protocol = new Protocol(url.getProtocol(), (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
                 }
@@ -385,6 +393,22 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
                 public Socket createSocket(String host, int port) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(host, port);
+                }
+
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+                    Socket socket = getSSLContext().getSocketFactory().createSocket();
+                    int connectTimeout = httpConnectionParams.getConnectionTimeout();
+
+                    socket.bind(new InetSocketAddress(clientAddress, clientPort));
+
+                    try {
+                        socket.connect(new InetSocketAddress(host, port), connectTimeout);
+                    }
+                    catch(SocketTimeoutException ste) {
+                        throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
+                    }
+
+                    return socket;
                 }
             }, port);
             hconf.setHost(url.getHost(), port, protocol);

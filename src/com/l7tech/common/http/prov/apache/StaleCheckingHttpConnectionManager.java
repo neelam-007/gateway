@@ -13,6 +13,7 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 
 /**
  * Extension of the MultiThreadedHttpConnectionManager that will close stale connections.
@@ -83,7 +84,7 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
     }
 
     /**
-     *
+     * @deprecated
      */
     public HttpConnection getConnection(HostConfiguration hostConfiguration, long timeout) throws HttpException {
         seenHostConfigurations.add(new HostConfiguration(hostConfiguration));
@@ -109,7 +110,7 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
                 for (int c=0; c<staleCleanupCountPerHost; c++) {
                     HttpConnection connection = null;
                     try {
-                        connection = super.getConnection(hostConfiguration, 10);;
+                        connection = super.getConnectionWithTimeout(hostConfiguration, 10);
                         connection.isOpen(); // triggers stale checking
                     }
                     finally {
@@ -117,7 +118,7 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
                     }
                 }
             }
-            catch(HttpException he) {
+            catch(ConnectionPoolTimeoutException cpte) {
                 // timeout
             }
         }

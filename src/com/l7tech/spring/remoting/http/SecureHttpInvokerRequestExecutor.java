@@ -15,10 +15,10 @@ import org.springframework.remoting.httpinvoker.CommonsHttpInvokerRequestExecuto
 import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpRecoverableException;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.protocol.Protocol;
 
 import com.l7tech.common.http.HttpConstants;
 
@@ -78,31 +78,6 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         return inputStream;
     }
 
-    protected void executePostMethod(HttpInvokerClientConfiguration config, HttpClient httpClient, PostMethod postMethod) throws IOException {
-        HostConfiguration hostConfiguration = new HostConfiguration(httpClient.getHostConfiguration());
-        hostConfiguration.setHost(postMethod.getURI().getHost(),
-                                  postMethod.getURI().getPort(),
-                                  httpClient.getHostConfiguration().getProtocol());
-
-        postMethod.setHostConfiguration(hostConfiguration);
-
-        try {
-            super.executePostMethod(config, httpClient, postMethod);
-        }
-        catch (IOException ioe) {
-            // HACK: since HttpClient is not passing the root cause for this exception we will detect it from
-            // the message text and create a dummy throwable
-            if (ioe instanceof HttpRecoverableException) {
-                if (ioe.getMessage().startsWith("java.net.SocketException:")) {
-                    logger.log(Level.WARNING, "Replacing HttpHttpRecoverableExceptionException with (dummy) SocketException.", ioe);
-                    throw new SocketException("Dummy cause since HttpClient doesn't nest exceptions.");
-                }
-                else throw ioe;
-            }
-            else throw ioe;
-        }
-    }
-
     protected PostMethod createPostMethod(HttpInvokerClientConfiguration config) throws IOException {
         PostMethod postMethod = super.createPostMethod(new HttpInvokerClientConfigurationImpl(config));
 
@@ -133,6 +108,13 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         }
     }
 
+    protected void executePostMethod(HttpInvokerClientConfiguration config, HttpClient httpClient, PostMethod postMethod) throws IOException {
+        Protocol protocol = httpClient.getHostConfiguration().getProtocol();
+        HostConfiguration hostConfiguration = new HostConfiguration();
+        hostConfiguration.setHost(host, port, protocol);
+        httpClient.executeMethod(hostConfiguration, postMethod);
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SecureHttpInvokerRequestExecutor.class.getName());
@@ -140,7 +122,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     /**
      * Regex for replacing the host name in the url with the host[:port] from the login dialog.
      */
-    private static final String HOST_REGEX = "(?<=^http[s]?\\://)[a-zA-Z_\\-0-9\\.\\:]{1,1024}";
+    private static final String HOST_REGEX = "^http[s]?\\://[a-zA-Z_\\-0-9\\.\\:]{1,1024}";
     private static final String ENCODING_GZIP = "gzip";
 
     private final String userAgent;
@@ -152,7 +134,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     private class HttpInvokerClientConfigurationImpl implements HttpInvokerClientConfiguration {
         private final HttpInvokerClientConfiguration delegate;
 
-        private HttpInvokerClientConfigurationImpl(HttpInvokerClientConfiguration config) {
+        private HttpInvokerClientConfigurationImpl(final HttpInvokerClientConfiguration config) {
             delegate = config;
         }
 
@@ -164,16 +146,13 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
             return decorate(delegate.getServiceUrl());
         }
 
-        private String decorate(String url) {
+        /**
+         * Turn the URL into a relative URL and add the session id if there is one.
+         */
+        private String decorate(final String url) {
             // switch in the correct host/port
             Matcher matcher = hostSubstitutionPattern.matcher(url);
-            String decoratedUrl = matcher.replaceFirst(host + ":" + port);
-
-            // ensure HTTPS even if HTTP is specified
-            int protEnd = decoratedUrl.indexOf(':');
-            if (protEnd > 0) {
-                decoratedUrl = "https" + decoratedUrl.substring(protEnd);
-            }
+            String decoratedUrl = matcher.replaceFirst("");
 
             // add session id if we have one
             if (sessionId != null) {

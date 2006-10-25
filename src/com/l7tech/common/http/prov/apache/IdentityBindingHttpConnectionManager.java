@@ -19,8 +19,7 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpRecoverableException;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 /**
@@ -183,6 +182,8 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @param timeout           The maximum wait time
      * @return the HttpConnection
      * @throws HttpException on timeout
+     *
+     * @deprecated
      */
     public HttpConnection getConnection(HostConfiguration hostConfiguration, long timeout) throws HttpException {
         HttpConnection httpConnection = null;
@@ -416,7 +417,6 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
 
     private boolean setBoundHttpConnection(Object identity, HttpConnection httpConnection) {
         boolean bound = false;
-        HostConfiguration connectionHostConfiguration = buildHostConfiguration(httpConnection);
         boolean gotLock = false;
         try {
             lock.writeLock().acquire();
@@ -461,10 +461,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         HostConfiguration hostConfiguration = new HostConfiguration();
 
         String host = httpConnection.getHost();
-        String virtualHost = httpConnection.getVirtualHost();
         int port = httpConnection.getPort();
         Protocol protocol = httpConnection.getProtocol();
-        hostConfiguration.setHost(host, virtualHost, port, protocol);
+        hostConfiguration.setHost(host, port, protocol);
 
         if (httpConnection.getLocalAddress() != null) {
             InetAddress localAddress = httpConnection.getLocalAddress();
@@ -678,6 +677,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public boolean isStaleCheckingEnabled() {
             if (hasConnection()) {
                 return wrappedConnection.isStaleCheckingEnabled();
@@ -694,6 +696,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void setStaleCheckingEnabled(boolean staleCheckEnabled) {
             if (hasConnection()) {
                 wrappedConnection.setStaleCheckingEnabled(staleCheckEnabled);
@@ -767,34 +772,10 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
-        /**
-         * @deprecated
-         */
-        public OutputStream getRequestOutputStream(boolean useChunking)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                return wrappedConnection.getRequestOutputStream(useChunking);
-            } else {
-                return null;
-            }
-        }
-
         public InputStream getResponseInputStream()
             throws IOException, IllegalStateException {
             if (hasConnection()) {
                 return wrappedConnection.getResponseInputStream();
-            } else {
-                return null;
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public InputStream getResponseInputStream(HttpMethod method)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                return wrappedConnection.getResponseInputStream(method);
             } else {
                 return null;
             }
@@ -856,8 +837,11 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void print(String data)
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.print(data);
             } else {
@@ -866,7 +850,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         public void printLine()
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.printLine();
             } else {
@@ -874,8 +858,11 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void printLine(String data)
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.printLine(data);
             } else {
@@ -883,6 +870,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public String readLine() throws IOException, IllegalStateException {
             if (hasConnection()) {
                 return wrappedConnection.readLine();
@@ -902,6 +892,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void setConnectionTimeout(int timeout) {
             if (hasConnection()) {
                 wrappedConnection.setConnectionTimeout(timeout);
@@ -969,14 +962,6 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         /**
          * @deprecated
          */
-        public void setSecure(boolean secure) throws IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setSecure(secure);
-            } else {
-                // do nothing
-            }
-        }
-
         public void setSoTimeout(int timeout)
             throws SocketException, IllegalStateException {
             if (hasConnection()) {
@@ -986,6 +971,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void shutdownOutput() {
             if (hasConnection()) {
                 wrappedConnection.shutdownOutput();
@@ -1003,7 +991,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         public void write(byte[] data, int offset, int length)
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.write(data, offset, length);
             } else {
@@ -1012,7 +1000,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         public void write(byte[] data)
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.write(data);
             } else {
@@ -1021,7 +1009,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         public void writeLine()
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.writeLine();
             } else {
@@ -1030,7 +1018,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         public void writeLine(byte[] data)
-            throws IOException, IllegalStateException, HttpRecoverableException {
+            throws IOException, IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.writeLine(data);
             } else {
@@ -1046,6 +1034,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public int getSoTimeout() throws SocketException {
             if (hasConnection()) {
                 return wrappedConnection.getSoTimeout();
@@ -1054,6 +1045,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public String getVirtualHost() {
             if (hasConnection()) {
                 return wrappedConnection.getVirtualHost();
@@ -1062,6 +1056,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void setVirtualHost(String host) throws IllegalStateException {
             if (hasConnection()) {
                 wrappedConnection.setVirtualHost(host);
@@ -1078,6 +1075,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        /**
+         * @deprecated
+         */
         public void setSendBufferSize(int sendBufferSize) throws SocketException {
             if (hasConnection()) {
                 wrappedConnection.setSendBufferSize(sendBufferSize);
@@ -1086,5 +1086,60 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
+        public boolean closeIfStale() throws IOException {
+            if (hasConnection()) {
+                return super.closeIfStale();
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
+
+        public HttpConnectionParams getParams() {
+            if (hasConnection()) {
+                return super.getParams();
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
+
+        public void print(String string, String string1) throws IOException, IllegalStateException {
+            if (hasConnection()) {
+                super.print(string, string1);
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
+
+        public void printLine(String string, String string1) throws IOException, IllegalStateException {
+            if (hasConnection()) {
+                super.printLine(string, string1);
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
+
+        public String readLine(String string) throws IOException, IllegalStateException {
+            if (hasConnection()) {
+                return super.readLine(string);
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
+
+        public void setParams(HttpConnectionParams httpConnectionParams) {
+            if (hasConnection()) {
+                super.setParams(httpConnectionParams);
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
+
+        public void setSocketTimeout(int i) throws SocketException, IllegalStateException {
+            if (hasConnection()) {
+                super.setSocketTimeout(i);
+            } else {
+                throw new IllegalStateException("Connection has been released");
+            }
+        }
     }
 }

@@ -8,9 +8,12 @@ package com.l7tech.proxy;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -152,6 +155,14 @@ public class ClientCertSslClient {
             log.info("Socket is type: " + sock.getClass());
             return sock;
         }
+
+        public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams)
+          throws IOException, UnknownHostException, ConnectTimeoutException {
+            log.info("MySocketFactory.createSocket4(): host=" + host);
+            final SSLSocket sock = (SSLSocket)sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
+            log.info("Socket is type: " + sock.getClass());
+            return sock;
+        }
     }
 
     public static void main(String[] args) {
@@ -173,7 +184,7 @@ public class ClientCertSslClient {
         sslContext.init(new X509KeyManager[]{keyManager},
           new X509TrustManager[]{trustManager},
           null);
-        Protocol https = new Protocol("https", new MySocketFactory(sslContext), 443);
+        Protocol https = new Protocol("https", (ProtocolSocketFactory) new MySocketFactory(sslContext), 443);
         Protocol.registerProtocol("https", https);
 
         HttpClient httpClient = new HttpClient();

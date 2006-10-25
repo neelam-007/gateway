@@ -3,11 +3,13 @@ package com.l7tech.server.util;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.SingleHostHttpConnectionManagerParams;
 import com.l7tech.server.ServerConfig;
 
 /**
@@ -86,8 +88,9 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
             }
 
             IdentityBindingHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
-            connectionManager.setMaxConnectionsPerHost(hmax);
-            connectionManager.setMaxTotalConnections(tmax);
+            HttpConnectionManagerParams params = new SingleHostHttpConnectionManagerParams(hmax, tmax);
+            params.setDefaults(connectionManager.getParams().getDefaults());
+            connectionManager.setParams(params);
             connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
             this.connectionManager = connectionManager;
             httpConnectionManager = connectionManager;

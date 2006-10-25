@@ -12,6 +12,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.w3c.dom.Document;
 
 import java.util.logging.Logger;
@@ -53,8 +54,9 @@ public class AcmeSoapClient extends TestCase {
         HttpClient client = new HttpClient();      
         PostMethod pm = new PostMethod(TEST_URL);
         Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
-        pm.setRequestBody(XmlUtil.nodeToString(req));
-        log.info("Sending request: " + pm.getRequestBodyAsString());
+        String requestBody = XmlUtil.nodeToString(req);
+        pm.setRequestEntity(new ByteArrayRequestEntity(requestBody.getBytes()));
+        log.info("Sending request: " + requestBody);
         pm.addRequestHeader("SOAPAction", "\"http://warehouse.acme.com/ws/getProductDetails\"");
         pm.addRequestHeader("Content-Type", "text/xml");
         int result = client.executeMethod(pm);

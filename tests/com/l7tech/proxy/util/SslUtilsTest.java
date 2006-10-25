@@ -13,6 +13,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 import java.net.PasswordAuthentication;
 
@@ -35,7 +36,7 @@ public class SslUtilsTest extends TestCase {
     public void testPasswordChange() throws Exception {
         // Configure SSL for outgoing connections
         System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
-        Protocol https = new Protocol("https", ClientProxySecureProtocolSocketFactory.getInstance(), 443);
+        Protocol https = new Protocol("https", (ProtocolSocketFactory) ClientProxySecureProtocolSocketFactory.getInstance(), 443);
         Protocol.registerProtocol("https", https);
 
         String username="mike";

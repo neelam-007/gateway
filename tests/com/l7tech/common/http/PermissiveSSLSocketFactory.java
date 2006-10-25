@@ -1,6 +1,8 @@
 package com.l7tech.common.http;
 
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.ConnectTimeoutException;
 
 import javax.net.ssl.*;
 import java.net.Socket;
@@ -66,5 +68,9 @@ public class PermissiveSSLSocketFactory extends SSLSocketFactory implements Secu
 
     public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
         return (SSLSocket) socketFactory().createSocket(inetAddress, i);
+    }
+
+    public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+        return createSocket(host, port, clientHost, clientPort);
     }
 }

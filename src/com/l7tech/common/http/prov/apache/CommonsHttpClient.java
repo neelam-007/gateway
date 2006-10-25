@@ -12,13 +12,22 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ConnectionTimeoutSocketFactory;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.HexUtils;
 
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.httpclient.params.HttpParams;
+import org.apache.commons.httpclient.params.DefaultHttpParams;
+import org.apache.commons.httpclient.params.DefaultHttpParamsFactory;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
@@ -26,9 +35,9 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
-import javax.net.SocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,9 +55,12 @@ public class CommonsHttpClient implements GenericHttpClient {
     public static final int DEFAULT_CONNECT_TIMEOUT = 30000;
     public static final int DEFAULT_READ_TIMEOUT = 60000;
 
+    private static HttpParams httpParams;
     private static final Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
-    private static final ThreadLocalNumber threadLocalTimeout = new ThreadLocalNumber(Integer.valueOf(DEFAULT_CONNECT_TIMEOUT));
-    private static Protocol httpProtocol;
+
+    static {
+        DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
+    }
 
     private final HttpConnectionManager cman;
     private final int connectionTimeout;
@@ -70,12 +82,17 @@ public class CommonsHttpClient implements GenericHttpClient {
         this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
         this.identity = identity;
         this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
+
+        HttpConnectionManagerParams params = cman.getParams();
+        params.setConnectionTimeout(this.connectionTimeout);
+        params.setSoTimeout(this.timeout);
     }
 
     public static MultiThreadedHttpConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
         MultiThreadedHttpConnectionManager hcm = new MultiThreadedHttpConnectionManager();
-        hcm.setMaxConnectionsPerHost(maxConnectionsPerHost);
-        hcm.setMaxTotalConnections(maxTotalConnections);
+        HttpConnectionManagerParams hcmp = new SingleHostHttpConnectionManagerParams(maxConnectionsPerHost, maxTotalConnections);
+        hcm.setParams(hcmp);
+
         return hcm;
     }
 
@@ -115,28 +132,32 @@ public class CommonsHttpClient implements GenericHttpClient {
             } else
                 hconf = null;
         } else
-            hconf = getHostConfig(targetUrl);
+            hconf = null;
 
         final HttpClient client = new HttpClient(cman);
-        //
-        // NOTE: HttpClient starts an extra Thread to manage connection timeout.
-        //       For this reason we do connection timeouts with a custom socket
-        //       factory instead of using the built in functionality.
-        //
-        //client.setConnectionTimeout(connectionTimeout);
-        client.setTimeout(timeout);
+
+        HttpClientParams clientParams = client.getParams();
+        clientParams.setDefaults(getOrBuildCachingHttpParams(clientParams.getDefaults()));
+        clientParams.setAuthenticationPreemptive(false);
 
         final HttpState state = getHttpState(client, params);
 
-        final HttpMethod httpMethod = method == POST ? new PostMethod(targetUrl.toString())
-                                                     : new GetMethod(targetUrl.toString());
+        // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
+        //       we end up with the default socket factory for the protocol
+        final HttpMethod httpMethod = method == POST ? (HttpMethod) new PostMethod(targetUrl.getFile())
+                                                     : (HttpMethod) new GetMethod(targetUrl.getFile());
 
         httpMethod.setFollowRedirects(params.isFollowRedirects());
+        HttpMethodParams methodParams = httpMethod.getParams();
+        methodParams.setVersion(HttpVersion.HTTP_1_1);
+        methodParams.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+        methodParams.setSoTimeout(timeout);
+
         PasswordAuthentication pw = params.getPasswordAuthentication();
         NtlmAuthentication ntlm = params.getNtlmAuthentication();
         if (ntlm != null) {
             httpMethod.setDoAuthentication(true);
-            state.setCredentials(null, null,
+            state.setCredentials(AuthScope.ANY,
                 new NTCredentials(
                     ntlm.getUsername(),
                     new String(ntlm.getPassword()),
@@ -148,18 +169,16 @@ public class CommonsHttpClient implements GenericHttpClient {
             httpMethod.setDoAuthentication(true);
             String username = pw.getUserName();
             char[] password = pw.getPassword();
-            state.setCredentials(null, null,
+            state.setCredentials(AuthScope.ANY,
                                  new UsernamePasswordCredentials(username, new String(password)));
-            state.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
+            clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
         }
 
-        Long contentLen = params.getContentLength();
+        final Long contentLen = params.getContentLength();
         if (httpMethod instanceof PostMethod && contentLen != null) {
             final long clen = contentLen.longValue();
             if (clen > Integer.MAX_VALUE)
                 throw new GenericHttpException("Content-Length is too long -- maximum supported is " + Integer.MAX_VALUE);
-            if (clen >= 0)
-                ((PostMethod)httpMethod).setRequestContentLength((int)clen);
         }
 
         List headers = params.getExtraHeaders();
@@ -179,14 +198,30 @@ public class CommonsHttpClient implements GenericHttpClient {
         return new GenericHttpRequest() {
             private HttpMethod method = httpMethod;
 
-            public void setInputStream(InputStream bodyInputStream) {
+            public void setInputStream(final InputStream bodyInputStream) {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
                 if (!(method instanceof PostMethod))
                     throw new UnsupportedOperationException("Only POST requests require a body InputStream");
 
                 PostMethod postMethod = (PostMethod)method;
-                postMethod.setRequestBody(bodyInputStream);
+                postMethod.setRequestEntity(new RequestEntity(){
+                    public long getContentLength() {
+                        return contentLen != null ? contentLen.longValue() : -1;
+                    }
+
+                    public String getContentType() {
+                        return rct.getFullValue();
+                    }
+
+                    public boolean isRepeatable() {
+                        return false;
+                    }
+
+                    public void writeRequest(OutputStream outputStream) throws IOException {
+                        HexUtils.copyStream(bodyInputStream, outputStream);
+                    }
+                });
             }
 
             public GenericHttpResponse getResponse() throws GenericHttpException {
@@ -194,7 +229,6 @@ public class CommonsHttpClient implements GenericHttpClient {
                     throw new IllegalStateException("This request has already been closed");
 
                 stampBindingIdentity();
-                threadLocalTimeout.set(Integer.valueOf(connectionTimeout));
                 final int status;
                 final ContentTypeHeader contentType;
                 final Long contentLength;
@@ -307,7 +341,6 @@ public class CommonsHttpClient implements GenericHttpClient {
         if(params.getState()==null) {
             // use per client http state (standard behaviour)
             httpState = client.getState();
-            httpState.setCookiePolicy(CookiePolicy.COMPATIBILITY);
         }
         else {
             // use caller managed http state scoping
@@ -334,33 +367,15 @@ public class CommonsHttpClient implements GenericHttpClient {
 
     }
 
-    private Protocol getHttpProtocol(){
-        Protocol protocol = httpProtocol;
-        if (protocol == null) {
-            protocol = new Protocol("http", getTimeoutProtocolSocketFactory(), 80);
-            httpProtocol = protocol;
+    private static HttpParams getOrBuildCachingHttpParams(final HttpParams params) {
+        HttpParams defaultParams = httpParams;
+
+        if (defaultParams == null) {
+            defaultParams = new CachingHttpParams(params);
+            httpParams = defaultParams;
         }
-        return protocol;
-    }
 
-    private ProtocolSocketFactory getTimeoutProtocolSocketFactory() {
-        return new ProtocolSocketFactory() {
-            private final SocketFactory socketFactory = new ConnectionTimeoutSocketFactory(SocketFactory.getDefault(), threadLocalTimeout);
-
-            public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                return socketFactory.createSocket(host, port);
-            }
-
-            public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort) throws IOException, UnknownHostException {
-                return socketFactory.createSocket(host, port, clientHost, clientPort);
-            }
-        };
-    }
-
-    private HostConfiguration getHostConfig(final URL targetUrl) {
-        HostConfiguration hconf = new HostConfiguration();
-        hconf.setHost(targetUrl.getHost(), targetUrl.getPort(), getHttpProtocol());
-        return hconf;
+        return defaultParams;
     }
 
     private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier) {
@@ -368,34 +383,33 @@ public class CommonsHttpClient implements GenericHttpClient {
         Protocol protocol = (Protocol)protoBySockFac.get(sockFac);
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
-            protocol = new Protocol("https", new SecureProtocolSocketFactory() {
+            protocol = new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
                     return verify(sockFac.createSocket(socket, host, port, autoClose), host);
                 }
 
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
-                    return wrap(getHttpProtocol().getSocketFactory().createSocket(host, port, clientAddress, clientPort), host, port);
+                    return verify(sockFac.createSocket(host, port, clientAddress, clientPort), host);
                 }
 
                 public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                    return wrap(getHttpProtocol().getSocketFactory().createSocket(host, port), host, port);
+                    return verify(sockFac.createSocket(host, port), host);
                 }
 
-                private Socket wrap(Socket socket, String host, int port) throws IOException, UnknownHostException {
-                    Socket secure = null;
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+                    Socket socket = sockFac.createSocket();
+                    int connectTimeout = httpConnectionParams.getConnectionTimeout();
+
+                    socket.bind(new InetSocketAddress(clientAddress, clientPort));
+
                     try {
-                        secure = sockFac.createSocket(socket, host, port, true);
-                        socket = null;
-                    } finally {
-                        if (socket != null) {
-                            try {
-                                socket.close();
-                            } catch (IOException ioe) {
-                                // ok
-                            }
-                        }
+                        socket.connect(new InetSocketAddress(host, port), connectTimeout);
                     }
-                    return verify(secure, host);
+                    catch(SocketTimeoutException ste) {
+                        throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
+                    }
+
+                    return verify(socket, host);
                 }
 
                 private Socket verify(Socket socket, String host) throws IOException {
@@ -414,57 +428,8 @@ public class CommonsHttpClient implements GenericHttpClient {
             protoBySockFac.put(sockFac, protocol);
         }
         hconf = new HostConfiguration();
-        hconf.setHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
+        HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
+        hconf.setHost(httpHost);
         return hconf;
-    }
-
-    private static class ThreadLocalNumber extends Number {
-        private final Number number;
-        private final ThreadLocal localValue;
-
-        private ThreadLocalNumber(Number initialValue) {
-            number = initialValue;
-            localValue = new ThreadLocal(){
-                protected Object initialValue() {
-                    return number;
-                }
-            };
-        }
-
-        protected Object initialValue() {
-            return number;
-        }
-
-        private void set(Number value) {
-            localValue.set(value);
-        }
-
-        private Number getNumber() {
-            return (Number) localValue.get();
-        }
-
-        public byte byteValue() {
-            return getNumber().byteValue();
-        }
-
-        public double doubleValue() {
-            return getNumber().doubleValue();
-        }
-
-        public float floatValue() {
-            return getNumber().floatValue();
-        }
-
-        public int intValue() {
-            return getNumber().intValue();
-        }
-
-        public long longValue() {
-            return getNumber().longValue();
-        }
-
-        public short shortValue() {
-            return getNumber().shortValue();
-        }
     }
 }
