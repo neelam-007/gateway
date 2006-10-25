@@ -31,6 +31,8 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.TimerTask;
 
 /**
@@ -84,6 +86,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     // Brake to prevent calls to System.currentTimeMillis every time a license check is made.
     // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
     private final AtomicInteger checkCount = new AtomicInteger(CHECKCOUNT_CHECK_NOW);
+    private final Lock licenseUpdateLock = new ReentrantLock();
     private long lastCheck = TIME_CHECK_NOW;
 
     private boolean licenseSet = false;
@@ -115,54 +118,75 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     private void check() {
         if (checkCount.getAndIncrement() < CHECK_THRESHOLD)
             return;
-        synchronized (this) {
+        boolean gotLock = false;
+        try {
+            if (license != null) {
+                // if we already have a licence then just try a lock so we don't wait if another thread
+                // is holding the lock
+                gotLock = licenseUpdateLock.tryLock();
+            } else {
+                gotLock = true;
+                licenseUpdateLock.lock();
+            }
+
+            if (!gotLock || checkCount.get() < CHECK_THRESHOLD) // see if someone else got here first
+                return;
+
             long now = System.currentTimeMillis();
             if ((now - lastCheck) > CHECK_INTERVAL) {
                 reloadLicenseFromDatabase();
                 lastCheck = System.currentTimeMillis();
             }
             checkCount.set(0);
+        } finally {
+            if (gotLock) licenseUpdateLock.unlock();
         }
     }
 
     /** (Re)read the license from the cluster property table. */
-    private synchronized void reloadLicenseFromDatabase() {
-        if (clusterPropertyManager == null) throw new IllegalStateException("ClusterPropertyManager has not been set");
-
-        // Get current license XML from database.
-        final String licenseXml;
+    private void reloadLicenseFromDatabase() {
+        licenseUpdateLock.lock();
         try {
-            licenseXml = clusterPropertyManager.getProperty(LICENSE_PROPERTY_NAME);
-        } catch (FindException e) {
-            // We'll let this slide and keep the current license, if any, unless it was loaded more than 1 day ago
-            if (license != null && (System.currentTimeMillis() - licenseLoaded < DB_FAILURE_GRACE_PERIOD)) {
-                fireEvent(SystemMessages.LICENSE_DB_ERROR_RETRY, null, "Retrying");
-                return;
-            } else {
-                fireEvent(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null, "Giving up");
+            if (clusterPropertyManager == null) throw new IllegalStateException("ClusterPropertyManager has not been set");
+
+            // Get current license XML from database.
+            final String licenseXml;
+            try {
+                licenseXml = clusterPropertyManager.getProperty(LICENSE_PROPERTY_NAME);
+            } catch (FindException e) {
+                // We'll let this slide and keep the current license, if any, unless it was loaded more than 1 day ago
+                if (license != null && (System.currentTimeMillis() - licenseLoaded < DB_FAILURE_GRACE_PERIOD)) {
+                    fireEvent(SystemMessages.LICENSE_DB_ERROR_RETRY, null, "Retrying");
+                    return;
+                } else {
+                    fireEvent(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null, "Giving up");
+                    setLicense(null);
+                    this.licenseLastError = new InvalidLicenseException("Unable to read license information from database: " + ExceptionUtils.getMessage(e), e);
+                    // Leave licenseLoaded the same so this message repeats.
+                    return;
+                }
+            }
+
+            if (licenseXml == null || licenseXml.length() < 1) {
+                fireEvent(SystemMessages.LICENSE_NO_LICENSE, null, "No license");
                 setLicense(null);
-                this.licenseLastError = new InvalidLicenseException("Unable to read license information from database: " + ExceptionUtils.getMessage(e), e);
-                // Leave licenseLoaded the same so this message repeats.
+                this.licenseLoaded = System.currentTimeMillis();
+                return;
+            }
+
+            try {
+                validateAndInstallLicense(licenseXml);
+                this.licenseLastError = null;
+            } catch (InvalidLicenseException e) {
+                this.licenseLastError = e;
+                fireEvent(SystemMessages.LICENSE_INVALID, e.getMessage(), "Invalid");
+                setLicense(null);
+                this.licenseLoaded = System.currentTimeMillis();
                 return;
             }
         }
-
-        if (licenseXml == null || licenseXml.length() < 1) {
-            fireEvent(SystemMessages.LICENSE_NO_LICENSE, null, "No license");
-            setLicense(null);
-            this.licenseLoaded = System.currentTimeMillis();
-            return;
-        }
-
-        try {
-            validateAndInstallLicense(licenseXml);
-            this.licenseLastError = null;
-        } catch (InvalidLicenseException e) {
-            this.licenseLastError = e;
-            fireEvent(SystemMessages.LICENSE_INVALID, e.getMessage(), "Invalid");
-            setLicense(null);
-            this.licenseLoaded = System.currentTimeMillis();
-            return;
+        finally {
+            licenseUpdateLock.unlock();
         }
     }
 
@@ -175,20 +199,35 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
      * @param licenseXml the license to validate and install
      */
     private void validateAndInstallLicense(String licenseXml) throws InvalidLicenseException {
-
-        final License license;
+        licenseUpdateLock.lock();
         try {
-            license = new License(licenseXml, getTrustedIssuers(), GatewayFeatureSets.getFeatureSetExpander());
-            license.checkValidity();
-            checkProductVersion(license);
-        } catch (InvalidLicenseException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new InvalidLicenseException("License XML invalid: " + ExceptionUtils.getMessage(e), e);
-        }
+            final License license;
+            final License oldLicense = this.license;
+            boolean updated = false;
+            try {
+                if (oldLicense != null && oldLicense.asXml().equals(licenseXml)) {
+                    license = oldLicense;
+                } else {
+                    updated = true;
+                    license = new License(licenseXml, getTrustedIssuers(), GatewayFeatureSets.getFeatureSetExpander());
+                }
 
-        setLicense(license);
-        this.licenseLoaded = System.currentTimeMillis();
+                // always check validity
+                license.checkValidity();
+                checkProductVersion(license);
+            } catch (InvalidLicenseException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new InvalidLicenseException("License XML invalid: " + ExceptionUtils.getMessage(e), e);
+            }
+
+            if (updated)
+                setLicense(license);
+            this.licenseLoaded = System.currentTimeMillis();
+        }
+        finally {
+            licenseUpdateLock.unlock();
+        }
     }
 
     /**
@@ -202,7 +241,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
      * @param license   the license to check
      * @throws InvalidLicenseException if this license does not grant access to this version of this product
      */
-    private void checkProductVersion(License license) throws InvalidLicenseException {
+    private static void checkProductVersion(License license) throws InvalidLicenseException {
         final String product = BuildInfo.getProductName();
         final String major = BuildInfo.getProductVersionMajor();
         final String minor = BuildInfo.getProductVersionMinor();
@@ -230,14 +269,20 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     }
 
     /** Set the current license.  Should only be called by updateLicense(), and only with a valid license. */
-    private synchronized void setLicense(License license) {
-        License old = this.license;
-        this.license = license; // always replace the object with the new one...
-        // ...but suppress the event/audit message if we are just reinstalling an identical license
-        if (licenseSet && (old == license || (old != null && old.equals(this.license))))
-            return;
-        this.licenseSet = true;
-        fireEvent(SystemMessages.LICENSE_UPDATED, license == null ? "<none>" : license.toString(), "Updated");
+    private void setLicense(License license) {
+        licenseUpdateLock.lock();
+        try {
+            License old = this.license;
+            this.license = license; // always replace the object with the new one...
+            // ...but suppress the event/audit message if we are just reinstalling an identical license
+            if (licenseSet && (old == license || (old != null && old.equals(this.license))))
+                return;
+            this.licenseSet = true;
+            fireEvent(SystemMessages.LICENSE_UPDATED, license == null ? "<none>" : license.toString(), "Updated");
+        }
+        finally {
+            licenseUpdateLock.unlock();
+        }
     }
 
     /** Listen for the license property being changed, and update the license immediately. */
@@ -256,9 +301,13 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
      * Ensure that the next time a license check is performed, the license will be reloaded from the database.
      */
     private void requestReload() {
-        synchronized (this) {
+        licenseUpdateLock.lock();
+        try {
             checkCount.set(CHECKCOUNT_CHECK_NOW);
             lastCheck = TIME_CHECK_NOW;
+        }
+        finally {
+            licenseUpdateLock.unlock();
         }
     }
 
@@ -270,13 +319,19 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
      * @return the currently installed valid license, or null if no license is installed or present in the database.
      * @throws InvalidLicenseException if a license is present in the database but was not installed because it was invalid.
      */
-    public synchronized License getCurrentLicense() throws InvalidLicenseException {
-        reloadLicenseFromDatabase();
-        if (license != null)
-            return license;
-        if (licenseLastError != null)
-            throw new InvalidLicenseException(licenseLastError.getMessage(), licenseLastError);
-        return null;
+    public License getCurrentLicense() throws InvalidLicenseException {
+        licenseUpdateLock.lock();
+        try {
+            reloadLicenseFromDatabase();
+            if (license != null)
+                return license;
+            if (licenseLastError != null)
+                throw new InvalidLicenseException(licenseLastError.getMessage(), licenseLastError);
+            return null;
+        }
+        finally {
+            licenseUpdateLock.unlock();
+        }
     }
 
     /**
@@ -292,32 +347,38 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
      * @throws InvalidLicenseException  if the license was not valid.
      * @throws UpdateException   if the database change could not be recorded (old license restored)
      */
-    public synchronized void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
-        long oldLoadTime = this.licenseLoaded;
-        License oldLicense = this.license;
-        validateAndInstallLicense(newLicenseXml);
-
-        // It was valid.  Save to db so the other cluster nodes can bask in its glory
-        Exception oops;
+    public void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
+        licenseUpdateLock.lock();
         try {
-            ClusterProperty property = clusterPropertyManager.findByUniqueName(LICENSE_PROPERTY_NAME);
-            if (property == null) {
-                property = new ClusterProperty(LICENSE_PROPERTY_NAME, newLicenseXml);
-                clusterPropertyManager.save(property);
-            } else {
-                property.setValue(newLicenseXml);
-                clusterPropertyManager.update(property);
-            }
-            return;
-        } catch (ObjectModelException e) {
-            // Fallthrough and roll back to old license
-            oops = e;
-        }
+            long oldLoadTime = this.licenseLoaded;
+            License oldLicense = this.license;
+            validateAndInstallLicense(newLicenseXml);
 
-        // Roll back to the old license license
-        setLicense(oldLicense);
-        this.licenseLoaded = oldLoadTime;
-        throw new UpdateException("New license was valid, but could not be installed: " + ExceptionUtils.getMessage(oops), oops);
+            // It was valid.  Save to db so the other cluster nodes can bask in its glory
+            Exception oops;
+            try {
+                ClusterProperty property = clusterPropertyManager.findByUniqueName(LICENSE_PROPERTY_NAME);
+                if (property == null) {
+                    property = new ClusterProperty(LICENSE_PROPERTY_NAME, newLicenseXml);
+                    clusterPropertyManager.save(property);
+                } else {
+                    property.setValue(newLicenseXml);
+                    clusterPropertyManager.update(property);
+                }
+                return;
+            } catch (ObjectModelException e) {
+                // Fallthrough and roll back to old license
+                oops = e;
+            }
+
+            // Roll back to the old license license
+            setLicense(oldLicense);
+            this.licenseLoaded = oldLoadTime;
+            throw new UpdateException("New license was valid, but could not be installed: " + ExceptionUtils.getMessage(oops), oops);
+        }
+        finally {
+            licenseUpdateLock.unlock();
+        }
     }
 
     public boolean isAssertionEnabled(String assertionClassname) {
