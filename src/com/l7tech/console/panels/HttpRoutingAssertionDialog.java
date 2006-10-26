@@ -70,6 +70,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JCheckBox connectTimeoutDefaultCheckBox;
     private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
+    private JButton button1;
+    private JButton button2;
 
     /**
      * Creates new form ServicePanel
