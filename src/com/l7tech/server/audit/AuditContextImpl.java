@@ -191,7 +191,7 @@ public class AuditContextImpl implements AuditContext {
             Level output = null;
             if (msgLevel != null) {
                 try {
-                    output = Level.parse(msgLevel);
+                    output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " +
                                    DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
@@ -211,7 +211,7 @@ public class AuditContextImpl implements AuditContext {
             Level output = null;
             if (msgLevel != null) {
                 try {
-                    output = Level.parse(msgLevel);
+                    output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid associated logs threshold value '" + msgLevel + "'. Will use default " +
                                    DEFAULT_ASSOCIATED_LOGS_THRESHOLD.getName() + " instead.");
@@ -246,7 +246,7 @@ public class AuditContextImpl implements AuditContext {
             Level output = null;
             if (msgLevel != null) {
                 try {
-                    output = Level.parse(msgLevel);
+                    output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid admin threshold value '" + msgLevel + "'. Will use default " +
                                    DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
@@ -266,7 +266,7 @@ public class AuditContextImpl implements AuditContext {
             Level output = null;
             if (msgLevel != null) {
                 try {
-                    output = Level.parse(msgLevel);
+                    output = getLevel(msgLevel);
                 } catch(IllegalArgumentException e) {
                     logger.warning("Invalid system client threshold value '" + msgLevel + "'. Will use default " +
                                    DEFAULT_SYSTEM_CLIENT_THRESHOLD.getName() + " instead.");
@@ -278,6 +278,27 @@ public class AuditContextImpl implements AuditContext {
             currentSystemClientThreshold = output;
         }
         return currentSystemClientThreshold;
+    }
+
+    /**
+     * Get the Level for the given name/value.
+     *
+     * Level.parse is synchronized so this is better for common level names.
+     */
+    private Level getLevel(final String levelName) {
+        Level level;
+
+        if (Level.WARNING.getName().equals(levelName)) {
+            level = Level.WARNING;
+        } else if (Level.INFO.getName().equals(levelName)) {
+            level = Level.INFO;
+        } else if (Level.SEVERE.getName().equals(levelName)) {
+            level = Level.SEVERE;
+        } else {
+            level = Level.parse(levelName);
+        }
+
+        return level;
     }
 
     private Level currentMessageThreshold;
