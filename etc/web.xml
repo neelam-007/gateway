@@ -187,7 +187,7 @@
     </servlet>
 
     <servlet>
-        <servlet-name>managerApplet</servlet-name>
+        <servlet-name>managerAppletServlet</servlet-name>
         <servlet-class>com.l7tech.server.admin.ManagerAppletServlet</servlet-class>
     </servlet>
 
@@ -267,7 +267,7 @@
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>managerApplet</servlet-name>
+        <servlet-name>managerAppletServlet</servlet-name>
         <url-pattern>/ssg/webadmin</url-pattern>
     </servlet-mapping>
 
