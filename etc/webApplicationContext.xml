@@ -228,7 +228,15 @@
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
-          singleton="false"/>
+          singleton="false">
+        <property name="connectionManagerParameters">
+            <map>
+                <entry key="http.connection.stalecheck">
+                    <value type="java.lang.Boolean">false</value>
+                </entry>
+            </map>
+        </property>
+    </bean>
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar">

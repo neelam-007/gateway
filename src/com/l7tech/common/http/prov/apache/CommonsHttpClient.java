@@ -195,14 +195,18 @@ public class CommonsHttpClient implements GenericHttpClient {
         if (rct != null)
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
 
-        return new GenericHttpRequest() {
+        return new RerunnableHttpRequest() {
             private HttpMethod method = httpMethod;
+            private boolean requestEntitySet = false;
 
             public void setInputStream(final InputStream bodyInputStream) {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
                 if (!(method instanceof PostMethod))
                     throw new UnsupportedOperationException("Only POST requests require a body InputStream");
+                if (requestEntitySet)
+                    throw new IllegalStateException("Request entity already set!");
+                requestEntitySet = true;
 
                 PostMethod postMethod = (PostMethod)method;
                 postMethod.setRequestEntity(new RequestEntity(){
@@ -224,6 +228,43 @@ public class CommonsHttpClient implements GenericHttpClient {
                 });
             }
 
+            public void setInputStreamFactory(final InputStreamFactory inputStreamFactory) {
+                if (inputStreamFactory == null)
+                    throw new IllegalArgumentException("inputStreamFactory must not be null");
+                if (method == null)
+                    throw new IllegalStateException("This request has already been closed");
+                if (!(method instanceof PostMethod))
+                    throw new UnsupportedOperationException("Only POST requests require a body InputStream");
+                if (requestEntitySet)
+                    throw new IllegalStateException("Request entity already set!");
+                requestEntitySet = true;
+
+                PostMethod postMethod = (PostMethod)method;
+                postMethod.setRequestEntity(new RequestEntity(){
+                    public long getContentLength() {
+                        return contentLen != null ? contentLen.longValue() : -1;
+                    }
+
+                    public String getContentType() {
+                        return rct.getFullValue();
+                    }
+
+                    public boolean isRepeatable() {
+                        return true;
+                    }
+
+                    public void writeRequest(OutputStream outputStream) throws IOException {
+                        InputStream inputStream = null;
+                        try {
+                            inputStream = inputStreamFactory.getInputStream();
+                            HexUtils.copyStream(inputStream, outputStream);
+                        } finally {
+                            if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
+                        }
+                    }
+                });
+            }
+
             public GenericHttpResponse getResponse() throws GenericHttpException {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
@@ -234,7 +275,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                 final Long contentLength;
                 try {
                     if (hconf == null) {
-                        HostConfiguration hc = (HostConfiguration) client.getHostConfiguration().clone();
+                        HostConfiguration hc = new HostConfiguration(client.getHostConfiguration());
                         hc.setHost(targetUrl.getHost(), targetUrl.getPort());
                         status = client.executeMethod(hc , method, state);
                     }

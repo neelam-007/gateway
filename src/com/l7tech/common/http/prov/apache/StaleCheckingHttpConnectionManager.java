@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 
@@ -83,12 +82,9 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
         return super.getConnection(hostConfiguration);
     }
 
-    /**
-     * @deprecated
-     */
-    public HttpConnection getConnection(HostConfiguration hostConfiguration, long timeout) throws HttpException {
+    public HttpConnection getConnectionWithTimeout(HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
         seenHostConfigurations.add(new HostConfiguration(hostConfiguration));
-        return super.getConnection(hostConfiguration, timeout);
+        return super.getConnectionWithTimeout(hostConfiguration, timeout);
     }
 
     //- PROTECTED

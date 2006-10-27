@@ -1,7 +1,10 @@
 package com.l7tech.common.http.prov.apache;
 
+import java.util.Map;
+
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.HostConfiguration;
+import EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 
 /**
  * HttpConnectionManagerParams extension that does not support multiple hosts.
@@ -18,6 +21,7 @@ public class SingleHostHttpConnectionManagerParams extends HttpConnectionManager
     public SingleHostHttpConnectionManagerParams(int maxConnectionsPerHost, int maxTotalConnections) {
         this.maxConnectionsPerHost = maxConnectionsPerHost;
         this.maxTotalConnections = maxTotalConnections;
+        cache = new ConcurrentHashMap();
     }
 
     /**
@@ -50,8 +54,39 @@ public class SingleHostHttpConnectionManagerParams extends HttpConnectionManager
         throw new UnsupportedOperationException("Read only");
     }
 
+    public Object getParameter(final String name) {
+        return getCachedParameter(name);
+    }
+
+    public void setParameter(final String name, final Object value) {
+       setCachedParameter(name, value);
+    }
+
     //- PRIVATE
+
+    private static final Object NULL_OBJECT = new Object();
 
     private final int maxConnectionsPerHost;
     private final int maxTotalConnections;
+    private final Map cache;
+
+    private Object getCachedParameter(final String name) {
+        Object value = cache.get(name);
+
+        if (value == null) {
+            value = super.getParameter(name);
+            setCachedParameter(name, value);
+        } else if (value == NULL_OBJECT) {
+            value = null;
+        }
+
+        return value;
+    }
+
+    private void setCachedParameter(final String name, final Object value) {
+        if (name != null && value != null)
+            cache.put(name, value);
+        else if (value == null && name != null)
+            cache.put(name, NULL_OBJECT);
+    }
 }

@@ -16,11 +16,13 @@ import com.l7tech.common.http.GenericHttpRequest;
 import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.RerunnableHttpRequest;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -29,6 +31,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -77,6 +80,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final int maxFailoverAttempts;
     private final SSLContext sslContext;
     private final boolean urlUsesVariables;
+    private final URL protectedServiceUrl;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
@@ -88,6 +92,17 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         } else {
             logger.info("this http routing assertion has null url");
             urlUsesVariables = false;
+        }
+        if (urlUsesVariables || data.getProtectedServiceUrl()==null) {
+            protectedServiceUrl = null;
+        } else {
+            URL url = null;
+            try {
+                url = new URL(data.getProtectedServiceUrl());
+            } catch (MalformedURLException murle) {
+                logger.log(Level.WARNING, "Invalid protected service URL.", murle);
+            }
+            protectedServiceUrl = url;
         }
 
         try {
@@ -381,8 +396,23 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  getTimeout(),
                                                                  connectionId);
             routedRequest = httpClient.createRequest(GenericHttpClient.POST, routedRequestParams);
-            final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-            routedRequest.setInputStream(bodyInputStream);
+            if (routedRequest instanceof RerunnableHttpRequest) {
+                RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
+                rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
+                    public InputStream getInputStream() {
+                        try {
+                            return reqMime.getEntireMessageBodyAsInputStream();
+                        } catch (NoSuchPartException nspe) {
+                            return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
+                        } catch (IOException ioe) {
+                            return new IOExceptionThrowingInputStream(ioe);
+                        }
+                    }
+                });
+            } else {
+                final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+                routedRequest.setInputStream(bodyInputStream);
+            }
 
             long latencyTimerStart = System.currentTimeMillis();
             routedResponse = routedRequest.getResponse();
@@ -510,17 +540,24 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     private URL getProtectedServiceUrl(PublishedService service, PolicyEnforcementContext context) throws WSDLException, MalformedURLException {
-        String psurl = data.getProtectedServiceUrl();
-        if (urlUsesVariables) {
-           psurl = ExpandVariables.process(psurl, context.getVariableMap(varNames, auditor));
+        URL url = protectedServiceUrl; // protectedServiceUrl only set if we are no using variables and url is valid
+
+        if (url == null) {
+            String psurl;
+            if (urlUsesVariables) {
+               psurl = ExpandVariables.process(data.getProtectedServiceUrl(), context.getVariableMap(varNames, auditor));
+            } else {
+               psurl = data.getProtectedServiceUrl();
+            }
+
+            if (psurl == null) {
+                logger.info("assertion's url was null, falling back on service's url value");
+                url = service.serviceUrl();
+            } else {
+                url = new URL(psurl);
+            }
         }
-        URL url;
-        if (psurl == null) {
-            logger.info("assertion's url was null, falling back on service's url value");
-            url = service.serviceUrl();
-        } else {
-            url = new URL(psurl);
-        }
+
         return url;
     }
 

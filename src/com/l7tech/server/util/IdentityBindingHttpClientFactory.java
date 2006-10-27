@@ -1,6 +1,9 @@
 package com.l7tech.server.util;
 
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -67,6 +70,18 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
                                      identity);
     }
 
+    /**
+     * Optional configuration parameters for the HttpConnectionManager.
+     *
+     * <p>You might find more info here:<br> 
+     * http://jakarta.apache.org/commons/httpclient/preference-api.html#HTTP_connection_parameters</p>
+     *
+     * @param parameters the String -> Object map.
+     */
+    public void setConnectionManagerParameters(Map parameters) {
+        parameterMap = new HashMap(parameters);
+    }
+
     //- PRIVATE
 
     // class
@@ -74,6 +89,7 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
 
     //
     private HttpConnectionManager connectionManager;
+    private Map parameterMap;
 
     /**
      *
@@ -90,6 +106,21 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
             IdentityBindingHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
             HttpConnectionManagerParams params = new SingleHostHttpConnectionManagerParams(hmax, tmax);
             params.setDefaults(connectionManager.getParams().getDefaults());
+
+            if (parameterMap != null) {
+                for (Iterator mapEntryIter = parameterMap.entrySet().iterator(); mapEntryIter.hasNext(); ) {
+                    Map.Entry entry = (Map.Entry) mapEntryIter.next();
+                    Object key = entry.getKey();
+                    Object value = entry.getValue();
+                    if (key instanceof String) {
+                        params.setParameter((String)key, value);
+                    }
+                    else {
+                        logger.warning("Ignoring non-string parameter '"+ key +"'");
+                    }
+                }
+            }
+
             connectionManager.setParams(params);
             connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
             this.connectionManager = connectionManager;

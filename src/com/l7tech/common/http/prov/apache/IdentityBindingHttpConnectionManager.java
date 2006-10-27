@@ -1,10 +1,6 @@
 package com.l7tech.common.http.prov.apache;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,9 +13,7 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.HttpConnectionManager;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 /**
@@ -36,7 +30,7 @@ import org.apache.commons.httpclient.protocol.Protocol;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConnectionManager {
+public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionManager {
 
     //- PUBLIC
 
@@ -169,23 +163,14 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         if (httpConnection == null) {
-            httpConnection = super.getConnection(hostConfiguration);
+            HttpConnection newConnection = super.getConnection(hostConfiguration);
+            httpConnection = new HttpConnectionWrapper(newConnection, new HttpConnectionInfo(newConnection));
         }
 
         return httpConnection;
     }
 
-    /**
-     * Get a connection based on the current identity or from the unbound pool.
-     *
-     * @param hostConfiguration The connection descriptor.
-     * @param timeout           The maximum wait time
-     * @return the HttpConnection
-     * @throws HttpException on timeout
-     *
-     * @deprecated
-     */
-    public HttpConnection getConnection(HostConfiguration hostConfiguration, long timeout) throws HttpException {
+    public HttpConnection getConnectionWithTimeout(HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
         HttpConnection httpConnection = null;
         ThreadLocalInfo tli = getInfo();
         if (tli != null) {
@@ -195,42 +180,15 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         if (httpConnection == null) {
-            httpConnection = super.getConnection(hostConfiguration, timeout);
+            HttpConnection newConnection = super.getConnectionWithTimeout(hostConfiguration, timeout);
+            httpConnection = new HttpConnectionWrapper(newConnection, new HttpConnectionInfo(newConnection));
         }
 
         return httpConnection;
     }
 
-    /**
-     * Release a connection.
-     *
-     * <p>Note that if the id is set this will NOT release the underlying connection.</p>
-     *
-     * @param httpConnection The connection to release
-     */
-    public void releaseConnection(HttpConnection httpConnection) {
-        if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Releasing connection.");
-        }
-
-        ThreadLocalInfo tli = getInfo();
-        Object identity = tli!=null ? tli.getId() : null;
-        boolean bound = false;
-        if (identity != null && tli.hasBindingStatus() && httpConnection != null && httpConnection.isOpen()) {
-            if (tli.bindingRequested()) {
-                bound = setBoundHttpConnection(identity, httpConnection);
-            }
-            else {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Connection is bound, retaining.");
-                }
-                bound = true;
-            }
-        }
-
-        if (!bound) {
-            reallyReleaseConnection(httpConnection);
-        }
+    public void releaseConnection(HttpConnection conn) {
+        super.releaseConnection(unwrapit(conn));
     }
 
     //- PROTECTED
@@ -332,7 +290,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         try {
             return getBoundHttpConnection(identity, hostConfiguration, 0);
         }
-        catch(HttpException he) { // cant happen with 0 timeout
+        catch(ConnectionPoolTimeoutException he) { // cant happen with 0 timeout
             logger.log(Level.WARNING, "Unexpected timeout looking for bound connection", he);
             return null;
         }
@@ -348,7 +306,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @param timeout           The maximum time to wait in milliseconds
      * @return The HttpConnection or null
      */
-    private HttpConnection getBoundHttpConnection(Object identity, HostConfiguration hostConfiguration, long timeout) throws HttpException {
+    private HttpConnection getBoundHttpConnection(Object identity, HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
         HttpConnection httpConnection = null;
 
         boolean gotLock = false;
@@ -356,7 +314,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             try {
                 if (timeout == 0) lock.readLock().acquire();
                 else if(!lock.readLock().attempt(timeout)) {
-                    throw new HttpException("Timeout acquiring lock.");
+                    throw new ConnectionPoolTimeoutException("Timeout acquiring lock.");
                 }
                 gotLock = true;
                 HttpConnectionInfo hci = (HttpConnectionInfo) connectionsById.get(identity);
@@ -364,7 +322,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
                     if(isValid(hci)) {
                         httpConnection = hci.getHttpConnection();
                         if (httpConnection != null) {
-                            httpConnection = new BoundHttpConnectionAdapter(httpConnection, hci);
+                            httpConnection = new HttpConnectionWrapper(httpConnection, hci);
                         }
                         else {
                             logger.info("Valid bound connection for identity '"+identity+"' is null?.");
@@ -403,7 +361,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
                 }
 
                 connectionForClosing.close(); // Close it since the connection must not be reused
-                reallyReleaseConnection(connectionForClosing);
+                releaseConnection(connectionForClosing);
             }
             else {
                 if (logger.isLoggable(Level.FINE)) {
@@ -510,22 +468,19 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         return valid;
     }
 
-    private HttpConnection unwrap(HttpConnection httpConnection) {
-        if (httpConnection instanceof BoundHttpConnectionAdapter) {
-            httpConnection = ((BoundHttpConnectionAdapter)httpConnection).getWrappedConnection();
+    private HttpConnection unwrapit(HttpConnection httpConnection) {
+        while (httpConnection instanceof HttpConnectionWrapper && 
+            ((HttpConnectionWrapper)httpConnection).getConnectionListener() instanceof HttpConnectionInfo) {
+            httpConnection = ((HttpConnectionWrapper)httpConnection).getWrappedConnection();
         }
 
         return httpConnection;
     }
 
-    private void reallyReleaseConnection(HttpConnection httpConnection) {
-        super.releaseConnection(unwrap(httpConnection));
-    }
-
     /**
      * Holder for HttpConnection data
      */
-    private static final class HttpConnectionInfo {
+    private final class HttpConnectionInfo implements HttpConnectionWrapper.ConnectionListener {
         private final Object lock = new Object();
         private final long allocationTime;
         private long lastUsageTime;
@@ -557,15 +512,39 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             return inUse;
         }
 
-        public void recordUsage() {
+        public void wrap() {
             this.inUse = true;
             this.lastUsageTime = System.currentTimeMillis();
         }
 
-        public void recordRelease() {
+        /**
+         * Release a connection.
+         *
+         * <p>Note that if the id is set this will NOT release the underlying connection.</p>
+         */
+        public boolean release() {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, "Releasing connection.");
+            }
+
+            ThreadLocalInfo tli = getInfo();
+            HttpConnection httpConnection = getHttpConnection();
+            Object identity = tli!=null ? tli.getId() : null;
+            boolean bound = false;
+            if (identity != null && tli.hasBindingStatus() && httpConnection != null && httpConnection.isOpen()) {
+                if (tli.bindingRequested()) {
+                    bound = setBoundHttpConnection(identity, httpConnection);
+                }
+                else {
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("Connection is bound, retaining.");
+                    }
+                    bound = true;
+                }
+            }
+
             this.inUse = false;
-            //TODO update usage on release?
-            //this.lastUsageTime = System.currentTimeMillis();
+            return !bound; // release underlying connection?
         }
 
         public void dispose() {
@@ -626,520 +605,4 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
     }
 
-    /**
-     * Wrapper for HttpConnections (only used when bound).
-     */
-    private static class BoundHttpConnectionAdapter extends HttpConnection {
-
-        // the wrapped connection
-        private HttpConnection wrappedConnection;
-        private final HttpConnectionInfo connectionInfo;
-
-        /**
-         * Creates a new HttpConnectionAdapter.
-         * @param connection the connection to be wrapped
-         */
-        public BoundHttpConnectionAdapter(HttpConnection connection, HttpConnectionInfo connectionInfo) {
-            super(connection.getHost(), connection.getPort(), connection.getProtocol());
-            this.wrappedConnection = connection;
-            this.connectionInfo = connectionInfo;
-            this.connectionInfo.recordUsage();
-        }
-
-        /**
-         * Tests if the wrapped connection is still available.
-         * @return boolean
-         */
-        protected boolean hasConnection() {
-            return wrappedConnection != null;
-        }
-
-        /**
-         *
-         */
-        HttpConnection getWrappedConnection() {
-            return wrappedConnection;
-        }
-
-        public void close() {
-            if (hasConnection()) {
-                wrappedConnection.close();
-            } else {
-                // do nothing
-            }
-        }
-
-        public InetAddress getLocalAddress() {
-            if (hasConnection()) {
-                return wrappedConnection.getLocalAddress();
-            } else {
-                return null;
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public boolean isStaleCheckingEnabled() {
-            if (hasConnection()) {
-                return wrappedConnection.isStaleCheckingEnabled();
-            } else {
-                return false;
-            }
-        }
-
-        public void setLocalAddress(InetAddress localAddress) {
-            if (hasConnection()) {
-                wrappedConnection.setLocalAddress(localAddress);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void setStaleCheckingEnabled(boolean staleCheckEnabled) {
-            if (hasConnection()) {
-                wrappedConnection.setStaleCheckingEnabled(staleCheckEnabled);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public String getHost() {
-            if (hasConnection()) {
-                return wrappedConnection.getHost();
-            } else {
-                return null;
-            }
-        }
-
-        public HttpConnectionManager getHttpConnectionManager() {
-            if (hasConnection()) {
-                return wrappedConnection.getHttpConnectionManager();
-            } else {
-                return null;
-            }
-        }
-
-        public InputStream getLastResponseInputStream() {
-            if (hasConnection()) {
-                return wrappedConnection.getLastResponseInputStream();
-            } else {
-                return null;
-            }
-        }
-
-        public int getPort() {
-            if (hasConnection()) {
-                return wrappedConnection.getPort();
-            } else {
-                return -1;
-            }
-        }
-
-        public Protocol getProtocol() {
-            if (hasConnection()) {
-                return wrappedConnection.getProtocol();
-            } else {
-                return null;
-            }
-        }
-
-        public String getProxyHost() {
-            if (hasConnection()) {
-                return wrappedConnection.getProxyHost();
-            } else {
-                return null;
-            }
-        }
-
-        public int getProxyPort() {
-            if (hasConnection()) {
-                return wrappedConnection.getProxyPort();
-            } else {
-                return -1;
-            }
-        }
-
-        public OutputStream getRequestOutputStream()
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                return wrappedConnection.getRequestOutputStream();
-            } else {
-                return null;
-            }
-        }
-
-        public InputStream getResponseInputStream()
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                return wrappedConnection.getResponseInputStream();
-            } else {
-                return null;
-            }
-        }
-
-        public boolean isOpen() {
-            if (hasConnection()) {
-                return wrappedConnection.isOpen();
-            } else {
-                return false;
-            }
-        }
-
-        public boolean isProxied() {
-            if (hasConnection()) {
-                return wrappedConnection.isProxied();
-            } else {
-                return false;
-            }
-        }
-
-        public boolean isResponseAvailable() throws IOException {
-            if (hasConnection()) {
-                return  wrappedConnection.isResponseAvailable();
-            } else {
-                return false;
-            }
-        }
-
-        public boolean isResponseAvailable(int timeout) throws IOException {
-            if (hasConnection()) {
-                return  wrappedConnection.isResponseAvailable(timeout);
-            } else {
-                return false;
-            }
-        }
-
-        public boolean isSecure() {
-            if (hasConnection()) {
-                return wrappedConnection.isSecure();
-            } else {
-                return false;
-            }
-        }
-
-        public boolean isTransparent() {
-            if (hasConnection()) {
-                return wrappedConnection.isTransparent();
-            } else {
-                return false;
-            }
-        }
-
-        public void open() throws IOException {
-            if (hasConnection()) {
-                wrappedConnection.open();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void print(String data)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.print(data);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void printLine()
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.printLine();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void printLine(String data)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.printLine(data);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public String readLine() throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                return wrappedConnection.readLine();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void releaseConnection() {
-            if (hasConnection()) {
-                HttpConnection wrappedConnection = this.wrappedConnection;
-                this.wrappedConnection = null;
-                this.connectionInfo.recordRelease();
-                wrappedConnection.releaseConnection();
-            } else {
-                // do nothing
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void setConnectionTimeout(int timeout) {
-            if (hasConnection()) {
-                wrappedConnection.setConnectionTimeout(timeout);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setHost(String host) throws IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setHost(host);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setHttpConnectionManager(HttpConnectionManager httpConnectionManager) {
-            if (hasConnection()) {
-                wrappedConnection.setHttpConnectionManager(httpConnectionManager);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setLastResponseInputStream(InputStream inStream) {
-            if (hasConnection()) {
-                wrappedConnection.setLastResponseInputStream(inStream);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setPort(int port) throws IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setPort(port);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setProtocol(Protocol protocol) {
-            if (hasConnection()) {
-                wrappedConnection.setProtocol(protocol);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setProxyHost(String host) throws IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setProxyHost(host);
-            } else {
-                // do nothing
-            }
-        }
-
-        public void setProxyPort(int port) throws IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setProxyPort(port);
-            } else {
-                // do nothing
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void setSoTimeout(int timeout)
-            throws SocketException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setSoTimeout(timeout);
-            } else {
-                // do nothing
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void shutdownOutput() {
-            if (hasConnection()) {
-                wrappedConnection.shutdownOutput();
-            } else {
-                // do nothing
-            }
-        }
-
-        public void tunnelCreated() throws IllegalStateException, IOException {
-            if (hasConnection()) {
-                wrappedConnection.tunnelCreated();
-            } else {
-                // do nothing
-            }
-        }
-
-        public void write(byte[] data, int offset, int length)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.write(data, offset, length);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void write(byte[] data)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.write(data);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void writeLine()
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.writeLine();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void writeLine(byte[] data)
-            throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.writeLine(data);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void flushRequestOutputStream() throws IOException {
-            if (hasConnection()) {
-                wrappedConnection.flushRequestOutputStream();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public int getSoTimeout() throws SocketException {
-            if (hasConnection()) {
-                return wrappedConnection.getSoTimeout();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public String getVirtualHost() {
-            if (hasConnection()) {
-                return wrappedConnection.getVirtualHost();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void setVirtualHost(String host) throws IllegalStateException {
-            if (hasConnection()) {
-                wrappedConnection.setVirtualHost(host);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public int getSendBufferSize() throws SocketException {
-            if (hasConnection()) {
-                return wrappedConnection.getSendBufferSize();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        /**
-         * @deprecated
-         */
-        public void setSendBufferSize(int sendBufferSize) throws SocketException {
-            if (hasConnection()) {
-                wrappedConnection.setSendBufferSize(sendBufferSize);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public boolean closeIfStale() throws IOException {
-            if (hasConnection()) {
-                return super.closeIfStale();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public HttpConnectionParams getParams() {
-            if (hasConnection()) {
-                return super.getParams();
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void print(String string, String string1) throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                super.print(string, string1);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void printLine(String string, String string1) throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                super.printLine(string, string1);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public String readLine(String string) throws IOException, IllegalStateException {
-            if (hasConnection()) {
-                return super.readLine(string);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void setParams(HttpConnectionParams httpConnectionParams) {
-            if (hasConnection()) {
-                super.setParams(httpConnectionParams);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-
-        public void setSocketTimeout(int i) throws SocketException, IllegalStateException {
-            if (hasConnection()) {
-                super.setSocketTimeout(i);
-            } else {
-                throw new IllegalStateException("Connection has been released");
-            }
-        }
-    }
 }
