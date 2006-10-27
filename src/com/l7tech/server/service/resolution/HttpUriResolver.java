@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Set;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,7 +32,7 @@ public class HttpUriResolver extends NameValueServiceResolver {
         String uri = service.getRoutingUri();
         //int max = getMaxLength();
         if (uri == null) uri = "";
-        //if (uri.length() > max) uri = uri.substring(0, max);
+        // todo, check for wildcards and transform into pattern
         return new String[] {uri};
     }
 
@@ -47,6 +48,13 @@ public class HttpUriResolver extends NameValueServiceResolver {
             return super.resolve(request, serviceSubset);
         }
     }
+
+    /*
+    protected Map<Long, PublishedService> getServiceMap(Object value) {
+        // todo, consider wildcards here if present
+        return null;
+    }
+    */
 
     protected Object getRequestValue(Message request) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);

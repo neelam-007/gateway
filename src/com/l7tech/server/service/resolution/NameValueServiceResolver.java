@@ -159,7 +159,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return false;
     }
 
-    private Map<Long, PublishedService> getServiceMap( Object value ) {
+    protected Map<Long, PublishedService> getServiceMap( Object value ) {
         Sync read = _rwlock.readLock();
         Sync write = _rwlock.writeLock();
         try {
