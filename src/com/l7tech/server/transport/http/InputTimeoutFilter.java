@@ -8,6 +8,8 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Filter that wraps the input stream for http requests that (may) have a body.
@@ -24,11 +26,9 @@ public class InputTimeoutFilter implements Filter {
      */
     public InputTimeoutFilter() {
         // init with defaults
-        synchronized(sync) {
-            timeout = DEFAULT_BLOCKED_READ_TIMEOUT;
-            readTime = DEFAULT_SLOW_READ_TIMEOUT;
-            readRate = DEFAULT_SLOW_READ_LIMIT;
-        }
+        timeout = new AtomicLong(DEFAULT_BLOCKED_READ_TIMEOUT);
+        readTime = new AtomicLong(DEFAULT_SLOW_READ_TIMEOUT);
+        readRate = new AtomicInteger(DEFAULT_SLOW_READ_LIMIT);
     }
 
     /**
@@ -52,11 +52,10 @@ public class InputTimeoutFilter implements Filter {
         String configReadTime = filterConfig.getInitParameter(INIT_PROP_SLOW_READ_THRESHOLD);
         String configReadRate = filterConfig.getInitParameter(INIT_PROP_SLOW_READ_THROUGHPUT);
 
-        synchronized(sync) {
-            timeout = parseLong(configTimeout, 500, 3600000, DEFAULT_BLOCKED_READ_TIMEOUT, INIT_PROP_TIMEOUT);
-            readTime = parseLong(configReadTime, 500, 3600000, DEFAULT_SLOW_READ_TIMEOUT, INIT_PROP_SLOW_READ_THRESHOLD);
-            readRate = parseInt(configReadRate, 0, 1000000, DEFAULT_SLOW_READ_LIMIT, INIT_PROP_SLOW_READ_THROUGHPUT);
-        }
+        timeout.set(parseLong(configTimeout, 500, 3600000, DEFAULT_BLOCKED_READ_TIMEOUT, INIT_PROP_TIMEOUT));
+        readTime.set(parseLong(configReadTime, 500, 3600000, DEFAULT_SLOW_READ_TIMEOUT, INIT_PROP_SLOW_READ_THRESHOLD));
+        readRate.set(parseInt(configReadRate, 0, 1000000, DEFAULT_SLOW_READ_LIMIT, INIT_PROP_SLOW_READ_THROUGHPUT));
+
         initPropUpdater();
     }
 
@@ -83,15 +82,9 @@ public class InputTimeoutFilter implements Filter {
         TimeoutServletRequest tsr = null;
 
         if(servletRequest instanceof HttpServletRequest) {
-            long reqTimeout;
-            long reqReadTime;
-            int reqReadRate;
-
-            synchronized(sync) {
-                reqTimeout = timeout;
-                reqReadTime = readTime;
-                reqReadRate = readRate;
-            }
+            long reqTimeout = timeout.get();
+            long reqReadTime = readTime.get();
+            int reqReadRate = readRate.get();
 
             tsr = new TimeoutServletRequest((HttpServletRequest) servletRequest, reqTimeout, reqReadTime, reqReadRate);
             requestForNextFilter = tsr;
@@ -135,10 +128,9 @@ public class InputTimeoutFilter implements Filter {
     private TimeoutPropertyUpdate updater;
 
     //
-    private Object sync = new Object();
-    private long timeout;
-    private long readTime;
-    private int readRate;
+    private final AtomicLong timeout;
+    private final AtomicLong readTime;
+    private final AtomicInteger readRate;
 
     /**
      * Parse the value, log an error and use default if invalid.
@@ -276,15 +268,9 @@ public class InputTimeoutFilter implements Filter {
                             break;
                         }
 
-                        long currentTimeout;
-                        long currentReadTime;
-                        int currentReadRate;
-
-                        synchronized(sync) {
-                            currentTimeout = timeout;
-                            currentReadTime = readTime;
-                            currentReadRate = readRate;
-                        }
+                        long currentTimeout = timeout.get();
+                        long currentReadTime = readTime.get();
+                        int currentReadRate = readRate.get();
 
                         long newTimeout = getTimeout(currentTimeout);
                         long newReadTime = getReadTime(currentReadTime);
@@ -300,14 +286,12 @@ public class InputTimeoutFilter implements Filter {
                             if (newReadTime != currentReadTime)
                                 logger.log(Level.CONFIG, "Updating readTime, new value is {0}", newReadTime);
 
-                            if (newReadRate != currentReadRate) 
+                            if (newReadRate != currentReadRate)
                                 logger.log(Level.CONFIG, "Updating readRate, new value is {0}", newReadRate);
 
-                            synchronized(sync) {
-                                timeout = newTimeout;
-                                readTime = newReadTime;
-                                readRate = newReadRate;
-                            }
+                            timeout.set(newTimeout);
+                            readTime.set(newReadTime);
+                            readRate.set(newReadRate);
                         }
 
                         Thread.sleep(30000);

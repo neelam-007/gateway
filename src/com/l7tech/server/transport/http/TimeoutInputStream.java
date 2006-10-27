@@ -2,16 +2,14 @@ package com.l7tech.server.transport.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Queue;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 import javax.servlet.ServletInputStream;
-
-import EDU.oswego.cs.dl.util.concurrent.ReentrantLock;
-
-import com.l7tech.common.util.CausedIOException;
 
 /**
  * An InputStream that will timeout if no data is read.
@@ -60,7 +58,7 @@ public class TimeoutInputStream extends ServletInputStream {
         this.lock = new ReentrantLock();
 
         // track
-        currentBlockers.add(this.bin);
+        newBlockerQueue.add(this.bin);
     }
 
     /**
@@ -172,9 +170,9 @@ public class TimeoutInputStream extends ServletInputStream {
      * @throws IOException if an underlying error occurs
      */
     public void close() throws IOException {
-        if(!bin.timedOut){
+        if(!bin.isTimedOut()){
             in.close();
-            currentBlockers.remove(this.bin);
+            doneBlocking();
         }
     }
 
@@ -209,7 +207,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * You must not read from the stream after calling this method.
      */
     public final void done() {
-        bin.readComplete = true;
+        bin.markReadComplete();
     }
 
     //- PROTECTED
@@ -217,7 +215,7 @@ public class TimeoutInputStream extends ServletInputStream {
     /**
      * Called on entry to a blocking section (activate timeout)
      */
-    private final void enterBlocking() throws IOException {
+    protected final void enterBlocking() throws IOException {
         acquireLock();
         checkTimeout();
         if(isOuterLock()) {
@@ -241,16 +239,18 @@ public class TimeoutInputStream extends ServletInputStream {
     }
 
     /**
+     * Called on exit from a blocking section (deactivate timeout)
+     */
+    protected final void doneBlocking() {
+        bin.done();
+    }
+
+    /**
      * Record a number of bytes read. If -1 is passed then the stream is
      * flagged as fully read.
      */
     protected final int trackBytes(int bytes) {
-        if(bytes>0) {
-            bin.bytesRead += bytes;
-        }
-        else if(bytes<0) {
-            bin.readComplete = true;
-        }
+        bin.trackBytes(bytes);
         return bytes;
     }
 
@@ -259,12 +259,7 @@ public class TimeoutInputStream extends ServletInputStream {
      * flagged as fully read.
      */
     protected final long trackBytes(long bytes) {
-        if(bytes>0) {
-            bin.bytesRead += bytes;
-        }
-        else if(bytes<0) {
-            bin.readComplete = true;
-        }
+        bin.trackBytes(bytes);
         return bytes;
     }
 
@@ -293,7 +288,7 @@ public class TimeoutInputStream extends ServletInputStream {
     /**
      * Set of currently in use TimeoutInputStream.BlockerInfos
      */
-    private static final Set currentBlockers = Collections.synchronizedSet(new HashSet());
+    private static final Queue<BlockerInfo> newBlockerQueue = new ConcurrentLinkedQueue();
 
     // Create and start the timer daemon
     static {
@@ -314,79 +309,178 @@ public class TimeoutInputStream extends ServletInputStream {
     private BlockerInfo bin;
 
     /**
-     *
+     * reentrant to allow for read calling another read method
      */
     private ReentrantLock lock;
 
     /**
      *
      */
-    private void acquireLock() throws IOException {
-        try {
-            lock.acquire();
-        }
-        catch(InterruptedException ie) {
-            throw new CausedIOException(ie);
-        }
+    private void acquireLock() {
+        lock.lock();
     }
 
     /**
      *
      */
     private void releaseLock() {
-        lock.release();
+        lock.unlock();
     }
 
     /**
      *
      */
     private boolean isOuterLock() {
-        return lock.holds()==1;
+        return lock.getHoldCount()==1;
     }
 
     /**
      * Check for timeout, throw if necessary
      */
     private void checkTimeout() throws IOException {
-        if(bin.timedOut) throw new IOException("Stream timeout");
+        if(bin.isTimedOut()) throw new IOException("Stream timeout");
     }
 
     /**
      * Data for the blocker
      */
     private static class BlockerInfo {
-        private InputStream inputStreamToClose;
+        // lock for data sync
+        private Object lock = new Object();
+
+        // thread shared data
         private boolean cleared;
         private boolean readComplete;
-        private long bytesRead;
-        private long streamStartTime;
-        private long operationStartTime;
         private boolean timedOut;
 
-        private long readTimeout;
-        private long minSlowTime;
-        private int minDataRate;
+        private long bytesRead;
+        private long operationStartTime;
 
-        private BlockerInfo(InputStream toClose, long timeout, long slowTime, int dataRate) {
+        // immutable data
+        private final long streamStartTime;
+        private final InputStream inputStreamToClose;
+        private final long readTimeout;
+        private final long minSlowTime;
+        private final int minDataRate;
+
+        BlockerInfo(InputStream toClose, long timeout, long slowTime, int dataRate) {
             inputStreamToClose = toClose;
             streamStartTime = System.currentTimeMillis();
-            bytesRead = 0;
-            readComplete = false;
-            cleared = true;
-            timedOut = false;
             readTimeout = timeout;
             minSlowTime = slowTime;
             minDataRate = dataRate;
+
+            synchronized(lock) {
+                cleared = true;
+                readComplete = false;
+                timedOut = false;
+                bytesRead = 0;
+                operationStartTime = 0;
+            }
         }
 
-        private void enter() {
-            if(cleared==false) throw new IllegalStateException("Reentrance or multi-threading problem!");
-            cleared = false;
-            operationStartTime = System.currentTimeMillis();
+        void trackBytes(int bytes) {
+            if(bytes>0) {
+                synchronized (lock) {
+                    bytesRead += bytes;
+                }
+            }
+            else if(bytes<0) {
+                synchronized (lock) {
+                    readComplete = true;
+                }
+            }
         }
 
-        private void exit() {
-            cleared = true;
+        void trackBytes(long bytes) {
+            if(bytes>0) {
+                synchronized (lock) {
+                    bytesRead += bytes;
+                }
+            }
+            else if(bytes<0) {
+                synchronized (lock) {
+                    readComplete = true;
+                }
+            }
+        }
+
+        void enter() {
+            long time = System.currentTimeMillis();
+            synchronized (lock) {
+                if(cleared==false) throw new IllegalStateException("Reentrance or multi-threading problem!");
+                cleared = false;
+                operationStartTime = time;
+            }
+        }
+
+        void exit() {
+            synchronized (lock) {
+                cleared = true;
+            }
+        }
+
+        void done() {
+            synchronized (lock) {
+                readComplete = true;
+            }
+        }
+
+        void markReadComplete() {
+            synchronized (lock) {
+                readComplete = true;
+            }
+        }
+
+        boolean isReadComplete() {
+            synchronized (lock) {
+                return readComplete;
+            }
+        }
+
+        void markTimedOut() {
+            synchronized (lock) {
+                readComplete = true;
+            }
+        }
+
+        boolean isTimedOut() {
+            synchronized (lock) {
+                return timedOut;
+            }
+        }
+
+        boolean readTimeout(long timeNow) {
+            boolean timeout = false;
+            synchronized(lock) {
+                timeout = !cleared && (timeNow-operationStartTime)>readTimeout;
+            }
+            return timeout;
+        }
+
+        void slowRead(long timeNow, boolean[] flags) {
+            flags[0] = false;
+            flags[1] = false;
+
+            long bytesRead;
+            boolean cleared;
+            synchronized(lock) {
+                bytesRead = this.bytesRead;
+                cleared = this.cleared;
+            }
+
+            if(minDataRate > 0) {
+                long activeTime = timeNow - streamStartTime;
+                if(activeTime > minSlowTime) {
+                    // we have enough data to make a rate check valid
+                    int bytesPerSecond = (int)(bytesRead / activeTime);
+                    if(bytesPerSecond < minDataRate) {
+                        flags[1] = true;
+                        flags[2] = cleared;
+                    }
+                }
+            }
+
         }
     }
 
@@ -394,60 +488,68 @@ public class TimeoutInputStream extends ServletInputStream {
      * Runnable for checking on currently blocked IO.
      */
     private static class Interrupter implements Runnable {
+        private Set currentBlockers = new HashSet(100);
 
         private void interrupt(BlockerInfo bi, boolean justFlag) {
             if(!justFlag) {
                 InputStream localIS = bi.inputStreamToClose;
-                bi.inputStreamToClose = null;
                 if(localIS!=null) {
                     // interrupt the thread and then close its input stream
                     try{ localIS.close(); }catch(IOException ioe){}
                 }
             }
-            bi.timedOut = true; // mark timeOut after closing
-            currentBlockers.remove(bi);
+            bi.markTimedOut(); // mark timeOut after closing
         }
 
         public void run() {
             logger.info("InputStream timeout thread starting.");
             try {
+                boolean processedBlockers = false;
                 for(;;) {
-                    Thread.sleep(500);
+                    if (!processedBlockers)
+                        Thread.sleep(100);
+                    else
+                        Thread.sleep(10);
+                    processedBlockers = false;
 
-                    // copy set so we can iterate without a lock
-                    Set copy = null;
-                    synchronized(currentBlockers) {
-                        copy = new HashSet(currentBlockers);
+                    // process new arrivals
+                    BlockerInfo newBlocker = null;
+                    while ((newBlocker = newBlockerQueue.poll()) != null ) {
+                        if (!newBlocker.isReadComplete()) {
+                            currentBlockers.add(newBlocker);
+                            processedBlockers = true;
+                        }
                     }
 
+                    //
                     long timeNow = System.currentTimeMillis();
-                    for(Iterator iterator = copy.iterator(); iterator.hasNext(); ) {
-                        BlockerInfo bi = (BlockerInfo) iterator.next();
+                    for(Iterator iterator = currentBlockers.iterator(); iterator.hasNext(); ) {
+                        BlockerInfo blockerInfo = (BlockerInfo) iterator.next();
 
                         // check for completed read
-                        if(bi.readComplete) {
-                            currentBlockers.remove(bi);
+                        if(blockerInfo.isReadComplete()) {
+                            iterator.remove();
                             continue;
                         }
 
                         // check for blocked IO timeouts
-                        if(!bi.cleared && (timeNow-bi.operationStartTime)>bi.readTimeout) {
+                        if(blockerInfo.readTimeout(timeNow)) {
                             logger.fine("IO timeout, interrupting.");
-                            interrupt(bi,false);
+                            interrupt(blockerInfo,false);
+                            iterator.remove();
                             continue;
                         }
 
+                        // flag to check again soon
+                        processedBlockers = true;
+
                         // check for slow read timeouts
-                        if(bi.minDataRate > 0) {
-                            long activeTime = timeNow - bi.streamStartTime;
-                            if(activeTime > bi.minSlowTime) {
-                                // we have enough data to make a rate check valid
-                                int bytesPerSecond = (int)(bi.bytesRead / activeTime);
-                                if(bytesPerSecond < bi.minDataRate) {
-                                    if(!bi.cleared) logger.fine("IO too slow, interrupting.");
-                                    interrupt(bi, bi.cleared);
-                                }
-                            }
+                        boolean[] slowReadFlags = new boolean[2];
+                        blockerInfo.slowRead(timeNow, slowReadFlags);
+                        if(slowReadFlags[0]) {
+                            if(!slowReadFlags[1]) logger.fine("IO too slow, interrupting.");
+                            interrupt(blockerInfo, slowReadFlags[1]);
+                            iterator.remove();
                         }
                     }
                 }
