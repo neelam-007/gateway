@@ -100,6 +100,10 @@ public class LogonDialog extends JDialog {
     private SsmPreferences preferences;
     private LogonListener logonListener;
 
+    // Cache version info here so we don't do needless repeat calls to get it again   TODO move this somewhere more reasonable
+    public static String remoteProtocolVersion;
+    public static String remoteSoftwareVersion;
+
     /**
      * Create a new LogonDialog
      *
@@ -606,6 +610,24 @@ public class LogonDialog extends JDialog {
     private static SecurityProvider getCredentialManager() {
         SecurityProvider credentialManager = Registry.getDefault().getSecurityProvider();
         return credentialManager;
+    }
+
+    public static void setLastRemoteProtocolVersion(String rv) {
+        remoteProtocolVersion = rv;
+    }
+
+    public static void setLastRemoteSoftwareVersion(String rv) {
+        remoteSoftwareVersion = rv;
+    }
+
+    /** @return the remote protocol version, ie "". */
+    public static String getLastRemoteProtocolVersion() {
+        return remoteProtocolVersion;
+    }
+
+    /** @return the remote software version, ie "4.0", or null if this is a logoff event. */
+    public static String getLastRemoteSoftwareVersion() {
+        return remoteSoftwareVersion;
     }
 
     private static class LogonInProgressDialog extends JDialog {

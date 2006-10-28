@@ -20,6 +20,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
+import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
@@ -150,6 +151,8 @@ public class SecurityProviderImpl extends SecurityProvider
                 this.user = user;
             }
 
+            LogonDialog.setLastRemoteSoftwareVersion(remoteSoftwareVersion);
+            LogonDialog.setLastRemoteProtocolVersion(remoteVersion);
             LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON, result.getPermissions());
             applicationContext.publishEvent(le);
         }

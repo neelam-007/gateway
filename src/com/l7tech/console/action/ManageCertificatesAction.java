@@ -21,11 +21,15 @@ import java.util.logging.Logger;
 public class ManageCertificatesAction extends SecureAction {
     static final Logger log = Logger.getLogger(ManageCertificatesAction.class.getName());
 
+    // TODO move this to somewhere shared between Gateway and SSM
+    // (and move the rest of GatewayFeatureSets well-known feature set names there too)
+    private static final String TRUSTSTORE_FEATURESET_NAME = "service:TrustStore";
+
     /**
      * create the aciton that disables the service
      */
     public ManageCertificatesAction() {
-        super(new AttemptedAnyOperation(EntityType.TRUSTED_CERT), LIC_AUTH_ASSERTIONS);
+        super(new AttemptedAnyOperation(EntityType.TRUSTED_CERT), TRUSTSTORE_FEATURESET_NAME);
     }
 
     /**

@@ -122,6 +122,7 @@ public class GatewayFeatureSetsTest extends TestCase {
             "service:SnmpQuery",        GatewayFeatureSets.getFeatureSetNameForServlet(SnmpQueryServlet.class),
             "service:WsdlProxy",        GatewayFeatureSets.getFeatureSetNameForServlet(WsdlProxyServlet.class),
             "service:Bridge",           GatewayFeatureSets.getFeatureSetNameForServlet(BridgeServlet.class),
+            "service:TrustStore",       // Not named after a servlet      
     };
 
     /** Makes sure that all registered services are included in ALL_SERVICES.  Dual of testAllServicesMapped. */

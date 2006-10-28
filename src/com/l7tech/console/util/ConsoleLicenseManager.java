@@ -13,6 +13,7 @@ import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.console.panels.LogonDialog;
 
 import java.util.*;
 
@@ -22,6 +23,7 @@ import java.util.*;
 public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
     private static final ConsoleLicenseManager INSTANCE = new ConsoleLicenseManager();
     private License license = null;
+    private Set<String> compat = new HashSet<String>(); // Features to enable in GUI for license backward compat (even though they don't appear explicitly in the license as downloaded from an older Gateway)
     private Map<LicenseListener, Object> licenseListeners = new WeakHashMap<LicenseListener, Object>();
 
     protected ConsoleLicenseManager() {
@@ -46,7 +48,26 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
         if (this.license != license) {
             if (this.license != null && this.license.equals(license)) return;
             this.license = license;
+            compat.clear();
+            if (license != null) addCompatFeatures();
             fireLicenseEvent();
+        }
+    }
+
+    /**
+     * Add any compat feature sets, required by connecting to older versions of the software.
+     */
+    private void addCompatFeatures() {
+        String v = LogonDialog.getLastRemoteSoftwareVersion();
+        if (license == null || v == null) return;
+
+        if (("HEAD".equals(v) || "3.6".equals(v)) &&
+                license.isFeatureEnabled(Assertion.getFeatureSetName(SpecificUser.class.getName())))
+        {
+            // 3.6 Gateway does not require the "service:TrustStore" feature set to be present
+            // before allowing access to Trusted Cert management, so allow it as long as SpecificUser is available
+            // TODO move this feature set name somewhere more reasonable
+            compat.add("service:TrustStore");
         }
     }
 
@@ -83,7 +104,7 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
 
     public boolean isFeatureEnabled(String featureName) {
         if (license == null) return false;
-        return license.isFeatureEnabled(featureName);
+        return compat.contains(featureName) || license.isFeatureEnabled(featureName);
     }
 
     public boolean isAuthenticationEnabled() {

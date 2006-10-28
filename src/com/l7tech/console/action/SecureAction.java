@@ -12,6 +12,7 @@ import com.l7tech.console.util.LicenseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.Assertion;
 
 import java.awt.event.ActionEvent;
 import java.security.AccessControlException;
@@ -39,7 +40,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
         }
     };
 
-    private final Set<String> assertionLicenseClassnames = new HashSet<String>();
+    private final Set<String> featureSetNames = new HashSet<String>();
     private final AttemptedOperation attemptedOperation;
 
     /**
@@ -59,7 +60,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     protected SecureAction(AttemptedOperation attemptedOperation, Class requiredAssertionLicense) {
         this(attemptedOperation);
         if (requiredAssertionLicense != null)
-            assertionLicenseClassnames.add(requiredAssertionLicense.getName());
+            featureSetNames.add(Assertion.getFeatureSetName(requiredAssertionLicense.getName()));
         initLicenseListener();
     }
 
@@ -73,13 +74,27 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
         this.attemptedOperation = attemptedOperation;
         if (allowedAssertionLicenses != null)
             for (Class clazz : allowedAssertionLicenses)
-                assertionLicenseClassnames.add(clazz.getName());
+                featureSetNames.add(Assertion.getFeatureSetName(clazz.getName()));
+        initLicenseListener();
+    }
+
+    /**
+     * Create a SecureAction which will only be enabled if the user meets the admin requirement (if specified)
+     * and the specified feature set license is enabled.
+     *
+     * @param attemptedOperation
+     * @param requiredFeaturesetLicense  required feature set name, ie "service:TrustStore"
+     */
+    protected SecureAction(AttemptedOperation attemptedOperation, String requiredFeaturesetLicense) {
+        this(attemptedOperation);
+        if (requiredFeaturesetLicense != null)
+            featureSetNames.add(requiredFeaturesetLicense);
         initLicenseListener();
     }
 
     /** Registers this action as a license listener, if any license requirements were set on it. */
     private void initLicenseListener() {
-        if (assertionLicenseClassnames.isEmpty()) return;
+        if (featureSetNames.isEmpty()) return;
         Registry.getDefault().getLicenseManager().addLicenseListener(this);
     }
 
@@ -102,12 +117,12 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
      * @return true if at least one of the required assertion license classnames is licensed.
      */
     public final boolean isLicensed() {
-        if (assertionLicenseClassnames.isEmpty())
+        if (featureSetNames.isEmpty())
             return true;
 
         ConsoleLicenseManager lm = ConsoleLicenseManager.getInstance();
-        for (String s : assertionLicenseClassnames)
-            if (lm.isAssertionEnabled(s))
+        for (String s : featureSetNames)
+            if (lm.isFeatureEnabled(s))
                 return true;
         return false;
     }

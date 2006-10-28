@@ -7,6 +7,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.License;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -16,16 +17,15 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -67,6 +67,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_WSDLPROXY = "service:WsdlProxy";
     public static final String SERVICE_SNMPQUERY = "service:SnmpQuery";
     public static final String SERVICE_BRIDGE = "service:Bridge";
+    public static final String SERVICE_TRUSTSTORE = "service:TrustStore"; // Ability to configure Trusted Certs
 
     static {
         // Declare all baked-in feature sets
@@ -132,6 +133,10 @@ public class GatewayFeatureSets {
             srv(SERVICE_SNMPQUERY, "HTTP SNMP query service"),
             ass(SnmpTrapAssertion.class));
 
+        GatewayFeatureSet trustStore =
+        fsr("set:trustStore", "Ability to configure Trusted Certificates",
+            srv(SERVICE_TRUSTSTORE, "Ability to configure Trusted Certificates"));
+
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
@@ -146,22 +151,23 @@ public class GatewayFeatureSets {
         //
 
         // Access control
+/*
         GatewayFeatureSet accessAccel =
         fsr("set:AccessControl:Accel", "SecureSpan Accelerator access control",
-            "User and group auth, and basic HTTP, SSL, and XML credential sources.  No WSS message-level security.",
+            "User and group auth, and basic HTTP, SSL, and XML credential sources.  No WSS message-level security.");
+*/
+
+        GatewayFeatureSet accessFw =
+        fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
+            "Adds access control WSS message-level security (including WS-SecureConversation) and identity mapping",
+            fs(wssc),
             ass(SpecificUser.class),
             ass(MemberOfGroup.class),
             ass(HttpBasic.class),
             ass(HttpDigest.class),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
             ass(XpathCredentialSource.class),
-            ass(RequestWssX509Cert.class));
-
-        GatewayFeatureSet accessFw =
-        fsr("set:AccessControl:Firewall", "SecureSpan Firewall access control",
-            "Adds WSS message-level security (including WS-SecureConversation) and identity mapping",
-            fs(accessAccel),
-            fs(wssc),
+            ass(RequestWssX509Cert.class),
             ass(MappingAssertion.class),
             ass(WssBasic.class),
             ass(RequestWssSaml.class),
@@ -180,16 +186,16 @@ public class GatewayFeatureSets {
         GatewayFeatureSet xmlsecAccel =
         fsr("set:XmlSec:Accel", "SecureSpan Accelerator XML security",
             "Element signature and encryption using WSS",
-            ass(RequestWssIntegrity.class),
-            ass(RequestWssConfidentiality.class),
-            ass(ResponseWssIntegrity.class),
-            ass(ResponseWssConfidentiality.class),
             ass(ResponseWssTimestamp.class));
 
         GatewayFeatureSet xmlsecFw =
         fsr("set:XmlSec:Firewall", "SecureSpan Firewall XML security",
             "Adds timestamp and token manipulation",
             fs(xmlsecAccel),
+            ass(RequestWssIntegrity.class),
+            ass(RequestWssConfidentiality.class),
+            ass(ResponseWssIntegrity.class),
+            ass(ResponseWssConfidentiality.class),
             ass(RequestWssReplayProtection.class),
             ass(RequestWssTimestamp.class),
             ass(ResponseWssSecurityToken.class));
@@ -200,7 +206,6 @@ public class GatewayFeatureSets {
             "XPath, Schema, XSLT, and SOAP operation detector",
             ass(RequestXpathAssertion.class),
             ass(ResponseXpathAssertion.class),
-            ass(Operation.class),
             ass(SchemaValidation.class),
             ass(XslTransformation.class));
 
@@ -208,6 +213,7 @@ public class GatewayFeatureSets {
         fsr("set:Validation:Firewall", "SecureSpan Firewall message validation and transformation",
             "Adds regex and attachments",
             fs(validationAccel),
+            ass(Operation.class),
             ass(RequestSwAAssertion.class),
             ass(Regex.class),
             ass(WsiBspAssertion.class),
@@ -227,7 +233,8 @@ public class GatewayFeatureSets {
             fs(httpFront),
             fs(httpBack),
             fs(jmsFront),
-            fs(jmsBack));
+            fs(jmsBack),
+            fs(trustStore));
 
         GatewayFeatureSet routingAccel =
         fsr("set:Routing:Accel", "SecureSpan Accelerator message routing",
@@ -237,10 +244,16 @@ public class GatewayFeatureSets {
             ass(HardcodedResponseAssertion.class),
             ass(EchoRoutingAssertion.class));
 
+        GatewayFeatureSet routingFw =
+        fsr("set:Routing:Firewall", "SecureSpan Firewall message routing",
+            "Adds abiltity to configure Trusted Certificates",
+            fs(routingAccel),
+            fs(trustStore));
+
         GatewayFeatureSet routingGateway =
         fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",
             "Adds BRA and JMS routing.",
-            fs(routingAccel),
+            fs(routingFw),
             fs(jmsFront),
             fs(jmsBack),
             ass(BridgeRoutingAssertion.class));
@@ -248,9 +261,14 @@ public class GatewayFeatureSets {
         // Service availability
         GatewayFeatureSet availabilityAccel =
         fsr("set:Availability:Accel", "SecureSpan Accelerator service availability",
-            "Time/Day, IP range, and throughput qutoa",
+            "Time/Day and IP range",
             ass(TimeRange.class),
-            ass(RemoteIpRange.class),
+            ass(RemoteIpRange.class));
+
+        GatewayFeatureSet availabilityFw =
+        fsr("set:Availability:Firewall", "SecureSpan Firewall service availability",
+            "Adds throughput qutoa",
+            fs(availabilityAccel),
             ass(ThroughputQuota.class));
 
         // Logging/auditing and alerts
@@ -288,7 +306,6 @@ public class GatewayFeatureSets {
         GatewayFeatureSet threatAccel =
         fsr("set:Threats:Accel", "SecureSpan Accelerator threat protection",
             "Just document structure threats and schema validation",
-            ass(OversizedTextAssertion.class),
             ass(SchemaValidation.class));
 
         GatewayFeatureSet threatFw =
@@ -324,16 +341,15 @@ public class GatewayFeatureSets {
             fs(admin),
             fs(routingIps),
             fs(threatIps),
-            fs(availabilityAccel),
+            fs(availabilityFw),
             fs(validationAccel),
             fs(auditAccel),
             fs(policyAccel));
 
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
-            "XML acceleration features with basic authentication",
+            "XML acceleration features",
             fs(core),
             fs(admin),
-            fs(accessAccel),
             fs(xmlsecAccel),
             fs(validationAccel),
             fs(routingAccel),
@@ -349,8 +365,8 @@ public class GatewayFeatureSets {
             fs(accessFw),
             fs(xmlsecFw),
             fs(validationFw),
-            fs(routingAccel),
-            fs(availabilityAccel),
+            fs(routingFw),
+            fs(availabilityFw),
             fs(auditAccel),
             fs(policyAccel),
             fs(threatFw),
@@ -366,7 +382,7 @@ public class GatewayFeatureSets {
             fs(xmlsecFw),
             fs(validationGateway),
             fs(routingGateway),
-            fs(availabilityAccel),
+            fs(availabilityFw),
             fs(auditAccel),
             fs(policyAccel),
             fs(threatFw),
@@ -382,7 +398,7 @@ public class GatewayFeatureSets {
             fs(xmlsecFw),
             fs(validationGateway),
             fs(routingGateway),
-            fs(availabilityAccel),
+            fs(availabilityFw),
             fs(auditAccel),
             fs(policyAccel),
             fs(threatFw),

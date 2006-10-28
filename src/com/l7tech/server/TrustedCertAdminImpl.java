@@ -68,6 +68,16 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         }
     }
 
+    private void checkLicenseHeavy() throws RemoteException {
+        try {
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_ADMIN);
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_TRUSTSTORE);
+        } catch (LicenseException e) {
+            // New exception to conceal original stack trace from LicenseManager
+            throw new RemoteException(ExceptionUtils.getMessage(e), new LicenseException(e.getMessage()));
+        }
+    }
+
     public List findAllCerts() throws FindException, RemoteException {
         checkLicense();
         return new ArrayList(getManager().findAll());
@@ -84,7 +94,7 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     }
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, RemoteException {
-        checkLicense();
+        checkLicenseHeavy();
         long oid;
         if (cert.getOid() == TrustedCert.DEFAULT_OID) {
             // check that cert with same dn not already exist
@@ -108,18 +118,18 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     }
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
-        checkLicense();
+        checkLicenseHeavy();
         getManager().delete(oid);
     }
 
     public X509Certificate[] retrieveCertFromUrl(String purl) throws IOException, RemoteException, HostnameMismatchException {
-        checkLicense();
+        checkLicenseHeavy();
         return retrieveCertFromUrl(purl, false);
     }
 
     public X509Certificate[] retrieveCertFromUrl(String purl, boolean ignoreHostname)
       throws IOException, RemoteException, HostnameMismatchException {
-        checkLicense();
+        checkLicenseHeavy();
         if (!purl.startsWith("https://")) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
         URL url = new URL(purl);
 
