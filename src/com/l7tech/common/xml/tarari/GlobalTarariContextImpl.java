@@ -4,8 +4,6 @@
  */
 package com.l7tech.common.xml.tarari;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidXpathException;
@@ -24,6 +22,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  */
 public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchemaHandler {
     private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
-    static final ReadWriteLock tarariLock = new WriterPreferenceReadWriteLock();
+    static final ReadWriteLock tarariLock = new ReentrantReadWriteLock(false);
 
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
@@ -55,8 +55,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
     public void compileAllXpaths() {
         logger.fine("compiling xpath expressions");
         while (true) {
+            tarariLock.writeLock().lock();
             try {
-                tarariLock.writeLock().acquire();
                 if (!xpathChangedSinceLastCompilation) {
                     logger.fine("skipping compilation since no changes to xpath expressions were detected");
                     return;
@@ -82,11 +82,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
                         /* FALLTHROUGH and try compiling again */
                     }
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while waiting for Tarari write lock");
             } finally {
-                tarariLock.writeLock().release();
+                tarariLock.writeLock().unlock();
             }
         }
     }
@@ -164,15 +161,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
      * @param expression the XPath expression to add to the context.
      */
     void addXpath(String expression) {
+        tarariLock.writeLock().lock();
         try {
-            tarariLock.writeLock().acquire();
             currentXpaths.add(expression);
             xpathChangedSinceLastCompilation = true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
         } finally {
-            tarariLock.writeLock().release();
+            tarariLock.writeLock().unlock();
         }
     }
 
@@ -180,15 +174,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
      * Indicates that the caller is no longer interested in the specified expression.
      */
     void removeXpath(String expression) {
+        tarariLock.writeLock().lock();
         try {
-            tarariLock.writeLock().acquire();
             currentXpaths.remove(expression);
             xpathChangedSinceLastCompilation = true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
         } finally {
-            tarariLock.writeLock().release();
+            tarariLock.writeLock().unlock();
         }
     }
 
@@ -208,8 +199,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
     public Map setHardwareSchemas(final LinkedHashMap hardwareSchemas)
     {
+        tarariLock.writeLock().lock();
         try {
-            tarariLock.writeLock().acquire();
 
             // Unload all currently-loaded schemas
             SchemaLoader.unloadAllSchemas();
@@ -267,20 +258,16 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
             // Let's assume we are done
             return errorMap;
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari write lock");
         } finally {
-            tarariLock.writeLock().release();
+            tarariLock.writeLock().unlock();
         }
     }
 
     public boolean validate(TarariMessageContext tmc) throws SAXException {
         long before = 0;
         boolean result = false;
+        tarariLock.readLock().lock();
         try {
-            tarariLock.readLock().acquire();
             if (logger.isLoggable(Level.FINE)) {
                 before = System.currentTimeMillis();
                 logger.fine("Validing message in hardware");
@@ -290,11 +277,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
             return result;
         } catch (com.tarari.xml.XmlException e) {
             throw new SAXException("Unable to validate document: " + ExceptionUtils.getMessage(e), e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari read lock");
         } finally {
-            tarariLock.readLock().release();
+            tarariLock.readLock().unlock();
             if (logger.isLoggable(Level.FINE)) {
                 long after = System.currentTimeMillis();
                 logger.log(Level.FINE, "Validation {0} in {1}ms", new Object[] { result ? "succeeded" : "failed", after-before});

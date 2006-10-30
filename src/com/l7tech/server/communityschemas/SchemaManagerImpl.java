@@ -3,9 +3,6 @@
  */
 package com.l7tech.server.communityschemas;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.http.cache.AbstractHttpObjectCache;
 import com.l7tech.common.http.cache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
@@ -34,6 +31,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -58,7 +58,7 @@ public class SchemaManagerImpl implements SchemaManager {
     /** This LSInput will be returned to indicate "Resource not resolved, and don't try to get it over the network unless you know what you are doing" */
     public static final LSInput LSINPUT_UNRESOLVED = new LSInputImpl();
 
-    private final ReadWriteLock cacheLock = new WriterPreferenceReadWriteLock();
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(false);
 
     /**
      * The latest version of every currently-known schema, by URL.  This includes SchemaEntry and policy assertion
@@ -188,8 +188,8 @@ public class SchemaManagerImpl implements SchemaManager {
 
         final long maxCacheEntries;
 
+        cacheLock.readLock().lock();
         try {
-            cacheLock.readLock().acquire();
             maxCacheEntries = this.maxCacheEntries + globalSchemasByUrl.size();
 
             // First, if the cache is too big, throw out the least-recently-used schemas until it isn't.
@@ -246,17 +246,13 @@ public class SchemaManagerImpl implements SchemaManager {
                     }
                 }
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         } finally {
-            cacheLock.readLock().release();
+             cacheLock.readLock().unlock();
         }
 
         // Now remove em
+        cacheLock.writeLock().lock();
         try {
-            cacheLock.writeLock().acquire();
-
             for (Map.Entry<String, SchemaHandle> entry : urlsToRemove.entrySet()) {
                 String url = entry.getKey();
                 SchemaHandle handle = entry.getValue();
@@ -269,12 +265,8 @@ public class SchemaManagerImpl implements SchemaManager {
                     if (old != null) deferredCloseHandle(old);
                 }
             }
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         } finally {
-            cacheLock.writeLock().release();
+            cacheLock.writeLock().unlock();
         }
 
         // Close all the handles we kicked out
@@ -294,15 +286,11 @@ public class SchemaManagerImpl implements SchemaManager {
         }
 
         if (!schemasRecentlySuperseded.isEmpty()) {
+            cacheLock.writeLock().lock();
             try {
-                cacheLock.writeLock().acquire();
                 invalidateParentsOfRecentlySupersededSchemas();
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
             } finally {
-                cacheLock.writeLock().release();
+                cacheLock.writeLock().unlock();
             }
         }
 
@@ -362,15 +350,12 @@ public class SchemaManagerImpl implements SchemaManager {
      *         This is a new handle duped just for the caller; caller must close it when they are finished with it.
      */
     public SchemaHandle getSchemaByUrl(String url) throws IOException, SAXException {
+        cacheLock.readLock().lock();
         try {
-            cacheLock.readLock().acquire();
             SchemaHandle ret = getSchemaByUrlNoCompile(url);
             if (ret != null) return ret;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         } finally {
-            cacheLock.readLock().release();
+            cacheLock.readLock().unlock();
         }
 
         // Cache miss.  We'll need to compile a new instance of this schema.
@@ -383,19 +368,15 @@ public class SchemaManagerImpl implements SchemaManager {
         // One-lock-per-schema-URL: results in deadlock:
         //     - Thread A compiling Schema A needs to import (and compile) Schema B; while at the same time,
         //     - Thread B compiling Schema B needs to import (and compile) Schema A
+        cacheLock.writeLock().lock();
         try {
-            cacheLock.writeLock().acquire();
-
             // See if anyone else got it while we were waiting for the compiler mutex
             SchemaHandle ret = getSchemaByUrlNoCompile(url);
             if (ret != null) return ret;
 
             return compileAndCache(url, schemaDoc);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         } finally {
-            cacheLock.writeLock().release();
+            cacheLock.writeLock().unlock();
         }
     }
 
@@ -515,7 +496,7 @@ public class SchemaManagerImpl implements SchemaManager {
         }
     }
 
-    Sync getReadLock() {
+    Lock getReadLock() {
         return cacheLock.readLock();
     }
 
@@ -762,8 +743,8 @@ public class SchemaManagerImpl implements SchemaManager {
         logger.log(Level.FINE, "Closing {0}", schema);
         String tns = schema.getTargetNamespace();
 
+        cacheLock.writeLock().lock();
         try {
-            cacheLock.writeLock().acquire();
 
             SchemaHandle old = schemasBySystemId.get(schema.getSystemId());
             if (old != null && old.getTarget() == schema) {
@@ -791,12 +772,8 @@ public class SchemaManagerImpl implements SchemaManager {
                     maybeHardwareEnable(survivingSchema, true, true, new HashSet<CompiledSchema>());
                 }
             }
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.severe("Interrupted waiting for cache lock");
         } finally {
-            cacheLock.writeLock().release();
+            cacheLock.writeLock().unlock();
         }
     }
 
@@ -836,8 +813,8 @@ public class SchemaManagerImpl implements SchemaManager {
             StringBuilder sb = new StringBuilder("\n\nSchema cache contents: \n\n");
             Set<CompiledSchema> schemaSet = new HashSet<CompiledSchema>();
             Set<CompiledSchema> reported = new HashSet<CompiledSchema>();
+            cacheLock.readLock().lock();
             try {
-                cacheLock.readLock().acquire();
                 // We'll do two passes.  In the first pass, we'll draw trees down from the roots.
                 // In second pass, we'll draw any schemas that we missed during the first pass (possible
                 // due to upward links being weak references)
@@ -879,12 +856,8 @@ public class SchemaManagerImpl implements SchemaManager {
                         sb.append("       ").append(active).append(schema).append("\n");
                     }
                 }
-
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             } finally {
-                cacheLock.readLock().release();
+                cacheLock.readLock().unlock();
             }
             sb.append("\n\n");
             logger.finest(sb.toString());
@@ -1021,31 +994,22 @@ public class SchemaManagerImpl implements SchemaManager {
      */
     private void maybeRebuildHardwareCache() {
         // Do an initial fast check to see if there is anything to do, before getting the concurrency-killing write lock
+        cacheLock.readLock().lock();
         try {
-            cacheLock.readLock().acquire();
             if (!shouldRebuildNow()) return;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warning("Interrupted waiting for schema cache read lock");
-            return;
         } finally {
-            cacheLock.readLock().release();
+            cacheLock.readLock().unlock();
         }
 
         // Grab the write lock and do one final check, then do the rebuild
+        cacheLock.writeLock().lock();
         try {
-            cacheLock.writeLock().acquire();
             if (!shouldRebuildNow()) return;
 
             // Do the actual
             doRebuild();
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warning("Interrupted waiting for schema cache write lock");
-            return;  // don't throw back up to Timer thread
         } finally {
-            cacheLock.writeLock().release();
+            cacheLock.writeLock().unlock();
         }
     }
 

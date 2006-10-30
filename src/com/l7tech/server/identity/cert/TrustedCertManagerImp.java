@@ -6,9 +6,6 @@
 
 package com.l7tech.server.identity.cert;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
@@ -30,6 +27,9 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -214,34 +214,30 @@ public class TrustedCertManagerImp
 
     @Transactional(readOnly=true)
     public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException {
-        Sync read = cacheLock.readLock();
-        Sync write = cacheLock.writeLock();
+        Lock read = cacheLock.readLock();
+        Lock write = cacheLock.writeLock();
         try {
-            read.acquire();
+            read.lock();
             final Long oid = dnToOid.get(dn);
-            read.release();
+            read.unlock();
             read = null;
             if (oid == null) {
                 TrustedCert cert = findBySubjectDn(dn);
                 if (cert == null) return null;
-                write.acquire();
+                write.lock();
                 checkAndCache(cert);
-                write.release();
+                write.unlock();
                 write = null;
                 return cert;
             } else {
                 return getCachedCertByOid(oid.longValue(), maxAge);
             }
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
-            Thread.currentThread().interrupt();
-            return null;
         } catch (CacheVeto e) {
             logger.log(Level.WARNING, e.getMessage(), e.getCause());
             throw new CertificateException(e.getMessage());
         } finally {
-            if (write != null) write.release();
-            if (read != null) read.release();
+            if (write != null) write.unlock();
+            if (read != null) read.unlock();
         }
     }
 
@@ -322,5 +318,5 @@ public class TrustedCertManagerImp
     }
 
     private Map<String, Long> dnToOid = new HashMap<String, Long>();
-    private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(false);
 }

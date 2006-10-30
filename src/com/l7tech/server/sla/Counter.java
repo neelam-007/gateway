@@ -6,8 +6,9 @@
  */
 package com.l7tech.server.sla;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReadWriteLock;
+
 
 /**
  * A counter to enforce sla limit against.
@@ -20,7 +21,7 @@ public class Counter {
     private long currentHourCounter;
     private long currentDayCounter;
     private long currentMonthCounter;
-    final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
+    final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
 
     public Counter(){}
 

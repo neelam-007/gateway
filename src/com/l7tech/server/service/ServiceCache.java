@@ -1,8 +1,5 @@
 package com.l7tech.server.service;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
@@ -34,6 +31,9 @@ import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -94,9 +94,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     }
 
     private void resetUnlicensed() {
-        Sync write = rwlock.writeLock();
+        rwlock.writeLock().lock();
         try {
-            write.acquire();
             List<Long> unlicensed = new ArrayList<Long>(servicesThatAreUnlicensed);
 
             int numUnlicensed = unlicensed.size();
@@ -114,12 +113,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                     logger.log(Level.WARNING, "Unable to reenable service after license change: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 }
             }
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         } finally {
-            if (write != null) write.release();
+            rwlock.writeLock().unlock();
         }
     }
 
@@ -129,16 +124,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * @return the number of services currently cached
      */
     public int size() throws InterruptedException {
-        Sync read = rwlock.readLock();
+        rwlock.readLock().lock();
         try {
-            read.acquire();
             return services.size();
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
         } finally {
-            if (read != null) read.release();
+            rwlock.readLock().unlock();
         }
     }
 
@@ -161,19 +151,14 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * @param serviceOid id of the service of which we want the parsed server side root assertion
      */
     public ServerPolicyHandle getServerPolicy(long serviceOid) throws InterruptedException {
-        Sync read = rwlock.readLock();
+        rwlock.readLock().lock();
         try {
-            read.acquire();
             ServerPolicyHandle handle = serverPolicies.get(serviceOid);
             if (handle == null) return null;
             ServerPolicy target = handle.getTarget();
             return target == null ? null : target.ref();
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
         } finally {
-            if (read != null) read.release();
+            rwlock.readLock().unlock();
         }
     }
 
@@ -185,9 +170,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      */
     public PublishedService resolve(Message req) throws ServiceResolutionException {
         Set<PublishedService> serviceSet;
-        Sync read = rwlock.readLock();
+        rwlock.readLock().lock();
         try {
-            read.acquire();
             serviceSet = new HashSet<PublishedService>();
             serviceSet.addAll(services.values());
 
@@ -230,12 +214,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                   "more than one service. this should be corrected at next cache integrity" +
                   "check");
             }
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw new ServiceResolutionException("Interruption exception in cache", e);
         } finally {
-            if (read != null) read.release();
+            rwlock.readLock().unlock();
         }
 
         return null;
@@ -247,16 +227,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * @throws ServerPolicyException if a server assertion contructor for this service threw an exception
      */
     public void cache(PublishedService service) throws InterruptedException, ServerPolicyException {
-        Sync write = rwlock.writeLock();
+        rwlock.writeLock().lock();
         try {
-            write.acquire();
             cacheNoLock(service);
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
         } finally {
-            if (write != null) write.release();
+            rwlock.writeLock().unlock();
         }
     }
 
@@ -329,16 +304,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * @param service
      */
     public void removeFromCache(PublishedService service) throws InterruptedException {
-        Sync write = rwlock.writeLock();
+        rwlock.writeLock().lock();
         try {
-            write.acquire();
             removeNoLock(service);
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
         } finally {
-            if (write != null) write.release();
+            rwlock.writeLock().unlock();
         }
     }
 
@@ -360,17 +330,12 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * gets a service from the cache
      */
     public PublishedService getCachedService(long oid) throws InterruptedException {
-        Sync read = rwlock.readLock();
         PublishedService out = null;
+        rwlock.readLock().lock();
         try {
-            read.acquire();
             out = services.get(oid);
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
         } finally {
-            if (read != null) read.release();
+            rwlock.readLock().unlock();
         }
         return out;
     }
@@ -379,17 +344,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * get all current service stats
      */
     public Collection<ServiceStatistics> getAllServiceStatistics() throws InterruptedException {
-        Sync read = null;
+        rwlock.readLock().lock();
         try {
-            read = rwlock.readLock();
-            read.acquire();
             Collection<ServiceStatistics> output = new ArrayList<ServiceStatistics>();
             output.addAll(serviceStatistics.values());
             return output;
         } finally {
-            if (read != null) {
-                read.release();
-            }
+            rwlock.readLock().unlock();
         }
     }
 
@@ -399,34 +360,30 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      */
     public ServiceStatistics getServiceStatistics(long serviceOid) throws InterruptedException {
         ServiceStatistics stats;
-        Sync read = null;
-        Sync write = null;
+        Lock read = null;
+        Lock write = null;
         try {
             read = rwlock.readLock();
-            read.acquire();
+            read.lock();
             stats = serviceStatistics.get(serviceOid);
             if (stats == null) {
                 // Upgrade read lock to write lock
-                read.release();
+                read.unlock();
                 read = null;
                 stats = new ServiceStatistics(serviceOid);
                 write = rwlock.writeLock();
-                write.acquire();
+                write.lock();
                 serviceStatistics.put(serviceOid, stats);
-                write.release();
+                write.unlock();
                 write = null;
             } else {
-                read.release();
+                read.unlock();
                 read = null;
             }
             return stats;
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted while acquiring statistics lock!", e);
-            Thread.currentThread().interrupt();
-            throw e;
         } finally {
-            if (read != null) read.release();
-            if (write != null) write.release();
+            if (read != null) read.unlock();
+            if (write != null) write.unlock();
         }
     }
 
@@ -439,14 +396,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     }
 
     private void checkIntegrity() {
-        Sync ciReadLock = rwlock.readLock();
-        try {
-            ciReadLock.acquire();
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "error getting read lock. " +
-              "this integrity check is stopping prematurely", e);
-            return;
-        }
+        Lock ciReadLock = rwlock.readLock();
+        ciReadLock.lock();
         try {
             Map<Long, Integer> cacheversions = versionSnapshot();
             Map<Long, Integer> dbversions;
@@ -492,19 +443,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             // 3. make the updates
             if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
                 // nothing to do. we're done
-                ciReadLock.release();
+                ciReadLock.unlock();
                 ciReadLock = null;
             } else {
-                Sync ciWriteLock = rwlock.writeLock();
-                ciReadLock.release();
+                ciReadLock.unlock();
                 ciReadLock = null;
-                try {
-                    ciWriteLock.acquire();
-                } catch (InterruptedException e) {
-                    logger.log(Level.SEVERE, "could not get write lock. this integrity" +
-                      "check is stopping prematurely", e);
-                    return;
-                }
+                Lock ciWriteLock = rwlock.writeLock();
+                ciWriteLock.lock();
                 try {
                     for (Long svcid : updatesAndAdditions) {
                         PublishedService toUpdateOrAdd;
@@ -543,12 +488,12 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                         removeNoLock(serviceToDelete);
                     }
                 } finally {
-                    ciWriteLock.release();
+                    ciWriteLock.unlock();
                 }
             }
 
         } finally {
-            if (ciReadLock != null) ciReadLock.release();
+            if (ciReadLock != null) ciReadLock.unlock();
         }
     }
 
@@ -604,7 +549,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     private final NameValueServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
 
     // read-write lock for thread safety
-    private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
+    private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

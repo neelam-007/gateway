@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion.credential;
 
-import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
@@ -15,8 +14,6 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -36,6 +33,7 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

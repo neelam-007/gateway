@@ -29,6 +29,7 @@ import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -175,9 +176,9 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
         setLastUsedTime();
 
+        final Lock readLock = manager.getReadLock();
+        readLock.lock();
         try {
-            manager.getReadLock().acquire();
-
             if (tryHardware && isHardwareEligible() && isLoaded()) {
 
                 // Do it in Tarari
@@ -207,22 +208,16 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
             // Hardware impossible or inappropriate in this case, or was tried and failed
             /* FALLTHROUGH and do it in softare */
 
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Thread interrupted while waiting for read lock", e);
         } finally {
-            manager.getReadLock().release();
+            readLock.unlock();
         }
 
         // Try to run the validation in software
+        readLock.lock();
         try {
-            manager.getReadLock().acquire();
             validateMessageDom(msg, isSoap, errorHandler);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
         } finally {
-            manager.getReadLock().release();
+            readLock.unlock();
         }
     }
 
@@ -353,14 +348,12 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
      */
     void validateElements(Element[] elementsToValidate, SchemaValidationErrorHandler errorHandler) throws IOException, SAXException {
         setLastUsedTime();
+        final Lock readLock = manager.getReadLock();
+        readLock.lock();
         try {
-            manager.getReadLock().acquire();
             doValidateElements(elementsToValidate, errorHandler);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Thread interrupted while waiting for schema read lock", e);
         } finally {
-            manager.getReadLock().release();
+            readLock.unlock();
         }
     }
 

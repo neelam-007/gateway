@@ -9,12 +9,9 @@ package com.l7tech.server.sla;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.beans.factory.DisposableBean;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.HashMap;
 import java.util.Calendar;
 
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 /**
@@ -26,7 +23,6 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
  * @deprecated (remove as soon as DBCounterManager is complete and works fine)
  */
 public class CounterCache extends ApplicationObjectSupport implements CounterManager, DisposableBean {
-    private final Logger logger =  Logger.getLogger(getClass().getName());
     private final HashMap counters = new HashMap();
 
     public CounterCache() {
@@ -47,18 +43,9 @@ public class CounterCache extends ApplicationObjectSupport implements CounterMan
                                                        long timestamp,
                                                        int fieldOfInterest,
                                                        long limit) throws LimitAlreadyReachedException {
-        Counter counter = null;
-        synchronized (counters) {
-            Object key = new Long(counterId);
-            counter = (Counter)counters.get(key);
-            if (counter == null) {
-                counter = new Counter();
-                counters.put(key, counter);
-            }
-        }
-        Sync write = counter.rwlock.writeLock();
+        final Counter counter = getOrCreateCounter(counterId);
+        counter.rwlock.writeLock().lock();
         try {
-            write.acquire();
             Counter tmpCounter = new Counter(counter);
             incrementCounterNoLock(tmpCounter, timestamp);
 
@@ -88,7 +75,6 @@ public class CounterCache extends ApplicationObjectSupport implements CounterMan
             }
 
             if (limitViolated) {
-                write.release();
                 throw new LimitAlreadyReachedException("Limit already met");
             } else {
                 counter.copyFrom(tmpCounter);
@@ -96,51 +82,34 @@ public class CounterCache extends ApplicationObjectSupport implements CounterMan
                 //CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
                 //hitsCounter.recordHit(counterId, timestamp);
 
-                try {
-                    switch (fieldOfInterest) {
-                        case ThroughputQuota.PER_SECOND:
-                            return counter.getCurrentSecondCounter();
-                        case ThroughputQuota.PER_HOUR:
-                            return counter.getCurrentHourCounter();
-                        case ThroughputQuota.PER_DAY:
-                            return counter.getCurrentDayCounter();
-                        case ThroughputQuota.PER_MONTH:
-                            return counter.getCurrentMonthCounter();
-                    }
-                    // should not happen
-                    throw new RuntimeException("Asked for unsupported fieldOfInterest: " + fieldOfInterest);
-                } finally {
-                    write.release();
+                switch (fieldOfInterest) {
+                    case ThroughputQuota.PER_SECOND:
+                        return counter.getCurrentSecondCounter();
+                    case ThroughputQuota.PER_HOUR:
+                        return counter.getCurrentHourCounter();
+                    case ThroughputQuota.PER_DAY:
+                        return counter.getCurrentDayCounter();
+                    case ThroughputQuota.PER_MONTH:
+                        return counter.getCurrentMonthCounter();
                 }
+                // should not happen
+                throw new RuntimeException("Asked for unsupported fieldOfInterest: " + fieldOfInterest);
             }
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "unexpected InterruptedException in increment", e);
-            throw new RuntimeException(e);
+        } finally {
+            counter.rwlock.writeLock().unlock();
         }
     }
 
     public void decrement(long counterId) {
-        Counter counter = null;
-
-        synchronized (counters) {
-            Object key = new Long(counterId);
-            counter = (Counter)counters.get(key);
-            if (counter == null) {
-                counter = new Counter();
-                counters.put(key, counter);
-            }
-        }
-        Sync write = counter.rwlock.writeLock();
+        final Counter counter = getOrCreateCounter(counterId);
+        counter.rwlock.writeLock().lock();
         try {
-            write.acquire();
             counter.setCurrentSecondCounter(counter.getCurrentSecondCounter()-1);
             counter.setCurrentHourCounter(counter.getCurrentHourCounter()-1);
             counter.setCurrentDayCounter(counter.getCurrentDayCounter()-1);
             counter.setCurrentMonthCounter(counter.getCurrentMonthCounter()-1);
-            write.release();
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "unexpected InterruptedException in decrement", e);
-            throw new RuntimeException(e);
+        } finally {
+            counter.rwlock.writeLock().unlock();
         }
     }
 
@@ -153,46 +122,53 @@ public class CounterCache extends ApplicationObjectSupport implements CounterMan
      * @return the counter value of interest
      */
     public long incrementAndReturnValue(long counterId, long timestamp, int fieldOfInterest) {
-        Counter counter = null;
-        synchronized (counters) {
-            Object key = new Long(counterId);
-            counter = (Counter)counters.get(key);
-            if (counter == null) {
-                counter = new Counter();
-                counters.put(key, counter);
-            }
-        }
-        Sync write = counter.rwlock.writeLock();
+        final Counter counter = getOrCreateCounter(counterId);
+        counter.rwlock.writeLock().lock();
         try {
-            write.acquire();
             incrementCounterNoLock(counter, timestamp);
             // record hit in database
             //CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
             //hitsCounter.recordHit(counterId, timestamp);
 
-            try {
-                switch (fieldOfInterest) {
-                    case ThroughputQuota.PER_SECOND:
-                        return counter.getCurrentSecondCounter();
-                    case ThroughputQuota.PER_HOUR:
-                        return counter.getCurrentHourCounter();
-                    case ThroughputQuota.PER_DAY:
-                        return counter.getCurrentDayCounter();
-                    case ThroughputQuota.PER_MONTH:
-                        return counter.getCurrentMonthCounter();
-                }
-                // should not happen
-                throw new RuntimeException("Asked for unsupported fieldOfInterest: " + fieldOfInterest);
-            } finally {
-                write.release();
+            switch (fieldOfInterest) {
+                case ThroughputQuota.PER_SECOND:
+                    return counter.getCurrentSecondCounter();
+                case ThroughputQuota.PER_HOUR:
+                    return counter.getCurrentHourCounter();
+                case ThroughputQuota.PER_DAY:
+                    return counter.getCurrentDayCounter();
+                case ThroughputQuota.PER_MONTH:
+                    return counter.getCurrentMonthCounter();
             }
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "unexpected InterruptedException in increment", e);
-            throw new RuntimeException(e);
+            // should not happen
+            throw new RuntimeException("Asked for unsupported fieldOfInterest: " + fieldOfInterest);
+        } finally {
+            counter.rwlock.writeLock().unlock();
         }
     }
 
     public long getCounterValue(long counterId, int fieldOfInterest) {
+        final Counter counter = getOrCreateCounter(counterId);
+        counter.rwlock.readLock().lock();
+        try {
+            switch (fieldOfInterest) {
+                case ThroughputQuota.PER_SECOND:
+                    return counter.getCurrentSecondCounter();
+                case ThroughputQuota.PER_HOUR:
+                    return counter.getCurrentHourCounter();
+                case ThroughputQuota.PER_DAY:
+                    return counter.getCurrentDayCounter();
+                case ThroughputQuota.PER_MONTH:
+                    return counter.getCurrentMonthCounter();
+            }
+            // should not happen
+            throw new RuntimeException("Asked for unsupported fieldOfInterest: " + fieldOfInterest);
+        } finally {
+            counter.rwlock.readLock().unlock();
+        }
+    }
+
+    private Counter getOrCreateCounter(long counterId) {
         Counter counter = null;
         synchronized (counters) {
             Object key = new Long(counterId);
@@ -202,29 +178,7 @@ public class CounterCache extends ApplicationObjectSupport implements CounterMan
                 counters.put(key, counter);
             }
         }
-        Sync read = counter.rwlock.readLock();
-        try {
-            read.acquire();
-            try {
-                switch (fieldOfInterest) {
-                    case ThroughputQuota.PER_SECOND:
-                        return counter.getCurrentSecondCounter();
-                    case ThroughputQuota.PER_HOUR:
-                        return counter.getCurrentHourCounter();
-                    case ThroughputQuota.PER_DAY:
-                        return counter.getCurrentDayCounter();
-                    case ThroughputQuota.PER_MONTH:
-                        return counter.getCurrentMonthCounter();
-                }
-                // should not happen
-                throw new RuntimeException("Asked for unsupported fieldOfInterest: " + fieldOfInterest);
-            } finally {
-                read.release();
-            }
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "unexpected InterruptedException in getCounterValue", e);
-            throw new RuntimeException(e);
-        }
+        return counter;
     }
 
     private boolean inSameMonth(Calendar last, Calendar now) {
