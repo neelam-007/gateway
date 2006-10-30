@@ -498,8 +498,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                         if (existing == null) {
                                             session.save(head);
                                         } else {
-                                            logger.log(Level.INFO, "Merging contents of duplicate MetricsBin [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
-                                                    new Object[]{head.getClusterNodeId(), head.getServiceOid(), head.getResolution(), head.getPeriodStart()});
+                                            if (logger.isLoggable(Level.FINE)) {
+                                                logger.log(Level.FINE, "Merging contents of duplicate MetricsBin [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
+                                                        new Object[]{head.getClusterNodeId(), head.getServiceOid(), head.getResolution(), head.getPeriodStart()});
+                                            }
                                             existing.merge(head);
                                             session.save(existing);
                                         }
