@@ -16,7 +16,7 @@ public interface CounterManager {
      * @param fieldOfInterest ThroughputQuota.PER_SECOND, ThroughputQuota.PER_HOUR, ThroughputQuota.PER_DAY or
      * ThroughputQuota.PER_MONTH
      * @return the counter value of interest if incremented. if the limit is already reached, an exceptio is thrown
-     * @throws com.l7tech.server.sla.CounterCache.LimitAlreadyReachedException if the limit was already reached
+     * @throws com.l7tech.server.sla.CounterManager.LimitAlreadyReachedException if the limit was already reached
      */
     public long incrementOnlyWithinLimitAndReturnValue(long counterId,
                                                        long timestamp,
@@ -47,5 +47,5 @@ public interface CounterManager {
         public LimitAlreadyReachedException(String msg) {
             super(msg);
         }
-    };
+    }
 }
