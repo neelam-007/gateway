@@ -29,7 +29,7 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="jmsConnectionManager"/>
         <constructor-arg ref="jmsEndpointManager"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
+        <constructor-arg ref="managedDeleteTimer"/>
     </bean>
 
     <!--
@@ -801,7 +801,7 @@
             </bean>
         </constructor-arg>
         <constructor-arg>
-            <ref local="managedBackgroundTimer"/>
+            <ref local="managedDeleteTimer"/>
         </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
@@ -868,8 +868,8 @@
 
     </bean>
 
-    <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
-        <constructor-arg value="Background timer"/>
+    <bean id="managedDeleteTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="deleteTimer"/>
     </bean>
 
     <bean id="whirlyLife" class="com.l7tech.server.WhirlyLifecycle"/>

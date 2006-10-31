@@ -147,10 +147,8 @@ public class ServiceMetrics {
 
     /**
      * Archives the current fine resolution bin and starts a new one.
-     *
-     * @param limit maximum number of bins to keep
      */
-    public void archiveFineBin(final long limit) {
+    public void archiveFineBin() {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
             _fineLock.writeLock().acquire();
@@ -174,10 +172,8 @@ public class ServiceMetrics {
 
     /**
      * Archives the current hourly resolution bin and starts a new one.
-     *
-     * @param limit maximum number of bins to keep
      */
-    public void archiveHourlyBin(final long limit) {
+    public void archiveHourlyBin() {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
             _hourlyLock.writeLock().acquire();
@@ -200,10 +196,8 @@ public class ServiceMetrics {
 
     /**
      * Archives the current daily resolution bin and starts a new one.
-     *
-     * @param limit maximum number of bins to keep
      */
-    public void archiveDailyBin(final long limit) {
+    public void archiveDailyBin() {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
             _dailyLock.writeLock().acquire();

@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  * Manages the processing and accumulation of service metrics for one SSG node.
  *
  * @author rmak
+ * @author alex
  */
 
 @Transactional(propagation=Propagation.SUPPORTS)
@@ -37,37 +38,37 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     //- PUBLIC
 
-    public ServiceMetricsManager(String clusterNodeId, Timer fineTimer, Timer hourlyTimer, Timer dailyTimer, Timer timer) {
-        this._clusterNodeId = clusterNodeId;
+    public ServiceMetricsManager(String clusterNodeId, Timer fineTimer, Timer hourlyTimer, Timer dailyTimer, Timer deleteTimer) {
+        _clusterNodeId = clusterNodeId;
 
-        if (fineTimer == null) fineTimer = new Timer("ServiceMetricsManager.fineTimer" /* name */, true /* isDaemon */);
-        if (hourlyTimer == null) hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer" /* name */, true /* isDaemon */);
-        if (dailyTimer == null) dailyTimer = new Timer("ServiceMetricsManager.dailyTimer" /* name */, true /* isDaemon */);
-        if (timer == null) timer = new Timer("ServiceMetricsManager.background" /* name */, true /* isDaemon */);
+        if (fineTimer == null) fineTimer = new Timer("ServiceMetricsManager.fineTimer", true /* isDaemon */);
+        if (hourlyTimer == null) hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer", true /* isDaemon */);
+        if (dailyTimer == null) dailyTimer = new Timer("ServiceMetricsManager.dailyTimer", true /* isDaemon */);
+        if (deleteTimer == null) deleteTimer = new Timer("ServiceMetricsManager.deleteTimer", true /* isDaemon */);
 
-        this.fineTimer = fineTimer;
-        this.hourlyTimer = hourlyTimer;
-        this.dailyTimer = dailyTimer;
-        this.backgroundTimer = timer;
+        _fineTimer = fineTimer;
+        _hourlyTimer = hourlyTimer;
+        _dailyTimer = dailyTimer;
+        _deleteTimer = deleteTimer;
     }
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
+        _transactionManager = transactionManager;
     }
 
     public void setServiceManager(ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
+        _serviceManager = serviceManager;
     }
 
     public void destroy() throws Exception {
-        if (fineTimer != null) fineTimer.cancel();
-        if (hourlyTimer != null) hourlyTimer.cancel();
-        if (dailyTimer != null) dailyTimer.cancel();
-        if (fineDeleter != null) fineDeleter.cancel();
-        if (hourlyDeleter != null) hourlyDeleter.cancel();
-        if (dailyDeleter != null) dailyDeleter.cancel();
-        if (flusher != null) flusher.quit();
-        if (flusherThread != null) flusherThread.interrupt();
+        if (_fineTimer != null) _fineTimer.cancel();
+        if (_hourlyTimer != null) _hourlyTimer.cancel();
+        if (_dailyTimer != null) _dailyTimer.cancel();
+        if (_fineDeleter != null) _fineDeleter.cancel();
+        if (_hourlyDeleter != null) _hourlyDeleter.cancel();
+        if (_dailyDeleter != null) _dailyDeleter.cancel();
+        if (_flusher != null) _flusher.quit();
+        if (_flusherThread != null) _flusherThread.interrupt();
     }
 
     /**
@@ -84,7 +85,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             synchronized (_serviceMetricsMapLock) {
                 serviceMetrics = (ServiceMetrics) _serviceMetricsMap.get(oid);
                 if (serviceMetrics == null) {
-                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, queue);
+                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, _flusherQueue);
                     _serviceMetricsMap.put(oid, serviceMetrics);
                 }
             }
@@ -185,8 +186,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     //- PROTECTED
 
     protected void initDao() throws Exception {
-        if (transactionManager == null) throw new IllegalStateException("TransactionManager must be set");
-        if (serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
+        if (_transactionManager == null) throw new IllegalStateException("TransactionManager must be set");
+        if (_serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
         if (_clusterNodeId == null) throw new IllegalStateException("clusterNodeId must be set");
 
         _enabled = Boolean.valueOf(System.getProperty("com.l7tech.service.metrics.enabled", "true")).booleanValue();
@@ -194,40 +195,26 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             return;
         }
 
-        _fineBinInterval = (int)getLongProperty("com.l7tech.service.metrics.fineBinInterval",
-                                          MIN_FINE_BIN_INTERVAL,
-                                          MAX_FINE_BIN_INTERVAL,
-                                          DEF_FINE_BIN_INTERVAL);
+        _fineBinInterval = (int)getLongProperty("com.l7tech.service.metrics.fineBinInterval", MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL);
 
-        fineTtl = getLongProperty("com.l7tech.service.metrics.maxFineAge",
-                                      MIN_FINE_AGE,
-                                      MAX_FINE_AGE,
-                                      DEF_FINE_AGE);
+        final long fineTtl = getLongProperty("com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE);
+        final long hourlyTtl = getLongProperty("com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE);
+        final long dailyTtl = getLongProperty("com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE);
 
-        hourlyTtl = getLongProperty("com.l7tech.service.metrics.maxHourlyAge",
-                                        MIN_HOURLY_AGE,
-                                        MAX_HOURLY_AGE,
-                                        DEF_HOURLY_AGE);
+        _fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
+        _deleteTimer.schedule(_fineDeleter, MINUTE, 5 * MINUTE);
+        _logger.config("Scheduled first fine deletion task for " + new Date(System.currentTimeMillis() + MINUTE));
 
-        dailyTtl = getLongProperty("com.l7tech.service.metrics.maxDailyAge",
-                                       MIN_DAILY_AGE,
-                                       MAX_DAILY_AGE,
-                                       DEF_DAILY_AGE);
+        _hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
+        _deleteTimer.schedule(_hourlyDeleter, 15 * MINUTE, 12 * HOUR);
+        _logger.config("Scheduled first hourly deletion task for " + new Date(System.currentTimeMillis() + 15 * MINUTE));
 
-        fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
-        backgroundTimer.schedule(fineDeleter, MINUTE, 5 * MINUTE);
-        logger.config("Scheduled first fine deletion task for " + new Date(System.currentTimeMillis() + MINUTE));
+        _dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
+        _deleteTimer.schedule(_dailyDeleter, HOUR, 24 * HOUR);
+        _logger.config("Scheduled first daily deletion task for " + new Date(System.currentTimeMillis() + HOUR));
 
-        hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
-        backgroundTimer.schedule(hourlyDeleter, 15 * MINUTE, 12 * HOUR);
-        logger.config("Scheduled first hourly deletion task for " + new Date(System.currentTimeMillis() + 15 * MINUTE));
-
-        dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
-        backgroundTimer.schedule(dailyDeleter, HOUR, 24 * HOUR);
-        logger.config("Scheduled first daily deletion task for " + new Date(System.currentTimeMillis() + HOUR));
-
-        // Populate initial bins
-        Collection serviceHeaders = serviceManager.findAllHeaders();
+        // Populates initial bins.
+        Collection serviceHeaders = _serviceManager.findAllHeaders();
         for (Iterator i = serviceHeaders.iterator(); i.hasNext();) {
             EntityHeader service = (EntityHeader)i.next();
             getServiceMetrics(service.getOid());
@@ -238,41 +225,28 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
         // Sets fine resolution timer to excecute every fine interval; starting at the next fine period.
         final Date nextFineStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_FINE, _fineBinInterval, now));
-        fineTimer.scheduleAtFixedRate(new FineTask(), nextFineStart, _fineBinInterval);
-        logger.config("Fine archive interval is " + _fineBinInterval + "ms");
-        logger.config("Scheduled first fine archive task for " + nextFineStart);
+        _fineTimer.scheduleAtFixedRate(new FineTask(), nextFineStart, _fineBinInterval);
+        _logger.config("Fine archive interval is " + _fineBinInterval + "ms");
+        _logger.config("Scheduled first fine archive task for " + nextFineStart);
 
         // Sets hourly resolution timer every hour; starting at the next hourly period.
         final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now));
-        hourlyTimer.scheduleAtFixedRate(new HourlyTask(), nextHourlyStart, HOUR);
-        logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
+        _hourlyTimer.scheduleAtFixedRate(new HourlyTask(), nextHourlyStart, HOUR);
+        _logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
 
         // Sets daily resolution timer to execute at the next daily period.
         // But can't just schedule at fixed rate of 24-hours interval because a
         // calender day varies, e.g., when switching Daylight Savings Time.
         final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now));
-        dailyTimer.schedule(new DailyTask(), nextDailyStart);
-        logger.config("Scheduled first daily archive task for " + nextDailyStart);
+        _dailyTimer.schedule(new DailyTask(), nextDailyStart);
+        _logger.config("Scheduled first daily archive task for " + nextDailyStart);
 
-        // Flusher waits forever on {@link #queue}
-        flusherThread = new Thread(flusher, flusher.getClass().getName());
-        flusherThread.start();
+        // Flusher waits forever on {@link #_flusherQueue}.
+        _flusherThread = new Thread(_flusher, _flusher.getClass().getName());
+        _flusherThread.start();
     }
 
     //- PRIVATE
-
-    private final Timer fineTimer;
-    private final Timer hourlyTimer;
-    private final Timer dailyTimer;
-    private final Timer backgroundTimer;
-
-    private Thread flusherThread;
-    private final Flusher flusher = new Flusher();
-
-    private PlatformTransactionManager transactionManager;
-
-    private static final BoundedPriorityQueue queue = new BoundedPriorityQueue(500);
-    private ServiceManager serviceManager;
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
     private static final int MINUTE = 60 * 1000;
@@ -280,25 +254,16 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private static final long DAY = 24 * HOUR;
     private static final long YEAR = 365 * DAY;
 
-    /**
-     * Minimum allowed fine resolution bin interval (in milliseconds).
-     */
+    /** Minimum allowed fine resolution bin interval (in milliseconds). */
     private static final int MIN_FINE_BIN_INTERVAL = 1000; // 1 second
 
-    /**
-     * Maximum allowed fine resolution bin interval (in milliseconds).
-     */
+    /** Maximum allowed fine resolution bin interval (in milliseconds). */
     private static final int MAX_FINE_BIN_INTERVAL = 5 * MINUTE; // 5 minutes
 
-    /**
-     * Default fine resolution bin interval (in milliseconds).
-     */
+    /** Default fine resolution bin interval (in milliseconds). */
     private static final int DEF_FINE_BIN_INTERVAL = 5 * 1000; // 5 seconds
 
-    /**
-     * Limit and default values for number of fine resolution bins are
-     * designed to fill 1 hour.
-     */
+    // Limits and default values for number of fine resolution bins are designed to fill 1 hour.
     private static final int MIN_FINE_AGE = HOUR;
     private static final int MAX_FINE_AGE = HOUR;
     private static final int DEF_FINE_AGE = HOUR;
@@ -307,48 +272,40 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private static final long MAX_HOURLY_AGE = 31 * DAY;     // a month
     private static final long DEF_HOURLY_AGE = 7 * DAY;      // a week
 
-    private static final long MIN_DAILY_AGE = 31 * DAY;           // a month
+    private static final long MIN_DAILY_AGE = 31 * DAY;      // a month
     private static final long MAX_DAILY_AGE = 10 * YEAR;     // 10 years
     private static final long DEF_DAILY_AGE = YEAR;          // 1 year
 
-    private static final Logger logger = Logger.getLogger(ServiceMetricsManager.class.getName());
+    private static final Logger _logger = Logger.getLogger(ServiceMetricsManager.class.getName());
 
-    /**
-     * Id for this node
-     */
+    /** ID for this node. */
     private String _clusterNodeId;
 
-    /**
-     * Whether statistics collecting is turned on.
-     */
+    /** Whether statistics collecting is turned on. */
     private boolean _enabled;
 
-    /**
-     * Fine resolution bin interval (in milliseconds).
-     */
+    /** Fine resolution bin interval (in milliseconds). */
     private int _fineBinInterval;
 
-    /**
-     * Maximum number of fine resolution bins to archive.
-     */
-    private long fineTtl;
+    private final Timer _fineTimer;
+    private final Timer _hourlyTimer;
+    private final Timer _dailyTimer;
+    private final Timer _deleteTimer;
 
-    /**
-     * Maximum number of hourly resolution bins to archive.
-     */
-    private long hourlyTtl;
+    private DeleteTask _fineDeleter;
+    private DeleteTask _hourlyDeleter;
+    private DeleteTask _dailyDeleter;
 
-    /**
-     * Maximum number of daily resolution bins to archive.
-     */
-    private long dailyTtl;
+    private Thread _flusherThread;
+    private final Flusher _flusher = new Flusher();
+    private static final BoundedPriorityQueue _flusherQueue = new BoundedPriorityQueue(500);
 
-    private DeleteTask fineDeleter;
-    private DeleteTask hourlyDeleter;
-    private DeleteTask dailyDeleter;
-
-    private final Map _serviceMetricsMap = new HashMap/* <Long, ServiceMetrics> */();
+    private final Map _serviceMetricsMap = new HashMap/* <service OID as Long, ServiceMetrics> */();
     private final Object _serviceMetricsMapLock = new Object();
+
+    private PlatformTransactionManager _transactionManager;
+
+    private ServiceManager _serviceManager;
 
     /**
      * Convenience method to return a system property value parsed into an
@@ -364,15 +321,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             try {
                 final long longValue = Long.parseLong(value);
                 if (longValue < lower) {
-                    logger.warning("Imposing lower constraint (" + lower + ") on system property value (" + longValue + "): " + name);
+                    _logger.warning("Imposing lower constraint (" + lower + ") on system property value (" + longValue + "): " + name);
                     return lower;
                 } else if (longValue > upper) {
-                    logger.warning("Imposing upper constraint (" + upper + ") on system property value (" + longValue + "): " + name);
+                    _logger.warning("Imposing upper constraint (" + upper + ") on system property value (" + longValue + "): " + name);
                     return upper;
                 }
                 return longValue;
             } catch (NumberFormatException e) {
-                logger.info("Using default value (" + defaultValue + ") for missing system property: " + name);
+                _logger.info("Using default value (" + defaultValue + ") for missing system property: " + name);
                 return defaultValue;
             }
         }
@@ -384,8 +341,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class FineTask extends TimerTask {
         public void run() {
-            if (logger.isLoggable(Level.FINER))
-                logger.finer("FineTask running at " + new Date());
+            if (_logger.isLoggable(Level.FINER))
+                _logger.finer("FineTask running at " + new Date());
             List metricsList = new ArrayList();
             synchronized(_serviceMetricsMapLock) {
                 metricsList.addAll(_serviceMetricsMap.values());
@@ -393,7 +350,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             Iterator itor = metricsList.iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
-                serviceMetrics.archiveFineBin(fineTtl);
+                serviceMetrics.archiveFineBin();
             }
         }
     }
@@ -412,11 +369,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             Iterator itor = metricsList.iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
-                serviceMetrics.archiveHourlyBin(hourlyTtl);
+                serviceMetrics.archiveHourlyBin();
                 num++;
             }
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("Hourly archiving task completed; archived " + num + " hourly bins");
+            if (_logger.isLoggable(Level.FINE))
+                _logger.fine("Hourly archiving task completed; archived " + num + " hourly bins");
         }
     }
 
@@ -434,23 +391,23 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             Iterator itor = metricsList.iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
-                serviceMetrics.archiveDailyBin(dailyTtl);
+                serviceMetrics.archiveDailyBin();
                 num++;
             }
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("Daily archiving task completed; archived " + num + " daily bins");
+            if (_logger.isLoggable(Level.FINE))
+                _logger.fine("Daily archiving task completed; archived " + num + " daily bins");
 
             // Schedule the next timer execution at the end of current period
             // (with a new task instance because a task cannot be reused).
             Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()));
-            dailyTimer.schedule(new DailyTask(), nextTimerDate);
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("Scheduled next daily archive task for " + nextTimerDate);
+            _dailyTimer.schedule(new DailyTask(), nextTimerDate);
+            if (_logger.isLoggable(Level.FINE))
+                _logger.fine("Scheduled next daily archive task for " + nextTimerDate);
         }
     }
 
     /**
-     * Flush bins to the DB
+     * Flush queued metrics bins to the database.
      */
     private class Flusher implements Runnable {
         private Object flusherLock = new Object();
@@ -469,7 +426,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
 
         public void run() {
-            logger.info("Database flusher beginning");
+            _logger.info("Database flusher beginning");
             while (true) {
                 boolean stop;
                 synchronized(flusherLock) {
@@ -479,12 +436,12 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     break;
                 }
                 try {
-                    final MetricsBin head = (MetricsBin)queue.take();
+                    final MetricsBin head = (MetricsBin)_flusherQueue.take();
 
-                    if (logger.isLoggable(Level.FINER))
-                        logger.finer("Saving " + head.toString());
+                    if (_logger.isLoggable(Level.FINER))
+                        _logger.finer("Saving " + head.toString());
 
-                    new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                    new TransactionTemplate(_transactionManager).execute(new TransactionCallbackWithoutResult() {
                         protected void doInTransactionWithoutResult(TransactionStatus status) {
                             try {
                                 getHibernateTemplate().execute(new HibernateCallback(){
@@ -498,8 +455,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                         if (existing == null) {
                                             session.save(head);
                                         } else {
-                                            if (logger.isLoggable(Level.FINE)) {
-                                                logger.log(Level.FINE, "Merging contents of duplicate MetricsBin [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
+                                            if (_logger.isLoggable(Level.FINE)) {
+                                                _logger.log(Level.FINE, "Merging contents of duplicate MetricsBin [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
                                                         new Object[]{head.getClusterNodeId(), head.getServiceOid(), head.getResolution(), head.getPeriodStart()});
                                             }
                                             existing.merge(head);
@@ -519,56 +476,56 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                         isQuit = quit;
                     }
                     if (!isQuit) {
-                        logger.info("Database flusher quitting due to interrupt.");
+                        _logger.info("Database flusher quitting due to interrupt.");
                         quit();
                     }
                 } catch (DataIntegrityViolationException e) {
-                    logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation; likely clock skew");
+                    _logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation; likely clock skew");
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Couldn't save MetricsBin", e);
+                    _logger.log(Level.WARNING, "Couldn't save MetricsBin", e);
                 }
             }
-            logger.info("Database flusher exiting.");
+            _logger.info("Database flusher exiting.");
         }
     }
 
     /**
-     * Remove old data from the DB
+     * Timer task to delete old metrics bins from the database.
      */
     private class DeleteTask extends TimerTask {
-        private final long ttl;
-        private final int resolution;
+        private final long _ttl;
+        private final int _resolution;
 
         private DeleteTask(long ttl, int resolution) {
-            this.ttl = ttl;
-            this.resolution = resolution;
+            _ttl = ttl;
+            _resolution = resolution;
         }
 
         public void run() {
-            final long oldestSurvivor = System.currentTimeMillis() - ttl;
+            final long oldestSurvivor = System.currentTimeMillis() - _ttl;
             try {
-                Integer num = (Integer)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                Integer num = (Integer)new TransactionTemplate(_transactionManager).execute(new TransactionCallback() {
                     public Object doInTransaction(TransactionStatus status) {
                         return getHibernateTemplate().execute(new HibernateCallback() {
                             public Object doInHibernate(Session session) throws HibernateException {
                                 Query query = session.createQuery(HQL_DELETE);
                                 query.setLong(0, oldestSurvivor);
-                                query.setInteger(1, resolution);
+                                query.setInteger(1, _resolution);
                                 return new Integer(query.executeUpdate());
                             }
                         });
                     }
                 });
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "Deleted {0} {1} bins older than {2}",
+                if (_logger.isLoggable(Level.FINE)) {
+                    _logger.log(Level.FINE, "Deleted {0} {1} bins older than {2}",
                             new Object[] {
                                 num,
-                                MetricsBin.describeResolution(resolution),
+                                MetricsBin.describeResolution(_resolution),
                                 new Date(oldestSurvivor)
                             });
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Couldn't delete MetricsBins", e);
+                _logger.log(Level.WARNING, "Couldn't delete MetricsBins", e);
             }
         }
     }
