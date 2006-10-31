@@ -73,4 +73,8 @@ public class PermissiveSSLSocketFactory extends SSLSocketFactory implements Secu
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
         return createSocket(host, port, clientHost, clientPort);
     }
+
+    public Socket createSocket() throws IOException {
+        return (SSLSocket) socketFactory().createSocket();
+    }
 }

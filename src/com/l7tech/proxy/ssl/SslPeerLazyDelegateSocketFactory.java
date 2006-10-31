@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.SocketFactory;
 
 /**
  * SSLSocket factory that delegates via an SSLContext.
@@ -66,6 +65,11 @@ public class SslPeerLazyDelegateSocketFactory extends SSLSocketFactory {
     public Socket createSocket(String s, int i, InetAddress inetAddress, int i1) throws IOException, UnknownHostException {
         checkInit();
         return delegate.createSocket(s, i, inetAddress, i1);
+    }
+
+    public Socket createSocket() throws IOException {
+        checkInit();
+        return delegate.createSocket();
     }
 
     //- PRIVATE

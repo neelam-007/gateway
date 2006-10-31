@@ -50,6 +50,10 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         return peer.getSslContext().getSocketFactory();
     }
 
+    public Socket createSocket() throws IOException {
+        return (SSLSocket) socketFactory().createSocket();
+    }
+
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
             throws IOException, UnknownHostException
     {
