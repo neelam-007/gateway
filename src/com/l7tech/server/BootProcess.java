@@ -5,7 +5,7 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.cluster.ClusterPropertyCache;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.audit.Auditor;
@@ -195,9 +195,9 @@ public class BootProcess
 
 
 
-        ClusterPropertyManager clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
-        if (clusterPropertyManager == null) throw new LifecycleException("ClusterPropertyManager not available yet");
-        serverConfig.setClusterPropertyManager(clusterPropertyManager);
+        ClusterPropertyCache clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
+        if (clusterPropertyCache == null) throw new LifecycleException("ClusterPropertyCache not available yet");
+        serverConfig.setClusterPropertyCache(clusterPropertyCache);
 
         GlobalTarariContext context = TarariLoader.getGlobalContext();
         if (context != null) {
