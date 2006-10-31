@@ -4,27 +4,40 @@
 
 package com.l7tech.server;
 
-import com.l7tech.cluster.ClusterProperty;
-import com.l7tech.cluster.ClusterPropertyManager;
-import org.springframework.context.support.ApplicationObjectSupport;
-
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
+import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterPropertyCache;
+import com.l7tech.cluster.ClusterPropertyListener;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class ServerConfig extends ApplicationObjectSupport {
+public class ServerConfig implements ClusterPropertyListener {
+
+    //- PUBLIC
+
     public static final long DEFAULT_CACHE_AGE = 30000;
-    private static final String NO_CACHE_BY_DEFAULT = "com.l7tech.server.ServerConfig.suppressCacheByDefault";
-    private static final Boolean NO_CACHE_BY_DEFAULT_VALUE = Boolean.getBoolean(NO_CACHE_BY_DEFAULT);
 
     public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
     public static final String PARAM_SERVER_ID = "serverId";
@@ -104,20 +117,37 @@ public class ServerConfig extends ApplicationObjectSupport {
     private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
     private static final int CLUSTER_DEFAULT_AGE = 30000;
 
-    private static class CachedValue {
-        private final String value;
-        private final long when;
-        public CachedValue(String value, long when) {
-            this.value = value;
-            this.when = when;
+    public static ServerConfig getInstance() {
+        return InstanceHolder.INSTANCE;
+    }
+
+
+    public void setPropertyChangeListener(final PropertyChangeListener propertyChangeListener) {
+        propLock.writeLock().lock();
+        try {
+            if (this.propertyChangeListener != null) throw new IllegalStateException("propertyChangeListener already set!");
+            this.propertyChangeListener = propertyChangeListener;
+        } finally {
+            propLock.writeLock().unlock();
         }
     }
 
-    private static final Map<String,CachedValue> valueCache = new ConcurrentHashMap<String,CachedValue>();
+    public void setClusterPropertyCache(final ClusterPropertyCache clusterPropertyCache) {
+        propLock.writeLock().lock();
+        try {
+            if (this.clusterPropertyCache != null) throw new IllegalStateException("clusterPropertyCache already set!");
+            this.clusterPropertyCache = clusterPropertyCache;
+        } finally {
+            propLock.writeLock().unlock();            
+        }
+    }
 
-    public static ServerConfig getInstance() {
-        if (_instance == null) _instance = new ServerConfig();
-        return _instance;
+    public void clusterPropertyChanged(final ClusterProperty clusterProperty) {
+        clusterPropertyEvent(clusterProperty);
+    }
+
+    public void clusterPropertyDeleted(final ClusterProperty clusterProperty) {
+        clusterPropertyEvent(clusterProperty);
     }
 
     /**
@@ -168,14 +198,24 @@ public class ServerConfig extends ApplicationObjectSupport {
 
         String value = null;
 
+        ClusterPropertyCache clusterPropertyCache;
+        InitialContext icontext;
+        propLock.readLock().lock();
+        try {
+            clusterPropertyCache = this.clusterPropertyCache;
+            icontext = this._icontext;
+        } finally {
+            propLock.readLock().unlock();
+        }
+
         if ( systemPropertyName != null && systemPropertyName.length() > 0 ) {
             logger.finest("Checking System property " + systemPropertyName);
             value = System.getProperty(systemPropertyName);
         }
 
         if (value == null && clusterKey != null && clusterKey.length() > 0) {
-            if (clusterPropertyManager == null) {
-                logger.warning("Property '" + propName + "' has a cluster properties key defined, but the ClusterPropertyManager is not yet available");
+            if (clusterPropertyCache == null) {
+                logger.warning("Property '" + propName + "' has a cluster properties key defined, but the ClusterPropertyCache is not yet available");
             } else {
                 logger.finest("Checking for cluster property '" + clusterKey + "'");
                 try {
@@ -186,7 +226,7 @@ public class ServerConfig extends ApplicationObjectSupport {
                         age = CLUSTER_DEFAULT_AGE;
                     }
 
-                    ClusterProperty cp = clusterPropertyManager.getCachedEntityByName(clusterKey, age);
+                    ClusterProperty cp = clusterPropertyCache.getCachedEntityByName(clusterKey, age);
                     if (cp == null) {
                         logger.finest("No cluster property named '" + clusterKey + "'");
                     } else {
@@ -202,8 +242,16 @@ public class ServerConfig extends ApplicationObjectSupport {
         if (value == null && jndiName != null && jndiName.length() > 0 ) {
             try {
                 logger.finest("Checking JNDI property " + jndiName);
-                if (_icontext == null) _icontext = new InitialContext();
-                value = (String)_icontext.lookup(jndiName);
+                if (icontext == null) {
+                    icontext = new InitialContext();
+                    propLock.writeLock().lock();
+                    try {
+                        _icontext = icontext;
+                    } finally {
+                        propLock.writeLock().unlock();                        
+                    }
+                }
+                value = (String)icontext.lookup(jndiName);
             } catch (NamingException ne) {
                 logger.fine(ne.getMessage());
             }
@@ -269,159 +317,47 @@ public class ServerConfig extends ApplicationObjectSupport {
         return name;
     }
 
-    private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
-        Map<String, String> keyValueToMappedValue = new TreeMap<String, String>();
-        if(keySuffix!=null) {
-            for (Map.Entry propEntry : _properties.entrySet()) {
-                String propKey = (String) propEntry.getKey();
-                String propVal = (String) propEntry.getValue();
-
-                if(propKey==null || propVal==null) continue;
-
-                if(propKey.endsWith(keySuffix)) {
-                    keyValueToMappedValue.put(
-                            propVal,
-                            _properties.getProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
-                }
-            }
-        }
-        return keyValueToMappedValue;
-    }
-
-    private String getServerConfigProperty(String prop) {
-        String val = (String)_properties.get(prop);
-        if (val == null) return null;
-        if (val.length() == 0) return val;
-
-        StringBuffer val2 = new StringBuffer();
-        int pos = val.indexOf('$');
-        if (pos >= 0) {
-            while (pos >= 0) {
-                if (val.charAt(pos + 1) == '{') {
-                    int pos2 = val.indexOf('}', pos + 1);
-                    if (pos2 >= 0) {
-                        // there's a reference
-                        String prop2 = val.substring(pos + 2, pos2);
-                        String ref = getProperty(prop2);
-                        if (ref == null) {
-                            val2.append("${");
-                            val2.append(prop2);
-                            val2.append("}");
-                        } else {
-                            val2.append(ref);
-                        }
-
-                        pos = val.indexOf('$', pos + 1);
-                        if (pos >= 0) {
-                            val2.append(val.substring(pos2 + 1, pos));
-                        } else {
-                            val2.append(val.substring(pos2 + 1));
-                        }
-                    } else {
-                        // there's no terminating }, pass it through literally
-                        val2.append(val);
-                        break;
-                    }
-                }
-            }
-        } else {
-            val2.append(val);
-        }
-        return val2.toString();
-
-    }
-
-    private ServerConfig() {
-        _properties = new Properties();
-
-        String configPropertiesPath = System.getProperty(PROPS_PATH_PROPERTY);
-        if (configPropertiesPath == null) configPropertiesPath = PROPS_PATH_DEFAULT;
-
-        InputStream propStream = null;
-        try {
-
-            File file = new File(configPropertiesPath);
-            if (file.exists())
-                propStream = new FileInputStream(file);
-            else
-                propStream = ServerConfig.class.getClassLoader().getResourceAsStream(PROPS_RESOURCE_PATH);
-
-            if (propStream != null) {
-                _properties.load(propStream);
-            } else {
-                logger.severe("Couldn't load serverconfig.properties!");
-                throw new RuntimeException("Couldn't load serverconfig.properties!");
-            }
-        } catch (IOException ioe) {
-            logger.severe("Couldn't load serverconfig.properties!");
-            throw new RuntimeException("Couldn't load serverconfig.properties!");
-        } finally {
-            if (propStream != null)
-                try {
-                    propStream.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't close properties file", e);
-                }
-        }
-
-        // Find and process any override properties
-        String overridePath = System.getProperty(PROPS_OVER_PATH_PROPERTY);
-        if (overridePath == null) overridePath = PROPS_OVER_PATH_DEFAULT;
-
-        try {
-            if (overridePath != null) {
-                propStream = new FileInputStream(overridePath);
-                Properties op = new Properties();
-                op.load(propStream);
-
-                Set opKeys = op.keySet();
-                for (Object s : opKeys) {
-                    _properties.put(s, op.get(s));
-                    logger.log(Level.FINE, "Overriding serverconfig property: " + s);
-                }
-            }
-        } catch (FileNotFoundException e) {
-            logger.log(Level.INFO, "Couldn't find serverconfig_override.properties; continuing with no overrides");
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
-        }
-
-        // export as system property. This is required so custom assertions
-        // do not need to import in the ServerConfig and the clases referred by it
-        // (LogManager, TransportProtocol) to read the single property.  - em20040506
-        String cfgDirectory = getPropertyCached(PARAM_CONFIG_DIRECTORY);
-        if (cfgDirectory !=null) {
-            System.setProperty("ssg.config.dir", cfgDirectory);
-        } else {
-            logger.warning("The server config directory value is empty");
-        }
-    }
-
     public int getServerId() {
-        if (_serverId == 0) {
+        int serverId;
+        propLock.readLock().lock();
+        try{
+            serverId = _serverId;
+        } finally {
+            propLock.readLock().unlock();
+        }
+
+        if (serverId == 0) {
             String sid = null;
             try {
                 sid = getPropertyCached(PARAM_SERVER_ID);
                 if (sid != null && sid.length() > 0)
-                    _serverId = Byte.parseByte(sid);
+                    serverId = Byte.parseByte(sid);
             } catch (NumberFormatException nfe) {
                 logger.log(Level.WARNING, "Invalid ServerID value '" + sid + "'", nfe);
             }
 
-            if (_serverId == 0) {
+            if (serverId == 0) {
                 try {
                     InetAddress localhost = InetAddress.getLocalHost();
                     byte[] ip = localhost.getAddress();
-                    _serverId = ip[3] & 0xff;
-                    logger.info("ServerId parameter not set, assigning server ID " + _serverId +
+                    serverId = ip[3] & 0xff;
+                    logger.info("ServerId parameter not set, assigning server ID " + serverId +
                       " from server's IP address");
                 } catch (UnknownHostException e) {
-                    _serverId = 1;
-                    logger.severe("Couldn't get server's local host!  Using server ID " + _serverId);
+                    serverId = 1;
+                    logger.severe("Couldn't get server's local host!  Using server ID " + serverId);
                 }
             }
+
+            propLock.writeLock().lock();
+            try {
+                _serverId = serverId;
+            } finally {
+                propLock.writeLock().unlock();                
+            }
         }
-        return _serverId;
+        
+        return serverId;
     }
 
 
@@ -526,19 +462,34 @@ public class ServerConfig extends ApplicationObjectSupport {
 //    }
 
     public String getHostname() {
-        if (_hostname == null) {
-            _hostname = getPropertyCached(PARAM_HOSTNAME);
+        String hostname;
+        propLock.readLock().lock();
+        try {
+            hostname = _hostname;
+        } finally {
+            propLock.readLock().unlock();            
+        }
 
-            if (_hostname == null) {
+        if (hostname == null) {
+            hostname = getPropertyCached(PARAM_HOSTNAME);
+
+            if (hostname == null) {
                 try {
-                    _hostname = InetAddress.getLocalHost().getHostName();
+                    hostname = InetAddress.getLocalHost().getHostName();
                 } catch (UnknownHostException e) {
-                    logger.info("HostName parameter not set, assigning hostname " + _hostname);
+                    logger.info("HostName parameter not set, assigning hostname " + hostname);
                 }
+            }
+
+            propLock.writeLock().lock();
+            try {
+                _hostname = hostname;
+            } finally {
+                propLock.writeLock().unlock();
             }
         }
 
-        return _hostname;
+        return hostname;
     }
 
     /**
@@ -616,17 +567,197 @@ public class ServerConfig extends ApplicationObjectSupport {
         return val;
     }
 
-    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
-        this.clusterPropertyManager = clusterPropertyManager;
-    }
+    //- PRIVATE
 
-    private ClusterPropertyManager clusterPropertyManager;
-    private int _serverId;
-    private String _hostname;
-    private Properties _properties;
+    private static final String NO_CACHE_BY_DEFAULT = "com.l7tech.server.ServerConfig.suppressCacheByDefault";
+    private static final Boolean NO_CACHE_BY_DEFAULT_VALUE = Boolean.getBoolean(NO_CACHE_BY_DEFAULT);
 
-    private static ServerConfig _instance;
+    private static final Map<String,CachedValue> valueCache = new ConcurrentHashMap<String,CachedValue>();
+
+    //
+    private final ReadWriteLock propLock = new ReentrantReadWriteLock(false);
+    private final Properties _properties;
     private final long _serverBootTime = System.currentTimeMillis();
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    // 
+    private PropertyChangeListener propertyChangeListener;
+    private ClusterPropertyCache clusterPropertyCache;
+    private int _serverId;
+    private String _hostname;
     private InitialContext _icontext;
+
+    private ServerConfig() {
+        _properties = new Properties();
+
+        String configPropertiesPath = System.getProperty(PROPS_PATH_PROPERTY);
+        if (configPropertiesPath == null) configPropertiesPath = PROPS_PATH_DEFAULT;
+
+        InputStream propStream = null;
+        try {
+
+            File file = new File(configPropertiesPath);
+            if (file.exists())
+                propStream = new FileInputStream(file);
+            else
+                propStream = ServerConfig.class.getClassLoader().getResourceAsStream(PROPS_RESOURCE_PATH);
+
+            if (propStream != null) {
+                _properties.load(propStream);
+            } else {
+                logger.severe("Couldn't load serverconfig.properties!");
+                throw new RuntimeException("Couldn't load serverconfig.properties!");
+            }
+        } catch (IOException ioe) {
+            logger.severe("Couldn't load serverconfig.properties!");
+            throw new RuntimeException("Couldn't load serverconfig.properties!");
+        } finally {
+            if (propStream != null)
+                try {
+                    propStream.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Couldn't close properties file", e);
+                }
+        }
+
+        // Find and process any override properties
+        String overridePath = System.getProperty(PROPS_OVER_PATH_PROPERTY);
+        if (overridePath == null) overridePath = PROPS_OVER_PATH_DEFAULT;
+
+        try {
+            if (overridePath != null) {
+                propStream = new FileInputStream(overridePath);
+                Properties op = new Properties();
+                op.load(propStream);
+
+                Set opKeys = op.keySet();
+                for (Object s : opKeys) {
+                    _properties.put(s, op.get(s));
+                    logger.log(Level.FINE, "Overriding serverconfig property: " + s);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            logger.log(Level.INFO, "Couldn't find serverconfig_override.properties; continuing with no overrides");
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
+        } finally {
+            if (propStream != null) try{ propStream.close(); }catch(IOException ioe){ /* ok */ }
+        }
+
+        // export as system property. This is required so custom assertions
+        // do not need to import in the ServerConfig and the clases referred by it
+        // (LogManager, TransportProtocol) to read the single property.  - em20040506
+        String cfgDirectory = getPropertyCached(PARAM_CONFIG_DIRECTORY);
+        if (cfgDirectory !=null) {
+            System.setProperty("ssg.config.dir", cfgDirectory);
+        } else {
+            logger.warning("The server config directory value is empty");
+        }
+    }
+    
+    private void invalidateCachedProperty(final String propName) {
+        valueCache.remove(propName);
+    }
+
+    private void clusterPropertyEvent(final ClusterProperty clusterProperty) {
+        String propertyName = getNameFromClusterName(clusterProperty.getName());
+        if (propertyName != null) {
+            invalidateCachedProperty(propertyName);
+
+            PropertyChangeListener pcl;
+            propLock.readLock().lock();
+            try {
+                pcl = propertyChangeListener;
+            } finally {
+                propLock.readLock().unlock();                
+            }
+
+            if (pcl != null) {
+                String newValue = getPropertyCached(propertyName);
+                PropertyChangeEvent pce =
+                        new PropertyChangeEvent(this, propertyName, clusterProperty.getValue(), newValue);
+
+                try {
+                    pcl.propertyChange(pce);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unexpected exception during property change event dispatch.", e);
+                }
+            }
+        }
+    }
+
+    private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
+        Map<String, String> keyValueToMappedValue = new TreeMap<String, String>();
+        if(keySuffix!=null) {
+            for (Map.Entry propEntry : _properties.entrySet()) {
+                String propKey = (String) propEntry.getKey();
+                String propVal = (String) propEntry.getValue();
+
+                if(propKey==null || propVal==null) continue;
+
+                if(propKey.endsWith(keySuffix)) {
+                    keyValueToMappedValue.put(
+                            propVal,
+                            _properties.getProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
+                }
+            }
+        }
+        return keyValueToMappedValue;
+    }
+
+    private String getServerConfigProperty(String prop) {
+        String val = (String)_properties.get(prop);
+        if (val == null) return null;
+        if (val.length() == 0) return val;
+
+        StringBuffer val2 = new StringBuffer();
+        int pos = val.indexOf('$');
+        if (pos >= 0) {
+            while (pos >= 0) {
+                if (val.charAt(pos + 1) == '{') {
+                    int pos2 = val.indexOf('}', pos + 1);
+                    if (pos2 >= 0) {
+                        // there's a reference
+                        String prop2 = val.substring(pos + 2, pos2);
+                        String ref = getProperty(prop2);
+                        if (ref == null) {
+                            val2.append("${");
+                            val2.append(prop2);
+                            val2.append("}");
+                        } else {
+                            val2.append(ref);
+                        }
+
+                        pos = val.indexOf('$', pos + 1);
+                        if (pos >= 0) {
+                            val2.append(val.substring(pos2 + 1, pos));
+                        } else {
+                            val2.append(val.substring(pos2 + 1));
+                        }
+                    } else {
+                        // there's no terminating }, pass it through literally
+                        val2.append(val);
+                        break;
+                    }
+                }
+            }
+        } else {
+            val2.append(val);
+        }
+        return val2.toString();
+
+    }
+
+    private static final class InstanceHolder {
+        private static final ServerConfig INSTANCE = new ServerConfig();
+    }
+
+    private static final class CachedValue {
+        private final String value;
+        private final long when;
+        public CachedValue(String value, long when) {
+            this.value = value;
+            this.when = when;
+        }
+    }
 }

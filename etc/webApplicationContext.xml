@@ -36,7 +36,20 @@
     * singleton using the factory method. This is transitional, as it is referencef from
     * too many places.
     -->
-    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance">
+        <property name="propertyChangeListener">
+            <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
+                <constructor-arg>
+                    <map>
+                        <!--
+                        <entry key="serviceMetricsManager"><list><value>auditMessageThreshold</value></list></entry>
+                        -->
+                    </map>
+                </constructor-arg>
+            </bean>
+        </property>
+    </bean>
+
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory"></bean>
 
@@ -690,6 +703,15 @@
         </property>
     </bean>
 
+    <bean id="clusterPropertyCache" class="com.l7tech.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager">
+            <ref bean="clusterPropertyManager"/>
+        </property>
+        <property name="clusterPropertyListener">
+            <ref bean="serverConfig"/>
+        </property>
+    </bean>
+
     <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
@@ -797,6 +819,7 @@
             <list>
                 <ref bean="schemaEntryManager"/>
                 <ref bean="roleManager"/>
+                <ref bean="clusterPropertyManager"/>
             </list>
         </property>
         <property name="timer">
