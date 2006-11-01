@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
 import com.l7tech.server.identity.IdProvConfManagerServer;
@@ -110,7 +111,10 @@ public class AdminWebServiceFilter implements Filter {
                                 new HttpBasic(),
                         })),
                         new SslAssertion(true), // With client cert
-                        new RequestWssX509Cert(), // TODO do we care what part of the message is signed?
+                        new AllAssertion(Arrays.asList(new Assertion[] {
+                                new RequestWssX509Cert(),
+                                new RequestWssIntegrity(),
+                        })),
                         new SecureConversation(),
                 })),
                 new AuthenticationAssertion(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID)
