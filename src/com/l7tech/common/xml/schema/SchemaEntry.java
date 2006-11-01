@@ -6,8 +6,6 @@
  */
 package com.l7tech.common.xml.schema;
 
-import java.io.Serializable;
-
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
@@ -19,8 +17,10 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  */
 public class SchemaEntry extends NamedEntityImp {
 
+    /** @return the schema text, which may be empty or null. */
     public String getSchema() {
-        return schema;
+        // Protect legacy code now that this field is nullable
+        return schema != null ? schema : "";
     }
 
     public void setSchema(String schema) {

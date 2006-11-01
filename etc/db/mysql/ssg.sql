@@ -29,7 +29,7 @@ CREATE TABLE identity_provider (
   objectid bigint(20) NOT NULL,
   version int(11) default NULL,
   name varchar(128) NOT NULL,
-  description mediumtext default '',
+  description mediumtext,
   type bigint(20) NOT NULL,
   properties mediumtext,
   PRIMARY KEY  (objectid),
@@ -157,9 +157,9 @@ CREATE TABLE service_resolution (
   objectid bigint(20) NOT NULL,
   serviceid bigint NOT NULL,
   digested varchar(32) NOT NULL,
-  soapaction mediumtext character set latin1 BINARY default '',
-  urn mediumtext character set latin1 BINARY default '',
-  uri mediumtext character set latin1 BINARY default '',
+  soapaction mediumtext character set latin1 BINARY,
+  urn mediumtext character set latin1 BINARY,
+  uri mediumtext character set latin1 BINARY,
   unique(digested),
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -460,7 +460,7 @@ CREATE TABLE community_schemas (
   version integer NOT NULL,
   name varchar(128) default '',
   tns varchar(128) default '',
-  schema_xml mediumtext default '',
+  schema_xml mediumtext,
   system tinyint(1) NOT NULL default 0,
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -528,7 +528,7 @@ CREATE TABLE rbac_role (
   name varchar(128) default NULL,
   entity_type varchar(255),
   entity_oid bigint(20),
-  description varchar(255),
+  description mediumtext,
   PRIMARY KEY (objectid),
   UNIQUE KEY name (name),
   UNIQUE KEY entity_info (entity_type, entity_oid),

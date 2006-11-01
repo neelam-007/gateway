@@ -501,6 +501,7 @@ public class SchemaManagerImpl implements SchemaManager {
     }
 
     public void registerSchema(String globalUrl, String schemadoc) {
+        if (schemadoc == null) throw new NullPointerException("A schema must be provided");
         String old = globalSchemasByUrl.put(globalUrl, schemadoc);
         if (old != null)
             onUrlDownloaded(globalUrl);

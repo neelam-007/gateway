@@ -260,7 +260,9 @@ public class SchemaEntryManagerImpl
     private void compileAndCache(long oid, SchemaEntry entry) throws SAXException, IOException {
         String systemId = entry.getName();
         if (systemId == null) systemId = "policy:communityschema:" + oid;
-        schemaManager.registerSchema(systemId, entry.getSchema());
+        String schemaString = entry.getSchema();
+        if (schemaString == null) schemaString = "";
+        schemaManager.registerSchema(systemId, schemaString);
 
         // Make sure it compiles
         SchemaHandle handle = schemaManager.getSchemaByUrl(systemId);

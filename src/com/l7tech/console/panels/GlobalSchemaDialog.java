@@ -287,7 +287,9 @@ public class GlobalSchemaDialog extends JDialog {
     private boolean checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
         Document schemaDoc = null;
         try {
-            schemaDoc = XmlUtil.stringToDocument(schemaTobeSaved.getSchema());
+            String schemaString = schemaTobeSaved.getSchema();
+            if (schemaString == null) schemaString = "";
+            schemaDoc = XmlUtil.stringToDocument(schemaString);
         } catch (SAXException e) {
             String msg = "cannot get xml doc from schema property";
             logger.log(Level.SEVERE, msg, e);
