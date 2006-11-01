@@ -15,6 +15,11 @@ import java.lang.ref.WeakReference;
  * <p>This Timer implementation supports a small number of long-lived
  * ManagedTimer objects.</p>
  *
+ * <p>WARNING! TimerTasks that are scheduled with the ManagedTimer cannot
+ * be cancelled by invoking {@link TimerTask#cancel} (if this needs to be
+ * suported then we will need a ManagedTimerTask class that can be
+ * extended or a TaskFactory, etc).</p>
+ *
  * @author Steve Jones
  */
 public class ManagedTimer extends Timer {
