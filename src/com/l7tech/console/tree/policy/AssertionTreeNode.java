@@ -165,7 +165,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                 return null;
             }
         } else {
-            sb.append("<html><strong> There are {0}<br>");
+            sb.append("<html><strong>The policy may be invalid due to {0}<br>");
             Iterator it = messages.iterator();
             boolean first = true;
             boolean hasWarnings = false;
@@ -188,11 +188,11 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             }
             sb.append("</strong></html>");
             String format = sb.toString();
-            String msg = "warnings and errors, the policy might be invalid";
+            String msg = "warnings and errors:";
             if (hasWarnings && !hasErrors) {
-                msg = "warnings, the policy might be invalid";
+                msg = "warnings:";
             } else if (!hasWarnings && hasErrors) {
-                msg = "errors, the policy might be invalid";
+                msg = "errors:";
             }
             return MessageFormat.format(format, new Object[]{msg});
         }
