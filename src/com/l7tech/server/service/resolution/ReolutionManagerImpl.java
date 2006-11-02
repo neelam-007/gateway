@@ -149,7 +149,8 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         UrnResolver urnresolver = new UrnResolver();
         HttpUriResolver uriresolver = new HttpUriResolver();
 
-        String httpuri = (String)uriresolver.doGetTargetValues(service)[0];
+        Object tmp = uriresolver.doGetTargetValues(service)[0];
+        String httpuri = tmp.toString();
         Set soapactions = soapresolver.getDistinctParameters(service);
         for (Iterator i = soapactions.iterator(); i.hasNext();) {
             Set urns = urnresolver.getDistinctParameters(service);

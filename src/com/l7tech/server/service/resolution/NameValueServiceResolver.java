@@ -207,7 +207,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return resultSet;
     }
 
-    private final Map<Object, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<Object, Map<Long, PublishedService>>();
-    private final Map<Long, Object[]> _serviceOidToValuesArrayMap = new HashMap<Long, Object[]>();
-    private final ReadWriteLock _rwlock = new ReentrantReadWriteLock(false);
+    protected final Map<Object, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<Object, Map<Long, PublishedService>>();
+    protected final Map<Long, Object[]> _serviceOidToValuesArrayMap = new HashMap<Long, Object[]>();
+    protected final ReadWriteLock _rwlock = new ReentrantReadWriteLock(false);
 }
