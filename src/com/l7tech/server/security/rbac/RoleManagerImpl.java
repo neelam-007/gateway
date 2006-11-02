@@ -80,6 +80,7 @@ public class RoleManagerImpl
         return false;
     }
 
+    // TODO check whether any of the assigned users is internal?
     @Override
     public void update(Role role) throws UpdateException {
         if (role.getOid() == Role.ADMIN_ROLE_OID && role.getUserAssignments().isEmpty())

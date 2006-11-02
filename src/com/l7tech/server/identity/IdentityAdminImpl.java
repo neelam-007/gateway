@@ -215,22 +215,28 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public User findUserByID(long identityProviderConfigId, String userId)
-      throws RemoteException, FindException {
-            checkLicense();
-            IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
-            if (provider == null) throw new FindException("IdentityProvider could not be found");
-            UserManager userManager = provider.getUserManager();
+                           throws RemoteException, FindException {
+        checkLicense();
+        IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
+        if (provider == null) {
+            logger.warning("Identity Provider #" + identityProviderConfigId + " does not exist");
+            return null;
+        }
+        UserManager userManager = provider.getUserManager();
 
-            return userManager.findByPrimaryKey(userId);
+        return userManager.findByPrimaryKey(userId);
     }
 
     public User findUserByLogin(long idProvCfgId, String login) throws RemoteException, FindException {
-            checkLicense();
-            IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
-            if (provider == null) throw new FindException("IdentityProvider could not be found");
-            UserManager userManager = provider.getUserManager();
+        checkLicense();
+        IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
+        if (provider == null) {
+            logger.warning("Identity Provider #" + idProvCfgId + " does not exist");
+            return null;
+        }
+        UserManager userManager = provider.getUserManager();
 
-            return userManager.findByLogin(login);
+        return userManager.findByLogin(login);
     }
 
     public void deleteUser(long cfgid, String userId)
@@ -287,12 +293,15 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public Group findGroupByID(long cfgid, String groupId) throws RemoteException, FindException {
-            checkLicense();
-            IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
-            if (provider == null) throw new FindException("IdentityProvider could not be found");
-            GroupManager groupManager = provider.getGroupManager();
+        checkLicense();
+        IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
+        if (provider == null) {
+            logger.warning("Identity Provider #" + cfgid + " does not exist");
+            return null;
+        }
+        GroupManager groupManager = provider.getGroupManager();
 
-            return groupManager.findByPrimaryKey(groupId);
+        return groupManager.findByPrimaryKey(groupId);
     }
 
     public void deleteGroup(long cfgid, String groupId)

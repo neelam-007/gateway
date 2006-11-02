@@ -19,10 +19,10 @@ public interface EntityFinder {
     EntityHeader[] findAll(Class<? extends Entity> entityClass) throws FindException;
 
     @Transactional(readOnly=true)
-    Object find(EntityHeader header) throws FindException;
+    Entity find(EntityHeader header) throws FindException;
 
     @Transactional(readOnly=true)
-            <ET> ET find(Class<ET> clazz, Serializable pk) throws FindException;
+    <ET extends Entity> ET find(Class<ET> clazz, Serializable pk) throws FindException;
 
     @Transactional(readOnly=true)
     EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException;

@@ -21,7 +21,6 @@ import java.util.Iterator;
  *
  */
 public class LdapIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
-
     public LdapIdentityProviderConfig(IdentityProviderConfig toto) {
         super(IdentityProviderType.LDAP);
         this._version = toto.getVersion();
@@ -95,6 +94,19 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(CUSTOM_USER_SEARCH_FILTER, filter);
     }
 
+
+    @Override
+    public boolean isAdminEnabled() {
+        Boolean b = (Boolean) getProperty(ADMIN_ENABLED);
+        return b != null && b.booleanValue();
+    }
+
+
+    @Override
+    public void setAdminEnabled(boolean adminEnabled) {
+        setProperty(ADMIN_ENABLED, adminEnabled);
+    }
+
     /**
      * overrides the search filter for user objects
      * currently unused
@@ -110,8 +122,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     public GroupMappingConfig getGroupMapping(String objClass) {
         HashMap grpMap = (HashMap)getProperty(GROUP_MAPPINGS);
         if (grpMap == null) return null;
-        GroupMappingConfig output = (GroupMappingConfig)grpMap.get(objClass.toLowerCase());
-        return output;
+        return (GroupMappingConfig)grpMap.get(objClass.toLowerCase());
     }
 
     /**
@@ -265,4 +276,5 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String BIND_DN = "ldapBindDN";
     private static final String BIND_PASS = "ldapBindPass";
     private static final String BASE_TEMPLATE = "originalTemplateName";
+    private static final String ADMIN_ENABLED = "adminEnabled";
 }

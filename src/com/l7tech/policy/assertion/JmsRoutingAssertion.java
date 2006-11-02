@@ -1,15 +1,16 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+
 /**
  * Holds information needed to route a message to an outbound JMS destination.
  */
-public class JmsRoutingAssertion extends RoutingAssertion {
+public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities {
     public static final int DEFAULT_TIMEOUT = 10000;
 
     /**
@@ -47,7 +48,7 @@ public class JmsRoutingAssertion extends RoutingAssertion {
      * The time, in milliseconds, that the SSG should wait for a response from the protected service.
      * After this timeout has lapsed, the request fails.
      *
-     * Defaults to {@link JmsRoutingAssertion.DEFAULT_TIMEOUT}.
+     * Defaults to {@link JmsRoutingAssertion#DEFAULT_TIMEOUT}.
      * @return the response timeout (in milliseconds)
      */
     public int getResponseTimeout() {
@@ -58,11 +59,15 @@ public class JmsRoutingAssertion extends RoutingAssertion {
      * The time, in milliseconds, that the SSG should wait for a response from the protected service.
      * After this timeout has lapsed, the request fails.
      *
-     * Defaults to {@link JmsRoutingAssertion.DEFAULT_TIMEOUT}.
+     * Defaults to {@link JmsRoutingAssertion#DEFAULT_TIMEOUT}.
      * @param responseTimeout the response timeout (in milliseconds)
      */
     public void setResponseTimeout( int responseTimeout ) {
         this.responseTimeout = responseTimeout;
+    }
+
+    public EntityHeader[] getEntitiesUsed() {
+        return new EntityHeader[] { new EntityHeader(this.endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};
     }
 
     private Long endpointOid = null;

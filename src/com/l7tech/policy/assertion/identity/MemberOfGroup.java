@@ -1,10 +1,12 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.policy.assertion.identity;
+
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
 
 /**
  * Asserts that the requestor is a member of a particular group.
@@ -37,6 +39,14 @@ public class MemberOfGroup extends IdentityAssertion {
         super(providerOid);
         _groupName = groupName;
         this.groupId = groupID;
+    }
+
+    public EntityHeader[] getEntitiesUsed() {
+        EntityHeader[] headers = super.getEntitiesUsed();
+        EntityHeader[] headers2 = new EntityHeader[headers.length + 1];
+        System.arraycopy(headers, 0, headers2, 0, headers.length);
+        headers2[headers.length] = new IdentityHeader(_identityProviderOid, groupId, EntityType.GROUP, _groupName, null);
+        return headers2;
     }
 
     public String toString() {

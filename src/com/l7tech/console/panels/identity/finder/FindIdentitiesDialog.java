@@ -16,7 +16,6 @@ import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -998,7 +997,7 @@ public class FindIdentitiesDialog extends JDialog {
                 if (config == null) {
                     logger.warning("IdentityProviderConfig #" + header.getOid() + " no longer exists");
                 } else {
-                    if (config.getOid() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID || !options.isInternalOnly()) {
+                    if (config.isAdminEnabled() || !options.isAdminOnly()) {
                         providersComboBoxModel.addElement(config);
                     }
                 }

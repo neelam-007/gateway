@@ -15,6 +15,8 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -30,6 +32,7 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.server.EntityFinder;
 import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -65,16 +68,36 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
     private static final String WARNING_NOCERT = "This identity requires a certificate for authentication (authentication will always fail).";
 
+    private static final int ID_NOT_EXIST = 0; // the corresponding id does not exist
+    private static final int ID_EXIST = 1; // the corresponding id exists and is not fip
+    private static final int ID_FIP = 2; // the corresponding id exists but in a fip provider (saml and wss authen only)
+    private static final int ID_SAMLONLY = 3; // the corresponding id exists but belongs to saml only fip
+    private static final int ID_X509ONLY = 4; // the corresponding id exists but belongs to X509 only fip
+    private static final int ID_LDAP = 5; // the corresponding id exists in a ldap provider
+    private static final int PROVIDER_NOT_EXIST = 6; // the corresponding provider does not exist any more
+    private static final int ID_FIP_NOCERT = 7; // 2 & there is no certificate available to authenticate with
+    private static final int ID_SAMLONLY_NOCERT = 8; // 3 & there is no certificate available to authenticate with
+    private static final int ID_X509ONLY_NOCERT = 9; // 4 & there is no certificate available to authenticate with
+
+    private static final Logger logger = Logger.getLogger(ServerPolicyValidator.class.getName());
+
+    /**
+    * value is {@link #ID_NOT_EXIST}, {@link #ID_EXIST}, {@link #ID_FIP}, {@link #ID_SAMLONLY}, or {@link #ID_X509ONLY}
+    */
+    private final Map<IdentityAssertion, Integer> idAssertionStatusCache = new WeakHashMap<IdentityAssertion, Integer>();
+    private final Map<EntityHeader, Entity> entityCache = new WeakHashMap<EntityHeader, Entity>();
+
     private JmsEndpointManager jmsEndpointManager;
     private IdentityProviderFactory identityProviderFactory;
     private SchemaEntryManager schemaEntryManager;
     private ClientCertManager clientCertManager;
+    private EntityFinder entityFinder;
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service, AssertionLicense assertionLicense) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
-        for (int i = 0; i < ass.length; i++) {
-            validateAssertion(ass[i], pathContext, r, ap, assertionLicense);
+        for (Assertion as : ass) {
+            validateAssertion(as, pathContext, r, ap, assertionLicense);
         }
     }
 
@@ -104,12 +127,12 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 case ID_FIP:
                     { // scope
                         boolean foundUsableCredSource = false;
-                        for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                            Object credSrc = iterator.next();
+                        for (Assertion credSrc : pathContext.credentialSources) {
                             if (credSrc instanceof RequestWssSaml ||
-                                    credSrc instanceof RequestWssX509Cert ||
-                                    credSrc instanceof SecureConversation ||
-                                    credSrc instanceof SslAssertion) {
+                                credSrc instanceof RequestWssX509Cert ||
+                                credSrc instanceof SecureConversation ||
+                                credSrc instanceof SslAssertion)
+                            {
                                 foundUsableCredSource = true;
                                 break;
                             }
@@ -130,8 +153,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 case ID_SAMLONLY:
                     { // scope
                         boolean foundUsableCredSource = false;
-                        for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                            Object credSrc = iterator.next();
+                        for (Assertion credSrc : pathContext.credentialSources) {
                             if (credSrc instanceof RequestWssSaml || credSrc instanceof SslAssertion) {
                                 foundUsableCredSource = true;
                                 break;
@@ -154,8 +176,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 case ID_X509ONLY:
                     { // scope
                         boolean foundUsableCredSource = false;
-                        for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                            Object credSrc = iterator.next();
+                        for (Assertion credSrc : pathContext.credentialSources) {
                             if (credSrc instanceof RequestWssX509Cert ||
                                     credSrc instanceof SecureConversation ||
                                     credSrc instanceof SslAssertion) {
@@ -211,30 +232,26 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         } else if (a instanceof SchemaValidation) {
             // check for unresolved imports
             SchemaValidation svass = (SchemaValidation)a;
-            Document schemaDoc = null;
             AssertionResourceInfo ri = svass.getResourceInfo();
             if (ri instanceof StaticResourceInfo)
                 validateSchemaValidation(a, ap, (StaticResourceInfo)ri, r);
-        }
-        else if (a instanceof UnknownAssertion) {
+        } else if (a instanceof UnknownAssertion) {
             UnknownAssertion ua = (UnknownAssertion) a;
 
             String message = "Unknown assertion{0}, this assertion will always fail.";
             String detail = "";
             Throwable cause = ua.cause();
             if(cause instanceof ClassNotFoundException) {
-                String className = ((ClassNotFoundException)cause).getMessage();
+                String className = cause.getMessage();
                 detail = " [" + (className.substring(className.lastIndexOf('.')+1)) + "]";
             }
-            r.addError(new PolicyValidatorResult.Error(a, ap, MessageFormat.format(message, new Object[]{detail}), null));
-        }
-        else if (a instanceof HttpFormPost) {
+            r.addError(new PolicyValidatorResult.Error(a, ap, MessageFormat.format(message, detail), null));
+        } else if (a instanceof HttpFormPost) {
             HttpFormPost httpFormPost = (HttpFormPost) a;
 
             StringBuffer contentTypeBuffer = new StringBuffer();
             HttpFormPost.FieldInfo[] fieldInfos = httpFormPost.getFieldInfos();
-            for (int i = 0; i < fieldInfos.length; i++) {
-                HttpFormPost.FieldInfo fieldInfo = fieldInfos[i];
+            for (HttpFormPost.FieldInfo fieldInfo : fieldInfos) {
                 String contentType = fieldInfo.getContentType();
                 try {
                     ContentTypeHeader cth = ContentTypeHeader.parseValue(contentType);
@@ -243,7 +260,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                         throw new IllegalStateException();
                     }
                 }
-                catch(Exception e) {
+                catch (Exception e) {
                     if (contentTypeBuffer.length() > 0) contentTypeBuffer.append(", ");
                     contentTypeBuffer.append("'");
                     contentTypeBuffer.append(contentType);
@@ -275,6 +292,35 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                   null));
             }
         }
+
+        if (a instanceof UsesEntities && !(a instanceof IdentityAssertion || a instanceof JmsRoutingAssertion)) {
+            UsesEntities uea = (UsesEntities)a;
+            for (EntityHeader header : uea.getEntitiesUsed()) {
+                Entity entity = null;
+                FindException thrown = null;
+                try {
+                    synchronized(entityCache) {
+                        entity = entityCache.get(header);
+                    }
+
+                    if (entity == null) {
+                        entity = entityFinder.find(header);
+                        if (entity != null) {
+                            synchronized(entityCache) {
+                                entityCache.put(header, entity);
+                            }
+                        }
+                    }
+                } catch (FindException e) {
+                    thrown = e;
+                }
+                if (entity == null)
+                    r.addError(new PolicyValidatorResult.Error(a, ap,
+                            "Assertion refers to a " + header.getType().getName() +
+                                    " that cannot be located on this system", thrown));
+            }
+
+        }
     }
 
     private void validateSchemaValidation(Assertion a, AssertionPath ap, StaticResourceInfo sri, PolicyValidatorResult r) {
@@ -284,9 +330,9 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
             Element schemael = schemaDoc.getDocumentElement();
             List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
             if (!listofimports.isEmpty()) {
-                ArrayList unresolvedImportsList = new ArrayList();
+                ArrayList<String> unresolvedImportsList = new ArrayList<String>();
 
-
+                //noinspection ForLoopReplaceableByForEach
                 for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
                     Element importEl = (Element)iterator.next();
                     String importns = importEl.getAttribute("namespace");
@@ -335,7 +381,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
      */
     private synchronized int getIdentityStatus(IdentityAssertion identityAssertion) {
         // look in cache first
-        Integer output = (Integer)idAssertionStatusCache.get(identityAssertion);
+        Integer output = idAssertionStatusCache.get(identityAssertion);
         if (output == null) {
             try {
 // get provider
@@ -350,7 +396,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 if (identityAssertion instanceof SpecificUser) {
                     SpecificUser su = (SpecificUser)identityAssertion;
                     final String uid = su.getUserUid();
-                    User u = null;
+                    User u;
                     if (uid == null) {
                         u = prov.getUserManager().findByLogin(su.getUserLogin());
                     } else {
@@ -362,7 +408,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     }
                 } else if (identityAssertion instanceof MemberOfGroup) {
                     MemberOfGroup mog = (MemberOfGroup)identityAssertion;
-                    Group g = null;
+                    Group g;
                     final String gid = mog.getGroupId();
                     if (gid == null) {
                         g = prov.getGroupManager().findByName(mog.getGroupName());
@@ -414,28 +460,6 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         return output.intValue();
     }
 
-    private static final int ID_NOT_EXIST = 0; // the corresponding id does not exist
-    private static final int ID_EXIST = 1; // the corresponding id exists and is not fip
-    private static final int ID_FIP = 2; // the corresponding id exists but in a fip provider (saml and wss authen only)
-    private static final int ID_SAMLONLY = 3; // the corresponding id exists but belongs to saml only fip
-    private static final int ID_X509ONLY = 4; // the corresponding id exists but belongs to X509 only fip
-    private static final int ID_LDAP = 5; // the corresponding id exists in a ldap provider
-    private static final int PROVIDER_NOT_EXIST = 6; // the corresponding provider does not exist any more
-    private static final int ID_FIP_NOCERT = 7; // 2 & there is no certificate available to authenticate with
-    private static final int ID_SAMLONLY_NOCERT = 8; // 3 & there is no certificate available to authenticate with
-    private static final int ID_X509ONLY_NOCERT = 9; // 4 & there is no certificate available to authenticate with
-
-// A new validator is instantiated once per policy validation
-// so it's ok to cache these here. This cache will expire at
-// end of each policy validation.
-    /**
-     * key is IdentityAssertion object
-     * value Integer (ID_NOT_EXIST, ID_EXIST, ID_FIP, ID_SAMLONLY, or ID_X509ONLY)
-     */
-    private Map idAssertionStatusCache = new HashMap();
-
-    private final Logger logger = Logger.getLogger(ServerPolicyValidator.class.getName());
-
 
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
         this.jmsEndpointManager = jmsEndpointManager;
@@ -453,6 +477,10 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         this.clientCertManager = clientCertManager;
     }
 
+    public void setEntityFinder(EntityFinder entityFinder) {
+        this.entityFinder = entityFinder;
+    }
+
     public void afterPropertiesSet() throws Exception {
         if (jmsEndpointManager == null) {
             throw new IllegalArgumentException("JMS Endpoint manager is required");
@@ -465,15 +493,18 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         if (clientCertManager == null) {
             throw new IllegalArgumentException("Client Cert Manger is required");
         }
+
+        if (entityFinder == null) {
+            throw new IllegalArgumentException("EntityFinder is required");
+        }
     }
 
     class PathContext {
-        Collection credentialSources = new ArrayList();
+        Collection<Assertion> credentialSources = new ArrayList<Assertion>();
 
-        boolean contains(Class clz) {
-            for (Iterator iterator = credentialSources.iterator(); iterator.hasNext();) {
-                Object o = iterator.next();
-                if (o.getClass().equals(clz)) {
+        boolean contains(Class<? extends Assertion> clz) {
+            for (Assertion ass : credentialSources) {
+                if (ass.getClass().equals(clz)) {
                     return true;
                 }
             }

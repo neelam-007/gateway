@@ -1,10 +1,13 @@
 package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.variable.VariableMetadata;
 
-public class MappingAssertion extends IdentityAssertion implements SetsVariables {
+public class MappingAssertion extends IdentityAssertion implements SetsVariables, UsesEntities {
     private long attributeConfigOid;
 
     private String variableName;
@@ -68,6 +71,14 @@ public class MappingAssertion extends IdentityAssertion implements SetsVariables
 
     public void setValidForGroups(boolean validForGroups) {
         this.validForGroups = validForGroups;
+    }
+
+    public EntityHeader[] getEntitiesUsed() {
+        EntityHeader[] headers = super.getEntitiesUsed();
+        EntityHeader[] headers2 = new EntityHeader[headers.length + 1];
+        System.arraycopy(headers, 0, headers2, 0, headers.length);
+        headers2[headers.length] = new EntityHeader(Long.toString(attributeConfigOid), EntityType.ATTRIBUTE_CONFIG, null, null);
+        return headers2;
     }
 
     public VariableMetadata[] getVariablesSet() {

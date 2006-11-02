@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 package com.l7tech.admin.rmi;
 
@@ -8,6 +8,7 @@ import com.l7tech.admin.AdminContextBean;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.rbac.OperationType;
@@ -20,9 +21,12 @@ import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.spring.remoting.RemoteUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
@@ -41,13 +45,17 @@ import java.util.logging.Logger;
  * @author emil
  * @version Dec 2, 2004
  */
-public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLogin, InitializingBean {
+public class AdminLoginImpl
+        extends ApplicationObjectSupport
+        implements AdminLogin, InitializingBean, ApplicationListener
+{
     private static final Logger logger = Logger.getLogger(AdminLoginImpl.class.getName());
 
     private AdminSessionManager sessionManager;
 
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
+    private Set<IdentityProvider> adminProviders;
     private RoleManager roleManager;
     private X509Certificate serverCertificate;
 
@@ -55,24 +63,42 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             throws RemoteException, AccessControlException, LoginException
     {
         if (username == null || password == null) {
-            throw new AccessControlException("Illegal username or password");
+            throw new AccessControlException("Username and password are both required");
         }
 
         try {
             LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
-            AuthenticationResult authResult = getInternalIdentityProvider().authenticate(creds);
-            if (authResult == null) {
-                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
+            // Try internal first (internal accounts with the same credentials should hide externals)
+            List<IdentityProvider> providers = new ArrayList<IdentityProvider>();
+            Set<IdentityProvider> tempProviders;
+            synchronized(this) {
+                tempProviders = adminProviders;
             }
-            User user = authResult.getUser();
+            providers.addAll(tempProviders);
+            Set<Permission> perms = null;
+            User user = null;
 
-            Set<Permission> perms = getPerms(user);
+            for (IdentityProvider provider : providers) {
+                try {
+                    AuthenticationResult authResult = provider.authenticate(creds);
+                    user = authResult == null ? null : authResult.getUser();
+                    if (user != null) {
+                        perms = getPerms(user);
+                        logger.info("Authenticated on " + provider.getConfig().getName());
+                        break;
+                    }
+                } catch (AuthenticationException e) {
+                    logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
+                }
+            }
 
+            if (perms == null)
+                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
+            
             logger.info("User '" + user.getLogin() + "' logged in from IP '" +
                     RemoteUtils.getClientHost() + "'.");
 
             AdminContext adminContext = makeAdminContext();
-
 
             getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, perms));
 
@@ -82,19 +108,13 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
         } catch (ServerNotActiveException snae) {
             logger.log(Level.FINE, "Authentication failed", snae);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(snae);
-        } catch (AuthenticationException e) {
-            logger.log(Level.FINE, "Authentication failed", e);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
-        } catch (InvalidIdProviderCfgException e) {
-            logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
         }
     }
 
-    private Set<Permission> getPerms(User user) throws FindException {
+    private Set<Permission> getPerms(User user) throws AuthenticationException, FindException {
         boolean ok = false;
         // TODO is holding any CRUD permission sufficient?
         Collection<Role> roles = roleManager.getAssignedRoles(user);
@@ -109,7 +129,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             }
         }
 
-        if (!ok) throw new AccessControlException(user.getName() +
+        if (!ok) throw new AuthenticationException(user.getName() +
                 " does not have privilege to access administrative services");
         return perms;
     }
@@ -121,7 +141,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
                     BuildInfo.getProductVersion());
     }
 
-    public AdminLoginResult resume(String sessionId) throws RemoteException, AccessControlException, LoginException {
+    public AdminLoginResult resume(String sessionId) throws RemoteException, AuthenticationException, LoginException {
         Principal userObj = sessionManager.resumeSession(sessionId);
         if (!(userObj instanceof User)) {
             logger.log(Level.WARNING,  "Authentication failed: attempt to resume unrecognized session");
@@ -130,12 +150,15 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
 
         try {
             User user = (User) userObj;
-            Set<Permission> perms =  getPerms(user);
+            Set<Permission> perms = getPerms(user);
             AdminContext adminContext = makeAdminContext();
             return new AdminLoginResult(user, perms, adminContext, sessionId);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+            throw new AuthenticationException("Authentication failed", e);
+        } catch (AuthenticationException e) {
+            logger.log(Level.WARNING, "User no longer has any admin permissions", e);
+            throw new AuthenticationException("User no longer has any admin permissions", e);
         }
     }
 
@@ -218,11 +241,29 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
 
     public void afterPropertiesSet() throws Exception {
         checkidentityProviderConfigManager();
+        setupAdminProviders();
+    }
+
+    private void setupAdminProviders() throws FindException {
+        // Find any non-internal providers that support admin
+        SortedSet<IdentityProvider> adminProviders = new TreeSet<IdentityProvider>(INTERNAL_FIRST_COMPARATOR);
+
+        for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders(identityProviderConfigManager)) {
+            IdentityProviderConfig config = provider.getConfig();
+            if (config.isAdminEnabled()) {
+                logger.info("Enabling " + config.getName() + " for admin logins");
+                adminProviders.add(provider);
+            }
+        }
+        
+        synchronized(this) {
+            this.adminProviders = Collections.unmodifiableSet(adminProviders);
+        }
     }
 
     private void checkidentityProviderConfigManager() {
-        if (identityProviderConfigManager == null) {
-            throw new IllegalArgumentException("identity provider config is required");
+        if (identityProviderConfigManager == null || identityProviderFactory == null) {
+            throw new IllegalArgumentException("IPCM and IPF are required");
         }
     }
 
@@ -235,4 +276,37 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
         d.update(bytes);
         return d.digest();
     }
+
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
+            if (eie.getEntityClass() == IdentityProviderConfig.class) {
+                try {
+                    setupAdminProviders();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Couldn't setup admin providers", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Within internal providers, lower-numbered providers sort first, and all internal providers sort before all
+     * non-internal providers.
+     */
+    private static class InternalFirstComparator implements Comparator<IdentityProvider> {
+        public int compare(IdentityProvider o1, IdentityProvider o2) {
+            IdentityProviderConfig config1 = o1.getConfig();
+            IdentityProviderConfig config2 = o2.getConfig();
+            if (config1.type() == IdentityProviderType.INTERNAL && config2.type() == IdentityProviderType.INTERNAL) {
+                // Both internal, lower-numbered (i.e. -2 for "the" internal provider) comes first
+                return config1.getOid() < config2.getOid() ? -1 : 1;
+            } else {
+                // Internal comes first
+                return config1.type() == IdentityProviderType.INTERNAL ? -1 : 1;
+            }
+        }
+    }
+
+    private static final InternalFirstComparator INTERNAL_FIRST_COMPARATOR = new InternalFirstComparator();
 }

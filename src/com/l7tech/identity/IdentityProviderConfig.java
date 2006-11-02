@@ -25,6 +25,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
     public IdentityProviderConfig(IdentityProviderType type) {
         super();
         this.type = type;
+        if (type == IdentityProviderType.INTERNAL) adminEnabled = true;
     }
 
     public IdentityProviderConfig() {
@@ -99,7 +100,8 @@ public class IdentityProviderConfig extends NamedEntityImp {
         } else {
             ByteArrayInputStream in = new ByteArrayInputStream(serializedProps.getBytes());
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
-            props = (Map)decoder.readObject();
+            //noinspection unchecked
+            props = (Map<String, Object>) decoder.readObject();
         }
     }
 
@@ -115,6 +117,14 @@ public class IdentityProviderConfig extends NamedEntityImp {
      */
     public void setTypeVal(int val) {
         type = IdentityProviderType.fromVal(val);
+    }
+
+    public boolean isAdminEnabled() {
+        return adminEnabled;
+    }
+
+    public void setAdminEnabled(boolean adminEnabled) {
+        this.adminEnabled = adminEnabled;
     }
 
     /**
@@ -137,7 +147,8 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // PRIVATES
     // ************************************************
     protected String description;
-    protected IdentityProviderType type;
-    private Map props = new HashMap();
     private String propsXml;
+    protected IdentityProviderType type;
+    private Map<String, Object> props = new HashMap<String, Object>();
+    private boolean adminEnabled = false;
 }

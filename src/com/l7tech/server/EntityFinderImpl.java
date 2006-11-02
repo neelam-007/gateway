@@ -77,10 +77,11 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     }
 
     @Transactional(readOnly=true)
-    public Object find(EntityHeader header) throws FindException {
+    public Entity find(EntityHeader header) throws FindException {
         if (header instanceof IdentityHeader) {
             IdentityHeader identityHeader = (IdentityHeader)header;
             IdentityProvider provider = identityProviderFactory.getProvider(identityHeader.getProviderOid());
+            if (provider == null) return null;
             if (header.getType() == EntityType.USER) {
                 return provider.getUserManager().findByPrimaryKey(header.getStrId());
             } else if (header.getType() == EntityType.GROUP) {
@@ -95,7 +96,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     }
 
     @Transactional(readOnly=true)
-    public <ET> ET find(final Class<ET> clazz, Serializable pk) throws FindException {
+    public <ET extends Entity> ET find(final Class<ET> clazz, Serializable pk) throws FindException {
         try {
             Serializable tempPk;
             if (pk instanceof String) {
@@ -115,7 +116,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     //noinspection unchecked
-                    return (ET)session.load(clazz, finalPk);
+                    return session.load(clazz, finalPk);
                 }
             });
         } catch (Exception e) {

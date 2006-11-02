@@ -13,23 +13,30 @@ import java.io.Serializable;
  *
  */
 public class EntityType implements Serializable {
-    public static final EntityType ID_PROVIDER_CONFIG = new EntityType(1);
-    public static final EntityType USER = new EntityType(2);
-    public static final EntityType GROUP = new EntityType(3);
-    public static final EntityType SERVICE = new EntityType(4);
-    public static final EntityType JMS_CONNECTION = new EntityType(5);
-    public static final EntityType JMS_ENDPOINT = new EntityType(6);
-    public static final EntityType TRUSTED_CERT = new EntityType(7);
-    public static final EntityType ALERT_TRIGGER = new EntityType(8);
-    public static final EntityType ALERT_ACTION = new EntityType(9);
-    public static final EntityType SAMPLE_MESSAGE = new EntityType(10);
-    public static final EntityType MAXED_OUT_SEARCH_RESULT = new EntityType(11);
-    public static final EntityType RBAC_ROLE = new EntityType(12);
-    public static final EntityType UNDEFINED = new EntityType(-1);
+    public static final EntityType ID_PROVIDER_CONFIG = new EntityType(1, "Identity Provider");
+    public static final EntityType USER = new EntityType(2, "User");
+    public static final EntityType GROUP = new EntityType(3, "Group");
+    public static final EntityType SERVICE = new EntityType(4, "Published Service");
+    public static final EntityType JMS_CONNECTION = new EntityType(5, "JMS Connection");
+    public static final EntityType JMS_ENDPOINT = new EntityType(6, "JMS Endpoint");
+    public static final EntityType TRUSTED_CERT = new EntityType(7, "Trusted Certificate");
+    public static final EntityType ALERT_TRIGGER = new EntityType(8, "Alert Trigger");
+    public static final EntityType ALERT_ACTION = new EntityType(9, "Alert Action");
+    public static final EntityType SAMPLE_MESSAGE = new EntityType(10, "Sample Message");
+    public static final EntityType MAXED_OUT_SEARCH_RESULT = new EntityType(11, "Exceeded maximum search result size");
+    public static final EntityType RBAC_ROLE = new EntityType(12, "Role");
+    public static final EntityType ATTRIBUTE_CONFIG = new EntityType(13, "Attribute Config");
+    public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
 
     private static final long serialVersionUID = -5485680679515491927L;
 
     private int val;
+    private String name;
+
+    public EntityType(int num, String name) {
+        this.val = num;
+        this.name = name;
+    }
 
     /**
      * Returns a hash code value for the object.
@@ -67,10 +74,6 @@ public class EntityType implements Serializable {
         val = -1;
     }
 
-    private EntityType(int val) {
-        this.val = val;
-    }
-
     /**
      * this is exposed for facilitating the serialization of thi enum-type class
      */
@@ -83,6 +86,17 @@ public class EntityType implements Serializable {
      */
     public void setVal(int val) {
         this.val = val;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * this is exposed for facilitating the serialization of thi enum-type class
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String toString() {
@@ -111,6 +125,8 @@ public class EntityType implements Serializable {
                 return "MAXED_OUT_SEARCH_RESULT";
             case 12:
                 return "RBAC_ROLE";
+            case 13:
+                return "ATTRIBUTE_CONFIG";
             default:
                 return "?";
         }
@@ -149,6 +165,8 @@ public class EntityType implements Serializable {
                 return MAXED_OUT_SEARCH_RESULT;
             case 12:
                 return RBAC_ROLE;
+            case 13:
+                return ATTRIBUTE_CONFIG;
             default:
                 return UNDEFINED;
         }

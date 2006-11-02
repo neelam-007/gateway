@@ -24,6 +24,7 @@ import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.spring.remoting.http.SecureHttpClient;
@@ -199,6 +200,8 @@ public class SecurityProviderImpl extends SecurityProvider
 
         } catch (MalformedURLException e) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
+        } catch (AuthenticationException e) {
+            throw (LoginException) new LoginException("Session has lost admin permissions").initCause(e);
         } finally {
             if (!authenticated) {
                 resetCredentials();

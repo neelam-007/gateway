@@ -323,18 +323,11 @@
 
     <!-- server side policy validator -->
     <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
-        <property name="jmsEndpointManager">
-            <ref local="jmsEndpointManager"/>
-        </property>
-        <property name="identityProviderFactory">
-            <ref local='identityProviderFactory'/>
-        </property>
-        <property name="schemaEntryManager">
-            <ref local='schemaEntryManager'/>
-        </property>
-        <property name="clientCertManager">
-            <ref local='clientCertManager'/>
-        </property>
+        <property name="jmsEndpointManager" ref="jmsEndpointManager"/>
+        <property name="identityProviderFactory" ref='identityProviderFactory'/>
+        <property name="schemaEntryManager" ref='schemaEntryManager'/>
+        <property name="clientCertManager" ref='clientCertManager'/>
+        <property name="entityFinder" ref="entityFinder"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -805,6 +798,7 @@
                 <ref bean="schemaEntryManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="clusterPropertyManager"/>
+                <ref bean="identityProviderConfigManager"/>
             </list>
         </property>
         <property name="timer">

@@ -3,27 +3,24 @@ package com.l7tech.server.identity.internal;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.InternalGroup;
-import com.l7tech.identity.mapping.IdentityMapping;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.event.identity.Authenticated;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.cert.X509Certificate;
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,10 +58,6 @@ public class InternalIdentityProviderImpl
         return groupManager;
     }
 
-    public Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
-        throw new UnsupportedOperationException();
-    }
-
     @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate( LoginCredentials pc )
             throws AuthenticationException
@@ -79,10 +72,10 @@ public class InternalIdentityProviderImpl
             } catch (FindException e) {
                 throw new AuthenticationException("Couldn't authenticate credentials", e);
             }
+            
             if (dbUser == null) {
-                String err = "Couldn't find user with login " + login;
-                logger.info(err);
-                throw new AuthenticationException(err);
+                logger.info("Couldn't find user with login " + login);
+                return null;
             }
 
             if (dbUser.getExpiration() > -1 && dbUser.getExpiration() < System.currentTimeMillis()) {

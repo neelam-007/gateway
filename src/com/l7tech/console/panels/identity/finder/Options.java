@@ -88,18 +88,22 @@ public class Options {
         return disposeOnSelect;
     }
 
-    public boolean isInternalOnly() {
-        return internalOnly;
+    public boolean isAdminOnly() {
+        return adminOnly;
     }
 
-    public void setInternalOnly(boolean internalOnly) {
-        this.internalOnly = internalOnly;
+    /**
+     * True to offer only identity providers with  {@link com.l7tech.identity.IdentityProviderConfig#isAdminEnabled()}
+     * == true, false to show all identity providers
+     */
+    public void setAdminOnly(boolean adminOnly) {
+        this.adminOnly = adminOnly;
     }
 
     SearchType searchType = SearchType.ALL;
     boolean enableDeleteAction = false;
     boolean enableOpenProperties = true;
-    boolean internalOnly = false;
+    boolean adminOnly = false;
     private boolean disposeOnSelect = false;
     int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
     long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;

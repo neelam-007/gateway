@@ -18,13 +18,14 @@ import java.util.logging.Logger;
 
 
 /**
- * This class is a panel for users to input the configuration data of a LDAP identity provider.
+ * This class is a panel for users to input the configuration data of an LDAP identity provider.
  *
- * <p> Copyright (C) 2003 Layer 7 Technologies Inc.</p>
+ * <p> Copyright (C) 2003-2006 Layer 7 Technologies Inc.</p>
  *
  */
 
 public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
+    private static final int TOP_SPACING = 8;
 
     /** Creates new form ServicePanel */
     public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean providerTypeSelectable) {
@@ -256,6 +257,14 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return ldapBindPasswordField;
     }
 
+    private JCheckBox getAdminEnabledCheckbox() {
+        if (adminEnabledCheckbox != null) return adminEnabledCheckbox;
+
+        adminEnabledCheckbox = new JCheckBox(resources.getString("ldapAdminEnabledCheckbox.text"));
+        adminEnabledCheckbox.setToolTipText(resources.getString("ldapAdminEnabledCheckbox.tooltip"));
+        return adminEnabledCheckbox;
+    }
+
     private IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
         return Registry.getDefault().getIdentityAdmin();
@@ -338,7 +347,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
         configPanel.add(providerNameLabel, constraints);
 
         // Provider ID text field
@@ -349,7 +358,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 7, 0, 11);
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 11);
         configPanel.add(getProviderNameTextField(), constraints);
 
         // LDAP host
@@ -363,7 +372,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.NORTHWEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
         configPanel.add(ldapHostLabel, constraints);
 
         // ldap host text field
@@ -374,7 +383,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 7, 0, 11);
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 11);
         configPanel.add(getLdapHostListPanel(), constraints);
 
         // add, remove buttons
@@ -399,7 +408,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
         configPanel.add(ldapSearchBaseLabel, constraints);
 
         // search base text field
@@ -410,7 +419,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 7, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
         configPanel.add(getLdapSearchBaseTextField(), constraints);
 
         // Binding DN label
@@ -424,7 +433,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
         configPanel.add(ldapBindDNLabel, constraints);
 
         // Binding DN textfield
@@ -435,7 +444,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 7, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
         configPanel.add(getLdapBindDNTextField(), constraints);
 
         // Binding password label
@@ -449,7 +458,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 12, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
         configPanel.add(ldapBindPassLabel, constraints);
 
         // Binding password textfield
@@ -460,17 +469,19 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 7, 0, 0);
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
         configPanel.add(getLdapBindPasswordField(), constraints);
 
+        // Admin Enabled checkbox
         constraints = new GridBagConstraints();
-        constraints.gridx = 1;
+        constraints.gridx = 0;
         constraints.gridy = rowIndex++;
-        constraints.gridwidth = 1;
+        constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.EAST;
+        constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 7, 0, 10);
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
+        configPanel.add(getAdminEnabledCheckbox(), constraints);
 
         return configPanel;
     }
@@ -586,6 +597,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     getLdapBindPasswordField().setText(iProviderConfig.getBindPasswd());
                     getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
+                    getAdminEnabledCheckbox().setSelected(iProviderConfig.isAdminEnabled());
 
                     // populate host list based on what is in the iProviderConfig
                     ((DefaultComboBoxModel)getLdapHostList().getModel()).removeAllElements();
@@ -648,7 +660,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
-
+                ((LdapIdentityProviderConfig) settings).setAdminEnabled(getAdminEnabledCheckbox().isSelected());
             }
         }
     }
@@ -730,4 +742,5 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JButton removeButt;
     private JButton upbutton;
     private JButton downbutton;
+    private JCheckBox adminEnabledCheckbox;
 }

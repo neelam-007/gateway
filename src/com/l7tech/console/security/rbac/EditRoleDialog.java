@@ -359,7 +359,7 @@ public class EditRoleDialog extends JDialog {
                 opts.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
                 opts.setDisposeOnSelect(true);
                 opts.setDisableOpenProperties(true);
-                opts.setInternalOnly(true);
+                opts.setAdminOnly(true);
 
                 FindIdentitiesDialog fid = new FindIdentitiesDialog(TopComponents.getInstance().getMainWindow(), true, opts);
                 fid.pack();

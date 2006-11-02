@@ -87,9 +87,18 @@ public class EntityHeader implements Serializable, Comparable {
         return _name;
     }
 
+/*
     public int hashCode() {
         if (strId == null) return 0;
         return strId.hashCode();
+    }
+*/
+
+    public int hashCode() {
+        int result;
+        result = (type != null ? type.hashCode() : 0);
+        result = 31 * result + (strId != null ? strId.hashCode() : 0);
+        return result;
     }
 
     /**

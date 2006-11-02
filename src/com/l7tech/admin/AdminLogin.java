@@ -5,6 +5,8 @@
  */
 package com.l7tech.admin;
 
+import com.l7tech.identity.AuthenticationException;
+
 import javax.security.auth.login.LoginException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -49,11 +51,11 @@ public interface AdminLogin extends Remote {
      * Method that allows admin to login using an existing session.
      *
      * @param sessionId the session to resume
-     * @return 
+     * @return
      * @throws RemoteException
      * @throws AccessControlException
      * @throws LoginException
      */
     public AdminLoginResult resume(String sessionId)
-            throws RemoteException, AccessControlException, LoginException;
+            throws RemoteException, AuthenticationException, LoginException;
 }
