@@ -99,7 +99,7 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
         try {
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeObject(obj);
-            String encodedString = HexUtils.encodeBase64(bos.getPooledByteArray(), true, 0, bos.size());
+            String encodedString = HexUtils.encodeBase64(bos.toByteArray(), true);
             oos.close();
             return encodedString;
         } finally {

@@ -6,17 +6,19 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
-
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import org.apache.commons.codec.binary.Base64;
+
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
@@ -30,6 +32,8 @@ public class HexUtils {
     /** The size of the thread-local buffer returned by getBuffer() and used by slurpStreamLimited. */
     public static final int LOCAL_BUFFER_SIZE = CFG_LOCAL_BUFFER_SIZE >= MIN_LOCAL_BUFFER_SIZE
                                                       ? CFG_LOCAL_BUFFER_SIZE : MIN_LOCAL_BUFFER_SIZE;
+
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
         return getMd5().digest(stuffToDigest);
@@ -51,18 +55,6 @@ public class HexUtils {
     private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-    private static Pattern whitespacePattern = Pattern.compile("\\s+", Pattern.MULTILINE | Pattern.DOTALL);
-
-    private static ThreadLocal localDecoder = new ThreadLocal() {
-        protected Object initialValue() {
-            return new BASE64Decoder();
-        }
-    };
-    private static ThreadLocal localEncoder = new ThreadLocal() {
-        protected Object initialValue() {
-            return new BASE64Encoder();
-        }
-    };
 
     /**
      * Get a thread-local buffer for i.e. reading stuff that is at least 32 kilobytes and has not been zeroed
@@ -84,34 +76,35 @@ public class HexUtils {
     };
 
     public static String encodeBase64(byte[] binaryData) {
-        return encodeBase64(binaryData, false, 0, binaryData.length);
+        return encodeBase64(binaryData, false);
     }
 
     public static String encodeBase64(byte[] binaryData, boolean stripWhitespace) {
-        return encodeBase64(binaryData, stripWhitespace, 0, binaryData.length);
-    }
-
-    public static String encodeBase64(byte[] binaryData, boolean stripWhitespace, int offset, int length) {
-        BASE64Encoder encoder = (BASE64Encoder)localEncoder.get();
-        String s = encoder.encode( ByteBuffer.wrap(binaryData, offset, length) );
-        if (stripWhitespace) {
-            Matcher matcher = whitespacePattern.matcher(s);
-            return matcher.replaceAll("");
-        }
-        return s;
+        return decodeUtf8(Base64.encodeBase64(binaryData, !stripWhitespace)).trim();
     }
 
     public static byte[] decodeBase64(String s) throws IOException {
-        return decodeBase64(s, false);
+        return Base64.decodeBase64(encodeUtf8(s));
     }
 
     public static byte[] decodeBase64(String s, boolean stripWhitespaceFirst) throws IOException {
-        if (stripWhitespaceFirst) {
-            Matcher matcher = whitespacePattern.matcher(s);
-            s = matcher.replaceAll("");
-        }
-        BASE64Decoder decoder = (BASE64Decoder)localDecoder.get();
-        return decoder.decodeBuffer(s);
+        // The 'stripWhitespaceFirst' param used to remove whitespace before
+        // passing to suns BASE64Decoder.
+        //
+        // This was necessary since that decoder would silently translate all
+        // input to bytes even though it was not valid base64.
+        //
+        // The commons codec decoder handles whitespace, so this is no longer
+        // stripped out.        
+        return decodeBase64(s);
+    }
+
+    public static byte[] encodeUtf8(String text) {
+        return UTF8_CHARSET.encode(text).array();
+    }
+
+    public static String decodeUtf8(byte[] encodedText) {
+        return UTF8_CHARSET.decode(ByteBuffer.wrap(encodedText)).toString();
     }
 
     /** @return a hex string with exactly 8 nybbles, ie 000F0238 */
