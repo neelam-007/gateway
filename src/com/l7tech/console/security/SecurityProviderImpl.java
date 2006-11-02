@@ -13,6 +13,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
@@ -49,6 +50,7 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,8 +80,8 @@ public class SecurityProviderImpl extends SecurityProvider
      * If successful, those credentials will be cached for future admin ws calls.
      */
     public void login(PasswordAuthentication creds, String host, boolean validate)
-      throws LoginException, VersionException, RemoteException {
-
+            throws LoginException, VersionException, RemoteException
+    {
         boolean authenticated = false;
         serverCertificateChain = null;
         resetCredentials();
@@ -109,52 +111,18 @@ public class SecurityProviderImpl extends SecurityProvider
                 certsByHost.values().remove(serverCertificate);
             }
 
-
             AdminLoginResult result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
             // Update the principal with the actual internal user
 
-            resetCredentials();
-
-            SecureHttpInvokerRequestExecutor secureInvoker =
-                    (SecureHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");
-
-            secureInvoker.setSession(getHost(host), getPort(host), result.getSessionCookie());
-
-            // version checks
-            String remoteVersion = result.getAdminContext().getVersion();
-            if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
-                throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
-            }
-
-            String remoteSoftwareVersion = result.getAdminContext().getSoftwareVersion();
-            if (!Boolean.TRUE.equals(suppressVersionCheck) && !BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
-                throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
-            }
+            String remoteVersion = checkRemoteProtocolVersion(result);
+            String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
 
             authenticated = true;
 
-            AdminContext ac = new AdminContextBean(
-                            (IdentityAdmin) applicationContext.getBean("identityAdmin"),
-                            (AuditAdmin) applicationContext.getBean("auditAdmin"),
-                            (ServiceAdmin) applicationContext.getBean("serviceAdmin"),
-                            (JmsAdmin) applicationContext.getBean("jmsAdmin"),
-                            (TrustedCertAdmin) applicationContext.getBean("trustedCertAdmin"),
-                            (CustomAssertionsRegistrar) applicationContext.getBean("customAssertionsRegistrar"),
-                            (ClusterStatusAdmin) applicationContext.getBean("clusterStatusAdmin"),
-                            (SchemaAdmin) applicationContext.getBean("schemaAdmin"),
-                            (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
-                            (RbacAdmin) applicationContext.getBean("rbacAdmin"),
-                            "", "");
-
             User user = result.getUser();
-            synchronized (this) {
-                this.user = user;
-            }
-
-            LogonDialog.setLastRemoteSoftwareVersion(remoteSoftwareVersion);
-            LogonDialog.setLastRemoteProtocolVersion(remoteVersion);
-            LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON, result.getPermissions());
-            applicationContext.publishEvent(le);
+            String sessionCookie = result.getSessionCookie();
+            Set<Permission> perms = result.getPermissions();
+            setAuthenticated(sessionCookie, user, perms, remoteSoftwareVersion, remoteVersion, host);
         }
         catch(RemoteAccessException e) {
             Throwable cause = ExceptionUtils.unnestToRoot(e);
@@ -177,6 +145,99 @@ public class SecurityProviderImpl extends SecurityProvider
                 }
             }
         }
+    }
+
+    private String checkRemoteSoftwareVersion(AdminLoginResult result) throws VersionException {
+        String remoteSoftwareVersion = result.getAdminContext().getSoftwareVersion();
+        if (!Boolean.TRUE.equals(suppressVersionCheck) && !BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
+            throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
+        }
+        return remoteSoftwareVersion;
+    }
+
+    private String checkRemoteProtocolVersion(AdminLoginResult result) throws VersionException {
+        // version checks
+        String remoteVersion = result.getAdminContext().getVersion();
+        if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
+            throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
+        }
+        return remoteVersion;
+    }
+
+    // Called by the Applet to connect to the server
+    public void login(String sessionId, String host, final X509Certificate expectedServerCert)
+            throws LoginException, VersionException, RemoteException
+    {
+        boolean authenticated = false;
+
+        SSLTrustFailureHandler fh = new SSLTrustFailureHandler() {
+            public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
+                if (chain == null || chain.length < 1) return false;
+                return CertUtils.certsAreEqual(expectedServerCert, chain[0]);
+            }
+        };
+        SslRMIClientSocketFactory.setTrustFailureHandler(fh);
+        SecureHttpClient.setTrustFailureHandler(fh);
+
+
+        final AdminLogin adminLogin;
+        try {
+            adminLogin = getAdminLoginRemoteReference(host);
+
+            AdminLoginResult result = adminLogin.resume(sessionId);
+
+            String remoteVersion = checkRemoteProtocolVersion(result);
+            String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
+
+            authenticated = true;
+
+            User user = result.getUser();
+            String sessionCookie = result.getSessionCookie(); // Server is allowed to assign a new one if it wishes
+            Set<Permission> perms = result.getPermissions();
+
+            setAuthenticated(sessionCookie, user, perms, remoteSoftwareVersion, remoteVersion, host);
+
+        } catch (MalformedURLException e) {
+            throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
+        } finally {
+            if (!authenticated) {
+                resetCredentials();
+            }
+        }
+    }
+
+    /**
+     * Enable the authenticated state.
+     */
+    private void setAuthenticated(String sessionCookie, User user, Set<Permission> perms, String remoteSoftwareVersion, String remoteVersion, String remoteHost)
+    {
+        resetCredentials();
+
+        SecureHttpInvokerRequestExecutor secureInvoker =
+                (SecureHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");
+        secureInvoker.setSession(getHost(remoteHost), getPort(remoteHost), sessionCookie);
+
+        AdminContext ac = new AdminContextBean(
+                        (IdentityAdmin) applicationContext.getBean("identityAdmin"),
+                        (AuditAdmin) applicationContext.getBean("auditAdmin"),
+                        (ServiceAdmin) applicationContext.getBean("serviceAdmin"),
+                        (JmsAdmin) applicationContext.getBean("jmsAdmin"),
+                        (TrustedCertAdmin) applicationContext.getBean("trustedCertAdmin"),
+                        (CustomAssertionsRegistrar) applicationContext.getBean("customAssertionsRegistrar"),
+                        (ClusterStatusAdmin) applicationContext.getBean("clusterStatusAdmin"),
+                        (SchemaAdmin) applicationContext.getBean("schemaAdmin"),
+                        (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
+                        (RbacAdmin) applicationContext.getBean("rbacAdmin"),
+                        "", "");
+
+        synchronized (this) {
+            this.user = user;
+        }
+
+        LogonDialog.setLastRemoteSoftwareVersion(remoteSoftwareVersion);
+        LogonDialog.setLastRemoteProtocolVersion(remoteVersion);
+        LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON, perms);
+        applicationContext.publishEvent(le);
     }
 
     /**

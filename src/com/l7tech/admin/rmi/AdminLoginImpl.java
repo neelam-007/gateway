@@ -30,6 +30,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -65,30 +66,12 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             }
             User user = authResult.getUser();
 
-            boolean ok = false;
-            // TODO is holding any CRUD permission sufficient?
-            Collection<Role> roles = roleManager.getAssignedRoles(user);
-            Set<Permission> perms = new HashSet<Permission>();
-            roles: for (Role role : roles) {
-                perms.addAll(role.getPermissions());
-                for (Permission perm : role.getPermissions()) {
-                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
-                        ok = true;
-                        break roles;
-                    }
-                }
-            }
-
-            if (!ok) throw new AccessControlException(user.getName() +
-                    " does not have privilege to access administrative services");
+            Set<Permission> perms = getPerms(user);
 
             logger.info("User '" + user.getLogin() + "' logged in from IP '" +
                     RemoteUtils.getClientHost() + "'.");
 
-            AdminContext adminContext = new AdminContextBean(
-                        null,null,null,null,null,null,null,null,null,null,
-                        SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
-                        BuildInfo.getProductVersion());
+            AdminContext adminContext = makeAdminContext();
 
 
             getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, perms));
@@ -108,6 +91,51 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
+        }
+    }
+
+    private Set<Permission> getPerms(User user) throws FindException {
+        boolean ok = false;
+        // TODO is holding any CRUD permission sufficient?
+        Collection<Role> roles = roleManager.getAssignedRoles(user);
+        Set<Permission> perms = new HashSet<Permission>();
+        roles: for (Role role : roles) {
+            perms.addAll(role.getPermissions());
+            for (Permission perm : role.getPermissions()) {
+                if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
+                    ok = true;
+                    break roles;
+                }
+            }
+        }
+
+        if (!ok) throw new AccessControlException(user.getName() +
+                " does not have privilege to access administrative services");
+        return perms;
+    }
+
+    private AdminContext makeAdminContext() {
+        return new AdminContextBean(
+                    null,null,null,null,null,null,null,null,null,null,
+                    SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
+                    BuildInfo.getProductVersion());
+    }
+
+    public AdminLoginResult resume(String sessionId) throws RemoteException, AccessControlException, LoginException {
+        Principal userObj = sessionManager.resumeSession(sessionId);
+        if (!(userObj instanceof User)) {
+            logger.log(Level.WARNING,  "Authentication failed: attempt to resume unrecognized session");
+            throw new AccessControlException("Authentication failed");
+        }
+
+        try {
+            User user = (User) userObj;
+            Set<Permission> perms =  getPerms(user);
+            AdminContext adminContext = makeAdminContext();
+            return new AdminLoginResult(user, perms, adminContext, sessionId);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Authentication provider error", e);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         }
     }
 

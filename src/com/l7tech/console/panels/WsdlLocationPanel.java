@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.security.AccessControlException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -283,7 +284,12 @@ public class WsdlLocationPanel extends JPanel {
         boolean isFile = false;
 
         File wsdlFile = new File(filePath);
-        isFile = wsdlFile.isFile();
+        try {
+            isFile = wsdlFile.isFile();
+        } catch (AccessControlException e) {
+            // We're probably running as an unsigned applet
+            return false;
+        }
 
         return isFile;
     }

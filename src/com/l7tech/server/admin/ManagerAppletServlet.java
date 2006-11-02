@@ -5,19 +5,28 @@
 
 package com.l7tech.server.admin;
 
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.KeystoreUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.identity.User;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.security.cert.CertificateException;
+
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * Servlet that provides access to the Manager applet.
@@ -38,27 +47,47 @@ public class ManagerAppletServlet extends HttpServlet {
                     "Java runtime 5.0 or higher is required.  You can <a href=\"http://www.java.com/getjava/\">download it for free</a>.\n" +
                     "</applet>";
 
+    private WebApplicationContext applicationContext;
+    private KeystoreUtils keystoreUtils;
+    private AdminSessionManager adminSessionManager;
+
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+
+        keystoreUtils = (KeystoreUtils) getBean("keystore", null);
+        adminSessionManager = (AdminSessionManager) getBean("adminSessionManager", AdminSessionManager.class);
+    }
+
+    private WebApplicationContext getContext() throws ServletException {
+        if (applicationContext != null) return applicationContext;
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        if (applicationContext == null)
+            throw new ServletException("Configuration error; could not get application context");
+        return applicationContext;
+    }
+
+    private Object getBean(String name, Class clazz) throws ServletException {
+        Object got = clazz == null ? getContext().getBean(name) : getContext().getBean(name, clazz);
+        if (got == null)
+            throw new ServletException("Configuration error; could not get " + name);
+        return got;
     }
 
     protected void doGet(HttpServletRequest hreq, HttpServletResponse hresp)
             throws ServletException, IOException
     {
-
-        Object credsObj = hreq.getAttribute(ManagerAppletFilter.PROP_CREDS);
-        if (!(credsObj instanceof LoginCredentials))
+        Object userObj = hreq.getAttribute(ManagerAppletFilter.PROP_USER);
+        if (!(userObj instanceof User))
             throw new ServletException("ManagerAppletServlet: request was not authenticated"); // shouldn't be possible
 
-        LoginCredentials creds = (LoginCredentials)credsObj;
-        String login = creds.getLogin();
-        char[] pass = creds.getCredentials();
-
-        if (login == null || login.length() < 1 || pass == null)
-            throw new ServletException("ManagerAppletServlet: request was not authenticated (missing login or creds)"); // shouldn't be possible
+        // Establish a new admin session for the authenticated user
+        String sessionId = adminSessionManager.createSession((User)userObj);
+        Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
+        sessionCookie.setSecure(true);
 
         hresp.setContentType("text/html");
         hresp.setStatus(200);
+        hresp.addCookie(sessionCookie);
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
         try {
@@ -81,12 +110,21 @@ public class ManagerAppletServlet extends HttpServlet {
             //emitParam(ps, "progresscolor", "black");
             emitParam(ps, "cache_option", "Plugin");
             emitParam(ps, "hostname", hreq.getServerName());
-            emitParam(ps, "username", login);
-            emitParam(ps, "password", new String(pass));
+            emitParam(ps, "sessionId", sessionId);
+            emitServerCertParam(ps);
             ps.println(APPLET_CLOSE);
             ps.println(PAGE_CLOSE);
         } finally {
             ps.close();
+        }
+    }
+
+    private void emitServerCertParam(PrintStream ps) throws IOException {
+        try {
+            emitParam(ps, "gatewayCert", HexUtils.hexDump(keystoreUtils.getSslCert().getEncoded()));
+        } catch (CertificateException e) {
+            // Leave it out
+            logger.log(Level.WARNING, "Unable to provide gatewayCert to applet: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

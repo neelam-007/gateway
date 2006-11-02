@@ -20,6 +20,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.IdProvConfManagerServer;
@@ -27,6 +30,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.identity.User;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
@@ -34,9 +38,11 @@ import org.w3c.dom.Document;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.Principal;
 
 /**
  * Authentication filter for the Manager applet servlet (and serving the manager applet jarfiles).
@@ -44,6 +50,8 @@ import java.util.logging.Logger;
 public class ManagerAppletFilter implements Filter {
     private static final Logger logger = Logger.getLogger(ManagerAppletFilter.class.getName());
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
+    public static final String PROP_USER = "ManagerApplet.authenticatedUser";
+    public static final String SESSION_ID_COOKIE_NAME = "sessionId";
 
     private enum AuthResult { OK, CHALLENGED, FAIL }
 
@@ -52,21 +60,37 @@ public class ManagerAppletFilter implements Filter {
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
     private LicenseManager licenseManager;
+    private AdminSessionManager adminSessionManager;
 
     private ServerAssertion dogfoodPolicy;
     private Document fakeDoc;
 
+
+    private Object getBean(String name) throws ServletException {
+        Object obj = applicationContext.getBean(name);
+        if (obj == null)
+            throw new ServletException("Configuration error; could not get bean " + name);
+        return obj;
+    }
+
+    private Object getBean(String name, Class clazz) throws ServletException {
+        Object obj = applicationContext.getBean(name, clazz);
+        if (obj == null)
+            throw new ServletException("Configuration error; could not get bean " + name);
+        return obj;
+    }
 
     public void init(FilterConfig filterConfig) throws ServletException {
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        auditContext = (AuditContext)applicationContext.getBean("auditContext");
-        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
-        clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
-        licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
-        ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)applicationContext.getBean("policyFactory");
+        auditContext = (AuditContext)getBean("auditContext");
+        serverConfig = (ServerConfig)getBean("serverConfig");
+        clusterPropertyManager = (ClusterPropertyManager)getBean("clusterPropertyManager");
+        licenseManager = (LicenseManager)getBean("licenseManager");
+        ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory");
+        adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
 
         CompositeAssertion dogfood = new AllAssertion();
         dogfood.addChild(new HttpBasic());
@@ -117,7 +141,26 @@ public class ManagerAppletFilter implements Filter {
     }
 
     private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
-        String auth = hreq.getHeader(HttpConstants.HEADER_AUTHORIZATION);
+        // Check for provided session ID and, if its valid and arrived over SSL, bypass authentication
+        Cookie[] cookies = hreq.getCookies();
+        if (cookies != null) for (Cookie cookie : cookies) {
+            if (SESSION_ID_COOKIE_NAME.equalsIgnoreCase(cookie.getName())) {
+                String sessionId = cookie.getValue();
+                if (sessionId != null && sessionId.length() > 0 && hreq.isSecure()) {
+                    Principal userObj = adminSessionManager.resumeSession(sessionId);
+                    if (userObj instanceof User) {
+                        User user = (User) userObj;
+                        LoginCredentials creds = new LoginCredentials(user.getLogin(),
+                                sessionId.toCharArray(),
+                                CredentialFormat.OPAQUETOKEN,
+                                CookieCredentialSourceAssertion.class);
+                        hreq.setAttribute(PROP_CREDS, creds);
+                        hreq.setAttribute(PROP_USER, user);
+                        return AuthResult.OK;
+                    }
+                }
+            }
+        }
 
         Message request = new Message();
         request.initialize(fakeDoc);
@@ -134,6 +177,7 @@ public class ManagerAppletFilter implements Filter {
             result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE && context.getCredentials() != null) {
                 hreq.setAttribute(PROP_CREDS, context.getCredentials());
+                hreq.setAttribute(PROP_USER, context.getAuthenticatedUser());
                 return AuthResult.OK;
             }
 

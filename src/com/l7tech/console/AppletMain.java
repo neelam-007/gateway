@@ -6,6 +6,9 @@
 package com.l7tech.console;
 
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.CertUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -13,6 +16,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Entry point for applet-based version of SSM.
@@ -90,20 +97,27 @@ public class AppletMain extends JApplet {
             logger.info("Preconfigured server hostname: " + hostname);
         }
 
-        // TODO very important! do before tagging!
-        // TODO very important! do before tagging!
-        // TODO very important! do before tagging!
-        // TODO make single-use logon token instead of using plaintext passwd!
-        // TODO very important! do before tagging!
-        // TODO very important! do before tagging!
-        // TODO very important! do before tagging!
-        String username = getParameter("username");
-        String password = getParameter("password");
-
-        if (username != null && username.length() > 0 && password != null && password.length() > 0) {
-            LogonDialog.setPreconfiguredCredentials(username, password);
-            logger.info("Preconfigured server username and password; " + username);
+        String serverCertB64 = getParameter("gatewayCert");
+        if (serverCertB64 != null && serverCertB64.length() > 0) {
+            try {
+                byte[] certBytes;
+                try {
+                    certBytes = HexUtils.unHexDump(serverCertB64);
+                } catch (IOException e) {
+                    certBytes = HexUtils.decodeBase64(serverCertB64, true);
+                }
+                X509Certificate serverCert = CertUtils.decodeCert(certBytes);
+                LogonDialog.setPreconfiguredServerCert(serverCert);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Unable to parse preconfigured server cert bytes: " + ExceptionUtils.getMessage(e), e);
+            } catch (CertificateException e) {
+                logger.log(Level.WARNING, "Unable to parse preconfigured server cert bytes: " + ExceptionUtils.getMessage(e), e);
+            }
         }
+
+        String sessionId = getParameter("sessionId");
+        if (sessionId != null && sessionId.length() > 0)
+            LogonDialog.setPreconfiguredSessionId(sessionId);
     }
 
     private static ApplicationContext createApplicationContext() {

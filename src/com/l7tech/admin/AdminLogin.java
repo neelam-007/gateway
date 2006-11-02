@@ -43,5 +43,17 @@ public interface AdminLogin extends Remote {
      * @param password The password of the user.
      */
     public AdminLoginResult login(String username, String password)
-      throws RemoteException, AccessControlException, LoginException;
+            throws RemoteException, AccessControlException, LoginException;
+
+    /**
+     * Method that allows admin to login using an existing session.
+     *
+     * @param sessionId the session to resume
+     * @return 
+     * @throws RemoteException
+     * @throws AccessControlException
+     * @throws LoginException
+     */
+    public AdminLoginResult resume(String sessionId)
+            throws RemoteException, AccessControlException, LoginException;
 }

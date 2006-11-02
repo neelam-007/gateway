@@ -10,6 +10,7 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.InvalidHostCertificateException;
 import com.l7tech.console.security.InvalidHostNameException;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Registry;
@@ -33,6 +34,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -44,8 +46,8 @@ public class LogonDialog extends JDialog {
 
     /** Preconfigured credentials for applet. */
     private static String preconfiguredGatewayHostname;
-    private static String preconfiguredUsername;
-    private static String preconfiguredPassword;
+    private static String preconfiguredSessionId;
+    private static X509Certificate preconfiguredServerCert;
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authenticationCredentials = null;
@@ -475,7 +477,12 @@ public class LogonDialog extends JDialog {
 
                   public Object construct() {
                       try {
-                          securityProvider.getAuthenticationProvider().login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
+                          AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
+                          if (preconfiguredSessionId != null && preconfiguredServerCert != null) {
+                                authProv.login(preconfiguredSessionId, sHost, preconfiguredServerCert);
+                          } else {
+                                authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
+                          }
                       } catch (Throwable e) {
                           if (!Thread.currentThread().isInterrupted()) {
                               memoException = e;
@@ -538,15 +545,23 @@ public class LogonDialog extends JDialog {
     }
 
     /**
-     * Set preconfigured credentials to use instead of popping up the logon dialog.  These will be cleared
+     * Set preconfigured session ID to use instead of popping up the logon dialog.  This will be cleared
      * if there is a logon failure.  Used only by the Applet version of the manager.
      *
-     * @param username
-     * @param password
+     * @param sessionId  the preconfigured session ID, or null to display the login dialog normally.
      */
-    public static void setPreconfiguredCredentials(String username, String password) {
-        preconfiguredUsername = username;
-        preconfiguredPassword = password;
+    public static void setPreconfiguredSessionId(String sessionId) {
+        preconfiguredSessionId = sessionId;
+    }
+
+    /**
+     * Set preconfigured server cert to expect during the SSL handshake with the server.
+     * Used only by the applet version of the manager.
+     *
+     * @param serverCert  the preconfigured server SSL cert, or null to attempt to fault it in the usual way.
+     */
+    public static void setPreconfiguredServerCert(X509Certificate serverCert) {
+        preconfiguredServerCert = serverCert;
     }
 
     /**
@@ -587,9 +602,8 @@ public class LogonDialog extends JDialog {
         if (visible && preconfiguredGatewayHostname != null) {
             serverComboBox.setSelectedItem(preconfiguredGatewayHostname);
             serverComboBox.setEnabled(false);
-            if (preconfiguredUsername != null && preconfiguredPassword != null) {
-                userNameTextField.setText(preconfiguredUsername);
-                passwordField.setText(preconfiguredPassword);
+            if (preconfiguredSessionId != null && preconfiguredServerCert != null) {
+                // Skip the dialog and just try logging in
                 doLogon();
                 return;
             }
@@ -712,7 +726,7 @@ public class LogonDialog extends JDialog {
      * @param e
      */
     private void handleLogonThrowable(Throwable e, String host) {
-        preconfiguredPassword = null;
+        preconfiguredSessionId = null;
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException)cause;
