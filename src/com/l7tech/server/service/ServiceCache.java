@@ -179,7 +179,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 logger.finest("resolution failed because no services in the cache");
                 return null;
             }
-            for (NameValueServiceResolver resolver : resolvers) {
+            for (ServiceResolver resolver : resolvers) {
                 Set<PublishedService> resolvedServices;
                 boolean passthrough = false;
                 try {
@@ -244,14 +244,14 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         Long key = service.getOid();
         if (services.get(key) != null) update = true;
         if (update) {
-            for (NameValueServiceResolver resolver : resolvers) {
+            for (ServiceResolver resolver : resolvers) {
                 resolver.serviceUpdated(service);
             }
             logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
-            for (NameValueServiceResolver resolver : resolvers) {
+            for (ServiceResolver resolver : resolvers) {
                 resolver.serviceCreated(service);
             }
             logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
@@ -320,7 +320,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         services.remove(key);
         serverPolicies.remove(key);
         serviceStatistics.remove(key);
-        for (NameValueServiceResolver resolver : resolvers) {
+        for (ServiceResolver resolver : resolvers) {
             resolver.serviceDeleted(service);
         }
         logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
@@ -546,7 +546,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
 
     // the resolvers
-    private final NameValueServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
+    private final ServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
 
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);

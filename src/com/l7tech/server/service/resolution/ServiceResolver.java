@@ -24,9 +24,12 @@ public abstract class ServiceResolver implements Comparable {
      * Sets the <code>Set</code> of services in the system.  Concrete implementations should implement doSetServices and invalidate any caches based on this Set whenever it is called.
      * @param services A Set of all the services in the system.
      */
-    public abstract void setServices( Set<PublishedService> services );
+    public abstract void setServices(Set<PublishedService> services);
+    public abstract void serviceCreated(PublishedService service);
+    public abstract void serviceDeleted(PublishedService service);
+    public abstract void serviceUpdated(PublishedService service);
 
-    public abstract Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException, IOException;
+    public abstract Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException;
 
     /**
      * Returns a Map<Long,PublishedService> of any services this ServiceResolver knows about that match the specified PublishedService.
