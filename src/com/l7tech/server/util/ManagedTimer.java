@@ -16,9 +16,9 @@ import java.lang.ref.WeakReference;
  * ManagedTimer objects.</p>
  *
  * <p>WARNING! TimerTasks that are scheduled with the ManagedTimer cannot
- * be cancelled by invoking {@link TimerTask#cancel} (if this needs to be
- * suported then we will need a ManagedTimerTask class that can be
- * extended or a TaskFactory, etc).</p>
+ * be cancelled by invoking {@link TimerTask#cancel}.</p>
+ *
+ * <p>If you need to cancel tasks you will need to extend {@link ManagedTimerTask}</p>
  *
  * @author Steve Jones
  */
@@ -129,6 +129,23 @@ public class ManagedTimer extends Timer {
         }
     }
 
+    //- PACKAGE
+
+    void enter(final TimerTask task) {
+        synchronized(taskLock) {
+            runningTask = task;
+        }
+    }
+
+    void exit(final TimerTask task) {
+        synchronized(taskLock) {
+            runningTask = null;
+        }
+        synchronized(this) {
+            this.notifyAll();
+        }
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ManagedTimer.class.getName());
@@ -160,8 +177,11 @@ public class ManagedTimer extends Timer {
     private TimerTask managementProxy(final TimerTask timerTask) {
         TimerTask managedTimerTask = null;
 
-        if (timerTask != null) {
-            managedTimerTask = new ManagedTimerTask(timerTask);
+        if (timerTask instanceof ManagedTimerTask) {
+            ((ManagedTimerTask)timerTask).scheduled(this);
+            managedTimerTask = timerTask;    
+        } else if (timerTask != null) {
+            managedTimerTask = new ManagedTimerTaskWrapper(timerTask);
         }
 
         return managedTimerTask;
@@ -181,36 +201,16 @@ public class ManagedTimer extends Timer {
      * Extension of TimerTask that tracks if the underlying task is currently
      * running.
      */
-    private class ManagedTimerTask extends TimerTask {
+    private class ManagedTimerTaskWrapper extends ManagedTimerTask {
         private TimerTask delegate;
 
-        private ManagedTimerTask(TimerTask delegate) {
+        private ManagedTimerTaskWrapper(TimerTask delegate) {
             this.delegate = delegate;
+            scheduled(ManagedTimer.this);
         }
 
-        public boolean cancel() {
-            return delegate.cancel();
-        }
-
-        public void run() {
-            synchronized(taskLock) {
-                runningTask = this;
-            }
-            try {
-                delegate.run();
-            }
-            finally {
-                synchronized(taskLock) {
-                    runningTask = null;
-                }
-                synchronized(this) {
-                    this.notifyAll();
-                }
-            }
-        }
-
-        public long scheduledExecutionTime() {
-            return delegate.scheduledExecutionTime();
+        protected void doRun() {
+            delegate.run();
         }
     }
 }

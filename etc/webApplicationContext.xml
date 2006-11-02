@@ -786,21 +786,6 @@
             <ref bean="clusterNodeId"/>
         </constructor-arg>
         <constructor-arg>
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="ServiceMetricsManager.fineTimer"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg>
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="ServiceMetricsManager.hourlyTimer"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg>
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="ServiceMetricsManager.dailyTimer"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg>
             <ref local="managedBackgroundTimer"/>
         </constructor-arg>
         <property name="sessionFactory">

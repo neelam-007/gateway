@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.util.ManagedTimer;
+import com.l7tech.server.util.ManagedTimerTask;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
@@ -38,17 +40,14 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     //- PUBLIC
 
-    public ServiceMetricsManager(String clusterNodeId, Timer fineTimer, Timer hourlyTimer, Timer dailyTimer, Timer deleteTimer) {
+    public ServiceMetricsManager(String clusterNodeId, Timer deleteTimer) {
         _clusterNodeId = clusterNodeId;
 
-        if (fineTimer == null) fineTimer = new Timer("ServiceMetricsManager.fineTimer", true /* isDaemon */);
-        if (hourlyTimer == null) hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer", true /* isDaemon */);
-        if (dailyTimer == null) dailyTimer = new Timer("ServiceMetricsManager.dailyTimer", true /* isDaemon */);
-        if (deleteTimer == null) deleteTimer = new Timer("ServiceMetricsManager.deleteTimer", true /* isDaemon */);
+        if (deleteTimer==null) deleteTimer = new ManagedTimer("ServiceMetricsManager.deleteTimer");
 
-        _fineTimer = fineTimer;
-        _hourlyTimer = hourlyTimer;
-        _dailyTimer = dailyTimer;
+        _fineTimer = new ManagedTimer("ServiceMetricsManager.fineTimer");
+        _hourlyTimer = new ManagedTimer("ServiceMetricsManager.hourlyTimer");
+        _dailyTimer = new ManagedTimer("ServiceMetricsManager.dailyTimer");
         _deleteTimer = deleteTimer;
     }
 
@@ -339,8 +338,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * A timer task to execute at fine resolution binning interval; to close off
      * and archive the current fine resolution bins and start new ones.
      */
-    private class FineTask extends TimerTask {
-        public void run() {
+    private class FineTask extends ManagedTimerTask {
+        protected void doRun() {
             if (_logger.isLoggable(Level.FINER))
                 _logger.finer("FineTask running at " + new Date());
             List metricsList = new ArrayList();
@@ -359,8 +358,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * A timer task to execute at every hour; to close off and archive the
      * current hourly bins and start new ones.
      */
-    private class HourlyTask extends TimerTask {
-        public void run() {
+    private class HourlyTask extends ManagedTimerTask {
+        protected void doRun() {
             int num = 0;
             List metricsList = new ArrayList();
             synchronized(_serviceMetricsMapLock) {
@@ -381,8 +380,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * A timer task to execute at every midnight; to close off and archive the
      * current daily bins and start new ones.
      */
-    private class DailyTask extends TimerTask {
-        public void run() {
+    private class DailyTask extends ManagedTimerTask {
+        protected void doRun() {
             int num = 0;
             List metricsList = new ArrayList();
             synchronized(_serviceMetricsMapLock) {
@@ -492,7 +491,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /**
      * Timer task to delete old metrics bins from the database.
      */
-    private class DeleteTask extends TimerTask {
+    private class DeleteTask extends ManagedTimerTask {
         private final long _ttl;
         private final int _resolution;
 
@@ -501,7 +500,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             _resolution = resolution;
         }
 
-        public void run() {
+        protected void doRun() {
             final long oldestSurvivor = System.currentTimeMillis() - _ttl;
             try {
                 Integer num = (Integer)new TransactionTemplate(_transactionManager).execute(new TransactionCallback() {
