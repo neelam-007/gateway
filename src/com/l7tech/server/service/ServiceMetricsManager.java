@@ -7,6 +7,7 @@ import com.l7tech.service.MetricsBin;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.server.ServerConfig;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
@@ -26,6 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * Manages the processing and accumulation of service metrics for one SSG node.
@@ -36,19 +39,15 @@ import java.util.logging.Logger;
 
 @Transactional(propagation=Propagation.SUPPORTS)
 public class ServiceMetricsManager extends HibernateDaoSupport
-        implements InitializingBean, DisposableBean {
+        implements InitializingBean, DisposableBean, PropertyChangeListener {
 
     //- PUBLIC
 
-    public ServiceMetricsManager(String clusterNodeId, Timer deleteTimer) {
+    public ServiceMetricsManager(String clusterNodeId, ManagedTimer timer) {
         _clusterNodeId = clusterNodeId;
 
-        if (deleteTimer==null) deleteTimer = new ManagedTimer("ServiceMetricsManager.deleteTimer");
-
-        _fineTimer = new ManagedTimer("ServiceMetricsManager.fineTimer");
-        _hourlyTimer = new ManagedTimer("ServiceMetricsManager.hourlyTimer");
-        _dailyTimer = new ManagedTimer("ServiceMetricsManager.dailyTimer");
-        _deleteTimer = deleteTimer;
+        if (timer == null) timer = new ManagedTimer("ServiceMetricsManager ManagedTimer");
+        _timer = timer;
     }
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
@@ -60,14 +59,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     }
 
     public void destroy() throws Exception {
-        if (_fineTimer != null) _fineTimer.cancel();
-        if (_hourlyTimer != null) _hourlyTimer.cancel();
-        if (_dailyTimer != null) _dailyTimer.cancel();
-        if (_fineDeleter != null) _fineDeleter.cancel();
-        if (_hourlyDeleter != null) _hourlyDeleter.cancel();
-        if (_dailyDeleter != null) _dailyDeleter.cancel();
-        if (_flusher != null) _flusher.quit();
-        if (_flusherThread != null) _flusherThread.interrupt();
+        disable();
     }
 
     /**
@@ -182,6 +174,16 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         return summaryBin;
     }
 
+    public void propertyChange(PropertyChangeEvent event) {
+        if (CLUSTER_PROP_ENABLED.equals(event.getPropertyName())) {
+            if (Boolean.valueOf((String)event.getNewValue())) {
+                enable();
+            } else {
+                disable();
+            }
+        }
+    }
+
     //- PROTECTED
 
     protected void initDao() throws Exception {
@@ -189,63 +191,17 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         if (_serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
         if (_clusterNodeId == null) throw new IllegalStateException("clusterNodeId must be set");
 
-        _enabled = Boolean.valueOf(System.getProperty("com.l7tech.service.metrics.enabled", "true")).booleanValue();
-        if (! _enabled) {
-            return;
+        if (Boolean.valueOf(ServerConfig.getInstance().getProperty(CLUSTER_PROP_ENABLED))) {
+            enable();
+        } else {
+            _logger.info("Service metrics collection is currently disabled.");
         }
-
-        _fineBinInterval = (int)getLongProperty("com.l7tech.service.metrics.fineBinInterval", MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL);
-
-        final long fineTtl = getLongProperty("com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE);
-        final long hourlyTtl = getLongProperty("com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE);
-        final long dailyTtl = getLongProperty("com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE);
-
-        _fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
-        _deleteTimer.schedule(_fineDeleter, MINUTE, 5 * MINUTE);
-        _logger.config("Scheduled first fine deletion task for " + new Date(System.currentTimeMillis() + MINUTE));
-
-        _hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
-        _deleteTimer.schedule(_hourlyDeleter, 15 * MINUTE, 12 * HOUR);
-        _logger.config("Scheduled first hourly deletion task for " + new Date(System.currentTimeMillis() + 15 * MINUTE));
-
-        _dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
-        _deleteTimer.schedule(_dailyDeleter, HOUR, 24 * HOUR);
-        _logger.config("Scheduled first daily deletion task for " + new Date(System.currentTimeMillis() + HOUR));
-
-        // Populates initial bins.
-        Collection serviceHeaders = _serviceManager.findAllHeaders();
-        for (Iterator i = serviceHeaders.iterator(); i.hasNext();) {
-            EntityHeader service = (EntityHeader)i.next();
-            getServiceMetrics(service.getOid());
-        }
-
-        // Schedule the timers.
-        final long now = System.currentTimeMillis();
-
-        // Sets fine resolution timer to excecute every fine interval; starting at the next fine period.
-        final Date nextFineStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_FINE, _fineBinInterval, now));
-        _fineTimer.scheduleAtFixedRate(new FineTask(), nextFineStart, _fineBinInterval);
-        _logger.config("Fine archive interval is " + _fineBinInterval + "ms");
-        _logger.config("Scheduled first fine archive task for " + nextFineStart);
-
-        // Sets hourly resolution timer every hour; starting at the next hourly period.
-        final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now));
-        _hourlyTimer.scheduleAtFixedRate(new HourlyTask(), nextHourlyStart, HOUR);
-        _logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
-
-        // Sets daily resolution timer to execute at the next daily period.
-        // But can't just schedule at fixed rate of 24-hours interval because a
-        // calender day varies, e.g., when switching Daylight Savings Time.
-        final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now));
-        _dailyTimer.schedule(new DailyTask(), nextDailyStart);
-        _logger.config("Scheduled first daily archive task for " + nextDailyStart);
-
-        // Flusher waits forever on {@link #_flusherQueue}.
-        _flusherThread = new Thread(_flusher, _flusher.getClass().getName());
-        _flusherThread.start();
     }
 
     //- PRIVATE
+
+    /** Name of cluster property that enables/disables service metrics collection. */
+    private static final String CLUSTER_PROP_ENABLED = "serviceMetricsEnabled";
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
     private static final int MINUTE = 60 * 1000;
@@ -262,7 +218,6 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /** Default fine resolution bin interval (in milliseconds). */
     private static final int DEF_FINE_BIN_INTERVAL = 5 * 1000; // 5 seconds
 
-    // Limits and default values for number of fine resolution bins are designed to fill 1 hour.
     private static final int MIN_FINE_AGE = HOUR;
     private static final int MAX_FINE_AGE = HOUR;
     private static final int DEF_FINE_AGE = HOUR;
@@ -283,28 +238,147 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /** Whether statistics collecting is turned on. */
     private boolean _enabled;
 
+    /** For synchronizing calling {@link #enable()} and {@link #disable()}. */
+    private final Object _enableLock = new Object();
+
     /** Fine resolution bin interval (in milliseconds). */
     private int _fineBinInterval;
 
-    private final Timer _fineTimer;
-    private final Timer _hourlyTimer;
-    private final Timer _dailyTimer;
-    private final Timer _deleteTimer;
+    /** One timer for all tasks. */
+    private final ManagedTimer _timer;
 
+    // Tasks to close completed bins and generate new ones.
+    private FineTask _fineArchiver;
+    private HourlyTask _hourlyArchiver;
+    private DailyTask _dailyArchiver;
+
+    // Tasks to delete old bins from the database.
     private DeleteTask _fineDeleter;
     private DeleteTask _hourlyDeleter;
     private DeleteTask _dailyDeleter;
 
+    private Flusher _flusher;
     private Thread _flusherThread;
-    private final Flusher _flusher = new Flusher();
     private static final BoundedPriorityQueue _flusherQueue = new BoundedPriorityQueue(500);
 
-    private final Map _serviceMetricsMap = new HashMap/* <service OID as Long, ServiceMetrics> */();
+    private final Map<Long /* service OID */, ServiceMetrics> _serviceMetricsMap = new HashMap<Long, ServiceMetrics>();
     private final Object _serviceMetricsMapLock = new Object();
 
     private PlatformTransactionManager _transactionManager;
 
     private ServiceManager _serviceManager;
+
+    /** Turns on service metrics collection. */
+    private void enable() {
+        synchronized(_enableLock) {
+            if (_enabled) return;   // alreay enabled
+
+            _logger.info("Enabling service metrics collection.");
+
+            //
+            // Schedule the timer tasks to close finished bins and start new bins.
+            //
+
+            final long now = System.currentTimeMillis();
+
+            // Sets fine resolution timer to excecute every fine interval; starting at the next fine period.
+            _fineBinInterval = (int)getLongProperty("com.l7tech.service.metrics.fineBinInterval", MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL);
+            _logger.config("Fine archive interval is " + _fineBinInterval + "ms");
+            final Date nextFineStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_FINE, _fineBinInterval, now));
+            _fineArchiver = new FineTask();
+            _timer.scheduleAtFixedRate(_fineArchiver, nextFineStart, _fineBinInterval);
+            _logger.config("Scheduled first fine archive task for " + nextFineStart);
+
+            // Sets hourly resolution timer to excecute every hour; starting at the next hourly period.
+            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now));
+            _hourlyArchiver = new HourlyTask();
+            _timer.scheduleAtFixedRate(_hourlyArchiver, nextHourlyStart, HOUR);
+            _logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
+
+            // Sets daily resolution timer to execute at the next daily period start (= end of current daily period).
+            // But can't just schedule at fixed rate of 24-hours interval because a
+            // calender day varies, e.g., when switching Daylight Savings Time.
+            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now));
+            _dailyArchiver = new DailyTask();
+            _timer.schedule(_dailyArchiver, nextDailyStart);
+            _logger.config("Scheduled first daily archive task for " + nextDailyStart);
+
+            // Initializes a service metric for each published service; which in
+            // turn creates the current metric bins.
+            //
+            // {@link _serviceMetricsMap} should be empty here; whether because the
+            // gateway is starting or cleared during the previous call to {@link #disable()}.
+            try {
+                synchronized (_serviceMetricsMapLock) {
+                    Collection<EntityHeader> serviceHeaders = _serviceManager.findAllHeaders();
+                    for (EntityHeader service : serviceHeaders) {
+                        final Long oid = new Long(service.getOid());
+                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue);
+                         _serviceMetricsMap.put(oid, serviceMetrics);
+                    }
+                }
+            } catch (FindException e) {
+                _logger.warning("Failed to fetch list of published service. Metric bins generation will not start until requests arrive. Cause: " + e.getMessage());
+            }
+
+            //
+            // Starts the database flusher thread.
+            //
+
+            _flusher = new Flusher();
+            _flusherThread = new Thread(_flusher, _flusher.getClass().getName());
+            _flusherThread.start();
+
+            //
+            // Schedules timer tasks to delete old metrics bins from database.
+            //
+
+            final long fineTtl = getLongProperty("com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE);
+            final long hourlyTtl = getLongProperty("com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE);
+            final long dailyTtl = getLongProperty("com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE);
+
+            _fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
+            _timer.schedule(_fineDeleter, MINUTE, 5 * MINUTE);
+            _logger.config("Scheduled first deletion task for fine resolution metric bins at " + new Date(System.currentTimeMillis() + MINUTE));
+
+            _hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
+            _timer.schedule(_hourlyDeleter, 15 * MINUTE, 12 * HOUR);
+            _logger.config("Scheduled first deletion task for hourly metric bins at " + new Date(System.currentTimeMillis() + 15 * MINUTE));
+
+            _dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
+            _timer.schedule(_dailyDeleter, HOUR, 24 * HOUR);
+            _logger.config("Scheduled first deletion task for daily metric bins at " + new Date(System.currentTimeMillis() + HOUR));
+
+            _enabled = true;
+        }
+    }
+
+    /** Turns off service metrics collection. */
+    private void disable() {
+        synchronized(_enableLock) {
+            if (!_enabled) return;  // already disabled
+
+            _logger.info("Disabling service metrics collection.");
+
+            // Cancels the timer tasks; not the timer since we don't own it.
+            if (_fineArchiver != null) { _fineArchiver.cancel(); _fineArchiver = null; }
+            if (_hourlyArchiver != null) { _hourlyArchiver.cancel(); _hourlyArchiver = null; }
+            if (_dailyArchiver != null) { _dailyArchiver.cancel(); _dailyArchiver = null; }
+            if (_fineDeleter != null) { _fineDeleter.cancel(); _fineDeleter = null; }
+            if (_hourlyDeleter != null) { _hourlyDeleter.cancel(); _hourlyDeleter = null; }
+            if (_dailyDeleter != null) { _dailyDeleter.cancel(); _dailyDeleter = null; }
+
+            if (_flusher != null) { _flusher.quit(); _flusher = null; }
+            if (_flusherThread != null) { _flusherThread.interrupt(); _flusherThread = null; }
+
+            synchronized(_serviceMetricsMapLock) {
+                // Discards all the currently open metric bins.
+                _serviceMetricsMap.clear();
+            }
+
+            _enabled = false;
+        }
+    }
 
     /**
      * Convenience method to return a system property value parsed into an
@@ -340,17 +414,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class FineTask extends ManagedTimerTask {
         protected void doRun() {
-            if (_logger.isLoggable(Level.FINER))
-                _logger.finer("FineTask running at " + new Date());
-            List metricsList = new ArrayList();
+            List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
             synchronized(_serviceMetricsMapLock) {
-                metricsList.addAll(_serviceMetricsMap.values());
+                list.addAll(_serviceMetricsMap.values());
             }
-            Iterator itor = metricsList.iterator();
-            while (itor.hasNext()) {
-                ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
+            for (ServiceMetrics serviceMetrics : list) {
                 serviceMetrics.archiveFineBin();
             }
+            if (_logger.isLoggable(Level.FINER))
+                _logger.finer("Fine archiving task completed; archived " + list.size() + " fine bins.");
         }
     }
 
@@ -360,19 +432,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class HourlyTask extends ManagedTimerTask {
         protected void doRun() {
-            int num = 0;
-            List metricsList = new ArrayList();
+            List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
             synchronized(_serviceMetricsMapLock) {
-                metricsList.addAll(_serviceMetricsMap.values());
+                list.addAll(_serviceMetricsMap.values());
             }
-            Iterator itor = metricsList.iterator();
-            while (itor.hasNext()) {
-                ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
+            for (ServiceMetrics serviceMetrics : list) {
                 serviceMetrics.archiveHourlyBin();
-                num++;
             }
             if (_logger.isLoggable(Level.FINE))
-                _logger.fine("Hourly archiving task completed; archived " + num + " hourly bins");
+                _logger.fine("Hourly archiving task completed; archived " + list.size() + " hourly bins.");
         }
     }
 
@@ -382,24 +450,20 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class DailyTask extends ManagedTimerTask {
         protected void doRun() {
-            int num = 0;
-            List metricsList = new ArrayList();
+            List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
             synchronized(_serviceMetricsMapLock) {
-                metricsList.addAll(_serviceMetricsMap.values());
+                list.addAll(_serviceMetricsMap.values());
             }
-            Iterator itor = metricsList.iterator();
-            while (itor.hasNext()) {
-                ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
+            for (ServiceMetrics serviceMetrics : list) {
                 serviceMetrics.archiveDailyBin();
-                num++;
             }
             if (_logger.isLoggable(Level.FINE))
-                _logger.fine("Daily archiving task completed; archived " + num + " daily bins");
+                _logger.fine("Daily archiving task completed; archived " + list.size() + " daily bins.");
 
             // Schedule the next timer execution at the end of current period
             // (with a new task instance because a task cannot be reused).
             Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()));
-            _dailyTimer.schedule(new DailyTask(), nextTimerDate);
+            _timer.schedule(new DailyTask(), nextTimerDate);
             if (_logger.isLoggable(Level.FINE))
                 _logger.fine("Scheduled next daily archive task for " + nextTimerDate);
         }
@@ -436,6 +500,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 }
                 try {
                     final MetricsBin head = (MetricsBin)_flusherQueue.take();
+                        // This will wait indefinitely until there is an item in the queue.
 
                     if (_logger.isLoggable(Level.FINER))
                         _logger.finer("Saving " + head.toString());

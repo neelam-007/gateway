@@ -10,7 +10,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Service metrics compiles statistics on access to published service.
+ * A ServiceMetrics accumulates request statistics (for one single published
+ * service on one gateway node) into {@link MetricsBin}s. An external timer
+ * can use ServiceMetrics to generate {@link MetricsBin}s periodically.
  * <p/>
  * Data are binned and archived at 3 level of resolutions:
  * <ul>
@@ -91,6 +93,8 @@ public class ServiceMetrics {
     private final String _clusterNodeId;
 
     /**
+     * Creates a ServiceMetrics and starts new {@link MetricsBin}s right away.
+     *
      * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} for which metrics are being gathered
      * @param nodeId the MAC address of the cluster node for which metrics are being gathered
      * @param fineInterval the interval currently being used for buckets of {@link MetricsBin#RES_FINE} resolution
@@ -102,7 +106,7 @@ public class ServiceMetrics {
         if (fineInterval < 0) throw new IllegalArgumentException("fineInterval must be positive");
         if (queue == null) throw new NullPointerException();
 
-        this._queue = queue;
+        _queue = queue;
         _serviceOid = serviceOid;
         _clusterNodeId = nodeId;
         _fineInterval = fineInterval;

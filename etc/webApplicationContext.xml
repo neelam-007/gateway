@@ -41,9 +41,7 @@
             <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
                 <constructor-arg>
                     <map>
-                        <!--
-                        <entry key="serviceMetricsManager"><list><value>auditMessageThreshold</value></list></entry>
-                        -->
+                        <entry key="serviceMetricsManager"><list><value>serviceMetricsEnabled</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
