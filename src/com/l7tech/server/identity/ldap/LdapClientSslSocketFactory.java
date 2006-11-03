@@ -14,11 +14,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.util.logging.Logger;
+import java.util.Comparator;
 
 /**
  * @author alex
  */
-public class LdapClientSslSocketFactory extends SSLSocketFactory {
+public class LdapClientSslSocketFactory extends SSLSocketFactory implements Comparator {
     private static final Logger logger = Logger.getLogger(LdapClientSslSocketFactory.class.getName());
     private final SSLContext sslContext;
     private static SslClientTrustManager trustManager;
@@ -49,6 +50,19 @@ public class LdapClientSslSocketFactory extends SSLSocketFactory {
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Couldn't initialize LDAP client SSL context", e);
         }
+    }
+
+    /**
+     * Check socket factories for equivalence.
+     *
+     * <p>This factory is the same as any other LdapClientSslSocketFactory</p>
+     *
+     * <p>This method is used with connection pooling, if removed connections will not be pooled.</p>
+     *
+     * <p>NOTE: the actual objects passed are Strings ie. "com.l7tech.server.identity.ldap.LdapClientSslSocketFactory" </p>
+     */
+    public int compare(Object o1, Object o2) {
+        return o1!=null && o2!=null && o1.equals(o2) ? 0 : -1;
     }
 
     public String[] getDefaultCipherSuites() {
