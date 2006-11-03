@@ -772,9 +772,6 @@
           depends-on="ssgBoot"> <!-- To ensure system.properties file is processed first -->
         <constructor-arg ref="clusterNodeId"/>
         <constructor-arg ref="managedBackgroundTimer"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
 
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="transactionManager" ref="transactionManager"/>

@@ -113,7 +113,7 @@ public class ClusterPropertyCache implements ApplicationListener {
                         updatedProps = new HashMap(currentProps);
                     }
 
-                    List<ClusterProperty> updatedList = new ArrayList();
+                    List<ClusterProperty[]> updatedList = new ArrayList();
                     List<ClusterProperty> deletedList = new ArrayList();
                     for (long oid : updatedOids) {
                         try {
@@ -121,8 +121,8 @@ public class ClusterPropertyCache implements ApplicationListener {
                             if (updated != null && updated.getName() != null) {
                                 logger.log(Level.FINE, "Property ''{0}'', updated.", updated.getName());
                                 updated = new ImmutableClusterProperty(updated);
-                                updatedProps.put(updated.getName(), updated);
-                                updatedList.add(updated);
+                                ClusterProperty old = updatedProps.put(updated.getName(), updated);
+                                updatedList.add(new ClusterProperty[]{old, updated});
                             } else if (updated == null) {
                                 for (Iterator<ClusterProperty> propIter = updatedProps.values().iterator(); propIter.hasNext();) {
                                     ClusterProperty property = propIter.next();
@@ -141,8 +141,8 @@ public class ClusterPropertyCache implements ApplicationListener {
 
                     clusterPropertyCacheRef.set(Collections.unmodifiableMap(updatedProps));
 
-                    for (ClusterProperty updated : updatedList) {
-                        fireChanged(cpl, updated);
+                    for (ClusterProperty[] updated : updatedList) {
+                        fireChanged(cpl, updated[0], updated[1]);
                     }
                     for (ClusterProperty deleted : deletedList) {
                         fireDeleted(cpl, deleted);
@@ -174,10 +174,10 @@ public class ClusterPropertyCache implements ApplicationListener {
     private ClusterPropertyManager clusterPropertyManager;
     private ClusterPropertyListener clusterPropertyListener;
 
-    private void fireChanged(final ClusterPropertyListener cpl, final ClusterProperty updated) {
+    private void fireChanged(final ClusterPropertyListener cpl, final ClusterProperty classic, final ClusterProperty updated) {
         if (cpl != null) {
             try {
-                cpl.clusterPropertyChanged(updated);
+                cpl.clusterPropertyChanged(classic, updated);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Cluster property listener threw exception.", e);
             }

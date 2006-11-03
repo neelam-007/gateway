@@ -10,9 +10,10 @@ public interface ClusterPropertyListener {
     /**
      * Called when a cluster property is added or updated.
      *
-     * @param clusterProperty The cluster property
+     * @param clusterPropertyOld The old value of the cluster property (may be null)
+     * @param clusterPropertyNew The new value of the cluster property (may be null)
      */
-    void clusterPropertyChanged(ClusterProperty clusterProperty);
+    void clusterPropertyChanged(ClusterProperty clusterPropertyOld, ClusterProperty clusterPropertyNew);
 
     /**
      * Called when a cluster property is deleted.

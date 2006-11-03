@@ -142,12 +142,12 @@ public class ServerConfig implements ClusterPropertyListener {
         }
     }
 
-    public void clusterPropertyChanged(final ClusterProperty clusterProperty) {
-        clusterPropertyEvent(clusterProperty);
+    public void clusterPropertyChanged(final ClusterProperty clusterPropertyOld, final ClusterProperty clusterPropertyNew) {
+        clusterPropertyEvent(clusterPropertyNew, clusterPropertyOld);
     }
 
     public void clusterPropertyDeleted(final ClusterProperty clusterProperty) {
-        clusterPropertyEvent(clusterProperty);
+        clusterPropertyEvent(clusterProperty, clusterProperty);
     }
 
     /**
@@ -182,6 +182,11 @@ public class ServerConfig implements ClusterPropertyListener {
 
     /** @return the requested property, with no caching at this layer. */
     public String getPropertyUncached(String propName) {
+        return getPropertyUncached(propName, true);
+    }
+
+    /** @return the requested property, with no caching at this layer. */
+    public String getPropertyUncached(String propName, boolean includeClusterProperties) {
         String sysPropProp = propName + SUFFIX_SYSPROP;
         String setSysPropProp = propName + SUFFIX_SETSYSPROP;
         String jndiProp = propName + SUFFIX_JNDI;
@@ -213,7 +218,7 @@ public class ServerConfig implements ClusterPropertyListener {
             value = System.getProperty(systemPropertyName);
         }
 
-        if (value == null && clusterKey != null && clusterKey.length() > 0) {
+        if (value == null && includeClusterProperties && clusterKey != null && clusterKey.length() > 0) {
             if (clusterPropertyCache == null) {
                 logger.warning("Property '" + propName + "' has a cluster properties key defined, but the ClusterPropertyCache is not yet available");
             } else {
@@ -659,7 +664,7 @@ public class ServerConfig implements ClusterPropertyListener {
         valueCache.remove(propName);
     }
 
-    private void clusterPropertyEvent(final ClusterProperty clusterProperty) {
+    private void clusterPropertyEvent(final ClusterProperty clusterProperty, final ClusterProperty clusterPropertyOld) {
         String propertyName = getNameFromClusterName(clusterProperty.getName());
         if (propertyName != null) {
             invalidateCachedProperty(propertyName);
@@ -674,13 +679,17 @@ public class ServerConfig implements ClusterPropertyListener {
 
             if (pcl != null) {
                 String newValue = getPropertyCached(propertyName);
-                PropertyChangeEvent pce =
-                        new PropertyChangeEvent(this, propertyName, clusterProperty.getValue(), newValue);
+                String oldValue = clusterPropertyOld!=null ?
+                        clusterPropertyOld.getValue() :
+                        getPropertyUncached(propertyName, false);
 
-                try {
-                    pcl.propertyChange(pce);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Unexpected exception during property change event dispatch.", e);
+                if (oldValue==null || newValue==null || !oldValue.equals(newValue)) {
+                    PropertyChangeEvent pce = new PropertyChangeEvent(this, propertyName, oldValue, newValue);
+                    try {
+                        pcl.propertyChange(pce);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Unexpected exception during property change event dispatch.", e);
+                    }
                 }
             }
         }
