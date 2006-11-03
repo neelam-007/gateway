@@ -39,7 +39,6 @@ public class PublishServiceWizardTest {
         log.info("Property: " + System.getProperty("com.l7tech.common.locator"));
         //PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
         PublishServiceWizard w = PublishServiceWizard.getInstance(new JFrame());
-        w.setWsdlUrl("http://data.l7tech.com/ACMEWarehouseWS/Service1.asmx?WSDL");
         w.setVisible(true);
         Registry registry = Registry.getDefault();
         EntityHeader[] services = registry.getServiceManager().findAllPublishedServices();

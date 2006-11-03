@@ -163,7 +163,7 @@ public class ClientCertSslServer {
     // Entry point for using Jetty.
     private static void mainw() throws Exception {
         HttpServer httpServer = new HttpServer();
-        SunJsseListener jl = new SunJsseListener(getInetAddrPort());
+        SslListener jl = new SslListener(getInetAddrPort());
         jl.setKeystore(KEYSTORE);
         jl.setKeyPassword(KEYPASS);
         jl.setPassword(KEYPASS);

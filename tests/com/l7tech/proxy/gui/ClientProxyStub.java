@@ -15,6 +15,9 @@ import com.l7tech.proxy.ClientProxy;
  * Time: 11:21:40 AM
  */
 public class ClientProxyStub extends ClientProxy {
+    /**
+     * @deprecated
+     */
     public ClientProxyStub(int bindPort) {
         super(bindPort);
     }

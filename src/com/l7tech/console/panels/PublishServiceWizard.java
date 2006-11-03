@@ -269,12 +269,4 @@ public class PublishServiceWizard extends Wizard {
             ((EntityListener)listeners[i]).entityAdded(event);
         }
     }
-
-    /**
-     * @deprecated do not use -- this is here only for the benefit of the PublishServiceWizardTest
-     */
-    public void setWsdlUrl(String newUrl) {
-        //((ServicePanel)panels[0]).setWsdlUrl(newUrl);
-    }
-
 }
