@@ -89,6 +89,8 @@ public class HttpUriResolver extends ServiceResolver {
                     }
                 }
                 if (matchingRegexKeys.size() <= 0) {
+                    // todo, this could be exploted as an attack. we should either not try to do this or
+                    // we should have a worker thread making sure this does not grow too big
                     knownToFail.add((String)requestValue);
                     logger.fine("no matching possible with uri " + requestValue);
                     return EMPTYSERVICESET;
