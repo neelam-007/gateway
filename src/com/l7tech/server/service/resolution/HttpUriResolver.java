@@ -270,7 +270,10 @@ public class HttpUriResolver extends ServiceResolver {
     }
 
     static class URIResolutionParam {
-        URIResolutionParam(final String uri) {
+        URIResolutionParam(String uri) {
+            while (uri.indexOf("**") >= 0) {
+                uri = uri.replace("**", "*");
+            }
             this.uri = uri;
             if (uri.indexOf('*') > 0) {
                 this.pathPattern = uri.charAt(uri.length() - 1) == '*';
