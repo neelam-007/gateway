@@ -215,6 +215,10 @@ public class HttpUriResolver extends ServiceResolver {
     private URIResolutionParam whichOneIsBest(List<URIResolutionParam> in,
                                               boolean containsPathPattern,
                                               boolean containsExtensionPattern) {
+        // eliminate /* if present
+        in.remove(CATCHALLRESOLUTION);
+        if (in.size() == 1) return in.get(0);
+
         // eliminate extensions if paths exist
         if (containsPathPattern && containsExtensionPattern) {
             for (Iterator<URIResolutionParam> iterator = in.iterator(); iterator.hasNext();) {
@@ -223,6 +227,7 @@ public class HttpUriResolver extends ServiceResolver {
             }
         }
         if (in.size() == 1) return in.get(0);
+
         // choose longest
         long longestlength = 0;
         URIResolutionParam output = null;
@@ -264,7 +269,7 @@ public class HttpUriResolver extends ServiceResolver {
         }
     }
 
-    class URIResolutionParam {
+    static class URIResolutionParam {
         URIResolutionParam(final String uri) {
             this.uri = uri;
             if (uri.indexOf('*') > 0) {
@@ -312,4 +317,5 @@ public class HttpUriResolver extends ServiceResolver {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
     private static final Set<PublishedService> EMPTYSERVICESET = new HashSet<PublishedService>();
+    private static final URIResolutionParam CATCHALLRESOLUTION = new URIResolutionParam("/*");
 }
