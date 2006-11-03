@@ -102,7 +102,7 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
             if (sslContext != null) return sslContext;
             SSLContext sc = SSLContext.getInstance("SSL");
             KeystoreUtils keystore = (KeystoreUtils)applicationContext.getBean("keystore");
-            SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
+            SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("gatewaySslClientTrustManager");
             KeyManager[] keyman = keystore.getSSLKeyManagerFactory().getKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,

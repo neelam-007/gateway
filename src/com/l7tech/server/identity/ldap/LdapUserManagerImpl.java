@@ -5,6 +5,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.*;
+import com.sun.jndi.ldap.LdapURL;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -282,6 +283,18 @@ public class LdapUserManagerImpl implements LdapUserManager {
             //todo: sending anything in clear env.put(Context.SECURITY_PROTOCOL, "ssl");
             env.put(Context.SECURITY_CREDENTIALS, passwd);
             env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT);
+
+            try {
+                LdapURL url = new LdapURL(ldapurl);
+                if (url.useSsl()) {
+                    env.put("java.naming.ldap.factory.socket", LdapClientSslSocketFactory.class.getName());
+                    env.put(Context.SECURITY_PROTOCOL, "ssl");
+                }
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "Malformed LDAP URL", e);
+                return false;
+            }
+
             env.lock();
 
             DirContext userCtx;

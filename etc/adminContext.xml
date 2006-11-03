@@ -232,33 +232,15 @@
 
     <!-- service admin servant -->
     <bean id="serviceAdmin_UNSECURED" class="com.l7tech.server.service.ServiceAdminImpl">
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="registryPublicationManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="uddiAgentFactory"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="policyValidator"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="sampleMessageManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="counterIDManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="httpRoutingAssertionTrustManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="roleManager"/>
-        </constructor-arg>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="registryPublicationManager"/>
+        <constructor-arg ref="uddiAgentFactory"/>
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="policyValidator"/>
+        <constructor-arg ref="sampleMessageManager"/>
+        <constructor-arg ref="counterIDManager"/>
+        <constructor-arg ref="gatewaySslClientTrustManager"/>
+        <constructor-arg ref="roleManager"/>
     </bean>
 
     <!-- schema admin servant -->

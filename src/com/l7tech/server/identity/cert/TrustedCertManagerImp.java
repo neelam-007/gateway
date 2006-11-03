@@ -191,7 +191,7 @@ public class TrustedCertManagerImp
             throw new CertificateException(msg);
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
-            throw new CertificateException(e.getMessage());
+            throw new CertificateException(e.getMessage(), e);
         }
     }
 
@@ -215,7 +215,7 @@ public class TrustedCertManagerImp
     @Transactional(readOnly=true)
     public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException {
         Lock read = cacheLock.readLock();
-        Lock write = cacheLock.writeLock();
+        Lock write = null;
         try {
             read.lock();
             final Long oid = dnToOid.get(dn);
@@ -224,6 +224,7 @@ public class TrustedCertManagerImp
             if (oid == null) {
                 TrustedCert cert = findBySubjectDn(dn);
                 if (cert == null) return null;
+                write = cacheLock.writeLock(); 
                 write.lock();
                 checkAndCache(cert);
                 write.unlock();

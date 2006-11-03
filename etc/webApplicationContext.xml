@@ -161,15 +161,10 @@
     <!-- LDAP Identity Provider -->
     <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
           class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" singleton="false">
-        <property name="clientCertManager">
-            <ref local="clientCertManager"/>
-        </property>
-        <property name="serverConfig">
-            <ref local="serverConfig"/>
-        </property>
-        <property name="certificateAuthenticator">
-            <ref local="certificateAuthenticator"/>
-        </property>
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="serverConfig" ref="serverConfig"/>
+        <property name="certificateAuthenticator" ref ="certificateAuthenticator"/>
+        <property name="trustManager" ref="gatewaySslClientTrustManager"/>
     </bean>
 
     <!-- LDAP UserManager -->
@@ -224,7 +219,7 @@
         </constructor-arg>
     </bean>
     <!-- server side HTTP routing client trust manager -->
-    <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+    <bean id="gatewaySslClientTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
         <property name="trustedCertManager">
             <ref bean="trustedCertManager"/>
         </property>
@@ -775,21 +770,15 @@
           class="com.l7tech.server.service.ServiceMetricsManager"
           singleton="true"
           depends-on="ssgBoot"> <!-- To ensure system.properties file is processed first -->
-        <constructor-arg>
-            <ref bean="clusterNodeId"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="managedBackgroundTimer"/>
-        </constructor-arg>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
-        <property name="transactionManager">
-            <ref bean="transactionManager"/>
-        </property>
-        <property name="serviceManager">
-            <ref bean="serviceManager"/>
-        </property>
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
+
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="serviceManager" ref ="serviceManager"/>
     </bean>
 
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">

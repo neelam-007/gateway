@@ -83,7 +83,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
+            final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("gatewaySslClientTrustManager");
             hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);

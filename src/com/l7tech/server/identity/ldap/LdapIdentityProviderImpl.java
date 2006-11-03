@@ -3,29 +3,42 @@ package com.l7tech.server.identity.ldap;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.*;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.ldap.*;
+import com.l7tech.identity.ldap.GroupMappingConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.common.security.kerberos.KerberosServiceTicket;
-
+import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.*;
 import javax.naming.directory.*;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +72,10 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         this.certificateAuthenticator = certificateAuthenticator;
     }
 
+    public void setTrustManager(SslClientTrustManager trustManager) {
+        this.trustManager = trustManager;
+        LdapClientSslSocketFactory.setTrustManager(trustManager);
+    }
 
     public void initializeFallbackMechanism() {
         // configure timeout period
@@ -486,6 +503,18 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
                 env.put(Context.SECURITY_PRINCIPAL, dn);
                 env.put(Context.SECURITY_CREDENTIALS, pass);
             }
+
+            try {
+                LdapURL url = new LdapURL(ldapurl);
+                if (url.useSsl()) {
+                    env.put("java.naming.ldap.factory.socket", LdapClientSslSocketFactory.class.getName());
+                    env.put(Context.SECURITY_PROTOCOL, "ssl");
+                }
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            }
+
             env.lock();
 
             try {
@@ -683,6 +712,9 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         if (clientCertManager == null) {
             throw new IllegalArgumentException("The Client Certificate Manager is required");
         }
+        if (trustManager == null) {
+            throw new IllegalArgumentException("The SSL Client TrustManager is required");
+        }
         initializeFallbackMechanism();
     }
 
@@ -872,19 +904,23 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         return lmap;
     }
 
+    private static final Logger logger = Logger.getLogger(LdapIdentityProviderImpl.class.getName());
+
+    private SslClientTrustManager trustManager;
+    private ServerConfig serverConfig;
     private LdapIdentityProviderConfig config;
     private LdapAttributeMapping kerberosLdapAttributeMapping;
     private ClientCertManager clientCertManager;
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;
     private CertificateAuthenticator certificateAuthenticator;
+
     private String lastSuccessfulLdapUrl;
     private long retryFailedConnectionTimeout;
     private final ReadWriteLock fallbackLock = new WriterPreferenceReadWriteLock();
     private String[] ldapUrls;
     private Long[] urlStatus;
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private ServerConfig serverConfig;
+
     private final BigInteger fileTimeConversionfactor = new BigInteger("116444736000000000");
     private final BigInteger fileTimeConversionfactor2 = new BigInteger("10000");
     private long maxSearchResultSize = -1;

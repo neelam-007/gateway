@@ -121,7 +121,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         useClientCert = initCredentials();
 
-        final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
+        final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("gatewaySslClientTrustManager");
         ssg.getRuntime().setTrustManager(trustManager);
         ssg.getRuntime().setCredentialManager(newCredentialManager(trustManager));
         ssg.getRuntime().setSsgKeyStoreManager(new BridgeRoutingKeyStoreManager());

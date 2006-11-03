@@ -107,7 +107,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
+            final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("gatewaySslClientTrustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
             final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
             sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);

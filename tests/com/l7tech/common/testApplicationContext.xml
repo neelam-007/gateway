@@ -83,7 +83,7 @@
     </bean>
 
     <!-- server side HTTP routing client trust manager -->
-    <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+    <bean id="gatewaySslClientTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
         <property name="trustedCertManager">
             <ref bean="trustedCertManager"/>
         </property>
