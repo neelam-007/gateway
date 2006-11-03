@@ -134,6 +134,7 @@ public class HttpUriResolver extends ServiceResolver {
         rwlock.writeLock().lock();
         try {
             createnolock(service);
+            knownToFail.clear();
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -153,6 +154,7 @@ public class HttpUriResolver extends ServiceResolver {
         try {
             deletenolock(service);
             createnolock(service);
+            knownToFail.clear();
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -164,6 +166,7 @@ public class HttpUriResolver extends ServiceResolver {
             for (PublishedService svc : services) {
                 createnolock(svc);
             }
+            knownToFail.clear();
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -264,7 +267,6 @@ public class HttpUriResolver extends ServiceResolver {
     class URIResolutionParam {
         URIResolutionParam(final String uri) {
             this.uri = uri;
-            knownToFail.clear();
             if (uri.indexOf('*') > 0) {
                 this.pathPattern = uri.charAt(uri.length() - 1) == '*';
                 String tmp = uri.replace(".", "\\.");
