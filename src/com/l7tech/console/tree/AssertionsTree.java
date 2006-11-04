@@ -98,6 +98,7 @@ public class AssertionsTree extends JTree implements DragGestureListener {
             AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
             if (!node.isLeaf()) return null;
             if (node instanceof IdentityProviderNode) return null;
+            if (node.asAssertion() == null) return null;
             return new PolicyTransferable(node);
         }
         return null;
