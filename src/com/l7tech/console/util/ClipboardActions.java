@@ -109,6 +109,14 @@ public class ClipboardActions {
                 updateClipboardFlavors(clip);
             }
 
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    Clipboard clip = getClipboard();
+                    if (clip != null) updateClipboardFlavors(clip);
+                    updateClipboardActions();
+                }
+            });
+
             focusListenerInstalled = true;
         }
     }
