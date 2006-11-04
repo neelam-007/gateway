@@ -26,7 +26,10 @@ public class TreeNodeHidingTransferHandler extends TransferHandler {
                     // Strip the tree nodes, since they aren't all serializable and the attempt
                     // to put them onto the system clipboard will fail.
                     PolicyTransferable pt = (PolicyTransferable)t;
-                    t = new PolicyTransferable(pt.getPolicyXml());
+                    String xml = pt.getPolicyXml();
+                    if (xml == null) // Node couldn't produce an assertion
+                        return;
+                    t = new PolicyTransferable(xml);
                 }
 
                 try {
