@@ -14,6 +14,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+
+import com.l7tech.common.xml.TestDocuments;
 
 /**
  * Test for {@link HexUtils} facilities.
@@ -55,6 +58,13 @@ public class HexUtilsTest extends TestCase {
         assertTrue(Arrays.equals( HexUtils.unHexDump( "abcd" ), new byte[] { (byte)0xAB, (byte)0xCD }));
         assertTrue(Arrays.equals( HexUtils.unHexDump( "deadbeef" ), new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF } ));
         assertTrue( HexUtils.hexDump( HexUtils.unHexDump( "de615f787075c54bd19ba64da4128553" )).equals("de615f787075c54bd19ba64da4128553"));
+    }
+    
+    public void testBase64RoundTrip() throws Exception {
+        X509Certificate cert = TestDocuments.getDotNetServerCertificate();
+        String certB64 = HexUtils.encodeBase64(cert.getEncoded(), true);
+        X509Certificate decodedCert = CertUtils.decodeCert(HexUtils.decodeBase64(certB64));
+        assertTrue(CertUtils.certsAreEqual(cert, decodedCert));
     }
 
     public void testSlurpStream() throws Exception {
