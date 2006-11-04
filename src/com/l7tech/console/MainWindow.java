@@ -1891,6 +1891,34 @@ public class MainWindow extends JFrame {
                 MainWindow.this.exitMenuEventHandler();
             }
         });
+
+        // Adds listener to save window size and location under normal state
+        // (not under maximized state).
+        // But JDK 1.5 currently does not distinguish between the two, so we
+        // have to test for window state below.
+        // @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6256547
+        addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent e) {
+                super.componentResized(e);
+                if (getExtendedState() == Frame.NORMAL) {
+                    preferences.setLastWindowSize(getSize());
+                }
+            }
+
+            public void componentMoved(ComponentEvent e) {
+                super.componentMoved(e);
+                final Point p = getLocation();
+                if (getExtendedState() == Frame.NORMAL && p.x >= 0 && p.y >= 0) {
+                    // Currently JDK 1.5 fires componentMoved before state is
+                    // set to maximized. So we have to additionally test for
+                    // positive coordinate values. It's not perfect since user
+                    // can drag a normal state window slightly beyond the top
+                    // left screen corner. But that's the best we can do now.
+                    preferences.setLastWindowLocation(getLocation());
+                }
+            }
+        });
+
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
