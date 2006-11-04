@@ -14,6 +14,8 @@ import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 
+import com.l7tech.common.util.ShutdownExceptionHandler;
+
 /**
  * Extension of the MultiThreadedHttpConnectionManager that will close stale connections.
  *
@@ -127,6 +129,10 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
     private static final int MIN_STALE_CLEANUP_COUNT = 0;
     private static final int MAX_STALE_CLEANUP_COUNT = 1000;
     private static final Timer cleanupTimer = new Timer("HttpConnectionManagerCleanupTimer", true);
+
+    static {
+        ShutdownExceptionHandler.addShutdownHandler(cleanupTimer);
+    }
 
     private Set seenHostConfigurations;
     private int staleCleanupCountPerHost;

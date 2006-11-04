@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 import javax.servlet.ServletInputStream;
 
+import com.l7tech.common.util.ShutdownExceptionHandler;
+
 /**
  * An InputStream that will timeout if no data is read.
  *
@@ -295,6 +297,7 @@ public class TimeoutInputStream extends ServletInputStream {
         Thread timer = new Thread(new Interrupter());
         timer.setDaemon(true);
         timer.setName("InputTimeoutThread");
+        timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
         timer.start();
     }
 

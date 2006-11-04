@@ -7,6 +7,7 @@ package com.l7tech.server.util;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ShutdownExceptionHandler;
 import com.l7tech.server.ServerConfig;
 
 import java.io.BufferedInputStream;
@@ -57,6 +58,7 @@ public class UptimeMonitor {
             this.thread = new Thread(new Runnable() { public void run() { runMonitorThread(); }}, "Uptime Monitor");
             thread.setDaemon(true);
             thread.start();
+            thread.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
         }
     }
 

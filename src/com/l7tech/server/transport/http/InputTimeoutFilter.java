@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.common.util.ShutdownExceptionHandler;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -243,6 +244,7 @@ public class InputTimeoutFilter implements Filter {
         updateThread = new Thread(updater, "TimeoutFilterConfigRefresh");
         updateThread.setDaemon(true);
         updateThread.setPriority(Thread.NORM_PRIORITY-1);
+        updateThread.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
         updateThread.start();
     }
 

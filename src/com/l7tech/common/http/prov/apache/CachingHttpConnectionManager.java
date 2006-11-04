@@ -12,6 +12,8 @@ import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import EDU.oswego.cs.dl.util.concurrent.Channel;
 import EDU.oswego.cs.dl.util.concurrent.WaitFreeQueue;
 
+import com.l7tech.common.util.ShutdownExceptionHandler;
+
 /**
  * HttpConnectionManager that eliminates connection pool contention with a thread local cache.
  *
@@ -78,6 +80,7 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
         Thread timer = new Thread(new CachedConnectionCleanup());
         timer.setDaemon(true);
         timer.setName("CachedHttpConnectionCleanupThread");
+        timer.setUncaughtExceptionHandler(ShutdownExceptionHandler.getInstance());
         timer.start();
     }
 

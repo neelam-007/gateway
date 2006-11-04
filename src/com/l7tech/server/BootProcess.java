@@ -14,6 +14,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.Service;
+import com.l7tech.common.util.ShutdownExceptionHandler;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -154,6 +155,9 @@ public class BootProcess
             logger.info("Closing discovered component " + component);
             component.close();
         }
+
+        // 
+        ShutdownExceptionHandler.getInstance().shutdownNotify();
 
         getApplicationContext().publishEvent(new Closed(this, Component.GW_SERVER, ipAddress));
         logger.info("Closed.");
