@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.HttpRoutingAssertionDialog">
-  <grid id="83deb" binding="mainPanel" row-count="10" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="83deb" binding="mainPanel" row-count="9" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="52" y="32" width="568" height="763"/>
@@ -12,7 +12,7 @@
       <grid id="bff49" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="266" width="528" height="64"/>
+          <xy x="20" y="285" width="528" height="64"/>
           <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -64,7 +64,7 @@
       <grid id="e9c06" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="522" width="528" height="134"/>
+          <xy x="20" y="559" width="528" height="134"/>
           <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -112,7 +112,7 @@
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <xy x="20" y="718" width="528" height="25"/>
-          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
+          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -178,7 +178,7 @@
       <vspacer id="62820">
         <constraints>
           <xy x="278" y="743" width="11" height="20"/>
-          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="12"/>
           </grid>
         </constraints>
@@ -186,7 +186,7 @@
       <grid id="e1dc2" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="335" width="528" height="182"/>
+          <xy x="20" y="354" width="528" height="200"/>
           <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -194,7 +194,7 @@
         <children>
           <component id="2d605" class="javax.swing.JSeparator">
             <constraints>
-              <xy x="260" y="21" width="2" height="155"/>
+              <xy x="260" y="21" width="2" height="173"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="0" fill="2"/>
             </constraints>
             <properties>
@@ -204,7 +204,7 @@
           <grid id="cff3" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="21" width="235" height="155"/>
+              <xy x="6" y="21" width="235" height="173"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -262,7 +262,7 @@
               </component>
               <vspacer id="ccf7b">
                 <constraints>
-                  <xy x="112" y="135" width="11" height="20"/>
+                  <xy x="112" y="135" width="11" height="38"/>
                   <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
@@ -271,7 +271,7 @@
           <grid id="b4e88" binding="authDetailsPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="281" y="21" width="241" height="155"/>
+              <xy x="281" y="21" width="241" height="173"/>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -290,7 +290,7 @@
       <grid id="82225" row-count="2" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="2" left="0" bottom="2" right="0"/>
         <constraints>
-          <xy x="20" y="204" width="528" height="57"/>
+          <xy x="20" y="213" width="528" height="57"/>
           <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1"/>
         </constraints>
         <properties/>
@@ -362,41 +362,6 @@
               <enabled value="false"/>
             </properties>
           </component>
-        </children>
-      </grid>
-      <grid id="a5ef4" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <xy x="20" y="661" width="528" height="52"/>
-          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-        </constraints>
-        <properties/>
-        <border type="etched" title="HTTP Headers and Parameters Rules"/>
-        <children>
-          <component id="68fd6" class="javax.swing.JButton" binding="button1">
-            <constraints>
-              <xy x="6" y="21" width="87" height="25"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-            </constraints>
-            <properties>
-              <text value="Incoming"/>
-            </properties>
-          </component>
-          <component id="4f94a" class="javax.swing.JButton" binding="button2">
-            <constraints>
-              <xy x="103" y="21" width="87" height="25"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-            </constraints>
-            <properties>
-              <text value="Outgoing"/>
-            </properties>
-          </component>
-          <hspacer id="c5b4a">
-            <constraints>
-              <xy x="190" y="28" width="332" height="11"/>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
-            </constraints>
-          </hspacer>
         </children>
       </grid>
     </children>
