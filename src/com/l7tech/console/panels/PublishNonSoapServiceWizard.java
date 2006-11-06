@@ -20,6 +20,8 @@ import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Wizard that guides the administrator through the publication of a non-soap service.
@@ -65,9 +67,10 @@ public class PublishNonSoapServiceWizard extends Wizard {
             WspWriter.writePolicy(policy, bo);
             service.setPolicyXml(bo.toString());
             service.setSoap(false);
+            service.setHttpMethods(ANYVERBSET);// xml application are not like soap. by default, not just post is allowed
             service.setName(panel1.getPublishedServiceName());
             service.setRoutingUri(panel1.getRoutingURI());
-            
+
             long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
@@ -123,4 +126,11 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     private IdentityProviderWizardPanel panel2;
     private NonSoapServicePanel panel1;
+    private static final Set<String> ANYVERBSET = new HashSet<String>();
+    {
+        ANYVERBSET.add("POST");
+        ANYVERBSET.add("GET");
+        ANYVERBSET.add("PUT");
+        ANYVERBSET.add("DELETE");
+    }
 }
