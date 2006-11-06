@@ -13,6 +13,10 @@ import java.rmi.RemoteException;
 import java.security.AccessControlException;
 
 /**
+ * Interface used to establish an admin session.  The methods of this interface are explicitly excluded from admin
+ * session security requirements.  If you add a new method, be sure to add its name to the if statement in
+ * SecureRemoteInvocationExecutor.
+ *
  * @author emil
  * @version Dec 2, 2004
  */

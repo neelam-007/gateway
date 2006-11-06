@@ -82,6 +82,8 @@ public class LogonDialog extends JDialog {
      */
     private JLabel dialogTitleLabel = null;
 
+    private JLabel serverLabel;
+
     /**
      * username text field
      */
@@ -315,7 +317,7 @@ public class LogonDialog extends JDialog {
 
 
         //url label
-        JLabel serverLabel = new JLabel();
+        serverLabel = new JLabel();
         serverLabel.setDisplayedMnemonic(resources.getString("serverField.mnemonic").charAt(0));
         serverLabel.setToolTipText(resources.getString("serverField.tooltip"));
         serverLabel.setText(resources.getString("serverField.label"));
@@ -602,6 +604,8 @@ public class LogonDialog extends JDialog {
         if (visible && preconfiguredGatewayHostname != null) {
             serverComboBox.setSelectedItem(preconfiguredGatewayHostname);
             serverComboBox.setEnabled(false);
+            serverComboBox.setVisible(false);
+            serverLabel.setVisible(false);
             if (preconfiguredSessionId != null && preconfiguredServerCert != null) {
                 // Skip the dialog and just try logging in
                 doLogon();

@@ -15,9 +15,11 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -100,12 +102,10 @@ public class AppletMain extends JApplet {
         String serverCertB64 = getParameter("gatewayCert");
         if (serverCertB64 != null && serverCertB64.length() > 0) {
             try {
-                byte[] certBytes;
-                try {
-                    certBytes = HexUtils.unHexDump(serverCertB64);
-                } catch (IOException e) {
-                    certBytes = HexUtils.decodeBase64(serverCertB64, true);
-                }
+                serverCertB64 = URLDecoder.decode(serverCertB64, "UTF-8");
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "Preconfigured server cert(base64): " + serverCertB64);
+                byte[] certBytes = HexUtils.decodeBase64(serverCertB64, true);
                 X509Certificate serverCert = CertUtils.decodeCert(certBytes);
                 LogonDialog.setPreconfiguredServerCert(serverCert);
             } catch (IOException e) {
@@ -116,8 +116,13 @@ public class AppletMain extends JApplet {
         }
 
         String sessionId = getParameter("sessionId");
-        if (sessionId != null && sessionId.length() > 0)
-            LogonDialog.setPreconfiguredSessionId(sessionId);
+        if (sessionId != null && sessionId.length() > 0) {
+            try {
+                LogonDialog.setPreconfiguredSessionId(URLDecoder.decode(sessionId, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                logger.log(Level.WARNING, "Unable to decode preconfigured session ID: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
     }
 
     private static ApplicationContext createApplicationContext() {

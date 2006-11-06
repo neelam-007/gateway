@@ -121,7 +121,7 @@ public class ManagerAppletServlet extends HttpServlet {
 
     private void emitServerCertParam(PrintStream ps) throws IOException {
         try {
-            emitParam(ps, "gatewayCert", HexUtils.hexDump(keystoreUtils.getSslCert().getEncoded()));
+            emitParam(ps, "gatewayCert", HexUtils.encodeBase64(keystoreUtils.getSslCert().getEncoded(), true));
         } catch (CertificateException e) {
             // Leave it out
             logger.log(Level.WARNING, "Unable to provide gatewayCert to applet: " + ExceptionUtils.getMessage(e), e);
