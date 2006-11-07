@@ -10,8 +10,12 @@ package com.l7tech.common.http;
 public interface GenericHttpClient {
     String METHOD_GET = "GET";
     String METHOD_POST = "POST";
+    String METHOD_PUT = "PUT";
+    String METHOD_DELETE = "DELETE";
     public static GenericHttpMethod GET = new GenericHttpMethod(METHOD_GET, false);
     public static GenericHttpMethod POST = new GenericHttpMethod(METHOD_POST, true);
+    public static GenericHttpMethod PUT = new GenericHttpMethod(METHOD_PUT, true);
+    public static GenericHttpMethod DELETE = new GenericHttpMethod(METHOD_DELETE, false);
 
     public static class GenericHttpMethod {
         private final String name;

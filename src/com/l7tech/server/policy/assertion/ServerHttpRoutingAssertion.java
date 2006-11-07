@@ -119,7 +119,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             throw new RuntimeException(e);
         }
 
-        GenericHttpClientFactory factory = null;
+        GenericHttpClientFactory factory;
         try {
             factory = (GenericHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
         } catch (Exception e) {
@@ -353,7 +353,28 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-
+    private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context) {
+        if (context.getRequest().isHttpRequest()) {
+            HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+            // Check the request method
+            String requestMethod = httpRequestKnob.getMethod();
+            if (requestMethod.equals("GET")) {
+                return GenericHttpClient.GET;
+            } else if (requestMethod.equals("POST")) {
+                return GenericHttpClient.POST;
+            } else if (requestMethod.equals("PUT")) {
+                return GenericHttpClient.PUT;
+            }  else if (requestMethod.equals("DELETE")) {
+                return GenericHttpClient.DELETE;
+            } else {
+                logger.severe("Unexpected method " + requestMethod);
+            }
+        } else {
+            logger.info("assuming http method for downstream service (POST) because " +
+                        "there is no incoming http method to base this on");
+        }
+        return GenericHttpClient.POST;
+    }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context,
                                          GenericHttpRequestParams routedRequestParams,
@@ -380,7 +401,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (!data.isPassthroughHttpAuthentication() &&
                 routedRequestParams.getNtlmAuthentication() == null &&
                 routedRequestParams.getPasswordAuthentication() == null) {
-                routedRequestParams.setContentLength(new Long(contentLength));
+                routedRequestParams.setContentLength(contentLength);
             }
             else if (data.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
@@ -395,25 +416,28 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  getConnectionTimeout(),
                                                                  getTimeout(),
                                                                  connectionId);
-            routedRequest = httpClient.createRequest(GenericHttpClient.POST, routedRequestParams);
-            if (routedRequest instanceof RerunnableHttpRequest) {
-                RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
-                rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
-                    public InputStream getInputStream() {
-                        try {
-                            return reqMime.getEntireMessageBodyAsInputStream();
-                        } catch (NoSuchPartException nspe) {
-                            return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
-                        } catch (IOException ioe) {
-                            return new IOExceptionThrowingInputStream(ioe);
+            GenericHttpClient.GenericHttpMethod method = methodFromRequest(context);
+            routedRequest = httpClient.createRequest(method, routedRequestParams);
+            // only include payload if the method is POST or PUT
+            if (method == GenericHttpClient.POST || method == GenericHttpClient.PUT) {
+                if (routedRequest instanceof RerunnableHttpRequest) {
+                    RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
+                    rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
+                        public InputStream getInputStream() {
+                            try {
+                                return reqMime.getEntireMessageBodyAsInputStream();
+                            } catch (NoSuchPartException nspe) {
+                                return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
+                            } catch (IOException ioe) {
+                                return new IOExceptionThrowingInputStream(ioe);
+                            }
                         }
-                    }
-                });
-            } else {
-                final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-                routedRequest.setInputStream(bodyInputStream);
+                    });
+                } else {
+                    final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+                    routedRequest.setInputStream(bodyInputStream);
+                }
             }
-
             long latencyTimerStart = System.currentTimeMillis();
             routedResponse = routedRequest.getResponse();
 
@@ -451,8 +475,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 boolean passed = false;
                 List wwwAuthValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_WWW_AUTHENTICATE);
                 if (wwwAuthValues != null) {
-                    for (Iterator i = wwwAuthValues.iterator(); i.hasNext();) {
-                        String value = (String)i.next();
+                    for (Object wwwAuthValue : wwwAuthValues) {
+                        String value = (String) wwwAuthValue;
                         httpResponseKnob.addChallenge(value);
                         passed = true;
                     }
@@ -566,7 +590,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      *
      * @param routedRequestParams the request parameters
      * @param context the context for this request
-     * @return the collection of attached Cookies
      */
     private void copyCookiesOutbound(GenericHttpRequestParams routedRequestParams,
                                      PolicyEnforcementContext context,
@@ -607,7 +630,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      *
      * @param routedResponse the response received from the protected service, where cookies will be copied from
      * @param context the context for the SSG request, to which the cookies should be copied
-     * @param originalCookies the cookies that were already known at the time this request was sent (not newly set)
      */
     private void copyCookiesInbound(GenericHttpRequestParams routedRequestParams, GenericHttpResponse routedResponse, PolicyEnforcementContext context) {
         List setCookieValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
