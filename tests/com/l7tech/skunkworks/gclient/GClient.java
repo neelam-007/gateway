@@ -122,6 +122,7 @@ public class GClient {
     private JComboBox contentTypeComboBox;
     private JSpinner threadSpinner;
     private JSpinner requestSpinner;
+    private JTextField cookiesTextField;
 
 
     //
@@ -534,6 +535,7 @@ public class GClient {
         final String targetUrl = urlTextField.getText();
         final String message = requestTextArea.getText();
         final String contentType = (String) contentTypeComboBox.getSelectedItem();
+        final String cookies = cookiesTextField.getText();
 
         try {
             boolean isFastInfoset = contentType.indexOf("fastinfoset") > 0;
@@ -567,12 +569,14 @@ public class GClient {
                 final long startTime = System.currentTimeMillis();
                 for(int i=0; i<requests; i++) {
                     String[] responseData = !isJms ?
-                            doMessage(soapAction, targetUrl, requestBytes) :
+                            doMessage(soapAction, targetUrl, cookies, requestBytes) :
                             doJmsMessage(targetUrl, requestBytes);
                     if(responseData!=null) {
                         statusLabel.setText(responseData[0]);
                         lengthLabel.setText(responseData[1]);
                         ctypeLabel.setText(responseData[2]);
+                        if (responseData[4]!=null && responseData[4].length()>0)
+                            cookiesTextField.setText(responseData[4]);
                         rawResponse = responseData[3];
                         try {
                             formattedResponse = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseData[3]));
@@ -599,7 +603,7 @@ public class GClient {
                     requestThreads[t] = new Thread(requestGroup, new Runnable(){
                         public void run() {
                             for(int i=0; i<requests; i++) {
-                                String[] responseData = doMessage(soapAction, targetUrl, requestData);
+                                String[] responseData = doMessage(soapAction, targetUrl, null, requestData);
                                 if(responseData==null) {
                                     System.out.println("Request thread exiting after error!");
                                     clientLocal.set(null);
@@ -630,13 +634,18 @@ public class GClient {
 
     private String[] doJmsMessage(String targetUrl, byte[] requestBytes) {
         try {
-            JmsClient client = new JmsClient(new URI(targetUrl));
+            PasswordAuthentication credentials = null;
+            if (loginField.getText() != null && loginField.getText().length() > 0) {
+                credentials = new PasswordAuthentication(loginField.getText(), passwordField.getPassword());
+            }
+            JmsClient client = new JmsClient(new URI(targetUrl), credentials);
             String response = client.getResponse(new String(requestBytes), true);
             if (response != null) {
                 return new String[]{"0",
                                     Integer.toString(response.length()),
                                     "",
-                                    response};
+                                    response,
+                                    ""};
             }
         }
         catch(Exception e) {
@@ -658,7 +667,7 @@ public class GClient {
         client = new CommonsHttpClient(mhcm);
     }*/
     ThreadLocal clientLocal = new ThreadLocal();
-    private String[] doMessage(String soapAction, String targetUrl, byte[] requestBytes) {
+    private String[] doMessage(String soapAction, String targetUrl, String cookies, byte[] requestBytes) {
 
         GenericHttpClient client = (GenericHttpClient) clientLocal.get();
         if(client==null) {
@@ -690,7 +699,16 @@ public class GClient {
                 }
                 params.setContentType(ContentTypeHeader.parseValue(contentType));
             }
-            params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction)});
+            if (cookies != null && cookies.length() > 0) {
+                params.setExtraHeaders(new HttpHeader[]{
+                        new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction),
+                        new GenericHttpHeader("Cookie", cookies),
+                });
+            } else {
+                params.setExtraHeaders(new HttpHeader[]{
+                        new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction),
+                });
+            }
             if(params.getTargetUrl().getProtocol().equals("https")) {
                 params.setSslSocketFactory(getSSLSocketFactory());
             }
@@ -712,7 +730,8 @@ public class GClient {
             return new String[]{response==null ? "" : Integer.toString(response.getStatus()),
                                 response==null || response.getContentLength()==null ? "" : response.getContentLength().toString(),
                                 String.valueOf(type == null ? null : type.getFullValue()),
-                                responseText};
+                                responseText,
+                                getCookies(params.getTargetUrl(), response.getHeaders())};
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -725,6 +744,30 @@ public class GClient {
         }
 
         return null;
+    }
+
+    /**
+     * Get the cookies name/value pairs as a string
+     */
+    private String getCookies(final URL url, final HttpHeaders headers) {
+        StringBuffer cookieBuffer = new StringBuffer();
+
+        Collection cookies = headers.getValues("Set-Cookie");
+        for (Iterator cookieIter=cookies.iterator(); cookieIter.hasNext();) {
+            String cookieStatement = (String) cookieIter.next();
+            try {
+                HttpCookie cookie = new HttpCookie(url, cookieStatement);
+                cookieBuffer.append(cookie.getCookieName());
+                cookieBuffer.append('=');
+                cookieBuffer.append(cookie.getCookieValue());
+                cookieBuffer.append(';');
+            }
+            catch(HttpCookie.IllegalFormatException ife) {                
+                ife.printStackTrace();
+            }
+        }
+
+        return cookieBuffer.toString();
     }
 
     /**
