@@ -1941,7 +1941,7 @@ public class MainWindow extends JFrame {
         /* restore window position */
         initializeWindowPosition();
         initializeHTMLRenderingKit();
-
+        installInactivityTimerEventListener();
     }
 
     private void initializeHTMLRenderingKit() {
