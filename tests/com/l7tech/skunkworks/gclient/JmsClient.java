@@ -14,6 +14,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.PasswordAuthentication;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,6 +30,8 @@ import java.util.logging.Logger;
  * <p>An example url is:</p>
  *
  * <code>jms:/queue?destination=queue1&connectionFactory=ConnectionFactory&initialContextFactory=org.exolab.jms.jndi.InitialContextFactory&jndiProviderURL=tcp://localhost:3035</code>
+ * <code>jms:/queue?destination=queue&connectionFactory=qcf&initialContextFactory=fr.dyade.aaa.jndi2.client.NamingContextFactory&jndiProviderURL=scn://localhost:16400</code>
+ * <code>jms:/queue?destination=queue&connectionFactory=ConnectionFactory&initialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiProviderURL=tcp://localhost:61616</code>
  *
  * <p>This class is poorly written and minimally tested.</p>
  *
@@ -43,12 +46,14 @@ public class JmsClient {
      * Create a client that sends messages to the given destination.
      *
      * @param jmsUrl The JMS url
+     * @param credentials Connection credentials may be null
      */
-    public JmsClient(URI jmsUrl) {
+    public JmsClient(URI jmsUrl, PasswordAuthentication credentials) {
         if (!jmsUrl.getScheme().equals("jms")) {
             throw new IllegalArgumentException("Not a JMS URL: " + jmsUrl);
         }
 
+        this.credentials = credentials;
         data = new LinkedHashMap();
         ParameterizedString ps = new ParameterizedString(jmsUrl.getQuery());
         Set names = ps.getParameterNames();
@@ -126,7 +131,7 @@ public class JmsClient {
             }
 
             Destination jmsOutboundDest = getRoutedRequestDestination();
-            jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
+            jmsInboundDest = responseDestination;
 
             String corrId = jmsOutboundRequest.getJMSCorrelationID();
             String selector = null;
@@ -174,19 +179,13 @@ public class JmsClient {
             }
 
             return null;
-        } catch ( JMSException e ) {
-            closeBag();
-            throw e;
-        } catch ( Exception e ) {
-            closeBag();
-            throw e;
         } finally {
             try {
                 if ( jmsInboundDest instanceof TemporaryQueue ) {
                     if ( jmsConsumer != null ) jmsConsumer.close();
                     ((TemporaryQueue)jmsInboundDest).delete();
                 }
-            } catch ( JMSException e ) {
+            } finally {
                 closeBag();
             }
         }
@@ -194,6 +193,7 @@ public class JmsClient {
 
     //- PRIVATE
 
+    private PasswordAuthentication credentials;
     private Map data = null; // props for JMS dest
     private JmsConnectionManager jmsConnectionManager;
     private JmsConnection routedRequestConnection;
@@ -202,6 +202,7 @@ public class JmsClient {
     private JmsBag bag;
     private Destination routedRequestDestination;
     private Destination endpointResponseDestination;
+    private Destination responseDestination;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     public static final int BUFFER_SIZE = 8192;
@@ -222,7 +223,7 @@ public class JmsClient {
         return getJmsBag().getSession().createTemporaryQueue();
     }
 
-    private Destination getResponseDestination( JmsEndpoint endpoint, Message request )
+    private Destination getResponseDestination( JmsEndpoint endpoint )
             throws JMSException, NamingException, JmsConfigException {
         JmsReplyType replyType = endpoint.getReplyType();
 
@@ -284,7 +285,8 @@ public class JmsClient {
         JmsReplyType replyType = endpoint.getReplyType();
         if ( replyType != JmsReplyType.NO_REPLY ) {
             // Set replyTo & correlationId
-            outboundRequestMsg.setJMSReplyTo( getResponseDestination( endpoint, outboundRequestMsg ) );
+            responseDestination = getResponseDestination( endpoint );
+            outboundRequestMsg.setJMSReplyTo( responseDestination );
             outboundRequestMsg.setJMSCorrelationID( "GClient-" + Long.toString(System.currentTimeMillis()) );
         }
 
@@ -315,7 +317,7 @@ public class JmsClient {
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) throw new JMSException( "JmsEndpoint could not be located! It may have been deleted" );
 
-            bag = JmsUtil.connect( conn, null );
+            bag = JmsUtil.connect( conn, credentials );
             bag.getConnection().start();
         }
         return bag;
