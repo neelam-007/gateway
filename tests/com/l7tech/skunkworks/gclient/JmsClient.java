@@ -263,8 +263,7 @@ public class JmsClient {
 
     /**
      * Builds a {@link Message} to be routed to a JMS endpoint.
-     * @param context contains the request to be converted into a JMS Message
-     * @param auditor for adding associated logs to audit record.
+     * @param text contains the text to be converted into a JMS Message
      * @return the JMS Message
      * @throws IOException
      * @throws JMSException
