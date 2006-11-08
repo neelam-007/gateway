@@ -66,7 +66,7 @@
             <include name="jdom.jar"/>
             <include name="asm.jar"/>
             <include name="asm-commons.jar"/>
-            <include name="javac2.jar"/>
+            <include name="javac2-l7p1.jar"/>
         </fileset>
     </path>
 
@@ -162,7 +162,7 @@
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/qname.jar"/>
-        <include name="**/forms_rt.jar"/>
+        <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/xmlpad.jar"/>
         <include name="**/xmlpad-res.jar"/>
         <include name="**/xss4j.jar"/>
@@ -177,7 +177,7 @@
     -->
     <patternset id="configurationwizard.libs">
         <include name="**/commons-lang-1.0.1.jar"/>
-        <include name="**/forms_rt.jar"/>
+        <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/mysql-connector-java-3.0.17-ga-bin.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/bcprov-jdk15-134.jar"/>
@@ -221,7 +221,7 @@
         <include name="**/xbean-saml1_1.jar"/>
         <include name="**/xbean-saml2_0.jar"/>
         <include name="**/xbean-xenc-xmldsig.jar"/>
-        <include name="**/forms_rt.jar"/>
+        <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/xml4j.jar"/>
         <include name="**/are.jar"/>
         <include name="**/mailapi-1.3.2.jar"/>
@@ -253,7 +253,7 @@
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/qname.jar"/>
-        <include name="**/forms_rt.jar"/>
+        <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/xmlpad.jar"/>
         <include name="**/xmlpad-res.jar"/>
         <include name="**/jaxen-1.1-beta-10.jar"/>
