@@ -82,7 +82,6 @@ public class SecureHttpFilter implements Filter {
         // Resume session if available
         String cookie = servletRequest.getParameter("sessionId");
         if (cookie != null) {
-            cookie = URLDecoder.decode(cookie, "UTF-8");
             Principal authUser = adminSessionManager.resumeSession(cookie);
             if (authUser != null) {
                 subject.getPrincipals().add(authUser);

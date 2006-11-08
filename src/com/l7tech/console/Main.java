@@ -9,6 +9,7 @@ import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.SplashScreen;
 import com.l7tech.console.util.SsmPreferences;
@@ -191,7 +192,7 @@ public class Main {
     }
 
     private static ApplicationContext createApplicationContext() {
-        String ctxName = System.getProperty("ssm.application.context");
+        String ctxName = SyspropUtil.getProperty("ssm.application.context");
         if (ctxName == null) {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
         }

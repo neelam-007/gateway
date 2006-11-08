@@ -21,6 +21,7 @@
 package com.l7tech.console.xmlviewer.properties;
 
 import com.l7tech.console.xmlviewer.ExchangerDocumentFactory;
+import com.l7tech.common.util.SyspropUtil;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
@@ -34,6 +35,7 @@ import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Vector;
+import java.security.AccessControlException;
 
 /**
  * Handles the eXchaNGeR configuration document.
@@ -43,7 +45,7 @@ import java.util.Vector;
  */
 public class ConfigurationProperties {
     private static final boolean DEBUG = false;
-    public static final String XNGR_HOME = System.getProperty("user.home") + File.separator + ".xngr" + File.separator;
+    public static final String XNGR_HOME = SyspropUtil.getProperty("user.home") + File.separator + ".xngr" + File.separator;
     private static final String PROPERTIES_FILE = ".xngr.xml";
 
     private Document document = null;
@@ -63,22 +65,29 @@ public class ConfigurationProperties {
     public ConfigurationProperties() {
         if (DEBUG) System.out.println("ConfigurationProperties()");
 
-        File dir = new File(XNGR_HOME);
-
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-
-        File file = new File(dir, PROPERTIES_FILE);
-
         try {
-            url = file.toURI().toURL(); // MalformedURLException
-        } catch (Exception e) {
-            // Should never happen, am not sure what to do in this case...
-            e.printStackTrace();
+            File dir = new File(XNGR_HOME);
+
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
+
+            File file = new File(dir, PROPERTIES_FILE);
+
+            try {
+                url = file.toURI().toURL(); // MalformedURLException
+            } catch (Exception e) {
+                // Should never happen, am not sure what to do in this case...
+                e.printStackTrace();
+            }
+
+            document = readDocument(url);
+        } catch (AccessControlException e) {
+            // Probably running as applet
+            url = null;
+            document = null;
         }
 
-        document = readDocument(url);
 
         // First time, create the document...
         if (document == null) {

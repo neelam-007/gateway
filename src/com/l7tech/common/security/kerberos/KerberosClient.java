@@ -28,6 +28,7 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbApReq;
+import com.l7tech.common.util.SyspropUtil;
 
 /**
  * Represents a client of the kerberos key distribution center.
@@ -451,7 +452,7 @@ public class KerberosClient {
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
     private static final Integer KERBEROS_LIFETIME_DEFAULT = new Integer(60 * 15); // seconds
-    private static final Integer KERBEROS_LIFETIME = Integer.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
+    private static final Integer KERBEROS_LIFETIME = SyspropUtil.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT.intValue());
 
     private static Oid kerb5Oid;
     private static String acceptPrincipal;

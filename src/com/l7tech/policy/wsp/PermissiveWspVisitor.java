@@ -29,7 +29,10 @@ class PermissiveWspVisitor implements WspVisitor {
                                 Exception problemEncountered)
             throws InvalidPolicyStreamException
     {
-        logger.log(Level.FINE, "Ignoring invalid property " + parameterName + " of " + deserializedObject.getClass());
+        if (problemEncountered instanceof SecurityException) {
+            logger.log(Level.WARNING, "Unable to set property " + parameterName + " of " + deserializedObject.getClass(), problemEncountered);
+        } else
+            logger.log(Level.FINE, "Ignoring invalid property " + parameterName + " of " + deserializedObject.getClass());
     }
 
     /** Replace the problematic element with an UnknownAssertion. */

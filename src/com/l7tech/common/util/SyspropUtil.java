@@ -14,6 +14,15 @@ import java.util.logging.Logger;
 public class SyspropUtil {
     private static final Logger logger = Logger.getLogger(SyspropUtil.class.getName());
 
+    public static Integer getInteger(String name) {
+        try {
+            return Integer.getInteger(name);
+        } catch (AccessControlException e) {
+            logger.fine("Unable to access system property " + name + "; assuming it is not set");
+            return null;
+        }
+    }
+
     public static Integer getInteger(String name, int value) {
         try {
             return Integer.getInteger(name, value);
@@ -38,6 +47,33 @@ public class SyspropUtil {
         } catch (AccessControlException e) {
             logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
             return dflt;
+        }
+    }
+
+    public static String getProperty(String name) {
+        return getString(name, null);
+    }
+
+    public static Long getLong(String name, long dflt) {
+        try {
+             return Long.getLong(name, dflt);
+        } catch (AccessControlException e) {
+            logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
+            return new Long(dflt);
+        }
+    }
+
+    /**
+     * Attempt to set a system property, if possible in this security context.
+     *
+     * @param name   name of property to set.  May not be null.
+     * @param value  value to set.
+     */
+    public static void setProperty(String name, String value) {
+        try {
+            System.setProperty(name, value);
+        } catch (AccessControlException e) {
+            logger.fine("Unable to set system property " + name);
         }
     }
 }

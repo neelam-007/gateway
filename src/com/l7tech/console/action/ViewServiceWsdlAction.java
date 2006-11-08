@@ -155,6 +155,10 @@ public class ViewServiceWsdlAction extends NodeAction {
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+            if (TopComponents.getInstance().getMainWindow().isApplet()) {
+                // Search action tries to get the class loader
+                popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
+            }
 
             panel.add(xmlContainer.getView(), BorderLayout.CENTER);
 

@@ -1,5 +1,7 @@
 package com.l7tech.common.gui.util;
 
+import com.l7tech.common.util.SyspropUtil;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
@@ -119,7 +121,7 @@ public abstract class SwingWorker {
         try {
           setValue(construct());
         } catch(RuntimeException exception) {
-            String handlerClass = System.getProperty("sun.awt.exception.handler");
+            String handlerClass = SyspropUtil.getProperty("sun.awt.exception.handler");
             if (handlerClass != null) {
                 handleException(handlerClass, exception);
             }

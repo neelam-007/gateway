@@ -124,8 +124,12 @@ public class TypeMappingUtils {
         boolean accessibilityChanged = false;
         try {
             if (!accessible) {
-                method.setAccessible(true);
-                accessibilityChanged = true;
+                try {
+                    method.setAccessible(true);
+                    accessibilityChanged = true;
+                } catch (SecurityException e) {
+                    // Unable to open up access.  Try the invocation anyway.
+                }
             }
             return method.invoke(targetObject, args);
         } finally {

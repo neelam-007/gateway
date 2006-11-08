@@ -23,6 +23,8 @@ package com.l7tech.console.xmlviewer;
 import com.l7tech.console.xmlviewer.properties.DocumentProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import org.dom4j.Document;
+import org.dom4j.DocumentFactory;
+import org.dom4j.io.XMLWriter;
 import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
@@ -32,7 +34,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.MalformedURLException;
 import java.util.*;
 
 /**
@@ -52,9 +57,15 @@ public class ExchangerDocument implements XDocument {
     private Document document = null;
     private Exception exception = null;
     private boolean readOnly = false;
-    private URL url = null;
     private boolean updated = false;
-    private long modified = 0;
+    private static final URL fakeUrl;
+    static {
+        try {
+            fakeUrl = new URL("http://nowhere.example.com/aDocument");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
 
     private Timer timer = null;
 
@@ -65,56 +76,27 @@ public class ExchangerDocument implements XDocument {
      * It creates a new document properties object.
      *
      * @param document the dom4j document.
-     * @param location the url of the document.
      */
-    public ExchangerDocument(Document document, URL location, boolean validate) {
+    public ExchangerDocument(Document document, boolean validate) {
         listeners = new EventListenerList();
 
-        this.properties = new DocumentProperties(location, validate);
-        this.document = document;
-        this.url = location;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XMLWriter writer = null;
+        try {
+            writer = new XMLWriter(baos);
+            writer.write(document);
+            writer.close();
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-        File file = new File(location.getPath());
-        modified = file.lastModified();
+        this.properties = new DocumentProperties(fakeUrl.toExternalForm(), validate, baos.toString());
+        this.document = document;
 
         // Set this as the document in the root element.
         ((ExchangerElement)document.getRootElement()).document(this);
-    }
-
-    /**
-     * Constructs an exchanger document for the url.
-     *
-     * @param location the url of the document.
-     */
-    public ExchangerDocument(URL location, boolean validate) {
-        this(new DocumentProperties(location, validate));
-    }
-
-    /**
-     * Constructs an exchanger document for the url.
-     *
-     * @param location the url of the document.
-     * @param name     the name of the document.
-     */
-    public ExchangerDocument(URL location, String name, boolean validate) {
-        this(new DocumentProperties(location, name, validate));
-    }
-
-    /**
-     * Constructs an exchanger document for the url and
-     * dom4j document supplied.
-     *
-     * @param properties the properties describing the document.
-     */
-    public ExchangerDocument(DocumentProperties properties) {
-        listeners = new EventListenerList();
-
-        this.properties = properties;
-
-        this.url = properties.getURL();
-
-        File file = new File(url.getPath());
-        modified = file.lastModified();
     }
 
     /**
@@ -173,40 +155,15 @@ public class ExchangerDocument implements XDocument {
     }
 
     /**
-     * Returns the URL for this document.
-     *
-     * @return the URL for this document.
-     */
-    public URL getURL() {
-        return url;
-    }
-
-    /**
      * Sets the Properties for this remote document,
      * Resets the document value and the fires an event...
      * Note: This is only used for remote documents.
      *
-     * @param url the URL for this document.
+     * @param name  the name of this document
      */
-    public void setProperties(URL url, String name) {
-        if (name == null || name.length() == 0) {
-            name = url.getFile();
-        }
-
+    public void setProperties(String name) {
         if (!getName().equals(name)) {
             properties.setName(name);
-        }
-
-        if (!url.sameFile(this.url)) {
-            this.url = url;
-            properties.setURL(url);
-
-            document = null;
-
-            modified = (new Date()).getTime();
-            updated = false;
-            readOnly = true;
-            exception = null;
         }
 
         // Make sure the event is always fired on the GUI thread!
@@ -226,6 +183,14 @@ public class ExchangerDocument implements XDocument {
         return properties.getName();
     }
 
+    public void save() throws IOException {
+
+    }
+
+    public void load() throws IOException, SAXParseException {
+
+    }
+
     /**
      * Returns the root element for this document.
      *
@@ -237,6 +202,10 @@ public class ExchangerDocument implements XDocument {
         }
 
         return (XElement)document.getRootElement();
+    }
+
+    public URL getURL() {
+        return fakeUrl;
     }
 
     /**
@@ -255,7 +224,7 @@ public class ExchangerDocument implements XDocument {
      * @return true when the document is not a local file.
      */
     public boolean isRemote() {
-        return url.getProtocol().equalsIgnoreCase("http");
+        return false;
     }
 
     /**
@@ -304,64 +273,22 @@ public class ExchangerDocument implements XDocument {
     }
 
     /**
-     * Saves the document to disc and informs the
-     * listeners that the document has been changed.
-     */
-    public void save() throws IOException {
-        try {
-            stopTimer();
-
-            DocumentUtilities.writeDocument(document, url);
-
-            File file = new File(url.getPath());
-            modified = file.lastModified();
-            updated = false;
-
-            startTimer();
-        } finally {
-
-            // Make sure the event is always fired on the GUI thread!
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    try {
-                        fireDocumentUpdated(getRoot());
-                    } catch (Exception e) {
-                        // should not happen
-                    }
-                }
-            });
-        }
-    }
-
-    /**
-     * Loads the document from disc and informs the
+     * Loads the document from the specified xml string and informs the
      * listeners that the document has been changed.
      * <p/>
      * <b>Note:</b> The update event is always fired on the GUI thread!
      * This makes it easier to run this method in a thread.
      */
-    public synchronized void load() throws IOException, SAXParseException {
+    public synchronized void load(String xml) throws IOException, SAXParseException {
         ExchangerElement root = null;
         exception = null;
         document = null;
 
         try {
-            if (isRemote()) {
-                readOnly = true;
-                modified = (new Date()).getTime();
-                updated = false;
-
-                document = DocumentUtilities.readRemoteDocument(url, properties.validate());
-            } else {
-                File file = new File(url.getPath());
-                readOnly = !file.canWrite();
-                modified = file.lastModified();
-
-                startTimer();
-
-                document = DocumentUtilities.readDocument(url, properties.validate());
-                updated = false;
-            }
+            readOnly = true;
+            updated = false;
+            document = DocumentUtilities.readDocument(xml, properties.validate());
+            properties.setSourceXml(xml);
 
             root = (ExchangerElement)document.getRootElement();
 
@@ -386,38 +313,6 @@ public class ExchangerDocument implements XDocument {
         }
     }
 
-
-    /**
-     * Checks to find out if this version of the document is consistent
-     * with the one saved on disk. Tries to find out if the document has
-     * been changed or deleted by an external process.<p>
-     * When the document has been changed or deleted by an external
-     * process the correct event is fired to the document listener.
-     */
-    private void consistent() {
-        if (isLoaded() || isError()) {
-            File file = new File(url.getPath());
-
-            if (file.exists()) {
-                if (modified != file.lastModified()) {
-// System.out.println("Document updated!");
-                    // stop the timer now and start it again when the document has been loaded!
-                    stopTimer();
-
-                    try {
-                        load();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    startTimer();
-                }
-            } else {
-                stopTimer();
-                fireDocumentDeleted();
-            }
-        }
-    }
 
     /**
      * Adds a document listener to the document.
@@ -485,30 +380,6 @@ public class ExchangerDocument implements XDocument {
         }
 
         return result;
-    }
-
-    private void startTimer() {
-        if (timer == null) {
-            timer = new Timer(UPDATE_TIME, new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        consistent();
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            });
-        }
-
-        if (!timer.isRunning()) {
-            timer.start();
-        }
-    }
-
-    private void stopTimer() {
-        if (timer != null && timer.isRunning()) {
-            timer.stop();
-        }
     }
 
     /**

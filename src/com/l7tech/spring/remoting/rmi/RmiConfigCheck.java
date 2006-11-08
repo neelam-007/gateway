@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.springframework.beans.factory.InitializingBean;
+import com.l7tech.common.util.SyspropUtil;
 
 /**
  * Bean that checks RMI configuration.
@@ -39,7 +40,7 @@ public class RmiConfigCheck implements InitializingBean {
 
     private void checkConfig() {
         // If the RMI hostname is set ensure it resolves to a local address
-        String rmiHostName = System.getProperty(SYSPROP_RMI_HOSTNAME);
+        String rmiHostName = SyspropUtil.getProperty(SYSPROP_RMI_HOSTNAME);
         if (rmiHostName == null) {
             logger.log(Level.WARNING, "RMI host name is not set (java.rmi.server.hostname)");
         } else {

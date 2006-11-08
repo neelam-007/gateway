@@ -150,8 +150,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param sn    the ServiceNode
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener)
-    {
+    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
@@ -165,8 +164,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener)
-    {
+    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
@@ -178,7 +176,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         node = n;
         okActionListener = okListener;
 
-        assertion = (XpathBasedAssertion)node.asAssertion();
+        assertion = (XpathBasedAssertion) node.asAssertion();
         if (assertion.getXpathExpression() != null) {
             namespaces = assertion.getXpathExpression().getNamespaces();
         } else {
@@ -413,10 +411,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         setModal(true);
         namespaceButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                java.util.List requiredNS = new ArrayList(requiredNamespaces.values());
+                List requiredNS = new ArrayList(requiredNamespaces.values());
                 NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this,
-                                                                     namespaces,
-                                                                     requiredNS);
+                        namespaces,
+                        requiredNS);
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
                 nseditor.setVisible(true);
@@ -726,20 +724,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     }
 
     private ExchangerDocument asExchangerDocument(String content)
-      throws IOException, DocumentException, SAXParseException {
-
-        ExchangerDocument exchangerDocument = new ExchangerDocument(asTempFileURL(content), false);
+            throws IOException, DocumentException, SAXParseException {
+        Document document = DocumentUtilities.readDocument(content, false);
+        ExchangerDocument exchangerDocument = new ExchangerDocument(document, false);
         exchangerDocument.load();
         return exchangerDocument;
-    }
-
-    private URL asTempFileURL(String content)
-      throws IOException, DocumentException {
-        final File file = File.createTempFile("Temp", ".xml");
-        Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
-        DocumentUtilities.writeDocument(doc, file.toURI().toURL());
-        file.deleteOnExit();
-        return file.toURI().toURL();
     }
 
     /**
@@ -797,9 +786,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 if (lpc instanceof BindingTreeNode) {
                     messageViewerToolBar.setToolbarEnabled(false);
                     try {
-                        URL url = asTempFileURL("<all/>");
-                        exchangerDocument.setProperties(url, null);
-                        exchangerDocument.load();
+                        exchangerDocument.load("<all/>");
 
                         return;
                     } catch (Exception e1) {
@@ -875,9 +862,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             } catch (Exception e) {
                 log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
             }
-            URL url = asTempFileURL(soapMessage);
-            exchangerDocument.setProperties(url, null);
-            exchangerDocument.load();
+            exchangerDocument.load(soapMessage);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

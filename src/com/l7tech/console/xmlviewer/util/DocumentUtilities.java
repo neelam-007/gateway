@@ -21,6 +21,9 @@
 package com.l7tech.console.xmlviewer.util;
 
 import com.l7tech.console.xmlviewer.ExchangerDocumentFactory;
+import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.io.OutputFormat;
@@ -29,14 +32,13 @@ import org.dom4j.io.XMLWriter;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
+import org.apache.commons.httpclient.util.ExceptionUtil;
 
 import javax.swing.*;
-import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.AccessControlException;
 
 /**
  * Utilities for reading and writing of XML documents.
@@ -119,6 +121,37 @@ public class DocumentUtilities {
         return reader;
     }
 
+    public static synchronized Document readDocument(String xml, boolean validate) throws IOException, SAXParseException {
+        if (DEBUG) System.out.println("DocumentUtilities.readDocument( xml string )");
+
+        Document document = null;
+
+        try {
+            SAXReader reader = getReader(validate);
+
+            document = reader.read(new StringReader(xml));
+        } catch (DocumentException e) {
+            Exception x = (Exception)e.getNestedException();
+
+            if (x instanceof SAXParseException) {
+                SAXParseException spe = (SAXParseException)x;
+                Exception ex = spe.getException();
+
+                if (ex instanceof IOException) {
+                    throw (IOException)ex;
+                } else {
+                    throw (SAXParseException)x;
+                }
+            } else if (x instanceof IOException) {
+                throw (IOException)x;
+            }
+        }
+
+        if (DEBUG) System.out.println("DocumentUtilities.readDocument( xml string ) [" + document + "]");
+
+        return document;
+    }
+
     /**
      * Reads the document for this URL.
      *
@@ -167,13 +200,15 @@ public class DocumentUtilities {
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
             connection.setDefaultUseCaches(false);
             connection.setUseCaches(false);
-            connection.setRequestProperty("User-Agent", "eXchaNGeR/" + System.getProperty("xngr.version") + " (http://xngr.org/)");
+            connection.setRequestProperty("User-Agent", "eXchaNGeR/" + SyspropUtil.getString("xngr.version", "1") + " (http://xngr.org/)");
             connection.connect();
             InputStream stream = connection.getInputStream();
 
             document = reader.read(stream);
             stream.close();
             connection.disconnect();
+        } catch (AccessControlException e) {
+            throw new CausedIOException("Unable to access remote URL: " + ExceptionUtils.getMessage(e), e);
         } catch (DocumentException e) {
             Exception x = (Exception)e.getNestedException();
 

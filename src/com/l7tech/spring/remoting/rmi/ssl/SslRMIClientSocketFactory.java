@@ -1,5 +1,7 @@
 package com.l7tech.spring.remoting.rmi.ssl;
 
+import com.l7tech.common.util.SyspropUtil;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -168,7 +170,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
         // Set the SSLSocket Enabled Cipher Suites
         //
         final String enabledCipherSuites = (String)
-          System.getProperty("javax.rmi.ssl.client.enabledCipherSuites");
+          SyspropUtil.getProperty("javax.rmi.ssl.client.enabledCipherSuites");
         if (enabledCipherSuites != null) {
             StringTokenizer st = new StringTokenizer(enabledCipherSuites, ",");
             int tokens = st.countTokens();
@@ -186,7 +188,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
         // Set the SSLSocket Enabled Protocols
         //
         final String enabledProtocols = (String)
-          System.getProperty("javax.rmi.ssl.client.enabledProtocols");
+          SyspropUtil.getProperty("javax.rmi.ssl.client.enabledProtocols");
         if (enabledProtocols != null) {
             StringTokenizer st = new StringTokenizer(enabledProtocols, ",");
             int tokens = st.countTokens();

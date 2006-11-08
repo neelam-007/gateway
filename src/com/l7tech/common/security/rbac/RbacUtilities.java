@@ -9,6 +9,8 @@ import org.apache.commons.lang.StringUtils;
 
 import java.text.MessageFormat;
 
+import com.l7tech.common.util.SyspropUtil;
+
 /**
  * User: megery
  * Date: Jul 31, 2006
@@ -19,7 +21,7 @@ public class RbacUtilities {
     public static final String SYSTEM_PROP_ENABLEROLEEDIT = "com.l7tech.rbac.allowEditRoles";
 
     public static boolean isEnableRoleEditing() {
-        return StringUtils.equalsIgnoreCase(System.getProperty(SYSTEM_PROP_ENABLEROLEEDIT), "true");
+        return StringUtils.equalsIgnoreCase(SyspropUtil.getProperty(SYSTEM_PROP_ENABLEROLEEDIT), "true");
     }
 
     public static String getDescriptionString(Role role, boolean asHtml) {

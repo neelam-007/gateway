@@ -46,7 +46,7 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
 
         String methodName = invocation.getMethodName();
         if ((AdminLogin.class.isAssignableFrom(targetObject.getClass())
-           && ("login".equals(methodName) || "getServerCertificate".equals(methodName)))) {
+           && ("resume".equals(methodName) || "login".equals(methodName) || "getServerCertificate".equals(methodName)))) {
             // Only a few methods can be unauthenticated
             return invocation.invoke(targetObject);
         }

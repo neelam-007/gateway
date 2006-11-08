@@ -25,6 +25,8 @@ import org.dom4j.Element;
 
 import java.awt.*;
 
+import com.l7tech.common.util.SyspropUtil;
+
 /**
  * Handles the properties for the Explorer.
  *
@@ -105,7 +107,7 @@ public class ExplorerProperties extends ViewProperties {
     public static Font getDefaultFont() {
         Font defaultFont = null;
 
-        if (System.getProperty("mrj.version") != null) {
+        if (SyspropUtil.getProperty("mrj.version") != null) {
             defaultFont = new Font("Courier", Font.PLAIN, 12);
         } else {
             defaultFont = new Font("monospaced", Font.PLAIN, 12);

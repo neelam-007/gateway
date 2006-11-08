@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.table.MapBackedTableModel;
 
@@ -55,11 +56,10 @@ public class AboutBox extends JDialog implements ActionListener {
     };
 
     private Properties getWhiteListedProperties() {
-        Properties props = System.getProperties();
         Properties whitelist = new Properties();
         for (int i = 0; i < whitelistPropNames.length; i++) {
             String whitelistPropName = whitelistPropNames[i];
-            String prop = props.getProperty(whitelistPropName);
+            String prop = SyspropUtil.getProperty(whitelistPropName);
             if (prop != null) {
                 whitelist.setProperty(whitelistPropName, prop);
             }
@@ -88,7 +88,11 @@ public class AboutBox extends JDialog implements ActionListener {
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
         initUI();
         pack();
-        setAlwaysOnTop(true);
+        try {
+            setAlwaysOnTop(true);
+        } catch (SecurityException e) {
+            // Oh well
+        }
         setLocationRelativeTo(parent);
         rThread.start();
     }

@@ -45,6 +45,7 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
+import java.security.AccessControlException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -201,6 +202,8 @@ public class SecurityProviderImpl extends SecurityProvider
         } catch (MalformedURLException e) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
         } catch (AuthenticationException e) {
+            throw (LoginException) new LoginException("Session has lost admin permissions").initCause(e);
+        } catch (SecurityException e) {
             throw (LoginException) new LoginException("Session has lost admin permissions").initCause(e);
         } finally {
             if (!authenticated) {

@@ -304,24 +304,8 @@ public class Viewer extends JPanel implements XDocumentListener {
     protected static ExchangerDocument asExchangerDocument(String content)
       throws IOException, DocumentException, SAXParseException {
 
-        ExchangerDocument exchangerDocument = new ExchangerDocument(asTempFileURL(content), false);
+        ExchangerDocument exchangerDocument = new ExchangerDocument(DocumentUtilities.readDocument(content, false), false);
         exchangerDocument.load();
         return exchangerDocument;
-    }
-
-    protected static URL asTempFileURL(String content)
-      throws IOException, DocumentException {
-        final File file = File.createTempFile("Temp", ".xml");
-        Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
-        DocumentUtilities.writeDocument(doc, file.toURI().toURL());
-        file.deleteOnExit();
-        return file.toURI().toURL();
-    }
-
-    protected static URL emptyTempFileURL()
-      throws IOException {
-        final File file = File.createTempFile("Temp", ".xml");
-        file.deleteOnExit();
-        return file.toURI().toURL();
     }
 }

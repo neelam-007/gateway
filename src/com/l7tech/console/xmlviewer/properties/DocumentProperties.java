@@ -35,7 +35,15 @@ import java.net.URL;
  */
 public class DocumentProperties {
     private Element element = null;
-    private URL url = null;
+    private String sourceXml = null;
+    private static final URL fakeUrl;
+    static {
+        try {
+            fakeUrl = new URL("http://nowhere.example.com/aDocument");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Constructor for the document properties.
@@ -62,7 +70,7 @@ public class DocumentProperties {
      * @param location the URL of the document.
      * @param validate validate when opening the document.
      */
-    public DocumentProperties(URL location, boolean validate) {
+    private DocumentProperties(URL location, boolean validate) {
         this(location, getFilename(location), validate);
     }
 
@@ -73,15 +81,13 @@ public class DocumentProperties {
      * @param name     the name of the document.
      * @param validate validate when opening the document.
      */
-    public DocumentProperties(URL location, String name, boolean validate) {
+    private DocumentProperties(URL location, String name, boolean validate) {
         super();
-
-        url = location;
 
         this.element = new DefaultElement("document");
 
         Element locationElement = new DefaultElement("location");
-        locationElement.setText(location.toExternalForm());
+        locationElement.setText(fakeUrl.toExternalForm());
 
         Element nameElement = new DefaultElement("name");
         nameElement.setText(name);
@@ -94,22 +100,19 @@ public class DocumentProperties {
         element.add(validateElement);
     }
 
+
+    public DocumentProperties(String name, boolean validate, String sourceXml) {
+        this(fakeUrl, name, validate);
+        this.sourceXml = sourceXml;
+    }
+
     /**
      * Returns the URL of the document.
      *
      * @return the location.
      */
     public URL getURL() {
-        if (url == null) {
-            try {
-                url = new URL(element.element("location").getText());
-            } catch (MalformedURLException e) {
-                // This should not be possible...
-                e.printStackTrace();
-            }
-        }
-
-        return url;
+        return fakeUrl;
     }
 
     /**
@@ -118,8 +121,6 @@ public class DocumentProperties {
      * @param url the document URL (The param should not be null!).
      */
     public void setURL(URL url) {
-        this.url = url;
-        element.element("location").setText(url.toExternalForm());
     }
 
     /**
@@ -174,6 +175,14 @@ public class DocumentProperties {
      */
     public Element getElement() {
         return element;
+    }
+
+    public String getSourceXml() {
+        return sourceXml;
+    }
+
+    public void setSourceXml(String sourceXml) {
+        this.sourceXml = sourceXml;
     }
 
     // Gets the file part of the URL.

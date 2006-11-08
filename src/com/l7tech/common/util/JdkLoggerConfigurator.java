@@ -63,7 +63,7 @@ public class JdkLoggerConfigurator {
         InputStream in = null;
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-            String cf = System.getProperty("java.util.logging.config.file");
+            String cf = SyspropUtil.getProperty("java.util.logging.config.file");
             List configCandidates = new ArrayList(3);
             if (cf != null) {
                 configCandidates.add(cf);
