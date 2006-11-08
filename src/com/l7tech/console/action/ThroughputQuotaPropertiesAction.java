@@ -42,7 +42,7 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getMainWindow(),
+        ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),
                                                           subject.getAssertion(), null);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

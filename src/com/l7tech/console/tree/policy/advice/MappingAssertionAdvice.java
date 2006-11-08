@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
 
+import java.awt.*;
+
 /**
  * Advice for dragging a MappingAssertion into the tree.
  */
@@ -19,7 +21,7 @@ public class MappingAssertionAdvice implements Advice{
             throw new IllegalArgumentException();
         }
         MappingAssertion subject = (MappingAssertion) assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         MappingAssertionDialog dlg = new MappingAssertionDialog(mw, subject, true);
 
         // show the dialog

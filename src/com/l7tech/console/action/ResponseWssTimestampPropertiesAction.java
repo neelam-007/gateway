@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssTimestamp;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Edits the {@link com.l7tech.policy.assertion.xmlsec.ResponseWssTimestamp} properties.
@@ -55,7 +56,7 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         ResponseWssTimestamp ass = (ResponseWssTimestamp)node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, (ResponseWssTimestamp)(ass.clone()));
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();

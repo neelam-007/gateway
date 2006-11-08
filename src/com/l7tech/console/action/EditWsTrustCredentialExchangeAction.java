@@ -52,7 +52,7 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
     }
 
     protected void performAction() {
-        Frame parent = TopComponents.getInstance().getMainWindow();
+        Frame parent = TopComponents.getInstance().getTopParent();
         WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
+import java.security.AccessControlException;
 
 
 /**
@@ -158,7 +159,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      * @param throwable .
      */
     private void initialize(String title, String labelMessage, String message, Throwable throwable, Level level) {
-        setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
 
         if (labelMessage != null) {
             internalErrorLabelText = labelMessage;

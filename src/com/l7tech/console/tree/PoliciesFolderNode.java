@@ -42,7 +42,7 @@ public class PoliciesFolderNode extends AbstractPaletteFolderNode {
      * a given home path
      */
     public PoliciesFolderNode() {
-        super(NAME, TopComponents.getInstance().getMainWindow().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
+        super(NAME, TopComponents.getInstance().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
     }
 
 

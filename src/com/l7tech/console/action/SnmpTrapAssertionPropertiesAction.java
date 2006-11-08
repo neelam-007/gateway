@@ -33,7 +33,7 @@ public class SnmpTrapAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         SnmpTrapPropertiesDialog dlg = new SnmpTrapPropertiesDialog(f, subject.getSnmpTrapAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);

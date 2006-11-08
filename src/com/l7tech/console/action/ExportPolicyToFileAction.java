@@ -118,7 +118,7 @@ public class ExportPolicyToFileAction extends SecureAction {
                 return "XML Files";
             }
         });
-        int ret = chooser.showSaveDialog(TopComponents.getInstance().getMainWindow());
+        int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
         // add extension if not present
@@ -129,7 +129,7 @@ public class ExportPolicyToFileAction extends SecureAction {
         File policyFile = new File(name);
         final boolean policyFileExists = policyFile.exists();
         if (policyFileExists) {
-            overwrite = JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
+            overwrite = JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                                                       "Overwrite " + name + "?",
                                                       "Warning",
                                                       JOptionPane.YES_NO_OPTION);

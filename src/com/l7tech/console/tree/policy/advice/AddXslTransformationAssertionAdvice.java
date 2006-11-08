@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Invoked when a Xsl Transformation assertion is dropped in the policy tree.
@@ -31,7 +32,7 @@ public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAsse
         }
         super.proceed(pc);
         XslTransformation assertion = (XslTransformation)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

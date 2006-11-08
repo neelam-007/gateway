@@ -67,7 +67,7 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
     }
 
     protected void performAction() {
-        Frame frame = TopComponents.getInstance().getMainWindow();
+        Frame frame = TopComponents.getInstance().getTopParent();
 
         WsFederationPassiveTokenRequestPropertiesDialog dlg =
                 new WsFederationPassiveTokenRequestPropertiesDialog(wsFedAssertion, isTokenRequest, frame, true);

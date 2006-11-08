@@ -15,6 +15,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.common.gui.util.Utilities;
 
+import java.awt.*;
+
 /**
  * Invoked when a throughput quota assertion is added to
  * a policy tree to prompt admin for assertion properties.
@@ -28,7 +30,7 @@ public class AddThroughputQuotaAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         ThroughputQuota subject = (ThroughputQuota)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         ThroughputQuotaForm dlg = new ThroughputQuotaForm(mw, subject, pc.getPolicy());
 
         // show the dialog

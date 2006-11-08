@@ -364,10 +364,7 @@ public class PreferencesDialog extends JDialog {
             }
 
             getPreferences().setProperty(SsmPreferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
-            MainWindow mainWindow = TopComponents.getInstance().getMainWindow();            
-            if (mainWindow != null) {
-                mainWindow.setInactivitiyTimeout(timeout);
-            }
+            TopComponents.getInstance().setInactivitiyTimeout(timeout);
 
             return true;
         } catch (IOException e) {
@@ -381,7 +378,7 @@ public class PreferencesDialog extends JDialog {
     private void savePreferences() {
         try {
             // update & append
-            SsmPreferences prefs = TopComponents.getInstance().getMainWindow().getPreferences();
+            SsmPreferences prefs = TopComponents.getInstance().getPreferences();
             prefs.updateFromProperties(getPreferences(), true);
             prefs.store();
             prefs.updateSystemProperties();
@@ -415,7 +412,7 @@ public class PreferencesDialog extends JDialog {
      */
     private Properties getPreferences() throws IOException {
         if (props == null) {
-            props = TopComponents.getInstance().getMainWindow().getPreferences().asProperties();
+            props = TopComponents.getInstance().getPreferences().asProperties();
         }
         return props;
     }

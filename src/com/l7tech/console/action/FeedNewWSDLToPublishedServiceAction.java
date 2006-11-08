@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * This action resets the wsdl of an already published web service (for example if the downstream
@@ -59,7 +60,7 @@ public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
     }
 
     protected void performAction() {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         PublishedService svc;
         try {
             svc = ((ServiceNode)node).getPublishedService();

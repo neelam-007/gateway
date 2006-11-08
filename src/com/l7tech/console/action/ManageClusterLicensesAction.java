@@ -10,6 +10,8 @@ import com.l7tech.console.panels.LicenseDialog;
 import com.l7tech.console.MainWindow;
 import com.l7tech.common.gui.util.Utilities;
 
+import java.awt.*;
+
 /**
  * Action to manage the Gateway's license from the SSM.
  */
@@ -32,8 +34,8 @@ public class ManageClusterLicensesAction extends SecureAction {
 
     protected void performAction() {
         // TODO find the real gateway name
-        final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
-        final String ssgUrl = mainWindow.ssgURL();
+        final Frame mainWindow = TopComponents.getInstance().getTopParent();
+        final String ssgUrl = TopComponents.getInstance().ssgURL();
         LicenseDialog dlg = new LicenseDialog(mainWindow, ssgUrl);
 
         dlg.pack();

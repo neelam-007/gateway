@@ -44,7 +44,7 @@ public class RemoteIpRangePropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.getAssertion());
         dlg.addPolicyListener(listener);
         dlg.pack();

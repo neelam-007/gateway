@@ -115,8 +115,7 @@ public class LogonDialog extends JDialog {
      */
     public LogonDialog(Frame parent) {
         super(parent, true);
-        if (!TopComponents.getInstance().getMainWindow().isApplet())
-            this.setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
         this.parentFrame = parent;
         setTitle("");
         initResources();
@@ -247,7 +246,7 @@ public class LogonDialog extends JDialog {
         // last ID logic
         String lastID = null;
         rememberUser = false;
-        preferences = TopComponents.getInstance().getMainWindow().getPreferences();
+        preferences = TopComponents.getInstance().getPreferences();
         lastID = preferences.rememberLoginId() ?
                  preferences.getString(SsmPreferences.LAST_LOGIN_ID) :
                  null;
@@ -657,8 +656,7 @@ public class LogonDialog extends JDialog {
           throws HeadlessException {
             super(owner, true);
             setTitle("Logon in progress");
-            if (!TopComponents.getInstance().getMainWindow().isApplet())
-                setAlwaysOnTop(true);
+            Utilities.setAlwaysOnTop(this, true);
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
             setResizable(false);
             serviceUrl = url;

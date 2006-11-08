@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.HttpFormPost;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>HttpFormPostPropertiesAction</code> edits the
@@ -54,7 +55,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         HttpFormPost hfp = (HttpFormPost) node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);

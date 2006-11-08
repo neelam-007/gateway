@@ -36,7 +36,7 @@ public class ManageGlobalSchemasAction extends SecureAction {
     }
 
     protected void performAction() {
-        GlobalSchemaDialog dlg = new GlobalSchemaDialog(TopComponents.getInstance().getMainWindow());
+        GlobalSchemaDialog dlg = new GlobalSchemaDialog(TopComponents.getInstance().getTopParent());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

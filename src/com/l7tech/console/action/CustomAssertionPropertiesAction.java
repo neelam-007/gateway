@@ -85,7 +85,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         }
         catch(Exception e) {
             logger.log(Level.WARNING, "Error getting custom assertion editor.", e);
-            JFrame frame = TopComponents.getInstance().getMainWindow();
+            Frame frame = TopComponents.getInstance().getTopParent();
             // use warning level since the user does not need to restart the Manager
             ExceptionDialog ed = ExceptionDialog.createExceptionDialog(frame, "Error editing assertion, please check SecureSpan Gateway configuration.", null, Level.WARNING);
             ed.pack();
@@ -96,7 +96,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
 
     private void performGenericEditorAction() {
         CustomAssertionHolder cah = (CustomAssertionHolder)node.asAssertion();
-        final JDialog dialog = new JDialog(TopComponents.getInstance().getMainWindow(), true);
+        final JDialog dialog = new JDialog(TopComponents.getInstance().getTopParent(), true);
         final CustomAssertion ca = cah.getCustomAssertion();
         BeanEditor.Options options = new BeanEditor.Options();
         options.setDescription(ca.getName());

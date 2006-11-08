@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Advice that is run to add a new WS-Federation PRP assertion.
@@ -30,7 +31,7 @@ public class AddWsFederationPassiveTokenRequestAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         WsFederationPassiveTokenRequest assertion = (WsFederationPassiveTokenRequest) assertions[0];
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         WsFederationPassiveTokenRequestPropertiesDialog dlg = new WsFederationPassiveTokenRequestPropertiesDialog(assertion, true, f, true);
         Utilities.setEscKeyStrokeDisposes(dlg);

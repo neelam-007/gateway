@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.CommentAssertion;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>CommentAssertionPropertiesAction</code> edits the
@@ -53,7 +54,7 @@ public class CommentAssertionPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         CommentAssertion ca = (CommentAssertion)node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         CommentAssertionDialog cad = new CommentAssertionDialog(f, ca);
         Utilities.setEscKeyStrokeDisposes(cad);
         cad.pack();

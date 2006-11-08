@@ -42,7 +42,7 @@ public class NewGroupDialog extends JDialog {
     /** ID text field */
     private JTextField groupIdTextField = null;
     private JCheckBox additionalPropertiesCheckBox = null;
-    private JFrame parent;
+    private Frame parent;
 
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
@@ -56,7 +56,7 @@ public class NewGroupDialog extends JDialog {
      *
      * @param parent  the parent Frame. May be <B>null</B>
      */
-    public NewGroupDialog(JFrame parent, IdentityProviderConfig ipc) {
+    public NewGroupDialog(Frame parent, IdentityProviderConfig ipc) {
         super(parent, true);
         Utilities.setEscKeyStrokeDisposes(this);
         this.parent = parent;

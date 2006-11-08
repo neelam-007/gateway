@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,7 +71,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         try {
             if (n.getService() != null) {
                 XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);

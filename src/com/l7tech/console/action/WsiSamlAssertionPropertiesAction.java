@@ -43,7 +43,7 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         WsiSamlPropertiesDialog dlg = new WsiSamlPropertiesDialog(node.getAssertion(), f, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

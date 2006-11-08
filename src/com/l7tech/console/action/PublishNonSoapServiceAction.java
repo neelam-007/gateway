@@ -21,6 +21,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * SSM action to publish a non-soap xml service.
@@ -49,7 +50,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
     }
 
     protected void performAction() {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         PublishNonSoapServiceWizard wiz = PublishNonSoapServiceWizard.getInstance(mw);
         wiz.pack();
         wiz.setSize(800, 480);

@@ -13,6 +13,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.util.HashSet;
 import java.util.Set;
+import java.awt.*;
 
 /**
  * A abstract class for handling common tasks of User Panel. A subclass derived from this
@@ -32,7 +33,7 @@ abstract public class UserPanel extends EntityEditorPanel {
 
     protected boolean formModified;
     protected IdentityProviderConfig config;
-    protected final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+    protected final Frame topParent = TopComponents.getInstance().getTopParent();
 
     private final PermissionFlags userFlags;
     private final PermissionFlags groupFlags;

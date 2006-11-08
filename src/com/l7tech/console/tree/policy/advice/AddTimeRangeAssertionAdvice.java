@@ -9,6 +9,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.common.gui.util.Utilities;
 
+import java.awt.*;
+
 /**
  * Invoked when a TimeRange assertion is dropped to a policy tree to prompt
  * an administrator for a value.
@@ -26,7 +28,7 @@ public class AddTimeRangeAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         TimeRange subject = (TimeRange)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(mw, true, subject);
 
         // show the dialog

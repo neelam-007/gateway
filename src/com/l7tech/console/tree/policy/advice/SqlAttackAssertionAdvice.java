@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
 
+import java.awt.*;
+
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -23,7 +25,7 @@ public class SqlAttackAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         SqlAttackAssertion subject = (SqlAttackAssertion) assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         SqlAttackDialog dlg = new SqlAttackDialog(mw, subject, true);
 
         // show the dialog

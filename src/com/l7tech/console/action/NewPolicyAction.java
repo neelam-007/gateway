@@ -89,7 +89,7 @@ public class NewPolicyAction extends SecureAction {
             final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, false);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
-            TopComponents.getInstance().getMainWindow().firePolicyEdit(pep);
+            TopComponents.getInstance().firePolicyEdit(pep);
         } catch (ActionVetoException e) {
             logger.log(Level.WARNING, "vetoed!", e);
         } catch (Exception e) {

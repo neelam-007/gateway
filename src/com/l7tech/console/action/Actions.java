@@ -49,7 +49,7 @@ public class Actions {
     private static boolean deleteUser(UserNode node, IdentityProviderConfig config) {
         if (!config.isWritable()) return false;
         // Make sure
-        if ((JOptionPane.showConfirmDialog(getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getTopParent(),
           "Are you sure you want to delete " +
           node.getName() + "?",
           "Delete User",
@@ -66,14 +66,14 @@ public class Actions {
         } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(getMainWindow(),
+            JOptionPane.showMessageDialog(getTopParent(),
               ExceptionUtils.getMessage(e),
               "User Cannot Be Deleted",
               JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(getMainWindow(),
+            JOptionPane.showMessageDialog(getTopParent(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
@@ -88,7 +88,7 @@ public class Actions {
         if (!config.isWritable()) return false;
 
         // Make sure
-        if ((JOptionPane.showConfirmDialog(getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getTopParent(),
           "Are you sure you want to delete " +
           node.getName() + "?",
           "Delete Group",
@@ -110,7 +110,7 @@ public class Actions {
                 msg = de.getMessage();
             } else
                 msg = "Error encountered while deleting " + node.getName() + ". Please try again later.";
-            JOptionPane.showMessageDialog(getMainWindow(), msg, "Delete Group", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(getTopParent(), msg, "Delete Group", JOptionPane.ERROR_MESSAGE);
         }
         return false;
     }
@@ -125,7 +125,7 @@ public class Actions {
     // Deletes the given user
     private static boolean deleteProvider(IdentityProviderNode nodeIdentity) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getTopParent(),
           "Are you sure you want to delete " +
           nodeIdentity.getName() + "?",
           "Delete Provider",
@@ -141,7 +141,7 @@ public class Actions {
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting provider", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(getMainWindow(),
+            JOptionPane.showMessageDialog(getTopParent(),
               "Error encountered while deleting " +
               nodeIdentity.getName() +
               ". Please try again later.",
@@ -155,7 +155,7 @@ public class Actions {
     // Deletes the given saervice
     static boolean deleteService(ServiceNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getTopParent(),
           "Are you sure you want to delete the " + node.getName() + " service?",
           "Delete Service",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
@@ -169,7 +169,7 @@ public class Actions {
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting service", e);
-            JOptionPane.showMessageDialog(getMainWindow(),
+            JOptionPane.showMessageDialog(getTopParent(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
@@ -180,9 +180,6 @@ public class Actions {
     }
 
 
-    private static JFrame getMainWindow() {
-        return TopComponents.getInstance().getMainWindow();
-    }
 
     static boolean deleteAssertion(AssertionTreeNode node) {
         // Make sure
@@ -190,7 +187,7 @@ public class Actions {
         if (nodeName != null && nodeName.length() > 80) {
             nodeName = nodeName.substring(0,76) + "...";
         }
-        if ((JOptionPane.showConfirmDialog(getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getTopParent(),
                                            "Are you sure you want to delete assertion " + nodeName + "?", "Delete Assertion",
                                            JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
@@ -199,9 +196,13 @@ public class Actions {
         return true;
     }
 
+    private static Frame getTopParent() {
+        return TopComponents.getInstance().getTopParent();
+    }
+
     static boolean deleteAssertions(AssertionTreeNode[] nodes) {
         // Make sure
-        if (nodes == null || (JOptionPane.showConfirmDialog(getMainWindow(),
+        if (nodes == null || (JOptionPane.showConfirmDialog(getTopParent(),
                                            "Are you sure you want to delete " +nodes.length+ " assertions?", "Delete Assertions",
                                            JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
@@ -212,7 +213,7 @@ public class Actions {
 
     public static boolean deletePolicyTemplate(PolicyTemplateNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getTopParent(),
           "Are you sure you want to delete template " +
           node.getName() + "?",
           "Delete Policy Template",
@@ -245,7 +246,7 @@ public class Actions {
 
         Runnable r = new Runnable() {
             public void run() {
-                TopComponents.getInstance().getMainWindow().showHelpTopics(ke);
+                TopComponents.getInstance().showHelpTopics(ke);
             }
         };
         SwingUtilities.invokeLater(r);

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Invoked when a Xpath Credential Source Assertion is dropped to a policy tree to
@@ -22,7 +23,7 @@ public class AddXpathCredentialSourceAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         XpathCredentialSource assertion = (XpathCredentialSource)assertions[0];
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(assertion, f, true);
         Utilities.setEscKeyStrokeDisposes(dlg);

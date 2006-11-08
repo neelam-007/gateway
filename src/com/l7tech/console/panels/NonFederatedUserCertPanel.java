@@ -50,7 +50,7 @@ class NonFederatedUserCertPanel extends UserCertPanel {
                           "for user '" + user.getLogin() + "'<br>Contact the directory administrator to" +
                           " revoke the corresponding password.</b></center></html>";
                     }
-                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
+                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                       msg, "Revoke User Certificate",
                       JOptionPane.YES_NO_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {

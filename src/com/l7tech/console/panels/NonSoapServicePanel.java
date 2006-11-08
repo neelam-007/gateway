@@ -40,8 +40,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
         // set the prefix based on what host we are connected to
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        String ssgUrl = mw.ssgURL();
+        String ssgUrl = TopComponents.getInstance().ssgURL();
         if (!ssgUrl.startsWith("http://")) {
             ssgUrl = "http://" + ssgUrl;
         }

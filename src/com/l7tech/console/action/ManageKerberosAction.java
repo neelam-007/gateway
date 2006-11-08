@@ -52,7 +52,7 @@ public class ManageKerberosAction extends SecureAction {
      */
     protected void performAction() {
         try {
-            new KerberosDialog(TopComponents.getInstance().getMainWindow()).setVisible(true);
+            new KerberosDialog(TopComponents.getInstance().getTopParent()).setVisible(true);
         }
         catch(RemoteException re) {
             throw new RuntimeException("Cannot create kerberos dialog.", re);

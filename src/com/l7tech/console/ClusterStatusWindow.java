@@ -576,7 +576,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                                           KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    TopComponents.getInstance().getMainWindow().showHelpTopics(e);
+                    TopComponents.getInstance().showHelpTopics(e);
                 }
         });
 
@@ -859,7 +859,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     public void setVisible(boolean vis) {
         if (!vis) {
             // Let inactivity timeout start counting after this window is closed.
-            TopComponents.getInstance().getMainWindow().updateLastActivityTime();
+            TopComponents.getInstance().updateLastActivityTime();
         }
         super.setVisible(vis);
     }

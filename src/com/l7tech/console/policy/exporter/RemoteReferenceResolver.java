@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.awt.*;
 
 /**
  * This class takes a set of remote references that were exported with a policy
@@ -49,7 +50,7 @@ public class RemoteReferenceResolver {
         }
         if (!unresolved.isEmpty()) {
             ExternalReference[] unresolvedRefsArray = (ExternalReference[])unresolved.toArray(new ExternalReference[0]);
-            final MainWindow mw = TopComponents.getInstance().getMainWindow();
+            final Frame mw = TopComponents.getInstance().getTopParent();
             ResolveExternalPolicyReferencesWizard wiz =
                     ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
             wiz.pack();

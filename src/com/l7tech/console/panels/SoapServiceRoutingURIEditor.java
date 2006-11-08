@@ -69,8 +69,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
     }
 
     private void setInitialValues() {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        ssgURL = mw.ssgURL();
+        ssgURL = TopComponents.getInstance().ssgURL();
         if (!ssgURL.startsWith("http://")) {
             ssgURL = "http://" + ssgURL;
         }

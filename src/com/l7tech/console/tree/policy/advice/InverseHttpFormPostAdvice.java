@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.InverseHttpFormPost;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Invoked when an {@link com.l7tech.policy.assertion.HttpFormPost} Assertion is dropped to a policy tree to  initiate the
@@ -21,7 +22,7 @@ public class InverseHttpFormPostAdvice implements Advice {
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof InverseHttpFormPost)) {
             throw new IllegalArgumentException();
         }
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         InverseHttpFormPost hfp = (InverseHttpFormPost)assertions[0];
         InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp);
         hfpd.setModal(true);

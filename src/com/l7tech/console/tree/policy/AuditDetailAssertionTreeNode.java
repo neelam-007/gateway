@@ -91,7 +91,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
                 }
 
                 AuditDetailAssertionPropertiesDialog aad =
-                        new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(),
+                        new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(),
                                                                  getAssertion(), level);
                 aad.pack();
                 Utilities.centerOnScreen(aad);

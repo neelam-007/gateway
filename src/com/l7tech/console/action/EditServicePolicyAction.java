@@ -12,10 +12,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 
-import javax.security.auth.Subject;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.security.AccessController;
 import java.util.logging.Level;
 
 /**
@@ -126,7 +124,7 @@ public class EditServicePolicyAction extends NodeAction {
             final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, validate);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
-            TopComponents.getInstance().getMainWindow().firePolicyEdit(pep);
+            TopComponents.getInstance().firePolicyEdit(pep);
         } catch (ActionVetoException e) {
             // action vetoed
             log.log(Level.WARNING, "vetoed!", e);

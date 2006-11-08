@@ -193,7 +193,7 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     private void selectUddi() {
-        final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+        final Frame mainWindow = TopComponents.getInstance().getTopParent();
 
         try {
             // open UDDI browser
@@ -239,7 +239,7 @@ public class WsdlLocationPanel extends JPanel {
         };
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
-        int r = fc.showDialog(TopComponents.getInstance().getMainWindow(), "Open");
+        int r = fc.showDialog(TopComponents.getInstance().getTopParent(), "Open");
         if(r == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if(file!=null) {
@@ -324,7 +324,7 @@ public class WsdlLocationPanel extends JPanel {
                     logger.log(Level.WARNING, msg, (Throwable)result);
                     msg = "Unable to parse the WSDL at this location: \n" + ExceptionUtils.getMessage(t);
                 }
-                final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+                final Frame mainWindow = TopComponents.getInstance().getTopParent();
                 JOptionPane.showMessageDialog(mainWindow,
                                               msg + "\n",
                                               "Error",

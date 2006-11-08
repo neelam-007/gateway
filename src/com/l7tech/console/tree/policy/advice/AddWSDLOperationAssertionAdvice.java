@@ -15,6 +15,7 @@ import javax.swing.*;
 import javax.wsdl.WSDLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Invoked when a WSDL Operation assertion is dropped in a policy tree.
@@ -34,7 +35,7 @@ public class AddWSDLOperationAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         Operation assertion = (Operation)assertions[0];
-        final MainWindow f = TopComponents.getInstance().getMainWindow();
+        final Frame f = TopComponents.getInstance().getTopParent();
 
 
         PublishedService svc = pc.getService();

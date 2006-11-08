@@ -15,6 +15,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ComparisonAssertion;
 
+import java.awt.*;
+
 /**
  * Invoked when a {@link com.l7tech.policy.assertion.ComparisonAssertion} is added to
  * a policy tree to prompt admin for assertion properties.
@@ -26,7 +28,7 @@ public class ComparisonAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         ComparisonAssertion subject = (ComparisonAssertion) assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         ComparisonAssertionDialog dlg = new ComparisonAssertionDialog(mw, subject);
 
         // show the dialog

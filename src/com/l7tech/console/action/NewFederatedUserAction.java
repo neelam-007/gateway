@@ -11,6 +11,7 @@ import com.l7tech.identity.fed.FederatedUser;
 
 import javax.swing.*;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -59,7 +60,7 @@ public class NewFederatedUserAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 NewFederatedUserDialog dialog = new NewFederatedUserDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
                 dialog.setVisible(true);

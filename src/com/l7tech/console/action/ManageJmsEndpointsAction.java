@@ -54,7 +54,7 @@ public class ManageJmsEndpointsAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(TopComponents.getInstance().getMainWindow());
+        JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(TopComponents.getInstance().getTopParent());
         Utilities.centerOnScreen(jqw);
         jqw.setVisible(true);
         jqw.dispose();

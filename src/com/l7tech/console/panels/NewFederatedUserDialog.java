@@ -71,7 +71,7 @@ public class NewFederatedUserDialog extends JDialog {
      * @param parent  the owner of the component
      * @param ipc   the config of the identity provider the new user belongs to
      */
-    public NewFederatedUserDialog(JFrame parent, IdentityProviderConfig ipc) {
+    public NewFederatedUserDialog(Frame parent, IdentityProviderConfig ipc) {
         super(parent, true);
         this.ipc = ipc;
         this.user = new UserBean();

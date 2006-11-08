@@ -12,6 +12,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.util.TreeMap;
 import java.util.Properties;
+import java.security.AccessControlException;
 
 
 /**
@@ -88,11 +89,7 @@ public class AboutBox extends JDialog implements ActionListener {
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
         initUI();
         pack();
-        try {
-            setAlwaysOnTop(true);
-        } catch (SecurityException e) {
-            // Oh well
-        }
+        Utilities.setAlwaysOnTop(this, true);
         setLocationRelativeTo(parent);
         rThread.start();
     }

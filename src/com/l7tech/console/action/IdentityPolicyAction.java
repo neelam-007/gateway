@@ -59,7 +59,7 @@ public class IdentityPolicyAction extends SecureAction {
      */
     protected void performAction() {
         try {
-            Frame f = TopComponents.getInstance().getMainWindow();
+            Frame f = TopComponents.getInstance().getTopParent();
             IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
             pw.pack();
             Utilities.centerOnScreen(pw);

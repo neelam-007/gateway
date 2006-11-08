@@ -50,7 +50,7 @@ public class CustomAssertionsRegistrarClientTest extends TestCase {
                     public void checkPermission(Permission perm, Object context) {}
                 });
                 System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/console/resources/services.properties");
-                TopComponents.getInstance().getMainWindow().getPreferences().updateSystemProperties();
+                TopComponents.getInstance().getPreferences().updateSystemProperties();
             }
 
             protected void tearDown() throws Exception {

@@ -22,9 +22,9 @@ public class AdminSessionExpiredErrorHandler implements ErrorHandler {
                                      "complete the operation.";
     public void handle(ErrorEvent e) {
         final Throwable t = e.getThrowable();
-        if (isFailedLogin(t) && getMainWindow().isDisconnected()) {
+        if (isFailedLogin(t) && TopComponents.getInstance().isDisconnected()) {
             e.getLogger().log(e.getLevel(), MSG, t);
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(),
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(),
                                                                       "SecureSpan Manager - Connection error",
                                                                       MSG, t, e.getLevel());
             d.pack();
@@ -43,15 +43,4 @@ public class AdminSessionExpiredErrorHandler implements ErrorHandler {
             return isFailedLogin(e.getCause());
         }
     }
-
-    private MainWindow getMainWindow() {
-        if (mainFrame != null) return mainFrame;
-        TopComponents instance = TopComponents.getInstance();
-        if (instance.hasMainWindow()) {
-            mainFrame = instance.getMainWindow();
-        }
-        return mainFrame;
-    }
-
-    private MainWindow mainFrame;
 }

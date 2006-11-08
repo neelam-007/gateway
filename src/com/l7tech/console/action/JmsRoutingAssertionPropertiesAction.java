@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>JmsRoutingAssertionPropertiesAction</code> edits the
@@ -59,7 +60,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 JmsRoutingAssertionDialog d =
                   new JmsRoutingAssertionDialog(f, (JmsRoutingAssertion)node.asAssertion());
                 d.addPolicyListener(listener);

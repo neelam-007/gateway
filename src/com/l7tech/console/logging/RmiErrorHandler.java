@@ -11,6 +11,7 @@ import java.net.SocketException;
 import java.rmi.*;
 import java.security.AccessControlException;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * This is now more of a "remoting" error handler, not just RMI.
@@ -33,7 +34,7 @@ public class RmiErrorHandler implements ErrorHandler {
         final RemoteException rex = (RemoteException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
         final RemoteAccessException raex = (RemoteAccessException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
 
-        final MainWindow mainWindow = getMainWindow();
+        final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
             rex instanceof ConnectException ||
             rex instanceof ConnectIOException ||
@@ -42,7 +43,7 @@ public class RmiErrorHandler implements ErrorHandler {
             throwable instanceof AccessControlException) {
             // prevent error cascade during repaint if it's a network problem
             e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
-            if (mainWindow != null) mainWindow.disconnectFromGateway();
+            TopComponents.getInstance().disconnectFromGateway();
         }
 
         if (throwable instanceof RemoteException ||
@@ -66,24 +67,13 @@ public class RmiErrorHandler implements ErrorHandler {
                 level = Level.WARNING;
                 t = null;
             }
-            if (mainWindow != null) mainWindow.repaint();
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(mainWindow, "SecureSpan Manager - Gateway error", message, t, level);
+            if (topParent != null) topParent.repaint();
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(topParent, "SecureSpan Manager - Gateway error", message, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);
         } else {
             e.handle();
         }
-    }
-
-    private MainWindow getMainWindow() {
-        if (mainFrame != null) return mainFrame;
-
-        TopComponents instance = TopComponents.getInstance();
-        if (instance.hasMainWindow()) {
-            mainFrame = instance.getMainWindow();
-        }
-
-        return mainFrame;
     }
 }

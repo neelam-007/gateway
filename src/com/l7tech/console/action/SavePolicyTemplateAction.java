@@ -100,7 +100,7 @@ public class SavePolicyTemplateAction extends SecureAction {
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
         int ret =
-          chooser.showSaveDialog(TopComponents.getInstance().getMainWindow());
+          chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
         System.out.println(name);
@@ -110,7 +110,7 @@ public class SavePolicyTemplateAction extends SecureAction {
         if (policyFileExists) {
             overwrite =
               JOptionPane.showConfirmDialog(
-                TopComponents.getInstance().getMainWindow(),
+                TopComponents.getInstance().getTopParent(),
                 "Overwrite " + name + "?",
                 "Warning",
                 JOptionPane.YES_NO_OPTION);

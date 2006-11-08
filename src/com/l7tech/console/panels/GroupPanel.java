@@ -6,7 +6,6 @@ import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import static com.l7tech.common.security.rbac.EntityType.GROUP;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.SecurityProvider;
@@ -72,7 +71,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     protected IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
-    private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+    private final Frame topParent = TopComponents.getInstance().getTopParent();
 
     protected boolean canUpdate;
 
@@ -178,7 +177,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
                 final IdentityAdmin admin = getIdentityAdmin();
                 Group g = admin.findGroupByID(config.getOid(), groupHeader.getStrId());
                 if (g == null) {
-                    JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
                 } else {
                     ao = new AttemptedUpdate(GROUP, g);
@@ -480,13 +479,13 @@ public abstract class GroupPanel extends EntityEditorPanel {
                 groupHeader.setStrId(id);
             }
         } catch (ObjectNotFoundException e) {
-            JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = true;
         } catch (Exception e) {  // todo rethrow as runtime and handle with ErrorHandler em
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("Group ").append(groupHeader.getName()).append(".\n");
-            JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(topParent, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating Group: " + e.toString(), e);
             result = false;
         }

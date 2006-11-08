@@ -80,7 +80,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     public Action[] getActions() {
         final DeleteEntityAction deleteAction = new DeleteEntityAction(this, config);
         deleteAction.setEnabled(canDelete());
-        TopComponents.getInstance().getMainWindow().addPermissionRefreshListener(deleteAction);
+        TopComponents.getInstance().addPermissionRefreshListener(deleteAction);
         return new Action[]{deleteAction};
     }
 

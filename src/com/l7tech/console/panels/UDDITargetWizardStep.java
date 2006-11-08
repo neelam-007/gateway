@@ -37,7 +37,7 @@ public class UDDITargetWizardStep extends WizardStepPanel {
     public static final String UDDI_URL = "UDDI.URL";
     private String panelDescription = "Provide the UDDI registry URL and account information to publish this policy";
     private JLabel descLabel;
-    private final SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
+    private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
     public UDDITargetWizardStep(WizardStepPanel next) {
         super(next);

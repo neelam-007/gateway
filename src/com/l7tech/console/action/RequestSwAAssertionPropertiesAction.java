@@ -19,6 +19,7 @@ import javax.swing.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.awt.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -62,7 +63,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
 
                 WorkSpacePanel currentWorkSpace = TopComponents.getInstance().getCurrentWorkspace();
                 JComponent currentPanel = currentWorkSpace.getComponent();

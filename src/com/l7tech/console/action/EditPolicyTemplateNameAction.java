@@ -72,7 +72,7 @@ public class EditPolicyTemplateNameAction extends SecureAction {
                   TopComponents wm = TopComponents.getInstance();
 
                   EditPolicyTemplateNameDialog d =
-                    new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener, node.getName());
+                    new EditPolicyTemplateNameDialog(wm.getTopParent(), nameChangeListener, node.getName());
                   d.setVisible(true);
               }
           });

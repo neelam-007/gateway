@@ -71,8 +71,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         ButtonGroup bg = new ButtonGroup();
         bg.add(specificRecipientRradio);
         bg.add(defaultRadio);
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        String ssghostname = mw.ssgURL();
+        String ssghostname = TopComponents.getInstance().ssgURL();
         int pos = ssghostname.lastIndexOf(':');
         if (pos > 4) {
             ssghostname = ssghostname.substring(0, pos);
@@ -167,7 +166,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                     }
                 });
 
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 Wizard w = new AddCertificateWizard(f, panel1);
                 w.setTitle("New WSS Recipient Wizard");
 

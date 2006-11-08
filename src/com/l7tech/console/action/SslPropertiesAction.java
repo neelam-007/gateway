@@ -55,11 +55,11 @@ public class SslPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
-        new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(), sslAssertion).setVisible(true);
+        new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), sslAssertion).setVisible(true);
         assertionChanged();
 //
 //        String s =
-//          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
+//          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getTopParent(),
 //            "Select an SSL option:\n",
 //            "SSL Properties",
 //            JOptionPane.PLAIN_MESSAGE,

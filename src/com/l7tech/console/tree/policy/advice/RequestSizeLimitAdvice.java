@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSizeLimit;
 
+import java.awt.*;
+
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -23,7 +25,7 @@ public class RequestSizeLimitAdvice implements Advice{
             throw new IllegalArgumentException();
         }
         RequestSizeLimit subject = (RequestSizeLimit) assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         RequestSizeLimitDialog dlg = new RequestSizeLimitDialog(mw, subject, true);
 
         // show the dialog

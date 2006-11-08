@@ -14,6 +14,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.common.gui.util.Utilities;
 
+import java.awt.*;
+
 /**
  * Advice that displays cookie assertion property dialog.
  */
@@ -25,7 +27,7 @@ public class AddCookieCredentialSourceAssertionAdvice implements Advice {
         }
         CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)assertions[0];
 
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         CookieCredentialSourceAssertionPropertiesDialog dlg =
                 new CookieCredentialSourceAssertionPropertiesDialog(mw, true, assertion);
 

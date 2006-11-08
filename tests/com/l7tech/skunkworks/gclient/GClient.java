@@ -409,7 +409,7 @@ public class GClient {
         GClientLocationDialog locationChooser = new GClientLocationDialog((Frame)SwingUtilities.windowForComponent(parent));
         locationChooser.pack();
         Utilities.centerOnScreen(locationChooser);
-        locationChooser.setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(locationChooser, true);
         locationChooser.setVisible(true);
         if(locationChooser.wasOk()) {
             String uri = locationChooser.getOpenLocation();

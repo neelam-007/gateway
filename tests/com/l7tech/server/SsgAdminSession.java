@@ -65,7 +65,7 @@ public class SsgAdminSession {
         }
         JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
         // initialize preferences
-        SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
+        SsmPreferences preferences = TopComponents.getInstance().getPreferences();
         preferences.updateFromProperties(System.getProperties(), false);
         preferences.updateSystemProperties();
         // application context
@@ -114,7 +114,7 @@ public class SsgAdminSession {
     private String hostPort = defaultHostPort();
 
     private String defaultHostPort() {
-        SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
+        SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
         History serverUrlHistory = preferences.getHistory(SsmPreferences.SERVICE_URL);
         Object[] urls = serverUrlHistory.getEntries();

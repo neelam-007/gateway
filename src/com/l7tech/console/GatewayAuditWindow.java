@@ -140,7 +140,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                  TopComponents.getInstance().getMainWindow().showHelpTopics(e);
+                  TopComponents.getInstance().showHelpTopics(e);
               }
           });
 
@@ -406,7 +406,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
             }
         } else {
             // Let inactivity timeout start counting after this window is closed.
-            TopComponents.getInstance().getMainWindow().updateLastActivityTime();
+            TopComponents.getInstance().updateLastActivityTime();
         }
     }
 

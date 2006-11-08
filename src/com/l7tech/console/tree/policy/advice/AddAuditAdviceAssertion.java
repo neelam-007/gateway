@@ -13,6 +13,7 @@ import com.l7tech.common.gui.util.Utilities;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.awt.*;
 
 /**
  * Invoked when an Audit Detail assertion is added to a policy tree
@@ -40,7 +41,7 @@ public class AddAuditAdviceAssertion implements Advice {
         }
 
         AuditDetailAssertion subject = (AuditDetailAssertion)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject, serverLevel);
         aad.pack();
         Utilities.centerOnScreen(aad);

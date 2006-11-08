@@ -361,7 +361,7 @@ public class EditRoleDialog extends JDialog {
                 opts.setDisableOpenProperties(true);
                 opts.setAdminOnly(true);
 
-                FindIdentitiesDialog fid = new FindIdentitiesDialog(TopComponents.getInstance().getMainWindow(), true, opts);
+                FindIdentitiesDialog fid = new FindIdentitiesDialog(TopComponents.getInstance().getTopParent(), true, opts);
                 fid.pack();
                 Utilities.centerOnScreen(fid);
                 FindIdentitiesDialog.FindResult result = fid.showDialog();
@@ -372,7 +372,7 @@ public class EditRoleDialog extends JDialog {
                         User user = identityAdmin.findUserByID(providerId, header.getStrId());
                         assignmentListModel.add(new UserRoleAssignment(role, user.getProviderId(), user.getId()));
                     } catch (DuplicateObjectException dup) {
-                        JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(), dup.getMessage(), "Could not add assignment", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), dup.getMessage(), "Could not add assignment", JOptionPane.ERROR_MESSAGE);
                     } catch (Exception e1) {
                         throw new RuntimeException("Couldn't find User", e1);
                     }

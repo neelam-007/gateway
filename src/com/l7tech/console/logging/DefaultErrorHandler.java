@@ -26,20 +26,9 @@ public class DefaultErrorHandler implements ErrorHandler {
         final Throwable t = e.getThrowable();
         final Level level = e.getLevel();
         e.getLogger().log(level, message, t);
-        ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(), "SecureSpan Manager - Message", message, t, level);
+        ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(), "SecureSpan Manager - Message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);
         d.setVisible(true);
-    }
-
-    private JFrame getMainWindow() {
-        if (mainFrame != null) return mainFrame;
-
-        TopComponents instance = TopComponents.getInstance();
-        if (instance.hasMainWindow()) {
-            mainFrame = instance.getMainWindow();
-        }
-
-        return mainFrame;
     }
 }

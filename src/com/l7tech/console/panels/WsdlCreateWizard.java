@@ -83,7 +83,7 @@ public class WsdlCreateWizard extends Wizard {
                         Definition definition = (Definition)wizardInput;
                         wsdlWriter.writeWSDL(definition, writer);
 
-                        MainWindow mw = TopComponents.getInstance().getMainWindow();
+                        Frame mw = TopComponents.getInstance().getTopParent();
                         new RawWsdlDialog(mw, writer.toString(), definition.getQName().getLocalPart());
                     } catch (WSDLException e1) {
                         throw new RuntimeException(e1);
@@ -103,7 +103,7 @@ public class WsdlCreateWizard extends Wizard {
 
     private class RawWsdlDialog extends JDialog {
 
-        private RawWsdlDialog(JFrame mw, String wsdlString, String title) throws DocumentException, IOException, SAXParseException {
+        private RawWsdlDialog(Frame mw, String wsdlString, String title) throws DocumentException, IOException, SAXParseException {
 
             super(mw, true);
             setTitle(title);

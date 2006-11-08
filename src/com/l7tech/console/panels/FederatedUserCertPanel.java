@@ -38,7 +38,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
                 public void actionPerformed(ActionEvent event) {
                     String msg = "Are you sure you want to remove the user certificate?";
 
-                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
+                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                             msg, "Remove User Certificate",
                             JOptionPane.YES_NO_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
@@ -88,7 +88,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
                 if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {
                     //prompt you if he wants to replace the subject DN name
                     Object[] options = {"Replace", "Cancel"};
-                    int result = JOptionPane.showOptionDialog(fup.mainWindow,
+                    int result = JOptionPane.showOptionDialog(fup.topParent,
                             "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
                             "<br>The user's Subject DN: " +  fup.getX509SubjectNameTextField().getText() +
                             "<br>The Subject DN in the certiticate: " + subjectDNFromCert  +

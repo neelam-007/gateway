@@ -1,11 +1,16 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.security.PermissionRefreshListener;
+import com.l7tech.console.action.DeleteEntityAction;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.policy.PolicyToolBar;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +26,66 @@ import java.util.Map;
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
 
+    public void showHelpTopics(ActionEvent e) {
+        getMainWindow().showHelpTopics(e);
+    }
+
+    public void updateLastActivityTime() {
+        getMainWindow().updateLastActivityTime();
+    }
+
+    public void firePolicyEditDeleted() {
+        getMainWindow().firePolicyEditDeleted();
+    }
+
+    public void firePolicyEdit(PolicyEditorPanel pep) {
+        getMainWindow().firePolicyEdit(pep);
+    }
+
+    public String ssgURL() {
+        return getMainWindow().ssgURL();
+    }
+
+    public SsmPreferences getPreferences() {
+        return getMainWindow().getPreferences();
+    }
+
+    public void disconnectFromGateway() {
+        MainWindow mw = getMainWindow();
+        if (mw != null)
+            mw.disconnectFromGateway();
+    }
+
+    public void updateNodeNameInStatusMessage(String oldGatewayName, String newName) {
+        getMainWindow().updateNodeNameInStatusMessage(oldGatewayName, newName);
+    }
+
+    public void addPermissionRefreshListener(PermissionRefreshListener listener) {
+        getMainWindow().addPermissionRefreshListener(listener);
+    }
+
+    public void firePermissionRefresh() {
+        getMainWindow().firePermissionRefresh();
+    }
+
+    public void setInactivitiyTimeout(int timeout) {
+        MainWindow mw = getMainWindow();
+        if (mw != null) mw.setInactivitiyTimeout(timeout);
+    }
+
+    public PolicyToolBar getPolicyToolBar() {
+        return getMainWindow().getPolicyToolBar();
+    }
+
+    public boolean isDisconnected() {
+        return getMainWindow().isDisconnected();
+    }
+
+    /** Interface implemented by lazy component finders. */
+    public static interface ComponentFinder {
+        Component findComponent();
+    }
+
     /**
      * protected constructor, this class cannot be instantiated
      */
@@ -32,15 +97,13 @@ public class TopComponents {
 
     /**
      * Get the Main Window of the application.
-     * This should be used for:
-     * <UL>
-     * <LI>using the Main Window as the parent for dialogs</LI>
-     * <LI>using the Main Window's position for preplacement of windows</LI>
-     * </UL>
+     * <p/>
+     * This should NOT be used for a dialog parent -- use getTopParent() instead, which works both in and
+     * out of applet mode.
      *
      * @return the applicaiton Main Window
      */
-    public MainWindow getMainWindow() {
+    private MainWindow getMainWindow() {
         Component c = getComponent("mainWindow");
         if (c instanceof MainWindow) return (MainWindow)c;
 
@@ -52,6 +115,17 @@ public class TopComponents {
             }
         }
         return null;
+    }
+
+    /**
+     * Get the top level parent.
+     * @return the parent frame to use for dialogs that don't have any other parent to use
+     */
+    public Frame getTopParent() {
+        Component c = getComponent("topLevelParent");
+        if (c instanceof Frame) return (Frame)c;
+
+        return getMainWindow();
     }
 
     /**
@@ -77,6 +151,7 @@ public class TopComponents {
 
     /**
      * Current workspace.
+     * @return the workspace panel.  never null
      */
     public WorkSpacePanel getCurrentWorkspace() {
         synchronized (componentsRegistry) {
@@ -91,6 +166,7 @@ public class TopComponents {
 
     /**
      * Returns the default policy tree component from component registry.
+     * @return the PolicyTree.  never null
      */
     public JTree getPolicyTree() {
         synchronized (componentsRegistry) {
@@ -104,14 +180,24 @@ public class TopComponents {
 
     /**
      * Returns the component with the given name or <b>null</b> if none
-     * found.
+     * found.  May invoke a registered componentFinder to lazily locate the component.
+     *
+     * @param name  the component name
+     * @return  the specified component, or null if there wasn't one.
      */
     public Component getComponent(String name) {
         synchronized (componentsRegistry) {
-            WeakReference wr = (WeakReference)componentsRegistry.get(name);
+            WeakReference<Component> wr = componentsRegistry.get(name);
             if (wr == null) return null;
-            Component c = (Component)wr.get();
-            if (c == null) componentsRegistry.remove(name);
+            Component c = wr.get();
+            if (c == null) {
+                componentsRegistry.remove(name);
+                ComponentFinder cf = componentFinderRegistry.get(name);
+                if (cf == null) return null;
+                c = cf.findComponent();
+                if (c == null) return null;
+                componentsRegistry.put(name, new WeakReference<Component>(c));
+            }
             return c;
         }
     }
@@ -120,28 +206,53 @@ public class TopComponents {
      * Registers the component with the given name
      *
      * @param name the component name
+     * @param component  the component to register
      */
     public void registerComponent(String name, Component component) {
         synchronized (componentsRegistry) {
             Component c = getComponent(name);
             if (c != null)
                 throw new RuntimeException("There is an active component by name '" + name + "'");
-            componentsRegistry.put(name, new WeakReference(component));
+            componentsRegistry.put(name, new WeakReference<Component>(component));
+        }
+    }
+
+    /**
+     * Registers a component finder with the given name.  It will be invoked
+     * the first time a request is made for the named component.
+     *
+     * @param name   the component name
+     * @param componentFinder   a finder that will lazily locate the component when needed for the first time
+     */
+    public void registerComponent(String name, ComponentFinder componentFinder) {
+        synchronized (componentsRegistry) {
+            Component c = getComponent(name);
+            if (c != null)
+                throw new RuntimeException("There is an active component by name '" + name + "'");
+            componentFinderRegistry.put(name, componentFinder);
         }
     }
 
     /**
      * Unregisters the component with the given name
+     * @param name the name of the component to unregister
+     * @return the previous active component with that name, or null if there wan't one
      */
     public Component unregisterComponent(String name) {
         synchronized (componentsRegistry) {
-            WeakReference wr = (WeakReference)componentsRegistry.remove(name);
+            WeakReference<Component> wr = componentsRegistry.remove(name);
             if (wr == null) return null;
-            Component c = (Component)wr.get();
-            return c;
+            return wr.get();
         }
     }
 
-    private Map componentsRegistry = new HashMap();
+    /**
+     * @return  True if the SSM is currently running as an applet.
+     */
+    public boolean isApplet() {
+        return getMainWindow().isApplet();
+    }
 
+    private final Map<String, WeakReference<Component>> componentsRegistry = new HashMap<String, WeakReference<Component>>();
+    private final Map<String, ComponentFinder> componentFinderRegistry = new HashMap<String, ComponentFinder>();
 }

@@ -17,6 +17,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.security.AccessControlException;
 
 /**
  * Edits the SAML Attribute: name, namespace, value.
@@ -81,7 +82,7 @@ public class EditAttributeDialog extends JDialog {
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
         setResizable(false);
-        setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
     }
 
     /**

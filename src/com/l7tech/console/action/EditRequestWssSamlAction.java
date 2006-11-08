@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * Action that invokes the editor for the {@link com.l7tech.policy.assertion.xmlsec.RequestWssSaml}
@@ -48,7 +49,7 @@ public class EditRequestWssSamlAction extends NodeAction {
     }
 
     protected void performAction() {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         boolean assertionChanged = false;
         assertionChanged = editSamlAssertion(requestWssSaml, mw);
 
@@ -76,9 +77,9 @@ public class EditRequestWssSamlAction extends NodeAction {
         }
     }
 
-    private boolean editSamlAssertion(RequestWssSaml samlAuthenticationStatement, MainWindow mw) {
+    private boolean editSamlAssertion(RequestWssSaml samlAuthenticationStatement, Frame parent) {
         RequestWssSamlPropertiesPanel dlg =
-          new RequestWssSamlPropertiesPanel(samlAuthenticationStatement, mw, true);
+          new RequestWssSamlPropertiesPanel(samlAuthenticationStatement, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

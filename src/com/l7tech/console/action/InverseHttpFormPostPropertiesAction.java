@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.InverseHttpFormPost;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>HttpFormPostPropertiesAction</code> edits the
@@ -54,7 +55,7 @@ public class InverseHttpFormPostPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         InverseHttpFormPost hfp = (InverseHttpFormPost) node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp);
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);

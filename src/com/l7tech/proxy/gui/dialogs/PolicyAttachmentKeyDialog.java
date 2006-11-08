@@ -33,10 +33,6 @@ public class PolicyAttachmentKeyDialog extends JDialog {
 
     private PolicyAttachmentKey result = null;
 
-    public PolicyAttachmentKeyDialog() throws HeadlessException {
-        initialize();
-    }
-
     public PolicyAttachmentKeyDialog(Frame owner, String title, boolean modal) throws HeadlessException {
         super(owner, title, modal);
         initialize();

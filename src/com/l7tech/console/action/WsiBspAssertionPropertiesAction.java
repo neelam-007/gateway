@@ -43,7 +43,7 @@ public class WsiBspAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.getAssertion(), f, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

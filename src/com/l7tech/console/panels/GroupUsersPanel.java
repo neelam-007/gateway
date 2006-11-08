@@ -373,7 +373,7 @@ class GroupUsersPanel extends JPanel {
                     if (w instanceof Frame) {
                         parent = (Frame)w;
                     } else {
-                        parent = TopComponents.getInstance().getMainWindow();
+                        parent = TopComponents.getInstance().getTopParent();
                     }
 
                     JDialog dialog = new NewGroupMemberDialog(parent, GroupUsersPanel.this, ipc);

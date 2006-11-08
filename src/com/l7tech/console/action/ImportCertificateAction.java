@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 
 /**
@@ -103,9 +104,8 @@ public class ImportCertificateAction extends SecureAction {
         }
     }
 
-    private JFrame getFrame() {
-        JFrame mw = TopComponents.getInstance().getMainWindow();
-        return mw;
+    private Frame getFrame() {
+        return TopComponents.getInstance().getTopParent();
     }
 
     /**
@@ -123,7 +123,7 @@ public class ImportCertificateAction extends SecureAction {
     public static void importSsgCertificate(X509Certificate cert, String hostName)
             throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException
     {
-        TopComponents.getInstance().getMainWindow().getPreferences().importSsgCert(cert, hostName);
+        TopComponents.getInstance().getPreferences().importSsgCert(cert, hostName);
     }
 
     /**

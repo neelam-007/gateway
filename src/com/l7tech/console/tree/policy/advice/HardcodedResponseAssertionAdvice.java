@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 
+import java.awt.*;
+
 /**
  * Advice for dragging a Hardcoded Response assertion into the tree.
  */
@@ -19,7 +21,7 @@ public class HardcodedResponseAssertionAdvice implements Advice{
             throw new IllegalArgumentException();
         }
         HardcodedResponseAssertion subject = (HardcodedResponseAssertion) assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         HardcodedResponseDialog dlg = new HardcodedResponseDialog(mw, subject, true);
 
         // show the dialog

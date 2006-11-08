@@ -6,6 +6,7 @@
 package com.l7tech.console;
 
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.CertUtils;
@@ -14,6 +15,9 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.logging.Logger;
@@ -34,6 +38,19 @@ public class AppletMain extends JApplet {
     private static Container appletPanel = null;
     private static JMenuBar menuBar = null;
 
+    private WindowListener windowListener = null;
+
+    private void maybeAddWindowListener(final Frame f) {
+        if (windowListener != null) return;
+
+        windowListener = new WindowAdapter() {
+            public void windowActivated(WindowEvent e) {
+                f.toFront();
+            }
+        };
+        f.addWindowListener(windowListener);
+    }
+
     public void init() {
         super.init();
 
@@ -48,6 +65,23 @@ public class AppletMain extends JApplet {
                 getApplication().getMainWindow().activateLogonDialog();
             }
         });
+
+        TopComponents.getInstance().registerComponent("topLevelParent", new TopComponents.ComponentFinder() {
+            public Component findComponent() {
+                Component c = AppletMain.this;
+                while (c != null) {
+                    if (c instanceof Frame) {
+                        logger.info("Found applet container frame");
+                        maybeAddWindowListener((Frame)c);                        
+                        return c;
+                    }
+                    c = c.getParent();
+                }
+                logger.warning("Did not find applet container frame");
+                return null;
+            }
+        });
+
         repaint();
     }
 

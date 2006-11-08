@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -94,7 +95,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 WsdlDefinitionPanel defPanel =
                   new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null)))));
                 WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 Wizard w = new WsdlCreateWizard(f, p);
 
                 w.addWizardListener(wizardListener);
@@ -153,7 +154,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 header.setOid(oid);
                 serviceAdded(header);
             } catch (Exception e) {
-                MainWindow w = TopComponents.getInstance().getMainWindow();
+                Frame w = TopComponents.getInstance().getTopParent();
                 if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                     JOptionPane.showMessageDialog(w,
                       "Unable to save the service '" + service.getName() + "'\n" +

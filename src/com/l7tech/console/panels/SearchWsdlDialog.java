@@ -23,6 +23,7 @@ import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.security.AccessControlException;
 
 
 /**
@@ -73,7 +74,7 @@ public class SearchWsdlDialog extends JDialog {
     }
 
     private void initialize() throws RemoteException, FindException {
-        setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());

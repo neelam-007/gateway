@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * Action that brings up HardcodedResponsePropertyDialog.
@@ -44,7 +45,7 @@ public class HardcodedResponseDialogAction extends NodeAction{
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 HardcodedResponseDialog d = new HardcodedResponseDialog(f, (HardcodedResponseAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);

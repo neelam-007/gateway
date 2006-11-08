@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.VersionException;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * <code>VersionMismatchErrorHandler</code> is a generic handler that handles
@@ -17,7 +18,6 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class VersionMismatchErrorHandler implements ErrorHandler {
-    private MainWindow mainFrame;
     private static final String ERROR_MESSAGE =
       "<html><b>The record has changed in the meantime by another user." +
       "The Gateway was unable to complete the operation.</b><br></html>";
@@ -42,14 +42,7 @@ public class VersionMismatchErrorHandler implements ErrorHandler {
         }
     }
 
-    private JFrame getMainWindow() {
-        if (mainFrame != null) return mainFrame;
-
-        TopComponents instance = TopComponents.getInstance();
-        if (instance.hasMainWindow()) {
-            mainFrame = instance.getMainWindow();
-        }
-
-        return mainFrame;
+    private Frame getMainWindow() {
+        return TopComponents.getInstance().getTopParent();
     }
 }

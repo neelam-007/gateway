@@ -46,7 +46,7 @@ public class EditXpathCredentialSourceAction extends NodeAction {
     }
 
     protected void performAction() {
-        Frame parent = TopComponents.getInstance().getMainWindow();
+        Frame parent = TopComponents.getInstance().getTopParent();
         XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(xpathCredsAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

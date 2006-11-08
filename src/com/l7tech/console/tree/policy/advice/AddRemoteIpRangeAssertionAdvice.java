@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RemoteIpRange;
 
+import java.awt.*;
+
 /**
  * Invoked when a RemoteIpRange assertion node is dropped on a policy tree.
  *
@@ -26,7 +28,7 @@ public class AddRemoteIpRangeAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         RemoteIpRange assertion = (RemoteIpRange)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.pack();

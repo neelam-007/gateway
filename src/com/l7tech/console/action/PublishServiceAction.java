@@ -20,6 +20,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -59,7 +60,7 @@ public class PublishServiceAction extends SecureAction {
     /**
      */
     protected void performAction() {
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         //PublishServiceWizard dialog = new PublishServiceWizard(f, false);
         PublishServiceWizard dialog = PublishServiceWizard.getInstance(f);
         dialog.addEntityListener(listener);

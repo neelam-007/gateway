@@ -130,7 +130,7 @@ public class CertManagerWindow extends JDialog {
 
                         CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(null)), true);
 
-                        JFrame f = TopComponents.getInstance().getMainWindow();
+                        Frame f = TopComponents.getInstance().getTopParent();
                         Wizard w = new AddCertificateWizard(f, sp);
                         w.addWizardListener(wizardListener);
 

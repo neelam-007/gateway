@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Invoked when a SAML Browser Artifact Assertion is dropped to a policy tree to
@@ -22,7 +23,7 @@ public class AddSamlBrowserArtifactAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         SamlBrowserArtifact assertion = (SamlBrowserArtifact) assertions[0];
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(assertion, f, true);
         Utilities.setEscKeyStrokeDisposes(dlg);

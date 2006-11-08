@@ -20,6 +20,7 @@ import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.EventListener;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * The <code>IdentityProviderPropertiesAction</code> edits the
@@ -67,7 +68,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 IdentityProviderConfig iProvider;
                 if (header.getOid() != -1) {

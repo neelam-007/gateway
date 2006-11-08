@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssSecurityToken;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Edits the {@link com.l7tech.policy.assertion.xmlsec.ResponseWssSecurityToken} properties.
@@ -51,7 +52,7 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();

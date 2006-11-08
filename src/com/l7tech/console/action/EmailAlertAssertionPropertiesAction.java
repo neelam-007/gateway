@@ -33,7 +33,7 @@ public class EmailAlertAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.getSnmpTrapAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);

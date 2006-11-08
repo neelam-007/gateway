@@ -5,6 +5,7 @@ package com.l7tech.console.tree.policy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.awt.*;
 import javax.swing.*;
 
 import com.l7tech.policy.assertion.Assertion;
@@ -64,7 +65,7 @@ public class EchoRoutingAssertionPolicyNode extends LeafAssertionTreeNode {
             protected void performAction() {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        JFrame f = TopComponents.getInstance().getMainWindow();
+                        Frame f = TopComponents.getInstance().getTopParent();
                         EchoRoutingAssertionDialog d =
                           new EchoRoutingAssertionDialog(f, (EchoRoutingAssertion)asAssertion());
                         d.addPolicyListener(listener);

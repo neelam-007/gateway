@@ -42,7 +42,7 @@ public class CookieCredentialSourceAssertionPropertiesAction extends SecureActio
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)subject.asAssertion();
         CookieCredentialSourceAssertionPropertiesDialog dlg =
                 new CookieCredentialSourceAssertionPropertiesDialog(f, true, assertion);

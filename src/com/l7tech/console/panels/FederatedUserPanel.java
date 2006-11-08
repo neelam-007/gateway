@@ -6,7 +6,6 @@ import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import static com.l7tech.common.security.rbac.EntityType.USER;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
@@ -77,7 +76,7 @@ public class FederatedUserPanel extends UserPanel {
     private JTextField emailTextField;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
-    final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+    final Frame topParent = TopComponents.getInstance().getTopParent();
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -142,7 +141,7 @@ public class FederatedUserPanel extends UserPanel {
                 IdentityAdmin admin = getIdentityAdmin();
                 User u = admin.findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
-                    JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(topParent, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 } else {
                     ao = new AttemptedUpdate(USER, u);
@@ -689,13 +688,13 @@ public class FederatedUserPanel extends UserPanel {
             // Cleanup
             formModified = false;
         } catch (ObjectNotFoundException e) {
-            JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(topParent, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = false;
         } catch (Exception e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
-            JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(topParent, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating User: " + e.toString());
             result = false;
         }

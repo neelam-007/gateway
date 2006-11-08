@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -60,7 +61,7 @@ public class NewVirtualGroupAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 NewVirtualGroupDialog dialog = new NewVirtualGroupDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
                 dialog.setVisible(true);

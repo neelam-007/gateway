@@ -3,6 +3,8 @@
  */
 package com.l7tech.common.gui.util;
 
+import com.l7tech.common.gui.ExceptionDialog;
+
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
@@ -12,6 +14,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
+import java.security.AccessControlException;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -414,6 +417,21 @@ public class Utilities {
         int erow = tree.getRowCount() - 1;
         while (erow >= 0)
             tree.collapseRow(erow--);
+    }
+
+    /**
+     * Try to set alwaysOnTop for the specified dialog, taking no action if the security manager doesn't allow us
+     * to do so.
+     *
+     * @param dialog  the dialog that should be always on top (if possible).
+     * @param b       the desired new value for the alwaysOnTop property
+     */
+    public static void setAlwaysOnTop(JDialog dialog, boolean b) {
+        try {
+            dialog.setAlwaysOnTop(b);
+        } catch (AccessControlException e) {
+            // Probably running as applet
+        }
     }
 
     /**

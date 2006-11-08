@@ -35,7 +35,7 @@ public class ManageClusterPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        ClusterPropertyDialog dlg = new ClusterPropertyDialog(TopComponents.getInstance().getMainWindow());
+        ClusterPropertyDialog dlg = new ClusterPropertyDialog(TopComponents.getInstance().getTopParent());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

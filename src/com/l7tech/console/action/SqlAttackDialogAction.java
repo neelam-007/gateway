@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.SqlAttackAssertion;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 public class SqlAttackDialogAction extends NodeAction {
     private SqlAttackAssertionTreeNode treeNode;
@@ -44,7 +45,7 @@ public class SqlAttackDialogAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 SqlAttackDialog d = new SqlAttackDialog(f, (SqlAttackAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);

@@ -22,6 +22,7 @@ import javax.swing.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Action for showing {@link com.l7tech.policy.assertion.BridgeRoutingAssertion} properties dialog.
@@ -63,7 +64,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 BridgeRoutingAssertionPropertiesDialog d = null;
                 try {
                     PublishedService svc = null;

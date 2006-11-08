@@ -33,7 +33,7 @@ public class MappingAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        MappingAssertionDialog aad = new MappingAssertionDialog(TopComponents.getInstance().getMainWindow(), subject.getAssertion(), true);
+        MappingAssertionDialog aad = new MappingAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), true);
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);

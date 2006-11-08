@@ -91,7 +91,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         fd.getSearchResultTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

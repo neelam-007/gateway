@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * This action is to view/edit the HTTP URI resolution parameter of a non-soap service.
@@ -80,7 +81,7 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
     }
 
     private boolean editSoapServiceRoutingURI(PublishedService svc) {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(mw, svc);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -105,8 +106,8 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
     }
 
     private boolean editXMLServiceRoutingURI(PublishedService svc) {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        String ssgUrl = mw.ssgURL();
+        final Frame parent = TopComponents.getInstance().getTopParent();
+        String ssgUrl = TopComponents.getInstance().ssgURL();
         if (!ssgUrl.startsWith("http://")) {
             ssgUrl = "http://" + ssgUrl;
         }
@@ -123,7 +124,7 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
             String existingRoutingURI = svc.getRoutingUri();
             previousRoutingURI = existingRoutingURI;
             if (existingRoutingURI == null) existingRoutingURI = "";
-            newURI = (String)JOptionPane.showInputDialog(mw,
+            newURI = (String)JOptionPane.showInputDialog(parent,
               "View or edit the SecureSpan Gateway URL that receives service requests:\n" + prefix,
               "View Gateway URL",
               JOptionPane.PLAIN_MESSAGE,
@@ -133,10 +134,10 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
 
             if (newURI != null && !newURI.equals(existingRoutingURI)) {
                 if (newURI.length() <= 0 || newURI.equals("/")) { // non-soap service cannot have null routing uri
-                    JOptionPane.showMessageDialog(mw, "Cannot set empty uri on non-soap service");
+                    JOptionPane.showMessageDialog(parent, "Cannot set empty uri on non-soap service");
                     return false;
                 } else if (newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                    JOptionPane.showMessageDialog(mw, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
+                    JOptionPane.showMessageDialog(parent, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
                     return false;
                 } else {
                     if (newURI.length() <= 0) {
@@ -152,15 +153,15 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
                 }
             }
         } catch (DuplicateObjectException e) {
-            JOptionPane.showMessageDialog(mw,
+            JOptionPane.showMessageDialog(parent,
               "Unable to save the service '" + svc.getName() + "'\n" +
               "because an existing service is already using the URI " + svc.getRoutingUri(),
               "Service already exists",
               JOptionPane.ERROR_MESSAGE);
         } catch (MalformedURLException e) {
-            JOptionPane.showMessageDialog(mw, "Invalid URL " + prefix + newURI);
+            JOptionPane.showMessageDialog(parent, "Invalid URL " + prefix + newURI);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(mw, "Error while changing routing URI " + e.getMessage());
+            JOptionPane.showMessageDialog(parent, "Error while changing routing URI " + e.getMessage());
         } finally {
             // go back to previous value if something was aborted
             if (!updated && svc != null) {

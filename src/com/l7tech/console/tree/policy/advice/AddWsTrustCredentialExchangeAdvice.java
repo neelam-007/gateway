@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Invoked when a WS-Trust Credential Exchange Assertion is dropped to a policy tree to
@@ -22,7 +23,7 @@ public class AddWsTrustCredentialExchangeAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         WsTrustCredentialExchange assertion = (WsTrustCredentialExchange)assertions[0];
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(assertion, f, true);
         Utilities.setEscKeyStrokeDisposes(dlg);

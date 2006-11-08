@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Map;
 import java.text.SimpleDateFormat;
 import java.rmi.RemoteException;
+import java.security.AccessControlException;
 import javax.swing.*;
 
 import com.l7tech.common.gui.util.Utilities;
@@ -54,7 +55,7 @@ public class KerberosDialog extends JDialog {
     private void init() throws RemoteException {
         setTitle("Kerberos Configuration");
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
         setResizable(false);
         add(mainPanel);
 

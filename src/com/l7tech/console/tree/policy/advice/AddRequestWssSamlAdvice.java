@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Invoked when a SAML Authentication Assertion is dropped to a policy tree to
@@ -28,7 +29,7 @@ public class AddRequestWssSamlAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         RequestWssSaml assertion = (RequestWssSaml)assertions[0];
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         IntroductionWizardStepPanel p =
           new IntroductionWizardStepPanel(

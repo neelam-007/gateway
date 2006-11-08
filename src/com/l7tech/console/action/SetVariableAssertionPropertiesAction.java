@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.SetVariableAssertion;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>SetVariableAssertionPropertiesAction</code> edits the
@@ -56,7 +57,7 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         SetVariableAssertion sva = (SetVariableAssertion) node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = (JFrame)TopComponents.getInstance().getTopParent();
         SetVariableAssertionDialog eqd = new SetVariableAssertionDialog(f, sva);
         Utilities.setEscKeyStrokeDisposes(eqd);
         eqd.pack();

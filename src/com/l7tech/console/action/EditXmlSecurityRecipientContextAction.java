@@ -16,6 +16,7 @@ import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * Action that lets the manager admin change the {@link com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext}
@@ -44,7 +45,7 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
     }
 
     protected void performAction() {
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

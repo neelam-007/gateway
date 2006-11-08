@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>NewInternalUserAction</code> action adds the new user.
@@ -65,7 +66,7 @@ public class NewInternalUserAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 NewInternalUserDialog dialog = new NewInternalUserDialog(f);
                 dialog.setResizable(false);
                 dialog.setVisible(true);

@@ -17,6 +17,7 @@ import javax.swing.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>HttpRoutingAssertionPropertiesAction</code> edits the
@@ -62,7 +63,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 HttpRoutingAssertionDialog d =
                         null;
                 try {

@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.NoSuchElementException;
+import java.awt.*;
 
 /**
  * The <code>GroupPropertiesAction</code> edits the group entity.
@@ -65,7 +66,7 @@ public class GroupPropertiesAction extends NodeAction {
                 }
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 GroupPanel panel = GroupPanel.newInstance(config, header);
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 EditorDialog dialog = new EditorDialog(f, panel, true);
                 try {
                     panel.edit(header, config);

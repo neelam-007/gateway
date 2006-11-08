@@ -12,6 +12,7 @@ import com.l7tech.common.gui.util.Utilities;
 import javax.swing.*;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.awt.*;
 
 /**
  * Invoked when a regex Assertion is dropped to a policy tree to  initiate the
@@ -24,7 +25,7 @@ public class RegexAdvice implements Advice {
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof Regex)) {
             throw new IllegalArgumentException();
         }
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         Regex r = (Regex)assertions[0];
         RegexDialog rd = new RegexDialog(f, r);
         rd.setModal(true);

@@ -1,17 +1,12 @@
 package com.l7tech.console.action;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.io.File;
 import java.util.logging.Level;
-import java.util.Date;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 
-import com.l7tech.identity.Group;
 import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.GatewayLogWindow;
 import com.l7tech.console.util.TopComponents;
@@ -115,7 +110,7 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
         };
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
-        int r = fc.showDialog(TopComponents.getInstance().getMainWindow(), "Open");
+        int r = fc.showDialog(TopComponents.getInstance().getTopParent(), "Open");
         if(r == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if(file!=null) {
@@ -124,7 +119,7 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
                 }
                 else {
                     ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                            TopComponents.getInstance().getMainWindow(),
+                            TopComponents.getInstance().getTopParent(),
                             "SecureSpan Manager - Error",
                             "File not accessible:\n'"+file.getAbsolutePath()+"'.",
                             null,

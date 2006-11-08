@@ -48,7 +48,7 @@ public class NewVirtualGroupDialog extends JDialog {
     private JButton cancelButton;
     private JTextField groupDescriptionTextField;
 
-    private JFrame parent;
+    private Frame parent;
     private IdentityProviderConfig ipc;
     private EventListenerList listenerList = new EventListenerList();
     GroupBean group = new GroupBean();
@@ -61,7 +61,7 @@ public class NewVirtualGroupDialog extends JDialog {
      *
      * @param parent  the parent Frame. May be <B>null</B>
      */
-    public NewVirtualGroupDialog(JFrame parent, IdentityProviderConfig ipc) {
+    public NewVirtualGroupDialog(Frame parent, IdentityProviderConfig ipc) {
         super(parent, true);
         this.parent = parent;
         this.ipc = ipc;

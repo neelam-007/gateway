@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>NewGroupAction</code> action adds the new group.
@@ -84,7 +85,7 @@ public class NewGroupAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 NewGroupDialog dialog = new NewGroupDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
                 dialog.setVisible(true);

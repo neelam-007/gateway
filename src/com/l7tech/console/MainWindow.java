@@ -2392,7 +2392,7 @@ public class MainWindow extends JFrame {
         // enable the items that make sense to show when a policy is being edited
         getValidateMenuItem().setAction(policyPanel.getValidateAction());
         getSaveMenuItem().setAction(policyPanel.getSaveAction());
-        if (!TopComponents.getInstance().getMainWindow().isApplet()) {
+        if (!TopComponents.getInstance().isApplet()) {
             getExportMenuItem().setAction(policyPanel.getExportAction());
             getImportMenuItem().setAction(policyPanel.getImportAction());
         }

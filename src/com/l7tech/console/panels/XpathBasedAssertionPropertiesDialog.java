@@ -164,7 +164,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener) {
+    public XpathBasedAssertionPropertiesDialog(Frame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();

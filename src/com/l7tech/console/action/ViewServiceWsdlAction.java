@@ -98,7 +98,7 @@ public class ViewServiceWsdlAction extends NodeAction {
         private XMLContainer xmlContainer;
 
         private WsdlViewDialog(final PublishedService ps) {
-            super(TopComponents.getInstance().getMainWindow(), true);
+            super(TopComponents.getInstance().getTopParent(), true);
             setTitle(ps.getName());
             JPanel panel = new JPanel(new BorderLayout());
             JPanel wsdlPanel = new JPanel();
@@ -155,7 +155,7 @@ public class ViewServiceWsdlAction extends NodeAction {
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
-            if (TopComponents.getInstance().getMainWindow().isApplet()) {
+            if (TopComponents.getInstance().isApplet()) {
                 // Search action tries to get the class loader
                 popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
             }

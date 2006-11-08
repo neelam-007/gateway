@@ -38,7 +38,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         nodeList.add(new AuditFolderNode());
         nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new ThreatProtectionFolderNode());
-        if (!TopComponents.getInstance().getMainWindow().isApplet())
+        if (!TopComponents.getInstance().isApplet())
             nodeList.add(new PoliciesFolderNode());
 
         for (Iterator i = nodeList.iterator(); i.hasNext();) {

@@ -13,6 +13,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 
+import java.awt.*;
+
 /**
  * Invoked when a {@link com.l7tech.policy.assertion.SetVariableAssertion} is added to
  * a policy tree to prompt admin for assertion properties.
@@ -37,7 +39,7 @@ public class SetVariableAssertionAdvice implements Advice {
                 ((AssertionTreeNode)parentNode.getChildAt(parentNode.getChildCount()-1)).asAssertion();
         }
 
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, subject, beingInsertedAfter);
 
         // show the dialog

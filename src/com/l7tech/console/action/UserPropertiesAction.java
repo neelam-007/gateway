@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.NoSuchElementException;
+import java.awt.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -77,7 +78,7 @@ public class UserPropertiesAction extends NodeAction {
                     throw new RuntimeException("Unsupported UserPropertiesAction.");
                 }
 
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 EditorDialog dialog = new EditorDialog(f, panel, true);
                 try {
                     panel.edit(header, config);

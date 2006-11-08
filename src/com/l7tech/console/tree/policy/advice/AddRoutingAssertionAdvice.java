@@ -14,6 +14,7 @@ import javax.wsdl.WSDLException;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The class <code>AddRoutingAssertionAdvice</code> intercepts policy
@@ -71,7 +72,7 @@ public class AddRoutingAssertionAdvice implements Advice {
         } else if (assertions[0] instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion ra = (JmsRoutingAssertion) assertions[0];
             if (ra.getEndpointOid() == null) {
-                final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+                final Frame mainWindow = TopComponents.getInstance().getTopParent();
                 JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
                 dialog.setModal(true);
                 dialog.pack();

@@ -43,7 +43,7 @@ public class FaultLevelPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         FaultLevelPropertiesDialog dlg = new FaultLevelPropertiesDialog(f, (FaultLevel)subject.asAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);

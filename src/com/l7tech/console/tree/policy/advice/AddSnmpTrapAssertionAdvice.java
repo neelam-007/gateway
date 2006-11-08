@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 
+import java.awt.*;
+
 /**
  * Invoked when a SnmpTrapAssertion is dropped to a policy tree to prompt
  * an administrator for a value.
@@ -20,7 +22,7 @@ public class AddSnmpTrapAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         SnmpTrapAssertion subject = (SnmpTrapAssertion)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         SnmpTrapPropertiesDialog dlg = new SnmpTrapPropertiesDialog(mw, subject);
 
         // show the dialog

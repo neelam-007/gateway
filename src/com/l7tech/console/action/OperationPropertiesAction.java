@@ -46,7 +46,7 @@ public class OperationPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         PublishedService svc = null;
         try {

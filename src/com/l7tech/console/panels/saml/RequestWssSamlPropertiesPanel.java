@@ -18,6 +18,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.security.AccessControlException;
 
 /**
  * The <code>RequestWssSamlPropertiesPanel</code> edits the
@@ -62,7 +63,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
     }
 
     private void initialize() {
-        setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
         setResizable(false);
 
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);

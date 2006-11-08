@@ -12,6 +12,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.security.AccessControlException;
 
 /**
  * Simple "Please Wait.." dialog.
@@ -36,7 +37,7 @@ public class CancelableOperationDialog extends JDialog {
 
     private void doInit(String message, JProgressBar progressBar) {
         setResizable(false);
-        setAlwaysOnTop(true);
+        Utilities.setAlwaysOnTop(this, true);
 
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());

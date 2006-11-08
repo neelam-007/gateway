@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Invoked when a schema validation assertion is dropped in the policy tree.
@@ -29,7 +30,7 @@ public class AddSchemaValidationAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         SchemaValidation assertion = (SchemaValidation)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         //SchemaValidationTreeNode fakenode = new SchemaValidationTreeNode(assertion);
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
         // show the dialog

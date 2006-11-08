@@ -52,7 +52,7 @@ public class EditSamlBrowserArtifactAction extends NodeAction {
     }
 
     protected void performAction() {
-        Frame parent = TopComponents.getInstance().getMainWindow();
+        Frame parent = TopComponents.getInstance().getTopParent();
         SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(samlBrowserArtifactAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

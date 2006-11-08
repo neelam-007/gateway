@@ -46,7 +46,7 @@ public class SchemaValidationPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
         dlg.addPolicyListener(listener);
         dlg.pack();

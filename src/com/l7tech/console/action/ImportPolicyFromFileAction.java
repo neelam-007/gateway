@@ -118,7 +118,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
                 return "XML Files";
             }
         });
-        int ret = chooser.showOpenDialog(TopComponents.getInstance().getMainWindow());
+        int ret = chooser.showOpenDialog(TopComponents.getInstance().getTopParent());
         if (JFileChooser.APPROVE_OPTION != ret) return;
 
         try {
@@ -132,7 +132,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(),
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                           "Could not find policy export in the selected file",
                                           "Policy Not Found",
                                           JOptionPane.WARNING_MESSAGE);

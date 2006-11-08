@@ -9,6 +9,8 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 
+import java.awt.*;
+
 /**
  * Invoked when a EmailAlertAssertion is dropped to a policy tree to prompt
  * an administrator for a value.
@@ -20,7 +22,7 @@ public class AddEmailAlertAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         EmailAlertAssertion subject = (EmailAlertAssertion)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(mw, subject);
 
         // show the dialog

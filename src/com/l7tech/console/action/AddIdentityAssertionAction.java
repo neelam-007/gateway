@@ -23,6 +23,7 @@ import javax.swing.tree.DefaultTreeModel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
+import java.awt.*;
 
 
 /**
@@ -78,7 +79,7 @@ public class AddIdentityAssertionAction extends PolicyUpdatingAssertionAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 Options options = new Options();
                 options.setDisposeOnSelect(true);
                 options.setDisableOpenProperties(true);

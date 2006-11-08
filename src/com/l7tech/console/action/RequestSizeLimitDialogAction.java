@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.RequestSizeLimit;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 public class RequestSizeLimitDialogAction extends NodeAction{
     private RequestSizeLimitTreeNode treeNode;
@@ -44,7 +45,7 @@ public class RequestSizeLimitDialogAction extends NodeAction{
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 RequestSizeLimitDialog d;
                 d = new RequestSizeLimitDialog(f, (RequestSizeLimit)node.asAssertion(), true);
                 d.pack();

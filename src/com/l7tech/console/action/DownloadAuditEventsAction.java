@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
@@ -60,7 +61,7 @@ public class DownloadAuditEventsAction extends SecureAction {
         };
         fc.setFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
-        final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+        final Frame mainWindow = TopComponents.getInstance().getTopParent();
         int r = fc.showDialog(mainWindow, "Save Audit Events");
         if (r != JFileChooser.APPROVE_OPTION)
             return;

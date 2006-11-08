@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.OversizedTextAssertion;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * Action that displays Oversized Text Assertion properties dialog.
@@ -49,7 +50,7 @@ public class OversizedTextDialogAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 OversizedTextDialog d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);

@@ -61,14 +61,14 @@ public class ManageCertificatesAction extends SecureAction {
      */
     protected void performAction() {
         try {
-            CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getMainWindow());
+            CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getTopParent());
             Utilities.centerOnScreen(cmw);
             cmw.setVisible(true);
             cmw.dispose();
         } catch (RemoteException e) {
             String msg = "Error loading cert manager panel.\n" + e.getMessage();
             logger.log(Level.INFO, "error loading CertManagerWindow", e);
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(), msg,
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), msg,
                                           "Cannot Manage Certs",
                                           JOptionPane.ERROR_MESSAGE);
         }

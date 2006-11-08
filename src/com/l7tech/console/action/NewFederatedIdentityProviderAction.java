@@ -23,6 +23,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -71,7 +72,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
 
                 FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(null));
                 CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel);

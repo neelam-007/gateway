@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.Regex;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>RegexPropertiesAction</code> edits the Regex assertion
@@ -57,7 +58,7 @@ public class RegexPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         Regex ra = (Regex)node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         RegexDialog rd = new RegexDialog(f, ra);
         rd.setModal(true);
         rd.getBeanEditSupport().addBeanListener(new BeanAdapter() {

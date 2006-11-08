@@ -67,7 +67,7 @@ public class NewInternalUserDialog extends JDialog {
      *
      * @param parent  the parent Frame. May be <B>null</B>
      */
-    public NewInternalUserDialog(JFrame parent) {
+    public NewInternalUserDialog(Frame parent) {
         super(parent, true);
         this.user = new UserBean();
         this.user.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);

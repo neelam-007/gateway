@@ -90,7 +90,7 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
             }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    TopComponents.getInstance().getMainWindow().firePermissionRefresh();
+                    TopComponents.getInstance().firePermissionRefresh();
                 }
             });
             return perms;

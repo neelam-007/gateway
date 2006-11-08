@@ -14,6 +14,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.common.gui.util.Utilities;
 
+import java.awt.*;
+
 /**
  * Triggered when OversizedTextAssertion added to policy.
  */
@@ -24,7 +26,7 @@ public class OversizedTextAssertionAdvice implements Advice {
             throw new IllegalArgumentException();
         }
         OversizedTextAssertion subject = (OversizedTextAssertion) assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        final Frame mw = TopComponents.getInstance().getTopParent();
         OversizedTextDialog dlg = new OversizedTextDialog(mw, subject, true);
 
         // show the dialog

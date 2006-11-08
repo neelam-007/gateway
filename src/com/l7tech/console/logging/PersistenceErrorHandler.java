@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * <code>PersistenceErrorHandler</code> handles the persistence related
@@ -17,7 +18,6 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PersistenceErrorHandler implements ErrorHandler {
-    private MainWindow mainFrame;
     private static final String ERROR_MESSAGE =
       "<html><b>The Secure Span Gateway reported a " +
       "persistence error and was unable to complete the operation.</b><br></html>";
@@ -41,14 +41,7 @@ public class PersistenceErrorHandler implements ErrorHandler {
         }
     }
 
-    private JFrame getMainWindow() {
-        if (mainFrame != null) return mainFrame;
-
-        TopComponents instance = TopComponents.getInstance();
-        if (instance.hasMainWindow()) {
-            mainFrame = instance.getMainWindow();
-        }
-
-        return mainFrame;
+    private Frame getMainWindow() {
+        return TopComponents.getInstance().getTopParent();
     }
 }

@@ -76,7 +76,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     //private Assertion detachedPolicyRoot;
     private PolicyEditorSubject subject;
     private String subjectName;
-    private final SsmPreferences preferences = TopComponents.getInstance().getMainWindow().getPreferences();
+    private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final boolean applet;
 
     public interface PolicyEditorSubject {
@@ -111,7 +111,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         this.subject = subject;
         subjectName = subject.getName();
         this.policyTree = pt;
-        this.applet = TopComponents.getInstance().getMainWindow().isApplet();
+        this.applet = TopComponents.getInstance().isApplet();
         policyTree.setWriteAccess(subject.hasWriteAccess());
         layoutComponents();
 
@@ -286,7 +286,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         updateHeadings();
 
         TreeModel policyTreeModel;
-        final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
+        final PolicyToolBar pt = topComponents.getPolicyToolBar();
 
 
         if (identityView) {
@@ -767,7 +767,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         subject.removePropertyChangeListener(servicePropertyChangeListener);
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
-        final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
+        final PolicyToolBar pt = topComponents.getPolicyToolBar();
         if (pt != null) {
             pt.unregisterPolicyTree(policyTree);
         }
@@ -796,7 +796,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
       throws ContainerVetoException {
         if (e.getChild() == this) {
             if (policyEditorToolbar.buttonSave.isEnabled()) {
-                int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
+                int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                   "<html><center><b>Do you want to save changes to service policy " +
                   "for<br> '" + subjectName + "' ?</b></center></html>",
                   "Save Service policy",
@@ -807,7 +807,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     throw new ContainerVetoException(e, "User aborted");
                 }
             }
-            final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
+            final PolicyToolBar pt = topComponents.getPolicyToolBar();
             pt.disableAll();
         }
     }
@@ -910,7 +910,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
 
             protected void performAction() {
-                ImportPolicyFromUDDIWizard wiz = ImportPolicyFromUDDIWizard.getInstance(TopComponents.getInstance().getMainWindow());
+                ImportPolicyFromUDDIWizard wiz = ImportPolicyFromUDDIWizard.getInstance(TopComponents.getInstance().getTopParent());
                 wiz.setSize(850, 500);
                 Utilities.centerOnScreen(wiz);
                 wiz.setVisible(true);

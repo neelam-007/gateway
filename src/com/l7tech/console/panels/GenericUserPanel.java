@@ -14,6 +14,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
@@ -163,7 +164,8 @@ public class GenericUserPanel extends UserPanel {
             } else {
                 User u = getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
                 if (u == null) {
-                    JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                  USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 } else {
                     ao = new AttemptedUpdate(USER, u);
@@ -608,7 +610,7 @@ public class GenericUserPanel extends UserPanel {
             changePassButton.
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    new PasswordDialog(mainWindow, userPanel,
+                    new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
                       user.getUserBean(), passwordChangeListener).setVisible(true);
                     // Refresh the panel (since the Bridge's cert might have been revoked)
                 }
@@ -719,13 +721,13 @@ public class GenericUserPanel extends UserPanel {
             // Cleanup
             formModified = false;
         } catch (ObjectNotFoundException e) {
-            JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = false;
         } catch (Exception e) {  // todo rethrow as runtime and handle with ErrorHandler em
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
-            JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating User: " + e.toString(), e);
             result = false;
         }

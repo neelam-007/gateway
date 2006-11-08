@@ -132,7 +132,7 @@ public class IdentityPolicyPanel extends JPanel {
         configureBridgeRoutingButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 BridgeRoutingAssertionPropertiesDialog d =
-                        new BridgeRoutingAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(),
+                        new BridgeRoutingAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(),
                                                                    guiBraConfig,
                                                                    service);
                 d.setModal(true);

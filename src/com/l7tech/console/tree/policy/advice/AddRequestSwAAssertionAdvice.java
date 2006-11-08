@@ -57,7 +57,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         RequestSwAAssertion swaAssertion = (RequestSwAAssertion)assertions[0];
         final PublishedService service = pc.getService();
         if (service == null || !(service.isSoap())) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(), "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services or policies not attached to a WSDL.");
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services or policies not attached to a WSDL.");
             return;
         }
 

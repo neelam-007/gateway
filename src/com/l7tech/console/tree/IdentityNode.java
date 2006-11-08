@@ -37,7 +37,7 @@ public class IdentityNode extends AbstractLeafPaletteNode {
      * @return the assertion corresponding to this node or null
      */
     public Assertion[] asAssertions() {
-        Frame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         Options options = new Options();
         options.setDisableOpenProperties(true);
         options.setDisposeOnSelect(true);

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpFormPost;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * Invoked when an {@link HttpFormPost} Assertion is dropped to a policy tree to  initiate the
@@ -21,7 +22,7 @@ public class HttpFormPostAdvice implements Advice {
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof HttpFormPost)) {
             throw new IllegalArgumentException();
         }
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         HttpFormPost hfp = (HttpFormPost)assertions[0];
         HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
         hfpd.setModal(true);

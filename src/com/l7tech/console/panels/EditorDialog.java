@@ -14,11 +14,11 @@ public class EditorDialog extends JDialog {
   
   private JPanel panel;
   
-  public EditorDialog(JFrame parentFrame, JPanel panel) {
+  public EditorDialog(Frame parentFrame, JPanel panel) {
     this(parentFrame, panel, false);
   }
 
-  public EditorDialog(JFrame parentFrame, JPanel panel, boolean resizable) {
+  public EditorDialog(Frame parentFrame, JPanel panel, boolean resizable) {
     super(parentFrame, true);
     this.panel = panel;
     

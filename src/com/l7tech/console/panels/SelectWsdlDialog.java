@@ -27,7 +27,7 @@ public class SelectWsdlDialog extends JDialog {
      * @param parent the parent
      * @param title the title to use
      */
-    public SelectWsdlDialog(JDialog parent, String title) {
+    public SelectWsdlDialog(Dialog parent, String title) {
         super(parent, title, true);
         owner = parent;
         initComponents();
@@ -39,7 +39,7 @@ public class SelectWsdlDialog extends JDialog {
      * @param parent the parent
      * @param title the title to use
      */
-    public SelectWsdlDialog(JFrame parent, String title) {
+    public SelectWsdlDialog(Frame parent, String title) {
         super(parent, title, true);
         initComponents();
     }
@@ -91,7 +91,7 @@ public class SelectWsdlDialog extends JDialog {
 
     private static final Logger logger = Logger.getLogger(SelectWsdlDialog.class.getName());
 
-    private JDialog owner;
+    private Dialog owner;
     private WsdlLocationPanel wsdlLocationPanel;
     private Wsdl wsdl;
 

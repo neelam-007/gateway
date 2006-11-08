@@ -49,7 +49,7 @@ public class AuditAssertionPropertiesAction extends SecureAction {
             thresold = Level.INFO;
         }
 
-        AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getMainWindow(), subject.getAssertion(), thresold.getName());
+        AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), thresold.getName());
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);

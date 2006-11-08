@@ -20,6 +20,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 
 /**
@@ -72,7 +73,7 @@ public class NewLdapProviderAction extends NewProviderAction {
                   new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), true));
 
 
-                JFrame f = TopComponents.getInstance().getMainWindow();
+                Frame f = TopComponents.getInstance().getTopParent();
                 Wizard w = new CreateIdentityProviderWizard(f, configPanel);
                 w.addWizardListener(wizardListener);
 

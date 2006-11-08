@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.AboutBox;
+import com.l7tech.console.util.TopComponents;
 
 
 /**
@@ -40,6 +41,6 @@ public class AboutAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        AboutBox.showDialog(null);
+        AboutBox.showDialog(TopComponents.getInstance().getTopParent());
     }
 }

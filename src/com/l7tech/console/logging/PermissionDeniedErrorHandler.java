@@ -41,7 +41,7 @@ public class PermissionDeniedErrorHandler implements ErrorHandler {
             }
 
             e.getLogger().log(Level.INFO, message, t);
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getMainWindow(), "Permission Denied", message, null, Level.INFO);
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(), "Permission Denied", message, null, Level.INFO);
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);

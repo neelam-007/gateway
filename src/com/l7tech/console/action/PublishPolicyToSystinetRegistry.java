@@ -11,6 +11,7 @@ import com.l7tech.common.gui.util.Utilities;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.awt.*;
 
 /**
  * Action corresponding to publishing a policy on a systinet registry.
@@ -39,7 +40,7 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
     }
 
     protected void performAction() {
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
 
         // check that systinet (only supported uddi implementation so far) is in class path
         try {

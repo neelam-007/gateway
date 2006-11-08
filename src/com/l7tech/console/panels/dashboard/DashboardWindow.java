@@ -264,7 +264,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
             refreshTimer.stop();
 
             // Let inactivity timeout start counting after this window is closed.
-            TopComponents.getInstance().getMainWindow().updateLastActivityTime();
+            TopComponents.getInstance().updateLastActivityTime();
         }
         super.setVisible(vis);
     }

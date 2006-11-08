@@ -56,7 +56,7 @@ public class RequestSwAAssertionDialog extends JDialog {
     /**
      *
      */
-    public RequestSwAAssertionDialog(JFrame parent, RequestSwAAssertion assertion) {
+    public RequestSwAAssertionDialog(Frame parent, RequestSwAAssertion assertion) {
         super(parent, resources.getString("window.title"), true);
         this.originalAssertion = assertion;
         this.assertion = (RequestSwAAssertion) originalAssertion.clone();

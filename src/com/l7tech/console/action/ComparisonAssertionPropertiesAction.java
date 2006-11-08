@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.ComparisonAssertion;
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * The <code>ComparisonAssertionPropertiesAction</code> edits the
@@ -53,7 +54,7 @@ public class ComparisonAssertionPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         ComparisonAssertion eq = (ComparisonAssertion)node.asAssertion();
-        JFrame f = TopComponents.getInstance().getMainWindow();
+        Frame f = TopComponents.getInstance().getTopParent();
         ComparisonAssertionDialog eqd = new ComparisonAssertionDialog(f, eq);
         Utilities.setEscKeyStrokeDisposes(eqd);
         eqd.pack();
