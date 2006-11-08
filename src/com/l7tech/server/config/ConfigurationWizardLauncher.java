@@ -1,14 +1,5 @@
 package com.l7tech.server.config;
 
-import com.l7tech.server.config.ui.gui.ConfigurationWizard;
-import com.l7tech.server.config.ui.console.*;
-
-import java.util.List;
-import java.io.PrintWriter;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
 /**
  * User: megery
  * Date: Feb 22, 2006
