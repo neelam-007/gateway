@@ -15,13 +15,13 @@ public class OSDetector {
     private static Pattern LINUX_PATTERN = Pattern.compile("Linux.*");
     private static Pattern WINDOWS_PATTERN = Pattern.compile("Windows.*");
 
-    private static String OSName;
+    private static String OSName = System.getProperty("os.name");
 
     private static OSSpecificFunctions osf_;
 
     public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
         if (osf_ == null) {
-            OSName = System.getProperty("os.name");
+
             if (isWindows()) {
                 osf_ = new WindowsSpecificFunctions(OSName);
             } else if (isLinux()) {
@@ -34,11 +34,11 @@ public class OSDetector {
         return osf_;
     }
 
-    private static boolean isWindows() {
+    public static boolean isWindows() {
         return WINDOWS_PATTERN.matcher(OSName).matches();
     }
 
-    private static boolean isLinux() {
+    public static boolean isLinux() {
         return LINUX_PATTERN.matcher(OSName).matches();
     }
 }
