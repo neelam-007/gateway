@@ -835,7 +835,7 @@
     <!--
       Package the SSG (WAR).
     -->
-    <target name="package.gateway" depends="compile, configure_properties.dev">
+    <target name="package.gateway" depends="compile, configure_properties.dev, package.manager">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">

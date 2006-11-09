@@ -35,7 +35,6 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
@@ -61,9 +60,11 @@ public class WsdlLocationPanel extends JPanel {
      * @param owner the owner of this panel (used when creating other dialogs).
      * @param logger the logger to log to
      */
-    public WsdlLocationPanel(JDialog owner, Logger logger) {
+    public WsdlLocationPanel(JDialog owner, Logger logger, boolean enableFileSelection, boolean enableUddiSelection) {
         this.ownerd = owner;
         this.logger = logger;
+        this.allowFile = enableFileSelection;
+        this.allowUddi = enableUddiSelection;
         initComponents();
     }
 
@@ -73,9 +74,11 @@ public class WsdlLocationPanel extends JPanel {
      * @param owner the owner of this panel (used when creating other dialogs).
      * @param logger the logger to log to
      */
-    public WsdlLocationPanel(JFrame owner, Logger logger) {
+    public WsdlLocationPanel(JFrame owner, Logger logger, boolean enableFileSelection, boolean enableUddiSelection) {
         this.ownerf = owner;
         this.logger = logger;
+        this.allowFile = enableFileSelection;
+        this.allowUddi = enableUddiSelection;
         initComponents();
     }
 
@@ -150,6 +153,8 @@ public class WsdlLocationPanel extends JPanel {
     private Logger logger;
     private Document wsdlDocument;
     private PropertyChangeListener pcl;
+    private final boolean allowFile;
+    private final boolean allowUddi;
 
     private JButton wsdlUrlBrowseButton;
     private JButton wsdlFileButton;
@@ -168,8 +173,12 @@ public class WsdlLocationPanel extends JPanel {
         // example labels
         FontUtil.resizeFont(exampleUrlLabel, 0.84);
         FontUtil.resizeFont(exampleFileLabel, 0.84);
-        boolean isWindows = System.getProperty("os.name", "win").toLowerCase().indexOf("win") >= 0;
-        exampleFileLabel.setText(isWindows ? EXAMPLE_PATH_WINDOWS : EXAMPLE_PATH_NIX);
+        if (allowFile) {
+            boolean isWindows = System.getProperty("os.name", "win").toLowerCase().indexOf("win") >= 0;
+            exampleFileLabel.setText(isWindows ? EXAMPLE_PATH_WINDOWS : EXAMPLE_PATH_NIX);
+        } else {
+            exampleFileLabel.setText("");    
+        }
 
         // url field
         wsdlUrlTextField.addMouseListener(Utilities.createContextMenuMouseListener(
@@ -178,13 +187,14 @@ public class WsdlLocationPanel extends JPanel {
         wsdlUrlTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
 
         // buttons
-        if (!SearchWsdlDialog.uddiEnabled()) wsdlUrlBrowseButton.setVisible(false);
+        if (!allowUddi) wsdlUrlBrowseButton.setVisible(false);
         wsdlUrlBrowseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 selectUddi();
             }
         });
 
+        if (!allowFile) wsdlFileButton.setVisible(false);
         wsdlFileButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 selectFile();

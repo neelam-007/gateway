@@ -898,7 +898,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             @Override
             public boolean isAuthorized() {
                 PublishedService svc = getPublishedService();
-                return svc != null && canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+                return svc != null && canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc)) && !isApplet();
             }
 
             public String getName() {
