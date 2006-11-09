@@ -30,13 +30,8 @@ public class Exporter {
         if (outputpathval == null) {
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know where to output the image to.");
         }
-        try {
-            FileOutputStream fos = new FileOutputStream(outputpathval);
-            fos.close();
-        } catch (FileNotFoundException e) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to " + outputpathval + ". " + e.getMessage());
-        } catch (IOException e) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to " + outputpathval + ". " + e.getMessage());
+        if (!testCanWrite(outputpathval)) {
+            throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to " + outputpathval);
         }
 
         // check whether or not we are expected to include audit in export
@@ -78,13 +73,36 @@ public class Exporter {
         // dump the database
         DBDumpUtil.dump(databaseHost, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
 
-        // read policy files from this dump, collect all potential mapping in order to produce mapping template file
+        // produce template mapping if necessary
+        tmp = arguments.get(MAPPING_PATH);
+        if (tmp != null) {
+            if (!testCanWrite(tmp)) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + tmp);
+            }
+            // read policy files from this dump, collect all potential mapping in order to produce mapping template file
+            MappingUtil.produceTemplateMappingFileFromDump(dbDumpTempFile, tmp);
+        }
 
         // copy all config files we want into this temp directory
         // todo get path for all config files, copy these files into
 
         // zip the temp directory into the requested image file (outputpathval)
         // todo
+    }
+
+    private boolean testCanWrite(String path) {
+        try {
+            FileOutputStream fos = new FileOutputStream(path);
+            fos.close();
+        } catch (FileNotFoundException e) {
+            System.err.println("cannot write to " + path + ". " + e.getMessage());
+            return false;
+        } catch (IOException e) {
+            System.err.println("cannot write to " + path + ". " + e.getMessage());
+            return false;
+        }
+        (new File(path)).delete();
+        return true;
     }
 
     private String createTmpDirectory() throws IOException {
