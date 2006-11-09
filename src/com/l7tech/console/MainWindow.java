@@ -11,10 +11,7 @@ import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.LicenseDialog;
-import com.l7tech.console.panels.LogonDialog;
-import com.l7tech.console.panels.PreferencesDialog;
-import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -109,6 +106,7 @@ public class MainWindow extends JFrame {
     private JMenuItem dashboardMenuItem;
     private JMenuItem manageClusterLicensesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
+    private JMenuItem manageAuditAlertsMenuItem;
 
     // actions
     private Action refreshAction = null;
@@ -184,6 +182,11 @@ public class MainWindow extends JFrame {
     private boolean maximizeOnStart = false;
 
     private final SsmPreferences preferences;
+
+    private AuditAlertsNotificationPanel auditAlertBar;
+    private AuditAlertOptionsAction manageAuditAlertsAction;
+    private AuditAlertChecker auditAlertChecker;
+
 
     /**
      * MainWindow constructor comment.
@@ -572,6 +575,7 @@ public class MainWindow extends JFrame {
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
+            menu.add(getManageAuditAlertOptionsMenuItem());
 
 
             int mnemonic = menu.getText().toCharArray()[0];
@@ -580,6 +584,20 @@ public class MainWindow extends JFrame {
             tasksMenu = menu;
         }
         return tasksMenu;
+    }
+
+    private JMenuItem getManageAuditAlertOptionsMenuItem() {
+        if (manageAuditAlertsMenuItem == null) manageAuditAlertsMenuItem = new JMenuItem(getManageAuditAlertsAction());
+        return manageAuditAlertsMenuItem;
+    }
+
+    private Action getManageAuditAlertsAction() {
+        if (manageAuditAlertsAction == null)
+            manageAuditAlertsAction = new AuditAlertOptionsAction();
+            manageAuditAlertsAction.setEnabled(false);
+            this.addLogonListener(manageAuditAlertsAction);
+            addPermissionRefreshListener(manageAuditAlertsAction);
+        return manageAuditAlertsAction;
     }
 
     private JMenu getNewProviderSubMenu() {
@@ -656,6 +674,28 @@ public class MainWindow extends JFrame {
         helpMenu.setMnemonic(mnemonic);
 
         return helpMenu;
+    }
+
+    private AuditAlertsNotificationPanel getAuditAlertBar() {
+        if (auditAlertBar == null) {
+            auditAlertBar = new AuditAlertsNotificationPanel(this, getAuditChecker());
+            addLogonListener(auditAlertBar);
+        }
+        return auditAlertBar;
+    }
+
+    public AuditAlertChecker getAuditChecker() {
+        if (auditAlertChecker == null) {
+            AuditAlertConfigBean bean;
+            if (TopComponents.getInstance().isApplet()) bean = new AuditAlertConfigBean();
+            else bean = new AuditAlertConfigBean(preferences);
+            auditAlertChecker = new AuditAlertChecker(bean);
+        }
+        return auditAlertChecker;
+    }
+
+    public void updateAlertBar(String enabled, String intervalSeconds, String warningLevel) {
+        getAuditAlertBar().updateSettings(enabled, intervalSeconds, warningLevel);
     }
 
 
@@ -1291,6 +1331,7 @@ public class MainWindow extends JFrame {
             mainJMenuBar.add(getViewMenu());
             //           mainJMenuBar.add(getWindowMenu());
             mainJMenuBar.add(getHelpMenu());
+            mainJMenuBar.add(getAuditAlertBar());
             Utilities.removeToolTipsFromMenuItems(mainJMenuBar);
         }
         return mainJMenuBar;
