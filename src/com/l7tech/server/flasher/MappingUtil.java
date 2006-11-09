@@ -11,6 +11,7 @@ import java.io.IOException;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
+import org.w3c.dom.Comment;
 import org.xml.sax.SAXException;
 
 /**
@@ -91,7 +92,8 @@ public class MappingUtil {
                                                                       "globalvarmapping",
                                                                       "http://www.layer7tech.com/flashing/stagingmapping",
                                                                       "L7flash");
-
+        Comment comment = outputdoc.createComment("Please Review These Values");
+        globalvarmappingEl.appendChild(comment);
         for (String propKey: mapOfClusterProperties.keySet()) {
             Element varmapEl = XmlUtil.createAndAppendElementNS(globalvarmappingEl, "varmap",
                     "http://www.layer7tech.com/flashing/stagingmapping",
@@ -100,6 +102,7 @@ public class MappingUtil {
             varmapEl.setAttribute("value", mapOfClusterProperties.get(propKey));
         }
 
+        // todo, output to desired path instad of console
         System.out.println(XmlUtil.nodeToFormattedString(outputdoc));
     }
 
