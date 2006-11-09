@@ -1,10 +1,13 @@
 package com.l7tech.server.flasher;
 
+import org.xml.sax.SAXException;
+
 import java.util.Map;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.File;
+import java.sql.SQLException;
 
 /**
  * The utility that exports an SSG image file.
@@ -66,21 +69,31 @@ public class Exporter {
 
         // Read database connection settings for the partition at hand
         // todo Egery, i bet you already have code to get this info somewhere (especially given the partition number)
-        String databaseHost = "todo";
-        String databaseUser = "todo";
-        String databasePasswd = "todo";
+        // todo, should not hardcode these
+        String databaseHost = "localhost";
+        String databaseURL = "jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8";
+        String databaseUser = "gateway";
+        String databasePasswd = "7layer";
         String dbDumpTempFile = tmpDirectory + File.separator + "dbdump.sql";
         // dump the database
         DBDumpUtil.dump(databaseHost, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
 
         // produce template mapping if necessary
-        tmp = arguments.get(MAPPING_PATH);
+        tmp = arguments.get(MAPPING_PATH.name);
         if (tmp != null) {
             if (!testCanWrite(tmp)) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + tmp);
             }
             // read policy files from this dump, collect all potential mapping in order to produce mapping template file
-            MappingUtil.produceTemplateMappingFileFromDump(dbDumpTempFile, tmp);
+            try {
+                MappingUtil.produceTemplateMappingFileFromDatabaseConnection(databaseURL, databaseUser, databasePasswd, tmp);
+            } catch (SQLException e) {
+                // should not happen
+                throw new RuntimeException("problem producing template mapping file", e);
+            } catch (SAXException e) {
+                // should not happen
+                throw new RuntimeException("problem producing template mapping file", e);
+            }
         }
 
         // copy all config files we want into this temp directory

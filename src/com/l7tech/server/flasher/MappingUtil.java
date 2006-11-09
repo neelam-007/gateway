@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
+import java.io.FileOutputStream;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -27,19 +28,17 @@ public class MappingUtil {
 
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
-    public static void produceTemplateMappingFileFromDump(String dumpFilePath, String outputTemplatePath) {
-        // todo, regexes!
-    }
-
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
                                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
         // create connection to database
         com.mysql.jdbc.Driver driver = new com.mysql.jdbc.Driver();
         Properties props = new Properties();
-        props.put("user", "gateway");
-        props.put("password", "7layer");
-        Connection c = driver.connect("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", props);
-
+        props.put("user", dbuser);
+        props.put("password", dbpasswd);
+        Connection c = driver.connect(dburl, props);
+        if (c == null) {
+            throw new SQLException("could not connect using url: " + dburl + ". with username " + dbuser + ", and password: " + dbpasswd);
+        }
         // go through the cluster properties
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         Statement s = c.createStatement();
@@ -63,8 +62,8 @@ public class MappingUtil {
                 Element cia = XmlUtil.findFirstChildElementByName(ra, "http://www.layer7tech.com/ws/policy",
                                                                       "CustomIpAddresses");
                 List listofitems = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
-                for (Iterator iterator = listofitems.iterator(); iterator.hasNext();) {
-                    Element el =  (Element)iterator.next();
+                for (Object listofitem : listofitems) {
+                    Element el = (Element) listofitem;
                     ipaddressesInRoutingAssertions.add(el.getAttribute("stringValue"));
                 }
             }
@@ -75,6 +74,9 @@ public class MappingUtil {
         c.close();
         Document outputdoc = XmlUtil.createEmptyDocument("ssgimportmapping", "L7flash",
                                                          "http://www.layer7tech.com/flashing/stagingmapping");
+        Comment comment = outputdoc.createComment("Please review backend ip addresses and global variables" +
+                                                 "\n\tand provide corresponding values for the target system");
+        outputdoc.getDocumentElement().appendChild(comment);
         Element backendipmappingEl = XmlUtil.createAndAppendElementNS(outputdoc.getDocumentElement(),
                                                                       "backendipmapping",
                                                                       "http://www.layer7tech.com/flashing/stagingmapping",
@@ -92,18 +94,21 @@ public class MappingUtil {
                                                                       "globalvarmapping",
                                                                       "http://www.layer7tech.com/flashing/stagingmapping",
                                                                       "L7flash");
-        Comment comment = outputdoc.createComment("Please Review These Values");
-        globalvarmappingEl.appendChild(comment);
+
         for (String propKey: mapOfClusterProperties.keySet()) {
             Element varmapEl = XmlUtil.createAndAppendElementNS(globalvarmappingEl, "varmap",
                     "http://www.layer7tech.com/flashing/stagingmapping",
                     "L7flash");
             varmapEl.setAttribute("name", propKey);
-            varmapEl.setAttribute("value", mapOfClusterProperties.get(propKey));
+            varmapEl.setAttribute("sourcevalue", mapOfClusterProperties.get(propKey));
+            varmapEl.setAttribute("targetvalue", "__add_your_value__");
         }
 
-        // todo, output to desired path instad of console
-        System.out.println(XmlUtil.nodeToFormattedString(outputdoc));
+        System.out.print("Outputing template mapping file at " + outputTemplatePath + " ..");
+        FileOutputStream fos = new FileOutputStream(outputTemplatePath);
+        fos.write(XmlUtil.nodeToFormattedString(outputdoc).getBytes());
+        System.out.println(". Done");
+        fos.close();
     }
 
     public static String extractIpAddressFromString(String input) {
