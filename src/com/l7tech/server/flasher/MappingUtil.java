@@ -27,6 +27,14 @@ import org.xml.sax.SAXException;
 public class MappingUtil {
 
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    private static final String STAGINGMAPPINGNS = "http://www.layer7tech.com/flashing/stagingmapping";
+    private static final String NS_PREFIX = "L7flash";
+    private static final String IMPORTMAPPINGELNAME = "ssgimportmapping";
+    private static final String BACKENDIPMAPPINGELNAME = "backendipmapping";
+    private static final String IPMAPELNAME = "ipmap";
+    private static final String SOURCEVALUEATTRNAME = "sourcevalue";
+    private static final String TARGETVALUEATTRNAME = "targetvalue";
+    private static final String VARMAPELNAME = "varmap";
 
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
                                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
@@ -72,36 +80,36 @@ public class MappingUtil {
 
         s.close();
         c.close();
-        Document outputdoc = XmlUtil.createEmptyDocument("ssgimportmapping", "L7flash",
-                                                         "http://www.layer7tech.com/flashing/stagingmapping");
+        Document outputdoc = XmlUtil.createEmptyDocument(IMPORTMAPPINGELNAME, NS_PREFIX,
+                                                         STAGINGMAPPINGNS);
         Comment comment = outputdoc.createComment("Please review backend ip addresses and global variables" +
                                                  "\n\tand provide corresponding values for the target system");
         outputdoc.getDocumentElement().appendChild(comment);
         Element backendipmappingEl = XmlUtil.createAndAppendElementNS(outputdoc.getDocumentElement(),
-                                                                      "backendipmapping",
-                                                                      "http://www.layer7tech.com/flashing/stagingmapping",
-                                                                      "L7flash");
+                                                                      BACKENDIPMAPPINGELNAME,
+                                                                      STAGINGMAPPINGNS,
+                                                                      NS_PREFIX);
         for (String routingip : ipaddressesInRoutingAssertions) {
-            Element ipmapel = XmlUtil.createAndAppendElementNS(backendipmappingEl, "ipmap",
-                    "http://www.layer7tech.com/flashing/stagingmapping",
-                    "L7flash");
-            ipmapel.setAttribute("source", routingip);
-            ipmapel.setAttribute("target", "__add_your_value__");
+            Element ipmapel = XmlUtil.createAndAppendElementNS(backendipmappingEl, IPMAPELNAME,
+                    STAGINGMAPPINGNS,
+                    NS_PREFIX);
+            ipmapel.setAttribute(SOURCEVALUEATTRNAME, routingip);
+            ipmapel.setAttribute(TARGETVALUEATTRNAME, "__add_your_value__");
 
         }
 
         Element globalvarmappingEl = XmlUtil.createAndAppendElementNS(outputdoc.getDocumentElement(),
                                                                       "globalvarmapping",
-                                                                      "http://www.layer7tech.com/flashing/stagingmapping",
-                                                                      "L7flash");
+                                                                      STAGINGMAPPINGNS,
+                                                                      NS_PREFIX);
 
         for (String propKey: mapOfClusterProperties.keySet()) {
-            Element varmapEl = XmlUtil.createAndAppendElementNS(globalvarmappingEl, "varmap",
-                    "http://www.layer7tech.com/flashing/stagingmapping",
-                    "L7flash");
+            Element varmapEl = XmlUtil.createAndAppendElementNS(globalvarmappingEl, VARMAPELNAME,
+                    STAGINGMAPPINGNS,
+                    NS_PREFIX);
             varmapEl.setAttribute("name", propKey);
-            varmapEl.setAttribute("sourcevalue", mapOfClusterProperties.get(propKey));
-            varmapEl.setAttribute("targetvalue", "__add_your_value__");
+            varmapEl.setAttribute(SOURCEVALUEATTRNAME, mapOfClusterProperties.get(propKey));
+            varmapEl.setAttribute(TARGETVALUEATTRNAME, "__add_your_value__");
         }
 
         System.out.print("Outputing template mapping file at " + outputTemplatePath + " ..");
