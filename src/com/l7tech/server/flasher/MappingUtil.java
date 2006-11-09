@@ -1,6 +1,7 @@
 package com.l7tech.server.flasher;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TooManyChildElementsException;
 
 import java.sql.*;
 import java.util.*;
@@ -8,6 +9,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
 import java.io.FileOutputStream;
+import java.io.FileInputStream;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -35,6 +37,54 @@ public class MappingUtil {
     private static final String SOURCEVALUEATTRNAME = "sourcevalue";
     private static final String TARGETVALUEATTRNAME = "targetvalue";
     private static final String VARMAPELNAME = "varmap";
+    private static final String GLOBALVARMAPPINGELNAME = "globalvarmapping";
+
+    public static void applyMappingChangesToDBDump(String dbDumpFilePath, String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
+        // load mapping file, validate it and build two maps (one for backends, and one for global variables)
+        FileInputStream fis = new FileInputStream(mappingFilePath);
+        Document mappingDoc = XmlUtil.parse(fis);
+        Element simEl = mappingDoc.getDocumentElement();
+        if (!simEl.getLocalName().equals(IMPORTMAPPINGELNAME)) {
+            throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
+        }
+        if (!simEl.getNamespaceURI().equals(STAGINGMAPPINGNS)) {
+            throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
+        }
+        HashMap<String, String> backendIPMapping = new HashMap<String, String>();
+        HashMap<String, String> varMapping = new HashMap<String, String>();
+        try {
+            Element bimEl = XmlUtil.findOnlyOneChildElementByName(simEl, STAGINGMAPPINGNS, BACKENDIPMAPPINGELNAME);
+            List ipmaplist = XmlUtil.findChildElementsByName(bimEl, STAGINGMAPPINGNS, IPMAPELNAME);
+            for (Object anIpmaplist : ipmaplist) {
+                Element ipmapel = (Element) anIpmaplist;
+                String source = ipmapel.getAttribute(SOURCEVALUEATTRNAME);
+                String target = ipmapel.getAttribute(TARGETVALUEATTRNAME);
+                if (source != null && target != null) {
+                    source = extractIpAddressFromString(source);
+                    target = extractIpAddressFromString(target);
+                }
+                if (source == null || target == null) {
+                    throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for ipmap element");
+                }
+                backendIPMapping.put(source, target);
+            }
+            Element gvmEl = XmlUtil.findOnlyOneChildElementByName(simEl, STAGINGMAPPINGNS, GLOBALVARMAPPINGELNAME);
+            List varmaplist = XmlUtil.findChildElementsByName(gvmEl, STAGINGMAPPINGNS, VARMAPELNAME);
+            for (Object aVarmaplist : varmaplist) {
+                Element varmapel = (Element) aVarmaplist;
+                String name = varmapel.getAttribute("name");
+                String target = varmapel.getAttribute(TARGETVALUEATTRNAME);
+                if (name == null || target == null) {
+                    throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for varmap element");
+                }
+                varMapping.put(name, target);
+            }
+        } catch (TooManyChildElementsException e) {
+            throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file. " + e.getMessage());
+        }
+
+        // todo, build regexes, replace values, log whenever something is changed
+    }
 
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
                                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
@@ -99,7 +149,7 @@ public class MappingUtil {
         }
 
         Element globalvarmappingEl = XmlUtil.createAndAppendElementNS(outputdoc.getDocumentElement(),
-                                                                      "globalvarmapping",
+                                                                      GLOBALVARMAPPINGELNAME,
                                                                       STAGINGMAPPINGNS,
                                                                       NS_PREFIX);
 
@@ -155,7 +205,6 @@ public class MappingUtil {
 
     // for testing purposes only
     public static void main(String[] args) throws Exception {
-        produceTemplateMappingFileFromDatabaseConnection("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8",
-                "gateway", "7layer", "~/foo");
+        applyMappingChangesToDBDump("blah", "/home/flascell/tmp/template.xml");
     }
 }
