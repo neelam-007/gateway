@@ -41,6 +41,10 @@ public class AppletSsmPreferences extends AbstractSsmPreferences {
         // Takes no action for applet
     }
 
+    public boolean isStatusBarBarVisible() {
+        return false; // no status bar on applet
+    }
+
     public void initializeSsgCertStorage() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         // Takes no action for applet
     }

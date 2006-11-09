@@ -631,9 +631,11 @@ public class MainWindow extends JFrame {
         jcm.setSelected(policyMessageAreaVisible);
         menu.add(jcm);
 
-        jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
-        jcm.setSelected(getPreferences().isStatusBarBarVisible());
-        menu.add(jcm);
+        if (!isApplet()) {
+            jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
+            jcm.setSelected(getPreferences().isStatusBarBarVisible());
+            menu.add(jcm);
+        }
 
         menu.addSeparator();
 

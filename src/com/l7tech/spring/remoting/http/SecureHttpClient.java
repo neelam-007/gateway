@@ -18,9 +18,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.AccessControlException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -76,13 +74,42 @@ public class SecureHttpClient extends HttpClient {
     private SSLSocketFactory getSSLSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("SSL");
+            KeyManager[] keyManagers = getKeyManagers();
             TrustManager[] trustManagers = getTrustManagers();
-            sslContext.init(null, trustManagers, null);
+            sslContext.init(keyManagers, trustManagers, null);
             return sslContext.getSocketFactory();
         }
         catch(GeneralSecurityException gse) {
             throw new RuntimeException("Error initializing SSL", gse);
         }
+    }
+
+    private KeyManager[] getKeyManagers() {
+        return new KeyManager[] { new X509KeyManager() {
+            public String[] getClientAliases(String string, Principal[] principals) {
+                return new String[0];
+            }
+
+            public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+                return null;
+            }
+
+            public String[] getServerAliases(String string, Principal[] principals) {
+                return new String[0];
+            }
+
+            public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
+                return null;
+            }
+
+            public X509Certificate[] getCertificateChain(String string) {
+                return new X509Certificate[0];
+            }
+
+            public PrivateKey getPrivateKey(String string) {
+                return null;
+            }
+        }};
     }
 
     private TrustManager[] getTrustManagers() {

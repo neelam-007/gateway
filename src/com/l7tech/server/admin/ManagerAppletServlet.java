@@ -41,7 +41,7 @@ public class ManagerAppletServlet extends HttpServlet {
     private static final String APPLET_OPEN =
             "<applet codebase=\"CODEBASE\"  archive=\"Manager.jar\"\n" +
                     "code=\"com.l7tech.console.AppletMain.class\"\n" +
-                    "        width=\"100%\" height=\"100%\" mayscript>\n";
+                    "        width=\"100%\" height=\"100%\" mayscript>";
 
     private static final String APPLET_CLOSE =
             "\n" +
@@ -101,8 +101,8 @@ public class ManagerAppletServlet extends HttpServlet {
 
             appletOpen = appletOpen.replaceAll("CODEBASE", codebase);
 
-            ps.println(pageOpen);
-            ps.println(appletOpen);
+            ps.print(pageOpen);
+            ps.print(appletOpen);
             //emitParam(ps, "image", "loading.png");
             //emitParam(ps, "progressbar", "true");
             //emitParam(ps, "boxmessage", "Loading SecureSpan Manager...");
@@ -113,8 +113,8 @@ public class ManagerAppletServlet extends HttpServlet {
             emitParam(ps, "hostname", hreq.getServerName());
             emitParam(ps, "sessionId", sessionId);
             emitServerCertParam(ps);
-            ps.println(APPLET_CLOSE);
-            ps.println(PAGE_CLOSE);
+            ps.print(APPLET_CLOSE);
+            ps.print(PAGE_CLOSE);
         } finally {
             ps.close();
         }
