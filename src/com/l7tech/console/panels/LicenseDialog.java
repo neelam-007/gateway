@@ -10,8 +10,10 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.gui.widgets.LicensePanel;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
@@ -22,13 +24,11 @@ import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.*;
 
 /**
  * Dialog for viewing the current license and possibly installing a new one.
@@ -56,6 +56,104 @@ public class LicenseDialog extends JDialog {
         init();
     }
 
+    /**
+     * Get a new license InputStream from the user.
+     * @return  a license stream, or null to cancel.
+     * @throws java.io.IOException if a file is designated but couldn't be opened or read
+     */
+    private InputStream getLicenseStream() throws IOException {
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<InputStream>() {
+                public InputStream run() throws IOException {
+                    return getLicenseStreamFromFile();
+                }
+            });
+        } catch (AccessControlException e) {
+            /* FALLTHROUGH and try text box */
+        } catch (PrivilegedActionException e) {
+            if (ExceptionUtils.causedBy(e, IOException.class))
+                throw new CausedIOException(ExceptionUtils.getMessage(e), e);
+            /* FALLTHROUGH and try text box */
+        }
+        return getLicenseStreamFromTextBox();
+    }
+
+    private InputStream getLicenseStreamFromTextBox() {
+        JDialog textDlg = new JDialog(this, "License XML", true);
+        textDlg.setLayout(new BorderLayout());
+        textDlg.add(new JLabel("Paste the new license XML below:"), BorderLayout.NORTH);
+        final JTextArea licenseTextArea = new JTextArea(15, 80);
+        Utilities.attachDefaultContextMenu(licenseTextArea);
+        textDlg.add(new JScrollPane(licenseTextArea,
+                                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                                    JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS),
+                    BorderLayout.CENTER);
+        JPanel buttons = new JPanel();
+        buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
+
+        JButton okButton = new JButton("Ok");
+        JButton cancelButton = new JButton("Cancel");
+        Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+        buttons.add(Box.createGlue());
+        buttons.add(okButton);
+        buttons.add(cancelButton);
+        textDlg.add(buttons, BorderLayout.SOUTH);
+
+        textDlg.pack();
+        Utilities.centerOnScreen(textDlg);
+
+        final InputStream[] result = new InputStream[1];
+
+        okButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                result[0] = new ByteArrayInputStream(licenseTextArea.getText().getBytes());
+                setVisible(false);
+            }
+        });
+
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setVisible(false);
+            }
+        });
+
+        textDlg.getRootPane().setDefaultButton(okButton);
+        textDlg.setVisible(true);
+        textDlg.dispose();
+        return result[0];
+    }
+
+    /**
+     * Try to get the license stream from a file on disk, if we have permission to do so.
+     *
+     * @return  the license stream, or null to cancel.
+     * @throws AccessControlException  if our privileges are insufficient
+     * @throws java.io.IOException if the selected file can't be opened or read
+     */
+    private InputStream getLicenseStreamFromFile() throws AccessControlException, IOException {
+        JFileChooser fc = new JFileChooser();
+        fc.setFileFilter(new FileFilter() {
+            public String getDescription() {
+                return "License files (*.xml)";
+            }
+
+            public boolean accept(File f) {
+                final String name = f.getName().toLowerCase();
+                return f.isDirectory() || name.endsWith(".xml");
+            }
+        });
+        fc.setDialogTitle("Select license file to install");
+        int result = fc.showOpenDialog(LicenseDialog.this);
+        if (result != JFileChooser.APPROVE_OPTION)
+            return null;
+
+        File file = fc.getSelectedFile();
+        if (file == null)
+            return null;
+
+        return new FileInputStream(file);        
+    }
+
     private void init() {
         setTitle("Gateway Cluster License");
         Container cp = getContentPane();
@@ -71,29 +169,10 @@ public class LicenseDialog extends JDialog {
 
         installButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fc = new JFileChooser();
-                fc.setFileFilter(new FileFilter() {
-                    public String getDescription() {
-                        return "License files (*.xml)";
-                    }
-
-                    public boolean accept(File f) {
-                        final String name = f.getName().toLowerCase();
-                        return f.isDirectory() || name.endsWith(".xml");
-                    }
-                });
-                fc.setDialogTitle("Select license file to install");
-                int result = fc.showOpenDialog(LicenseDialog.this);
-                if (result != JFileChooser.APPROVE_OPTION)
-                    return;
-
-                File file = fc.getSelectedFile();
-                if (file == null)
-                    return;
-
                 InputStream is = null;
                 try {
-                    is = new FileInputStream(file);
+                    is = getLicenseStream();
+                    if (is == null) return;
                     String licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
                     Registry reg = Registry.getDefault();
                     ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
@@ -107,7 +186,7 @@ public class LicenseDialog extends JDialog {
 
                         int confResult = JOptionPane.showOptionDialog(
                                 LicenseDialog.this,
-                                "Are you sure you want to REPLACE the existing " + valid + " license with the\nlicense in the file " + file.getName() + "?",
+                                "Are you sure you want to REPLACE the existing " + valid + " license with the\nnew license?",
                                 "Destroy Existing License",
                                 JOptionPane.YES_NO_CANCEL_OPTION,
                                 JOptionPane.WARNING_MESSAGE,
@@ -127,7 +206,7 @@ public class LicenseDialog extends JDialog {
                         if (msg.indexOf(postDated) < 1) {
                             // Not post-dated; something else is wrong with it
                             JOptionPane.showMessageDialog(LicenseDialog.this,
-                                                          "The license in the file " + file.getName() + " is invalid and cannot be installed:\n" +
+                                                          "That license is invalid and cannot be installed:\n" +
                                                                   ExceptionUtils.getMessage(e1),
                                                           "Unable to install license",
                                                           JOptionPane.ERROR_MESSAGE);
@@ -140,7 +219,7 @@ public class LicenseDialog extends JDialog {
 
                         int confResult = JOptionPane.showOptionDialog(
                                 LicenseDialog.this,
-                                "The license in the file " + file.getName() + " is not valid, but might become valid in the future:\n\n\t" +
+                                "That license is not valid, but might become valid in the future:\n\n\t" +
                                 msg +
                                 "\n\n" +
                                 "Do you want to force the invalid license to be installed?",
