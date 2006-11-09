@@ -34,6 +34,10 @@ public class UrlPanel extends TextEntryPanel {
             //noinspection ResultOfMethodCallIgnored
             InetAddress.getByName(url.getHost());
             return null;
+        } catch (SecurityException se) {
+            // if we are not permitted to resolve the address don't show
+            // this as an error
+            return null;
         } catch (Exception e) {
             return ExceptionUtils.getMessage(e);
         }
