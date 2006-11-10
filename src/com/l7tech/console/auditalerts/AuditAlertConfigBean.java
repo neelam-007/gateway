@@ -1,13 +1,10 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.auditalerts;
 
+import com.l7tech.console.util.SsmPreferences;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.logging.Level;
-import java.util.Properties;
 import java.io.IOException;
-
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.SsmPreferences;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -21,24 +18,23 @@ public class AuditAlertConfigBean {
 
     private boolean isEnabled = true;
     private Level auditAlertLevel = Level.WARNING;
-    private int auditCheckInterval = 10;
+    private int auditCheckInterval = 30;
     private SsmPreferences preferences;
-
-    public AuditAlertConfigBean() {
-        this(null);
-    }
 
     public AuditAlertConfigBean(SsmPreferences ssmPrefs) {
         this.preferences = ssmPrefs;
         if (preferences != null) {
             String temp = preferences.getString(AUDIT_ALERT_ENABLED_PREFERENCE_KEY);
-            if (StringUtils.isNotEmpty(temp)) isEnabled = Boolean.valueOf(temp);
+            if (StringUtils.isNotEmpty(temp))
+                isEnabled = Boolean.valueOf(temp);
 
             temp = preferences.getString(AUDIT_ALERT_LEVEL_PREFERENCE_KEY);
-            if (StringUtils.isNotEmpty(temp)) auditAlertLevel = Level.parse(temp);
+            if (StringUtils.isNotEmpty(temp))
+                auditAlertLevel = Level.parse(temp);
 
             temp = preferences.getString(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY);
-            if (StringUtils.isNotEmpty(temp)) auditCheckInterval = Integer.valueOf(temp); 
+            if (StringUtils.isNotEmpty(temp))
+                auditCheckInterval = Integer.valueOf(temp);
         }
     }
 

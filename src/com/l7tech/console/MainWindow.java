@@ -12,6 +12,10 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.*;
+import com.l7tech.console.auditalerts.AuditAlertConfigBean;
+import com.l7tech.console.auditalerts.AuditAlertsNotificationPanel;
+import com.l7tech.console.auditalerts.AuditAlertChecker;
+import com.l7tech.console.auditalerts.AuditAlertOptionsAction;
 import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -592,11 +596,13 @@ public class MainWindow extends JFrame {
     }
 
     private Action getManageAuditAlertsAction() {
-        if (manageAuditAlertsAction == null)
-            manageAuditAlertsAction = new AuditAlertOptionsAction();
+        if (manageAuditAlertsAction == null) {
+            manageAuditAlertsAction = AuditAlertOptionsAction.getInstance();
+            manageAuditAlertsAction.addAuditWatcher(getAuditAlertBar());
             manageAuditAlertsAction.setEnabled(false);
             this.addLogonListener(manageAuditAlertsAction);
             addPermissionRefreshListener(manageAuditAlertsAction);
+        }
         return manageAuditAlertsAction;
     }
 
@@ -686,20 +692,12 @@ public class MainWindow extends JFrame {
         return auditAlertBar;
     }
 
-    public AuditAlertChecker getAuditChecker() {
+    private AuditAlertChecker getAuditChecker() {
         if (auditAlertChecker == null) {
-            AuditAlertConfigBean bean;
-            if (TopComponents.getInstance().isApplet()) bean = new AuditAlertConfigBean();
-            else bean = new AuditAlertConfigBean(preferences);
-            auditAlertChecker = new AuditAlertChecker(bean);
+            auditAlertChecker = new AuditAlertChecker(new AuditAlertConfigBean(preferences));
         }
         return auditAlertChecker;
     }
-
-    public void updateAlertBar(String enabled, String intervalSeconds, String warningLevel) {
-        getAuditAlertBar().updateSettings(enabled, intervalSeconds, warningLevel);
-    }
-
 
     /**
      * create the Action (the component that is used by several controls)

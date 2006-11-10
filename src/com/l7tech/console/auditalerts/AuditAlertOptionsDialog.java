@@ -1,18 +1,14 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.auditalerts;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.SsmPreferences;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.io.IOException;
 
 public class AuditAlertOptionsDialog extends JDialog {
-    private static final Logger logger = Logger.getLogger(AuditAlertOptionsDialog.class.getName());
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -21,53 +17,23 @@ public class AuditAlertOptionsDialog extends JDialog {
     private JComboBox auditLevelChoice;
     private JPanel optionsPanel;
     private JComboBox intervalChooser;
+    private JPanel mainPanel;
 
     private AuditAlertConfigBean configBean;
-
-    public AuditAlertConfigBean getConfigBean() {
-        return configBean;
-    }
-
-    private class IntervalWrapper {
-        private final static int MAX_SECONDS_BEFORE_MINUTES = 60;
-
-        private int seconds;
-
-        public IntervalWrapper(int seconds) {
-            this.seconds = seconds;
-        }
-
-        public int getSeconds() {
-            return seconds;
-        }
-
-        public String toString() {
-            if (seconds > MAX_SECONDS_BEFORE_MINUTES) return String.valueOf(seconds/60) + " minutes";
-            return String.valueOf(seconds) + " seconds";
-        }
-
-        public boolean equals(Object other) {
-            if (other instanceof IntervalWrapper) {
-                IntervalWrapper o = (IntervalWrapper) other;
-                return o == this || o.getSeconds() == this.getSeconds();
-            } else {
-                return false;
-            }
-        }
-    }
+    private boolean wasCancelled = false;
 
     public AuditAlertOptionsDialog(Frame owner) {
         super(owner, true);
-        if (TopComponents.getInstance().isApplet())
-            configBean = new AuditAlertConfigBean();
-        else
-            configBean = new AuditAlertConfigBean(TopComponents.getInstance().getPreferences());
-        
+        configBean = new AuditAlertConfigBean(TopComponents.getInstance().getPreferences());
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
 
         initComponents();
         enableOptions();
+    }
+
+    public AuditAlertConfigBean getConfigBean() {
+        return configBean;
     }
 
     private void initComponents() {
@@ -90,7 +56,7 @@ public class AuditAlertOptionsDialog extends JDialog {
                 new IntervalWrapper(300),
                 new IntervalWrapper(600),
         }));
-        intervalChooser.setSelectedItem(preferredInterval);
+        intervalChooser.getModel().setSelectedItem(new IntervalWrapper(preferredInterval));
 
         enableAuditAlerts.setSelected(alertsEnabled);
         initListeners();
@@ -136,21 +102,52 @@ public class AuditAlertOptionsDialog extends JDialog {
     }
 
     private void onOK() {
+        wasCancelled = false;
+        configBean.setEnabled(enableAuditAlerts.isSelected());
+        configBean.setAuditAlertLevel(Level.parse((String) auditLevelChoice.getSelectedItem()));
 
-        try {
-            configBean.savePreferences();
-        } catch (IOException e) {
-            logger.warning("Couldn't save preferences for audit alerts options: " + e.getMessage());
-        }
+        IntervalWrapper interval = (IntervalWrapper) intervalChooser.getModel().getSelectedItem();
+        configBean.setAuditCheckInterval(interval.getSeconds());
 
-        //TODO updateAlertBar();
         dispose();
     }
 
-//    private void updateAlertBar() {
-//    }
-
     private void onCancel() {
+        wasCancelled = true;
         dispose();
+    }
+
+    public boolean wasCancelled() {
+        return wasCancelled;
+    }
+
+    private class IntervalWrapper {
+        private final static int MAX_SECONDS_BEFORE_MINUTES = 60;
+
+        private int seconds;
+
+        public IntervalWrapper(int seconds) {
+            this.seconds = seconds;
+        }
+
+        public int getSeconds() {
+            return seconds;
+        }
+
+        public String toString() {
+            if (seconds > MAX_SECONDS_BEFORE_MINUTES)
+                return String.valueOf(seconds/60) + " minutes";
+
+            return String.valueOf(seconds) + " seconds";
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof IntervalWrapper) {
+                IntervalWrapper otherWrapper = (IntervalWrapper) other;
+                return otherWrapper == this || otherWrapper.getSeconds() == this.getSeconds();
+            } else {
+                return false;
+            }
+        }
     }
 }

@@ -1,11 +1,10 @@
-package com.l7tech.console;
+package com.l7tech.console.auditalerts;
 
 import com.l7tech.console.action.ViewGatewayAuditsAction;
-import com.l7tech.console.action.AuditAlertOptionsAction;
 
 import javax.swing.*;
-import java.awt.event.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class AuditAlertsDialog extends JDialog {
     private JPanel contentPane;
@@ -14,8 +13,6 @@ public class AuditAlertsDialog extends JDialog {
     private JButton viewAuditsButton;
 
     private AuditWatcher watcher;
-    private AuditAlertOptionsAction auditAlertOptionsAction;
-
 
     public AuditAlertsDialog(Frame owner, AuditWatcher watcher) throws HeadlessException {
         super(owner);
@@ -26,7 +23,7 @@ public class AuditAlertsDialog extends JDialog {
     public void init() {
         setContentPane(contentPane);
         setModal(true);
-        getRootPane().setDefaultButton(viewOptionsButton);
+        getRootPane().setDefaultButton(viewAuditsButton);
 
         viewAuditsButton.setAction(
                 new ViewGatewayAuditsAction(){
@@ -37,7 +34,7 @@ public class AuditAlertsDialog extends JDialog {
                     }
                 });
 
-        viewOptionsButton.setAction(getAuditAlertOptionsAction());
+        viewOptionsButton.setAction(AuditAlertOptionsAction.getInstance());
 
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -60,17 +57,6 @@ public class AuditAlertsDialog extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         pack();
-    }
-
-    private Action getAuditAlertOptionsAction() {
-        if (auditAlertOptionsAction == null) {
-            auditAlertOptionsAction = new AuditAlertOptionsAction();
-        }
-        return auditAlertOptionsAction;
-    }
-
-    private void viewAlertOptions() {
-        dispose();
     }
 
     private void onCancel() {

@@ -1,4 +1,4 @@
-package com.l7tech.console;
+package com.l7tech.console.auditalerts;
 
 /**
  * User: megery
@@ -8,4 +8,5 @@ package com.l7tech.console;
 public interface AuditWatcher {
     void auditsViewed();
     void alertsAvailable(boolean alertsAreAvailable);
+    void alertSettingsChanged(AuditAlertConfigBean bean);
 }

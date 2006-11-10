@@ -1,10 +1,9 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.auditalerts;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditSearchCriteria;
-import com.l7tech.console.AuditWatcher;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -31,7 +30,6 @@ public class AuditAlertChecker {
     public static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
 
     private final SimpleDateFormat formatter = new SimpleDateFormat();
-
 
     AuditAlertConfigBean configBean;
     Timer timer;
@@ -60,7 +58,7 @@ public class AuditAlertChecker {
     }
 
     public void checkForNewAlerts() {
-        logger.info("Checking for new Audits");
+        logger.fine("Checking for new Audits");
         try {
              ClusterProperty lastAckedProperty = clusterAdmin.findPropertyByName(CLUSTER_PROP_LAST_AUDITACK_TIME);
              if (lastAckedProperty == null) {
@@ -87,19 +85,19 @@ public class AuditAlertChecker {
                         startTimer();
                      }
                  } catch (ParseException e) {
-                     e.printStackTrace();
+                    logger.warning("Invalid date in " + CLUSTER_PROP_LAST_AUDITACK_TIME + " cluster property [" + e.getMessage() + "]");
                  }
             }
-         } catch (RemoteException e1) {
-            e1.printStackTrace();
-        } catch (FindException e1) {
-            e1.printStackTrace();
+         } catch (RemoteException e) {
+            logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
+        } catch (FindException e) {
+            logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
         } catch (SaveException e) {
-             e.printStackTrace();
+             logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
          } catch (DeleteException e) {
-             e.printStackTrace();
+             logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
          } catch (UpdateException e) {
-             e.printStackTrace();
+             logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
          }
     }
 
@@ -126,14 +124,16 @@ public class AuditAlertChecker {
 
     private void startTimer() {
         if (!timer.isRunning()) {
-            logger.info("Starting Audit Alert Timer (check interval = " + timer.getDelay() + ")");
+            logger.fine("Starting Audit Alert Timer (check interval = " + timer.getDelay() + ")");
             timer.start();
         }
     }
 
     private void stopTimer() {
-        logger.info("Stopping Audit Alert Timer");
-        if (timer.isRunning()) timer.stop();
+        logger.fine("Stopping Audit Alert Timer");
+
+        if (timer.isRunning())
+            timer.stop();
     }
 
     public void updateAuditsAcknowledgedTime() {
@@ -144,15 +144,38 @@ public class AuditAlertChecker {
                 clusterAdmin.saveProperty(prop);
             }
         } catch (RemoteException e) {
-            e.printStackTrace();
+            logger.warning("Error while updating the " + CLUSTER_PROP_LAST_AUDITACK_TIME + " cluster property [" + e.getMessage() +"]");
         } catch (SaveException e) {
-            e.printStackTrace();
+            logger.warning("Error while updating the " + CLUSTER_PROP_LAST_AUDITACK_TIME + " cluster property [" + e.getMessage() +"]");
         } catch (UpdateException e) {
-            e.printStackTrace();
+            logger.warning("Error while updating the " + CLUSTER_PROP_LAST_AUDITACK_TIME + " cluster property [" + e.getMessage() +"]");
         } catch (DeleteException e) {
-            e.printStackTrace();
+            logger.warning("Error while updating the " + CLUSTER_PROP_LAST_AUDITACK_TIME + " cluster property [" + e.getMessage() +"]");
         } catch (FindException e) {
-            e.printStackTrace();
+            logger.warning("Error while updating the " + CLUSTER_PROP_LAST_AUDITACK_TIME + " cluster property [" + e.getMessage() +"]");
         }
+    }
+
+    public void updateSettings(boolean enabled, int checkInterval, Level checkLevel) {
+        configBean.setEnabled(enabled);
+        configBean.setAuditCheckInterval(checkInterval);
+        configBean.setAuditAlertLevel(checkLevel);
+        reset();
+    }
+
+    private void reset() {
+        logger.fine("Audit alert options changed.");
+        boolean wasRunning = timer.isRunning();
+
+        if (wasRunning)
+            stopTimer();
+
+        logger.fine("setting audit alert timer to " + String.valueOf(configBean.getAuditCheckInterval()));
+        timer.setDelay(configBean.getAuditCheckInterval());
+
+        if (configBean.isEnabled())
+            startTimer();
+        else
+            logger.fine("Audit alerts disabled");
     }
 }
