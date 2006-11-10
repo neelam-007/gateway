@@ -124,12 +124,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
             };
 
             public void valueChanged(TreeSelectionEvent e) {
-                Clipboard sel = Toolkit.getDefaultToolkit().getSystemSelection();
+                Clipboard sel = Utilities.getDefaultSystemSelection();
                 if (sel == null) return;
                 sel.setContents(createTransferable(e.getPath()), owner);
             }
         };
-        if (Toolkit.getDefaultToolkit().getSystemSelection() != null)
+
+        if (Utilities.getDefaultSystemSelection() != null)
             getSelectionModel().addTreeSelectionListener(tsl);
 
         ActionMap map = this.getActionMap();
@@ -147,7 +148,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 TransferHandler.getCopyAction().actionPerformed(e);
             }
         });
-        
+
         setTransferHandler(new PolicyTreeTransferHandler());
     }
 

@@ -8,6 +8,7 @@ import com.l7tech.common.gui.ExceptionDialog;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -791,6 +792,14 @@ public class Utilities {
         }
     }
 
-
+    /** Safely return the default toolkit's system selection, or null if there isn't one or it's unavailable. */
+    public static Clipboard getDefaultSystemSelection() {
+        try {
+            return Toolkit.getDefaultToolkit().getSystemSelection();
+        } catch (AccessControlException e) {
+            // Very restrictive security manager
+            return null;
+        }
+    }
 
 }
