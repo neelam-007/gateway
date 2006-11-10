@@ -39,7 +39,8 @@ public class MappingUtil {
     private static final String VARMAPELNAME = "varmap";
     private static final String GLOBALVARMAPPINGELNAME = "globalvarmapping";
 
-    public static void applyMappingChangesToDBDump(String dbDumpFilePath, String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
+    public static void applyMappingChangesToDB(String dburl, String dbuser, String dbpasswd,
+                                               String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
         // load mapping file, validate it and build two maps (one for backends, and one for global variables)
         FileInputStream fis = new FileInputStream(mappingFilePath);
         Document mappingDoc = XmlUtil.parse(fis);
@@ -83,7 +84,8 @@ public class MappingUtil {
             throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file. " + e.getMessage());
         }
 
-        // todo, build regexes, replace values, log whenever something is changed
+        // todo, replace values, in target database, log whenever something is changed
+
     }
 
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
@@ -97,39 +99,42 @@ public class MappingUtil {
         if (c == null) {
             throw new SQLException("could not connect using url: " + dburl + ". with username " + dbuser + ", and password: " + dbpasswd);
         }
-        // go through the cluster properties
-        HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
-        Statement s = c.createStatement();
-        ResultSet rs = s.executeQuery("select propkey, propvalue from cluster_properties;");
-        while (rs.next()) {
-            String value = rs.getString(2);
-            String key = rs.getString(1);
-            if (!key.equals("license")) mapOfClusterProperties.put(key, value);
-        }
-        rs.close();
-
-        // go through the policies
         ArrayList<String> ipaddressesInRoutingAssertions = new ArrayList<String>();
-        rs = s.executeQuery("select policy_xml from published_service;");
-        while (rs.next()) {
-            String xml = rs.getString(1);
-            Document doc = XmlUtil.stringToDocument(xml);
-            NodeList nl = doc.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy", "HttpRoutingAssertion");
-            for (int i = 0; i < nl.getLength(); i++) {
-                Element ra = (Element)nl.item(i);
-                Element cia = XmlUtil.findFirstChildElementByName(ra, "http://www.layer7tech.com/ws/policy",
-                                                                      "CustomIpAddresses");
-                List listofitems = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
-                for (Object listofitem : listofitems) {
-                    Element el = (Element) listofitem;
-                    ipaddressesInRoutingAssertions.add(el.getAttribute("stringValue"));
+        HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
+        try {
+            // go through the cluster properties
+            Statement s = c.createStatement();
+            ResultSet rs = s.executeQuery("select propkey, propvalue from cluster_properties;");
+            while (rs.next()) {
+                String value = rs.getString(2);
+                String key = rs.getString(1);
+                if (!key.equals("license")) mapOfClusterProperties.put(key, value);
+            }
+            rs.close();
+            // go through the policies
+            rs = s.executeQuery("select policy_xml from published_service;");
+            while (rs.next()) {
+                String xml = rs.getString(1);
+                Document doc = XmlUtil.stringToDocument(xml);
+                List<Element> routingAssertionElements = getRoutingAssertionElementsFromPolicy(doc);
+                for (Element ra : routingAssertionElements) {
+                    Element cia = XmlUtil.findFirstChildElementByName(ra, "http://www.layer7tech.com/ws/policy",
+                                                                          "CustomIpAddresses");
+                    List listofitems = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
+                    for (Object listofitem : listofitems) {
+                        Element el = (Element) listofitem;
+                        String val = el.getAttribute("stringValue");
+                        if (val != null && !ipaddressesInRoutingAssertions.contains(val)) {
+                            ipaddressesInRoutingAssertions.add(val);
+                        }
+                    }
                 }
             }
+            rs.close();
+            s.close();
+        } finally {
+            c.close();
         }
-        rs.close();
-
-        s.close();
-        c.close();
         Document outputdoc = XmlUtil.createEmptyDocument(IMPORTMAPPINGELNAME, NS_PREFIX,
                                                          STAGINGMAPPINGNS);
         Comment comment = outputdoc.createComment("Please review backend ip addresses and global variables" +
@@ -169,6 +174,15 @@ public class MappingUtil {
         fos.close();
     }
 
+    private static List<Element> getRoutingAssertionElementsFromPolicy(Document policyxml) {
+        ArrayList<Element> output = new ArrayList<Element>();
+        NodeList nl = policyxml.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy", "HttpRoutingAssertion");
+        for (int i = 0; i < nl.getLength(); i++) {
+            output.add((Element)nl.item(i));
+        }
+        return output;
+    }
+
     public static String extractIpAddressFromString(String input) {
         Matcher m = ipaddresspattern.matcher(input);
         if (m.find()) {
@@ -205,6 +219,6 @@ public class MappingUtil {
 
     // for testing purposes only
     public static void main(String[] args) throws Exception {
-        applyMappingChangesToDBDump("blah", "/home/flascell/tmp/template.xml");
+        applyMappingChangesToDB("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", "gateway", "password", "/home/flascell/tmp/template.xml");
     }
 }
