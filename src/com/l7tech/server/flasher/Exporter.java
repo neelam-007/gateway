@@ -1,13 +1,21 @@
 package com.l7tech.server.flasher;
 
+import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
+import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
-import java.util.Map;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.regex.Matcher;
 
 /**
  * The utility that exports an SSG image file.
@@ -28,6 +36,7 @@ public class Exporter {
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
+        PartitionManager partitionManager = PartitionManager.getInstance();
         // check that we can write output at located asked for
         String outputpathval = arguments.get(IMAGE_PATH.name);
         if (outputpathval == null) {
@@ -43,50 +52,59 @@ public class Exporter {
             includeAudit = true;
         }
 
-        int desiredPartition = 0;
-        String tmp = arguments.get(PARTITION.name);
-        if (tmp != null) {
-            try {
-                desiredPartition = Integer.parseInt(tmp);
-            } catch (NumberFormatException e) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("the value " + tmp + " for option " + PARTITION.name + " is invalid");
-            }
-        }
-        boolean multiplePartitionSystem = false;
-        // check if the system has more than one partition on it
-        // todo, Egery how do i look for this?
+        //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
+        String partitionName = arguments.get(PARTITION.name);
 
+        // check if the system has more than one partition on it
+        boolean multiplePartitionSystem = partitionManager.isPartitioned();
 
         if (multiplePartitionSystem) {
             // option PARTITION now mandatory
-            // todo, Egery, how do i check that the partition desiredPartition exists on the target system
-        } else if (desiredPartition > 0) {
+            if (StringUtils.isEmpty(partitionName))
+                throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned. The \"" + PARTITION.name + "\" parameter is required");
+
+            PartitionInformation partitionInfo = partitionManager.getPartition(partitionName);
+            if (partitionInfo == null)
+                throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned but the partition \"" + partitionName + "\" is not present.");
+
+            //todo, FRANCO: do your stuff
+        } else {
             // make sure user did not ask for a partition that did not exist
-            throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition number " + desiredPartition);
+            if (StringUtils.isNotEmpty(partitionName))
+                throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition number " + partitionName);
         }
 
         tmpDirectory = createTmpDirectory();
 
-        // Read database connection settings for the partition at hand
         // todo Egery, i bet you already have code to get this info somewhere (especially given the partition number)
         // todo, should not hardcode these
-        String databaseHost = "localhost";
-        String databaseURL = "jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8";
-        String databaseUser = "gateway";
-        String databasePasswd = "7layer";
+        //EGERY: here you go
+
+        // Read database connection settings for the partition at hand
+        Map<String, String> dbProps = PropertyHelper.getProperties("someName", new String[] {
+            SsgDatabaseConfigBean.PROP_DB_USERNAME,
+            SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+            SsgDatabaseConfigBean.PROP_DB_URL,
+        });
+        String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
+        String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+        String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD); 
+        //EGERY: I don't think you need this if you already have the URL but here you go anyway
+        String databaseHost = getDbHostNameFromUrl(databaseURL);
+
         String dbDumpTempFile = tmpDirectory + File.separator + "dbdump.sql";
         // dump the database
         DBDumpUtil.dump(databaseHost, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
 
         // produce template mapping if necessary
-        tmp = arguments.get(MAPPING_PATH.name);
-        if (tmp != null) {
-            if (!testCanWrite(tmp)) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + tmp);
+        partitionName = arguments.get(MAPPING_PATH.name);
+        if (partitionName != null) {
+            if (!testCanWrite(partitionName)) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + partitionName);
             }
             // read policy files from this dump, collect all potential mapping in order to produce mapping template file
             try {
-                MappingUtil.produceTemplateMappingFileFromDatabaseConnection(databaseURL, databaseUser, databasePasswd, tmp);
+                MappingUtil.produceTemplateMappingFileFromDatabaseConnection(databaseURL, databaseUser, databasePasswd, partitionName);
             } catch (SQLException e) {
                 // should not happen
                 throw new RuntimeException("problem producing template mapping file", e);
@@ -98,9 +116,28 @@ public class Exporter {
 
         // copy all config files we want into this temp directory
         // todo get path for all config files, copy these files into
+        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+
+        //MEGERY: this should be the base of the configuration tree for you, regardless of if this is a partition or not.
+        String configPath = osFunctions.getConfigurationBase();
 
         // zip the temp directory into the requested image file (outputpathval)
+
+        /* TODO, FRANCO - take a look at BaseConfigurationCommand which has a (currently protected) backupFiles method.
+             We could use this logic if either:
+            1) it's extracted out into a utils class
+            2) you extend this class in your exporter (this is the worker class of the configurators)
+        */
         // todo
+    }
+
+    private String getDbHostNameFromUrl(String databaseURL) {
+        String hostname = null;
+        Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(databaseURL);
+        if (matcher.matches()) {
+            hostname = matcher.group(1);
+        }
+        return hostname;
     }
 
     private boolean testCanWrite(String path) {

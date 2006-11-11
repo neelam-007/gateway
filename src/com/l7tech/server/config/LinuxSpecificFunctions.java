@@ -16,16 +16,13 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
     }
 
     void makeOSSpecificFilenames() {
-        ssgInstallFilePath = "/etc/SSG_INSTALL";
-        hostsFile = "/etc/hosts";
         if (StringUtils.isEmpty(installRoot)) {
-            installRoot = "/ssg";
+            installRoot = "/ssg/";
         }
         lunaInstallDir = "/usr/lunasa";
         lunaJSPDir = "/usr/lunasa/jsp";
         lunaCmuPath = "bin/cmu";
         pathToJdk = "jdk/";
-        //pathToJavaLibPath = "jre/lib/i386/";
     }
 
     public String[] getKeystoreTypes() {

@@ -1,6 +1,7 @@
 package com.l7tech.server.config;
 
-import com.l7tech.server.config.exceptions.UnsupportedOsException;
+import com.l7tech.server.partition.PartitionInformation;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 
@@ -37,19 +38,24 @@ public abstract class OSSpecificFunctions {
     protected String pathToJavaLibPath;
 
     private String pathToDBCreateFile;
+    private String partitionName;
+    public static final String PARTITION_BASE = "etc/conf/partitions";
+    public static final String NOPARTITION_BASE = "etc/conf/";
 
     public OSSpecificFunctions(String OSName) {
+        this(OSName, "");
+    }
+
+    public OSSpecificFunctions(String OSName, String partitionName) {
         installRoot = System.getProperty("com.l7tech.server.home");
-        if (installRoot==null || installRoot.equalsIgnoreCase("")) {
-            throw new MissingPropertyException("Please set the system property: com.l7tech.server.home to point to the SSG installation root");
-        }
 
         if (installRoot != null && !installRoot.endsWith("/")) {
             installRoot = installRoot + "/";
         }
         this.osName = OSName;
-        makeFilenames();
+        this.partitionName = partitionName;
         makeOSSpecificFilenames();
+        makeFilenames();
     }
 
     public boolean isWindows() {
@@ -63,16 +69,17 @@ public abstract class OSSpecificFunctions {
     abstract void makeOSSpecificFilenames();
 
     public void makeFilenames() {
-        clusterHostFile = "etc/conf/cluster_hostname";
-        databaseConfig = "etc/conf/hibernate.properties";
-        ssgLogProperties = "etc/conf/ssglog.properties";
-        keyStorePropertiesFile = "etc/conf/keystore.properties";
+        clusterHostFile = "cluster_hostname";
+        databaseConfig = "hibernate.properties";
+        ssgLogProperties = "ssglog.properties";
+        keyStorePropertiesFile = "keystore.properties";
+        keystoreDir = "keys/";
+        ssgSystemPropertiesFile = "system.properties";
+
         tomcatServerConfig = "tomcat/conf/server.xml";
-        keystoreDir = "etc/keys/";
         pathToJreLibExt = "jre/lib/ext/";
         pathToJavaLibPath = "lib/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
-        ssgSystemPropertiesFile = "etc/conf/system.properties";
         pathToDBCreateFile = "etc/sql/ssg.sql";
     }
 
@@ -97,54 +104,54 @@ public abstract class OSSpecificFunctions {
     }
 
     protected String getClusterHostNamePath() {
-        return installRoot + clusterHostFile;
-    }
-
-    public boolean isSsgInstalled() {
-        File f = new File(getSsgInstallFilePath());
-        return f.exists();
+        return getSsgInstallRoot() + clusterHostFile;
     }
 
     public String getOSName() {
         return osName;
     }
 
+
+    public String getPartitionName() {
+        return partitionName;
+    }
+
+    public String getConfigurationBase() {
+        if (StringUtils.isNotEmpty(getPartitionName()))
+            return getSsgInstallRoot() + PartitionInformation.PARTITIONS_BASE + getPartitionName();
+
+        return getSsgInstallRoot() + NOPARTITION_BASE;
+
+    }
+
     public String getSsgInstallRoot() {
         return installRoot;
     }
 
-    String getSsgInstallFilePath() {
-        return ssgInstallFilePath;
-    }
-
-    public String getHostsFile() {
-        return hostsFile;
-    }
-
     public String getDatabaseConfig() {
-        return installRoot + databaseConfig;
+        return getConfigurationBase() + databaseConfig;
     }
 
     public String getClusterHostFile() {
-        return installRoot + clusterHostFile;
+        return getConfigurationBase() + clusterHostFile;
     }
 
     public abstract String[] getKeystoreTypes();
 
     public String getSsgLogPropertiesFile() {
-        return installRoot + ssgLogProperties;
+        return getConfigurationBase() + ssgLogProperties;
     }
 
     public String getKeyStorePropertiesFile() {
-        return installRoot + keyStorePropertiesFile;
+        return getConfigurationBase() + keyStorePropertiesFile;
     }
 
     public String getTomcatServerConfig() {
-        return installRoot + tomcatServerConfig;
+        return getSsgInstallRoot() + tomcatServerConfig;
     }
 
     public String getKeystoreDir() {
-        return installRoot + keystoreDir;
+        return getConfigurationBase() + keystoreDir;
     }
 
     public String getLunaJSPDir() {
@@ -164,7 +171,7 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getPathToJdk() {
-        return installRoot + pathToJdk;
+        return getSsgInstallRoot() + pathToJdk;
     }
 
     public String getPathToJavaSecurityFile() {
@@ -180,7 +187,7 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getSsgSystemPropertiesFile() {
-        return installRoot + ssgSystemPropertiesFile;
+        return getConfigurationBase() + ssgSystemPropertiesFile;
     }
 
     public String getPathToJavaLibPath() {
@@ -188,7 +195,7 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getPathToDBCreateFile() {
-        return installRoot + pathToDBCreateFile;
+        return getSsgInstallRoot() + pathToDBCreateFile;
     }
 
     public abstract String getNetworkConfigurationDirectory();

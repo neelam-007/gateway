@@ -16,16 +16,13 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
     }
 
     void makeOSSpecificFilenames() {
-        ssgInstallFilePath = "c:/program files/Layer 7/SSG/SSG_INSTALL";
-        hostsFile = "c:/windows/system32/drivers/etc/hosts";
         if (StringUtils.isEmpty(installRoot)) {
-            installRoot = "c:/program files/Layer 7/SSG";
+            installRoot = "c:/Program Files/Layer 7 Technologies/SecureSpan Gateway/";
         }
         lunaInstallDir = "C:/Program Files/LunaSA/";
         lunaJSPDir = "C:/Program Files/LunaSA/JSP";
         lunaCmuPath = "cmu.exe";
         pathToJdk = "jdk/";
-//        pathToJavaLibPath = "bin/";
     }
 
     public String[] getKeystoreTypes() {

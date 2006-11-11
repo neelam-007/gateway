@@ -41,4 +41,8 @@ public class OSDetector {
     public static boolean isLinux() {
         return LINUX_PATTERN.matcher(OSName).matches();
     }
+
+    public static OSSpecificFunctions getOSSpecificFunctions(String partitionName) {
+        return null;
+    }
 }
