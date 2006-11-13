@@ -1143,7 +1143,12 @@
                 <attribute name="Main-Class" value="com.l7tech.console.Main"/>
             </section>
         </generate-manifest>
-        <jar jarfile="${build.dir}/Manager.jar" manifest="${build.etc}/Manager.mf">
+        <jar jarfile="${build.dir}/Manager.jar" manifest="${build.etc}/Manager.mf" index="true">
+            <indexjars>
+                <fileset dir="${src.root}/lib" casesensitive="yes">
+                    <patternset refid="manager.libs"/>
+                </fileset>
+            </indexjars>
             <fileset dir="${build.classes}">
                 <exclude name="**/*.form"/>
                 <include name="**/*.xsd"/>
