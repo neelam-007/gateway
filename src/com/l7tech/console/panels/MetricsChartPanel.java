@@ -74,8 +74,8 @@ public class MetricsChartPanel extends ChartPanel {
 
     /**
      * Background color of the indicator plot. Chosen to enhance visibility of
-     * the alert indicator colors ({@link POLICY_VIOLATION_COLOR} and
-     * {@link ROUTING_FAILURE_COLOR}).
+     * the alert indicator colors ({@link MetricsChartPanel#POLICY_VIOLATION_COLOR POLICY_VIOLATION_COLOR} and
+     * {@link  MetricsChartPanel#ROUTING_FAILURE_COLOR ROUTING_FAILURE_COLOR}).
      */
     private static final Color INDICATOR_PLOT_BACKCOLOR = new Color(128, 128, 128);
 
@@ -171,7 +171,7 @@ public class MetricsChartPanel extends ChartPanel {
     /** Chart containing all plots with shared time axis. */
     private JFreeChart _chart;
 
-    /** Holding area for metrics bins waiting to be added; when {@link _suspended} is true. */
+    /** Holding area for metrics bins waiting to be added; when {@link MetricsChartPanel#_suspended _suspended} is true. */
     private final SortedSet _binsToAdd = new TreeSet();
 
     /** Indicates if chart data updating is suspended. */
@@ -432,7 +432,7 @@ public class MetricsChartPanel extends ChartPanel {
         try {
             Registry registry = Registry.getDefault();
             if (registry.isAdminContextPresent())
-                _timeZone = registry.getClusterStatusAdmin().getCurrentClusterTimeZone();
+                _timeZone = TimeZone.getTimeZone(registry.getClusterStatusAdmin().getCurrentClusterTimeZone());
         } catch (RemoteException e) {
             // Falls back to use local time zone.
         } finally {

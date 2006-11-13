@@ -143,8 +143,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return Calendar.getInstance().getTime();
     }
 
-    public TimeZone getCurrentClusterTimeZone() throws RemoteException {
-        return TimeZone.getDefault();
+    public String getCurrentClusterTimeZone() throws RemoteException {
+        return TimeZone.getDefault().getID();
     }
 
     /**

@@ -14,7 +14,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -26,7 +25,7 @@ import java.util.TimeZone;
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     private static License license = null;
 
-    public TimeZone getCurrentClusterTimeZone() throws RemoteException {
+    public String getCurrentClusterTimeZone() throws RemoteException {
         throw new UnsupportedOperationException();
     }
 

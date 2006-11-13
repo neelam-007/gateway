@@ -81,13 +81,13 @@ public interface ClusterStatusAdmin {
     java.util.Date getCurrentClusterSystemTime() throws RemoteException;
 
     /**
-     * Get the current system time zone on the gateway.
+     * Get the current system time zone ID on the gateway.
      *
      * @return the current system time zone on the gateway
      * @throws RemoteException on remote communication error
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    java.util.TimeZone getCurrentClusterTimeZone() throws RemoteException;
+    String getCurrentClusterTimeZone() throws RemoteException;
 
     /**
      * Get the name of node that handles the admin request.
