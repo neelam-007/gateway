@@ -91,11 +91,7 @@ public class MappingUtil {
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
                                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
         // create connection to database
-        com.mysql.jdbc.Driver driver = new com.mysql.jdbc.Driver();
-        Properties props = new Properties();
-        props.put("user", dbuser);
-        props.put("password", dbpasswd);
-        Connection c = driver.connect(dburl, props);
+        Connection c = DriverManager.getConnection(dburl, dbuser, dbpasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + dburl + ". with username " + dbuser + ", and password: " + dbpasswd);
         }
