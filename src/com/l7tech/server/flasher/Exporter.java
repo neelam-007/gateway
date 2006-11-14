@@ -6,16 +6,15 @@ import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.common.util.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.regex.Matcher;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
 
 /**
  * The utility that exports an SSG image file.
@@ -67,18 +66,13 @@ public class Exporter {
             if (partitionInfo == null)
                 throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned but the partition \"" + partitionName + "\" is not present.");
 
-            //todo, FRANCO: do your stuff
         } else {
             // make sure user did not ask for a partition that did not exist
             if (StringUtils.isNotEmpty(partitionName))
                 throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition number " + partitionName);
         }
-
+        if (partitionName == null) partitionName = "";
         tmpDirectory = createTmpDirectory();
-
-        // todo Egery, i bet you already have code to get this info somewhere (especially given the partition number)
-        // todo, should not hardcode these
-        //EGERY: here you go
 
         // Read database connection settings for the partition at hand
         OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
@@ -90,12 +84,10 @@ public class Exporter {
         String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
         String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-        //EGERY: I don't think you need this if you already have the URL but here you go anyway
-        String databaseHost = getDbHostNameFromUrl(databaseURL);
 
         String dbDumpTempFile = tmpDirectory + File.separator + "dbdump.sql";
         // dump the database
-        DBDumpUtil.dump(databaseHost, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
+        DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
 
         // produce template mapping if necessary
         partitionName = arguments.get(MAPPING_PATH.name);
@@ -116,28 +108,22 @@ public class Exporter {
         }
 
         // copy all config files we want into this temp directory
-        // todo get path for all config files, copy these files into
-
-        //MEGERY: this should be the base of the configuration tree for you, regardless of if this is a partition or not.
-        String configPath = osFunctions.getConfigurationBase();
+        File hibprops = new File(osFunctions.getDatabaseConfig());
+        File clusterprops = new File(osFunctions.getClusterHostFile());
+        File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
+        File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
+        File tomcatprops = new File(osFunctions.getTomcatServerConfig());
+        FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
+        if (clusterprops.exists()) {
+            FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
+        }
+        FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
+        FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
+        FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
 
         // zip the temp directory into the requested image file (outputpathval)
-
-        /* TODO, FRANCO - take a look at BaseConfigurationCommand which has a (currently protected) backupFiles method.
-             We could use this logic if either:
-            1) it's extracted out into a utils class
-            2) you extend this class in your exporter (this is the worker class of the configurators)
-        */
-        // todo
-    }
-
-    private String getDbHostNameFromUrl(String databaseURL) {
-        String hostname = null;
-        Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(databaseURL);
-        if (matcher.matches()) {
-            hostname = matcher.group(1);
-        }
-        return hostname;
+        zipDir(outputpathval, tmpDirectory);
+        FileUtils.deleteDir(new File(tmpDirectory));
     }
 
     private boolean testCanWrite(String path) {
@@ -160,6 +146,44 @@ public class Exporter {
         tmp.delete();
         tmp.mkdir();
         return tmp.getPath();
+    }
+
+    private void zipDir(String zipFileName, String dir) throws IOException {
+        File dirObj = new File(dir);
+        if (!dirObj.isDirectory()) {
+            throw new IOException(dir + " is not a directory");
+        }
+        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
+        System.out.println("Creating : " + zipFileName);
+        addDir(dirObj, out);
+        out.close();
+    }
+
+    private void addDir(File dirObj, ZipOutputStream out) throws IOException {
+        File[] files = dirObj.listFiles();
+        byte[] tmpBuf = new byte[1024];
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                addDir(file, out);
+                continue;
+            }
+            FileInputStream in = new FileInputStream(file.getAbsolutePath());
+            System.out.println(" Adding: " + file.getAbsolutePath());
+            String zipEntryName = file.getAbsolutePath();
+            if (zipEntryName.startsWith(tmpDirectory)) {
+                zipEntryName = zipEntryName.substring(tmpDirectory.length() + 1);
+            }
+            out.putNextEntry(new ZipEntry(zipEntryName));
+            // Transfer from the file to the ZIP file
+            int len;
+            while ((len = in.read(tmpBuf)) > 0) {
+                out.write(tmpBuf, 0, len);
+            }
+            // Complete the entry
+            out.closeEntry();
+            in.close();
+        }
     }
 
     private boolean includeAudit = false;

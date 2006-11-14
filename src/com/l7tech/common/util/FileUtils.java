@@ -283,4 +283,21 @@ public class FileUtils {
             ResourceUtils.closeQuietly(destinationChannel);
         }
     }
+
+    /**
+     * deletes a non-empty directory
+     */
+    public static boolean deleteDir(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (String aChildren : children) {
+                boolean success = deleteDir(new File(dir, aChildren));
+                if (!success) {
+                    return false;
+                }
+            }
+        }
+        // The directory is now empty so delete it
+        return dir.delete();
+    }
 }
