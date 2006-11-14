@@ -29,22 +29,6 @@ public class VirtualGroupTest extends TestCase {
         System.out.println((double)i/t *1000 + " iterations per second");
     }
 
-    public void testDnPatterns() throws Exception {
-        assertTrue(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
-                               "O=ACME Inc., OU=Widgets, CN=*"));
-
-        assertFalse(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
-                                "O=ACME Inc., OU=Widgets, CN=bob"));
-
-        assertTrue("Multi-valued attributes, case and whitespace are insignificant",
-                   CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
-                               "dc=layer7-tech, DC=com, UID=*"));
-
-        assertFalse("Group value wildcards are required",
-                    CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
-                                "dc=layer7-tech, DC=com, cn=*, UID=*"));
-    }
-
     /**
      * create the <code>TestSuite</code> for the VirtualGroupTest <code>TestCase</code>
      */

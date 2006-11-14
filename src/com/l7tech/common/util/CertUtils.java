@@ -7,9 +7,6 @@ package com.l7tech.common.util;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.security.CertificateExpiry;
 import com.whirlycott.cache.Cache;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
 import org.apache.harmony.security.asn1.ASN1Integer;
@@ -60,6 +57,51 @@ public class CertUtils {
     public static final String FINGERPRINT_HEX = "hex";
     public static final String FINGERPRINT_RAW_HEX = "rawhex";
     public static final String FINGERPRINT_BASE64 = "b64";
+
+    interface DnParser {
+        Map dnToAttributeMap(String dn);
+    }
+    static final DnParser DEFAULT_DN_PARSER;
+    static {
+        DnParser dp = null;
+        Throwable jdk15err = null;
+        try {
+            // First try using the Java 1.5 parser
+            Class dpclass = Class.forName("com.l7tech.common.util.DnParserJava15");
+            if (dpclass != null) dp = (DnParser)dpclass.newInstance();
+        } catch (ClassNotFoundException e) {
+            jdk15err = e;
+        } catch (IllegalAccessException e) {
+            jdk15err = e;
+        } catch (InstantiationException e) {
+            jdk15err = e;
+        }
+
+        Throwable bcErr = null;
+        if (dp == null) {
+            // Try using Bouncy Castle parser
+            try {
+                Class dpclass = Class.forName("com.l7tech.common.util.DnParserBc");
+                if (dpclass != null) dp = (DnParser)dpclass.newInstance();
+            } catch (ClassNotFoundException e) {
+                bcErr = e;
+            } catch (IllegalAccessException e) {
+                bcErr = e;
+            } catch (InstantiationException e) {
+                bcErr = e;
+            }
+        }
+
+        if (dp == null) {
+            if (jdk15err != null) logger.log(Level.SEVERE, "Unable to initialize: no DN parser available; JDK 1.5 parser failed: " + ExceptionUtils.getMessage(jdk15err), jdk15err);
+            if (bcErr != null) logger.log(Level.SEVERE, "Unable to initialize: no DN parser available; BC parser failed: " + ExceptionUtils.getMessage(bcErr), bcErr);
+            throw (LinkageError)new LinkageError("Unable to initialize CertUtils: no DN parser available").initCause(bcErr != null ? bcErr : jdk15err);
+        }
+
+        DEFAULT_DN_PARSER = dp;
+    }
+    static DnParser DN_PARSER = DEFAULT_DN_PARSER;
+
 
     // Map of VerifiedCert => Boolean.TRUE
     private static final Cache certVerifyCache =
@@ -316,6 +358,8 @@ public class CertUtils {
     }
 
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
+    public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
+
     private static final String[] KEY_USAGES = {
         "Digital Signature",
         "Non-Repudiation",
@@ -390,29 +434,12 @@ public class CertUtils {
      * where possible, otherwise a String containing an OID.'
      *
      * The values are a {@link List} of values for that attribute (they are frequently multivalued)
-     * 
+     *
      * @param dn the X.500 DN to parse
      * @return a Map of attribute names to value lists
      */
     public static Map dnToAttributeMap(String dn) {
-        X509Name x509name = new X509Name(dn);
-        Map map = new HashMap();
-        for (int i = 0; i < x509name.getOIDs().size(); i++ ) {
-            final DERObjectIdentifier oid = (DERObjectIdentifier)x509name.getOIDs().get(i);
-
-            String name = (String)X509Name.DefaultSymbols.get(oid);
-            if (name == null) name = (String)X509Name.RFC2253Symbols.get(oid);
-            if (name == null) name = oid.getId();
-
-            List values = (List) map.get(name);
-            if ( values == null ) {
-                values = new ArrayList();
-                map.put(name, values);
-            }
-            String value = (String)x509name.getValues().get(i);
-            values.add(value);
-        }
-        return map;
+        return DN_PARSER.dnToAttributeMap(dn);
     }
 
     /**
@@ -430,9 +457,10 @@ public class CertUtils {
      * </p><p>
      * Note that the DN can have additional attributes that are not present
      * in the pattern and can still be considered to match if the rules are met.</p>
-     * @param dn the dn to be matched
-     * @param pattern the pattern to match against
+     * @param dn the dn to be matched.  If this is invalid, this method will return false.
+     * @param pattern the pattern to match against.  Must be a valid DN.
      * @return true if the dn matches the pattern, false otherwise.
+     * @throws IllegalArgumentException if the pattern is not a valid DN.
      */
     public static boolean dnMatchesPattern(String dn, String pattern) {
         Map dnMap = dnToAttributeMap(dn);
@@ -705,11 +733,11 @@ public class CertUtils {
      * Extract the value of the CN attribute from the DN in the Principal.
      * @param principal
      * @return String  The value of CN attribute in the DN.  Might be null.
-     * @throws IllegalArgumentException if the DN contains multiple CN values.
+     * @throws IllegalArgumentException if the DN contains multiple CN values or is otherwise invalid.
      */
     private static String extractCommonName(Principal principal) {
         String dn = principal.getName();
-        Map dnParts = CertUtils.dnToAttributeMap(dn);
+        Map dnParts = dnToAttributeMap(dn);
         List cns = (List)dnParts.get("CN");
         if (cns == null) return null;
         switch(cns.size()) {
@@ -764,7 +792,7 @@ public class CertUtils {
      */
     public static byte[] getAKIBytesFromCert(X509Certificate cert) {
         if (cert.getVersion() < 3) return null;
-        byte[] ext = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+        byte[] ext = cert.getExtensionValue(X509_OID_AUTHORITYKEYID);
         if (ext == null) return null;
         return stripAsnPrefix(ext, 6);
     }

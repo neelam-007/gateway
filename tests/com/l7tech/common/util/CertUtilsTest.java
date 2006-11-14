@@ -11,6 +11,10 @@ import junit.framework.TestSuite;
 
 import java.security.cert.Certificate;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.List;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * @author mike
@@ -127,5 +131,57 @@ public class CertUtilsTest extends TestCase {
 
         cert = CertUtils.decodeCert(otherCertB64.getBytes());
 
+    }
+
+    public void testDnParser() throws Exception {
+        CertUtils.DN_PARSER = CertUtils.DEFAULT_DN_PARSER;
+        doTestDnParse();
+        doTestDnPatterns();
+    }
+
+    public void testDnParserJava15() throws Exception {
+        CertUtils.DN_PARSER = new DnParserJava15();
+        doTestDnParse();
+        doTestDnPatterns();
+    }
+
+    public void testDnParserBc() throws Exception {
+        CertUtils.DN_PARSER = new DnParserBc();
+        doTestDnParse();
+        doTestDnPatterns();
+    }
+
+    private void doTestDnParse() throws Exception {
+        log.info("\nTrying parser " + CertUtils.DN_PARSER.getClass().getName() + ":");
+
+        Map map = CertUtils.dnToAttributeMap("cn=Mike Lyons, ou=Research, o=Layer 7 Technologies");
+
+        Set entries = map.entrySet();
+        for (Iterator i = entries.iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry)i.next();
+            String key = (String)entry.getKey();
+            List values = (List)entry.getValue();
+            for (Iterator j = values.iterator(); j.hasNext();) {
+                String value = (String)j.next();
+                log.info("    key<" + key +">  value<" + value +">");
+            }
+        }
+
+    }
+
+    private void doTestDnPatterns() throws Exception {
+        assertTrue(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
+                               "O=ACME Inc., OU=Widgets, CN=*"));
+
+        assertFalse(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
+                                "O=ACME Inc., OU=Widgets, CN=bob"));
+
+        assertTrue("Multi-valued attributes, case and whitespace are insignificant",
+                   CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
+                               "dc=layer7-tech, DC=com, UID=*"));
+
+        assertFalse("Group value wildcards are required",
+                    CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
+                                "dc=layer7-tech, DC=com, cn=*, UID=*"));
     }
 }
