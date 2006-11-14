@@ -69,11 +69,17 @@ public class DBActions {
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
 
     public static Connection getConnection(String dburl, String dbuser, String dbpasswd) throws SQLException {
-        com.mysql.jdbc.Driver driver = new com.mysql.jdbc.Driver();
+        try {
+            Class.forName(JDBC_DRIVER_NAME);
+        } catch (ClassNotFoundException e) {
+            // should not happen
+            throw new SQLException("driver not in classpath");
+        }
+
         Properties props = new Properties();
         props.put("user", dbuser);
         props.put("password", dbpasswd);
-        return driver.connect(dburl, props);
+        return DriverManager.getConnection(dburl, props);
     }
 
     public static class DBActionsResult {
