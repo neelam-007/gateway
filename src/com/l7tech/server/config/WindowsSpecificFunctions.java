@@ -15,6 +15,10 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         super(osname);
     }
 
+    public WindowsSpecificFunctions(String osname, String partitionName) {
+        super(osname, partitionName);
+    }
+
     void makeOSSpecificFilenames() {
         if (StringUtils.isEmpty(installRoot)) {
             installRoot = "c:/Program Files/Layer 7 Technologies/SecureSpan Gateway/";

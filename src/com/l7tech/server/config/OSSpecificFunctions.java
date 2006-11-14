@@ -53,7 +53,12 @@ public abstract class OSSpecificFunctions {
             installRoot = installRoot + "/";
         }
         this.osName = OSName;
-        this.partitionName = partitionName;
+
+        if (StringUtils.isNotEmpty(partitionName))
+            this.partitionName = partitionName;
+        else
+            this.partitionName = "";
+        
         makeOSSpecificFilenames();
         makeFilenames();
     }
@@ -118,7 +123,8 @@ public abstract class OSSpecificFunctions {
 
     public String getConfigurationBase() {
         if (StringUtils.isNotEmpty(getPartitionName()))
-            return getSsgInstallRoot() + PartitionInformation.PARTITIONS_BASE + getPartitionName();
+            return getSsgInstallRoot() + PartitionInformation.PARTITIONS_BASE + getPartitionName() + "/";
+
 
         return getSsgInstallRoot() + NOPARTITION_BASE;
 

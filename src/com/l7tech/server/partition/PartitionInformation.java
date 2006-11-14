@@ -6,7 +6,7 @@ package com.l7tech.server.partition;
  * Time: 10:15:56 AM
  */
 public class PartitionInformation {
-    public static final String PARTITIONS_BASE = "etc/conf/partitions";
+    public static final String PARTITIONS_BASE = "etc/conf/partitions/";
 
     String partitionId;
     public PartitionInformation(String partitionId) {

@@ -15,6 +15,10 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
         super(osname);
     }
 
+    public LinuxSpecificFunctions(String osname, String partitionName) {
+        super(osname, partitionName);
+    }
+
     void makeOSSpecificFilenames() {
         if (StringUtils.isEmpty(installRoot)) {
             installRoot = "/ssg/";

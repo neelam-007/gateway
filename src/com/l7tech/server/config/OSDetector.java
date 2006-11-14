@@ -20,19 +20,25 @@ public class OSDetector {
     private static OSSpecificFunctions osf_;
 
     public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
-        if (osf_ == null) {
+        return createPartitionAwareOSFunctions("");
+    }
 
+    public static OSSpecificFunctions getOSSpecificFunctions(String partitionName) {
+        return createPartitionAwareOSFunctions(partitionName);
+    }
+
+    private static OSSpecificFunctions createPartitionAwareOSFunctions(String partitionName) {
+        if (osf_ == null) {
             if (isWindows()) {
-                osf_ = new WindowsSpecificFunctions(OSName);
+                osf_ = new WindowsSpecificFunctions(OSName,partitionName);
             } else if (isLinux()) {
-                osf_ = new LinuxSpecificFunctions(OSName);
+                osf_ = new LinuxSpecificFunctions(OSName,partitionName);
             }
             else {
                 throw new UnsupportedOsException(OSName + " is not a supported operating system.");
             }
         }
-        return osf_;
-    }
+        return osf_;    }
 
     public static boolean isWindows() {
         return WINDOWS_PATTERN.matcher(OSName).matches();
@@ -42,7 +48,4 @@ public class OSDetector {
         return LINUX_PATTERN.matcher(OSName).matches();
     }
 
-    public static OSSpecificFunctions getOSSpecificFunctions(String partitionName) {
-        return null;
-    }
 }
