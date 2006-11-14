@@ -65,7 +65,13 @@ public class DBActions {
         new DbVersion33Checker(),
         new DbVersion3132Checker(),
     };
+    
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
+
+    public Connection getConnection(String dburl, String dbuser, String dbpasswd) {
+        //egery, todo
+        return null;
+    }
 
     public static class DBActionsResult {
         private int status = 0;
