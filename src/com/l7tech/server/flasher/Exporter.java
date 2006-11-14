@@ -87,7 +87,11 @@ public class Exporter {
 
         String dbDumpTempFile = tmpDirectory + File.separator + "dbdump.sql";
         // dump the database
-        DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
+        try {
+            DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
+        } catch (SQLException e) {
+            throw new IOException("cannot dump the database " + e.getMessage());
+        }
 
         // produce template mapping if necessary
         partitionName = arguments.get(MAPPING_PATH.name);
