@@ -137,13 +137,13 @@ public class ManagerAppletServlet extends HttpServlet {
         }
     }
 
-    private void emitParam(PrintStream ps, String username, String password) {
-        username = urlEncode(username);
-        password = urlEncode(password);
+    private void emitParam(PrintStream ps, String name, String value) {
+        name = urlEncode(name);
+        value = urlEncode(value);
         ps.print("<PARAM NAME=\"");
-        ps.print(username);
+        ps.print(name);
         ps.print("\" VALUE=\"");
-        ps.print(password);
+        ps.print(value);
         ps.print("\"/>");
         ps.println();
     }
