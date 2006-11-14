@@ -38,6 +38,10 @@ public class WspReaderTest extends TestCase {
     private static String RESOURCE_PATH = "com/l7tech/policy/resources";
     private static String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
 
+    static {
+        System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
+    }
+    
     public WspReaderTest(String name) {
         super(name);
     }

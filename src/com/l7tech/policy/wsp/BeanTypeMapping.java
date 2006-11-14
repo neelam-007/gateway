@@ -11,20 +11,51 @@ import org.w3c.dom.Element;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
+
+import com.l7tech.common.util.SyspropUtil;
 
 /**
  * A TypeMapping that supports a bean-like object with a default constructor and some getters and setters.
  */
 class BeanTypeMapping extends ComplexTypeMapping {
     private static final Logger log = Logger.getLogger(BeanTypeMapping.class.getName());
+    static boolean checkForNonPublicAccessors = SyspropUtil.getBoolean("com.l7tech.policy.wsp.checkAccessors");
 
     BeanTypeMapping(Class clazz, String externalName) {
         super(clazz, externalName);
+        if (checkForNonPublicAccessors) doCheckForNonPublicAccessors();
+    }
+
+    private void doCheckForNonPublicAccessors() {
+        Map getters = new HashMap();
+        Map setters = new HashMap();
+        findGettersAndSetters(clazz, getters, setters);
+
+        Set methods = new HashSet();
+
+        // Build set of methods that must be accessible
+        for (Iterator i = getters.entrySet().iterator(); i.hasNext();) {
+            Map.Entry getterEntry = (Map.Entry)i.next();
+            String parm = (String)getterEntry.getKey();
+            Method getter = (Method)getterEntry.getValue();
+            Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
+
+            // Ignore getters with no setter (per fla fix for Bug #2215)
+            if (setter != null) {
+                methods.add(getter);
+                methods.add(setter);
+            }
+        }
+
+        // Make sure they are all accessible
+        for (Iterator i = methods.iterator(); i.hasNext();) {
+            Method method = (Method)i.next();
+
+            if (!Modifier.isPublic(method.getModifiers()))
+                throw new AssertionError("Unable to create type mapper for class " + clazz.getName() + ": method not accessible: " + method.getName());
+        }
     }
 
     protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
@@ -116,17 +147,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
         Class ac = bean.getClass();
         Map setters = new HashMap();
         Map getters = new HashMap();
-        Method[] methods = ac.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
-            String name = method.getName();
-            if (name.startsWith("is") && name.length() > 2 && method.getReturnType().equals(boolean.class))
-                getters.put(name.substring(2), method);
-            else if (name.startsWith("get") && name.length() > 3)
-                getters.put(name.substring(3), method);
-            else if (name.startsWith("set") && name.length() > 3)
-                setters.put(name.substring(3) + ":" + method.getParameterTypes()[0], method);
-        }
+        findGettersAndSetters(ac, getters, setters);
         for (Iterator i = getters.keySet().iterator(); i.hasNext();) {
             String parm = (String)i.next();
             if (TypeMappingUtils.isIgnorableProperty(parm))
@@ -134,10 +155,6 @@ class BeanTypeMapping extends ComplexTypeMapping {
             Method getter = (Method)getters.get(parm);
             if (getter == null)
                 throw new InvalidPolicyTreeException("Internal error"); // can't happen
-
-            if (Modifier.isStatic(getter.getModifiers())) { // ignore statics
-                continue;
-            }
 
             Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
             if (setter == null) {
@@ -166,6 +183,25 @@ class BeanTypeMapping extends ComplexTypeMapping {
 
             TypedReference tr = new TypedReference(returnType, value, parm);
             tm.freeze(wspWriter, tr, element);
+        }
+    }
+
+    private static void findGettersAndSetters(Class ac, Map getters, Map setters) {
+        Method[] methods = ac.getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+
+            if (Modifier.isStatic(method.getModifiers())) { // ignore statics
+                continue;
+            }
+
+            String name = method.getName();
+            if (name.startsWith("is") && name.length() > 2 && method.getReturnType().equals(boolean.class))
+                getters.put(name.substring(2), method);
+            else if (name.startsWith("get") && name.length() > 3)
+                getters.put(name.substring(3), method);
+            else if (name.startsWith("set") && name.length() > 3)
+                setters.put(name.substring(3) + ":" + method.getParameterTypes()[0], method);
         }
     }
 }

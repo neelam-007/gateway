@@ -40,6 +40,10 @@ public class WspWriterTest extends TestCase {
     public static final String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
     public static final String SCHEMA_PATH = RESOURCE_PATH + "/ws_policy_2002.xsd";
     public static final String UTILITY_SCHEMA = RESOURCE_PATH + "/ws_utility_2002.xsd";
+    
+    static {
+        System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
+    }
 
     public WspWriterTest(String name) {
         super(name);
