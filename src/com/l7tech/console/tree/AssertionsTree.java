@@ -5,6 +5,7 @@ import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.policy.PolicyTransferable;
+import com.l7tech.console.util.ClipboardActions;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
@@ -78,6 +79,11 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         ToolTipManager.sharedInstance().registerComponent(this);
 
         setTransferHandler(new PaletteTransferHandler());
+
+        // disable Edit menu actions
+        putClientProperty(ClipboardActions.COPY_HINT, "false");
+        putClientProperty(ClipboardActions.CUT_HINT, "false");
+        putClientProperty(ClipboardActions.PASTE_HINT, "false");
     }
 
     public void dragGestureRecognized(DragGestureEvent dge) {
@@ -98,7 +104,6 @@ public class AssertionsTree extends JTree implements DragGestureListener {
             AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
             if (!node.isLeaf()) return null;
             if (node instanceof IdentityProviderNode) return null;
-            if (node.asAssertion() == null) return null;
             return new PolicyTransferable(node);
         }
         return null;

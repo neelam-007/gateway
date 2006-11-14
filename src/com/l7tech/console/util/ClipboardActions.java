@@ -19,6 +19,9 @@ import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlException;
 
 /**
  * Holds global clipboard actions for cut/copy/paste and manages their enable/disable state.  The global
@@ -70,6 +73,15 @@ public class ClipboardActions {
     public static final Action PASTE_ACTION = new ProxyAction(TransferHandler.getPasteAction(),
                                                             KeyEvent.VK_P,
                                                             KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
+
+    /** Explicit hint, as a client property.  May be "true" or "false".  If not present will guess. */
+    public static final String CUT_HINT = "com.l7tech.clipboard.cut.enable";
+
+    /** Explicit hint, as a client property.  May be "true" or "false".  If not present will guess. */
+    public static final String COPY_HINT = "com.l7tech.clipboard.copy.enable";
+
+    /** Explicit hint, as a client property.  May be "true" or "false".  If not present will guess. */
+    public static final String PASTE_HINT = "com.l7tech.clipboard.paste.enable";
 
     private static boolean focusListenerInstalled = false;
     private static WeakReference<JComponent> focusOwner = null;
@@ -166,10 +178,27 @@ public class ClipboardActions {
                 return;
 
             int actions = th.getSourceActions(jc);
-            acceptCopy = am.get(copyName) != null && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
+
+            Boolean copyHint = checkProp(jc, COPY_HINT);
+            if (copyHint != null)
+                acceptCopy = copyHint;
+            else
+                acceptCopy = am.get(copyName) != null && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
+
             acceptCopyAll = am.get(copyAllName) != null && acceptCopy;
-            acceptCut = am.get(cutName) != null && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
-            acceptPaste = am.get(pasteName) != null && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
+
+            Boolean cutHint = checkProp(jc, CUT_HINT);
+            if (cutHint != null)
+                acceptCut = cutHint;
+            else
+                acceptCut = am.get(cutName) != null && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
+
+            Boolean pasteHint = checkProp(jc, PASTE_HINT);
+            if (pasteHint != null)
+                acceptPaste = pasteHint;
+            else
+                acceptPaste = am.get(pasteName) != null && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
+
             logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (am.get(pasteName) != null) + "  clipboard=" + getClipboard() + "  flavors:" + clipboardFlavors);
         } finally {
             CUT_ACTION.setEnabled(acceptCut);
@@ -179,12 +208,21 @@ public class ClipboardActions {
         }
     }
 
+    private static Boolean checkProp(JComponent jc, String prop) {
+        Object value = jc.getClientProperty(prop);
+        if (value instanceof String) {
+            String s = (String)value;
+            return "true".equalsIgnoreCase(s);
+        }
+        return null;
+    }
+
     /**
      * @return the system Clipboard, if accessible; otherwise null.
      */
     private static Clipboard getClipboard() {
         if (noClipAccess) return null;
-        if (checkedClipboard) return Toolkit.getDefaultToolkit().getSystemClipboard();
+        if (checkedClipboard) return getSystemClipboard();
         checkedClipboard = true;
 
         if (GraphicsEnvironment.isHeadless()) {
@@ -192,16 +230,21 @@ public class ClipboardActions {
             noClipAccess = true;
             return null;
         }
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkSystemClipboardAccess();
-            } catch (SecurityException e) {
-                noClipAccess = true;
-                return null;
+
+        return getSystemClipboard();
+    }
+
+    private static Clipboard getSystemClipboard() {
+        return AccessController.doPrivileged(new PrivilegedAction<Clipboard>() {
+            public Clipboard run() {
+                try {
+                    return Toolkit.getDefaultToolkit().getSystemClipboard();
+                } catch (AccessControlException ace) {
+                    noClipAccess = true;
+                    return null;
+                }
             }
-        }
-        return Toolkit.getDefaultToolkit().getSystemClipboard();
+        });
     }
 
     /**
@@ -249,7 +292,12 @@ public class ClipboardActions {
 
         public void actionPerformed(ActionEvent e) {
             if (logger.isLoggable(Level.FINE)) logger.fine("Dispatching action command: " + actionCommand);
-            runActionCommandOnFocusedComponent(actionCommand);
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                public Object run() {
+                    runActionCommandOnFocusedComponent(actionCommand);
+                    return null;
+                }
+            });
             afterActionPerformed();
         }
 
