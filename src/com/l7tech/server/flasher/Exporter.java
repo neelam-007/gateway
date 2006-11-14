@@ -106,24 +106,26 @@ public class Exporter {
                 throw new RuntimeException("problem producing template mapping file", e);
             }
         }
-
-        // copy all config files we want into this temp directory
-        File hibprops = new File(osFunctions.getDatabaseConfig());
-        File clusterprops = new File(osFunctions.getClusterHostFile());
-        File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
-        File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
-        File tomcatprops = new File(osFunctions.getTomcatServerConfig());
-        File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
-        FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
-        if (clusterprops.exists()) {
-            FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
+        // we dont support full image on windows (windows only supports staging use case)
+        if (!OSDetector.isWindows()) {
+            // copy all config files we want into this temp directory
+            File hibprops = new File(osFunctions.getDatabaseConfig());
+            File clusterprops = new File(osFunctions.getClusterHostFile());
+            File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
+            File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
+            File tomcatprops = new File(osFunctions.getTomcatServerConfig());
+            File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
+            FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
+            if (clusterprops.exists()) {
+                FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
+            }
+            if (sysProps.exists()) {
+                FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
+            }
+            FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
+            FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
+            FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
         }
-        if (sysProps.exists()) {
-            FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
-        }
-        FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
-        FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
-        FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
 
         // zip the temp directory into the requested image file (outputpathval)
         zipDir(outputpathval, tmpDirectory);
