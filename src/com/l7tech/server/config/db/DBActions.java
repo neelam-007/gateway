@@ -65,12 +65,15 @@ public class DBActions {
         new DbVersion33Checker(),
         new DbVersion3132Checker(),
     };
-    
+
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
 
-    public Connection getConnection(String dburl, String dbuser, String dbpasswd) {
-        //egery, todo
-        return null;
+    public static Connection getConnection(String dburl, String dbuser, String dbpasswd) throws SQLException {
+        com.mysql.jdbc.Driver driver = new com.mysql.jdbc.Driver();
+        Properties props = new Properties();
+        props.put("user", dbuser);
+        props.put("password", dbpasswd);
+        return driver.connect(dburl, props);
     }
 
     public static class DBActionsResult {
