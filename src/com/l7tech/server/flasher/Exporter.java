@@ -113,9 +113,13 @@ public class Exporter {
         File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
         File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
         File tomcatprops = new File(osFunctions.getTomcatServerConfig());
+        File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
         FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
         if (clusterprops.exists()) {
             FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
+        }
+        if (sysProps.exists()) {
+            FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
         }
         FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
         FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
