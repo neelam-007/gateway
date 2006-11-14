@@ -27,6 +27,12 @@ public class DBDumpUtil {
      */
     public static void dump(String databaseURL, String databaseUser, String databasePasswd,
                             boolean includeAudit, String outputPath) throws SQLException, IOException {
+
+        // todo
+        // start with SET FOREIGN_KEY_CHECKS = 0;, end with SET FOREIGN_KEY_CHECKS = 1;,
+        // look at collectMetaInfo in dbactions to iterate through tables
+        // include drop table if exist and create table statments
+
         Connection c = DBActions.getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL + ". with username " + databaseUser + ", and password: " + databasePasswd);
