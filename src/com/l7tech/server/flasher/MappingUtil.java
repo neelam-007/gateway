@@ -2,6 +2,7 @@ package com.l7tech.server.flasher;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.server.config.db.DBActions;
 
 import java.sql.*;
 import java.util.*;
@@ -90,8 +91,9 @@ public class MappingUtil {
 
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
                                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
-        // create connection to database
-        Connection c = DriverManager.getConnection(dburl, dbuser, dbpasswd);
+
+        Connection c = DBActions.getConnection(dburl, dbuser, dbpasswd);
+
         if (c == null) {
             throw new SQLException("could not connect using url: " + dburl + ". with username " + dbuser + ", and password: " + dbpasswd);
         }
@@ -215,6 +217,7 @@ public class MappingUtil {
 
     // for testing purposes only
     public static void main(String[] args) throws Exception {
-        applyMappingChangesToDB("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", "gateway", "password", "/home/flascell/tmp/template.xml");
+        //applyMappingChangesToDB("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", "gateway", "password", "/home/flascell/tmp/template.xml");
+        produceTemplateMappingFileFromDatabaseConnection("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", "gateway", "7layer", "/home/flascell/tmp/templatemap.xml");
     }
 }
