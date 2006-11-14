@@ -73,13 +73,17 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
      */
     private static LnfSetter windowsLnfSetter = new LnfSetter() {
         public void setLnf() throws Exception {
+            boolean wasSet = false;
             UIManager.LookAndFeelInfo[] feels = UIManager.getInstalledLookAndFeels();
             for (UIManager.LookAndFeelInfo feel : feels) {
                 if (feel.getName().indexOf("Windows") >= 0) {
                     UIManager.setLookAndFeel(feel.getClassName());
+                    wasSet = true;
                     break;
                 }
             }
+            if (!wasSet)
+                throw new Exception("No XP LNF");
         }
     };
 
