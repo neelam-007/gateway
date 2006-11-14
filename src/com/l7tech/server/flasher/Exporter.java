@@ -81,14 +81,15 @@ public class Exporter {
         //EGERY: here you go
 
         // Read database connection settings for the partition at hand
-        Map<String, String> dbProps = PropertyHelper.getProperties("someName", new String[] {
+        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+        Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
             SsgDatabaseConfigBean.PROP_DB_USERNAME,
             SsgDatabaseConfigBean.PROP_DB_PASSWORD,
             SsgDatabaseConfigBean.PROP_DB_URL,
         });
         String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
         String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-        String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD); 
+        String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
         //EGERY: I don't think you need this if you already have the URL but here you go anyway
         String databaseHost = getDbHostNameFromUrl(databaseURL);
 
@@ -116,7 +117,6 @@ public class Exporter {
 
         // copy all config files we want into this temp directory
         // todo get path for all config files, copy these files into
-        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
 
         //MEGERY: this should be the base of the configuration tree for you, regardless of if this is a partition or not.
         String configPath = osFunctions.getConfigurationBase();
