@@ -25,7 +25,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     private String resourcePath;
     protected MainWindow mainWindow;
 
-    public MainWindow getMainWindow() {
+    protected MainWindow getMainWindow() {
         return mainWindow;
     }
 
@@ -121,4 +121,6 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
             logger.log(Level.WARNING, "Unable to update look-and-feel classloader", e);
         }
     }
+
+    public abstract void showHelpTopicsRoot();
 }

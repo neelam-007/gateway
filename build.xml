@@ -1011,6 +1011,7 @@
                 </patternset>
                 <patternset refid="manager.libs"/>
             </zipfileset>
+            <zipfileset src="${src.root}/webhelp/ssm/help.zip" prefix="ssg/webadmin"/>
         </war>
 
         <jar jarfile="${build.dir}/l7valve.jar">
@@ -1356,9 +1357,8 @@
         <chmod file="${build.installer}/Bridge-${build.version}/Bridge.sh" perm="555"/>
 
         <!-- Help files -->
-        <untar src="${src.root}/webhelp/ssb/help.tgz" 
-               dest="${build.installer}/Bridge-${build.version}"
-               compression="gzip"/>
+        <unzip src="${src.root}/webhelp/ssb/help.zip"
+               dest="${build.installer}/Bridge-${build.version}"/>
 
         <!-- Create distro TAR -->
         <tar destfile="${build.installer}/Bridge-${build.version}.tar.gz"
@@ -1422,9 +1422,8 @@
         <chmod file="${build.installer}/Manager-${build.version}/Manager.sh" perm="555"/>
 
         <!-- Help files -->
-        <untar src="${src.root}/webhelp/ssm/help.tgz" 
-               dest="${build.installer}/Manager-${build.version}"
-               compression="gzip"/>
+        <unzip src="${src.root}/webhelp/ssm/help.zip" 
+               dest="${build.installer}/Manager-${build.version}"/>
 
         <!-- Create distro TAR -->
         <tar destfile="${build.installer}/Manager-${build.version}.tar.gz"

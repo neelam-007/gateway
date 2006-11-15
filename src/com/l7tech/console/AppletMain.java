@@ -20,6 +20,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.MalformedURLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
@@ -33,12 +34,20 @@ import java.security.cert.X509Certificate;
 public class AppletMain extends JApplet {
     private static final Logger logger = Logger.getLogger(AppletMain.class.getName());
 
+    /** Name we use to register the most recent instance of ourself under TopComponents. */
+    public static final String COMPONENT_NAME = "appletMain";
+
+    /** Url we try to use for help topics if we aren't given an override as an applet param. */
+    private static final String DEFAULT_HELP_ROOT_RELATIVE_URL = "/ssg/webadmin/help/_start.htm";
+
     private static ApplicationContext applicationContext = null;
     private static SsmApplication application = null;
     private static Container appletPanel = null;
     private static JMenuBar menuBar = null;
 
     private WindowListener windowListener = null;
+    private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
+    private String helpTarget = "managerAppletHelp";
 
     private void maybeAddWindowListener(final Frame f) {
         if (windowListener != null) return;
@@ -54,7 +63,7 @@ public class AppletMain extends JApplet {
     public void init() {
         super.init();
 
-        configureCredentials();
+        gatherAppletParameters();
         getApplication().setAutoLookAndFeel();
         getApplication().run();
         setJMenuBar(getAppletMenuBar());
@@ -81,6 +90,9 @@ public class AppletMain extends JApplet {
                 return null;
             }
         });
+
+        TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
+        TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
 
         repaint();
     }
@@ -120,7 +132,7 @@ public class AppletMain extends JApplet {
         return menuBar;
     }
 
-    private void configureCredentials() {
+    private void gatherAppletParameters() {
         String hostname = getParameter("hostname");
 
         if (hostname == null || hostname.length() < 1) {
@@ -130,8 +142,16 @@ public class AppletMain extends JApplet {
 
         if (hostname != null && hostname.length() > 0) {
             LogonDialog.setPreconfiguredGatewayHostname(hostname);
+            helpTarget = "managerAppletHelp_" + hostname;
             logger.info("Preconfigured server hostname: " + hostname);
         }
+
+        String helpRootUrl = getParameter("helpRootUrl");
+        if (helpRootUrl != null && helpRootUrl.trim().length() > 0) {
+            this.helpRootUrl = helpRootUrl;
+            logger.info("Help root URL: " + helpRootUrl);
+        } else
+            logger.info("Using default help root URL: " + helpRootUrl);
 
         String serverCertB64 = getParameter("gatewayCert");
         if (serverCertB64 != null && serverCertB64.length() > 0) {
@@ -176,5 +196,15 @@ public class AppletMain extends JApplet {
             {"username", "string", "The adminstrator username.  Mandatory."},
             {"token", "string", "The authenticaton token.  Mandatory."},
         };
+    }
+
+    public void showHelpTopicsRoot() {
+        try {
+            URL cb = getDocumentBase();
+            URL url = new URL(cb.getProtocol(), cb.getHost(), cb.getPort(), helpRootUrl);
+            getAppletContext().showDocument(url, helpTarget);
+        } catch (MalformedURLException e) {
+            logger.warning("Unable to display webhelp: bad webhelp URL: " + ExceptionUtils.getMessage(e));
+        }
     }
 }

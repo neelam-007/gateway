@@ -34,6 +34,13 @@ public class SsmApplicationApplet extends SsmApplication {
         return true;
     }
 
+    public void showHelpTopicsRoot() {
+        AppletMain appletMain = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+        if (appletMain == null)
+            throw new IllegalStateException("In applet mode but no appletMain registered");
+        appletMain.showHelpTopicsRoot();
+    }
+
     public void onApplicationEvent(ApplicationEvent event) {
         // Ignore preference changes, it's an applet
     }

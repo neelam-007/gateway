@@ -474,7 +474,7 @@ public class Gui {
         } else if ( MENU_HELP_ABOUT.equals( e.getActionCommand() ) ) {
             new AboutBox().setVisible(true);
         } else if ( MENU_HELP_HELP.equals( e.getActionCommand() ) ) {
-            HelpUtil.showHelpTopics(System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath()),
+            HelpUtil.showHelpTopicsRoot(System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath()),
                                     Gui.getInstance().getFrame());
         }
     }

@@ -72,10 +72,6 @@ public class MainWindow extends JFrame {
      */
     public static final String HELP_FILE_NAME = "help/!_start_!.htm";
 
-    //the property name for the current applications home directory. If not set, this is defaulted to null by code
-    // that uses it
-    private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
-
     public static final String CONNECTION_PREFIX = " [connected to node: ";
     /**
      * the resource bundle name
@@ -1894,7 +1890,7 @@ public class MainWindow extends JFrame {
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                  showHelpTopics(e);
+                  showHelpTopicsRoot();
               }
           });
 
@@ -2047,15 +2043,6 @@ public class MainWindow extends JFrame {
         }
     }
 
-
-    /**
-     * The "Help Topics".
-     * This procedure displays the WebHelp contents in the preferred browser for the system on which the SSM is running.
-     */
-    public void showHelpTopics(ActionEvent e) {
-        String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
-        HelpUtil.showHelpTopics(applicationHome, MainWindow.this);
-    }
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
     private long lastActivityTime = System.currentTimeMillis();
@@ -2463,4 +2450,7 @@ public class MainWindow extends JFrame {
         });
     }
 
+    public void showHelpTopicsRoot() {
+        ssmApplication.showHelpTopicsRoot();
+    }
 }

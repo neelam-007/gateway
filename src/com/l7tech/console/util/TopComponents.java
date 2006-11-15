@@ -2,7 +2,6 @@ package com.l7tech.console.util;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.PermissionRefreshListener;
-import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.policy.PolicyTree;
@@ -26,8 +25,8 @@ import java.util.Map;
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
 
-    public void showHelpTopics(ActionEvent e) {
-        getMainWindow().showHelpTopics(e);
+    public void showHelpTopics() {
+        getMainWindow().showHelpTopicsRoot();
     }
 
     public void updateLastActivityTime() {

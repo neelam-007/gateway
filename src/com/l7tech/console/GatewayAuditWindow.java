@@ -140,7 +140,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                  TopComponents.getInstance().showHelpTopics(e);
+                  TopComponents.getInstance().showHelpTopics();
               }
           });
 

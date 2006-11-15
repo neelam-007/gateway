@@ -246,7 +246,7 @@ public class Actions {
 
         Runnable r = new Runnable() {
             public void run() {
-                TopComponents.getInstance().showHelpTopics(ke);
+                TopComponents.getInstance().showHelpTopics();
             }
         };
         SwingUtilities.invokeLater(r);

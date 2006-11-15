@@ -9,17 +9,24 @@ import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.PreferencesChangedEvent;
 import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.HelpUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.swing.*;
 import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * Thick-client version of SsmApplication.
  */
 public class SsmApplicationHeavy extends SsmApplication implements ApplicationListener  {
     private final Logger log = Logger.getLogger(getClass().getName());
+
+    //the property name for the current applications home directory. If not set, this is defaulted to null by code
+    // that uses it
+    private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
+
     private static SsmApplication ssmApplication;
     private boolean running = false;
 
@@ -109,4 +116,12 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         mainWindow.validate();
     }
 
+    /**
+     * The "Help Topics".
+     * This procedure displays the WebHelp contents in the preferred browser for the system on which the SSM is running.
+     */
+    public void showHelpTopicsRoot() {
+        String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
+        HelpUtil.showHelpTopicsRoot(applicationHome, TopComponents.getInstance().getTopParent());
+    }
 }

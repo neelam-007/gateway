@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.*;
 
 /**
  * Utility code for launching web help.
@@ -38,7 +39,7 @@ public class HelpUtil {
      * @param parentComponent  parent component if an error dialog must be displayed, or null to use the default
      *                         frame (same as JOptionPane)
      */
-    public static void showHelpTopics(String homePath, JFrame parentComponent) {
+    public static void showHelpTopicsRoot(String homePath, Frame parentComponent) {
         String applicationHome = homePath;
         if (!applicationHome.endsWith("/")) applicationHome += "/";
         String helpPath =applicationHome + HELP_FILE_NAME;

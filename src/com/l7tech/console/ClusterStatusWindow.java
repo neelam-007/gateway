@@ -576,7 +576,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                                           KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),
             new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    TopComponents.getInstance().showHelpTopics(e);
+                    TopComponents.getInstance().showHelpTopics();
                 }
         });
 
