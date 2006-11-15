@@ -290,8 +290,9 @@ public class FileUtils {
     public static boolean deleteDir(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();
-            for (String aChildren : children) {
-                boolean success = deleteDir(new File(dir, aChildren));
+            for (int i = 0; i < children.length; i++) {
+                String child = children[i];
+                boolean success = deleteDir(new File(dir, child));
                 if (!success) {
                     return false;
                 }
