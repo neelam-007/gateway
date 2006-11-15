@@ -28,22 +28,23 @@ public class DBDumpUtil {
     public static void dump(String databaseURL, String databaseUser, String databasePasswd,
                             boolean includeAudit, String outputPath) throws SQLException, IOException {
 
-        // todo
-        // start with SET FOREIGN_KEY_CHECKS = 0;, end with SET FOREIGN_KEY_CHECKS = 1;,
-        // look at collectMetaInfo in dbactions to iterate through tables
-        // include drop table if exist and create table statments
-
+        // todo include drop table if exist and create table statments
         Connection c = DBActions.getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
-            throw new SQLException("could not connect using url: " + databaseURL + ". with username " + databaseUser + ", and password: " + databasePasswd);
+            throw new SQLException("could not connect using url: " + databaseURL +
+                                   ". with username " + databaseUser +
+                                   ", and password: " + databasePasswd);
         }
-
-        Statement showTablesStmt = c.createStatement();
-        ResultSet tablesList = showTablesStmt.executeQuery("show tables");
+        DatabaseMetaData metadata = c.getMetaData();
+        String[] tableTypes = {
+                "TABLE"
+        };
+        ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
         FileOutputStream fos = new FileOutputStream(outputPath);
         System.out.print("Dumping database to " + outputPath + " ..");
-        while (tablesList.next()) {
-            String tableName = tablesList.getString(1);
+        fos.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
+        while (tableNames.next()) {
+            String tableName = tableNames.getString("TABLE_NAME");
             if (tableName.equals("service_metrics")) continue;
             if (!includeAudit) {
                 if (tableName.startsWith("audit_")) continue;
@@ -65,18 +66,15 @@ public class DBDumpUtil {
                             insertStatementToRecord.append(tdataList.getLong(i));
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
-
                         case Types.INTEGER:
                         case Types.BIT:
                             insertStatementToRecord.append(tdataList.getInt(i));
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
-
                         case Types.DOUBLE:
                             insertStatementToRecord.append(tdataList.getDouble(i));
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
-
                         case Types.VARCHAR:
                         case Types.CHAR:
                         case Types.LONGVARCHAR: // medium text
@@ -93,7 +91,6 @@ public class DBDumpUtil {
                             }
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
-
                         default:
                             throw new RuntimeException("unhandled column type:" + colType);
                     }
@@ -103,15 +100,26 @@ public class DBDumpUtil {
             }
             tdataList.close();
         }
-        tablesList.close();
-        showTablesStmt.close();
         c.close();
+        fos.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
+        fos.close();
         System.out.println(". Done");
 
     }
 
     public static void main(String[] args) throws Exception {
-        dump("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8",
-             "gateway", "7layer", false, "/home/flascell/tmp/dumped.sql");
+        /*dump("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8",
+             "gateway", "7layer", false, "/home/flascell/tmp/dumped.sql");*/
+        Connection c = DBActions.getConnection("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8",
+                                               "gateway", "7layer");
+        DatabaseMetaData metadata = c.getMetaData();
+        String[] tableTypes = {
+                "TABLE"
+        };
+        ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
+        while (tableNames.next()) {
+            String tableName = tableNames.getString("TABLE_NAME");
+
+        }
     }
 }
