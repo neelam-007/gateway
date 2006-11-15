@@ -29,9 +29,10 @@ public class Exporter {
     // exporter options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to export");
     public static final CommandLineOption AUDIT = new CommandLineOption("-ia", "[yes | no] whether or not to include audit tables in resulting image");
-    public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition index to import to");
+    public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it", "path of the output mapping template");
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
+    public static final String DBDUMP_FILENAME = "dbdump.sql";
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -85,7 +86,7 @@ public class Exporter {
         String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
 
-        String dbDumpTempFile = tmpDirectory + File.separator + "dbdump.sql";
+        String dbDumpTempFile = tmpDirectory + File.separator + DBDUMP_FILENAME;
         // dump the database
         try {
             DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
@@ -155,7 +156,7 @@ public class Exporter {
         return true;
     }
 
-    private String createTmpDirectory() throws IOException {
+    public static String createTmpDirectory() throws IOException {
         File tmp = File.createTempFile("ssgflash", "tmp");
         tmp.delete();
         tmp.mkdir();
