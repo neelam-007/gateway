@@ -35,7 +35,6 @@ public class Exporter {
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
-        PartitionManager partitionManager = PartitionManager.getInstance();
         // check that we can write output at located asked for
         String outputpathval = arguments.get(IMAGE_PATH.name);
         if (outputpathval == null) {
@@ -55,6 +54,7 @@ public class Exporter {
         String partitionName = arguments.get(PARTITION.name);
 
         // check if the system has more than one partition on it
+        PartitionManager partitionManager = PartitionManager.getInstance();
         boolean multiplePartitionSystem = partitionManager.isPartitioned();
 
         if (multiplePartitionSystem) {

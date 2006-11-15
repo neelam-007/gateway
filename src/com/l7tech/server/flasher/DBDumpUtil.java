@@ -27,8 +27,6 @@ public class DBDumpUtil {
      */
     public static void dump(String databaseURL, String databaseUser, String databasePasswd,
                             boolean includeAudit, String outputPath) throws SQLException, IOException {
-
-        // todo include drop table if exist and create table statments
         Connection c = DBActions.getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
@@ -45,6 +43,14 @@ public class DBDumpUtil {
         fos.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         while (tableNames.next()) {
             String tableName = tableNames.getString("TABLE_NAME");
+            // drop and recreate table
+            fos.write(("DROP TABLE IF EXISTS \'" + tableName + "\';\n").getBytes());
+            Statement getCreateTablesStmt = c.createStatement();
+            ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
+            while (createTables.next()) {
+                String s = createTables.getString(2);
+                fos.write((s + ";\n").getBytes());
+            }
             if (tableName.equals("service_metrics")) continue;
             if (!includeAudit) {
                 if (tableName.startsWith("audit_")) continue;
@@ -104,6 +110,5 @@ public class DBDumpUtil {
         fos.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
         fos.close();
         System.out.println(". Done");
-
     }
 }
