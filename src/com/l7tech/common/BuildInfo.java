@@ -22,6 +22,7 @@ public class BuildInfo {
     private static final String BUILD_TIME = "TIME";  // ie, 153238
     private static final String BUILD_USER = "USER";  // ie, alex
     private static final String BUILD_MACHINE = "BUILDHOST"; // ie, locutus.l7tech.com
+    private static final String PRODUCT_VERSION_SUBMINOR = ""; // ie, 5
 
     public static String getLongBuildString() {
         StringBuffer string = new StringBuffer();
@@ -65,6 +66,11 @@ public class BuildInfo {
     /** @return the strict product minor version, ie "4". NOTE: Licenses bind to this. */
     public static String getProductVersionMinor() {
         return PRODUCT_VERSION_MINOR;
+    }
+
+    /** @return the strict product subminor version, ie "5" in 3.6.5 NOTE: Licenses DO NOT bind to this. */
+    public static String getProductVersionSubMinor() {
+        return PRODUCT_VERSION_SUBMINOR;
     }
 
     /** @return the strict product name, ie "Layer 7 SecureSpan Suite".  NOTE: Licenses bind to this. */
