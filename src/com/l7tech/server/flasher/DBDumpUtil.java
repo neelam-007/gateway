@@ -106,20 +106,4 @@ public class DBDumpUtil {
         System.out.println(". Done");
 
     }
-
-    public static void main(String[] args) throws Exception {
-        /*dump("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8",
-             "gateway", "7layer", false, "/home/flascell/tmp/dumped.sql");*/
-        Connection c = DBActions.getConnection("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8",
-                                               "gateway", "7layer");
-        DatabaseMetaData metadata = c.getMetaData();
-        String[] tableTypes = {
-                "TABLE"
-        };
-        ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
-        while (tableNames.next()) {
-            String tableName = tableNames.getString("TABLE_NAME");
-
-        }
-    }
 }
