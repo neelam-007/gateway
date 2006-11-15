@@ -1,6 +1,10 @@
 package com.l7tech.server.flasher;
 
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.util.FileUtils;
@@ -12,6 +16,10 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -38,6 +46,12 @@ public class Importer {
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MODE, PARTITION, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER};
 
     private String tempDirectory;
+    private String partitionName;
+    private boolean fullClone = false;
+    private String databaseURL;
+    private String databaseUser;
+    private String databasePasswd;
+    private DBActions dbActions;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -45,7 +59,6 @@ public class Importer {
         if (inputpathval == null) {
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know what to import");
         }
-        boolean fullClone = false;
         String mode = arguments.get(MODE.name);
         if (mode == null) {
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + MODE.name);
@@ -77,7 +90,7 @@ public class Importer {
                 }
             }
             // get target partition, make sure it already exists
-            String partitionName = arguments.get(PARTITION.name);
+            partitionName = arguments.get(PARTITION.name);
             // check if the system has more than one partition on it
             PartitionManager partitionManager = PartitionManager.getInstance();
             boolean multiplePartitionSystem = partitionManager.isPartitioned();
@@ -95,13 +108,90 @@ public class Importer {
             }
             if (partitionName == null) partitionName = "";
             // check that target db is not currently used by an SSG
-            
-            // todo
+
+            OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+            Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
+                SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                SsgDatabaseConfigBean.PROP_DB_URL,
+            });
+            databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
+            databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+            databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+
+            try {
+                String connectedNode = checkSSGConnectedToDatabase();
+                if (StringUtils.isNotEmpty(connectedNode)) {
+                    throw new IOException("A SecureSpan Gateway is currently running " +
+                                          "and connected to the database. Please shutdown " + connectedNode);
+                }
+            } catch (ClassNotFoundException e) {
+                throw new IOException("cannot get database driver" + e.getMessage());
+            } catch (SQLException e) {
+                throw new IOException("cannot connect to database" + e.getMessage());
+            }  catch (InterruptedException e) {
+                throw new IOException("interrupted!" + e.getMessage());
+            }
+
+
             // actually go on with the import
             // todo
         } finally {
             FileUtils.deleteDir(new File(tempDirectory));
         }
+    }
+
+    /**
+     * @return name of ssg node connected to database, null if nothing appears to be connected
+     */
+    private String checkSSGConnectedToDatabase() throws ClassNotFoundException, SQLException, InterruptedException {
+        System.out.print("Cheching if target is offline .");
+        Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
+        if (c == null) {
+            throw new SQLException("could not connect using url: " + databaseURL +
+                                   ". with username " + databaseUser +
+                                   ", and password: " + databasePasswd);
+        }
+        try {
+            Statement checkStatusStatement = c.createStatement();
+            try {
+                ResultSet statusTimeStampList = checkStatusStatement.executeQuery("select statustimestamp, name from cluster_info");
+                long longest = 0;
+                try {
+                    while (statusTimeStampList.next()) {
+                        long tmp = statusTimeStampList.getLong(1);
+                        if (tmp > longest) {
+                            longest = tmp;
+                        }
+                    }
+                } finally {
+                    statusTimeStampList.close();
+                }
+                // do this 11 times to make sure we're not alive
+                for (int i = 0; i < 11; i++) {
+                    Thread.sleep(500);
+                    statusTimeStampList = checkStatusStatement.executeQuery("select statustimestamp, name from cluster_info");
+                    try {
+                        while (statusTimeStampList.next()) {
+                            long tmp = statusTimeStampList.getLong(1);
+                            if (tmp > longest) {
+                                System.out.print(" ");
+                                return statusTimeStampList.getString(2);
+                            }
+                        }
+                    } finally {
+                        statusTimeStampList.close();
+                    }
+                    System.out.print(".");
+                }
+                System.out.println(" DONE");
+            } finally {
+                checkStatusStatement.close();
+            }
+        } finally {
+            c.close();
+        }
+        return null;
     }
 
     public void unzipToDir(String filename, String destinationpath) throws IOException {
@@ -134,5 +224,12 @@ public class Importer {
             zipentry = zipinputstream.getNextEntry();
         }
         zipinputstream.close();
+    }
+
+
+    private DBActions getDBActions() throws ClassNotFoundException {
+        if (dbActions == null)
+            dbActions = new DBActions();
+        return dbActions;
     }
 }

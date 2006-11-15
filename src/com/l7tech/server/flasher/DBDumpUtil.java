@@ -40,6 +40,7 @@ public class DBDumpUtil {
         };
         ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
         FileOutputStream fos = new FileOutputStream(outputPath);
+        // todo, produce parrallel dump for staging only which would include only staging content
         System.out.print("Dumping database to " + outputPath + " ..");
         fos.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         while (tableNames.next()) {
@@ -86,6 +87,7 @@ public class DBDumpUtil {
                         case Types.CHAR:
                         case Types.LONGVARCHAR: // medium text
                         case Types.LONGVARBINARY: // medium blob
+                            // todo, all necessary encoding
                             String tmp = tdataList.getString(i);
                             if (tmp != null) {
                                 tmp = tmp.replace("\"", "\\\"");

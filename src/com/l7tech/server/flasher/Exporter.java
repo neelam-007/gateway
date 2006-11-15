@@ -34,6 +34,9 @@ public class Exporter {
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
     public static final String DBDUMP_FILENAME = "dbdump.sql";
 
+    private boolean includeAudit = false;
+    private String tmpDirectory;
+
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
         // check that we can write output at located asked for
@@ -124,6 +127,7 @@ public class Exporter {
             File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
             File tomcatprops = new File(osFunctions.getTomcatServerConfig());
             File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
+            // todo, what else? what about actual keystores?
             FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
             if (clusterprops.exists()) {
                 FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
@@ -199,8 +203,5 @@ public class Exporter {
             out.closeEntry();
             in.close();
         }
-    }
-
-    private boolean includeAudit = false;
-    private String tmpDirectory;
+    }    
 }
