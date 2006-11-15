@@ -45,8 +45,17 @@ public class MappingUtil {
     private static final String GLOBALVARMAPPINGELNAME = "globalvarmapping";
     private static DBActions dbActions;
 
+    public static class CorrespondanceMap {
+        public HashMap<String, String> backendIPMapping = new HashMap<String, String>();
+        public HashMap<String, String> varMapping = new HashMap<String, String>();
+    }
+
     public static void applyMappingChangesToDB(String dburl, String dbuser, String dbpasswd,
-                                               String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
+                                               CorrespondanceMap mappingResults) {
+        // todo
+    }
+    
+    public static CorrespondanceMap loadMapping(String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
         // load mapping file, validate it and build two maps (one for backends, and one for global variables)
         FileInputStream fis = new FileInputStream(mappingFilePath);
         Document mappingDoc = XmlUtil.parse(fis);
@@ -57,8 +66,7 @@ public class MappingUtil {
         if (!simEl.getNamespaceURI().equals(STAGINGMAPPINGNS)) {
             throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
         }
-        HashMap<String, String> backendIPMapping = new HashMap<String, String>();
-        HashMap<String, String> varMapping = new HashMap<String, String>();
+        CorrespondanceMap output = new CorrespondanceMap();
         try {
             Element bimEl = XmlUtil.findOnlyOneChildElementByName(simEl, STAGINGMAPPINGNS, BACKENDIPMAPPINGELNAME);
             List ipmaplist = XmlUtil.findChildElementsByName(bimEl, STAGINGMAPPINGNS, IPMAPELNAME);
@@ -73,7 +81,7 @@ public class MappingUtil {
                 if (source == null || target == null) {
                     throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for ipmap element");
                 }
-                backendIPMapping.put(source, target);
+                output.backendIPMapping.put(source, target);
             }
             Element gvmEl = XmlUtil.findOnlyOneChildElementByName(simEl, STAGINGMAPPINGNS, GLOBALVARMAPPINGELNAME);
             List varmaplist = XmlUtil.findChildElementsByName(gvmEl, STAGINGMAPPINGNS, VARMAPELNAME);
@@ -84,14 +92,12 @@ public class MappingUtil {
                 if (name == null || target == null) {
                     throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for varmap element");
                 }
-                varMapping.put(name, target);
+                output.varMapping.put(name, target);
             }
         } catch (TooManyChildElementsException e) {
             throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file. " + e.getMessage());
         }
-
-        // todo, replace values, in target database, log whenever something is changed
-
+        return output;
     }
 
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,

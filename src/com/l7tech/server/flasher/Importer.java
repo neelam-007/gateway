@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 
 import org.apache.commons.lang.StringUtils;
+import org.xml.sax.SAXException;
 
 /**
  * The utility that imports an SSG image
@@ -52,6 +53,7 @@ public class Importer {
     private String databaseUser;
     private String databasePasswd;
     private DBActions dbActions;
+    private MappingUtil.CorrespondanceMap mapping = null;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -133,9 +135,25 @@ public class Importer {
                 throw new IOException("interrupted!" + e.getMessage());
             }
 
+            // load mapping if requested
+            String mappingPath = arguments.get(MAPPING_PATH.name);
+            if (mappingPath != null) {
+                System.out.print("Reading mapping file ..");
+                try {
+                    mapping = MappingUtil.loadMapping(mappingPath);
+                } catch (SAXException e) {
+                    throw new IOException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
+                }
+                System.out.println(". DONE");
+            }
 
             // actually go on with the import
             // todo
+
+            // apply mapping if applicable
+            if (mapping != null) {
+                MappingUtil.applyMappingChangesToDB(databaseURL, databaseUser, databasePasswd, mapping);
+            }
         } finally {
             FileUtils.deleteDir(new File(tempDirectory));
         }
@@ -145,7 +163,7 @@ public class Importer {
      * @return name of ssg node connected to database, null if nothing appears to be connected
      */
     private String checkSSGConnectedToDatabase() throws ClassNotFoundException, SQLException, InterruptedException {
-        System.out.print("Cheching if target is offline .");
+        System.out.print("Making sure target is offline .");
         Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
@@ -167,7 +185,8 @@ public class Importer {
                 } finally {
                     statusTimeStampList.close();
                 }
-                // do this 11 times to make sure we're not alive
+                // we're looping until we've gone beyond the status update frequency while stopping early if
+                // we find an update beforehand
                 for (int i = 0; i < 11; i++) {
                     Thread.sleep(500);
                     statusTimeStampList = checkStatusStatement.executeQuery("select statustimestamp, name from cluster_info");
