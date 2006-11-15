@@ -91,6 +91,8 @@ public class Exporter {
             DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
         } catch (SQLException e) {
             throw new IOException("cannot dump the database " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            throw new IOException("cannot dump the database " + e.getMessage());
         }
 
         // produce template mapping if necessary
@@ -107,6 +109,8 @@ public class Exporter {
                 throw new RuntimeException("problem producing template mapping file", e);
             } catch (SAXException e) {
                 // should not happen
+                throw new RuntimeException("problem producing template mapping file", e);
+            } catch (ClassNotFoundException e) {
                 throw new RuntimeException("problem producing template mapping file", e);
             }
         }

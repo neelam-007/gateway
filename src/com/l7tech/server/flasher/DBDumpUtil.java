@@ -2,9 +2,9 @@ package com.l7tech.server.flasher;
 
 import com.l7tech.server.config.db.DBActions;
 
-import java.sql.*;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.*;
 
 /**
  * Methods for dumping
@@ -16,6 +16,7 @@ import java.io.IOException;
  * Date: Nov 8, 2006<br/>ma
  */
 public class DBDumpUtil {
+    private static DBActions dbActions;
 
     /**
      * outputs a database dump
@@ -26,8 +27,8 @@ public class DBDumpUtil {
      * @param outputPath the path where the dump should go to
      */
     public static void dump(String databaseURL, String databaseUser, String databasePasswd,
-                            boolean includeAudit, String outputPath) throws SQLException, IOException {
-        Connection c = DBActions.getConnection(databaseURL, databaseUser, databasePasswd);
+                            boolean includeAudit, String outputPath) throws SQLException, IOException, ClassNotFoundException {
+        Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
@@ -110,5 +111,11 @@ public class DBDumpUtil {
         fos.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
         fos.close();
         System.out.println(". Done");
+    }
+
+    private static DBActions getDBActions() throws ClassNotFoundException {
+        if (dbActions == null)
+            dbActions = new DBActions();
+        return dbActions;
     }
 }

@@ -1,7 +1,8 @@
 package com.l7tech.server.config.db;
 
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.sql.*;
@@ -9,8 +10,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Various DB manipulaton and checking methods used by the configuration wizard. Can probably be made more generic to be
@@ -59,6 +58,7 @@ public class DBActions {
     private OSSpecificFunctions osFunctions;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
+        new DbVersion365Checker(),
         new DbVersion36Checker(),
         new DbVersion35Checker(),
         new DbVersion34Checker(),
@@ -67,142 +67,8 @@ public class DBActions {
     };
 
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
-
-    public static Connection getConnection(String dburl, String dbuser, String dbpasswd) throws SQLException {
-        try {
-            Class.forName(JDBC_DRIVER_NAME);
-        } catch (ClassNotFoundException e) {
-            // should not happen
-            throw new SQLException("driver not in classpath");
-        }
-
-        Properties props = new Properties();
-        props.put("user", dbuser);
-        props.put("password", dbpasswd);
-        return DriverManager.getConnection(dburl, props);
-    }
-
-    public static class DBActionsResult {
-        private int status = 0;
-        private String errorMessage = null;
-
-        public DBActionsResult() {
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public void setStatus(int status) {
-            this.status = status;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public void setErrorMessage(String errorMessage) {
-            this.errorMessage = errorMessage;
-        }
-    }
-
-    public class WrongDbVersionException extends Exception {
-        String dbVersionMessage = null;
-        private String dbVersion;
-
-        public WrongDbVersionException(String version, String versionMsg) {
-            setVersionInfo(version, versionMsg);
-        }
-
-        public WrongDbVersionException(String s, String version, String versionMsg) {
-            super(s);
-            setVersionInfo(version, versionMsg);
-        }
-
-        public WrongDbVersionException(String s, Throwable throwable, String version, String versionMsg) {
-            super(s, throwable);
-            setVersionInfo(version, versionMsg);
-        }
-
-        private void setVersionInfo(String version, String versionMsg) {
-            dbVersion = version;
-            dbVersionMessage = versionMsg;
-        }
-
-        public String getVersionMessage() {
-            return dbVersionMessage;
-        }
-
-        public String getVersionString() {
-            return dbVersion;
-        }
-    }
-
-    private class DBInformation {
-        private String hostname;
-        private String dbName;
-        private String username;
-        private String password;
-        private String privUsername;
-        private String privPassword;
-
-        public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
-            this.hostname = hostname;
-            this.dbName = dbName;
-            this.username = username;
-            this.password = password;
-            this.privUsername = privUsername;
-            this.privPassword = privPassword;
-        }
-
-        public String getHostname() {
-            return hostname;
-        }
-
-        public void setHostname(String hostname) {
-            this.hostname = hostname;
-        }
-
-        public String getDbName() {
-            return dbName;
-        }
-
-        public void setDbName(String dbName) {
-            this.dbName = dbName;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getPrivUsername() {
-            return privUsername;
-        }
-
-        public void setPrivUsername(String privUsername) {
-            this.privUsername = privUsername;
-        }
-
-        public String getPrivPassword() {
-            return privPassword;
-        }
-
-        public void setPrivPassword(String privPassword) {
-            this.privPassword = privPassword;
-        }
-    }
+    private static final String PROP_HIBERNATE_DRIVER_CLASS = "hibernate.connection.driver_class";
+    private static final Object DEFAULT_DB_DRIVER_PROP = "DB_DRIVER";
 
     //
     // CONSTRUCTOR
@@ -215,6 +81,21 @@ public class DBActions {
     //
     // PUBLIC METHODS
     //
+
+    /**
+     * Retrieve a database connection to the given database. This connection will need to be closed by the caller to
+     * avoid resource leaks
+     * @param dburl a URL of the form jdbc:dbtype://host/dbname where dbtype is the name of the db driver/vendor
+     * (in our case it's mysql)
+     * @param dbuser the user to connect with
+     * @param dbpasswd the password for the db user. Not null, pass "" for no password
+     * @return an established connection to the DB specified in dburl. Caller is responsible for closing and
+     * maintinaining this connection
+     * @throws SQLException if there was an exception while connecting to the DB
+     */
+    public Connection getConnection(String dburl, String dbuser, String dbpasswd) throws SQLException {
+        return DriverManager.getConnection(dburl, dbuser, dbpasswd);
+    }
 
     public String checkDbVersion(String hostname, String dbName, String username, String password) {
         Connection conn = null;
@@ -520,9 +401,7 @@ public class DBActions {
 //
 
     private Connection getConnection(String hostname, String dbName, String username, String password) throws SQLException {
-        Connection conn;
-        conn = DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
-        return conn;
+        return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
     }
 
     private void dropDatabase(Statement stmt, String dbName, boolean isInfo) throws SQLException {
@@ -575,11 +454,37 @@ public class DBActions {
     }
 
     private void init() throws ClassNotFoundException {
-        Class.forName(JDBC_DRIVER_NAME);
-        ssgDbChecker = new CheckSSGDatabase();
         osFunctions = OSDetector.getOSSpecificFunctions();
+        initDriver();
+        
+        ssgDbChecker = new CheckSSGDatabase();
         //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
-        Arrays.sort(dbCheckers, Collections.reverseOrder());
+        Arrays.sort(dbCheckers, Collections.reverseOrder());    
+    }
+
+    private void initDriver() throws ClassNotFoundException {
+        Properties dbProps = new Properties();
+        InputStream is = null;
+        try {
+            is = new FileInputStream(osFunctions.getDatabaseConfig());
+            dbProps.load(is);
+        } catch (IOException e) {
+            throw new RuntimeException("could not load the database configuration file: " + e.getMessage());
+        } finally {
+            if (is != null)
+                try {
+                    is.close();
+                } catch (IOException e) {}
+        }
+
+        String driverName = dbProps.getProperty(PROP_HIBERNATE_DRIVER_CLASS);
+        if (StringUtils.isEmpty(driverName))
+            throw new RuntimeException("Could not determine database driver name ");
+        if (driverName.equals(DEFAULT_DB_DRIVER_PROP))
+            throw new RuntimeException("Could not determine database driver name [found " + DEFAULT_DB_DRIVER_PROP + "]");
+
+        //instantiate the driver class
+        Class.forName(JDBC_DRIVER_NAME);
     }
 
     private Set<String> getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
@@ -880,5 +785,126 @@ public class DBActions {
 
     }
 
+    public class WrongDbVersionException extends Exception {
+        String dbVersionMessage = null;
+        private String dbVersion;
+
+        public WrongDbVersionException(String version, String versionMsg) {
+            setVersionInfo(version, versionMsg);
+        }
+
+        public WrongDbVersionException(String s, String version, String versionMsg) {
+            super(s);
+            setVersionInfo(version, versionMsg);
+        }
+
+        public WrongDbVersionException(String s, Throwable throwable, String version, String versionMsg) {
+            super(s, throwable);
+            setVersionInfo(version, versionMsg);
+        }
+
+        private void setVersionInfo(String version, String versionMsg) {
+            dbVersion = version;
+            dbVersionMessage = versionMsg;
+        }
+
+        public String getVersionMessage() {
+            return dbVersionMessage;
+        }
+
+        public String getVersionString() {
+            return dbVersion;
+        }
+    }
+
+    public static class DBActionsResult {
+        private int status = 0;
+        private String errorMessage = null;
+
+        public DBActionsResult() {
+        }
+
+        public int getStatus() {
+            return status;
+        }
+
+        public void setStatus(int status) {
+            this.status = status;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+
+        public void setErrorMessage(String errorMessage) {
+            this.errorMessage = errorMessage;
+        }
+    }
+    
+    private class DBInformation {
+        private String hostname;
+        private String dbName;
+        private String username;
+        private String password;
+        private String privUsername;
+        private String privPassword;
+
+        public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
+            this.hostname = hostname;
+            this.dbName = dbName;
+            this.username = username;
+            this.password = password;
+            this.privUsername = privUsername;
+            this.privPassword = privPassword;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public String getDbName() {
+            return dbName;
+        }
+
+        public void setDbName(String dbName) {
+            this.dbName = dbName;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        public String getPrivUsername() {
+            return privUsername;
+        }
+
+        public void setPrivUsername(String privUsername) {
+            this.privUsername = privUsername;
+        }
+
+        public String getPrivPassword() {
+            return privPassword;
+        }
+
+        public void setPrivPassword(String privPassword) {
+            this.privPassword = privPassword;
+        }
+    }
 
 }

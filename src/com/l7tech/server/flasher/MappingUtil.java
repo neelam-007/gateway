@@ -3,20 +3,24 @@ package com.l7tech.server.flasher;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.server.config.db.DBActions;
-
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
 import org.w3c.dom.Comment;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Methods facilitating the mapping of ip addresses between staging SSG instances.
@@ -39,6 +43,7 @@ public class MappingUtil {
     private static final String TARGETVALUEATTRNAME = "targetvalue";
     private static final String VARMAPELNAME = "varmap";
     private static final String GLOBALVARMAPPINGELNAME = "globalvarmapping";
+    private static DBActions dbActions;
 
     public static void applyMappingChangesToDB(String dburl, String dbuser, String dbpasswd,
                                                String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
@@ -90,9 +95,9 @@ public class MappingUtil {
     }
 
     public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
-                                                                        String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
+                                                                        String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException, ClassNotFoundException {
 
-        Connection c = DBActions.getConnection(dburl, dbuser, dbpasswd);
+        Connection c = getDbActions().getConnection(dburl, dbuser, dbpasswd);
 
         if (c == null) {
             throw new SQLException("could not connect using url: " + dburl + ". with username " + dbuser + ", and password: " + dbpasswd);
@@ -170,6 +175,11 @@ public class MappingUtil {
         fos.write(XmlUtil.nodeToFormattedString(outputdoc).getBytes());
         System.out.println(". Done");
         fos.close();
+    }
+
+    private static DBActions getDbActions() throws ClassNotFoundException {
+        if (dbActions == null) dbActions = new DBActions();
+        return dbActions;
     }
 
     private static List<Element> getRoutingAssertionElementsFromPolicy(Document policyxml) {
