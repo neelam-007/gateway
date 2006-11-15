@@ -97,7 +97,12 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             UserTransaction tx = null;
             try {
                 tx = new DummyUserTransaction(dummyTransactionManager);
-                tx.begin();
+                try {
+                    tx.begin();
+                } catch (Exception e) {
+                    tx = null;
+                    throw e;
+                }
                 Set names = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
                 if (names != null) {
                     List toBeRemoved = new ArrayList(names.size()/2);
@@ -179,7 +184,12 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         try {
             // load old message ids from database
             tx = new DummyUserTransaction(dummyTransactionManager);
-            tx.begin();
+            try {
+                tx.begin();
+            } catch (Exception e) {
+                tx = null;
+                throw e;
+            }
             conn = session.connection();
             ps = conn.prepareStatement("SELECT messageid, expires FROM message_id");
             rs = ps.executeQuery();
@@ -249,7 +259,12 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             Map toSave = new HashMap();
             {
                 tx = new DummyUserTransaction(dummyTransactionManager);
-                tx.begin();
+                try {
+                    tx.begin();
+                } catch (Exception e) {
+                    tx = null;
+                    throw e;
+                }
                 final Set ids = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
                 if (ids == null) return;
                 for (Iterator i = ids.iterator(); i.hasNext();) {
@@ -288,7 +303,12 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
 
             // Flip expiry sign to avoid saving the same record again
             tx = new DummyUserTransaction(dummyTransactionManager);
-            tx.begin();
+            try {
+                tx.begin();
+            } catch (Exception e) {
+                tx = null;
+                throw e;
+            }
 
             for (Iterator i = saved.entrySet().iterator(); i.hasNext();) {
                 Map.Entry entry = (Map.Entry)i.next();
@@ -336,7 +356,12 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         UserTransaction tx = null;
         try {
             tx = new DummyUserTransaction(dummyTransactionManager);
-            tx.begin();
+            try {
+                tx.begin();
+            } catch (Exception e) {
+                tx = null;
+                throw e;
+            }
             Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(), EXPIRES_ATTR);
             if (expires == null) {
                 tree.put(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(),
