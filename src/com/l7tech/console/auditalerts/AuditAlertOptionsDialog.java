@@ -10,7 +10,6 @@ import java.util.logging.Level;
 
 public class AuditAlertOptionsDialog extends JDialog {
 
-    private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
     private JCheckBox enableAuditAlerts;
@@ -25,7 +24,7 @@ public class AuditAlertOptionsDialog extends JDialog {
     public AuditAlertOptionsDialog(Frame owner) {
         super(owner, true);
         configBean = new AuditAlertConfigBean(TopComponents.getInstance().getPreferences());
-        setContentPane(contentPane);
+        setContentPane(mainPanel);
         getRootPane().setDefaultButton(buttonOK);
 
         initComponents();
@@ -90,7 +89,7 @@ public class AuditAlertOptionsDialog extends JDialog {
         });
 
         // call onCancel() on ESCAPE
-        contentPane.registerKeyboardAction(new ActionListener() {
+        mainPanel.registerKeyboardAction(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
