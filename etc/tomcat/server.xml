@@ -11,14 +11,23 @@
                connectionTimeout="20000" disableUploadTimeout="true" 
                socketFactory="com.l7tech.server.tomcat.SsgServerSocketFactory"/>
 
-    <!-- Define a SSL HTTP/1.1 Connector on port 8443 -->
-    <Connector port="8443" 
-               maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
-               enableLookups="false" disableUploadTimeout="true"
-               acceptCount="100" scheme="https" secure="true"
-               clientAuth="want" sslProtocol="TLS" keystoreFile="/ssg/etc/keys/ssl.ks" 
-               keystorePass="blahblah" keystoreType="PKCS12"
-               SSLImplementation="com.l7tech.server.tomcat.SsgSSLImplementation"/>
+      <!-- Define a SSL HTTP/1.1 Connector on port 8443 -->
+      <Connector port="8443"
+                 maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
+                 enableLookups="false" disableUploadTimeout="true"
+                 acceptCount="100" scheme="https" secure="true"
+                 clientAuth="want" sslProtocol="TLS" keystoreFile="/ssg/etc/keys/ssl.ks"
+                 keystorePass="blahblah" keystoreType="PKCS12"
+                 SSLImplementation="com.l7tech.server.tomcat.SsgSSLImplementation"/>
+
+      <!-- Define a "no client cert challenges" SSL HTTP/1.1 Connector on port 9443 -->
+      <Connector port="9443"
+                 maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
+                 enableLookups="false" disableUploadTimeout="true"
+                 acceptCount="100" scheme="https" secure="true"
+                 clientAuth="false" sslProtocol="TLS" keystoreFile="/ssg/etc/keys/ssl.ks"
+                 keystorePass="blahblah" keystoreType="PKCS12"
+                 SSLImplementation="com.l7tech.server.tomcat.SsgSSLImplementation"/>
 
     <!-- Define the top level container in our container hierarchy -->
     <Engine name="Catalina" defaultHost="localhost">
