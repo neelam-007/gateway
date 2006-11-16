@@ -30,6 +30,8 @@ import java.util.logging.Level;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * To display audit records.
@@ -452,9 +454,17 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
      */
     private void saveMenuEventHandler() {
         // File requestor
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
         final JFileChooser fc = SsmApplication.createJFileChooser();
         if (fc == null) return;
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            public Object run() {
+                doSave(fc);
+                return null;
+            }
+        });
+    }
+
+    private void doSave(final JFileChooser fc) {
         fc.setDialogTitle("Save audit data as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {
@@ -465,7 +475,8 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
                 return "(*.ssga) SecureSpan Gateway Audit data file.";
             }
         };
-        final String suggestedName = "SecureSpanGateway_Audit_" +sdf.format(new Date()) + ".ssga";
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+        final String suggestedName = "SecureSpanGateway_Audit_" + sdf.format(new Date()) + ".ssga";
         fc.setSelectedFile(new File(suggestedName));
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
