@@ -125,10 +125,12 @@ public class Exporter {
             File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
             File tomcatprops = new File(osFunctions.getTomcatServerConfig());
             File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
-            File caCer = new File(osFunctions.getKeystoreDir() + File.separator + "ca.cer");
-            File sslCer = new File(osFunctions.getKeystoreDir() + File.separator + "ssl.cer");
-            File caKS = new File(osFunctions.getKeystoreDir() + File.separator + "ca.ks");
-            File sslKS = new File(osFunctions.getKeystoreDir() + File.separator + "ssl.ks");
+            //String ksdir = osFunctions.getKeystoreDir();
+            String ksdir = "/ssg/etc/keys"; // todo, go back to above once partitioning is fully implemented
+            File caCer = new File(ksdir + File.separator + "ca.cer");
+            File sslCer = new File(ksdir + File.separator + "ssl.cer");
+            File caKS = new File(ksdir + File.separator + "ca.ks");
+            File sslKS = new File(ksdir + File.separator + "ssl.ks");
             FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
             if (clusterprops.exists()) {
                 FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
@@ -139,11 +141,10 @@ public class Exporter {
             FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
             FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
             FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
-            // todo, go back and re-enable once this is fixed
-            // FileUtils.copyFile(caCer, new File(tmpDirectory + File.separator + caCer.getName()));
-            // FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
-            // FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
-            // FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
+            FileUtils.copyFile(caCer, new File(tmpDirectory + File.separator + caCer.getName()));
+            FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
+            FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
+            FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
         }
 
         // zip the temp directory into the requested image file (outputpathval)

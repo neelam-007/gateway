@@ -54,6 +54,7 @@ public class Importer {
     private String databasePasswd;
     private DBActions dbActions;
     private MappingUtil.CorrespondanceMap mapping = null;
+    private String licenseValueBeforeImport = null;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -148,15 +149,77 @@ public class Importer {
             }
 
             // actually go on with the import
-            // todo, choose which dump to use depending on mode
-            // todo, if applicable, copy all config files to the right place
+            try {
+                saveExistingLicense();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("cannot save existing license from database " + e.getMessage());
+            } catch (SQLException e) {
+                throw new IOException("cannot save existing license from database " + e.getMessage());
+            }
+            // load database dump
+            loadDumpFromExplodedImage();
+
+            // if applicable, copy all config files to the right place
+            if (fullClone) {
+                copySystemConfigFiles();
+            }
 
             // apply mapping if applicable
             if (mapping != null) {
                 MappingUtil.applyMappingChangesToDB(databaseURL, databaseUser, databasePasswd, mapping);
             }
+
+            // reload license if applicable
+            reloadLicense();
+
         } finally {
             FileUtils.deleteDir(new File(tempDirectory));
+        }
+    }
+
+    private void reloadLicense() {
+        // todo
+    }
+
+    private void loadDumpFromExplodedImage() {
+        String dumpFilePath;
+        if (fullClone) {
+            dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE;
+        } else {
+            dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING;
+        }
+        System.out.println("TODO load dump from " + dumpFilePath);
+        // todo
+    }
+
+    private void copySystemConfigFiles() {
+        // todo
+    }
+
+    private void saveExistingLicense() throws ClassNotFoundException, SQLException {
+        Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
+        if (c == null) {
+            throw new SQLException("could not connect using url: " + databaseURL +
+                                   ". with username " + databaseUser +
+                                   ", and password: " + databasePasswd);
+        }
+        try {
+            Statement selectlicense = c.createStatement();
+            ResultSet maybeLicenseRS = selectlicense.executeQuery("select propvalue from cluster_properties where propkey=\'license\'");
+            try {
+                while (maybeLicenseRS.next()) {
+                    String maybeLicense = maybeLicenseRS.getString(1);
+                    if (StringUtils.isNotEmpty(maybeLicense)) {
+                        licenseValueBeforeImport = maybeLicense;
+                        break;
+                    }
+                }
+            } finally {
+                maybeLicenseRS.close();
+                selectlicense.close();
+            }
+        } finally {
+            c.close();
         }
     }
 
@@ -216,7 +279,7 @@ public class Importer {
 
     public void unzipToDir(String filename, String destinationpath) throws IOException {
         byte[] buf = new byte[1024];
-        ZipInputStream zipinputstream = null;
+        ZipInputStream zipinputstream;
         ZipEntry zipentry;
         zipinputstream = new ZipInputStream(new FileInputStream(filename));
         zipentry = zipinputstream.getNextEntry();
