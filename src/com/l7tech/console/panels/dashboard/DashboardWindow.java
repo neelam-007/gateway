@@ -48,11 +48,11 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private static final int hourlyChartRange = 60 * 60 * 60 * 1000; // 60 hours
     private static final long dailyChartRange = 60 * 24 * 60 * 60 * 1000L; // 60 days
 
-    static final Range FINE = new Range(MetricsBin.RES_FINE, fineChartRange, 5 * 1000, resources.getString("resolutionCombo.fineValue"), resources.getString("rightPanel.fineTitle"));
-    static final Range HOURLY = new Range(MetricsBin.RES_HOURLY, hourlyChartRange, 60 * 60 * 1000, resources.getString("resolutionCombo.hourlyValue"), resources.getString("rightPanel.hourlyTitle"));
-    static final Range DAILY = new Range(MetricsBin.RES_DAILY, dailyChartRange, 24 * 60 * 60 * 1000, resources.getString("resolutionCombo.dailyValue"), resources.getString("rightPanel.dailyTitle"));
+    private final Range FINE = new Range(MetricsBin.RES_FINE, fineChartRange, 5 * 1000, resources.getString("resolutionCombo.fineValue"), resources.getString("rightPanel.fineTitle"), this);
+    private final Range HOURLY = new Range(MetricsBin.RES_HOURLY, hourlyChartRange, 60 * 60 * 1000, resources.getString("resolutionCombo.hourlyValue"), resources.getString("rightPanel.hourlyTitle"), this);
+    private final Range DAILY = new Range(MetricsBin.RES_DAILY, dailyChartRange, 24 * 60 * 60 * 1000, resources.getString("resolutionCombo.dailyValue"), resources.getString("rightPanel.dailyTitle"), this);
 
-    private static final Range[] ALL_RANGES = {FINE, HOURLY, DAILY};
+    private final Range[] ALL_RANGES = {FINE, HOURLY, DAILY};
 
     private Range currentRange = FINE;
 
@@ -231,6 +231,20 @@ public class DashboardWindow extends JFrame implements LogonListener {
         refreshTimer.start();
     }
 
+    public ClusterNodeInfo getClusterNodeSelected() {
+        ClusterNodeInfo result = (ClusterNodeInfo)nodeComboModel.getSelectedItem();
+        if (result == ALL_NODES)
+            result = null;
+        return result;
+    }
+
+    public EntityHeader getPublishedServiceSelected() {
+        EntityHeader result = (EntityHeader)serviceComboModel.getSelectedItem();
+        if (result == ALL_SERVICES)
+            result = null;
+        return result;
+    }
+
     public void onLogon(LogonEvent e) {
         clusterStatusAdmin = null;
         serviceAdmin = null;
@@ -259,7 +273,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
         if (vis) {
             refreshTimer.start();
             currentRange.getMetricsChartPanel().restoreAutoRange(); // In case chart was zoomed in when closed.
-            currentRange.getMetricsChartPanel().resume();           // In case chart was suspended when closed.
+            currentRange.getMetricsChartPanel().resumeUpdate();     // In case chart was suspended when closed.
         } else {
             refreshTimer.stop();
 
@@ -433,8 +447,10 @@ public class DashboardWindow extends JFrame implements LogonListener {
                                                               new Integer(range.getResolution()),
                                                               null);
         }
-        if (newBins.size() > 0)
-            logger.info("Found " + newBins.size() + " MetricsBins for range " + range.toString());
+        if (newBins.size() > 0) {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("Found " + newBins.size() + " MetricsBins for range " + range.toString());
+        }
 
         // Add new bins to allPeriods etc.
         for (Iterator i = newBins.iterator(); i.hasNext();) {

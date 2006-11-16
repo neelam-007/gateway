@@ -104,6 +104,10 @@ public class LogPanel extends JPanel {
     private JPanel selectPane;
     private JPanel filterPane;
     private JLabel filterLabel;
+    private final JTextField filterMessageTextField = new JTextField(16);
+    private final JTextField filterNodeTextField = new JTextField(16);
+    private final JTextField filterServiceTextField = new JTextField(16);
+    private final JTextField filterThreadIdTextField = new JTextField(16);
     private JScrollPane msgTablePane;
     private JPanel statusPane;
     private JTable msgTable;
@@ -857,7 +861,7 @@ public class LogPanel extends JPanel {
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterNode(((JTextField)e.getSource()).getText());
                     }
-                });
+                }, filterNodeTextField);
     }
 
     private JPanel getFilterServicePane() {
@@ -866,7 +870,7 @@ public class LogPanel extends JPanel {
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterService(((JTextField)e.getSource()).getText());
                     }
-                });
+                }, filterServiceTextField);
     }
 
     private JPanel getFilterThreadPane() {
@@ -875,7 +879,7 @@ public class LogPanel extends JPanel {
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterThreadId(((JTextField)e.getSource()).getText());
                     }
-                });
+                }, filterThreadIdTextField);
     }
 
     private JPanel getFilterMessagePane() {
@@ -884,13 +888,12 @@ public class LogPanel extends JPanel {
                     public void textValueChanged(TextEvent e) {
                         updateMsgFilterMessage(((JTextField)e.getSource()).getText());
                     }
-                });
+                }, filterMessageTextField);
     }
 
-    private JPanel buildFilterPane(String labelText, final TextListener listener) {
+    private JPanel buildFilterPane(String labelText, final TextListener listener, final JTextField textField) {
         JPanel filterPane = new JPanel();
 
-        final JTextField textField = new JTextField(16);
         textField.setFont(new java.awt.Font("Dialog", 0, 11));
         textField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
             public void run() {
@@ -1301,6 +1304,54 @@ public class LogPanel extends JPanel {
             flts.clearLogCache();
             flts.refreshLogs(this, first, last, nodeId);
         }
+    }
+
+    /**
+     * Displays the given log messages. Old display is cleared first.
+     *
+     * @param logs      log messages to load; as a map of gateway node ID and
+     *                  corresponding collection of {@link LogMessage}s
+     */
+    public void setLogs(Map<String, Collection<LogMessage>> logs) {
+        clearLogCache();
+        getFilteredLogTableSorter().setLogs(this, logs);
+        getLastUpdateTimeLabel().setVisible(false);    // It's not applicable in static view.
+    }
+
+    /**
+     * Changes the message filter value.
+     * @param message  message text
+     */
+    public void setMsgFilterMessage(String message) {
+        filterMessageTextField.setText(message);
+        updateMsgFilterMessage(message);
+    }
+
+    /**
+     * Changes the gateway node filter value.
+     * @param nodeName  gateway node name
+     */
+    public void setMsgFilterNode(String nodeName) {
+        filterNodeTextField.setText(nodeName);
+        updateMsgFilterNode(nodeName);
+    }
+
+    /**
+     * Changes the published service filter value.
+     * @param serviceName   name of published service
+     */
+    public void setMsgFilterService(String serviceName) {
+        filterServiceTextField.setText(serviceName);
+        updateMsgFilterService(serviceName);
+    }
+
+    /**
+     * Changes the thread ID filter value.
+     * @param threadId  thread ID
+     */
+    public void setMsgFilterThreadId(String threadId) {
+        filterThreadIdTextField.setText(threadId);
+        updateMsgFilterThreadId(threadId);
     }
 
     /**

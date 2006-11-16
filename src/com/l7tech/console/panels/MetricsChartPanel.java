@@ -1,19 +1,26 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.jfree.*;
+import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.audit.AuditRecord;
+import com.l7tech.common.audit.AuditSearchCriteria;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.jfree.*;
+import com.l7tech.console.GatewayAuditWindow;
+import com.l7tech.console.panels.dashboard.DashboardWindow;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.cluster.ClusterNodeInfo;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.annotations.XYBoxAnnotation;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.event.AxisChangeEvent;
 import org.jfree.chart.event.AxisChangeListener;
 import org.jfree.chart.labels.XYToolTipGenerator;
-import org.jfree.chart.plot.CombinedDomainXYPlot;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.SeriesRenderingOrder;
-import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.plot.*;
 import org.jfree.chart.renderer.xy.StackedXYBarRenderer;
 import org.jfree.data.Range;
 import org.jfree.data.RangeType;
@@ -22,14 +29,18 @@ import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
 import org.jfree.data.xy.XYDataset;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
+import java.rmi.RemoteException;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-import java.rmi.RemoteException;
+import java.util.logging.Logger;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -44,6 +55,8 @@ import java.rmi.RemoteException;
  * @author rmak
  */
 public class MetricsChartPanel extends ChartPanel {
+    private static final Logger _logger = Logger.getLogger(MetricsChartPanel.class.getName());
+
     private static final ResourceBundle _resources = ResourceBundle.getBundle("com.l7tech.console.resources.MetricsChartPanel");
 
     /** Color for the horizontal line representing average frontend response times. */
@@ -74,8 +87,8 @@ public class MetricsChartPanel extends ChartPanel {
 
     /**
      * Background color of the indicator plot. Chosen to enhance visibility of
-     * the alert indicator colors ({@link MetricsChartPanel#POLICY_VIOLATION_COLOR POLICY_VIOLATION_COLOR} and
-     * {@link  MetricsChartPanel#ROUTING_FAILURE_COLOR ROUTING_FAILURE_COLOR}).
+     * the alert indicator colors ({@link #POLICY_VIOLATION_COLOR} and
+     * {@link #ROUTING_FAILURE_COLOR}).
      */
     private static final Color INDICATOR_PLOT_BACKCOLOR = new Color(128, 128, 128);
 
@@ -121,13 +134,28 @@ public class MetricsChartPanel extends ChartPanel {
      */
     private static final String SERIES_BACKEND_RESPONSE = _resources.getString("seriesBackend");
 
+    /** Name prefix for the pop-up context menu item to show audits. */
+    private static final String SHOW_AUDITS_ITEM_NAME = _resources.getString("showAuditsItemName");
+
+    /** Unique identifier for the pop-up context menu item to show audits. */
+    private static final String SHOW_AUDITS_COMMAND = "SHOW AUDITS COMMAND";
+
+    /** Title prefix for our custom GatewayAuditWindow ({@link #_gatewayAuditWindow}). */
+    private static final String GATEWAY_AUDIT_WINDOW_TITLE = _resources.getString("gatewayAuditWindowTitle");
+
+    /** Metrics bin resolution. */
+    final int _resolution;
+
     /** Nominal bin interval (in milliseconds). */
     private final long _binInterval;
 
     /** Maximum time range of data to keep around (in milliseconds). */
     private long _maxTimeRange;
 
-    /** Time zone for the time axis. */
+    /** The Dashboard window containing this panel. */
+    private final DashboardWindow _dashboardWindow;
+
+    /** Time zone for displaying time values. */
     private TimeZone _timeZone;
 
     /**
@@ -163,19 +191,39 @@ public class MetricsChartPanel extends ChartPanel {
     private DateAxis _xAxis;
 
     /** Y-axis for the response time plot. */
-    private final NumberAxis _rYAxis;
+    private final NumberAxis _responsesYAxis;
 
     /** Y-axis for the message rate plot. */
-    private final NumberAxis _mYAxis;
+    private final NumberAxis _ratesYAxis;
 
-    /** Chart containing all plots with shared time axis. */
+    /** Combined plot with shared time axis; containing response times, alert
+        indicator, and message rates subplots. */
+    private final CombinedDomainXYPlot _combinedPlot;
+
+    /** Chart containing the combined plot. */
     private JFreeChart _chart;
 
-    /** Holding area for metrics bins waiting to be added; when {@link MetricsChartPanel#_suspended _suspended} is true. */
+    /** Pop-up context menu. */
+    private final JPopupMenu _popup;
+
+    /** Pop-up context menu item to display audits for selected a metrics bin. */
+    private final JMenuItem _showAuditsItem;
+
+    /** Start date of metrics bin selected to show audits. */
+    private Date _showAuditsStartDate;
+
+    /** End date of metrics bin selected to show audits. */
+    private Date _showAuditsEndDate;
+
+    /** Our custom GatewayAuditWindow to display audits for a selected metrics bin.
+        Declared static for singleton; to prevent an explosion of such windows. */
+    private static GatewayAuditWindow _gatewayAuditWindow;
+
+    /** Holding area for metrics bins waiting to be added; when {@link #_updateSuspended} is true. */
     private final SortedSet _binsToAdd = new TreeSet();
 
-    /** Indicates if chart data updating is suspended. */
-    private boolean _suspended = false;
+    /** Indicates if chart data updating is currently suspended. */
+    private boolean _updateSuspended = false;
 
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
@@ -275,12 +323,49 @@ public class MetricsChartPanel extends ChartPanel {
      * This is used for matching the response time min-max bar color to the right
      * panel icon legend color. It is neccessary because the min-max bar uses
      * transparency while the icon legend is designed with opaque color.
+     *
+     * @param r0    red component of opague color
+     * @param g0    green component of opague color
+     * @param b0    blue component of opague color
+     * @param a     alpha component of transparent color
+     *
+     * @return a transparent color
      */
     private static Color GetAlphaEquiv(int r0, int g0, int b0, int a) {
         final int r = Math.round(Math.max(0.f, (r0 + a - 255) * 255.f / a));
         final int g = Math.round(Math.max(0.f, (g0 + a - 255) * 255.f / a));
         final int b = Math.round(Math.max(0.f, (b0 + a - 255) * 255.f / a));
         return new Color(r, g, b, a);
+    }
+
+    /**
+     * Composes a human friendly text string for a given time range.
+     *
+     * @param start     start time
+     * @param end       end time
+     * @param tz        time zone
+     * @return text string of the form
+     *         yyyy-MM-dd HH:mm:ss - yyyy-MM-dd HH:mm:ss XXX if spanning more than one calendar date,
+     *         yyyy-MM-dd HH:mm:ss - HH:mm:ss XXX if within one calendar date;
+     *         where XXX is the time zone short name
+     */
+    private static String timeRangeAsString(final Date start, final Date end, final TimeZone tz) {
+        final StringBuilder sb = new StringBuilder();
+        final SimpleDateFormat YMD_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+        final SimpleDateFormat HMS_FORMAT = new SimpleDateFormat("HH:mm:ss");
+        YMD_FORMAT.setTimeZone(tz);
+        HMS_FORMAT.setTimeZone(tz);
+        final String fromYMD = YMD_FORMAT.format(start);
+        final String toYMD = YMD_FORMAT.format(end);
+        sb.append(fromYMD);
+        sb.append(" ");
+        sb.append(HMS_FORMAT.format(start));
+        sb.append(" \u2013 ");  // en-dash
+        if (! fromYMD.equals(toYMD)) sb.append(toYMD);
+        sb.append(HMS_FORMAT.format(end));
+        sb.append(" ");
+        sb.append(tz.getDisplayName(tz.inDaylightTime(start), TimeZone.SHORT));
+        return sb.toString();
     }
 
     /**
@@ -301,18 +386,18 @@ public class MetricsChartPanel extends ChartPanel {
         final Range displayedRange = _xAxis.getRange();
 
         // Response times plot.
-        double maxTime = 0.;
+        double maxResponse = 0.;
         for (int i = 0; i < _frontendResponseTimes.getItemCount(); ++ i) {
             TimePeriodValueWithHighLow value = (TimePeriodValueWithHighLow) _frontendResponseTimes.getDataItem(i);
             if (value.getPeriod().getEnd().getTime() >= displayedRange.getLowerBound() &&
                     value.getPeriod().getStart().getTime() <= displayedRange.getUpperBound())
             {
-                maxTime = Math.max(maxTime, value.getHighValue().doubleValue());
+                maxResponse = Math.max(maxResponse, value.getHighValue().doubleValue());
             }
         }
-        maxTime *= 1. + _rYAxis.getUpperMargin();
-        final double yMaxTime = Math.max(maxTime, _rYAxis.getAutoRangeMinimumSize());
-        _rYAxis.setRange(new Range(0, yMaxTime));
+        maxResponse *= 1. + _responsesYAxis.getUpperMargin();
+        final double yMaxResponse = Math.max(maxResponse, _responsesYAxis.getAutoRangeMinimumSize());
+        _responsesYAxis.setRange(new Range(0, yMaxResponse));
 
         // Message rates plot.
         double maxRate = 0.;
@@ -330,19 +415,28 @@ public class MetricsChartPanel extends ChartPanel {
                 maxRate = Math.max(maxRate, totalRate);
             }
         }
-        maxRate *= 1. + _mYAxis.getUpperMargin();
-        final double yMaxRate = Math.max(maxRate, _mYAxis.getAutoRangeMinimumSize());
-        _mYAxis.setRange(new Range(0, yMaxRate));
+        maxRate *= 1. + _ratesYAxis.getUpperMargin();
+        final double yMaxRate = Math.max(maxRate, _ratesYAxis.getAutoRangeMinimumSize());
+        _ratesYAxis.setRange(new Range(0, yMaxRate));
     }
 
     /**
+     * @param resolution    the metric bin resolution ({@link com.l7tech.service.MetricsBin#RES_FINE},
+     *                      {@link com.l7tech.service.MetricsBin#RES_HOURLY} or
+     *                      {@link com.l7tech.service.MetricsBin#RES_DAILY})
      * @param binInterval   nominal bin interval (in milliseconds)
      * @param maxTimeRange  maximum time range of data to keep around
+     * @param dashboardWindow   the Dashboard window containing this panel
      */
-    public MetricsChartPanel(long binInterval, long maxTimeRange) {
+    public MetricsChartPanel(int resolution,
+                             long binInterval,
+                             long maxTimeRange,
+                             DashboardWindow dashboardWindow) {
         super(null);
+        _resolution = resolution;
         _binInterval = binInterval;
         _maxTimeRange = maxTimeRange;
+        _dashboardWindow = dashboardWindow;
 
         // Creates the empty data structures.
         _frontendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_FRONTEND_RESPONSE);
@@ -356,21 +450,21 @@ public class MetricsChartPanel extends ChartPanel {
         // Top plot for response times.
         //
 
-        _rYAxis = new NumberAxis(RESPONSE_TIME_AXIS_LABEL);
-        _rYAxis.setAutoRange(true);
-        _rYAxis.setRangeType(RangeType.POSITIVE);
-        _rYAxis.setAutoRangeMinimumSize(10.);
-        final TimePeriodValueWithHighLowRenderer rRenderer = new TimePeriodValueWithHighLowRenderer();
-        rRenderer.setDrawBarOutline(false);
-        rRenderer.setSeriesStroke(0, RESPONSE_AVG_STROKE);
-        rRenderer.setSeriesPaint(0, FRONTEND_RESPONSE_AVG_COLOR);
-        rRenderer.setSeriesFillPaint(0, FRONTEND_RESPONSE_MINMAX_COLOR);
-        rRenderer.setSeriesStroke(1, RESPONSE_AVG_STROKE);
-        rRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
-        rRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
-        rRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_messageRates));
-        final XYPlot rPlot = new XYPlot(_responseTimes, null, _rYAxis, rRenderer);
-        rPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
+        _responsesYAxis = new NumberAxis(RESPONSE_TIME_AXIS_LABEL);
+        _responsesYAxis.setAutoRange(true);
+        _responsesYAxis.setRangeType(RangeType.POSITIVE);
+        _responsesYAxis.setAutoRangeMinimumSize(10.);
+        final TimePeriodValueWithHighLowRenderer responsesRenderer = new TimePeriodValueWithHighLowRenderer();
+        responsesRenderer.setDrawBarOutline(false);
+        responsesRenderer.setSeriesStroke(0, RESPONSE_AVG_STROKE);
+        responsesRenderer.setSeriesPaint(0, FRONTEND_RESPONSE_AVG_COLOR);
+        responsesRenderer.setSeriesFillPaint(0, FRONTEND_RESPONSE_MINMAX_COLOR);
+        responsesRenderer.setSeriesStroke(1, RESPONSE_AVG_STROKE);
+        responsesRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
+        responsesRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
+        responsesRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_messageRates));
+        final XYPlot responsesPlot = new XYPlot(_responseTimes, null, _responsesYAxis, responsesRenderer);
+        responsesPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
         //
         // Middle plot for alert indicators of policy violations and routing failures.
@@ -378,7 +472,7 @@ public class MetricsChartPanel extends ChartPanel {
         // may shows up too small to see.
         //
 
-        final NumberAxis iYAxis = new NumberAxis() {
+        final NumberAxis alertsYAxis = new NumberAxis() {
             /**
              * Overrides parent method to prevent any zooming, particularly
              * autozoom. We need to do this because although {@link #setRange}
@@ -388,58 +482,62 @@ public class MetricsChartPanel extends ChartPanel {
                 // Do nothing.
             }
         };
-        iYAxis.setRange(0., 10.);   // This y-range and the forced y values
+        alertsYAxis.setRange(0., 10.);   // This y-range and the forced y values
                                     // below are chosen to space out the
                                     // alert indicator shapes evenly.
-        iYAxis.setTickLabelsVisible(false);
-        iYAxis.setTickMarksVisible(false);
-        final ReplaceYShapeRenderer iRenderer = new ReplaceYShapeRenderer();
-        iRenderer.setSeriesVisible(0, Boolean.FALSE);   // success message rate
-        iRenderer.setSeriesYValue(1, 3.);               // policy violation message rate
-        iRenderer.setSeriesYValue(2, 7.);               // routing failure message rate
-        iRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);
-        iRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR);
-        iRenderer.setSeriesShape(1, INDICATOR_SHAPE);
-        iRenderer.setSeriesShape(2, INDICATOR_SHAPE);
+        alertsYAxis.setTickLabelsVisible(false);
+        alertsYAxis.setTickMarksVisible(false);
+        final ReplaceYShapeRenderer alertsRenderer = new ReplaceYShapeRenderer();
+        alertsRenderer.setSeriesVisible(0, Boolean.FALSE);   // success message rate
+        alertsRenderer.setSeriesYValue(1, 3.);               // policy violation message rate
+        alertsRenderer.setSeriesYValue(2, 7.);               // routing failure message rate
+        alertsRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);
+        alertsRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR);
+        alertsRenderer.setSeriesShape(1, INDICATOR_SHAPE);
+        alertsRenderer.setSeriesShape(2, INDICATOR_SHAPE);
         final AlertIndicatorToolTipGenerator alertIndicatorToolTipGenerator = new AlertIndicatorToolTipGenerator();
-        iRenderer.setBaseToolTipGenerator(alertIndicatorToolTipGenerator);
-        final XYPlot iPlot = new XYPlot(_messageRates, null, iYAxis, iRenderer);
-        iPlot.setBackgroundPaint(INDICATOR_PLOT_BACKCOLOR);
-        iPlot.setRangeGridlinesVisible(false);
-        iPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
+        alertsRenderer.setBaseToolTipGenerator(alertIndicatorToolTipGenerator);
+        final XYPlot alertsPlot = new XYPlot(_messageRates, null, alertsYAxis, alertsRenderer);
+        alertsPlot.setBackgroundPaint(INDICATOR_PLOT_BACKCOLOR);
+        alertsPlot.setRangeGridlinesVisible(false);
+        alertsPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
         //
         // Bottom plot for message rates.
         //
 
-        _mYAxis = new NumberAxis(MESSAGE_RATE_AXIS_LABEL);
-        _mYAxis.setAutoRange(true);
-        _mYAxis.setRangeType(RangeType.POSITIVE);
-        _mYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
-        final StackedXYBarRenderer mRenderer = new StackedXYBarRendererEx();
-        mRenderer.setDrawBarOutline(false);
-        mRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
-        mRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
-        mRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
+        _ratesYAxis = new NumberAxis(MESSAGE_RATE_AXIS_LABEL);
+        _ratesYAxis.setAutoRange(true);
+        _ratesYAxis.setRangeType(RangeType.POSITIVE);
+        _ratesYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
+        final StackedXYBarRenderer _ratesRenderer = new StackedXYBarRendererEx();
+        _ratesRenderer.setDrawBarOutline(false);
+        _ratesRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
+        _ratesRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
+        _ratesRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
         final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator();
-        mRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
-        final XYPlot mPlot = new XYPlot(_messageRates, null, _mYAxis, mRenderer);
+        _ratesRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
+        final XYPlot ratesPlot = new XYPlot(_messageRates, null, _ratesYAxis, _ratesRenderer);
 
         //
         // Now combine all plots to share the same time (x-)axis.
         //
 
+        // Gets the time zone to use from gateway.
         try {
-            Registry registry = Registry.getDefault();
-            if (registry.isAdminContextPresent())
+            final Registry registry = Registry.getDefault();
+            if (registry.isAdminContextPresent()) {
                 _timeZone = TimeZone.getTimeZone(registry.getClusterStatusAdmin().getCurrentClusterTimeZone());
+            }
         } catch (RemoteException e) {
-            // Falls back to use local time zone.
-        } finally {
-            if (_timeZone == null)
-                _timeZone = TimeZone.getDefault();
+            // Falls through to use local time zone.
         }
-        _xAxis = new DateAxis(TIME_AXIS_LABEL /* effective time zone to be appended later */, _timeZone) {
+        if (_timeZone == null) {
+            _logger.warning("Failed to get time zone from gateway. Falling back to use local time zone for display.");
+            _timeZone = TimeZone.getDefault();
+        }
+
+        _xAxis = new DateAxis(TIME_AXIS_LABEL /* effective time zone name to be appended later */, _timeZone) {
             public void setRange(Range range, boolean turnOffAutoRange, boolean notify) {
                 // Do not zoom in any smaller than the nominal bin interval.
                 if ((range.getUpperBound() - range.getLowerBound()) >= _binInterval)
@@ -453,32 +551,42 @@ public class MetricsChartPanel extends ChartPanel {
                 resetYAxisRanges();
             }
         });
-        final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(_xAxis);
-        combinedPlot.setGap(0.);
-        combinedPlot.add(rPlot, 35);
-        combinedPlot.add(iPlot, 5);
-        combinedPlot.add(mPlot, 60);
-        combinedPlot.setOrientation(PlotOrientation.VERTICAL);
+        _combinedPlot = new CombinedDomainXYPlot(_xAxis);
+        _combinedPlot.setGap(0.);
+        _combinedPlot.add(responsesPlot, 35);
+        _combinedPlot.add(alertsPlot, 5);
+        _combinedPlot.add(ratesPlot, 60);
+        _combinedPlot.setOrientation(PlotOrientation.VERTICAL);
 
         _chart = new JFreeChart(null,   // chart title
                 null,                   // title font
-                combinedPlot,
+                _combinedPlot,
                 false                   // generate legend?
         );
         _chart.setAntiAlias(false);
 
         setChart(_chart);
-        setPopupMenu(null);             // Suppresses right-click pop menu.
         setRangeZoomable(false);        // Suppresses range (y-axis) zooming.
         setFillZoomRectangle(true);
         setInitialDelay(100);           // Makes tool tip respond fast.
         setDismissDelay(Integer.MAX_VALUE); // Makes tool tip display indefinitely.
         setReshowDelay(100);
 
+        // Adds custom pop-up context menu; replacing the default inherited from {@link ChartPanel}.
+        _showAuditsItem = new JMenuItem();  // Name to be customized based on time period selected.
+        _showAuditsItem.setActionCommand(SHOW_AUDITS_COMMAND);
+        _showAuditsItem.addActionListener(this);
+        _popup = new JPopupMenu();
+        _popup.add(_showAuditsItem);
+        setPopupMenu(_popup);
+
         setXAxisRangeIfNoData();
     }
 
-    /** Stores away metrics bins waiting to be added (when chart data updating is suspended). */
+    /**
+     * Stores away metrics bins waiting to be added (when chart data updating is suspended).
+     * @param metricsBins   metrics bins waiting to be added
+     */
     private void storeBinsToAdd(List metricsBins) {
         _binsToAdd.addAll(metricsBins);
 
@@ -505,7 +613,7 @@ public class MetricsChartPanel extends ChartPanel {
      * @param metricsBins new data to be added
      */
     public synchronized void addData(List metricsBins) {
-        if (_suspended) {
+        if (_updateSuspended) {
             storeBinsToAdd(metricsBins);
             return;
         }
@@ -571,7 +679,7 @@ public class MetricsChartPanel extends ChartPanel {
             }
         }
 
-        // Appends current effective time zone to time axis label.
+        // Appends current effective time zone to time axis label, e.g., PST vs PDT.
         final boolean inDST = _timeZone.inDaylightTime(new Date(newUpperBound));
         _xAxis.setLabel(TIME_AXIS_LABEL + " (" + _timeZone.getDisplayName(inDST, TimeZone.SHORT) + ")");
 
@@ -621,17 +729,121 @@ public class MetricsChartPanel extends ChartPanel {
         restoreAutoDomainBounds();
         setXAxisRangeIfNoData();
         restoreAutoRange();
-        resume();
+        resumeUpdate();
+    }
+
+    /**
+     * Overrides superclass method to handle our custom pop-up context menu.
+     */
+    protected synchronized void displayPopupMenu(int x, int y) {
+        // Converts the pixel x-coordinate to time value.
+        final Rectangle2D rectangle2d = getChartRenderingInfo().getPlotInfo().getDataArea();
+        final long t = (long)_xAxis.java2DToValue(x, rectangle2d, _combinedPlot.getDomainAxisEdge());
+
+        // Determines the metrics bin period containing that time value.
+        _showAuditsStartDate = new Date(MetricsBin.periodStartFor(_resolution, (int)_binInterval, t));
+        _showAuditsEndDate = new Date(MetricsBin.periodEndFor(_resolution, (int)_binInterval, t));
+
+        // Customizes the name of the show audits menu item.
+        _showAuditsItem.setText(SHOW_AUDITS_ITEM_NAME + " (" + timeRangeAsString(_showAuditsStartDate, _showAuditsEndDate, _timeZone) + ")");
+
+        // Draws outline around selected time period.
+        final XYBoxAnnotation annotation = new XYBoxAnnotation(_showAuditsStartDate.getTime(),
+                                                               0.0,
+                                                               _showAuditsEndDate.getTime(),
+                                                               1.0e6,
+                                                               new BasicStroke(0.0f),
+                                                               Color.BLUE,
+                                                               null);
+        // noinspection unchecked
+        for (XYPlot plot : (List<XYPlot>)_combinedPlot.getSubplots()) {
+            plot.clearAnnotations();    // Clears outline around previous selection, if any.
+            plot.addAnnotation(annotation);
+        }
+
+        _popup.show(this, x, y);
+    }
+
+    /** Overrides superclass method to handle our custom pop-up context menu items. */
+    public void actionPerformed(ActionEvent event) {
+        final String command = event.getActionCommand();
+        if (command.equals(SHOW_AUDITS_COMMAND)) {
+            showAudits(_showAuditsStartDate, _showAuditsEndDate);
+        } else {
+            throw new RuntimeException("Missing hanlder for context menu item: " + command);
+        }
+    }
+
+    /**
+     * Brings up a window to show audits for the selected time period.
+     *
+     * @param startDate     start time of audit records
+     * @param endDate       end time of audit records
+     */
+    private void showAudits(Date startDate, Date endDate) {
+        String errDialogMsg = null;
+
+        final Registry registry = Registry.getDefault();
+        if (registry.isAdminContextPresent()) {
+            final AuditAdmin auditAdmin = registry.getAuditAdmin();
+            final AuditSearchCriteria criteria = new AuditSearchCriteria(
+                    startDate,
+                    endDate,
+                    null,                   // fromLevel
+                    null,                   // toLevel
+                    null,                   // recordClass
+                    null,                   // nodeId
+                    0L,                     // startMessageNumber,
+                    0L,                     // endMessageNumber,
+                    0                       // maxRecords
+            );
+            try {
+                final Collection<AuditRecord> records = auditAdmin.find(criteria);
+
+                if (_gatewayAuditWindow == null) {
+                    _gatewayAuditWindow = new GatewayAuditWindow(false);
+                    Utilities.centerOnScreen(_gatewayAuditWindow);
+                }
+
+                _gatewayAuditWindow.setVisible(true);
+                _gatewayAuditWindow.setExtendedState(Frame.NORMAL);
+                _gatewayAuditWindow.toFront();
+                _gatewayAuditWindow.setTitle(GATEWAY_AUDIT_WINDOW_TITLE + " (" +
+                        timeRangeAsString(_showAuditsStartDate, _showAuditsEndDate, _timeZone) + ")");
+
+                final ClusterNodeInfo nodeSelected = _dashboardWindow.getClusterNodeSelected();
+                _gatewayAuditWindow.getLogPane().setMsgFilterNode(nodeSelected == null ? "" : nodeSelected.getName());
+
+                final EntityHeader serviceSelected = _dashboardWindow.getPublishedServiceSelected();
+                _gatewayAuditWindow.getLogPane().setMsgFilterService(serviceSelected == null ? "" : serviceSelected.getName());
+
+                _gatewayAuditWindow.displayAudits(records);
+            } catch (RemoteException e) {
+                _logger.warning("Failed to query for audit events: " + e.getMessage());
+                errDialogMsg = e.getMessage();
+            } catch (FindException e) {
+                _logger.warning("Failed to query for audit events: " + e.getMessage());
+                errDialogMsg = e.getMessage();
+            }
+        } else {
+            _logger.warning("Registry.isAdminContextPresent() returns false.");
+            errDialogMsg = "Disconnected from gateway.";
+        }
+
+        if (errDialogMsg != null) {
+            // ? Should I use ExceptionDialog instead ?
+            JOptionPane.showMessageDialog(this, "Failed to get audit events from gateway: " + errDialogMsg, "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /** Suspends updating of displayed chart data. */
-    private synchronized void suspend() {
-        _suspended = true;
+    private synchronized void suspendUpdate() {
+        _updateSuspended = true;
     }
 
     /** Resumes updating of displayed chart data. */
-    public synchronized void resume() {
-        _suspended = false;
+    public synchronized void resumeUpdate() {
+        _updateSuspended = false;
 
         // Now adds bins waiting to be added.
         if (! _binsToAdd.isEmpty()) {
@@ -645,7 +857,7 @@ public class MetricsChartPanel extends ChartPanel {
         // temporarily suspend updating the chart data, otherwise the rubberband
         // zoom box will appear jumpy.
         // @see http://www.jfree.org/phpBB2/viewtopic.php?t=10022&highlight=zoom+dynamic
-        suspend();
+        suspendUpdate();
         super.mousePressed(e);
     }
 
@@ -655,13 +867,13 @@ public class MetricsChartPanel extends ChartPanel {
 
         // Resumes chart data updating only if not zoomed in.
         if (_xAxis.isAutoRange()) {
-            resume();
+            resumeUpdate();
         }
     }
 
     public void restoreAutoRange() {
         _xAxis.setAutoRange(true);
-        _rYAxis.setAutoRange(true);
-        _mYAxis.setAutoRange(true);
+        _responsesYAxis.setAutoRange(true);
+        _ratesYAxis.setAutoRange(true);
     }
 }

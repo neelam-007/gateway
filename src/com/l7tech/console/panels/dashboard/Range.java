@@ -26,12 +26,17 @@ class Range {
     /** End time of last metrics bin downloaded; -1 to mean no data downloaded yet. */
     private volatile long lastPeriodDownloaded;
 
-    Range(int resolution, long chartRange, long rightPanelRange, String name, String rightPanelTitle) {
+    Range(int resolution,
+          long chartRange,
+          long rightPanelRange,
+          String name,
+          String rightPanelTitle,
+          DashboardWindow dashboardWindow) {
         this.resolution = resolution;
         this.chartRange = chartRange;
         this.rightPanelRange = rightPanelRange;
         this.name = name;
-        this.metricsChartPanel = new MetricsChartPanel(rightPanelRange, chartRange);
+        this.metricsChartPanel = new MetricsChartPanel(resolution, rightPanelRange, chartRange, dashboardWindow);
         this.lastPeriodDownloaded = -1;
         this.rightPanelTitle = rightPanelTitle;
         clear();

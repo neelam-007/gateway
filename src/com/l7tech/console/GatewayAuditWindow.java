@@ -6,32 +6,35 @@
  */
 package com.l7tech.console;
 
+import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.audit.AuditRecord;
+import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.logging.LogMessage;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.event.MenuListener;
 import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.ResourceBundle;
-import java.util.Date;
-import java.util.logging.Level;
 import java.io.File;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * To display audit records.
@@ -159,6 +162,53 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
      */
     public boolean displayAudits(File auditFile) throws IOException {
         return getLogPane().importView(auditFile);
+    }
+
+    /**
+     * Displays the given audit records. Old display is cleared first.
+     *
+     * @param auditRecords  audit records to display
+     */
+    public void displayAudits(Collection<AuditRecord> auditRecords) {
+        // Constructs mapping from gateway node ID to name.
+        final Map<String, String> nodeIdNames = new HashMap<String, String>();
+        final Registry registry = Registry.getDefault();
+        if (registry.isAdminContextPresent()) {
+            try {
+                final ClusterNodeInfo[] nodeInfos = registry.getClusterStatusAdmin().getClusterStatus();
+                for (ClusterNodeInfo nodeInfo : nodeInfos) {
+                    nodeIdNames.put(nodeInfo.getMac(), nodeInfo.getName());
+                }
+            } catch (RemoteException e) {
+                // Leave the map empty.
+            } catch (FindException e) {
+                // Leave the map empty.
+            }
+        }
+        // else Leave the map empty.
+
+        // Converts flat collection to map.
+        final Map<String, Collection<LogMessage>> map = new HashMap<String, Collection<LogMessage>>();
+        for (AuditRecord auditRecord : auditRecords) {
+            final String nodeId = auditRecord.getNodeId();
+            Collection<LogMessage> coll = map.get(nodeId);
+            if (coll == null) {
+                coll = new LinkedHashSet<LogMessage>();
+                map.put(nodeId, coll);
+            }
+
+            final LogMessage logMessage = new LogMessage(auditRecord);
+            // Needs to set gateway node name manually:
+            String nodeName = nodeIdNames.get(nodeId);
+            if (nodeName == null) {     // Node has been removed from cluster.
+                nodeName = nodeId;      // Better than blank?
+            }
+            logMessage.setNodeName(nodeName);
+
+            coll.add(logMessage);
+        }
+
+        getLogPane().setLogs(map);
     }
 
     /**
