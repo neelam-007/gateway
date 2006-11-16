@@ -32,7 +32,6 @@ public class Exporter {
     public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it", "path of the output mapping template");
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
-    public static final String DBDUMP_FILENAME = "dbdump.sql";
 
     private boolean includeAudit = false;
     private String tmpDirectory;
@@ -89,10 +88,9 @@ public class Exporter {
         String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
 
-        String dbDumpTempFile = tmpDirectory + File.separator + DBDUMP_FILENAME;
         // dump the database
         try {
-            DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, dbDumpTempFile);
+            DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
         } catch (SQLException e) {
             throw new IOException("cannot dump the database " + e.getMessage());
         } catch (ClassNotFoundException e) {

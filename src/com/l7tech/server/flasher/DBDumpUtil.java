@@ -4,6 +4,7 @@ import com.l7tech.server.config.db.DBActions;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.File;
 import java.sql.*;
 
 /**
@@ -17,17 +18,22 @@ import java.sql.*;
  */
 public class DBDumpUtil {
     private static DBActions dbActions;
+    public static final String DBDUMPFILENAME_STAGING = "dbdump_staging.sql";
+    public static final String DBDUMPFILENAME_CLONE = "dbdump_clone.sql";
+    private static final String[] TABLE_NOT_IN_STAGING = {"client_cert"};
+    private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "service_usage", "message_id", "service_metrics"};
+
 
     /**
-     * outputs a database dump
+     * outputs database dump files
      * @param databaseURL database host
      * @param databaseUser database user
      * @param databasePasswd database password
      * @param includeAudit whether or not audit tables should be included
-     * @param outputPath the path where the dump should go to
+     * @param outputDirectory the directory path where the dump files should go to
      */
     public static void dump(String databaseURL, String databaseUser, String databasePasswd,
-                            boolean includeAudit, String outputPath) throws SQLException, IOException, ClassNotFoundException {
+                            boolean includeAudit, String outputDirectory) throws SQLException, IOException, ClassNotFoundException {
         Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
@@ -39,21 +45,26 @@ public class DBDumpUtil {
                 "TABLE"
         };
         ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
-        FileOutputStream fos = new FileOutputStream(outputPath);
-        // todo, produce parrallel dump for staging only which would include only staging content
-        System.out.print("Dumping database to " + outputPath + " ..");
-        fos.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
+        FileOutputStream cloneoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_CLONE);
+        FileOutputStream stageoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_STAGING);
+        System.out.print("Dumping database to " + outputDirectory + " ..");
+        cloneoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
+        stageoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         while (tableNames.next()) {
             String tableName = tableNames.getString("TABLE_NAME");
             // drop and recreate table
-            fos.write(("DROP TABLE IF EXISTS \'" + tableName + "\';\n").getBytes());
+            cloneoutput.write(("DROP TABLE IF EXISTS \'" + tableName + "\';\n").getBytes());
+            stageoutput.write(("DROP TABLE IF EXISTS \'" + tableName + "\';\n").getBytes());
             Statement getCreateTablesStmt = c.createStatement();
             ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
             while (createTables.next()) {
                 String s = createTables.getString(2);
-                fos.write((s + ";\n").getBytes());
+                s = s.replace("\r", " ");
+                s = s.replace("\n", " ");
+                cloneoutput.write((s + ";\n").getBytes());
+                stageoutput.write((s + ";\n").getBytes());
             }
-            if (tableName.equals("service_metrics")) continue;
+            if (tableInList(tableName, TABLE_NEVER_EXPORT)) continue;
             if (!includeAudit) {
                 if (tableName.startsWith("audit_")) continue;
             }
@@ -105,14 +116,27 @@ public class DBDumpUtil {
                     }
                 }
                 insertStatementToRecord.append(");\n");
-                fos.write(insertStatementToRecord.toString().getBytes());
+                cloneoutput.write(insertStatementToRecord.toString().getBytes());
+                if (!tableInList(tableName, TABLE_NOT_IN_STAGING)) {
+                    stageoutput.write(insertStatementToRecord.toString().getBytes());
+                }
             }
             tdataList.close();
         }
         c.close();
-        fos.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-        fos.close();
+        cloneoutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
+        stageoutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
+        cloneoutput.close();
+        stageoutput.close();
         System.out.println(". Done");
+    }
+
+    private static boolean tableInList(String tableName, String[] tableList) {
+        for (int i = 0; i < tableList.length; i++) {
+            String s = tableList[i];
+            if (s.equals(tableName)) return true;
+        }
+        return false;
     }
 
     private static DBActions getDBActions() throws ClassNotFoundException {

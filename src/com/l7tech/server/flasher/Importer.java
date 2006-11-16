@@ -80,7 +80,7 @@ public class Importer {
         tempDirectory = Exporter.createTmpDirectory();
         try {
             unzipToDir(inputpathval, tempDirectory);
-            if (!(new File(tempDirectory + File.separator + Exporter.DBDUMP_FILENAME)).exists()) {
+            if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING)).exists()) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("the file " + inputpathval +
                                                                         " does not appear to be a valid SSG flash image");
             }
@@ -148,7 +148,8 @@ public class Importer {
             }
 
             // actually go on with the import
-            // todo
+            // todo, choose which dump to use depending on mode
+            // todo, if applicable, copy all config files to the right place
 
             // apply mapping if applicable
             if (mapping != null) {
