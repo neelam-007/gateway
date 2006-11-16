@@ -3,12 +3,12 @@ package com.l7tech.console.panels;
 import com.ibm.wsdl.DefinitionImpl;
 import com.ibm.wsdl.extensions.PopulatedExtensionRegistry;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.xmlviewer.Viewer;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXParseException;
@@ -76,7 +76,7 @@ public class WsdlCreateWizard extends Wizard {
             buttonPreview.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     try {
-                        WSDLFactory fac = WSDLFactory.newInstance();
+                        WSDLFactory fac = WsdlUtils.getWSDLFactory();
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
                         StringWriter writer = new StringWriter();
                         collect();
@@ -85,6 +85,8 @@ public class WsdlCreateWizard extends Wizard {
 
                         Frame mw = TopComponents.getInstance().getTopParent();
                         new RawWsdlDialog(mw, writer.toString(), definition.getQName().getLocalPart());
+                    } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
+                        TopComponents.getInstance().showNoPrivilegesErrorMessage();    
                     } catch (WSDLException e1) {
                         throw new RuntimeException(e1);
                     } catch (DocumentException e1) {
