@@ -24,6 +24,9 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlException;
 import java.security.cert.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -164,7 +167,16 @@ public abstract class UserCertPanel extends JPanel {
             exportCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
                     if (cert != null) {
-                        GuiCertUtil.exportCertificate(SwingUtilities.getWindowAncestor(UserCertPanel.this), cert);
+                        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                            public Object run() {
+                                try {
+                                    GuiCertUtil.exportCertificate(SwingUtilities.getWindowAncestor(UserCertPanel.this), cert);
+                                } catch (AccessControlException ace) {
+                                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                                }
+                                return null;
+                            }
+                        });
                     }
                     else {
                         // something is wrong, the button should not have been enabled

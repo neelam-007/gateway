@@ -39,6 +39,7 @@ import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.FindException;
 
 /**
@@ -234,7 +235,8 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     private void selectFile() {
-        final JFileChooser fc = Utilities.createJFileChooser();
+        final JFileChooser fc = SsmApplication.createJFileChooser();
+        if (fc == null) return;
         fc.setDialogTitle("Select WSDL or WSIL.");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {

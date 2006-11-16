@@ -7,6 +7,7 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -74,7 +75,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         browseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 //Create a file chooser
-                final JFileChooser fc = Utilities.createJFileChooser();
+                final JFileChooser fc = SsmApplication.createJFileChooser();
+                if (fc == null) return;
 
                 int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
 

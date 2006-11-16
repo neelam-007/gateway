@@ -17,6 +17,7 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.StaticResourceInfo;
@@ -607,7 +608,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void readFromFile() {
-        JFileChooser dlg = Utilities.createJFileChooser();
+        JFileChooser dlg = SsmApplication.createJFileChooser();
+        if (dlg == null) return;
 
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;

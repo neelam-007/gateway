@@ -17,6 +17,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.console.SsmApplication;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -162,7 +163,8 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     private void readFromFile() {
-        JFileChooser dlg = Utilities.createJFileChooser();
+        JFileChooser dlg = SsmApplication.createJFileChooser();
+        if (dlg == null) return;
 
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;

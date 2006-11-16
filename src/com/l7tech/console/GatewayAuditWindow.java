@@ -453,7 +453,8 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
     private void saveMenuEventHandler() {
         // File requestor
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        final JFileChooser fc = Utilities.createJFileChooser();
+        final JFileChooser fc = SsmApplication.createJFileChooser();
+        if (fc == null) return;
         fc.setDialogTitle("Save audit data as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {

@@ -11,6 +11,7 @@ import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
@@ -22,6 +23,9 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -204,20 +208,27 @@ public class CertPropertiesWindow extends JDialog {
 
         exportButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                try {
-                    GuiCertUtil.exportCertificate(CertPropertiesWindow.this, trustedCert.getCertificate());
-                } catch (CertificateException e) {
-                    logger.warning(resources.getString("cert.decode.error"));
-                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                                  resources.getString("save.error.title"),
-                                                  JOptionPane.ERROR_MESSAGE);
-                } catch (IOException e) {
-                    logger.warning(resources.getString("cert.decode.error"));
-                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                                  resources.getString("save.error.title"),
-                                                  JOptionPane.ERROR_MESSAGE);
-                }
+                AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                    public Object run() {
+                        try {
+                            GuiCertUtil.exportCertificate(CertPropertiesWindow.this, trustedCert.getCertificate());
+                        } catch (CertificateException e) {
+                            logger.warning(resources.getString("cert.decode.error"));
+                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                                          resources.getString("save.error.title"),
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } catch (IOException e) {
+                            logger.warning(resources.getString("cert.decode.error"));
+                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                                          resources.getString("save.error.title"),
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } catch (AccessControlException ace) {
+                            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                        }
 
+                        return null;
+                    }
+                });
             }
         });
 

@@ -11,6 +11,7 @@ import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -47,7 +48,8 @@ public class DownloadAuditEventsAction extends SecureAction {
     protected void performAction() {
 
         // File requestor
-        JFileChooser fc = Utilities.createJFileChooser();
+        JFileChooser fc = SsmApplication.createJFileChooser();
+        if (fc == null) return;
         fc.setDialogTitle("Select file to save");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {

@@ -17,6 +17,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -217,7 +218,8 @@ public class GlobalSchemaEntryEditor extends JDialog {
     }
 
     private void uploadFromFile() {
-        JFileChooser dlg = Utilities.createJFileChooser();
+        JFileChooser dlg = SsmApplication.createJFileChooser();
+        if (dlg == null) return;
 
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;

@@ -177,7 +177,8 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private void saveAsEventHandler() {
         // File requestor
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        final JFileChooser fc = Utilities.createJFileChooser();
+        final JFileChooser fc = SsmApplication.createJFileChooser();
+        if (fc == null) return;
         fc.setDialogTitle("Save log data as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {

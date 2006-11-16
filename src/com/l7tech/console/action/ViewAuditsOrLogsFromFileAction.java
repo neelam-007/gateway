@@ -9,6 +9,7 @@ import javax.swing.filechooser.FileFilter;
 
 import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.GatewayLogWindow;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.ExceptionDialog;
@@ -95,7 +96,8 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        final JFileChooser fc = Utilities.createJFileChooser();
+        final JFileChooser fc = SsmApplication.createJFileChooser();
+        if (fc == null) return;
         fc.setDialogTitle("Analyze saved events ...");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {

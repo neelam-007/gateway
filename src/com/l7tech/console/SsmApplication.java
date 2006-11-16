@@ -6,12 +6,17 @@
 package com.l7tech.console;
 
 import com.l7tech.common.util.JavaVersionChecker;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.TopComponents;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlException;
 
 /**
  * @author mike
@@ -44,6 +49,25 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     /** @return true if a custom look and feel should be honored.  False to do normal automatic look-and-feel selection. */
     public static boolean isSuppressAutoLookAndFeel() {
         return SUPPRESS_AUTO_LNF;
+    }
+
+    /**
+     * Try to create a JFileChooser, failing with a graceful error message if running as an untrusted applet.
+     *
+     * @return the JFileChooser, or null if one could not be created because this is an untrusted applet (in which
+     *         case an error message has already been displayed).
+     */
+    public static JFileChooser createJFileChooser() {
+        return AccessController.doPrivileged(new PrivilegedAction<JFileChooser>() {
+            public JFileChooser run() {
+                try {
+                    return Utilities.createJFileChooser();
+                } catch (AccessControlException ace) {
+                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                    return null;
+                }
+            }
+        });
     }
 
     private static interface LnfSetter {
