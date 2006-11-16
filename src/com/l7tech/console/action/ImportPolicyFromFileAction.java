@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.*;
 
 
 /**
@@ -33,12 +34,12 @@ public class ImportPolicyFromFileAction extends SecureAction {
     private final String homePath;
 
     public ImportPolicyFromFileAction(String path) {
-        super(path == null ? NOT_ALLOWED : null);
+        super(null);
         this.homePath = path;
     }
 
     public ImportPolicyFromFileAction(PublishedService svc, String path) {
-        super(path == null ? NOT_ALLOWED : null);
+        super(null);
         if (svc == null) {
             throw new IllegalArgumentException();
         }
@@ -78,6 +79,19 @@ public class ImportPolicyFromFileAction extends SecureAction {
      * This is the method which should be called programmatically.
      */
     protected void performAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            public Object run() {
+                try {
+                    doFileImport();
+                } catch (AccessControlException e) {
+                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                }
+                return null;
+            }
+        });
+    }
+
+    private void doFileImport() {
         newPolicyXml = null;
         policyImportSuccess = false;
         if (pubService == null) {
@@ -85,25 +99,30 @@ public class ImportPolicyFromFileAction extends SecureAction {
             throw new IllegalStateException("no service specified");
         }
         // get file from user
+        JFileChooser chooser;
         File templateDir = null;
-        try {
-            templateDir = new File(homePath +
-                                   File.separator + PoliciesFolderNode.TEMPLATES_DIR);
-            if (!templateDir.exists()) {
-                if (!templateDir.mkdir()) {
-                    throw new IOException("Cannot create " + templateDir.getPath());
+        if (homePath != null) {
+            try {
+                templateDir = new File(homePath +
+                                       File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+                if (!templateDir.exists()) {
+                    if (!templateDir.mkdir()) {
+                        throw new IOException("Cannot create " + templateDir.getPath());
+                    }
                 }
+            } catch (IOException e) {
+                ErrorManager.getDefault().notify(Level.WARNING,
+                                                 e,
+                                                 "The system reported problem in accessing or creating" +
+                                                 "the policy template directory " + templateDir.getPath() + "\n" +
+                                                 "The policy template is not saved.");
+                return;
             }
-        } catch (IOException e) {
-            ErrorManager.getDefault().notify(Level.WARNING,
-                                             e,
-                                             "The system reported problem in accessing or creating" +
-                                             "the policy template directory " + templateDir.getPath() + "\n" +
-                                             "The policy template is not saved.");
-            return;
+            chooser = new JFileChooser(templateDir);
+        } else {
+            chooser = new JFileChooser();
         }
 
-        JFileChooser chooser = new JFileChooser(templateDir);
         chooser.setDialogTitle("Import Policy");
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {

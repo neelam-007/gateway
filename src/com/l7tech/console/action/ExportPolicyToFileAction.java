@@ -17,6 +17,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlException;
 
 
 /**
@@ -36,12 +39,12 @@ public class ExportPolicyToFileAction extends SecureAction {
     private final String homePath;
 
     public ExportPolicyToFileAction(String homePath) {
-        super(homePath == null ? NOT_ALLOWED : null);
+        super(null);
         this.homePath = homePath;
     }
 
     public ExportPolicyToFileAction(AssertionTreeNode node, String homePath) {
-        super(homePath == null ? NOT_ALLOWED : null);
+        super(null);
         if (node == null) {
             throw new IllegalArgumentException();
         }
@@ -77,32 +80,49 @@ public class ExportPolicyToFileAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        if (homePath == null) return; // disabled
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            public Object run() {
+                try {
+                    doFileExport();
+                } catch (AccessControlException e) {
+                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                }
+                return null;
+            }
+        });
+    }
 
+    private void doFileExport() {
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }
 
         lastSavedFile = null;
+
+        JFileChooser chooser;
         File templateDir = null;
-        try {
-            templateDir = new File(homePath +
-                                   File.separator + PoliciesFolderNode.TEMPLATES_DIR);
-            if (!templateDir.exists()) {
-                if (!templateDir.mkdir()) {
-                    throw new IOException("Cannot create " + templateDir.getPath());
+        if (homePath != null) {
+            try {
+                templateDir = new File(homePath +
+                                       File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+                if (!templateDir.exists()) {
+                    if (!templateDir.mkdir()) {
+                        throw new IOException("Cannot create " + templateDir.getPath());
+                    }
                 }
+            } catch (IOException e) {
+                ErrorManager.getDefault().notify(Level.WARNING,
+                                                 e,
+                                                 "The system reported problem in accessing or creating" +
+                                                 "the policy template directory " + templateDir.getPath() + "\n" +
+                                                 "The policy template is not saved.");
+                return;
             }
-        } catch (IOException e) {
-            ErrorManager.getDefault().notify(Level.WARNING,
-                                             e,
-                                             "The system reported problem in accessing or creating" +
-                                             "the policy template directory " + templateDir.getPath() + "\n" +
-                                             "The policy template is not saved.");
-            return;
+            chooser = new JFileChooser(templateDir);
+        } else {
+            chooser = new JFileChooser();
         }
 
-        JFileChooser chooser = new JFileChooser(templateDir);
         chooser.setDialogTitle(dialogTitle);
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
@@ -139,7 +159,7 @@ public class ExportPolicyToFileAction extends SecureAction {
         try {
             exporter.exportToFile(node.asAssertion(), policyFile);
             // only update template folder if this policy is saved in templates directory
-            if (!policyFileExists && templateDir.equals(chooser.getSelectedFile().getParentFile())) {
+            if (!policyFileExists && templateDir != null && templateDir.equals(chooser.getSelectedFile().getParentFile())) {
                 insertIntoAssertionTree(policyFile);
             }
             lastSavedFile = policyFile;

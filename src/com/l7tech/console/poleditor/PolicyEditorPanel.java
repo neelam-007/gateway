@@ -442,8 +442,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             buttonImport = new JButton(getImportAction());
             this.add(buttonImport);
 
-            buttonUDDIImport = new JButton(getUDDIImportAction());
-            this.add(buttonUDDIImport);
+            if (!TopComponents.getInstance().isApplet()) {
+                buttonUDDIImport = new JButton(getUDDIImportAction());
+                this.add(buttonUDDIImport);
+            }
 
             policyViewButton = new JToggleButton(new PolicyViewAction());
             policyViewButton.addActionListener(new ActionListener() {

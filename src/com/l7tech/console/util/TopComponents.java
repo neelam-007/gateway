@@ -80,6 +80,10 @@ public class TopComponents {
         return getMainWindow().isDisconnected();
     }
 
+    public void showNoPrivilegesErrorMessage() {
+        getMainWindow().showNoPrivilegesErrorMessage();
+    }
+
     /** Interface implemented by lazy component finders. */
     public static interface ComponentFinder {
         Component findComponent();

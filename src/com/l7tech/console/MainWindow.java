@@ -2420,10 +2420,8 @@ public class MainWindow extends JFrame {
         // enable the items that make sense to show when a policy is being edited
         getValidateMenuItem().setAction(policyPanel.getValidateAction());
         getSaveMenuItem().setAction(policyPanel.getSaveAction());
-        if (!TopComponents.getInstance().isApplet()) {
-            getExportMenuItem().setAction(policyPanel.getExportAction());
-            getImportMenuItem().setAction(policyPanel.getImportAction());
-        }
+        getExportMenuItem().setAction(policyPanel.getExportAction());
+        getImportMenuItem().setAction(policyPanel.getImportAction());
     }
 
     public void showLicenseWarning(boolean invalidLicense) {
@@ -2452,5 +2450,15 @@ public class MainWindow extends JFrame {
 
     public void showHelpTopicsRoot() {
         ssmApplication.showHelpTopicsRoot();
+    }
+
+    public void showNoPrivilegesErrorMessage() {
+        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                      "The requested action could not be performed because the applet is running\n" +
+                                      "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
+                                      "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
+                                      "this applet and reload the page.",
+                                      "Disallowed by browser settings",
+                                      JOptionPane.WARNING_MESSAGE);
     }
 }
