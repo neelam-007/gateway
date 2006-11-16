@@ -2548,6 +2548,7 @@
         <buildinforeplace token="BUILD_NUMBER"          value="${build.number}"/>
         <buildinforeplace token="PRODUCT_VERSION_MAJOR" value="${build.version.major}"/>
         <buildinforeplace token="PRODUCT_VERSION_MINOR" value="${build.version.minor}"/>
+        <buildinforeplace token="PRODUCT_VERSION_SUBMINOR" value="${build.version.subminor}"/>
         <buildinforeplace token="PRODUCT_NAME"  value="${app.name}"/>
         <buildinforeplace token="BUILD_DATE"    value="${build.date}"/>
         <buildinforeplace token="BUILD_TIME"    value="${build.time}"/>
