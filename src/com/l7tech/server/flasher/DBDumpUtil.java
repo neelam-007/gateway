@@ -98,7 +98,7 @@ public class DBDumpUtil {
                         case Types.CHAR:
                         case Types.LONGVARCHAR: // medium text
                         case Types.LONGVARBINARY: // medium blob
-                            // todo, all necessary encoding
+                            // todo, *all* necessary escaping
                             String tmp = tdataList.getString(i);
                             if (tmp != null) {
                                 tmp = tmp.replace("\"", "\\\"");
@@ -132,8 +132,7 @@ public class DBDumpUtil {
     }
 
     private static boolean tableInList(String tableName, String[] tableList) {
-        for (int i = 0; i < tableList.length; i++) {
-            String s = tableList[i];
+        for (String s : tableList) {
             if (s.equals(tableName)) return true;
         }
         return false;
