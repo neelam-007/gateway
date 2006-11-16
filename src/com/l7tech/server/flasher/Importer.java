@@ -12,10 +12,7 @@ import com.l7tech.common.util.FileUtils;
 import java.util.Map;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -128,8 +125,6 @@ public class Importer {
                     throw new IOException("A SecureSpan Gateway is currently running " +
                                           "and connected to the database. Please shutdown " + connectedNode);
                 }
-            } catch (ClassNotFoundException e) {
-                throw new IOException("cannot get database driver" + e.getMessage());
             } catch (SQLException e) {
                 throw new IOException("cannot connect to database" + e.getMessage());
             }  catch (InterruptedException e) {
@@ -151,13 +146,15 @@ public class Importer {
             // actually go on with the import
             try {
                 saveExistingLicense();
-            } catch (ClassNotFoundException e) {
-                throw new IOException("cannot save existing license from database " + e.getMessage());
             } catch (SQLException e) {
                 throw new IOException("cannot save existing license from database " + e.getMessage());
             }
             // load database dump
-            loadDumpFromExplodedImage();
+            try {
+                loadDumpFromExplodedImage();
+            } catch (SQLException e) {
+                throw new IOException("error loading db dump " + e.getMessage());
+            }
 
             // if applicable, copy all config files to the right place
             if (fullClone) {
@@ -181,28 +178,60 @@ public class Importer {
         // todo
     }
 
-    private void loadDumpFromExplodedImage() {
+    private void loadDumpFromExplodedImage() throws IOException, SQLException {
+        System.out.print("Loading Database [please wait] ..");
         String dumpFilePath;
         if (fullClone) {
             dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE;
         } else {
             dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING;
         }
-        System.out.println("TODO load dump from " + dumpFilePath);
-        // todo
+        BufferedReader reader = new BufferedReader(new FileReader(dumpFilePath));
+        String tmp;
+        Connection c = getConnection();
+        try {
+            c.setAutoCommit(false);
+            Statement stmt = c.createStatement();
+            try {
+                while((tmp = reader.readLine()) != null) {
+                    if (tmp.endsWith(";")) {
+                        stmt.executeUpdate(tmp.substring(0, tmp.length()-1));
+                    } else {
+                        throw new SQLException("unexpected statement " + tmp);
+                    }
+                }
+                c.commit();
+            } finally {
+                stmt.close();
+                c.setAutoCommit(true);
+            }
+        } finally {
+            c.close();
+        }
+        System.out.println(". Done");
     }
 
     private void copySystemConfigFiles() {
         // todo
     }
 
-    private void saveExistingLicense() throws ClassNotFoundException, SQLException {
-        Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
+    private Connection getConnection() throws SQLException {
+        Connection c;
+        try {
+            c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("cannot get driver " + e.getMessage());
+        }
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
                                    ", and password: " + databasePasswd);
         }
+        return c;
+    }
+
+    private void saveExistingLicense() throws SQLException {
+        Connection c = getConnection();
         try {
             Statement selectlicense = c.createStatement();
             ResultSet maybeLicenseRS = selectlicense.executeQuery("select propvalue from cluster_properties where propkey=\'license\'");
@@ -226,14 +255,9 @@ public class Importer {
     /**
      * @return name of ssg node connected to database, null if nothing appears to be connected
      */
-    private String checkSSGConnectedToDatabase() throws ClassNotFoundException, SQLException, InterruptedException {
+    private String checkSSGConnectedToDatabase() throws SQLException, InterruptedException {
         System.out.print("Making sure target is offline .");
-        Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
-        if (c == null) {
-            throw new SQLException("could not connect using url: " + databaseURL +
-                                   ". with username " + databaseUser +
-                                   ", and password: " + databasePasswd);
-        }
+        Connection c = getConnection();
         try {
             Statement checkStatusStatement = c.createStatement();
             try {

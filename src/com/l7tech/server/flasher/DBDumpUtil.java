@@ -53,14 +53,15 @@ public class DBDumpUtil {
         while (tableNames.next()) {
             String tableName = tableNames.getString("TABLE_NAME");
             // drop and recreate table
-            cloneoutput.write(("DROP TABLE IF EXISTS \'" + tableName + "\';\n").getBytes());
-            stageoutput.write(("DROP TABLE IF EXISTS \'" + tableName + "\';\n").getBytes());
+            cloneoutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
+            stageoutput.write(("DROP TABLE IF EXISTS " + tableName + "o;\n").getBytes());
             Statement getCreateTablesStmt = c.createStatement();
             ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
             while (createTables.next()) {
                 String s = createTables.getString(2);
                 s = s.replace("\r", " ");
                 s = s.replace("\n", " ");
+                s = s.replace("`", "");
                 cloneoutput.write((s + ";\n").getBytes());
                 stageoutput.write((s + ";\n").getBytes());
             }
