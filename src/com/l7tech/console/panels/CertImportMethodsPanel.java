@@ -7,6 +7,7 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
@@ -22,6 +23,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.AccessControlException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -75,20 +79,20 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         browseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 //Create a file chooser
-                final JFileChooser fc = SsmApplication.createJFileChooser();
-                if (fc == null) return;
+                SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+                    public void useFileChooser(JFileChooser fc) {
+                        int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
 
-                int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
+                        File file = null;
+                        if (returnVal == JFileChooser.APPROVE_OPTION) {
+                            file = fc.getSelectedFile();
 
-                File file = null;
-                if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    file = fc.getSelectedFile();
-
-                    certFileName.setText(file.getAbsolutePath());
-                } else {
-                    // cancelled by user
-                }
-
+                            certFileName.setText(file.getAbsolutePath());
+                        } else {
+                            // cancelled by user
+                        }
+                    }
+                });
             }
         });
 
@@ -179,14 +183,25 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         if (fileRadioButton.isSelected()) {
             try {
-                is = new FileInputStream(new File(certFileName.getText().trim()));
+                is = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
+                        try {
+                            return new FileInputStream(new File(certFileName.getText().trim()));
+                        } catch (FileNotFoundException fne) {
+                            JOptionPane.showMessageDialog(CertImportMethodsPanel.this,
+                                                          resources.getString("view.error.filenotfound"),
+                                                          resources.getString("view.error.title"),
+                                                          JOptionPane.ERROR_MESSAGE);
+                            return null;
+                        } catch (AccessControlException ace) {
+                            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                            return null;
+                        }
+                    }
+                });
+                if (is == null) return false;
                 cert = (X509Certificate)CertUtils.getFactory().generateCertificate(is);
 
-            } catch (FileNotFoundException fne) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.filenotfound"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
-                return false;
 
             } catch (CertificateException ce) {
                 final String msg = resources.getString("view.error.cert.generate");

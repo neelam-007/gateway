@@ -20,6 +20,8 @@ import java.util.logging.Level;
 import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * To display log records.
@@ -173,12 +175,17 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
 
     /**
      * Save currently displayed logs records to file
+     * TODO this can probably be merged with the code in GatewayAuditWindow that does the same thing
      */
     private void saveAsEventHandler() {
-        // File requestor
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        final JFileChooser fc = SsmApplication.createJFileChooser();
-        if (fc == null) return;
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doSave(fc);
+            }
+        });
+    }
+
+    private void doSave(final JFileChooser fc) {
         fc.setDialogTitle("Save log data as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {
@@ -189,6 +196,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
                 return "(*.ssgl) SecureSpan Gateway Log data file.";
             }
         };
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
         final String suggestedName = "SecureSpanGateway_Log_" +sdf.format(new Date()) + ".ssgl";
         fc.setSelectedFile(new File(suggestedName));
         fc.addChoosableFileFilter(fileFilter);

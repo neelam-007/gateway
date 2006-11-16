@@ -453,13 +453,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
      * Save displayed audit records to file
      */
     private void saveMenuEventHandler() {
-        // File requestor
-        final JFileChooser fc = SsmApplication.createJFileChooser();
-        if (fc == null) return;
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
                 doSave(fc);
-                return null;
             }
         });
     }

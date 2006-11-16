@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.awt.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
@@ -46,10 +48,14 @@ public class DownloadAuditEventsAction extends SecureAction {
     }
 
     protected void performAction() {
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doDownload(fc);
+            }
+        });
+    }
 
-        // File requestor
-        JFileChooser fc = SsmApplication.createJFileChooser();
-        if (fc == null) return;
+    private void doDownload(final JFileChooser fc) {
         fc.setDialogTitle("Select file to save");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {

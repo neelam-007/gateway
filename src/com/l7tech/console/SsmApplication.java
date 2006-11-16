@@ -58,16 +58,30 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
      *         case an error message has already been displayed).
      */
     public static JFileChooser createJFileChooser() {
+        return doWithJFileChooser(new FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                // Do nothing -- caller will use the file chooser themselves
+            }
+        });
+    }
+
+    public static JFileChooser doWithJFileChooser(final FileChooserUser fcu) {
         return AccessController.doPrivileged(new PrivilegedAction<JFileChooser>() {
             public JFileChooser run() {
                 try {
-                    return Utilities.createJFileChooser();
+                    JFileChooser fc = Utilities.createJFileChooser();
+                    fcu.useFileChooser(fc);
+                    return fc;
                 } catch (AccessControlException ace) {
                     TopComponents.getInstance().showNoPrivilegesErrorMessage();
                     return null;
                 }
             }
         });
+    }
+
+    public interface FileChooserUser {
+        void useFileChooser(JFileChooser fc);
     }
 
     private static interface LnfSetter {

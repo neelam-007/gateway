@@ -218,9 +218,14 @@ public class GlobalSchemaEntryEditor extends JDialog {
     }
 
     private void uploadFromFile() {
-        JFileChooser dlg = SsmApplication.createJFileChooser();
-        if (dlg == null) return;
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doUpload(fc);
+            }
+        });
+    }
 
+    private void doUpload(final JFileChooser dlg) {
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;
         }

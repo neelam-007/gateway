@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -235,8 +237,14 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     private void selectFile() {
-        final JFileChooser fc = SsmApplication.createJFileChooser();
-        if (fc == null) return;
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doSelectFile(fc);
+            }
+        });
+    }
+
+    private void doSelectFile(JFileChooser fc) {
         fc.setDialogTitle("Select WSDL or WSIL.");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {
@@ -324,7 +332,16 @@ public class WsdlLocationPanel extends JPanel {
                 result = gatewayFetchWsdlUrl(wsdlUrl);
             }
             else { // it is a file url or
-                result = readFile(wsdlUrl);
+                result = AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                    public Object run() {
+                        try {
+                            return readFile(wsdlUrl);
+                        } catch (AccessControlException ace) {
+                            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                            return null;
+                        }
+                    }
+                });
             }
             if (result == null)
                 // canceled

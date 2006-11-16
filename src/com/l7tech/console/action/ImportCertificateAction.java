@@ -10,9 +10,7 @@ import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -66,8 +64,14 @@ public class ImportCertificateAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        JFileChooser fc = SsmApplication.createJFileChooser();
-        if (fc == null) return;
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doImport(fc);
+            }
+        });
+    }
+
+    private void doImport(final JFileChooser fc) {
         FileFilter filter = new FileFilter() {
             public boolean accept(File f) {
                 if (f.isDirectory())

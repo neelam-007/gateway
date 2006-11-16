@@ -608,9 +608,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void readFromFile() {
-        JFileChooser dlg = SsmApplication.createJFileChooser();
-        if (dlg == null) return;
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doRead(fc);
+            }
+        });
+    }
 
+    private void doRead(JFileChooser dlg) {
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;
         }

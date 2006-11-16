@@ -96,8 +96,14 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        final JFileChooser fc = SsmApplication.createJFileChooser();
-        if (fc == null) return;
+        SsmApplication.doWithJFileChooser(new SsmApplication.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                doView(fc);
+            }
+        });
+    }
+
+    private void doView(final JFileChooser fc) {
         fc.setDialogTitle("Analyze saved events ...");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {
