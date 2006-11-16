@@ -4,6 +4,7 @@ import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
+import com.l7tech.common.BuildInfo;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -151,7 +152,11 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             logger.severe("error while updating the Database configuration file");
             logger.severe(e.getMessage());
             throw e;
-        } finally {
+        } catch (NumberFormatException e) {
+            logger.severe("error while updating the Database configuration file");
+            throw e;
+        }
+        finally {
             if (fos != null)
                 try { fos.close(); } catch (IOException e) {}
         }
@@ -159,10 +164,24 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
     private void upgradePackageName(Properties dbProps) {
         String currentVersion = ConfigurationWizard.getCurrentVersion();
-        if (Float.parseFloat(currentVersion) >= 3.6f) {
-            dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
-            dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
-            dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
+        float currentVersionFloat = 0.0f;
+        try {
+            currentVersionFloat = Float.parseFloat(currentVersion);
+            if (currentVersionFloat >= 3.6f) {
+                dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
+                dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
+                dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
+            }
+        } catch (NumberFormatException ex) {
+            //version string is something other than a normal number ... try just the major and minor instead
+            String s = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+
+            try {
+                currentVersionFloat = Float.parseFloat(s);
+            } catch (NumberFormatException e) {
+                logger.warning("Couldn't determine build version so database configuration package upgrade could not proceed.");
+                throw e;
+            }
         }
     }
 

@@ -39,7 +39,7 @@ public class AuditAlertOptionsAction extends SecureAction {
     }
 
     public String getName() {
-        return "View Audit Alert Options";
+        return "Configure Audit Alert Options";
     }
 
     protected String iconResource() {

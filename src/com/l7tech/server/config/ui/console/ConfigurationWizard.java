@@ -5,6 +5,7 @@ import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -133,8 +134,11 @@ public class ConfigurationWizard {
     }
 
     public String getCurrentVersion() {
-        if (currentVersion == null)
+        if (currentVersion == null) {
             currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+            String s = BuildInfo.getProductVersionSubMinor();
+            if (StringUtils.isNotEmpty(s)) currentVersion += "." + s;
+        }
         return currentVersion;
     }
 

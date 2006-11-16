@@ -54,11 +54,18 @@ public class ConfigurationWizard extends Wizard {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     boolean hadFailures = false;
-    private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
-    private Set<ConfigurationCommand> additionalCommands;
+    private static String currentVersion;
 
+    private Set<ConfigurationCommand> additionalCommands;
     private ManualStepsManager manualSteps;
     private ClusteringType clusteringType;
+
+
+    static {
+        currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+        String subMinor = BuildInfo.getProductVersionSubMinor();
+        if (subMinor != null && !subMinor.equals("")) currentVersion += "." + subMinor;
+    }
 
     /**
      * Creates new wizard
@@ -99,13 +106,6 @@ public class ConfigurationWizard extends Wizard {
             }
         });
         getButtonHelp().setVisible(false);
-        //  Disable for now
-        //
-        //        getButtonHelp().addActionListener(new ActionListener() {
-        //            public void actionPerformed(ActionEvent e) {
-        //                Actions.invokeHelp(ConfigurationWizard.this);
-        //            }
-        //        });
         pack();
     }
 

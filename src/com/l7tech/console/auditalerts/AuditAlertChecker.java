@@ -39,22 +39,24 @@ public class AuditAlertChecker {
 
     public AuditAlertChecker(AuditAlertConfigBean configBean) {
         this.configBean = configBean;
-        auditWatchers = new ArrayList<AuditWatcher>();
-        createTimer();
+        auditWatchers = new ArrayList<AuditWatcher>();        
     }
 
     public void addWatcher(AuditWatcher watcher) {
         auditWatchers.add(watcher);
     }
-    
-    private void createTimer() {
-        int interval = configBean.getAuditCheckInterval();
-        timer = new Timer(interval*1000,
-            new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if (configBean.isEnabled()) checkForNewAlerts();
-                }
+
+    private Timer getTimer() {
+        if (timer == null) {
+            int interval = configBean.getAuditCheckInterval();
+            timer = new Timer(interval*1000,
+                new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        if (configBean.isEnabled()) checkForNewAlerts();
+                    }
             });
+        }
+        return timer;
     }
 
     public void checkForNewAlerts() {
@@ -123,17 +125,17 @@ public class AuditAlertChecker {
     }
 
     private void startTimer() {
-        if (!timer.isRunning()) {
-            logger.fine("Starting Audit Alert Timer (check interval = " + timer.getDelay() + ")");
-            timer.start();
+        if (!getTimer().isRunning()) {
+            logger.fine("Starting Audit Alert Timer (check interval = " + getTimer().getDelay() + ")");
+            getTimer().start();
         }
     }
 
     private void stopTimer() {
         logger.fine("Stopping Audit Alert Timer");
 
-        if (timer.isRunning())
-            timer.stop();
+        if (getTimer().isRunning())
+            getTimer().stop();
     }
 
     public void updateAuditsAcknowledgedTime() {
@@ -165,13 +167,13 @@ public class AuditAlertChecker {
 
     private void reset() {
         logger.fine("Audit alert options changed.");
-        boolean wasRunning = timer.isRunning();
+        boolean wasRunning = getTimer().isRunning();
 
         if (wasRunning)
             stopTimer();
 
         logger.fine("setting audit alert timer to " + String.valueOf(configBean.getAuditCheckInterval()));
-        timer.setDelay(configBean.getAuditCheckInterval());
+        getTimer().setDelay(configBean.getAuditCheckInterval());
 
         if (configBean.isEnabled())
             startTimer();

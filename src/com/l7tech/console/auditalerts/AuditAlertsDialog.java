@@ -8,9 +8,9 @@ import java.awt.event.*;
 
 public class AuditAlertsDialog extends JDialog {
     private JPanel contentPane;
+    private JButton viewAuditsButton;
     private JButton viewOptionsButton;
     private JButton buttonCancel;
-    private JButton viewAuditsButton;
 
     private AuditWatcher watcher;
 
@@ -31,6 +31,10 @@ public class AuditAlertsDialog extends JDialog {
                         dispose();
                         if (watcher != null) watcher.auditsViewed();
                         super.performAction();
+                    }
+
+                    public String getName() {
+                        return "View Audits";
                     }
                 });
 

@@ -22,12 +22,14 @@ public class DbVersion365Checker extends DbVersionChecker{
         if (tableData != null) {
             Set data = tableData.get(AUDIT_MSG_TABLE_NAME);
             if (data != null) {
-                passedAuditCheck = data.contains(AUTH_TYPE_COLUMN);
+                passedAuditCheck =  data.contains(AUTH_TYPE_COLUMN) ||
+                                    data.contains(AUTH_TYPE_COLUMN.toLowerCase());
             }
 
             data = tableData.get(TRUSTED_CERT_TABLE_NAME);
             if (data != null) {
-                passedTrustedCertCheck = data.contains(VERIFY_HOSTNAME_COLUMN);
+                passedTrustedCertCheck =    data.contains(VERIFY_HOSTNAME_COLUMN) ||
+                                            data.contains(VERIFY_HOSTNAME_COLUMN);
             }
         }
         return passedAuditCheck && passedTrustedCertCheck;

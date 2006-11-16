@@ -4,18 +4,20 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.HelpUtil;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
-import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.*;
-import com.l7tech.console.auditalerts.AuditAlertConfigBean;
-import com.l7tech.console.auditalerts.AuditAlertsNotificationPanel;
 import com.l7tech.console.auditalerts.AuditAlertChecker;
+import com.l7tech.console.auditalerts.AuditAlertConfigBean;
 import com.l7tech.console.auditalerts.AuditAlertOptionsAction;
+import com.l7tech.console.auditalerts.AuditAlertsNotificationPanel;
+import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.panels.LicenseDialog;
+import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.panels.PreferencesDialog;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -141,6 +143,7 @@ public class MainWindow extends JFrame {
     private ShowDashboardAction showDashboardAction = null;
     private ManageClusterLicensesAction manageClusterLicensesAction = null;
     private NewInternalUserAction newInernalUserAction;
+    private AuditAlertOptionsAction manageAuditAlertsAction;
 
 
     private JPanel frameContentPane = null;
@@ -184,7 +187,6 @@ public class MainWindow extends JFrame {
     private final SsmPreferences preferences;
 
     private AuditAlertsNotificationPanel auditAlertBar;
-    private AuditAlertOptionsAction manageAuditAlertsAction;
     private AuditAlertChecker auditAlertChecker;
 
 
