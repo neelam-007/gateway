@@ -224,7 +224,7 @@
         <include name="**/forms_rt-l7p1.jar"/>
         <include name="**/xml4j.jar"/>
         <include name="**/are.jar"/>
-        <include name="**/mailapi-1.3.2.jar"/>
+        <include name="**/mailapi-1.4.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/spring-context.jar"/>
         <include name="**/xalan-2.5.2.jar"/>
@@ -270,7 +270,7 @@
         <include name="**/spring-beans.jar"/>
         <include name="**/spring-remoting.jar"/>
         <include name="**/aopalliance.jar"/>
-        <include name="**/mailapi-1.3.2.jar"/>
+        <include name="**/mailapi-1.4.jar"/>
         <include name="**/antlr-2.7.7-l7p1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
         <include name="**/jsr173_1.0_api.jar"/>
@@ -845,7 +845,7 @@
                 <include name="commons-logging-1.0.4.jar"/>
 
                 <include name="activation.jar"/>
-                <include name="mailapi-1.3.2.jar"/>
+                <include name="mailapi-1.4.jar"/>
                 <include name="smtp-1.3.2.jar"/>
                 <include name="whirlycache-1.0.1.jar"/>
                 <include name="policy-1.0.jar"/>
@@ -1423,7 +1423,7 @@
         <chmod file="${build.installer}/Manager-${build.version}/Manager.sh" perm="555"/>
 
         <!-- Help files -->
-        <unzip src="${src.root}/webhelp/ssm/help.zip" 
+        <unzip src="${src.root}/webhelp/ssm/help.zip"
                dest="${build.installer}/Manager-${build.version}"/>
 
         <!-- Create distro TAR -->
