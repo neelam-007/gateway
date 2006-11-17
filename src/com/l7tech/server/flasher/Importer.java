@@ -13,10 +13,7 @@ import java.util.Map;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 import java.io.*;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.ResultSet;
+import java.sql.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
@@ -57,7 +54,7 @@ public class Importer {
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
         String inputpathval = arguments.get(IMAGE_PATH.name);
         if (inputpathval == null) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know what to import");
+            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
         }
         String mode = arguments.get(MODE.name);
         if (mode == null) {
@@ -167,15 +164,36 @@ public class Importer {
             }
 
             // reload license if applicable
-            reloadLicense();
+            try {
+                reloadLicense();
+            } catch (SQLException e) {
+                throw new IOException("error resetting license " + e.getMessage());
+            }
 
         } finally {
             FileUtils.deleteDir(new File(tempDirectory));
         }
     }
 
-    private void reloadLicense() {
-        // todo
+    private void reloadLicense() throws IOException, SQLException {
+        if (licenseValueBeforeImport != null) {
+            // get the id to use
+            byte[] buf = new byte[64];
+            FileInputStream fis = new FileInputStream(tempDirectory + File.separator + DBDumpUtil.LICENCEORIGINALID);
+            int read = fis.read(buf);
+            fis.close();
+            long licenseObjectId = Long.parseLong(new String(buf, 0, read));
+            Connection c = getConnection();
+            try {
+                PreparedStatement ps = c.prepareStatement("insert into cluster_properties values (?, 1, \'license\', ?)");
+                ps.setLong(1, licenseObjectId);
+                ps.setString(2, licenseValueBeforeImport);
+                ps.executeUpdate();
+                ps.close();
+            } finally {
+                c.close();
+            }
+        }
     }
 
     private void loadDumpFromExplodedImage() throws IOException, SQLException {

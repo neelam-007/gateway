@@ -20,6 +20,7 @@ public class DBDumpUtil {
     private static DBActions dbActions;
     public static final String DBDUMPFILENAME_STAGING = "dbdump_staging.sql";
     public static final String DBDUMPFILENAME_CLONE = "dbdump_clone.sql";
+    public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
     private static final String[] TABLE_NOT_IN_STAGING = {"client_cert"};
     private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "service_usage", "message_id", "service_metrics"};
 
@@ -54,7 +55,7 @@ public class DBDumpUtil {
             String tableName = tableNames.getString("TABLE_NAME");
             // drop and recreate table
             cloneoutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
-            stageoutput.write(("DROP TABLE IF EXISTS " + tableName + "o;\n").getBytes());
+            stageoutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
             Statement getCreateTablesStmt = c.createStatement();
             ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
             while (createTables.next()) {
@@ -74,7 +75,16 @@ public class DBDumpUtil {
             while (tdataList.next()) {
                 if (tableName.equals("cluster_properties")) { // dont include license in image
                     String tmp = tdataList.getString(3);
-                    if (tmp != null && tmp.equals("license")) continue;
+                    if (tmp != null && tmp.equals("license")) {
+                        // we dont include the license, however, we will record the object id
+                        // in order to be able to put back same id when we restore the original
+                        // target license. this will avoid clashing object id
+                        long licenseobjectid = tdataList.getLong(1);
+                        FileOutputStream licenseFos = new FileOutputStream(outputDirectory + File.separator + LICENCEORIGINALID);
+                        licenseFos.write(Long.toString(licenseobjectid).getBytes());
+                        licenseFos.close();
+                        continue;
+                    }
                 }
 
                 StringBuffer insertStatementToRecord = new StringBuffer("INSERT INTO " + tableName + " VALUES (");
