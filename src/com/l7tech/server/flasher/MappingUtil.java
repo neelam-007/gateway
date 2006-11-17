@@ -12,10 +12,7 @@ import org.xml.sax.SAXException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,8 +48,46 @@ public class MappingUtil {
     }
 
     public static void applyMappingChangesToDB(String dburl, String dbuser, String dbpasswd,
-                                               CorrespondanceMap mappingResults) {
-        // todo
+                                               CorrespondanceMap mappingResults) throws SQLException {
+        Connection c = getConnection(dburl, dbuser, dbpasswd);
+        try {
+            Statement selStatement = c.createStatement();
+
+            // iterate through policies
+            ResultSet selrs = selStatement.executeQuery("select policy_xml, objectid, name from published_service");
+            while (selrs.next()) {
+                String policy = selrs.getString(1);
+                boolean changed = false;
+                for (String fromip : mappingResults.backendIPMapping.keySet()) {
+                    if (policy.indexOf("stringValue=\"" + fromip + "\"") >= 0) {
+                        String toip = mappingResults.backendIPMapping.get(fromip);
+                        System.out.println("changing " + fromip + " to " + toip + " in service named " + selrs.getString(3));
+                        policy = policy.replace("stringValue=\"" + fromip + "\"", "stringValue=\"" + toip + "\"");
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    PreparedStatement updateps = c.prepareStatement("update published_service set policy_xml=? where objectid=?");
+                    updateps.setString(1, policy);
+                    updateps.setLong(2, selrs.getLong(2));
+                    updateps.executeUpdate();
+                    updateps.close();
+                }
+            }
+            selStatement.close();
+
+            // iterate through global variables
+            for (String varname : mappingResults.varMapping.keySet()) {
+                String varval = mappingResults.varMapping.get(varname);
+                PreparedStatement updateps = c.prepareStatement("update cluster_properties set propvalue=? where propkey=?");
+                updateps.setString(1, varval);
+                updateps.setString(2, varname);
+                updateps.executeUpdate();
+                updateps.close();
+            }
+        } finally {
+            c.close();
+        }
     }
     
     public static CorrespondanceMap loadMapping(String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
@@ -100,14 +135,25 @@ public class MappingUtil {
         return output;
     }
 
-    public static void produceTemplateMappingFileFromDatabaseConnection(String dburl, String dbuser,
-                                                                        String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException, ClassNotFoundException {
-
-        Connection c = getDbActions().getConnection(dburl, dbuser, dbpasswd);
-
-        if (c == null) {
-            throw new SQLException("could not connect using url: " + dburl + ". with username " + dbuser + ", and password: " + dbpasswd);
+    private static Connection getConnection(String databaseURL, String databaseUser, String databasePasswd) throws SQLException {
+        Connection c;
+        try {
+            c = getDbActions().getConnection(databaseURL, databaseUser, databasePasswd);
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("cannot get driver " + e.getMessage());
         }
+        if (c == null) {
+            throw new SQLException("could not connect using url: " + databaseURL +
+                                   ". with username " + databaseUser +
+                                   ", and password: " + databasePasswd);
+        }
+        return c;
+    }
+
+    public static void produceTemplateMappingFileFromDB(String dburl, String dbuser,
+                                                        String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
+
+        Connection c = getConnection(dburl, dbuser, dbpasswd);
         ArrayList<String> ipaddressesInRoutingAssertions = new ArrayList<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         try {
@@ -230,10 +276,4 @@ public class MappingUtil {
             </L7p:HttpRoutingAssertion>
 
     */
-
-    // for testing purposes only
-    public static void main(String[] args) throws Exception {
-        //applyMappingChangesToDB("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", "gateway", "password", "/home/flascell/tmp/template.xml");
-        produceTemplateMappingFileFromDatabaseConnection("jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8", "gateway", "7layer", "/home/flascell/tmp/templatemap.xml");
-    }
 }

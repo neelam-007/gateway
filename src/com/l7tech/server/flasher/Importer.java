@@ -160,7 +160,11 @@ public class Importer {
 
             // apply mapping if applicable
             if (mapping != null) {
-                MappingUtil.applyMappingChangesToDB(databaseURL, databaseUser, databasePasswd, mapping);
+                try {
+                    MappingUtil.applyMappingChangesToDB(databaseURL, databaseUser, databasePasswd, mapping);
+                } catch (SQLException e) {
+                    throw new IOException("error mapping staging values " + e.getMessage());
+                }
             }
 
             // reload license if applicable

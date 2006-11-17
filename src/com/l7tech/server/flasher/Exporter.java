@@ -105,14 +105,12 @@ public class Exporter {
             }
             // read policy files from this dump, collect all potential mapping in order to produce mapping template file
             try {
-                MappingUtil.produceTemplateMappingFileFromDatabaseConnection(databaseURL, databaseUser, databasePasswd, partitionName);
+                MappingUtil.produceTemplateMappingFileFromDB(databaseURL, databaseUser, databasePasswd, partitionName);
             } catch (SQLException e) {
                 // should not happen
                 throw new RuntimeException("problem producing template mapping file", e);
             } catch (SAXException e) {
                 // should not happen
-                throw new RuntimeException("problem producing template mapping file", e);
-            } catch (ClassNotFoundException e) {
                 throw new RuntimeException("problem producing template mapping file", e);
             }
         }
@@ -210,5 +208,5 @@ public class Exporter {
             out.closeEntry();
             in.close();
         }
-    }    
+    }
 }

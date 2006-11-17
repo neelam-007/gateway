@@ -22,15 +22,16 @@ public class FlashUtilityLauncher {
             printusage();
             return;
         }
-
         try {
             HashMap<String, String> passedArgs = parseArguments(args);
-            if (args[0].equals("import")) {
+            if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
                 importer.doIt(passedArgs);
-            } else if (args[0].equals("export")) {
+                System.out.println("\n\nImport completed with no errors. You may restart the target SecureSpan Gateway.");
+            } else if (args[0].toLowerCase().equals("export")) {
                 Exporter exporter = new Exporter();
                 exporter.doIt(passedArgs);
+                System.out.println("\n\nExport of SecureSpan Gateway image completed with no errors.");
             }
         } catch (InvalidArgumentException e) {
             System.out.println(e.getMessage());
@@ -61,18 +62,18 @@ public class FlashUtilityLauncher {
     private static void printusage() {
         StringBuffer output = new StringBuffer();
         if (OSDetector.isWindows()) {
-            output.append("usage: ssgflash.cmd [import | export] [OPTIONS]" + EOL_CHAR);
+            output.append("usage: ssgflash.cmd [import | export] [OPTIONS]").append(EOL_CHAR);
         } else {
-            output.append("usage: ssgflash.sh [import | export] [OPTIONS]" + EOL_CHAR);
+            output.append("usage: ssgflash.sh [import | export] [OPTIONS]").append(EOL_CHAR);
         }
-        output.append("\tIMPORT OPTIONS:" + EOL_CHAR);
+        output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
         for (CommandLineOption option : Importer.ALLOPTIONS) {
-            output.append("\t" + option.name + "\t\t" + option.description + EOL_CHAR);
+            output.append("\t").append(option.name).append("\t\t").append(option.description).append(EOL_CHAR);
         }
         output.append(EOL_CHAR);
-        output.append("\tEXPORT OPTIONS:" + EOL_CHAR);
+        output.append("\tEXPORT OPTIONS:").append(EOL_CHAR);
         for (CommandLineOption option : Exporter.ALLOPTIONS) {
-            output.append("\t" + option.name + "\t\t" + option.description + EOL_CHAR);
+            output.append("\t").append(option.name).append("\t\t").append(option.description).append(EOL_CHAR);
         }
         System.out.println(output);
     }
