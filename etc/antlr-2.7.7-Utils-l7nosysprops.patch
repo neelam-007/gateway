@@ -1,0 +1,17 @@
+--- antlr/Utils.java-ORIG	2006-11-16 16:26:28.000000000 -0800
++++ antlr/Utils.java	2006-11-16 16:26:58.000000000 -0800
+@@ -3,12 +3,14 @@
+ public class Utils {
+ 	private static boolean useSystemExit = true;
+ 	private static boolean useDirectClassLoading = false;
++/*  commented out -- lyonsm@layer7-tech.com
+ 	static {
+ 		if ("true".equalsIgnoreCase(System.getProperty("ANTLR_DO_NOT_EXIT", "false")))
+ 			useSystemExit = false;
+ 		if ("true".equalsIgnoreCase(System.getProperty("ANTLR_USE_DIRECT_CLASS_LOADING", "false")))
+ 			useDirectClassLoading = true;
+ 	}
++*/
+ 
+ 	/** Thanks to Max Andersen at JBOSS and Scott Stanchfield */
+ 	public static Class loadClass(String name) throws ClassNotFoundException {
