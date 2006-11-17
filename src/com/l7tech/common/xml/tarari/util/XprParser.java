@@ -1,4 +1,4 @@
-// $ANTLR 2.7.6 (20051207): "xparser.g" -> "XprParser.java"$
+// $ANTLR 2.7.7 (2006-11-01): "xparser.g" -> "XprParser.java"$
 
 package com.l7tech.common.xml.tarari.util;
 
