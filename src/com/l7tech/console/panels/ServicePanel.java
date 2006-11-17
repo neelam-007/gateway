@@ -15,7 +15,6 @@ import org.w3c.dom.Document;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 
@@ -119,7 +118,7 @@ public class ServicePanel extends WizardStepPanel {
     private void initComponents() {
         setLayout(new BorderLayout());
         wsdlLocationPanel = new WsdlLocationPanel(getOwner(), logger,
-                !TopComponents.getInstance().isApplet(), SearchWsdlDialog.uddiEnabled());
+                true, SearchWsdlDialog.uddiEnabled());
         wsdlLocationPanel.addPropertyListener(new PropertyChangeListener(){
             public void propertyChange(PropertyChangeEvent evt) {
                 notifyListeners();

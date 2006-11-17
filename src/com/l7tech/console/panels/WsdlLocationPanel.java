@@ -12,14 +12,13 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -41,6 +40,7 @@ import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.FindException;
 
@@ -332,35 +332,11 @@ public class WsdlLocationPanel extends JPanel {
                 result = gatewayFetchWsdlUrl(wsdlUrl);
             }
             else { // it is a file url or
-                result = AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                    public Object run() {
-                        try {
-                            return readFile(wsdlUrl);
-                        } catch (AccessControlException ace) {
-                            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-                            return null;
-                        }
-                    }
-                });
+               result = readFile(wsdlUrl);
             }
             if (result == null)
                 // canceled
                 return null;
-            if (!(result instanceof String) && !(result instanceof Document)) {
-                String msg = "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'";
-                if (result instanceof Throwable) {
-                    Throwable t = (Throwable)result;
-                    logger.log(Level.WARNING, msg, (Throwable)result);
-                    msg = "Unable to parse the WSDL at this location: \n" + ExceptionUtils.getMessage(t);
-                }
-                final Frame mainWindow = TopComponents.getInstance().getTopParent();
-                JOptionPane.showMessageDialog(mainWindow,
-                                              msg + "\n",
-                                              "Error",
-                                              JOptionPane.ERROR_MESSAGE);
-                return null;
-            }
-
 
             Document resolvedDoc = null;
 
@@ -404,10 +380,12 @@ public class WsdlLocationPanel extends JPanel {
                 if (!wsdlUrl.startsWith("http")) {
                     baseUri = "local file"; // looks odd but makes the error messages nicer ...
                 }
-                Wsdl wsdl = Wsdl.newInstance(baseUri, new StringReader(XmlUtil.nodeToString(resolvedDoc)), false);
+                Wsdl wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), baseUri, new StringReader(XmlUtil.nodeToString(resolvedDoc)), false);
                 wsdlDocument = resolvedDoc;
                 return wsdl;
             }
+        } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
         } catch (WSDLException e1) {
             logger.log(Level.INFO, "Could not parse WSDL.", e1); // this used to do e.printStackTrace() this is slightly better.
             String message = ExceptionUtils.getMessage(e1);
@@ -421,6 +399,12 @@ public class WsdlLocationPanel extends JPanel {
               "Error",
               JOptionPane.ERROR_MESSAGE);
         } catch (MalformedURLException e1) {
+            logger.log(Level.INFO, "Could not parse URL.", e1); // this used to do e.printStackTrace() this is slightly better.
+            JOptionPane.showMessageDialog(null,
+              "Illegal URL string '" + wsdlUrl + "'\n",
+              "Error",
+              JOptionPane.ERROR_MESSAGE);
+        } catch (URISyntaxException e1) {
             logger.log(Level.INFO, "Could not parse URL.", e1); // this used to do e.printStackTrace() this is slightly better.
             JOptionPane.showMessageDialog(null,
               "Illegal URL string '" + wsdlUrl + "'\n",
@@ -445,7 +429,7 @@ public class WsdlLocationPanel extends JPanel {
         return null;
     }
 
-    private Object gatewayFetchWsdlUrl(final String wsdlUrl) {
+    private String gatewayFetchWsdlUrl(final String wsdlUrl) throws IOException {
         Dialog rootDialog = (Dialog) SwingUtilities.getWindowAncestor(this);
         final CancelableOperationDialog dlg = new CancelableOperationDialog(rootDialog,
                                                                             "Resolving target",
@@ -454,12 +438,6 @@ public class WsdlLocationPanel extends JPanel {
             public Object construct() {
                 try {
                     return Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrl);
-                } catch (RemoteException e) {
-                    return e;
-                } catch (MalformedURLException e) {
-                    return e;
-                } catch (IOException e) {
-                    return e;
                 } catch (Exception e) {
                     return e;
                 }
@@ -472,13 +450,28 @@ public class WsdlLocationPanel extends JPanel {
         worker.start();
         dlg.setVisible(true);
         worker.interrupt();
-        return worker.get();
+
+        Object result = worker.get();
+
+        if (result instanceof Throwable) {
+            if (result instanceof RuntimeException) {
+                throw (RuntimeException) result;
+            }
+            else if (result instanceof IOException) {
+                throw (IOException) result;
+            }
+            else {
+                throw new RuntimeException("Unexpected exception when fetching WSDL.", (Throwable)result);
+            }
+        }
+
+        return (String) result;
     }
 
     /**
-     * Returns a Document or an Exception
+     * Returns a WSDL Document.
      */
-    private Object readFile(final String wsdlUrl) {
+    private Document readFile(final String wsdlUrl) throws URISyntaxException, IOException, SAXException {
         File wsdlFile = null;
         FileInputStream fin = null;
         try {
@@ -493,9 +486,6 @@ public class WsdlLocationPanel extends JPanel {
 
             fin = new FileInputStream(wsdlFile);
             return XmlUtil.parse(fin, true);
-        }
-        catch(Exception e) {
-            return e;
         }
         finally {
             ResourceUtils.closeQuietly(fin);

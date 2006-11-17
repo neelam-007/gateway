@@ -1,9 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -19,7 +15,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
 
     private JPanel mainPanel;
     private JLabel panelHeader;
-
+    private JTextPane overviewTextPane;
 
     public WsdlCreateOverviewPanel(WizardStepPanel next) {
         super(next);
@@ -28,34 +24,19 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
-    }
 
-    /**
-     * @return the wizard step description
-     */
-    public String getDescription() {
-        return "";
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to proceed to the next
-     * one.
-     * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean isValid() {
-        return true;
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-
-    public boolean canFinish() {
-        return false;
+        overviewTextPane.setText(
+                "<html>\n" +
+                "<body>\n" +
+                "<p><b>This Wizard will guide you through the steps required to generate WSDL for a new Web service.</b></p>\n" +
+                "<p><b>You will be asked to provide:</b></p>\n" +
+                "<table>\n" +
+                "<tr><td valign=top><p><b>-</b></p></td><td valign=top><p><b>A service definition</b></p></td></tr>\n" +
+                "<tr><td valign=top><p><b>-</b></p></td><td valign=top><p><b>The operations, operations messages, and message parts involved in the Web service</b></p></td></tr>\n" +
+                "<tr><td valign=top><p><b>-</b></p></td><td valign=top><p><b>A service endpoint address and the SOAPAction operation attributes</b></p></td></tr>\n" +
+                "</table>\n" +
+                "</body>\n" +
+                "</html>");
     }
 
     /**

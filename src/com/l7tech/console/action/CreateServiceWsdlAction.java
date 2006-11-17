@@ -5,7 +5,6 @@ import com.l7tech.common.security.rbac.AttemptedCreate;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
@@ -15,6 +14,7 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -33,11 +33,11 @@ import javax.swing.tree.TreePath;
 import javax.wsdl.Definition;
 import javax.wsdl.Port;
 import javax.wsdl.Service;
+import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLWriter;
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
@@ -92,18 +92,24 @@ public class CreateServiceWsdlAction extends SecureAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                WsdlDefinitionPanel defPanel =
-                  new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null)))));
-                WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
-                Frame f = TopComponents.getInstance().getTopParent();
-                Wizard w = new WsdlCreateWizard(f, p);
+                try {
+                    WsdlDefinitionPanel defPanel =
+                      new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null)))));
+                    WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
+                    Frame f = TopComponents.getInstance().getTopParent();
+                    Wizard w = new WsdlCreateWizard(f, p);
 
-                w.addWizardListener(wizardListener);
-                Utilities.setEscKeyStrokeDisposes(w);
-                w.pack();
-                w.setSize(850, 500);
-                Utilities.centerOnScreen(w);
-                w.setVisible(true);
+                    w.addWizardListener(wizardListener);
+                    Utilities.setEscKeyStrokeDisposes(w);
+                    w.pack();
+                    w.setSize(850, 500);
+                    Utilities.centerOnScreen(w);
+                    w.setVisible(true);
+                } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
+                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                } catch (WSDLException we) {
+                    throw new RuntimeException(we);
+                }
             }
         });
     }
@@ -121,11 +127,11 @@ public class CreateServiceWsdlAction extends SecureAction {
                 Definition def = (Definition)w.getWizardInput();
 
                 service.setDisabled(true);
-                WSDLFactory fac = WSDLFactory.newInstance();
+                WSDLFactory fac = WsdlUtils.getWSDLFactory();
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
                 StringWriter sw = new StringWriter();
                 wsdlWriter.writeWSDL(def, sw);
-                Wsdl ws = Wsdl.newInstance(Wsdl.extractBaseURI(sw.toString()), new StringReader(sw.toString()));
+                Wsdl ws = new Wsdl(def);
                 service.setName(ws.getServiceName());
                 service.setWsdlXml(sw.toString());
                 final String serviceAddress = getServiceAddress(def);
@@ -153,6 +159,8 @@ public class CreateServiceWsdlAction extends SecureAction {
                 header.setName(service.getName());
                 header.setOid(oid);
                 serviceAdded(header);
+            } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
+                TopComponents.getInstance().showNoPrivilegesErrorMessage();    
             } catch (Exception e) {
                 Frame w = TopComponents.getInstance().getTopParent();
                 if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
@@ -171,14 +179,6 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 }
             }
-        }
-
-        /**
-         * Invoked when the wizard has been cancelled.
-         *
-         * @param e the event describinng the wizard cancel
-         */
-        public void wizardCanceled(WizardEvent e) {
         }
 
         /**

@@ -1,14 +1,11 @@
 package com.l7tech.console.table;
 
-import com.ibm.wsdl.MessageImpl;
-
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.Definition;
 import javax.wsdl.Message;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -22,20 +19,23 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WsdlMessagesTableModel extends AbstractTableModel {
-    private Definition definition;
-    List messageList = new ArrayList();
+    private final Definition definition;
+    private final List<MessageInfo> messageList = new ArrayList<MessageInfo>();
 
     /**
      * Create the new <code>WsdlMessagesTableModel</code>
      * 
-     * @param def 
+     * @param definition The wsdl Definition 
      */
-    public WsdlMessagesTableModel(Definition def) {
-        definition = def;
-        if (def == null) {
+    public WsdlMessagesTableModel(final Definition definition) {
+        if (definition == null) {
             throw new IllegalArgumentException();
         }
-        messageList.addAll(definition.getMessages().values());
+        this.definition = definition;
+        for (Object messageObject : definition.getMessages().values()) {
+            Message message = (Message) messageObject;
+            this.messageList.add(new MessageInfo(message, message.getOrderedParts(null)));
+        }
     }
 
     /**
@@ -61,16 +61,45 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * Returns the rows from the table model. Note that this
-     * operation returns the list that the table model is backed
-     * and not the copy.
+     * Get the list of messages.
+     *
+     * <p>The list is not backed by messages from the model.</p>
      * 
      * @return the list of rows in the model
      */
-    public List getMessages() {
-        return messageList;
+    public List<Message> getMessages() {
+        List<Message> messages = new ArrayList();
+
+        for (MessageInfo messageInfo : messageList) {
+            Message message = definition.createMessage();
+            message.setQName(messageInfo.message.getQName());
+            message.setUndefined(messageInfo.message.isUndefined());
+            for (Part part : messageInfo.parts) {
+                message.addPart(part);
+            }
+            messages.add(message);
+        }
+
+        return messages;
     }
 
+    /**
+     * Get the list of message Parts.
+     *
+     * <p>The list is backed by Parts from the model.</p>
+     *
+     * @return the list of Parts for the index (null for invalid index)
+     */
+    public List<Part> getMessageParts(int index) {
+        List<Part> parts = null;
+
+        if (index >=0 && index < messageList.size()) {
+            MessageInfo info = messageList.get(index);
+            parts = info.parts;
+        }
+
+        return parts;
+    }
 
     /**
      * Returns the value for the cell at <code>columnIndex</code> and
@@ -81,8 +110,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * this field is ignored as
      * @return	the value Object at the specified cell
      */
-    public Object getValueAt(int rowIndex, int columnIndex) {
-        return rowIndex==messageList.size() ? null : messageList.get(rowIndex);
+    public String getValueAt(int rowIndex, int columnIndex) {
+        return rowIndex==messageList.size() ? null : messageList.get(rowIndex).message.getQName().getLocalPart();
     }
 
     /**
@@ -104,7 +133,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public Message addMessage(QName name) {
-        Message m = new MutableMessage();
+        Message m = definition.createMessage();
         m.setQName(name);
         addMessage(m);
         return m;
@@ -117,11 +146,18 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param message the message to add
      */
     public void addMessage(Message message) {
+        boolean added = false;
         message.setUndefined(false);
-        definition.addMessage(message);
-        messageList.add(message);
-        int index = messageList.size();
-        this.fireTableRowsInserted(index, index);
+
+        if (indexOf(message.getQName()) == -1) {
+            messageList.add(new MessageInfo(message, message.getOrderedParts(null)));
+            added = true;
+        }
+        
+        if (added) {
+            int index = messageList.size();
+            this.fireTableRowsInserted(index, index);
+        }
     }
 
 
@@ -143,11 +179,9 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         int index = indexOf(name);
         if (index == -1) return null;
 
-        Message removed = definition.removeMessage(name);
-        if (removed != null) {
-            messageList.remove(removed);
-            this.fireTableRowsDeleted(index, index);
-        }
+        Message removed = messageList.remove(index).message;
+        this.fireTableRowsDeleted(index, index);
+
         return removed;
     }
 
@@ -157,18 +191,15 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param index the message index
      */
     public Message removeMessage(int index) {
-        Iterator it = messageList.iterator();
-        int row = 0;
-        while (it.hasNext()) {
-            Object o = it.next();
-            if (row++ == index) {
-                Message m = (Message)messageList.remove(index);
-                definition.removeMessage(m.getQName());
-                fireTableRowsDeleted(index, index);
-                return m;
-            }
+        MessageInfo messageInfo = messageList.remove(index);
+        Message message = null;
+
+        if (messageInfo != null) {
+            fireTableRowsDeleted(index, index);
+            message = messageInfo.message;
         }
-        throw new IndexOutOfBoundsException("" + index + " > " + messageList.size());
+
+        return message;
     }
 
     /**
@@ -182,8 +213,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      */
     public int indexOf(QName qn) {
         for (int i = messageList.size() - 1; i >= 0; --i) {
-            Message message = (Message)messageList.get(i);
-            if (qn.equals(message.getQName())) return i;
+            MessageInfo messageInfo = messageList.get(i);
+            if (qn.equals(messageInfo.message.getQName())) return i;
         }
         return -1;
     }
@@ -203,35 +234,23 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         if (aValue == null) {
             throw new IllegalArgumentException("value is null");
         }
-        if (!(aValue instanceof Message)) {
-            if (aValue instanceof String && rowIndex==messageList.size()) {
-                String value = (String) aValue;
-                if (value.length() > 0) addMessage(value);
+        if (columnIndex == 0) {
+            if (rowIndex == messageList.size()) {
+               String value = (String) aValue;
+               if (value.length() > 0)
+                   addMessage(value);
             }
-            else {
-                throw new IllegalArgumentException("value is not a Message. Received " + aValue.getClass());
+            else  {
+                // Preserve position in the list but remove / re-add to the definition
+                // since the key is changed (QName)
+                MessageInfo messageInfo = messageList.get(rowIndex);
+                messageInfo.message.setQName(new QName(definition.getTargetNamespace(), (String) aValue));
+                this.fireTableDataChanged();                
             }
-        }
-        else if (columnIndex == 0) {
-            replaceMessage(rowIndex, (Message)aValue);
         }
         else {
             throw new IndexOutOfBoundsException("" + columnIndex + " >= " + getColumnCount());
         }
-    }
-
-    /**
-     * replace the message at the index with the new message nm.
-     * 
-     * @param index the index of the message to replace
-     * @param nm the new message
-     */
-    private void replaceMessage(int index, Message nm) {
-        Message om = getMessageAt(index);
-        definition.removeMessage(om.getQName());
-        messageList.set(index, nm);
-        definition.addMessage(nm);
-        this.fireTableRowsUpdated(index, index);
     }
 
     /**
@@ -249,46 +268,22 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
 
-    /**
-     * Returns the Message at the  row <code>rowIndex</code>.
-     * 
-     * @param	rowIndex	the row whose value is to be queried
-     * (1 based)
-     * @return	the Message at the specified row
-     *
-     * @throws IndexOutOfBoundsException if the index is out of range (index
-     * 		  &lt; 0 || index &gt;= getRowCount()).
-     */
-    private Message getMessageAt(int rowIndex) {
-        if (rowIndex==messageList.size()) return addMessage("");
-        return (Message)messageList.get(rowIndex);
+    public Class<?> getColumnClass(int columnIndex) {
+        return String.class;
     }
 
-    // hack so MessageImpl is editable. Make the internal list
-    // accessible.
-    public static class MutableMessage extends MessageImpl {
-        public List getadditionOrderOfParts() {
-            return additionOrderOfParts;
-        }
+    private static final class MessageInfo {
+        private final Message message;
+        private final List<Part> parts;
 
-        /**
-         * Replace the message part.
-         * 
-         * @param part the part to be added
-         */
-        public void replacePart(String name, Part part) {
-            parts.remove(name);
+        MessageInfo(Message message, List parts) {
+            this.message = message;
+            this.parts = new ArrayList<Part>();
 
-            final int size = additionOrderOfParts.size();
-            for (int i = 0; i < size; i++) {
-                String s = (String)additionOrderOfParts.get(i);
-                if (s.equals(name)) {
-                    additionOrderOfParts.set(i, part.getName());
-                    break;
-                }
+            for (Object partObj : parts) {
+                Part part = (Part) partObj;
+                parts.add(part);
             }
-            parts.put(part.getName(), part);
         }
     }
-
 }

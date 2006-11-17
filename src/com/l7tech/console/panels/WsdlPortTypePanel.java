@@ -15,11 +15,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WsdlPortTypePanel extends WizardStepPanel {
+
+    private static final Logger logger = Logger.getLogger(WsdlPortTypePanel.class.getName());
 
     private JPanel mainPanel;
     private JTextField portTypeNameField;
@@ -88,28 +91,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     public String getStepLabel() {
         return "Port Type and Operations";
     }
-
-    /**
-     * Test whether the step is finished and it is safe to proceed to the next
-     * one.
-     * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     * 
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean isValid() {
-        return true;
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     * 
-     * @return true if the panel is valid, false otherwis
-     */
-
-    public boolean canFinish() {
-        return false;
-    }
-
 
     /**
      * Provides the wizard with the current data--either
@@ -296,7 +277,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         PortType p = getOrCreatePortType(def);
 
         if (needPortTypeUpdate(def, p)) {
-            WsdlCreateWizard.log.fine("target namespace changed, updating port type....");
+            logger.fine("target namespace changed, updating port type....");
             updatePortType(p, def);
         }
         validateOperations(def);

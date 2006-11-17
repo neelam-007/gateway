@@ -1,10 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.ibm.wsdl.extensions.soap.SOAPConstants;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.console.table.WsdlBindingOperationsTableModel;
+import com.l7tech.common.xml.Wsdl;
 
 import javax.swing.*;
 import javax.wsdl.*;
@@ -30,7 +27,6 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
     private JPanel mainPanel;
     private JTextField portTypeBindingNameField;
-    private JLabel portTypeName;
     private JTable bindingOperationsTable;
     private JScrollPane bindingOperationsTableScrollPane;
 
@@ -78,27 +74,6 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
                "\"SOAP Action\" column in the Operations window specifies the value of the SOAPAction http header " +
                "for the operation." +
                "</html>";
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to proceed to the next
-     * one.
-     * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean isValid() {
-        return true;
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-
-    public boolean canFinish() {
-        return false;
     }
 
     /**
@@ -157,9 +132,8 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        Binding binding = null;
         try {
-            binding = getEditedBinding();
+            getEditedBinding();
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }
@@ -212,7 +186,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
               portType.getQName().getLocalPart() + "#" + bop.getName();
             ExtensibilityElement ee = null;
             ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
-            ee = extensionRegistry.createExtension(BindingOperation.class, SOAPConstants.Q_ELEM_SOAP_OPERATION);
+            ee = extensionRegistry.createExtension(BindingOperation.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "operation"));
             if (ee instanceof SOAPOperation) {
                 SOAPOperation sop = (SOAPOperation)ee;
                 sop.setSoapActionURI(action);
@@ -235,7 +209,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     private ExtensibilityElement getSoapBody() throws WSDLException {
         ExtensibilityElement ee;
         ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
-        ee = extensionRegistry.createExtension(BindingInput.class, SOAPConstants.Q_ELEM_SOAP_BODY);
+        ee = extensionRegistry.createExtension(BindingInput.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "body"));
         if (ee instanceof SOAPBody) {
             SOAPBody sob = (SOAPBody)ee;
             sob.setNamespaceURI(definition.getTargetNamespace());
@@ -264,7 +238,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         extElements.removeAll(remove);
 
         ExtensibilityElement ee = null;
-        ee = extensionRegistry.createExtension(Binding.class, SOAPConstants.Q_ELEM_SOAP_BINDING);
+        ee = extensionRegistry.createExtension(Binding.class, new QName(Wsdl.WSDL_SOAP_NAMESPACE, "binding"));
         if (ee instanceof SOAPBinding) {
             SOAPBinding sb = (SOAPBinding)ee;
             sb.setTransportURI(portTypeBindingTransportField.getText());

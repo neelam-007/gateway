@@ -1,12 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.ibm.wsdl.DefinitionImpl;
-import com.ibm.wsdl.extensions.PopulatedExtensionRegistry;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.xmlviewer.Viewer;
@@ -29,7 +24,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * The <code>Wizard</code> that drives the wizard step panels.
@@ -38,16 +32,23 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public class WsdlCreateWizard extends Wizard {
-    static final Logger log = Logger.getLogger(WsdlCreateWizard.class.getName());
 
-    public WsdlCreateWizard(Frame parent, WizardStepPanel panel) {
+    //    
+    private static final String XSD_NAME_SPACE = "http://www.w3.org/2001/XMLSchema";
+    private static final String SOAP_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/soap/";
+    private static final String DEFAULT_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/";
+
+    //
+    private JButton buttonPreview;
+
+    public WsdlCreateWizard(Frame parent, WizardStepPanel panel) throws WSDLException {
         super(parent, panel);
         setResizable(true);
         setTitle("Create WSDL Wizard");
-        Definition def = new DefinitionImpl();
-        def.setExtensionRegistry(new PopulatedExtensionRegistry());
-        wizardInput = def;
-        this.addWizardListener(wizardListener);
+
+        // initialize the WSDL definition
+        initModel();
+        collect();
 
         getButtonHelp().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -75,12 +76,16 @@ public class WsdlCreateWizard extends Wizard {
             buttonPreview.setText("Preview");
             buttonPreview.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    // ensure model is up to date
+                    getSelectedWizardPanel().storeSettings(wizardInput);
+                    collect();
+
+                    // 
                     try {
                         WSDLFactory fac = WsdlUtils.getWSDLFactory();
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
                         StringWriter writer = new StringWriter();
-                        collect();
-                        Definition definition = (Definition)wizardInput;
+                        Definition definition = (Definition) wizardInput;
                         wsdlWriter.writeWSDL(definition, writer);
 
                         Frame mw = TopComponents.getInstance().getTopParent();
@@ -98,9 +103,21 @@ public class WsdlCreateWizard extends Wizard {
                     }
                 }
             });
-            buttonPreview.setEnabled(false);
         }
         return buttonPreview;
+    }
+
+    private void initModel() throws WSDLException {
+        Definition definition = WsdlUtils.getWSDLFactory().newDefinition();
+
+        definition.setQName(new QName("NewService"));
+        definition.setTargetNamespace("http://tempuri.org/");
+        definition.addNamespace("tns", definition.getTargetNamespace());                      
+        definition.addNamespace("xsd", XSD_NAME_SPACE);
+        definition.addNamespace("soap", SOAP_NAME_SPACE);
+        definition.addNamespace(null, DEFAULT_NAME_SPACE);
+
+        wizardInput = definition;
     }
 
     private class RawWsdlDialog extends JDialog {
@@ -149,20 +166,4 @@ public class WsdlCreateWizard extends Wizard {
         return prefix + localName.getLocalPart();
     }
 
-    private final WizardListener wizardListener = new WizardAdapter() {
-        /**
-         * Invoked when the wizard page has been changed.
-         *
-         * @param e the event describing the selection change
-         */
-        public void wizardSelectionChanged(WizardEvent e) {
-            WizardStepPanel p = (WizardStepPanel)e.getSource();
-            boolean enable =
-              (!((p instanceof WsdlCreateOverviewPanel) ||
-              (p instanceof WsdlDefinitionPanel)));
-            getButtonPreview().setEnabled(enable);
-        }
-
-    };
-    private JButton buttonPreview;
 }

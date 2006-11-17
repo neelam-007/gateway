@@ -6,9 +6,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.wsdl.Definition;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -23,23 +20,22 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WsdlMessagePartsTableModel extends AbstractTableModel {
-    private WsdlMessagesTableModel.MutableMessage message;
-    private Definition definition;
-    private List partsList = new ArrayList();
+    private final Definition definition;
+    private final List<Part> parts;
 
     /**
      * Create the new <code>WsdlMessagePartsTableModel</code>
      * 
-     * @param m the message that this model represents
-     * @param d the definition that the message belongs to
+     * @param parts the Parts that this model represents
+     * @param definition the definition that the Parts belong to
      */
-    public WsdlMessagePartsTableModel(WsdlMessagesTableModel.MutableMessage m, Definition d) {
-        message = m;
-        definition = d;
-        if (m == null || d == null) {
+    public WsdlMessagePartsTableModel(final List<Part> parts, final Definition definition) {
+        if (parts == null || definition == null) {
             throw new IllegalArgumentException();
         }
-        partsList = message.getadditionOrderOfParts();
+
+        this.definition = definition;
+        this.parts = parts;
     }
 
     /**
@@ -78,7 +74,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param columnIndex column of cell
      */
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        if (rowIndex == partsList.size()) {
+        if (rowIndex == parts.size()) {
             if (aValue == null) return;
             if (columnIndex == 0) {
                 String partName = (String) aValue;
@@ -103,10 +99,10 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
                     return;
                 }
                 p.setName(newName);
-                message.replacePart(partName, p);
             } else if (columnIndex == 1) {
                 p.setTypeName((QName)aValue);
             }
+            this.fireTableDataChanged();
         }
     }
 
@@ -119,7 +115,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        return partsList.size() + 1;
+        return parts.size() + 1;
     }
 
     /**
@@ -133,7 +129,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
-        if (rowIndex == partsList.size()) return null;
+        if (rowIndex == parts.size()) return null;
         Part p = getPartAt(rowIndex);
         if (columnIndex == 0) {
             return p.getName();
@@ -169,9 +165,10 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param p the part to add
      */
     public void addPart(Part p) {
-        message.addPart(p);
+        final int i = parts.size();
+        p.setName(p.getName());
+        parts.add(p);
         this.fireTableStructureChanged();
-        final int i = partsList.size();
         this.fireTableRowsInserted(i,i);
     }
 
@@ -181,15 +178,24 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param name the message name local part
      */
     private Part removePart(String name) {
-        Part removed = (Part)message.getParts().remove(name);
+        Part toRemove = null;
 
-        if (removed != null) {
-            AbstractList al = (AbstractList)partsList;
-            int index = al.indexOf(removed.getName());
-            partsList.remove(removed.getName());
-            this.fireTableRowsDeleted(index,index);
+        if (name != null) {
+            for (Part part : parts) {
+                if (part.getName().equals(name)) {
+                    toRemove = part;
+                    break;
+                }
+            }
+
+            if (toRemove != null) {
+                int index = parts.indexOf(toRemove);
+                parts.remove(toRemove);
+                this.fireTableRowsDeleted(index,index);
+            }
         }
-        return removed;
+
+        return toRemove;
     }
 
     /**
@@ -233,27 +239,14 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     }
 
     /**
-     * Returns the Part at the  row <code>rowIndex</code>.
+     * Returns the Part at the given <code>modelIndex</code>.
      * 
-     * @param	rowIndex	the row whose value is to be queried
+     * @param	modelIndex	the item whose value is to be queried
      * (1 based)
      * @return	the Part at the specified row
      */
-    private Part getPartAt(int rowIndex) {
-        //Iterator it = message.getParts().values().iterator();
-        Iterator it = partsList.iterator();
-        int row = 0;
-        while (it.hasNext()) {
-            Object o = it.next();
-            if (row++ == rowIndex) {
-                Part p = message.getPart(o.toString());
-                if (p == null) {
-                    throw new IllegalStateException("Internal error: Could not locate part "+o);
-                }
-                return p;
-            }
-        }
-        throw new IndexOutOfBoundsException("" + rowIndex + " > " + partsList.size());
+    private Part getPartAt(int modelIndex) {
+        return parts.get(modelIndex);
     }
 
     private String getNewMessagePartArgumentName() {

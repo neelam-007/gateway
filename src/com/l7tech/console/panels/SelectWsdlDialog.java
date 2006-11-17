@@ -10,7 +10,6 @@ import org.w3c.dom.Document;
 
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.util.TopComponents;
 
 /**
  * Dialog for selection of a WSDL from a URL (UDDI) or File.
@@ -103,8 +102,7 @@ public class SelectWsdlDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
-        wsdlLocationPanel = new WsdlLocationPanel(this, logger,
-                !TopComponents.getInstance().isApplet(), SearchWsdlDialog.uddiEnabled());
+        wsdlLocationPanel = new WsdlLocationPanel(this, logger, true, SearchWsdlDialog.uddiEnabled());
         controlPanel.setLayout(new BorderLayout());
         controlPanel.add(wsdlLocationPanel, BorderLayout.CENTER);
         add(mainPanel);

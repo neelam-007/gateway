@@ -1,7 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.ibm.wsdl.extensions.soap.SOAPConstants;
-
 import javax.swing.*;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -11,6 +9,8 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Map;
+
+import com.l7tech.common.xml.Wsdl;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -41,38 +41,6 @@ public class WsdlServicePanel extends WizardStepPanel {
         return "<html>" +
                "The \"service\" element defines the Web service endpoint URL and connection port." +
                "</html>";
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to proceed to the next
-     * one.
-     * If the step is valid, the "Next" (or "Finish") button will be enabled.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-    public boolean isValid() {
-        return true;
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to advance to the next
-     * one.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-
-    public boolean canAdvance() {
-        return false;
-    }
-
-    /**
-     * Test whether the step is finished and it is safe to finish the wizard.
-     *
-     * @return true if the panel is valid, false otherwis
-     */
-
-    public boolean canFinish() {
-        return true;
     }
 
     /**
@@ -182,7 +150,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         extensibilityElements.removeAll(remove);
 
         ee = extensionRegistry.createExtension(Port.class,
-          SOAPConstants.Q_ELEM_SOAP_ADDRESS);
+          new QName(Wsdl.WSDL_SOAP_NAMESPACE, "address"));
         if (ee instanceof SOAPAddress) {
             SOAPAddress sa = (SOAPAddress)ee;
             sa.setLocationURI(portAddressField.getText());

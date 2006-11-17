@@ -179,6 +179,27 @@ public class Wsdl {
     public static Wsdl newInstance(final String documentBaseURI, final Reader reader, final boolean allowLocalImports)
             throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
+        return newInstance(fac, documentBaseURI, reader, allowLocalImports);
+    }
+
+    /**
+     * Create the instance by reading a WSDL document into from
+     * the <code>Reader</code> character stream.
+     *
+     * @param fac             the WSDLFactory to use
+     * @param documentBaseURI the document base URI of the WSDL definition
+     *                        described by the document.
+     *                        Can be <b>null</b>, in which case it will be
+     *                        ignored.
+     * @param reader          the character stream that contains the WSDL document,
+     *                        an XML document obeying the WSDL schema.
+     * @param allowLocalImports True to allow imports to be resolved to the
+     *                        local file system.
+     * @return the <code>Wsdl</code> instance
+     * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
+     */
+    public static Wsdl newInstance(final WSDLFactory fac, final String documentBaseURI, final Reader reader, final boolean allowLocalImports)
+            throws WSDLException {
         WSDLReader wsdlReader = fac.newWSDLReader();
 
         return new Wsdl(wsdlReader.readWSDL(new WSDLLocator() {
