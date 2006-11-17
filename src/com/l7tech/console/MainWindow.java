@@ -69,11 +69,6 @@ public class MainWindow extends JFrame {
      */
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
-    /**
-     * the path to WebHelp start file, relative to the working dir.
-     */
-    public static final String HELP_FILE_NAME = "help/!_start_!.htm";
-
     public static final String CONNECTION_PREFIX = " [connected to node: ";
     /**
      * the resource bundle name
