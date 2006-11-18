@@ -107,6 +107,15 @@ public class WsdlCreateWizard extends Wizard {
         return buttonPreview;
     }
 
+    /**
+     * Override finish so all panels get the chance to update their settings 
+     */
+    protected void finish(ActionEvent evt) {
+        getSelectedWizardPanel().storeSettings(wizardInput);
+        collect();
+        super.finish(evt);
+    }
+
     private void initModel() throws WSDLException {
         Definition definition = WsdlUtils.getWSDLFactory().newDefinition();
 
