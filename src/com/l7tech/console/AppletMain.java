@@ -6,18 +6,19 @@
 package com.l7tech.console;
 
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.Sheet;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.MalformedURLException;
@@ -31,7 +32,7 @@ import java.security.cert.X509Certificate;
 /**
  * Entry point for applet-based version of SSM.
  */
-public class AppletMain extends JApplet {
+public class AppletMain extends JApplet implements Utilities.SheetHolder {
     private static final Logger logger = Logger.getLogger(AppletMain.class.getName());
 
     /** Name we use to register the most recent instance of ourself under TopComponents. */
@@ -44,21 +45,10 @@ public class AppletMain extends JApplet {
     private static SsmApplication application = null;
     private static Container appletPanel = null;
     private static JMenuBar menuBar = null;
+    private static AppletMain currentPanelOwner = null;
 
-    private WindowListener windowListener = null;
     private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
     private String helpTarget = "managerAppletHelp";
-
-    private void maybeAddWindowListener(final Frame f) {
-        if (windowListener != null) return;
-
-        windowListener = new WindowAdapter() {
-            public void windowActivated(WindowEvent e) {
-                f.toFront();
-            }
-        };
-        f.addWindowListener(windowListener);
-    }
 
     public void init() {
         super.init();
@@ -67,34 +57,42 @@ public class AppletMain extends JApplet {
         getApplication().setAutoLookAndFeel();
         getApplication().run();
         setJMenuBar(getAppletMenuBar());
-        setContentPane(getAppletPanel());
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                getApplication().getMainWindow().disconnectFromGateway();
-                getApplication().getMainWindow().activateLogonDialog();
-            }
-        });
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(getAppletPanel(), BorderLayout.CENTER);
+        if (currentPanelOwner != null) currentPanelOwner.notifyContentPaneStolen();
+        currentPanelOwner = this;
 
-        TopComponents.getInstance().registerComponent("topLevelParent", new TopComponents.ComponentFinder() {
-            public Component findComponent() {
-                Component c = AppletMain.this;
-                while (c != null) {
-                    if (c instanceof Frame) {
-                        logger.info("Found applet container frame");
-                        maybeAddWindowListener((Frame)c);                        
-                        return c;
-                    }
-                    c = c.getParent();
-                }
-                logger.warning("Did not find applet container frame");
-                return null;
-            }
-        });
+        Frame appletContainer = findAppletContainerFrame();
+        if (appletContainer != null)
+                TopComponents.getInstance().registerComponent("topLevelParent", appletContainer);
 
         TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
         TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
 
+        DialogDisplayer.setDefaultSheetHolder(this);
+
         repaint();
+    }
+
+    private Frame findAppletContainerFrame() {
+        Component c = this;
+        while (c != null) {
+            if (c instanceof Frame) {
+                logger.info("Found applet container frame");
+                return (Frame)c;
+            }
+            c = c.getParent();
+        }
+        logger.warning("Did not find applet container frame");
+        return null;
+    }
+
+
+    public void start() {
+        if (!getApplication().getMainWindow().isConnected()) {
+            getApplication().getMainWindow().disconnectFromGateway();
+            getApplication().getMainWindow().activateLogonDialog();
+        }
     }
 
     public void destroy() {
@@ -125,6 +123,16 @@ public class AppletMain extends JApplet {
         appletPanel = mainWindow.getContentPane();
         mainWindow.setContentPane(new JPanel());
         return appletPanel;
+    }
+
+    private void notifyContentPaneStolen() {
+        logger.info("Applet content has been moved to a different browser frame.");
+        getContentPane().removeAll();
+        getContentPane().add(new AppletContentStolenPanel(), BorderLayout.CENTER);
+        setJMenuBar(null);
+        SwingUtilities.getWindowAncestor(this).pack();
+        invalidate();
+        repaint();
     }
 
     private JMenuBar getAppletMenuBar() {
@@ -206,5 +214,9 @@ public class AppletMain extends JApplet {
         } catch (MalformedURLException e) {
             logger.warning("Unable to display webhelp: bad webhelp URL: " + ExceptionUtils.getMessage(e));
         }
+    }
+
+    public void showSheet(Sheet sheet) {
+        Utilities.showSheet(this, sheet);
     }
 }

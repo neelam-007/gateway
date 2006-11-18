@@ -6,6 +6,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -62,10 +63,8 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
-                BridgeRoutingAssertionPropertiesDialog d = null;
+                final BridgeRoutingAssertionPropertiesDialog d;
                 try {
                     PublishedService svc = null;
                     if (getServiceNodeCookie() != null) {
@@ -83,9 +82,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
                 d.pack();
                 Utilities.centerOnScreen(d);
                 d.addPolicyListener(listener);
-                d.setVisible(true);
-            }
-        });
+        DialogDisplayer.display(d, TopComponents.getInstance().getRootSheetHolder(), null);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

@@ -3,7 +3,7 @@
  */
 package com.l7tech.common.gui.util;
 
-import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -249,6 +249,18 @@ public class Utilities {
             frameSize.width = screenSize.width;
         window.setLocation((screenSize.width - frameSize.width) / 2,
                            (screenSize.height - frameSize.height) / 2);
+    }
+
+    public static void centerOnParent(Component component) {
+        Container parent = component.getParent();
+        Dimension parentSize = parent.getSize();
+        Dimension compSize = component.getSize();
+        if (compSize.height > parentSize.height)
+            compSize.height = parentSize.height;
+        if (compSize.width > parentSize.width)
+            compSize.width = parentSize.width;
+        component.setLocation((parentSize.width - compSize.width) / 2,
+                           (parentSize.height - compSize.height) / 2);
     }
 
 
@@ -801,5 +813,119 @@ public class Utilities {
             return null;
         }
     }
+
+    public static final String PROPERTY_TRANSLUCENT_SHEETS = "com.l7tech.common.gui.util.translucentSheets";
+
+    public static boolean translucentSheets = SyspropUtil.getBoolean(PROPERTY_TRANSLUCENT_SHEETS);
+
+    public static class SheetBlocker extends JPanel {
+        private MouseListener nullMouseListener = new MouseAdapter(){};
+        private KeyListener nullKeyListener = new KeyAdapter(){};
+        private boolean blockEvents = false;
+
+        public SheetBlocker(boolean blockEvents) {
+            super.setVisible(false);
+            setOpaque(false);
+            this.blockEvents = blockEvents;
+        }
+
+        protected void paintComponent(Graphics g) {
+            if (!translucentSheets) return;
+            Graphics2D gg = (Graphics2D)g;
+            Composite oldComp = gg.getComposite();
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            g.setColor(Color.LIGHT_GRAY);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            gg.setComposite(oldComp);
+        }
+
+        public void setVisible(boolean vis) {
+            boolean wasVis = isVisible();
+            super.setVisible(vis);
+            if (wasVis == vis)
+                return;
+            if (vis) {
+                logger.info("Showing sheet blocker");
+                if (blockEvents) {
+                    addMouseListener(nullMouseListener);
+                    addKeyListener(nullKeyListener);
+                }
+            } else {
+                logger.info("Hiding sheet blocker");
+                if (blockEvents) {
+                    removeMouseListener(nullMouseListener);
+                    removeKeyListener(nullKeyListener);
+                }
+            }
+        }
+    }
+
+    public interface SheetHolder extends RootPaneContainer {
+        /**
+         * Show the specified sheet on this SheetHolder.
+         * <p/>
+         * An implementation is provided: your implementing frame, dialog or applet just invoke
+         * {@link Utilities#showSheet} on itself and the sheet.
+         *
+         * @param sheet  the sheet to show.  May not be null.
+         */
+        void showSheet(Sheet sheet);
+    }
+
+    /**
+     * Display the specified dialog as a sheet attached to the specified RootPaneContainer (which must
+     * also be a JComponenet).
+     *
+     * @param rpc   the RootPaneContainer to hold the sheet.  Must be non-null.
+     * @param sheet    the sheet to display.
+     * @throws ClassCastException if holder isn't a JComponent.
+     */
+    public static void showSheet(final RootPaneContainer rpc, final Sheet sheet) {
+        final JLayeredPane layers = rpc.getLayeredPane();
+
+        Integer layer = (Integer)layers.getClientProperty(PROPERTY_SHEETLAYER);
+        if (layer == null) layer = new Integer(JLayeredPane.PALETTE_LAYER.intValue() + 1);
+        final Integer oldLayer = layer;
+
+        final SheetBlocker blocker;
+        if (sheet.isNeedsBlocker()) {
+            blocker = new SheetBlocker(true);
+            sheet.setBlocker(blocker);
+            layers.add(blocker);
+            layer = new Integer(layer.intValue() + 1);
+            layers.putClientProperty(PROPERTY_SHEETLAYER, layer);
+            layers.setLayer(blocker, layer.intValue(), 0);
+            blocker.setLocation(0, 0);
+            blocker.setSize(layers.getWidth(), layers.getHeight());
+            blocker.addPropertyChangeListener("visible", new PropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if ("false".equals(evt.getNewValue())) {
+                        layers.remove(blocker);
+                        layers.putClientProperty(PROPERTY_SHEETLAYER, oldLayer);
+                    }
+                }
+            });
+
+            ComponentListener resizeListener = new ComponentAdapter() {
+                public void componentResized(ComponentEvent e) {
+                    blocker.setSize(layers.getParent().getWidth(), layers.getParent().getHeight());
+                    blocker.invalidate();
+                    blocker.validate();
+                }
+            };
+            layers.getParent().addComponentListener(resizeListener);
+
+        } else blocker = null;
+
+        layers.add(sheet);
+        layers.setLayer(sheet, layer.intValue(), 0);
+        sheet.pack();
+        Utilities.centerOnParent(sheet);
+
+        if (blocker != null) blocker.setVisible(true);
+        sheet.setVisible(true);
+    }
+
+    private static final Object PROPERTY_SHEETLAYER = "com.l7tech.common.gui.util.Utilities.sheetLayer";
 
 }

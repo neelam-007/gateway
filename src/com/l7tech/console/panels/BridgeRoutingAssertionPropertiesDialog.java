@@ -6,6 +6,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
@@ -56,7 +57,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         buttonHttpProperties.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                httpDialog.setVisible(true);
+                DialogDisplayer.display(httpDialog);
             }
         });
 

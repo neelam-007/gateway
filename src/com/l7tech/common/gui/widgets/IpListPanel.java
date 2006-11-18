@@ -7,6 +7,7 @@
 package com.l7tech.common.gui.widgets;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 
@@ -76,7 +77,7 @@ public class IpListPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
 
                 Container rootPane = IpListPanel.this.getTopLevelAncestor();
-                GetIpDialog dlg;
+                final GetIpDialog dlg;
                 if (rootPane instanceof Frame)
                     dlg = new GetIpDialog((Frame)rootPane);
                 else if (rootPane instanceof Dialog)
@@ -86,14 +87,17 @@ public class IpListPanel extends JPanel {
 
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
-                dlg.setVisible(true);
-                String addr = dlg.getAddress();
-                dlg.dispose();
-                if (addr != null) {
-                    java.util.List addrList = getAddressesList();
-                    addrList.add(addr);
-                    setAddresses((String[])addrList.toArray(new String[0]));
-                }
+
+                DialogDisplayer.display(dlg, rootPane, new Runnable() {
+                    public void run() {
+                        String addr = dlg.getAddress();
+                        if (addr != null) {
+                            java.util.List addrList = getAddressesList();
+                            addrList.add(addr);
+                            setAddresses((String[])addrList.toArray(new String[0]));
+                        }
+                    }
+                });
             }
         });
 

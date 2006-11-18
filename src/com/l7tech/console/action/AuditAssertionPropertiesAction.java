@@ -7,6 +7,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.AuditAssertionDialog;
 import com.l7tech.console.tree.policy.AuditAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -49,15 +50,18 @@ public class AuditAssertionPropertiesAction extends SecureAction {
             thresold = Level.INFO;
         }
 
-        AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), thresold.getName());
+        final AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), thresold.getName());
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);
-        aad.setVisible(true);
-        if (aad.isModified()) {
-            subject.setUserObject(aad.getAssertion());
-            assertionChanged();
-        }
+        DialogDisplayer.display(aad, TopComponents.getInstance().getRootSheetHolder(), new Runnable() {
+            public void run() {
+                if (aad.isModified()) {
+                    subject.setUserObject(aad.getAssertion());
+                    assertionChanged();
+                }
+            }
+        });
     }
 
     public void assertionChanged() {

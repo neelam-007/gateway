@@ -6,10 +6,11 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
+import com.l7tech.common.gui.util.Utilities;
+import static com.l7tech.common.gui.util.Utilities.SheetHolder;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -120,6 +121,13 @@ public class TopComponents {
         return null;
     }
 
+    /** @return the last active applet holding our main UI panel, or null if none is registered. */
+    private JApplet getMainApplet() {
+        Component c = getComponent("appletMain");
+        if (c instanceof JApplet) return (JApplet)c;
+        return null;
+    }
+
     /**
      * Get the top level parent.
      * @return the parent frame to use for dialogs that don't have any other parent to use
@@ -127,6 +135,24 @@ public class TopComponents {
     public Frame getTopParent() {
         Component c = getComponent("topLevelParent");
         if (c instanceof Frame) return (Frame)c;
+
+        return getMainWindow();
+    }
+
+    /**
+     * Same as getTopParent(), but returns as a RootPaneContainer instead.  This is a convenience method
+     * to prevent having to do your own downcasting.
+     *
+     * @return  the RootPaneContainer of the parent frame of the application (either standalone or applet)
+     */
+    public SheetHolder getRootSheetHolder() {
+        JApplet applet = getMainApplet();
+        if (applet instanceof Utilities.SheetHolder)
+            return (SheetHolder)applet;
+
+        Frame frame = getTopParent();
+        if (frame instanceof SheetHolder)
+            return (SheetHolder)frame;
 
         return getMainWindow();
     }

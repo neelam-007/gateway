@@ -6,6 +6,7 @@ import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
@@ -62,7 +63,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class MainWindow extends JFrame {
+public class MainWindow extends JFrame implements Utilities.SheetHolder {
     static Logger log = Logger.getLogger(MainWindow.class.getName());
     /**
      * the resource path for the application
@@ -2185,7 +2186,7 @@ public class MainWindow extends JFrame {
      *
      * @return true if connected,false otherwise
      */
-    private boolean isConnected() {
+    public boolean isConnected() {
         // the menu item is enabled if connected
         return getDisconnectMenuItem().isEnabled();
     }
@@ -2457,5 +2458,14 @@ public class MainWindow extends JFrame {
                                       "this applet and reload the page.",
                                       "Disallowed by browser settings",
                                       JOptionPane.WARNING_MESSAGE);
+    }
+
+    public void showSheet(Sheet sheet) {
+        Frame topParent = TopComponents.getInstance().getTopParent();
+        if (topParent != this && topParent instanceof RootPaneContainer) {
+            Utilities.showSheet((RootPaneContainer)topParent, sheet);
+            return;
+        }
+        Utilities.showSheet(this, sheet);
     }
 }

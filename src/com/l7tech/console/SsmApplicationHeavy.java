@@ -10,6 +10,7 @@ import com.l7tech.console.util.PreferencesChangedEvent;
 import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.HelpUtil;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -44,6 +45,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
         TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
+        DialogDisplayer.setDefaultSheetHolder(mainWindow);
         // Window listener
         mainWindow.setVisible(true);
         mainWindow.toFront();

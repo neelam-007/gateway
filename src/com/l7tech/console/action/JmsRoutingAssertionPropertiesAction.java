@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -66,7 +67,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
                 d.addPolicyListener(listener);
                 d.pack();
                 Utilities.centerOnScreen(d);
-                d.setVisible(true);
+                DialogDisplayer.display(d);
             }
         });
     }

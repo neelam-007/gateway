@@ -5,6 +5,7 @@ import com.l7tech.common.VersionException;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.InvalidHostCertificateException;
@@ -456,12 +457,13 @@ public class LogonDialog extends JDialog {
 
     private void doLogon() {
         authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(), passwordField.getPassword());
-        Container parentContainer = getParent();
+        final Container parentContainer = getParent();
         // service URL
         String selectedHost = (String) serverComboBox.getSelectedItem();
         if(selectedHost!=null) selectedHost = selectedHost.trim();
         final String sHost = selectedHost;
 
+        boolean threw = true;
         try {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -490,7 +492,7 @@ public class LogonDialog extends JDialog {
                           }
                       }
                       finally {
-                        progressDialog.setVisible(false);
+                          progressDialog.dispose();
                       }
                       if (!Thread.currentThread().isInterrupted() && memoException == null) {
                           return new Boolean(true);
@@ -527,11 +529,18 @@ public class LogonDialog extends JDialog {
 
             sw.start();
             progressDialog.setSwingWorker(sw);
-            progressDialog.setVisible(true);
+            DialogDisplayer.display(progressDialog, TopComponents.getInstance().getRootSheetHolder(),new Runnable() {
+                public void run() {
+                    parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                }
+            });
+
+            threw = false;
         } catch (Exception e) {
             handleLogonThrowable(e, sHost);
         } finally {
-            parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            if (threw)
+                parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
     }
 

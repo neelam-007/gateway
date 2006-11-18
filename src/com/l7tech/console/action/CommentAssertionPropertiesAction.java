@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.CommentAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -55,12 +56,15 @@ public class CommentAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         CommentAssertion ca = (CommentAssertion)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        CommentAssertionDialog cad = new CommentAssertionDialog(f, ca);
+        final CommentAssertionDialog cad = new CommentAssertionDialog(f, ca);
         Utilities.setEscKeyStrokeDisposes(cad);
         cad.pack();
         Utilities.centerOnScreen(cad);
-        cad.setVisible(true);
-        if (cad.isAssertionModified()) assertionChanged();
+        DialogDisplayer.display(cad, new Runnable() {
+            public void run() {
+                if (cad.isAssertionModified()) assertionChanged();
+            }
+        });
     }
 
     public void assertionChanged() {

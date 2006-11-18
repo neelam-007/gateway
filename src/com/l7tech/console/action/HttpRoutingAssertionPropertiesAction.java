@@ -1,6 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.Sheet;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -83,7 +85,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                 d.pack();
                 Utilities.centerOnScreen(d);
                 d.addPolicyListener(listener);
-                d.setVisible(true);
+                DialogDisplayer.display(d);
             }
         });
     }
@@ -98,6 +100,5 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                 log.log(Level.WARNING, "Unable to reach the palette tree.");
             }
         }
-
     };
 }
