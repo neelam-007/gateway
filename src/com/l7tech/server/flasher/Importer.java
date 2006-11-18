@@ -8,6 +8,7 @@ import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.BuildInfo;
 
 import java.util.Map;
 import java.util.zip.ZipInputStream;
@@ -74,11 +75,13 @@ public class Importer {
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
         tempDirectory = Exporter.createTmpDirectory();
         try {
+            System.out.println("Reading SecureSpan image file");
             unzipToDir(inputpathval, tempDirectory);
             if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING)).exists()) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("the file " + inputpathval +
                                                                         " does not appear to be a valid SSG flash image");
             }
+
             // if clone is asked, make sure the image was produced from a linux system
             if (fullClone) {
                 if (!(new File(tempDirectory + File.separator + "hibernate.properties")).exists()) {
@@ -86,6 +89,20 @@ public class Importer {
                                                                             "perhaps it was created on a windows system");
                 }
             }
+
+            // compare version of the image with version of the target system
+            FileInputStream fis =  new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
+            byte[] buf = new byte[512];
+            int read = fis.read(buf);
+            String imgversion = new String(buf, 0, read);
+            if (!BuildInfo.getProductVersion().equals(imgversion)) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("the version of this image is incompatible " +
+                                                                        "with this target system (" + imgversion +
+                                                                        " instead of " + BuildInfo.getProductVersion() +
+                                                                        ")");
+            }
+
+            System.out.println("SecureSpan image file recognized.");
             // get target partition, make sure it already exists
             partitionName = arguments.get(PARTITION.name);
             // check if the system has more than one partition on it
@@ -181,6 +198,7 @@ public class Importer {
 
     private void reloadLicense() throws IOException, SQLException {
         if (licenseValueBeforeImport != null) {
+            System.out.print("Restoring license ..");
             // get the id to use
             byte[] buf = new byte[64];
             FileInputStream fis = new FileInputStream(tempDirectory + File.separator + DBDumpUtil.LICENCEORIGINALID);
@@ -194,6 +212,7 @@ public class Importer {
                 ps.setString(2, licenseValueBeforeImport);
                 ps.executeUpdate();
                 ps.close();
+                System.out.println(". Done");
             } finally {
                 c.close();
             }
@@ -233,8 +252,22 @@ public class Importer {
         System.out.println(". Done");
     }
 
-    private void copySystemConfigFiles() {
-        // todo
+    private void copySystemConfigFiles() throws IOException {
+        System.out.println("Cloning SecureSpan Gateway settings (todo)");
+        // look into image's version of hibernate.properties. make sure the username, passwd and url match
+        /*Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
+                                            SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                                            SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                                            SsgDatabaseConfigBean.PROP_DB_URL,
+                                        });*/
+
+        //OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+        //osFunctions.getDatabaseConfig()
+
+
+
+
+        // todo, copy the config files to the target system. if new hibernate has different username, password or url, do not copy it
     }
 
     private Connection getConnection() throws SQLException {
@@ -335,7 +368,7 @@ public class Importer {
             if (zipentry.isDirectory()) {
                 (new File(destinationpath + File.separator + entryName)).mkdir();
             } else {
-                System.out.println("unzipping " + entryName);
+                System.out.println("\t- " + entryName);
                 FileOutputStream fileoutputstream;
                 File newFile = new File(entryName);
                 String directory = newFile.getParent();
@@ -354,7 +387,6 @@ public class Importer {
         }
         zipinputstream.close();
     }
-
 
     private DBActions getDBActions() throws ClassNotFoundException {
         if (dbActions == null)

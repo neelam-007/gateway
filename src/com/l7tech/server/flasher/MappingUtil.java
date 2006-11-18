@@ -51,6 +51,7 @@ public class MappingUtil {
                                                CorrespondanceMap mappingResults) throws SQLException {
         Connection c = getConnection(dburl, dbuser, dbpasswd);
         try {
+            System.out.println("Applying mappings");
             Statement selStatement = c.createStatement();
 
             // iterate through policies
@@ -61,7 +62,7 @@ public class MappingUtil {
                 for (String fromip : mappingResults.backendIPMapping.keySet()) {
                     if (policy.indexOf("stringValue=\"" + fromip + "\"") >= 0) {
                         String toip = mappingResults.backendIPMapping.get(fromip);
-                        System.out.println("changing " + fromip + " to " + toip + " in service named " + selrs.getString(3));
+                        System.out.println("\tchanging " + fromip + " to " + toip + " in service named " + selrs.getString(3));
                         policy = policy.replace("stringValue=\"" + fromip + "\"", "stringValue=\"" + toip + "\"");
                         changed = true;
                     }
@@ -82,9 +83,15 @@ public class MappingUtil {
                 PreparedStatement updateps = c.prepareStatement("update cluster_properties set propvalue=? where propkey=?");
                 updateps.setString(1, varval);
                 updateps.setString(2, varname);
-                updateps.executeUpdate();
+                int res = updateps.executeUpdate();
+                if (res > 0) {
+                    System.out.println("\tSetting cluster property " + varname + " to value " + varval);
+                } else {
+                    System.out.println("\tTarget system does not have cluster property " + varname + ". Ignoring this mapping.");
+                }
                 updateps.close();
             }
+            System.out.println("Mapping Complete.");
         } finally {
             c.close();
         }

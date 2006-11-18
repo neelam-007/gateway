@@ -7,6 +7,7 @@ import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.BuildInfo;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
@@ -32,6 +33,7 @@ public class Exporter {
     public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it", "path of the output mapping template");
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
+    public static final String VERSIONFILENAME = "version";
 
     private boolean includeAudit = false;
     private String tmpDirectory;
@@ -97,6 +99,11 @@ public class Exporter {
             throw new IOException("cannot dump the database " + e.getMessage());
         }
 
+        // record version of this image
+        FileOutputStream fos = new FileOutputStream(tmpDirectory + File.separator + VERSIONFILENAME);
+        fos.write(BuildInfo.getProductVersion().getBytes());
+        fos.close();
+
         // produce template mapping if necessary
         partitionName = arguments.get(MAPPING_PATH.name);
         if (partitionName != null) {
@@ -114,6 +121,7 @@ public class Exporter {
                 throw new RuntimeException("problem producing template mapping file", e);
             }
         }
+
         // we dont support full image on windows (windows only supports staging use case)
         if (!OSDetector.isWindows()) {
             // copy all config files we want into this temp directory
@@ -147,6 +155,7 @@ public class Exporter {
 
         // zip the temp directory into the requested image file (outputpathval)
         zipDir(outputpathval, tmpDirectory);
+        System.out.println("Cleaning temporary files at " + tmpDirectory);
         FileUtils.deleteDir(new File(tmpDirectory));
     }
 
@@ -178,7 +187,7 @@ public class Exporter {
             throw new IOException(dir + " is not a directory");
         }
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-        System.out.println("Creating : " + zipFileName);
+        System.out.println("Compressing SecureSpan Gateway image into " + zipFileName);
         addDir(dirObj, out);
         out.close();
     }
@@ -193,7 +202,7 @@ public class Exporter {
                 continue;
             }
             FileInputStream in = new FileInputStream(file.getAbsolutePath());
-            System.out.println(" Adding: " + file.getAbsolutePath());
+            System.out.println("\t- " + file.getAbsolutePath());
             String zipEntryName = file.getAbsolutePath();
             if (zipEntryName.startsWith(tmpDirectory)) {
                 zipEntryName = zipEntryName.substring(tmpDirectory.length() + 1);
