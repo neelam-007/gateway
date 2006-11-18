@@ -1,8 +1,11 @@
 package com.l7tech.server.partition;
 
+import com.l7tech.server.config.OSDetector;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.io.File;
 
 /**
  * Manage the partition configurations on an SSG.
@@ -32,7 +35,23 @@ public class PartitionManager {
     }
 
     private void enumeratePartitions() {
+        String partitionRoot = OSDetector.getOSSpecificFunctions().getPartitionBase();
 
+        File partitionBaseDir = new File(partitionRoot);
+        File[] subDirs = null;
+        if (partitionBaseDir.exists() && partitionBaseDir.isDirectory()) {
+            subDirs = partitionBaseDir.listFiles();
+        }
+
+        if (subDirs != null) {
+            for (File subDir : subDirs) {
+                if (subDir.isDirectory()) {
+                    String s = subDir.getName();
+                    if (!s.equals(PartitionInformation.TEMPLATE_PARTITION_NAME))
+                        partitions.put(new String(s), new PartitionInformation(s));
+                }
+            }
+        }
     }
 
     public boolean isPartitioned() {

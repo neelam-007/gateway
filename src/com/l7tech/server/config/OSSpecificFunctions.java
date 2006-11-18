@@ -6,11 +6,14 @@ import org.apache.commons.lang.StringUtils;
 import java.io.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: megery
+ * A class that encapsulates the configuraration locations for an SSG on a supported platform.
+ *
+ * If the class is instantiated with a partition ID then it will provide configurations for THAT partition.
+ * If no partition name is given then the default partition configuration will be given.
+ *
+ * Written By: megery
  * Date: Aug 12, 2005
  * Time: 3:06:33 PM
- * To change this template use File | Settings | File Templates.
  */
 public abstract class OSSpecificFunctions {
     protected String osName;
@@ -121,9 +124,13 @@ public abstract class OSSpecificFunctions {
         return partitionName;
     }
 
+    public String getPartitionBase() {
+        return getSsgInstallRoot() + PartitionInformation.PARTITIONS_BASE;
+    }
+
     public String getConfigurationBase() {
         if (StringUtils.isNotEmpty(getPartitionName()))
-            return getSsgInstallRoot() + PartitionInformation.PARTITIONS_BASE + getPartitionName() + "/";
+             return getPartitionBase() + getPartitionName() + "/";
 
 
         return getSsgInstallRoot() + NOPARTITION_BASE;

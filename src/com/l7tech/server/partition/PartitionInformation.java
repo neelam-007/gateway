@@ -7,8 +7,9 @@ package com.l7tech.server.partition;
  */
 public class PartitionInformation {
     public static final String PARTITIONS_BASE = "etc/conf/partitions/";
-
+    public static final String TEMPLATE_PARTITION_NAME = "partitiontemplate_";
     String partitionId;
+
     public PartitionInformation(String partitionId) {
         this.partitionId = partitionId;
     }

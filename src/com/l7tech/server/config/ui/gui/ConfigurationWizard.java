@@ -167,9 +167,10 @@ public class ConfigurationWizard extends Wizard {
         ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(summaryPanel);
         ConfigWizardNewDBPanel configWizardDatabasePanelPanel = new ConfigWizardNewDBPanel(keystorePanel);
         ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel);
+        ConfigWizardPartitioningPanel partitionPanel = new ConfigWizardPartitioningPanel(clusteringPanel);
 
         ConfigWizardStepPanel startPanel;
-        startPanel = new ConfigWizardStartPanel(clusteringPanel);
+        startPanel = new ConfigWizardStartPanel(partitionPanel);
 
         return startPanel;
     }
