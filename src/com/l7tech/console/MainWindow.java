@@ -119,11 +119,7 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
     private ViewClusterStatusAction viewClusterStatusAction = null;
-    private ValidatePolicyAction validatePolicyAction;
-    private ExportPolicyToFileAction exportPolicyAction;
-    private ImportPolicyFromFileAction importPolicyAction;
     private NewPolicyAction newPolicyAction;
-    private SavePolicyAction savePolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
@@ -161,13 +157,11 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
     private String connectionContext = "";
-//    private FocusAdapter actionsFocusListener;
     private ServicesTree servicesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
-//    private JMenuItem newPolicyMenuItem;
     private JMenuItem saveMenuItem;
     private boolean disconnected = false;
     private String ssgURL;
@@ -385,10 +379,8 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
             menu.setText(resapplication.getString("File"));
             //menu.add(getNewPolicyMenuItem());
             menu.add(getSaveMenuItem());
-            if (!isApplet()) {
-                menu.add(getExportMenuItem());
-                menu.add(getImportMenuItem());
-            }
+            menu.add(getExportMenuItem());
+            menu.add(getImportMenuItem());
             menu.add(getValidateMenuItem());
 
             menu.addSeparator();
@@ -409,7 +401,11 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
 
     private JMenuItem getValidateMenuItem() {
         if (validateMenuItem == null) {
-            validateMenuItem = new JMenuItem(getValidateAction());
+            validateMenuItem = new JMenuItem();
+            validateMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/validate.gif"));
+            validateMenuItem.setIcon(icon);
+            validateMenuItem.setText("Validate");
             int mnemonic = validateMenuItem.getText().toCharArray()[0];
             validateMenuItem.setMnemonic(mnemonic);
             validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -417,22 +413,13 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
         return validateMenuItem;
     }
 
-    private BaseAction getValidateAction() {
-        if (validatePolicyAction == null) {
-            validatePolicyAction = new ValidatePolicyAction();
-            validatePolicyAction.setEnabled(false);
-            addLogonListener(validatePolicyAction);
-            addPermissionRefreshListener(validatePolicyAction);
-        }
-        return validatePolicyAction;
-    }
-
     private JMenuItem getImportMenuItem() {
         if (importMenuItem == null) {
-            importMenuItem = new JMenuItem(getImportPolicyAction());
+            importMenuItem = new JMenuItem();
             importMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
             importMenuItem.setIcon(icon);
+            importMenuItem.setText("Import Policy");
             int mnemonic = importMenuItem.getText().toCharArray()[0];
             importMenuItem.setMnemonic(mnemonic);
             importMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -442,9 +429,11 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
 
     private JMenuItem getExportMenuItem() {
         if (exportMenuItem == null) {
-            exportMenuItem = new JMenuItem(getExportPolicyAction());
+            exportMenuItem = new JMenuItem();
+            exportMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
             exportMenuItem.setIcon(icon);
+            exportMenuItem.setText("Export Policy");
             int mnemonic = exportMenuItem.getText().toCharArray()[0];
             exportMenuItem.setMnemonic(mnemonic);
             exportMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -457,40 +446,13 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
         return preferences;
     }
 
-    private BaseAction getExportPolicyAction() {
-        if (exportPolicyAction == null) {
-            exportPolicyAction = new ExportPolicyToFileAction(isApplet() ? null : preferences.getHomePath());
-            exportPolicyAction.setEnabled(false);
-        }
-        return exportPolicyAction;
-    }
-
-    private BaseAction getImportPolicyAction() {
-        if (importPolicyAction == null) {
-            importPolicyAction = new ImportPolicyFromFileAction(isApplet() ? null : preferences.getHomePath());
-            importPolicyAction.setEnabled(false);
-            addPermissionRefreshListener(importPolicyAction);
-        }
-        return importPolicyAction;
-    }
-
-//    private JMenuItem getNewPolicyMenuItem() {
-//        if (newPolicyMenuItem == null) {
-//            newPolicyMenuItem = new JMenuItem(getNewAction());
-//            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/New16.gif"));
-//            newPolicyMenuItem.setIcon(icon);
-//            int mnemonic = newPolicyMenuItem.getText().toCharArray()[0];
-//            newPolicyMenuItem.setMnemonic(mnemonic);
-//            newPolicyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-//        }
-//        return newPolicyMenuItem;
-//    }
-
     private JMenuItem getSaveMenuItem() {
         if (saveMenuItem == null) {
-            saveMenuItem = new JMenuItem(getSaveAction());
+            saveMenuItem = new JMenuItem();
+            saveMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Save16.gif"));
             saveMenuItem.setIcon(icon);
+            saveMenuItem.setText("Save");
             int mnemonic = saveMenuItem.getText().toCharArray()[0];
             saveMenuItem.setMnemonic(mnemonic);
             saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -504,15 +466,6 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
             newPolicyAction.setEnabled(false);
         }
         return newPolicyAction;
-    }
-
-    private BaseAction getSaveAction() {
-        if (savePolicyAction == null) {
-            savePolicyAction = new SavePolicyAction();
-            savePolicyAction.setEnabled(false);
-            addPermissionRefreshListener(savePolicyAction);
-        }
-        return savePolicyAction;
     }
 
     private JMenu getEditMenu() {
@@ -2407,7 +2360,7 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
     /**
      * called when the policy currently edited gets deleted
      */
-    public void firePolicyEditDeleted() {
+    public void firePolicyEditDone() {
         getValidateMenuItem().setEnabled(false);
         getSaveMenuItem().setEnabled(false);
         getExportMenuItem().setEnabled(false);

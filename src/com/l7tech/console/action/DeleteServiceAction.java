@@ -86,7 +86,6 @@ public class DeleteServiceAction extends ServiceNodeAction {
                     // if currently edited service was deleted
                     if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
                         cws.clearWorkspace();
-                        TopComponents.getInstance().firePolicyEditDeleted();
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);

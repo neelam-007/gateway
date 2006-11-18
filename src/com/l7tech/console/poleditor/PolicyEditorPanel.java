@@ -3,6 +3,7 @@ package com.l7tech.console.poleditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -36,6 +37,7 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.StringReader;
+import java.io.File;
 import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.Enumeration;
@@ -54,7 +56,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
     private static final String MESSAGE_AREA_DIVIDER_KEY = "policy.editor." + JSplitPane.DIVIDER_LOCATION_PROPERTY;
     public static final String SERVICENAME_PROPERTY = "service.name";
-    //private PublishedService service;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
     private PolicyTree policyTree;
@@ -62,7 +63,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private JSplitPane splitPane;
     private final TopComponents topComponents = TopComponents.getInstance();
     private JScrollPane policyTreePane;
-    //private ServiceNode serviceNode;
     private boolean initialValidate = false;
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
@@ -72,12 +72,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private ValidatePolicyAction serverValidateAction;
     private ExportPolicyToFileAction exportPolicyAction;
     private ImportPolicyFromFileAction importPolicyAction;
-    //private boolean detachedPolicyMode = false;
-    //private Assertion detachedPolicyRoot;
     private PolicyEditorSubject subject;
     private String subjectName;
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
-    private final boolean applet;
+    private final boolean enableUddi;
 
     public interface PolicyEditorSubject {
         /**
@@ -104,14 +102,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         boolean hasWriteAccess();
     }
 
-    public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean validateOnOpen) {
+    public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean validateOnOpen, boolean enableUddi) {
         if (subject == null || pt == null) {
             throw new IllegalArgumentException();
         }
+        this.enableUddi = enableUddi;
         this.subject = subject;
         subjectName = subject.getName();
         this.policyTree = pt;
-        this.applet = TopComponents.getInstance().isApplet();
         policyTree.setWriteAccess(subject.hasWriteAccess());
         layoutComponents();
 
@@ -129,10 +127,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
         }
-    }
-
-    public boolean isApplet() {
-        return applet;
     }
 
     /**
@@ -216,8 +210,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private void layoutComponents() {
         setBorder(null);
         setLayout(new BorderLayout());
+
+        // This component init has side-effects that need to occur before
+        // the toolbar is created (configures the pep with the policy tree)
+        //
+        // If you don't do this the buttons may not be correctly enabled.
+        JSplitPane pane = getSplitPane();
+
         add(getToolBar(), BorderLayout.NORTH);
-        add(getSplitPane(), BorderLayout.CENTER);
+        add(pane, BorderLayout.CENTER);
         setMessageAreaVisible(preferences.isPolicyMessageAreaVisible());
     }
 
@@ -402,13 +403,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      */
     final class PolicyEditToolBar extends JToolBar {
-        JButton buttonSave;
-        JButton buttonSaveTemplate;
-        JButton buttonImport;
-        JButton buttonUDDIImport;
-        JButton buttonValidate;
-        JToggleButton identityViewButton;
-        JToggleButton policyViewButton;
+        private JButton buttonSave;
+        private JButton buttonSaveTemplate;
+        private JButton buttonImport;
+        private JButton buttonUDDIImport;
+        private JButton buttonValidate;
+        private JToggleButton identityViewButton;
+        private JToggleButton policyViewButton;
 
         public PolicyEditToolBar() {
             super();
@@ -811,6 +812,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
             final PolicyToolBar pt = topComponents.getPolicyToolBar();
             pt.disableAll();
+            TopComponents.getInstance().firePolicyEditDone();
         }
     }
 
@@ -838,10 +840,21 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return pr;
     }
 
+    private String getHomePath() {
+        String homePath = null;
+        try {
+            homePath = preferences.getHomePath();
+        }
+        catch(UnsupportedOperationException uoe) {
+            // optional op
+        }
+        return homePath;        
+    }
+
     public Action getSaveAction() {
         if (saveAction == null) {
             if (subject.getServiceNode() == null) {
-                saveAction = new ExportPolicyToFileAction(isApplet() ? null : preferences.getHomePath()) {
+                saveAction = new ExportPolicyToFileAction(preferences.getHomePath()) {
                     public String getName() {
                         return "Save Policy";
                     }
@@ -849,11 +862,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         return "Save the policy to a file along with external references.";
                     }
                     protected void performAction() {
-                        node = rootAssertion;
-                        dialogTitle = "Save Policy to File";
-                        super.performAction();
-                        if (lastSavedFile != null) {
-                            subjectName = lastSavedFile.getName();
+                        Assertion assertion = rootAssertion.asAssertion();
+                        String dialogTitle = "Save Policy to File";
+                        File policyFile = exportPolicy(dialogTitle, assertion);
+                        if (policyFile != null) {
+                            subjectName = policyFile.getName();
                             updateHeadings();
                         }
                     }
@@ -885,10 +898,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getExportAction() {
         if (exportPolicyAction == null) {
-            exportPolicyAction = new ExportPolicyToFileAction(isApplet() ? null : preferences.getHomePath()) {
+            exportPolicyAction = new ExportPolicyToFileAction(preferences.getHomePath()) {
                 protected void performAction() {
-                    this.node = rootAssertion;
-                    super.performAction();
+                    Assertion assertion = rootAssertion.asAssertion();
+                    exportPolicy(getName(), assertion);
                 }
             };
         }
@@ -900,7 +913,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             @Override
             public boolean isAuthorized() {
                 PublishedService svc = getPublishedService();
-                return svc != null && canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc)) && !isApplet();
+                return svc != null && canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc)) && enableUddi;
             }
 
             public String getName() {
@@ -931,25 +944,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getImportAction() {
         if (importPolicyAction == null) {
             if (subject.getServiceNode() != null) {
-                importPolicyAction = new ImportPolicyFromFileAction(isApplet() ? null : preferences.getHomePath()) {
+                importPolicyAction = new ImportPolicyFromFileAction(getHomePath()) {
+
+                    protected OperationType getOperation() {
+                        return OperationType.UPDATE;
+                    }
+
                     protected void performAction() {
-                        super.performAction();
-                        if (policyImportSuccess) {
-                            // fix f0r bug #2866
-                            try {
-                                pubService = subject.getServiceNode().getPublishedService();
-                            } catch (FindException e) {
-                                log.log(Level.SEVERE, "cannot get back service", e);
-                            } catch (RemoteException e) {
-                                log.log(Level.SEVERE, "cannot get back service", e);
+                        try {
+                            PublishedService service = subject.getServiceNode().getPublishedService();
+                            if (importPolicy(service)) {
+                                rootAssertion = null;
+                                renderPolicy(false);
+                                policyEditorToolbar.buttonSave.setEnabled(true);
+                                policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                                validatePolicy();
                             }
-                            String newPolicy = getNewPolicyXml();
-                            pubService.setPolicyXml(newPolicy);
-                            rootAssertion = null;
-                            renderPolicy(false);
-                            policyEditorToolbar.buttonSave.setEnabled(true);
-                            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
-                            validatePolicy();
+                        } catch (FindException e) {
+                            log.log(Level.SEVERE, "cannot get back service", e);
+                        } catch (RemoteException e) {
+                            log.log(Level.SEVERE, "cannot get back service", e);
                         }
                     }
                 };

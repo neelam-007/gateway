@@ -1,7 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.PoliciesFolderNode;
@@ -28,22 +26,15 @@ import java.security.*;
  * User: flascell<br/>
  * Date: Jul 21, 2004<br/>
  */
-public class ImportPolicyFromFileAction extends SecureAction {
-    static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
-    protected PublishedService pubService;
+public abstract class ImportPolicyFromFileAction extends ServiceNodeAction {
+    private static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
     private final String homePath;
 
-    public ImportPolicyFromFileAction(String path) {
+    /**
+     *
+     */
+    public ImportPolicyFromFileAction(final String path) {
         super(null);
-        this.homePath = path;
-    }
-
-    public ImportPolicyFromFileAction(PublishedService svc, String path) {
-        super(null);
-        if (svc == null) {
-            throw new IllegalArgumentException();
-        }
-        this.pubService = svc;
         this.homePath = path;
     }
 
@@ -68,36 +59,20 @@ public class ImportPolicyFromFileAction extends SecureAction {
         return "com/l7tech/console/resources/saveTemplate.gif";
     }
 
-    @Override
-    public boolean isAuthorized() {
-        if (pubService == null) return false;
-        return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, pubService));
-    }
-
     /**
      * Actually perform the action.
      * This is the method which should be called programmatically.
      */
-    protected void performAction() {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
-                try {
-                    doFileImport();
-                } catch (AccessControlException e) {
-                    TopComponents.getInstance().showNoPrivilegesErrorMessage();
-                }
-                return null;
-            }
-        });
+    protected boolean importPolicy(PublishedService service) {
+        try {
+            return doFileImport(service);
+        } catch (AccessControlException e) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+        }
+        return false;
     }
 
-    private void doFileImport() {
-        newPolicyXml = null;
-        policyImportSuccess = false;
-        if (pubService == null) {
-            log.severe("This action was called without a service set.");
-            throw new IllegalStateException("no service specified");
-        }
+    private boolean doFileImport(PublishedService service) {
         // get file from user
         JFileChooser chooser;
         File templateDir = null;
@@ -116,7 +91,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
                                                  "The system reported problem in accessing or creating" +
                                                  "the policy template directory " + templateDir.getPath() + "\n" +
                                                  "The policy template is not saved.");
-                return;
+                return false;
             }
             chooser = new JFileChooser(templateDir);
         } else {
@@ -138,16 +113,16 @@ public class ImportPolicyFromFileAction extends SecureAction {
             }
         });
         int ret = chooser.showOpenDialog(TopComponents.getInstance().getTopParent());
-        if (JFileChooser.APPROVE_OPTION != ret) return;
+        if (JFileChooser.APPROVE_OPTION != ret) return false;
 
         try {
             Assertion newRoot = PolicyImporter.importPolicy(chooser.getSelectedFile());
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {
-                newPolicyXml = WspWriter.getPolicyXml(newRoot);
-                pubService.setPolicyXml(newPolicyXml);
-                policyImportSuccess = true;
+                String newPolicyXml = WspWriter.getPolicyXml(newRoot);
+                service.setPolicyXml(newPolicyXml);
+                return true;
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
@@ -156,12 +131,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
                                           "Policy Not Found",
                                           JOptionPane.WARNING_MESSAGE);
         }
-    }
 
-    public String getNewPolicyXml() {
-        return newPolicyXml;
+        return false;
     }
-
-    private String newPolicyXml = null;
-    protected boolean policyImportSuccess = false;
 }

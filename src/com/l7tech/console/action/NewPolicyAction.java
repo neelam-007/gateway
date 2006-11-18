@@ -86,7 +86,7 @@ public class NewPolicyAction extends SecureAction {
                 }
                 public boolean hasWriteAccess(){return true;}
             };
-            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, false);
+            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, false, !TopComponents.getInstance().isApplet());
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
             TopComponents.getInstance().firePolicyEdit(pep);

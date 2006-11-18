@@ -3,8 +3,10 @@ package com.l7tech.console.action;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyExporter;
 import com.l7tech.console.tree.*;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.common.security.rbac.OperationType;
+
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -31,24 +33,16 @@ import java.security.AccessControlException;
  * User: flascell<br/>
  * Date: Jul 21, 2004<br/>
  */
-public class ExportPolicyToFileAction extends SecureAction {
-    static final Logger log = Logger.getLogger(ExportPolicyToFileAction.class.getName());
-    protected AssertionTreeNode node;
-    protected String dialogTitle = "Export Policy";
-    protected File lastSavedFile;
+public abstract class ExportPolicyToFileAction extends SecureAction {
+    private static final Logger log = Logger.getLogger(ExportPolicyToFileAction.class.getName());
     private final String homePath;
 
+    /**
+     *
+     * @param homePath Path under which the template directory is located (may be null)
+     */
     public ExportPolicyToFileAction(String homePath) {
         super(null);
-        this.homePath = homePath;
-    }
-
-    public ExportPolicyToFileAction(AssertionTreeNode node, String homePath) {
-        super(null);
-        if (node == null) {
-            throw new IllegalArgumentException();
-        }
-        this.node = node;
         this.homePath = homePath;
     }
 
@@ -73,17 +67,21 @@ public class ExportPolicyToFileAction extends SecureAction {
         return "com/l7tech/console/resources/saveTemplate.gif";
     }
 
+    protected OperationType getOperation() {
+        return OperationType.UPDATE;
+    }
+
     /** Actually perform the action.
      * This is the method which should be called programmatically.
 
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    protected void performAction() {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+    protected File exportPolicy(final String title, final Assertion rootAssertion) {
+        return (File) AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 try {
-                    doFileExport();
+                    return doFileExport(title, rootAssertion);
                 } catch (AccessControlException e) {
                     TopComponents.getInstance().showNoPrivilegesErrorMessage();
                 }
@@ -92,13 +90,7 @@ public class ExportPolicyToFileAction extends SecureAction {
         });
     }
 
-    private void doFileExport() {
-        if (node == null) {
-            throw new IllegalStateException("no node specified");
-        }
-
-        lastSavedFile = null;
-
+    private File doFileExport(String title, Assertion rootAssertion) {
         JFileChooser chooser;
         File templateDir = null;
         if (homePath != null) {
@@ -116,14 +108,14 @@ public class ExportPolicyToFileAction extends SecureAction {
                                                  "The system reported problem in accessing or creating" +
                                                  "the policy template directory " + templateDir.getPath() + "\n" +
                                                  "The policy template is not saved.");
-                return;
+                return null;
             }
             chooser = new JFileChooser(templateDir);
         } else {
             chooser = new JFileChooser();
         }
 
-        chooser.setDialogTitle(dialogTitle);
+        chooser.setDialogTitle(title);
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
@@ -139,7 +131,7 @@ public class ExportPolicyToFileAction extends SecureAction {
             }
         });
         int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
-        if (JFileChooser.APPROVE_OPTION != ret) return;
+        if (JFileChooser.APPROVE_OPTION != ret) return null;
         String name = chooser.getSelectedFile().getPath();
         // add extension if not present
         if (!name.endsWith(".xml") && !name.endsWith(".XML")) {
@@ -154,20 +146,22 @@ public class ExportPolicyToFileAction extends SecureAction {
                                                       "Warning",
                                                       JOptionPane.YES_NO_OPTION);
         }
-        if (overwrite != JOptionPane.YES_OPTION) return;
+        if (overwrite != JOptionPane.YES_OPTION) return null;
         PolicyExporter exporter = new PolicyExporter();
         try {
-            exporter.exportToFile(node.asAssertion(), policyFile);
+            exporter.exportToFile(rootAssertion, policyFile);
             // only update template folder if this policy is saved in templates directory
             if (!policyFileExists && templateDir != null && templateDir.equals(chooser.getSelectedFile().getParentFile())) {
                 insertIntoAssertionTree(policyFile);
             }
-            lastSavedFile = policyFile;
+            return policyFile;
         } catch (IOException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
         } catch (SAXException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
         }
+
+        return null;
     }
 
     private void insertIntoAssertionTree(File policyFile) {

@@ -34,8 +34,8 @@ public class TopComponents {
         getMainWindow().updateLastActivityTime();
     }
 
-    public void firePolicyEditDeleted() {
-        getMainWindow().firePolicyEditDeleted();
+    public void firePolicyEditDone() {
+        getMainWindow().firePolicyEditDone();
     }
 
     public void firePolicyEdit(PolicyEditorPanel pep) {
