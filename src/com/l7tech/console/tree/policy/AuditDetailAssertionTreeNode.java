@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * Date: Jan 19, 2006<br/>
  */
 public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
-    private static final Logger logger = Logger.getLogger(AuditDetailAssertionTreeNode.class.getName());
+    protected static final Logger logger = Logger.getLogger(AuditDetailAssertionTreeNode.class.getName());
 
     public AuditDetailAssertionTreeNode(Assertion assertion) {
         super(assertion);
@@ -86,7 +86,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
                 try {
                     level = Registry.getDefault().getAuditAdmin().serverDetailAuditThreshold();
                 } catch (RemoteException e) {
-                    logger.log(Level.WARNING, "Couldn't get server's detail threshold; using default " + Level.INFO.toString());
+                    AuditDetailAssertionTreeNode.logger.log(Level.WARNING, "Couldn't get server's detail threshold; using default " + Level.INFO.toString());
                     level = Level.INFO;
                 }
 
@@ -108,7 +108,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
                     PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
                     model.assertionTreeNodeChanged(AuditDetailAssertionTreeNode.this);
                 } else {
-                    logger.log(Level.WARNING, "Unable to reach the palette tree.");
+                    AuditDetailAssertionTreeNode.logger.log(Level.WARNING, "Unable to reach the palette tree.");
                 }
             }
         };
