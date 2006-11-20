@@ -1313,7 +1313,7 @@ public class LogPanel extends JPanel {
      *                  corresponding collection of {@link LogMessage}s
      */
     public void setLogs(Map<String, Collection<LogMessage>> logs) {
-        clearLogCache();
+        onDisconnect();
         getFilteredLogTableSorter().setLogs(this, logs);
         getLastUpdateTimeLabel().setVisible(false);    // It's not applicable in static view.
     }
