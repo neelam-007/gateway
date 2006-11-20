@@ -109,11 +109,9 @@ public class DBDumpUtil {
                         case Types.CHAR:
                         case Types.LONGVARCHAR: // medium text
                         case Types.LONGVARBINARY: // medium blob
-                            // todo, *all* necessary escaping
                             String tmp = tdataList.getString(i);
                             if (tmp != null) {
-                                tmp = tmp.replace("\"", "\\\"");
-                                tmp = tmp.replace("\n", "\\n");
+                                tmp = escapeForSQLInsert(tmp);
                                 insertStatementToRecord.append("'");
                                 insertStatementToRecord.append(tmp);
                                 insertStatementToRecord.append("'");
@@ -140,6 +138,13 @@ public class DBDumpUtil {
         cloneoutput.close();
         stageoutput.close();
         System.out.println(". Done");
+    }
+
+    private static String escapeForSQLInsert(String in) {
+        String output = in.replace("\"", "\\\"");
+        output = output.replace("\'", "\\\'");
+        output = output.replace("\n", "\\n");
+        return output;
     }
 
     private static boolean tableInList(String tableName, String[] tableList) {
