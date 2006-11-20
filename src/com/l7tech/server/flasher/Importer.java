@@ -212,7 +212,7 @@ public class Importer {
                 ps.setString(2, licenseValueBeforeImport);
                 ps.executeUpdate();
                 ps.close();
-                System.out.println(". Done");
+                System.out.println(". DONE");
             } finally {
                 c.close();
             }
@@ -249,25 +249,52 @@ public class Importer {
         } finally {
             c.close();
         }
-        System.out.println(". Done");
+        System.out.println(". DONE");
     }
 
     private void copySystemConfigFiles() throws IOException {
-        System.out.println("Cloning SecureSpan Gateway settings (todo)");
+        System.out.print("Cloning SecureSpan Gateway settings ..");
+
+        // todo, solve the target database not present problem
         // look into image's version of hibernate.properties. make sure the username, passwd and url match
-        /*Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
-                                            SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                                            SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                                            SsgDatabaseConfigBean.PROP_DB_URL,
-                                        });*/
+        /*
+        Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
+                                                                   SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                                                                   SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                                                                   SsgDatabaseConfigBean.PROP_DB_URL,
+                                                                   });
+        */
 
-        //OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
-        //osFunctions.getDatabaseConfig()
+        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+        // copy hibernate.properties
+        restoreConfigFile(osFunctions.getDatabaseConfig());
+        // copy cluster host name file
+        restoreConfigFile(osFunctions.getClusterHostFile());
+        // copy logging properties
+        restoreConfigFile(osFunctions.getSsgLogPropertiesFile());
+        // copy keystore properties file
+        restoreConfigFile(osFunctions.getKeyStorePropertiesFile());
+        // copy tomcat server settings
+        restoreConfigFile(osFunctions.getTomcatServerConfig());
+        // copy system properties
+        restoreConfigFile(osFunctions.getSsgSystemPropertiesFile());
+        // copy keystores and certs
+        //String ksdir = osFunctions.getKeystoreDir();
+        String ksdir = "/ssg/etc/keys"; // todo, go back to above once partitioning is fully implemented
+        restoreConfigFile(ksdir + File.separator + "ca.cer");
+        restoreConfigFile(ksdir + File.separator + "ssl.cer");
+        restoreConfigFile(ksdir + File.separator + "ca.ks");
+        restoreConfigFile(ksdir + File.separator + "ssl.ks");
+        System.out.println(". DONE");
+    }
 
-
-
-
-        // todo, copy the config files to the target system. if new hibernate has different username, password or url, do not copy it
+    private void restoreConfigFile(String destination) throws IOException {
+        File toFile = new File(destination);
+        File fromFile = new File(tempDirectory + File.separator + toFile.getName());
+        if (fromFile.exists()) {
+            toFile.delete();
+            FileUtils.copyFile(fromFile, toFile);
+        }
     }
 
     private Connection getConnection() throws SQLException {
