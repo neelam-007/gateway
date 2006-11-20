@@ -854,7 +854,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getSaveAction() {
         if (saveAction == null) {
             if (subject.getServiceNode() == null) {
-                saveAction = new ExportPolicyToFileAction(preferences.getHomePath()) {
+                saveAction = new ExportPolicyToFileAction(getHomePath()) {
                     public String getName() {
                         return "Save Policy";
                     }
@@ -898,7 +898,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     public Action getExportAction() {
         if (exportPolicyAction == null) {
-            exportPolicyAction = new ExportPolicyToFileAction(preferences.getHomePath()) {
+            exportPolicyAction = new ExportPolicyToFileAction(getHomePath()) {
                 protected void performAction() {
                     Assertion assertion = rootAssertion.asAssertion();
                     exportPolicy(getName(), assertion);
