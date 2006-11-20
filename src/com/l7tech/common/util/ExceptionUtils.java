@@ -6,17 +6,17 @@
 
 package com.l7tech.common.util;
 
-import java.net.UnknownHostException;
-import java.util.Iterator;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.io.StringWriter;
-import java.io.PrintWriter;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Exception utilities.
@@ -189,9 +189,40 @@ public class ExceptionUtils {
         return result;
     }
 
+    /**
+     * A deep version of {@link Throwable#toString()} that includes detail
+     * messages from all chained exception causes.
+
+     * @param throwable     the throwable to examine
+     * @param multiline     whether to print the chained causes on separate lines
+     * @return a string of the form:<br/><i>class name</i>: <i>detail message</i><br/>Caused by: <i>class name</i>: <i>detail message</i><br/>Caused by: <i>and so on ...</i>
+     */
+    public static String toStringDeep(final Throwable throwable, final boolean multiline) {
+        final StringBuilder sb = new StringBuilder();
+        Throwable t = throwable;
+        while (t != null) {
+            if (t != throwable) {   // not the top
+                if (multiline) {
+                    sb.append(NEWLINE);
+                } else {
+                    sb.append(" ");
+                }
+                sb.append("Caused by: ");
+            }
+            sb.append(t.getClass().getName());
+            if (t.getMessage() != null) {
+                sb.append(": ");
+                sb.append(t.getMessage());
+            }
+            t = t.getCause();
+        }
+        return sb.toString();
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ExceptionUtils.class.getName());
+    private static final String NEWLINE = System.getProperty("line.separator");
 
     /**
      * Check if the throwable argument is of any of the given types.

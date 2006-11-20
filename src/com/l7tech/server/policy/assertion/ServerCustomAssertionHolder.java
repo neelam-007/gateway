@@ -185,19 +185,19 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
                     auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
                             customAssertion.getName(),
-                            "Authentication (login); detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
+                            "Authentication (login) failed: " + ExceptionUtils.toStringDeep(e, true) });
                     return AssertionStatus.AUTH_FAILED;
                 } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
                     if (isAuthAssertion) {
                         auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
                                 customAssertion.getName(),
-                                "Authorization (access control) failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
+                                "Authorization (access control) failed: " + ExceptionUtils.toStringDeep(e, true)});
                         return AssertionStatus.UNAUTHORIZED;
                     }
                     else {
                         auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
                                 customAssertion.getName(),
-                                "Assertion failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
+                                "Assertion failed: " + ExceptionUtils.toStringDeep(e, true) });
                         return AssertionStatus.FALSIFIED;
                     }
                 }
@@ -206,7 +206,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             } catch (AccessControlException e) {
                 auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
                         customAssertion.getName(),
-                        "Authorization (access control) failed; detail '"+ExceptionUtils.getMessage(e)+"'"});
+                        "Authorization (access control) failed: " + ExceptionUtils.toStringDeep(e, true) });
                 return AssertionStatus.UNAUTHORIZED;
             }
         } finally {
