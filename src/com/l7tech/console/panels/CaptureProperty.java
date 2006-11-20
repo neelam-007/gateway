@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.gui.util.DocumentSizeFilter;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -104,6 +105,7 @@ public class CaptureProperty extends JDialog {
         });
 
         enableReadOnlyIfNeeded();
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void enableReadOnlyIfNeeded() {
