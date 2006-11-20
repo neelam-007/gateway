@@ -196,6 +196,11 @@
         <include name="**/lib/commons-logging-1.0.4.jar"/>
     </patternset>
 
+    <patternset id="ssgflasher.libs">
+        <include name="**/mysql-connector-java-3.0.17-ga-bin.jar"/>
+        <include name="**/commons-lang-1.0.1.jar"/>
+    </patternset>
+
     <!--
       Bridge library patterset
     -->
@@ -769,7 +774,7 @@
     -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.readversion, package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz.all, package.modules, obfuscate.work"/>
+            depends="package.readversion, package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz.all, package.ssgflasher, package.modules, obfuscate.work"/>
 
 
     <!--
@@ -1486,6 +1491,42 @@
                 <include name="com/l7tech/common/security/prov/luna/BouncyCastleToLunaProvider.class"/>
             </fileset>
         </jar>
+    </target>
+
+    <!-- Package the ssg flasher utility -->
+    <target name="package.ssgflasher" unless="ssg.only" depends="compile">
+        <mkdir dir="${build.dir}/flasher"/>
+        <mkdir dir="${build.dir}/flasher/lib"/>
+        <copy todir="${build.dir}/flasher">
+            <fileset dir="${src.root}/etc">
+                <include name="ssgflash.sh"/>
+                <include name="ssgflash.cmd"/>
+            </fileset>
+        </copy>
+        <generate-manifest propertyPrefix="ssgflasher" filename="SSGFlasher.mf" pathPrefix=". ">
+            <section>
+                <attribute name="Main-Class" value="com.l7tech.server.flasher.FlashUtilityLauncher"/>
+            </section>
+        </generate-manifest>
+        <jar jarfile="${build.dir}/flasher/SSGFlasher.jar"  manifest="${build.etc}/SSGFlasher.mf">
+            <fileset dir="${build.classes}">
+                <include name="com/l7tech/server/flasher/**/*"/>
+                <include name="com/l7tech/common/BuildInfo*"/>
+                <include name="com/l7tech/common/util/FileUtils*"/>
+                <include name="com/l7tech/common/util/ResourceUtils*"/>
+                <include name="com/l7tech/common/util/XmlUtil*"/>
+                <include name="com/l7tech/common/xml/**/*"/>
+                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
+                <include name="com/l7tech/server/config/**/*"/>
+                <include name="com/l7tech/server/partition/**/*"/>
+            </fileset>
+        </jar>
+
+        <copy todir="${build.dir}/flasher/lib">
+            <fileset dir="${build.lib}">
+                <patternset refid="ssgflasher.libs"/>
+            </fileset>
+        </copy>
     </target>
 
     <!--
@@ -2315,6 +2356,7 @@
 
         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
         <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
+        <property name="install.src.flasher" value="${install.src.base}/flasher"/>
         <property name="install.src.sysconfigwizard" value="${install.src.base}/sysconfigwizard"/>
 
         <echo>Making directories...</echo>
@@ -2333,6 +2375,7 @@
         <mkdir dir="${install.src.var}"/>
         <mkdir dir="${install.src.var.attachments}"/>
         <mkdir dir="${install.src.configwizard}"/>
+        <mkdir dir="${install.src.flasher}"/>
     </target>
 
     <!--
@@ -2369,6 +2412,13 @@
         <!--copy the system config wizard -->
         <copy todir="${install.src.sysconfigwizard}">
             <fileset dir="${build.dir}/sysconfigwizard">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
+
+        <!--copy the ssg flasher -->
+        <copy todir="${install.src.flasher}">
+            <fileset dir="${build.dir}/flasher">
                 <include name="**/*"/>
             </fileset>
         </copy>
