@@ -155,7 +155,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             this.helpRootUrl = helpRootUrl;
             logger.info("Help root URL: " + helpRootUrl);
         } else
-            logger.info("Using default help root URL: " + helpRootUrl);
+            logger.info("Using default help root URL: " + this.helpRootUrl);
 
         String sessionId = getParameter("sessionId");
         if (sessionId != null && sessionId.length() > 0) {

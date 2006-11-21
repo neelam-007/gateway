@@ -19,6 +19,8 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.TopComponents;
+
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -80,6 +82,13 @@ public class XslTransformationSpecifyPanel extends JPanel {
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+        
+        if (TopComponents.getInstance().isApplet()) {
+            // Search action tries to get the class loader
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
+        }
+
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_COMMENTNODE_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_COPYNODE_ACTION));
@@ -89,6 +98,16 @@ public class XslTransformationSpecifyPanel extends JPanel {
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+
+        boolean lastWasSeparator = true; // remove trailing separator
+        for (int i=popupModel.size()-1; i>=0; i--) {
+            boolean isSeparator = popupModel.isSeparator(i);
+            if (isSeparator && (i==0 || lastWasSeparator)) {
+                popupModel.removeSeparator(i);
+            } else {
+                lastWasSeparator = isSeparator;
+            }
+        }
 
         fileButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

@@ -19,6 +19,7 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -91,6 +92,23 @@ public class GlobalSchemaEntryEditor extends JDialog {
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
         xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+
+        if (TopComponents.getInstance().isApplet()) {
+            // Search action tries to get the class loader
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
+        }
+
+        boolean lastWasSeparator = true; // remove trailing separator
+        for (int i=popupModel.size()-1; i>=0; i--) {
+            boolean isSeparator = popupModel.isSeparator(i);
+            if (isSeparator && (i==0 || lastWasSeparator)) {
+                popupModel.removeSeparator(i);
+            } else {
+                lastWasSeparator = isSeparator;
+            }
+        }
+
         xmlDisplayPanel.setLayout(new BorderLayout());
         xmlDisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
 

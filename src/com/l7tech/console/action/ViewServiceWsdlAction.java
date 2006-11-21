@@ -165,6 +165,16 @@ public class ViewServiceWsdlAction extends NodeAction {
                 popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
             }
 
+            boolean lastWasSeparator = true; // remove trailing separator
+            for (int i=popupModel.size()-1; i>=0; i--) {
+                boolean isSeparator = popupModel.isSeparator(i);
+                if (isSeparator && (i==0 || lastWasSeparator)) {
+                    popupModel.removeSeparator(i);
+                } else {
+                    lastWasSeparator = isSeparator;
+                }
+            }
+
             panel.add(xmlContainer.getView(), BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);

@@ -18,6 +18,7 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.AssertionPath;
@@ -759,6 +760,22 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+
+        if (TopComponents.getInstance().isApplet()) {
+            // Search action tries to get the class loader
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
+        }
+
+        boolean lastWasSeparator = true; // remove trailing separator
+        for (int i=popupModel.size()-1; i>=0; i--) {
+            boolean isSeparator = popupModel.isSeparator(i);
+            if (isSeparator && (i==0 || lastWasSeparator)) {
+                popupModel.removeSeparator(i);
+            } else {
+                lastWasSeparator = isSeparator;    
+            }
+        }
 
         ButtonGroup bg = new ButtonGroup();
         bg.add(rbApplyToBody);
