@@ -3,7 +3,10 @@ package com.l7tech.server.flasher;
 import com.l7tech.server.config.OSDetector;
 
 import java.util.HashMap;
+import java.util.logging.LogManager;
 import java.io.IOException;
+import java.io.File;
+import java.io.InputStream;
 
 /**
  * Entrypoint for the ssg flashing utility.
@@ -16,12 +19,17 @@ import java.io.IOException;
  */
 public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
+    private static final String LOGCONFIG_NAME = "flasherlogging.properties";
 
     public static void main(String[] args) {
         if (args == null || args.length < 1) {
             printusage();
             return;
         }
+
+        // set logging
+        initializeLogging();
+
         try {
             HashMap<String, String> passedArgs = parseArguments(args);
             if (args[0].toLowerCase().equals("import")) {
@@ -57,6 +65,30 @@ public class FlashUtilityLauncher {
             output.put(arg, val);
         }
         return output;
+    }
+
+    private static void initializeLogging() {
+        final LogManager logManager = LogManager.getLogManager();
+        final File file = new File(LOGCONFIG_NAME);
+        if (file.exists()) {
+            InputStream in = null;
+            try {
+                in = file.toURI().toURL().openStream();
+                if (in != null) {
+                    logManager.readConfiguration(in);
+                }
+            } catch (IOException e) {
+                System.err.println("Cannot initialize logging " + e.getMessage());
+            } finally {
+                try {
+                    if (in != null) in.close();
+                } catch (IOException e) { // should not happen
+                    System.err.println("cannot close logging properties input stream " + e.getMessage());
+                }
+            }
+        } else {
+            System.err.println("Cannot initialize logging");
+        }
     }
 
     private static void printusage() {

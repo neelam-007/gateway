@@ -1501,6 +1501,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="ssgflash.sh"/>
                 <include name="ssgflash.cmd"/>
+                <include name="flasherlogging.properties"/>
             </fileset>
         </copy>
         <generate-manifest propertyPrefix="ssgflasher" filename="SSGFlasher.mf" pathPrefix=". ">
