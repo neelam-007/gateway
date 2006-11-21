@@ -8,4 +8,6 @@
     <bean id="preferences" class="com.l7tech.console.util.AppletSsmPreferences" factory-method="getPreferences">
     </bean>
 
+    <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SimpleBrowserHttpInvokerRequestExecutor"/>
+
 </beans>

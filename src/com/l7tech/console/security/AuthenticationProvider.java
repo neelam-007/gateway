@@ -10,7 +10,6 @@ import com.l7tech.common.VersionException;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
-import java.security.cert.X509Certificate;
 
 /**
  * The SSM <code>AuthenticationProvider</code> implementations provide authentications
@@ -38,11 +37,10 @@ public interface AuthenticationProvider {
      *
      * @param sessionId  the session ID to connect to.  Must not be null.
      * @param host the host to authenticate with.  Must not be null.
-     * @param expectedServerCert  the server SSL cert to expect in the handshake.  Must not be null.
      *
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
-    public void login(String sessionId, String host, final X509Certificate expectedServerCert) 
+    public void login(String sessionId, String host)
       throws LoginException, VersionException, RemoteException;
 
     /**

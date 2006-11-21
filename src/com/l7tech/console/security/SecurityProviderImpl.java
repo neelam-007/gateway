@@ -27,8 +27,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.spring.remoting.http.SecureHttpClient;
-import com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor;
+import com.l7tech.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
 import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
@@ -45,7 +44,6 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
-import java.security.AccessControlException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -167,20 +165,10 @@ public class SecurityProviderImpl extends SecurityProvider
     }
 
     // Called by the Applet to connect to the server
-    public void login(String sessionId, String host, final X509Certificate expectedServerCert)
+    public void login(String sessionId, String host)
             throws LoginException, VersionException, RemoteException
     {
         boolean authenticated = false;
-
-        SSLTrustFailureHandler fh = new SSLTrustFailureHandler() {
-            public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
-                if (chain == null || chain.length < 1) return false;
-                return CertUtils.certsAreEqual(expectedServerCert, chain[0]);
-            }
-        };
-        SslRMIClientSocketFactory.setTrustFailureHandler(fh);
-        SecureHttpClient.setTrustFailureHandler(fh);
-
 
         final AdminLogin adminLogin;
         try {
@@ -219,9 +207,7 @@ public class SecurityProviderImpl extends SecurityProvider
     {
         resetCredentials();
 
-        SecureHttpInvokerRequestExecutor secureInvoker =
-                (SecureHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");
-        secureInvoker.setSession(getHost(remoteHost), getPort(remoteHost), sessionCookie);
+        getConfigurableHttpInvokerRequestExecutor().setSession(getHost(remoteHost), getPort(remoteHost), sessionCookie);
 
         AdminContext ac = new AdminContextBean(
                         (IdentityAdmin) applicationContext.getBean("identityAdmin"),
@@ -307,12 +293,12 @@ public class SecurityProviderImpl extends SecurityProvider
         hostBuffer.setLength(0);
         if(validate) hostBuffer.append(getHost(host));
         SslRMIClientSocketFactory.setTrustFailureHandler(permissiveSSLTrustFailureHandler);
-        SecureHttpClient.setTrustFailureHandler(permissiveSSLTrustFailureHandler);
+        getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(permissiveSSLTrustFailureHandler);
     }
 
     private void resetSslTrustHandler() {
         SslRMIClientSocketFactory.setTrustFailureHandler(null);
-        SecureHttpClient.setTrustFailureHandler(null);
+        getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(null);
     }
 
     /**
@@ -390,13 +376,14 @@ public class SecurityProviderImpl extends SecurityProvider
             bean.resetStub();
         }
         else {
-            SecureHttpInvokerRequestExecutor secureInvoker =
-                    (SecureHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");
-
-            secureInvoker.setSession(getHost(host), getPort(host), null);
+            getConfigurableHttpInvokerRequestExecutor().setSession(getHost(host), getPort(host), null);
         }
 
         return (AdminLogin) applicationContext.getBean("adminLogin");
+    }
+
+    private ConfigurableHttpInvokerRequestExecutor getConfigurableHttpInvokerRequestExecutor() {
+        return (ConfigurableHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");        
     }
 
     private void onLogoff(LogonEvent e) {

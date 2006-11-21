@@ -1,9 +1,7 @@
 package com.l7tech.spring.remoting.http;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.net.SocketException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -21,6 +19,7 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
 
 /**
  * Client side HTTP request executor.
@@ -30,7 +29,7 @@ import com.l7tech.common.http.HttpConstants;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestExecutor {
+public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestExecutor implements ConfigurableHttpInvokerRequestExecutor {
 
     //- PUBLIC
 
@@ -55,6 +54,10 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         this.port = port;
         this.sessionId = sessionId;
     }
+
+    public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
+        this.trustFailureHandler = failureHandler;
+    }    
 
     //- PROTECTED
 
@@ -109,9 +112,11 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     protected void executePostMethod(HttpInvokerClientConfiguration config, HttpClient httpClient, PostMethod postMethod) throws IOException {
+        SecureHttpClient.setTrustFailureHandler(trustFailureHandler);
         Protocol protocol = httpClient.getHostConfiguration().getProtocol();
         HostConfiguration hostConfiguration = new HostConfiguration();
         hostConfiguration.setHost(host, port, protocol);
+        postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
         httpClient.executeMethod(hostConfiguration, postMethod);
     }
 
@@ -126,6 +131,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     private static final String ENCODING_GZIP = "gzip";
 
     private final String userAgent;
+    private SSLTrustFailureHandler trustFailureHandler;
     private String host;
     private int port;
     private String sessionId;
@@ -153,19 +159,6 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
             // switch in the correct host/port
             Matcher matcher = hostSubstitutionPattern.matcher(url);
             String decoratedUrl = matcher.replaceFirst("");
-
-            // add session id if we have one
-            if (sessionId != null) {
-                String encodedId = sessionId;
-                try {
-                    encodedId = URLEncoder.encode(sessionId, "iso-8859-1");
-                }
-                catch (UnsupportedEncodingException uee) {
-                    logger.warning("Unable to URL encode session identifier, encoding not supported '"+
-                            uee.getMessage()+"'.");
-                }
-                decoratedUrl += "?sessionId="+ encodedId;
-            }
 
             return decoratedUrl;
         }

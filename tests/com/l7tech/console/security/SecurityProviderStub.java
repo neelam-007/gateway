@@ -5,7 +5,6 @@ import com.l7tech.identity.UserBean;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.security.cert.X509Certificate;
 import java.rmi.RemoteException;
 
 /**
@@ -23,7 +22,7 @@ public class SecurityProviderStub extends SecurityProvider {
         this.user = new UserBean(creds.getUserName());
     }
 
-    public void login(String sessionId, String host, final X509Certificate expectedServerCert)
+    public void login(String sessionId, String host)
             throws LoginException, VersionException, RemoteException
     {
         this.user = new UserBean("stubAdmin");

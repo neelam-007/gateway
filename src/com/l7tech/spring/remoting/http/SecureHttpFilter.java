@@ -80,7 +80,10 @@ public class SecureHttpFilter implements Filter {
         Subject subject = new Subject();
 
         // Resume session if available
-        String cookie = servletRequest.getParameter("sessionId");
+        String cookie = hsr.getHeader("X-Layer7-SessionId");
+        if (cookie == null) { // check for pre 3.6.5 URL parameter sessionId
+            cookie = servletRequest.getParameter("sessionId");
+        }
         if (cookie != null) {
             Principal authUser = adminSessionManager.resumeSession(cookie);
             if (authUser != null) {

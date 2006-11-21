@@ -8,10 +8,7 @@ package com.l7tech.console;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
@@ -25,10 +22,7 @@ import java.net.URLDecoder;
 import java.net.MalformedURLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 /**
  * Entry point for applet-based version of SSM.
@@ -163,22 +157,6 @@ public class AppletMain extends JApplet implements SheetHolder {
         } else
             logger.info("Using default help root URL: " + helpRootUrl);
 
-        String serverCertB64 = getParameter("gatewayCert");
-        if (serverCertB64 != null && serverCertB64.length() > 0) {
-            try {
-                serverCertB64 = URLDecoder.decode(serverCertB64, "UTF-8");
-                if (logger.isLoggable(Level.INFO))
-                    logger.log(Level.INFO, "Preconfigured server cert(base64): " + serverCertB64);
-                byte[] certBytes = HexUtils.decodeBase64(serverCertB64, true);
-                X509Certificate serverCert = CertUtils.decodeCert(certBytes);
-                LogonDialog.setPreconfiguredServerCert(serverCert);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to parse preconfigured server cert bytes: " + ExceptionUtils.getMessage(e), e);
-            } catch (CertificateException e) {
-                logger.log(Level.WARNING, "Unable to parse preconfigured server cert bytes: " + ExceptionUtils.getMessage(e), e);
-            }
-        }
-
         String sessionId = getParameter("sessionId");
         if (sessionId != null && sessionId.length() > 0) {
             try {
@@ -203,15 +181,13 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     public String[][] getParameterInfo() {
         return new String[][]{
-            {"username", "string", "The adminstrator username.  Mandatory."},
-            {"token", "string", "The authenticaton token.  Mandatory."},
         };
     }
 
     public void showHelpTopicsRoot() {
         try {
             URL cb = getDocumentBase();
-            URL url = new URL(cb.getProtocol(), cb.getHost(), cb.getPort(), helpRootUrl);
+            URL url = new URL(cb, helpRootUrl);
             getAppletContext().showDocument(url, helpTarget);
         } catch (MalformedURLException e) {
             logger.warning("Unable to display webhelp: bad webhelp URL: " + ExceptionUtils.getMessage(e));

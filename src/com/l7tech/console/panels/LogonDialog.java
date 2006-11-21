@@ -35,7 +35,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -48,7 +47,6 @@ public class LogonDialog extends JDialog {
     /** Preconfigured credentials for applet. */
     private static String preconfiguredGatewayHostname;
     private static String preconfiguredSessionId;
-    private static X509Certificate preconfiguredServerCert;
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authenticationCredentials = null;
@@ -481,8 +479,8 @@ public class LogonDialog extends JDialog {
                   public Object construct() {
                       try {
                           AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
-                          if (preconfiguredSessionId != null && preconfiguredServerCert != null) {
-                                authProv.login(preconfiguredSessionId, sHost, preconfiguredServerCert);
+                          if (preconfiguredSessionId != null) {
+                                authProv.login(preconfiguredSessionId, sHost);
                           } else {
                                 authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
                           }
@@ -565,16 +563,6 @@ public class LogonDialog extends JDialog {
     }
 
     /**
-     * Set preconfigured server cert to expect during the SSL handshake with the server.
-     * Used only by the applet version of the manager.
-     *
-     * @param serverCert  the preconfigured server SSL cert, or null to attempt to fault it in the usual way.
-     */
-    public static void setPreconfiguredServerCert(X509Certificate serverCert) {
-        preconfiguredServerCert = serverCert;
-    }
-
-    /**
      * invoke logon dialog
      *
      * @param frame
@@ -614,7 +602,7 @@ public class LogonDialog extends JDialog {
             serverComboBox.setEnabled(false);
             serverComboBox.setVisible(false);
             serverLabel.setVisible(false);
-            if (preconfiguredSessionId != null && preconfiguredServerCert != null) {
+            if (preconfiguredSessionId != null) {
                 // Skip the dialog and just try logging in
                 doLogon();
                 return;

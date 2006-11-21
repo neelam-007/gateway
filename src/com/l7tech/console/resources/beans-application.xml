@@ -8,4 +8,13 @@
     <bean id="preferences" class="com.l7tech.console.util.HeavySsmPreferences" factory-method="getPreferences">
     </bean>
 
+    <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor">
+        <constructor-arg>
+            <ref bean="httpClient"/>
+        </constructor-arg>
+        <constructor-arg>
+            <value>SecureSpan-Manager/3.6</value>
+        </constructor-arg>
+    </bean>
+    
 </beans>
