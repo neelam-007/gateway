@@ -549,10 +549,13 @@ public class DBActions {
 
         createDatabase(dbInfo.getDbName(), stmt);
 
-        executeUpdates(getCreateDbStatementsFromFile(dbCreateScript),
-                stmt,
-                "Creating schema for " + dbInfo.getDbName() + " database");
-
+        // fla - maybe i just want to create the database without adding tables and rows yet
+        if (dbCreateScript != null) {
+            executeUpdates(getCreateDbStatementsFromFile(dbCreateScript),
+                           stmt, "Creating schema for " + dbInfo.getDbName() + " database");
+        } else {
+            logger.info("Skipping creation of tables and rows");
+        }
         executeUpdates(getGrantStatements(dbInfo, isWindows),
                 stmt,
                 "Creating user \"" + dbInfo.getUsername() + "\" and performing grants on " + dbInfo.getDbName() + " database");
