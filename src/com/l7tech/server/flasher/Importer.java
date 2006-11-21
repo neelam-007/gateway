@@ -11,6 +11,8 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.BuildInfo;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 import java.io.*;
@@ -36,8 +38,8 @@ public class Importer {
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping", "location of the staging mapping file");
     public static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name");
     public static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
-    public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password");
-    public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username");
+    public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password (only needed if database needs to be created)");
+    public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username (only needed if database needs to be created)");
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MODE, PARTITION, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER};
 
@@ -121,30 +123,109 @@ public class Importer {
                     throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition number " + partitionName);
             }
             if (partitionName == null) partitionName = "";
-            // check that target db is not currently used by an SSG
 
-            OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
-            Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
-                SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                SsgDatabaseConfigBean.PROP_DB_URL,
-            });
-            databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-            databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-            databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-
-            try {
-                String connectedNode = checkSSGConnectedToDatabase();
-                if (StringUtils.isNotEmpty(connectedNode)) {
-                    throw new IOException("A SecureSpan Gateway is currently running " +
-                                          "and connected to the database. Please shutdown " + connectedNode);
+            boolean newDatabaseCreated = false;
+            if (fullClone) {
+                // if clone mode, check if we can already get connection from the target database
+                Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
+                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                    SsgDatabaseConfigBean.PROP_DB_URL,
+                });
+                databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
+                databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+                databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+                boolean databasepresentandkosher = false;
+                try {
+                    Connection c = getConnection();
+                    try {
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery("select * from hibernate_unique_key");
+                        if (rs.next()) {
+                            databasepresentandkosher = true;
+                        }
+                        rs.close();
+                        s.close();
+                    } finally {
+                        c.close();
+                    }
+                } catch (SQLException e) {
+                    databasepresentandkosher = false;
                 }
-            } catch (SQLException e) {
-                throw new IOException("cannot connect to database" + e.getMessage());
-            }  catch (InterruptedException e) {
-                throw new IOException("interrupted!" + e.getMessage());
+                System.out.println("Using database " + databaseURL);
+
+                // if the database needs to be created, do it
+                if (databasepresentandkosher) {
+                    System.out.println("Existing target database detected");
+                } else {
+                    // get root db username and password
+                    String rootDBUsername = arguments.get(DB_USER.name);
+                    String rootDBPasswd = arguments.get(DB_PASSWD.name);
+                    if (rootDBUsername == null) {
+                        throw new FlashUtilityLauncher.InvalidArgumentException("The target database needs to be " +
+                                        "created but root database username and password are not provided at " +
+                                        "command line. Please provide options " + DB_USER.name +
+                                        " and " + DB_PASSWD.name);
+                    }
+                    if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
+                    // extract db host and name from url
+                    String dbHost = null;
+                    String dbName = null;
+                    Matcher matcher = Pattern.compile("^.*//(.*)/(.*)\\?.*$").matcher(databaseURL);
+                    if (matcher.matches()) {
+                        dbHost = matcher.group(1);
+                        if (dbHost.indexOf(',') >= 0) {
+                            dbHost = dbHost.substring(0, dbHost.indexOf(','));
+                        }
+                        dbName = matcher.group(2);
+                    }
+                    if (StringUtils.isEmpty(dbHost) || StringUtils.isEmpty(dbName)) {
+                        throw new IOException("cannot resolve host name or database name from jdbc url in " +
+                                              tempDirectory + File.separator + "hibernate.properties");
+                    }
+
+                    System.out.print("The target database does not exist. Creating it now ...");
+                    try {
+                        DBActions.DBActionsResult res = getDBActions().createDb(rootDBUsername, rootDBPasswd,
+                                                                                dbHost, dbName, databaseUser,
+                                                                                databasePasswd, null, false, true);
+                        if (res.getStatus() != DBActions.DB_SUCCESS) {
+                            throw new IOException("cannot create database " + res.getErrorMessage());
+                        }
+                        newDatabaseCreated = true;
+                        System.out.println(" DONE");
+                    } catch (ClassNotFoundException e) {
+                        System.out.println(" Error " + e.getMessage());
+                        throw new IOException("cannot create new database " + e.getMessage());
+                    }
+                }
+            } else {
+                OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+                Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
+                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                    SsgDatabaseConfigBean.PROP_DB_URL,
+                });
+                databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
+                databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+                databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
             }
 
+            // check that target db is not currently used by an SSG
+            if (!newDatabaseCreated) {
+                try {
+                    String connectedNode = checkSSGConnectedToDatabase();
+                    if (StringUtils.isNotEmpty(connectedNode)) {
+                        throw new IOException("A SecureSpan Gateway is currently running " +
+                                              "and connected to the database. Please shutdown " + connectedNode);
+                    }
+                } catch (SQLException e) {
+                    throw new IOException("cannot connect to database" + e.getMessage());
+                }  catch (InterruptedException e) {
+                    throw new IOException("interrupted!" + e.getMessage());
+                }
+            }
+            
             // load mapping if requested
             String mappingPath = arguments.get(MAPPING_PATH.name);
             if (mappingPath != null) {
@@ -157,18 +238,22 @@ public class Importer {
                 System.out.println(". DONE");
             }
 
-            // actually go on with the import
-            try {
-                saveExistingLicense();
-            } catch (SQLException e) {
-                throw new IOException("cannot save existing license from database " + e.getMessage());
+            if (!newDatabaseCreated) {
+                // actually go on with the import
+                try {
+                    saveExistingLicense();
+                } catch (SQLException e) {
+                    throw new IOException("cannot save existing license from database " + e.getMessage());
+                }
             }
+
             // load database dump
             try {
                 loadDumpFromExplodedImage();
             } catch (SQLException e) {
                 throw new IOException("error loading db dump " + e.getMessage());
             }
+
 
             // if applicable, copy all config files to the right place
             if (fullClone) {
@@ -255,16 +340,6 @@ public class Importer {
     private void copySystemConfigFiles() throws IOException {
         System.out.print("Cloning SecureSpan Gateway settings ..");
 
-        // todo, solve the target database not present problem
-        // look into image's version of hibernate.properties. make sure the username, passwd and url match
-        /*
-        Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
-                                                                   SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                                                                   SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                                                                   SsgDatabaseConfigBean.PROP_DB_URL,
-                                                                   });
-        */
-
         OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
         // copy hibernate.properties
         restoreConfigFile(osFunctions.getDatabaseConfig());
@@ -334,9 +409,6 @@ public class Importer {
         }
     }
 
-    /**
-     * @return name of ssg node connected to database, null if nothing appears to be connected
-     */
     private String checkSSGConnectedToDatabase() throws SQLException, InterruptedException {
         System.out.print("Making sure target is offline .");
         Connection c = getConnection();
