@@ -517,7 +517,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         return sa;
     }
 
-    public void showSheet(Sheet sheet) {
+    public void showSheet(JInternalFrame sheet) {
         Sheet.showSheet(this, sheet);
     }
 }

@@ -3,24 +3,34 @@ package com.l7tech.common.gui.util;
 import com.l7tech.common.util.SyspropUtil;
 
 import javax.swing.*;
+import javax.swing.event.InternalFrameListener;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * Adapts a JDialog into an internal frame that can be displayed a sheet over top of an existing window.
+ * 
+ * @noinspection UnnecessaryUnboxing,UnnecessaryBoxing,ForLoopReplaceableByForEach
  */
 public class Sheet extends JInternalFrame {
     protected static final Logger logger = Logger.getLogger(Sheet.class.getName());
 
-    private Runnable continuation;
-    private SheetBlocker blocker;
-    private boolean needsBlocker;
-    public static final String PROPERTY_TRANSLUCENT_SHEETS = "com.l7tech.common.gui.util.translucentSheets";
+    public static final String PROPERTY_TRANSLUCENT_SHEETS = "com.l7tech.common.gui.util.Sheet.translucent";
     public static boolean translucentSheets = SyspropUtil.getBoolean(PROPERTY_TRANSLUCENT_SHEETS);
-    public static final Object PROPERTY_SHEETLAYER = "com.l7tech.common.gui.util.Utilities.sheetLayer";
+    public static final Object PROPERTY_SHEETLAYER = "com.l7tech.common.gui.util.Sheet.layer";
+    public static final Object PROPERTY_MODAL = "com.l7tech.common.gui.util.Sheet.modal";
+    public static final Object PROPERTY_CONTINUATION = "com.l7tech.common.gui.util.Sheet.continuation";
+
+    private final JDialog dialog;
+    private final WindowAdapter ourWindowListener = new WindowAdapter() {
+            public void windowClosed(WindowEvent e) {
+                logger.fine("Dialog shown as sheet has been closed");
+                dispose();
+            }
+        };
 
     /**
      * Convert the specified JDialog into an attachable sheet.  If the dialog is modal, the sheet will disable
@@ -42,29 +52,25 @@ public class Sheet extends JInternalFrame {
      * immediately in any case.  To transform a modal dialog into a sheetable one, caller must change
      * dialog.setVisible(true) into targetSheetHolder.showSheet(sheet), and move everything
      * that formerly came after dialog.setVisible(true) into a continuation and pass it here.
+     * <p/>
+     * All dialogs displayed as sheets should use dispose() to close themselves.  Conversely, any dialog
+     * displayed as a sheet that sets its visibility to false will be disposed automatically.
      *
      * @param dialog dialog to adapt into a Sheet.  Must not be null.
      * @param continuation  the code to invoke after the sheet is hidden, or null
      *                      to take no action.
+     * @throws java.awt.HeadlessException if no GUI available
      */
     public Sheet(JDialog dialog, Runnable continuation)
       throws HeadlessException {
-        this.continuation = continuation;
-        layoutComponents(dialog);
+        putClientProperty(PROPERTY_CONTINUATION, continuation);
+        this.dialog = dialog;
+        layoutComponents(this.dialog);
     }
 
-    public void setVisible(boolean vis) {
-        boolean wasVis = isVisible();
-        super.setVisible(vis);
-        if (wasVis == vis)
-            return;
-        if (vis) {
-            logger.finer("Showing blocker sheet");
-        } else {
-            logger.finer("Hiding blocker sheet");
-            if (blocker != null) blocker.setVisible(false);
-            if (continuation != null) continuation.run();
-        }
+    public void dispose() {
+        if (dialog != null && ourWindowListener != null) dialog.removeWindowListener(ourWindowListener);
+        super.dispose();
     }
 
     private void layoutComponents(final JDialog dialog) {
@@ -89,14 +95,10 @@ public class Sheet extends JInternalFrame {
         setContentPane(dialog.getContentPane());
         dialog.setContentPane(new JPanel());
 
-        needsBlocker = dialog.isModal();
+        putClientProperty(PROPERTY_MODAL, Boolean.valueOf(dialog.isModal()));
+        setClosable(!dialog.isModal());
         dialog.setModal(false);
 
-        final WindowAdapter ourWindowListener = new WindowAdapter() {
-            public void windowClosed(WindowEvent e) {
-                dismiss();
-            }
-        };
         dialog.addWindowListener(ourWindowListener);
 
         // Simulate Window Opened event in case anyone needs to know
@@ -125,24 +127,13 @@ public class Sheet extends JInternalFrame {
     }
 
     /**
-     * Synonym for setVisible(false).
-     * Provided for aesthetics because setVisible(true) should almost never be called manually when showing
-     * a sheet.
+     * Check if the specified object represents the truth.
+     *
+     * @return true iff. o is Boolean.TRUE or the string "true".
+     * @param o  object to check for truthhood
      */
-    public void dismiss() {
-        setVisible(false);
-    }
-
-    public SheetBlocker getBlocker() {
-        return blocker;
-    }
-
-    public void setBlocker(SheetBlocker blocker) {
-        this.blocker = blocker;
-    }
-
-    public boolean isNeedsBlocker() {
-        return needsBlocker;
+    private static boolean struth(Object o) {
+        return o instanceof Boolean ? ((Boolean)o).booleanValue() : o instanceof String && Boolean.valueOf((String)o).booleanValue();
     }
 
     /**
@@ -153,7 +144,7 @@ public class Sheet extends JInternalFrame {
      * @param sheet    the sheet to display.
      * @throws ClassCastException if holder isn't a JComponent.
      */
-    public static void showSheet(final RootPaneContainer rpc, final Sheet sheet) {
+    public static void showSheet(final RootPaneContainer rpc, final JInternalFrame sheet) {
         final JLayeredPane layers = rpc.getLayeredPane();
 
         Integer layer = (Integer)layers.getClientProperty(PROPERTY_SHEETLAYER);
@@ -161,42 +152,61 @@ public class Sheet extends JInternalFrame {
         final Integer oldLayer = layer;
 
         final SheetBlocker blocker;
-        if (sheet.isNeedsBlocker()) {
+
+        if ("optionDialog".equals(sheet.getClientProperty("JInternalFrame.frameType")) ||
+            struth(sheet.getClientProperty(Sheet.PROPERTY_MODAL)))
+        {
             blocker = new SheetBlocker(true);
-            sheet.setBlocker(blocker);
             layers.add(blocker);
             layer = new Integer(layer.intValue() + 1);
             layers.putClientProperty(PROPERTY_SHEETLAYER, layer);
             layers.setLayer(blocker, layer.intValue(), 0);
             blocker.setLocation(0, 0);
             blocker.setSize(layers.getWidth(), layers.getHeight());
-            blocker.addPropertyChangeListener("visible", new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if ("false".equals(evt.getNewValue())) {
-                        layers.remove(blocker);
-                        layers.putClientProperty(PROPERTY_SHEETLAYER, oldLayer);
-                    }
-                }
-            });
-
-            ComponentListener resizeListener = new ComponentAdapter() {
-                public void componentResized(ComponentEvent e) {
-                    blocker.setSize(layers.getParent().getWidth(), layers.getParent().getHeight());
-                    blocker.invalidate();
-                    blocker.validate();
-                }
-            };
-            layers.getParent().addComponentListener(resizeListener);
-
         } else blocker = null;
+
+        Object continuationObj = sheet.getClientProperty(PROPERTY_CONTINUATION);
+        final Runnable continuation;
+        if (continuationObj instanceof Runnable) {
+            continuation = (Runnable)continuationObj;
+        } else continuation = null;
 
         layers.add(sheet);
         layers.setLayer(sheet, layer.intValue(), 0);
         sheet.pack();
         Utilities.centerOnParent(sheet);
 
+        ComponentListener resizeListener = new ComponentAdapter() {
+            public void componentResized(ComponentEvent e) {
+                int pw = layers.getParent().getWidth();
+                int ph = layers.getParent().getHeight();
+
+                Point sp = sheet.getLocation();
+                if (sp.x > pw || sp.y > ph) Utilities.centerOnParent(sheet);
+
+                if (blocker != null) {
+                    blocker.setSize(pw, ph);
+                    blocker.invalidate();
+                    blocker.validate();
+                }
+            }
+        };
+        layers.getParent().addComponentListener(resizeListener);
+
+        sheet.addInternalFrameListener(new InternalFrameAdapter() {
+            public void internalFrameClosed(InternalFrameEvent e) {
+                if (blocker != null) {
+                    blocker.setVisible(false);
+                    layers.remove(blocker);
+                    layers.putClientProperty(PROPERTY_SHEETLAYER, oldLayer);
+                }
+                if (continuation != null) continuation.run();
+            }
+        });
+
         if (blocker != null) blocker.setVisible(true);
         sheet.setVisible(true);
+        sheet.requestFocusInWindow();
     }
 
     public static class SheetBlocker extends JPanel {
@@ -226,13 +236,13 @@ public class Sheet extends JInternalFrame {
             if (wasVis == vis)
                 return;
             if (vis) {
-                logger.info("Showing sheet blocker");
+                logger.fine("Showing sheet blocker");
                 if (blockEvents) {
                     addMouseListener(nullMouseListener);
                     addKeyListener(nullKeyListener);
                 }
             } else {
-                logger.info("Hiding sheet blocker");
+                logger.fine("Hiding sheet blocker");
                 if (blockEvents) {
                     removeMouseListener(nullMouseListener);
                     removeKeyListener(nullKeyListener);

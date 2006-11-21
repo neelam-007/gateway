@@ -2411,12 +2411,13 @@ public class MainWindow extends JFrame implements SheetHolder {
                                       JOptionPane.WARNING_MESSAGE);
     }
 
-    public void showSheet(Sheet sheet) {
+    public void showSheet(JInternalFrame sheet) {
         Frame topParent = TopComponents.getInstance().getTopParent();
         if (topParent != this && topParent instanceof RootPaneContainer) {
             Sheet.showSheet((RootPaneContainer)topParent, sheet);
             return;
         }
+
         Sheet.showSheet(this, sheet);
     }
 }

@@ -100,6 +100,10 @@ public class ViewServiceWsdlAction extends NodeAction {
 
         private WsdlViewDialog(final PublishedService ps) {
             super(TopComponents.getInstance().getTopParent(), true);
+
+            // TODO reenable this as soon as the problem with the XML viewer widget NPEing is straightened out
+            DialogDisplayer.suppressSheetDisplay(this);
+
             setTitle(ps.getName());
             JPanel panel = new JPanel(new BorderLayout());
             JPanel wsdlPanel = new JPanel();

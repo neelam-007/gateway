@@ -5,6 +5,7 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -111,17 +112,20 @@ public class ScopeDialog extends JDialog {
 
         specificFindButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, entityType);
+                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, entityType);
                 fed.pack();
                 Utilities.centerOnScreen(fed);
-                fed.setVisible(true);
-                EntityHeader header = fed.getSelectedEntityHeader();
-                specificEntity = header;
-                if (header != null) {
-                    scope.clear();
-                    scope.add(new ObjectIdentityPredicate(permission, header.getOid()));
-                    specificText.setText(header.getName());
-                }
+                DialogDisplayer.display(fed, new Runnable() {
+                    public void run() {
+                        EntityHeader header = fed.getSelectedEntityHeader();
+                        specificEntity = header;
+                        if (header != null) {
+                            scope.clear();
+                            scope.add(new ObjectIdentityPredicate(permission, header.getOid()));
+                            specificText.setText(header.getName());
+                        }
+                    }
+                });
             }
         });
 

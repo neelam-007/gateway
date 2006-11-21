@@ -9,10 +9,10 @@ public interface PolicyWillChangeListener extends EventListener {
      /**
      * Invoked whenever a node in the tree is about to be expanded.
      */
-    public void policyWillReceive(PolicyEvent event) throws PolicyChangeVetoException;
+    public void policyWillReceive(PolicyEvent event);
 
     /**
      * Invoked whenever a node in the tree is about to be collapsed.
      */
-    public void policyWillRemove(PolicyEvent event) throws PolicyChangeVetoException;
+    public void policyWillRemove(PolicyEvent event);
 }

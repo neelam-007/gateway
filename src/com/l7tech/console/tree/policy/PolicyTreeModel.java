@@ -1,6 +1,5 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.event.PolicyChangeVetoException;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyWillChangeListener;
 import com.l7tech.console.event.WeakEventListenerList;
@@ -109,8 +108,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
 
-    private void fireWillReceiveListeners(PolicyEvent event)
-      throws PolicyChangeVetoException {
+    private void fireWillReceiveListeners(PolicyEvent event) {
         EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
         for (int i = listeners.length - 1; i >= 0; i--) {
             ((PolicyWillChangeListener)listeners[i]).policyWillReceive(event);
@@ -118,8 +116,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
 
-    private void fireWillRemoveListeners(PolicyEvent event)
-      throws PolicyChangeVetoException {
+    private void fireWillRemoveListeners(PolicyEvent event) {
         EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
         for (int i = listeners.length - 1; i >= 0; i--) {
             ((PolicyWillChangeListener)listeners[i]).policyWillRemove(event);
@@ -260,8 +257,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
               (AssertionTreeNode)parent, index);
             pc.advices = Advices.getAdvices(a);
             pc.proceed();
-        } catch (PolicyChangeVetoException e) {
-            // vetoed
         } catch (PolicyException e) {
             throw new RuntimeException(e);
         } catch (RemoteException e) {
@@ -313,8 +308,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
                     policy, event, service, this, newChild, (AssertionTreeNode)parent, index);
             pc.advices = new Advice[]{new PolicyValidatorAdvice()};
             pc.proceed();
-        } catch (PolicyChangeVetoException e) {
-            // vetoed
         } catch (PolicyException e) {
             throw new RuntimeException(e);
         } catch (RemoteException e) {
@@ -402,35 +395,31 @@ public class PolicyTreeModel extends DefaultTreeModel {
         Assertion p = parent.asAssertion();
         Assertion a = ((AssertionTreeNode)node).asAssertion();
         final PolicyEvent event = new PolicyEvent(this, new AssertionPath(p.getPath()), childIndex, new Assertion[]{a});
-        try {
-            fireWillRemoveListeners(event);
-            super.removeNodeFromParent(node);
-            AssertionTreeNode assertionTreeNode = (AssertionTreeNode)getRoot();
-            ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
-            PublishedService service = null;
-            if (sn != null) {
-                try {
-                    service = sn.getPublishedService();
-                } catch (FindException e) {
-                    throw new RuntimeException(e);
-                } catch (RemoteException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            Assertion policy = assertionTreeNode.asAssertion();
-            PolicyTreeModelRemoveChange pc =
-              new PolicyTreeModelRemoveChange(policy,
-                event,
-                service,
-                PolicyTreeModel.this, (AssertionTreeNode)node,
-                      parent, childIndex[0]);
-            pc.advices = new Advice[]{new PolicyValidatorAdvice()};
+        fireWillRemoveListeners(event);
+        super.removeNodeFromParent(node);
+        AssertionTreeNode assertionTreeNode = (AssertionTreeNode)getRoot();
+        ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
+        PublishedService service = null;
+        if (sn != null) {
             try {
-                pc.proceed();
-            } catch (PolicyException e) {
+                service = sn.getPublishedService();
+            } catch (FindException e) {
+                throw new RuntimeException(e);
+            } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
-        } catch (PolicyChangeVetoException e) {
+        }
+        Assertion policy = assertionTreeNode.asAssertion();
+        PolicyTreeModelRemoveChange pc =
+                new PolicyTreeModelRemoveChange(policy,
+                                                event,
+                                                service,
+                                                PolicyTreeModel.this, (AssertionTreeNode)node,
+                                                parent, childIndex[0]);
+        pc.advices = new Advice[]{new PolicyValidatorAdvice()};
+        try {
+            pc.proceed();
+        } catch (PolicyException e) {
             throw new RuntimeException(e);
         }
     }

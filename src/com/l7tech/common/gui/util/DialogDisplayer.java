@@ -14,6 +14,8 @@ import java.util.WeakHashMap;
  * Display a possibly-modal dialog using a sheet if possible, otherwise just natively using setVisible(true).
  * To work properly with this mechanism, dialogs must be designed to call dispose() on themselves when
  * dismissed.
+ *
+ * @noinspection ForLoopReplaceableByForEach,unchecked
  */
 public class DialogDisplayer {
     public static final String PROPERTY_FORCE_NATIVE_DIALOG_DISPLAY = "com.l7tech.common.gui.util.forceNativeDialogDisplay";
@@ -30,6 +32,8 @@ public class DialogDisplayer {
 
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
+     * Even if the dialog is modal, this method <b>may return immediately</b>,
+     * without having yet invoked the continuation, if the dialog is being displayed as a sheet.
      *
      * @param dialog  the dialog to display.  Must not be null.
      */
@@ -39,16 +43,49 @@ public class DialogDisplayer {
 
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
+     * Even if the dialog is modal, this method <b>may return immediately</b>,
+     * without having yet invoked the continuation, if the dialog is being displayed as a sheet.
      *
      * @param dialog  the dialog to display.  Must not be null.
      * @param continuation  code to invoke when the dialog is disposed.
      */
     public static void display(JDialog dialog, Runnable continuation) {
-        display(dialog, (SheetHolder)null, continuation);
+        display(dialog, dialog.getParent(), continuation);
+    }
+
+    /**
+     * Display the specified option pane as a sheet if possible, but otherwise as a normal dialog.
+     * Even though JOptionPane is normally modal, this method <b>may return immediately</b>,
+     * without having yet invoked the continuation, if the JOptionPane is being displayed as a sheet.
+     *
+     * @param optionPane   a configured JOptionPane instance to display.  Must not be null.
+     * @param parent       the parent object for the dialog or sheet.  Must not be null.
+     * @param title        the title for the dialog or sheet.  Must not be null.
+     * @param continuation the continuation to invoke when the option pane is hidden.  Must not be null.
+     */
+    public static void display(JOptionPane optionPane, Container parent, String title, Runnable continuation) {
+        SheetHolder holder = getSheetHolderAncestor(parent);
+        if (holder != null) {
+            JInternalFrame jif = optionPane.createInternalFrame(parent, title);
+            jif.pack();
+            Utilities.centerOnParent(jif);
+            if (!mustShowNative(jif, holder)) {
+                jif.putClientProperty(Sheet.PROPERTY_CONTINUATION, continuation);
+                holder.showSheet(jif);
+                return;
+            }
+        }
+
+        JDialog dlg = optionPane.createDialog(parent, title);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        displayNatively(dlg, continuation);
     }
 
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
+     * Even if the dialog is modal, this method <b>may return immediately</b>,
+     * without having yet invoked the continuation, if the dialog is being displayed as a sheet.
      *
      * @param dialog  the dialog to display.  Must not be null.
      * @param parent  the parent to use instead of the dialog's parent.
@@ -60,8 +97,9 @@ public class DialogDisplayer {
     }
 
     /**
-     *
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
+     * Even if the dialog is modal, this method <b>may return immediately</b>,
+     * without having yet invoked the continuation, if the dialog is being displayed as a sheet.
      *
      * @param dialog  the dialog to display.  Must not be null.
      * @param holder  the sheet holder to use instead of searching up the dialog's parent, or null to force native display.
@@ -69,19 +107,22 @@ public class DialogDisplayer {
      */
     public static void display(JDialog dialog, SheetHolder holder, Runnable continuation) {
         if (holder != null) {
-            displayInHolder(dialog, holder, continuation);
+            if (mustShowNative(dialog, holder)) {
+                displayNatively(dialog, continuation);
+                return;
+            }
+            holder.showSheet(new Sheet(dialog, continuation));
             return;
         }
 
         displayNatively(dialog, continuation);
     }
 
-    private static void displayInHolder(JDialog dialog, SheetHolder holder, Runnable continuation) {
-        if (forceNative || isSuppressSheetDisplay(dialog) || isModalDialogShowing() || !willFit(dialog, holder)) {
-            displayNatively(dialog, continuation);
-            return;
-        }
-        holder.showSheet(new Sheet(dialog, continuation));
+    private static boolean mustShowNative(RootPaneContainer dialog, SheetHolder holder) {
+        return forceNative ||
+               isSuppressSheetDisplay(dialog) ||
+               isModalDialogShowing() ||
+               !willFit(dialog, holder);
     }
 
     /**
@@ -89,22 +130,22 @@ public class DialogDisplayer {
      * @param dialog  the dialog that should be checked to see if a sheet based on it would fit in the holder.
      * @param holder  the SheetHolder that should be checked to see if the dialog would fit.
      */
-    private static boolean willFit(JDialog dialog, SheetHolder holder) {
+    private static boolean willFit(RootPaneContainer dialog, SheetHolder holder) {
         Dimension holderSize = holder.getLayeredPane().getSize();
         if (holderSize == null) return false;
 
-        Dimension sheetSize = dialog.getSize();
+        Dimension sheetSize = dialog.getLayeredPane().getSize();
         if (sheetSize == null) {
-            if (dialog.isMinimumSizeSet())
-                sheetSize = dialog.getMinimumSize();
+            if (dialog instanceof JDialog) {
+                JDialog jd = (JDialog)dialog;
+                if (jd.isMinimumSizeSet())
+                    sheetSize = jd.getMinimumSize();
+            }
         }
 
-        if (sheetSize == null) return false;
-
-        if (sheetSize.getWidth() > holderSize.getWidth()) return false;
-        if (sheetSize.getHeight() > holderSize.getHeight()) return false;
-
-        return true;
+        return sheetSize != null &&
+               sheetSize.getWidth() <= holderSize.getWidth() &&
+               sheetSize.getHeight() <= holderSize.getHeight();
     }
 
     /**
@@ -114,7 +155,7 @@ public class DialogDisplayer {
      * @return true if this dialog instance or dialog subclass has been registered as "should never be displayed
      *         as a sheet"
      */
-    public static boolean isSuppressSheetDisplay(JDialog dialog) {
+    public static boolean isSuppressSheetDisplay(RootPaneContainer dialog) {
         return suppressSheetDisplayInstances.containsKey(dialog) ||
                suppressSheetDisplayClasses.containsKey(dialog.getClass());
     }
@@ -125,7 +166,6 @@ public class DialogDisplayer {
      * @param dialog  the dialog to flag.  Must not be null.
      */
     public static void suppressSheetDisplay(JDialog dialog) {
-        //noinspection unchecked
         suppressSheetDisplayInstances.put(dialog, new Object());
     }
 
@@ -135,7 +175,6 @@ public class DialogDisplayer {
      * @param dialogClass  the JDialog subclass to flag.  Must not be null.
      */
     public static void suppressSheetDisplay(Class dialogClass) {
-        //noinspection unchecked
         suppressSheetDisplayClasses.put(dialogClass, new Object());
     }
 
@@ -198,12 +237,12 @@ public class DialogDisplayer {
      * Register a sheet holder to use if the specified RootPaneContainer is encountered while searching
      * up the tree for a SheetHolder parent or owner.
      *
-     * @param appletContainer
-     * @param sheetHolder
+     * @param parentFrame  the parent frame for which to specify a SheetHolder.  Must not be null.
+     * @param sheetHolder  the SheetHolder to use to display sheets that have parentFrame
+     *                     as their closest parent or owner parent.  Must not be null.
      */
-    public static void putDefaultSheetHolder(Frame appletContainer, SheetHolder sheetHolder) {
-        //noinspection unchecked
-        defaultSheetHolderMap.put(appletContainer, sheetHolder);
+    public static void putDefaultSheetHolder(Frame parentFrame, SheetHolder sheetHolder) {
+        defaultSheetHolderMap.put(parentFrame, sheetHolder);
     }
 
 

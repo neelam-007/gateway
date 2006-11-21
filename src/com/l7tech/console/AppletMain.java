@@ -218,7 +218,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
     }
 
-    public void showSheet(Sheet sheet) {
+    public void showSheet(JInternalFrame sheet) {
         Sheet.showSheet(this, sheet);
     }
 }

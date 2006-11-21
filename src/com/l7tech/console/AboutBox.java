@@ -103,6 +103,7 @@ public class AboutBox extends JDialog implements ActionListener {
         JScrollPane jsp = new JScrollPane(systemProperties);
 
         this.setTitle("About the " + product /*+ " " + "Version" + " " + version*/);
+        this.getContentPane().setLayout(new BorderLayout());
         this.getContentPane().add(tabPanel, BorderLayout.CENTER);
         infoPanel.add(new JLabel("Product: " + product),
                       new GridBagConstraints(0, 1, 1, 1, 0d, 0d,
@@ -155,8 +156,21 @@ public class AboutBox extends JDialog implements ActionListener {
         resLabel.setPreferredSize(resourceMeter.getPreferredSize());
         resLabel.setMinimumSize(resourceMeter.getPreferredSize());
         resLabel.setMaximumSize(resourceMeter.getPreferredSize());
+
+        JButton closeButton = new JButton("Close");
+        closeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { dispose(); }
+        });
+        JPanel closeBox = new JPanel();
+        closeBox.setLayout(new BoxLayout(closeBox, BoxLayout.X_AXIS));
+        closeBox.add(Box.createGlue());
+        closeBox.add(closeButton);
+        closeBox.add(Box.createGlue());
+        this.getContentPane().add(closeBox, BorderLayout.SOUTH);
+
         setResizable(true);
         Utilities.setEscKeyStrokeDisposes(this);
+        getRootPane().setDefaultButton(closeButton);
     }
 
 

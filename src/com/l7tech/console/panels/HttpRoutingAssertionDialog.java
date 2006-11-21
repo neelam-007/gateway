@@ -228,6 +228,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void ok() {

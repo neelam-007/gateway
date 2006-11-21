@@ -575,7 +575,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         }
     }
 
-    public void showSheet(Sheet sheet) {
+    public void showSheet(JInternalFrame sheet) {
         Sheet.showSheet(this, sheet);
     }
 }

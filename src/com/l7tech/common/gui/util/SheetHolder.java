@@ -14,5 +14,5 @@ public interface SheetHolder extends RootPaneContainer {
      *
      * @param sheet  the sheet to show.  May not be null.
      */
-    void showSheet(Sheet sheet);
+    void showSheet(JInternalFrame sheet);
 }

@@ -1,7 +1,9 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.objectmodel.FindException;
@@ -107,12 +109,15 @@ public class RoleManagementDialog extends JDialog {
                     if (e.getClickCount() == 1)
                         enableEditRemoveButtons();
                     else if (e.getClickCount() >= 2) {
-                        showEditDialog(getSelectedRole());
-                        try {
-                            updatePropertiesSummary();
-                        } catch (RemoteException re) {
-                            throw new RuntimeException(re);
-                        }
+                        showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
+                            public void call(Role role) {
+                                try {
+                                    updatePropertiesSummary();
+                                } catch (RemoteException re) {
+                                    throw new RuntimeException(re);
+                                }
+                            }
+                        });
                     }
             }
 
@@ -262,13 +267,27 @@ public class RoleManagementDialog extends JDialog {
 
         JButton srcButton = (JButton) source;
         if (srcButton == addRole) {
-            Role newRole = showEditDialog(new Role());
-            if (newRole != null) populateList();
-            updatePropertiesSummary();
+            showEditDialog(new Role(), new Functions.UnaryVoid<Role>() {
+                public void call(Role newRole) {
+                    if (newRole != null) populateList();
+                    try {
+                        updatePropertiesSummary();
+                    } catch (RemoteException e1) {
+                        throw new RuntimeException(e1);
+                    }
+                }
+            });
         } else if (srcButton == editRole) {
-            Role r = showEditDialog(getSelectedRole());
-            if (r != null) populateList();
-            updatePropertiesSummary();
+            showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
+                public void call(Role r) {
+                    if (r != null) populateList();
+                    try {
+                        updatePropertiesSummary();
+                    } catch (RemoteException e1) {
+                        throw new RuntimeException(e1);
+                    }
+                }
+            });
         } else if (srcButton == removeRole) {
             final Role selectedRole = getSelectedRole();
             if (selectedRole == null) return;
@@ -294,19 +313,25 @@ public class RoleManagementDialog extends JDialog {
         return (Role)roleList.getSelectedValue();
     }
 
-    private Role showEditDialog(Role selectedRole) {
-        if (selectedRole == null) return null;
-
-        EditRoleDialog dlg = new EditRoleDialog(selectedRole, this);
-        Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        Role updated = dlg.getRole();
-        if (updated != null) {
-            Role sel = (Role) roleList.getSelectedValue();
-            populateList();
-            roleList.setSelectedValue(sel, true);
+    private void showEditDialog(Role selectedRole, final Functions.UnaryVoid<Role> result) {
+        if (selectedRole == null) {
+            result.call(null);
+            return;
         }
-        return updated;
+
+        final EditRoleDialog dlg = new EditRoleDialog(selectedRole, this);
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                Role updated = dlg.getRole();
+                if (updated != null) {
+                    Role sel = (Role) roleList.getSelectedValue();
+                    populateList();
+                    roleList.setSelectedValue(sel, true);
+                }
+                result.call(updated);
+            }
+        });
     }
 
     private void populateList() {

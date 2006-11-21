@@ -14,6 +14,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.awt.*;
 
@@ -24,22 +25,30 @@ import java.awt.*;
  * @author flascelles@layer7-tech.com
  */
 public class AddThroughputQuotaAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) throws PolicyException {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof ThroughputQuota)) {
             throw new IllegalArgumentException();
         }
         ThroughputQuota subject = (ThroughputQuota)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        ThroughputQuotaForm dlg = new ThroughputQuotaForm(mw, subject, pc.getPolicy());
+        final ThroughputQuotaForm dlg = new ThroughputQuotaForm(mw, subject, pc.getPolicy());
 
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // check that user oked this dialog
-        if (dlg.wasOKed()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (dlg.wasOKed()) {
+                    try {
+                        pc.proceed();
+                    } catch (PolicyException e) {
+                        // Pass the buck to the event queue
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
     }
 }

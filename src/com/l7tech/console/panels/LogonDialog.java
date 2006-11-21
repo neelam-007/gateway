@@ -529,7 +529,7 @@ public class LogonDialog extends JDialog {
 
             sw.start();
             progressDialog.setSwingWorker(sw);
-            DialogDisplayer.display(progressDialog, TopComponents.getInstance().getRootSheetHolder(),new Runnable() {
+            DialogDisplayer.display(progressDialog, new Runnable() {
                 public void run() {
                     parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 }

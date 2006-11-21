@@ -1048,7 +1048,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         }
     };
 
-    public void showSheet(Sheet sheet) {
+    public void showSheet(JInternalFrame sheet) {
         Sheet.showSheet(this, sheet);
     }
 
