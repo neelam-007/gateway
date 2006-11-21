@@ -40,10 +40,10 @@ start() {
 	echo "Increasing SYN packet Backlog"
 	echo 8192 > /proc/sys/net/ipv4/tcp_max_syn_backlog
 	echo "Setting higher tcp memory limits"
-	echo 8388608 > /proc/sys/net/core/wmem_max
-	echo 8388608 > /proc/sys/net/core/rmem_max
-	echo "4096 87380 4194304" > /proc/sys/net/ipv4/tcp_rmem
-	echo "4096 65536 4194304" > /proc/sys/net/ipv4/tcp_wmem
+	echo 16777216 > /proc/sys/net/core/wmem_max
+	echo 16777216> /proc/sys/net/core/rmem_max
+	echo "8192 87380 16777216" > /proc/sys/net/ipv4/tcp_rmem
+	echo "8192 87380 16777216" > /proc/sys/net/ipv4/tcp_wmem
 	echo "8000000 9000000 10000000" > /proc/sys/net/ipv4/tcp_mem
 	echo "Turning on TIME_WAIT recyle and reuse"
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle
@@ -52,6 +52,11 @@ start() {
 	echo 360000 > /proc/sys/net/ipv4/tcp_max_tw_buckets
 	echo "Turning on syncookie protection from Denial of Service (DOS) attacks"
 	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
+	echo "Don't cache thresholds from previous connections"
+    echo 1 > /proc/sys/net/ipv4/tcp_no_metrics_save
+    echo "Increase Network backlogs for Gigabit"
+    echo 2500> /proc/sys/net/core/netdev_max_backlog
+   
     echo "Done"
     return 0
 }
