@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.TableUtil;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -225,53 +226,56 @@ public class NamespaceMapEditor extends JDialog {
     }
 
     private void add() {
-        int selectedRow = table1.getSelectedRow();
+        final int[] selectedRow = new int[]{table1.getSelectedRow()};
 
-        NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
+        final NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
         grabber.pack();
         Utilities.centerOnScreen(grabber);
-        grabber.setVisible(true);
+        DialogDisplayer.display(grabber, new Runnable() {
+            public void run() {
+                if (grabber.cancelled) return;
 
-        if (grabber.cancelled) return;
+                if (grabber.prefix == null || grabber.nsuri == null ||
+                    grabber.prefix.length() < 1 || grabber.nsuri.length() < 1) {
+                    JOptionPane.showMessageDialog(addButton, "The prefix and namespace URI must both be specified");
+                    return;
+                }
 
-        if (grabber.prefix == null || grabber.nsuri == null ||
-            grabber.prefix.length() < 1 || grabber.nsuri.length() < 1) {
-            JOptionPane.showMessageDialog(addButton, "The prefix and namespace URI must both be specified");
-            return;
-        }
+                if (prefixes.contains(grabber.prefix)) {
+                    JOptionPane.showMessageDialog(addButton, "The prefix " + grabber.prefix + " is already specified.");
+                    return;
+                } else if (grabber.prefix.indexOf("=") >= 0 ||
+                           grabber.prefix.indexOf("/") >= 0 ||
+                           grabber.prefix.indexOf("<") >= 0 ||
+                           grabber.prefix.indexOf(">") >= 0 ||
+                           grabber.prefix.indexOf(":") >= 0 ||
+                           grabber.prefix.indexOf("?") >= 0 ||
+                           grabber.prefix.indexOf("!") >= 0 ||
+                           grabber.prefix.indexOf("\"") >= 0) {
+                    JOptionPane.showMessageDialog(addButton, grabber.prefix + " is not a valid namespace prefix value.");
+                    return;
+                }
 
-        if (prefixes.contains(grabber.prefix)) {
-            JOptionPane.showMessageDialog(addButton, "The prefix " + grabber.prefix + " is already specified.");
-            return;
-        } else if (grabber.prefix.indexOf("=") >= 0 ||
-                   grabber.prefix.indexOf("/") >= 0 ||
-                   grabber.prefix.indexOf("<") >= 0 ||
-                   grabber.prefix.indexOf(">") >= 0 ||
-                   grabber.prefix.indexOf(":") >= 0 ||
-                   grabber.prefix.indexOf("?") >= 0 ||
-                   grabber.prefix.indexOf("!") >= 0 ||
-                   grabber.prefix.indexOf("\"") >= 0) {
-            JOptionPane.showMessageDialog(addButton, grabber.prefix + " is not a valid namespace prefix value.");
-            return;
-        }
+                if (namespaces.contains(grabber.nsuri)) {
+                    JOptionPane.showMessageDialog(addButton, "The namespace " + grabber.nsuri + " is already specified.");
+                    return;
+                } else if (grabber.nsuri.indexOf("\'") >= 0 ||
+                           grabber.nsuri.indexOf("\"") >= 0) {
+                    JOptionPane.showMessageDialog(addButton, grabber.nsuri + " is not a valid namespace value.");
+                    return;
+                }
+                prefixes.add(grabber.prefix);
+                namespaces.add(grabber.nsuri);
 
-        if (namespaces.contains(grabber.nsuri)) {
-            JOptionPane.showMessageDialog(addButton, "The namespace " + grabber.nsuri + " is already specified.");
-            return;
-        } else if (grabber.nsuri.indexOf("\'") >= 0 ||
-                   grabber.nsuri.indexOf("\"") >= 0) {
-            JOptionPane.showMessageDialog(addButton, grabber.nsuri + " is not a valid namespace value.");
-            return;
-        }
-        prefixes.add(grabber.prefix);
-        namespaces.add(grabber.nsuri);
+                ((AbstractTableModel)table1.getModel()).fireTableDataChanged();
+                if (selectedRow[0] == -1 && table1.getModel().getRowCount() == 1) selectedRow[0] = 0;
+                if (selectedRow[0] >= 0) {
+                    table1.getSelectionModel().setSelectionInterval(selectedRow[0], selectedRow[0]);
+                }
+                enableRemoveBasedOnSelection();
+            }
+        });
 
-        ((AbstractTableModel)table1.getModel()).fireTableDataChanged();
-        if (selectedRow == -1 && table1.getModel().getRowCount() == 1) selectedRow = 0;
-        if (selectedRow >= 0) {
-            table1.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
-        }
-        enableRemoveBasedOnSelection();
     }
 
     private void remove() {

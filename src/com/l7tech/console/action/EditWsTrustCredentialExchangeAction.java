@@ -6,6 +6,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.WsTrustCredentialExchangePropertiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -53,18 +54,21 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
 
     protected void performAction() {
         Frame parent = TopComponents.getInstance().getTopParent();
-        WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true);
+        final WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.isAssertionChanged()) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.isAssertionChanged()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 }

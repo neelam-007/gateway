@@ -2,6 +2,7 @@ package com.l7tech.console.auditalerts;
 
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
@@ -65,7 +66,7 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     private void showPopup() {
         checker.stop();
         Utilities.centerOnScreen(getAlertsDialog());
-        getAlertsDialog().setVisible(true);
+        DialogDisplayer.display(getAlertsDialog());
     }
 
     private AuditAlertsDialog getAlertsDialog() {

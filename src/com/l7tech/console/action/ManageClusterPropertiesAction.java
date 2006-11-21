@@ -9,6 +9,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.ClusterPropertyDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
 
@@ -38,6 +39,6 @@ public class ManageClusterPropertiesAction extends SecureAction {
         ClusterPropertyDialog dlg = new ClusterPropertyDialog(TopComponents.getInstance().getTopParent());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
+        DialogDisplayer.display(dlg);
     }
 }

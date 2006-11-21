@@ -2100,6 +2100,7 @@
             <exclude name="com/l7tech/common/alert/**/*.java"/>
             <exclude name="com/l7tech/common/util/JaasUtils.java"/>
             <exclude name="com/l7tech/common/util/DnParserJava15.java"/>
+            <exclude name="com/l7tech/common/util/Functions.java"/>
             <exclude name="com/l7tech/common/audit/**/*.java"/>
             <exclude name="com/l7tech/common/transport/jms/**/*.java"/>
             <exclude name="com/l7tech/common/security/TrustedCert.java"/>

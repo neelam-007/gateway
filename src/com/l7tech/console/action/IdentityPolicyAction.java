@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.tree.policy.IdentityAssertionTreeNode;
 import com.l7tech.console.tree.policy.IdentityPolicyView;
 import com.l7tech.console.util.TopComponents;
@@ -63,7 +64,7 @@ public class IdentityPolicyAction extends SecureAction {
             IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
             pw.pack();
             Utilities.centerOnScreen(pw);
-            pw.setVisible(true);
+            DialogDisplayer.display(pw);
         } catch (FindException e) {
             e.printStackTrace();
         } catch (IOException e) {

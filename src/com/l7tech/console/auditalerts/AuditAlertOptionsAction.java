@@ -1,6 +1,7 @@
 package com.l7tech.console.auditalerts;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedReadAny;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.action.SecureAction;
@@ -47,18 +48,21 @@ public class AuditAlertOptionsAction extends SecureAction {
     }
 
     protected void performAction() {
-        AuditAlertOptionsDialog dlg = new AuditAlertOptionsDialog(TopComponents.getInstance().getTopParent());
+        final AuditAlertOptionsDialog dlg = new AuditAlertOptionsDialog(TopComponents.getInstance().getTopParent());
         Utilities.centerOnScreen(dlg);
         dlg.pack();
-        dlg.setVisible(true);
-        if (!dlg.wasCancelled()) {
-            try {
-                dlg.getConfigBean().savePreferences();
-            } catch (IOException e) {
-                logger.warning("Couldn't save preferences for audit alerts options: " + e.getMessage());
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (!dlg.wasCancelled()) {
+                    try {
+                        dlg.getConfigBean().savePreferences();
+                    } catch (IOException e) {
+                        logger.warning("Couldn't save preferences for audit alerts options: " + e.getMessage());
+                    }
+                    updateAuditWatchers(dlg.getConfigBean());
+                }
             }
-            updateAuditWatchers(dlg.getConfigBean());
-        }
+        });
     }
 
     private void updateAuditWatchers(AuditAlertConfigBean bean) {

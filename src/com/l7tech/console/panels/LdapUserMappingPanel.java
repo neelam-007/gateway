@@ -5,6 +5,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.PasswdStrategy;
 import com.l7tech.identity.ldap.UserMappingConfig;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -368,7 +369,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                         EditLdapObjectClassNameDialog d = new EditLdapObjectClassNameDialog(TopComponents.getInstance().getTopParent(), objectClassNameChangeListener, objectClass.getText());
 
                         // show the dialog
-                        d.setVisible(true);
+                        DialogDisplayer.display(d);
 
                     } else {
                         if (objectClass.getText().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {

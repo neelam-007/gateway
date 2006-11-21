@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.EmailAlertPropertiesDialog;
 import com.l7tech.console.tree.policy.EmailAlertAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -34,22 +35,24 @@ public class EmailAlertAssertionPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.getSnmpTrapAssertion());
+        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.getSnmpTrapAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.getResult() != null) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged(subject);
+                        log.finest("model invalidated");
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
 
-        if (dlg.getResult() != null) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(subject);
-                log.finest("model invalidated");
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
             }
-        }
-
+        });
     }
     
     private EmailAlertAssertionTreeNode subject;

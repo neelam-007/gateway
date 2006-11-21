@@ -9,6 +9,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.GlobalSchemaDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
@@ -39,6 +40,6 @@ public class ManageGlobalSchemasAction extends SecureAction {
         GlobalSchemaDialog dlg = new GlobalSchemaDialog(TopComponents.getInstance().getTopParent());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
+        DialogDisplayer.display(dlg);
     }
 }

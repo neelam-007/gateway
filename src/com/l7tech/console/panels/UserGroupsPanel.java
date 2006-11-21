@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
@@ -380,10 +381,12 @@ class UserGroupsPanel extends JPanel {
 
                     JDialog dialog = new NewGroupForUserDialog(d, UserGroupsPanel.this, ipc);
                     dialog.setResizable(false);
-                    dialog.setVisible(true);
-
-                    // Perform necessary post-updates
-                    setAddRemoveButtons();
+                    DialogDisplayer.display(dialog, new Runnable() {
+                        public void run() {
+                            // Perform necessary post-updates
+                            setAddRemoveButtons();
+                        }
+                    });
                 }
             });
         }

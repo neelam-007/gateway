@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.MainWindow;
@@ -53,11 +54,11 @@ public class PublishNonSoapServiceAction extends SecureAction {
         final Frame mw = TopComponents.getInstance().getTopParent();
         PublishNonSoapServiceWizard wiz = PublishNonSoapServiceWizard.getInstance(mw);
         wiz.pack();
-        wiz.setSize(800, 480);
+        wiz.setPreferredSize(new Dimension(800, 480));
         Utilities.centerOnScreen(wiz);
         wiz.addEntityListener(listener);
         wiz.setModal(true);
-        wiz.setVisible(true);
+        DialogDisplayer.display(wiz);
     }
 
     private EntityListener listener = new EntityListenerAdapter() {

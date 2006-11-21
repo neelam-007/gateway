@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.MappingAssertionDialog;
 import com.l7tech.console.tree.policy.MappingAssertionPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -33,15 +34,18 @@ public class MappingAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        MappingAssertionDialog aad = new MappingAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), true);
+        final MappingAssertionDialog aad = new MappingAssertionDialog(TopComponents.getInstance().getTopParent(), subject.getAssertion(), true);
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);
-        aad.setVisible(true);
-        if (aad.isModified()) {
-            subject.setUserObject(aad.getAssertion());
-            assertionChanged();
-        }
+        DialogDisplayer.display(aad, new Runnable() {
+            public void run() {
+                if (aad.isModified()) {
+                    subject.setUserObject(aad.getAssertion());
+                    assertionChanged();
+                }
+            }
+        });
     }
 
     public void assertionChanged() {

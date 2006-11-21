@@ -109,27 +109,19 @@ public class SelectWsdlDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                doOk();
+                wsdl = wsdlLocationPanel.getWsdl();
+
+                if (wsdl != null) {
+                    dispose();
+                }
             }
         });
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                doCancel();
+                dispose();
             }
         });
 
         pack();
-    }
-
-    private void doOk() {
-        wsdl = wsdlLocationPanel.getWsdl();
-
-        if (wsdl != null) {
-            this.setVisible(false);
-        }
-    }
-
-    private void doCancel() {
-        this.setVisible(false);
     }
 }

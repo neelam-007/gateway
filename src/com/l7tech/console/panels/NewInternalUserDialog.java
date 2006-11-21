@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
@@ -503,7 +504,7 @@ public class NewInternalUserDialog extends JDialog {
                                     null, Level.WARNING);
                             d.pack();
                             Utilities.centerOnScreen(d);
-                            d.setVisible(true);
+                            DialogDisplayer.display(d);
                         } catch (Exception e) {
                             ErrorManager.getDefault().
                               notify(Level.WARNING, e, "Error encountered while adding a user\n"+

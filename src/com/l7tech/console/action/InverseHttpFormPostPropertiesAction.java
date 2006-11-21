@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.InverseHttpFormPostDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -56,14 +57,17 @@ public class InverseHttpFormPostPropertiesAction extends NodeAction {
     protected void performAction() {
         InverseHttpFormPost hfp = (InverseHttpFormPost) node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp);
+        final InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp);
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         hfpd.setSize(800, 600);
         Utilities.centerOnScreen(hfpd);
-        hfpd.setVisible(true);
-        if (hfpd.isAssertionModified()) assertionChanged();
+        DialogDisplayer.display(hfpd, new Runnable() {
+            public void run() {
+                if (hfpd.isAssertionModified()) assertionChanged();
+            }
+        });
     }
 
     public void assertionChanged() {

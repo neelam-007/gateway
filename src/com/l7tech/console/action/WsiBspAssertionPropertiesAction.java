@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.WsiBspPropertiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -44,19 +45,22 @@ public class WsiBspAssertionPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.getAssertion(), f, true);
+        final WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.getAssertion(), f, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if(dlg.isAssertionChanged()) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if(dlg.isAssertionChanged()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 
     //- PRIVATE

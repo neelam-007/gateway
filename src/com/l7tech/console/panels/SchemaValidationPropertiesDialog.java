@@ -6,6 +6,7 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
@@ -197,17 +198,20 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");
         readUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                OkCancelDialog dlg = new OkCancelDialog(SchemaValidationPropertiesDialog.this,
+                final OkCancelDialog dlg = new OkCancelDialog(SchemaValidationPropertiesDialog.this,
                                                         resources.getString("urlDialog.title"),
                                                         true,
                                                         new UrlPanel(resources.getString("urlDialog.prompt"), null));
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
-                dlg.setVisible(true);
-                String url = (String)dlg.getValue();
-                if (url != null) {
-                    readFromUrl(url);
-                }
+                DialogDisplayer.display(dlg, new Runnable() {
+                    public void run() {
+                        String url = (String)dlg.getValue();
+                        if (url != null) {
+                            readFromUrl(url);
+                        }
+                    }
+                });
             }
         });
 
@@ -404,7 +408,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 GlobalSchemaDialog globalSchemaManager = new GlobalSchemaDialog(this);
                 globalSchemaManager.pack();
                 Utilities.centerOnScreen(globalSchemaManager);
-                globalSchemaManager.setVisible(true);
+                globalSchemaManager.setVisible(true); // TODO change to use DialogDisplayer
             }
             return true;
         }
@@ -585,7 +589,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
 
-        SelectWsdlSchemaDialog schemafromwsdlchooser;
+        final SelectWsdlSchemaDialog schemafromwsdlchooser;
         try {
             schemafromwsdlchooser = new SelectWsdlSchemaDialog(this, wsdlDoc);
         } catch (DocumentException e) {
@@ -597,14 +601,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
         schemafromwsdlchooser.pack();
         Utilities.centerOnScreen(schemafromwsdlchooser);
-        schemafromwsdlchooser.setVisible(true);
-        schemafromwsdlchooser.dispose();
-        String result = schemafromwsdlchooser.getOkedSchema();
-        if (result != null) {
-            final XMLEditor editor = uiAccessibility.getEditor();
-            editor.setText(result);
-            editor.setLineNumber(1);
-        }
+        DialogDisplayer.display(schemafromwsdlchooser, new Runnable() {
+            public void run() {
+                String result = schemafromwsdlchooser.getOkedSchema();
+                if (result != null) {
+                    final XMLEditor editor = uiAccessibility.getEditor();
+                    editor.setText(result);
+                    editor.setLineNumber(1);
+                }
+            }
+        });
     }
 
     private void readFromFile() {

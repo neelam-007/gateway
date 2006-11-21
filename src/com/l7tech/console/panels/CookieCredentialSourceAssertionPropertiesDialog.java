@@ -36,14 +36,14 @@ public class CookieCredentialSourceAssertionPropertiesDialog extends JDialog {
                 if (!isDataValid())
                     return;
                 confirmed = true;
-                setVisible(false);
+                dispose();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
-                setVisible(false);
+                dispose();
             }
         });
 

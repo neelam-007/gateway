@@ -14,6 +14,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 
@@ -216,19 +217,22 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
         Utilities.setEnabled(component,enable);
     }
 
-    private void edit(FieldInfo fieldInfo) {
+    private void edit(final FieldInfo fieldInfo) {
         if (fieldInfo != null) {
-            SamlBrowserArtifactFieldDialog fieldDialog = new SamlBrowserArtifactFieldDialog(this, true);
+            final SamlBrowserArtifactFieldDialog fieldDialog = new SamlBrowserArtifactFieldDialog(this, true);
             Utilities.centerOnScreen(fieldDialog);
             fieldDialog.getNameField().setText(fieldInfo.name);
             fieldDialog.getValueField().setText(fieldInfo.value);
             fieldDialog.pack();
-            fieldDialog.setVisible(true);
-            if (fieldDialog.isModified()) {
-                listModel.removeElement(fieldInfo);
-                listModel.addElement(new FieldInfo(fieldDialog.getNameField().getText(), fieldDialog.getValueField().getText()));
-                updateButtons();
-            }
+            DialogDisplayer.display(fieldDialog, new Runnable() {
+                public void run() {
+                    if (fieldDialog.isModified()) {
+                        listModel.removeElement(fieldInfo);
+                        listModel.addElement(new FieldInfo(fieldDialog.getNameField().getText(), fieldDialog.getValueField().getText()));
+                        updateButtons();
+                    }
+                }
+            });
         }
     }
 

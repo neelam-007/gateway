@@ -8,6 +8,8 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.LogonListener;
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class DashboardWindow extends JFrame implements LogonListener {
+public class DashboardWindow extends JFrame implements LogonListener, SheetHolder {
     private static final Logger logger = Logger.getLogger(DashboardWindow.class.getName());
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
@@ -515,4 +517,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
         return sa;
     }
 
+    public void showSheet(Sheet sheet) {
+        Sheet.showSheet(this, sheet);
+    }
 }

@@ -10,11 +10,14 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 /**
  * The <code>EditServiceNameAction</code> invokes the service name
@@ -74,7 +77,7 @@ public class EditServiceNameAction extends ServiceNodeAction {
                       lastServiceName = svc.getName();
                       EditServiceNameDialog d =
                         new EditServiceNameDialog(wm.getTopParent(), svc, nameChangeListener);
-                      d.setVisible(true);
+                      DialogDisplayer.display(d);
                   } catch (Exception e) {
                       //todo: ErroManager someday?
                       e.printStackTrace();

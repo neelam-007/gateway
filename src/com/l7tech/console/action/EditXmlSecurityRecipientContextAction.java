@@ -13,6 +13,7 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -46,18 +47,21 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion);
+        final XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.hasAssertionChanged()) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.hasAssertionChanged()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 }

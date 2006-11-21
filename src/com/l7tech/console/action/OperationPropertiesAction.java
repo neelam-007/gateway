@@ -6,6 +6,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.WSDLOperationPropertiesDialog;
 import com.l7tech.policy.assertion.Operation;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
@@ -78,18 +79,21 @@ public class OperationPropertiesAction extends SecureAction {
             return;
         }
 
-        WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, (Operation)subject.asAssertion(), operations);
+        final WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, (Operation)subject.asAssertion(), operations);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.oked) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(subject);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the policy tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.oked) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged(subject);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the policy tree.");
+                    }
+                }
             }
-        }
+        });
     }
 }

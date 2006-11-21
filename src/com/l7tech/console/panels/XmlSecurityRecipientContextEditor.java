@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.TopComponents;
@@ -187,8 +188,11 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 w.pack();
                 w.setSize(800, 560);
                 Utilities.centerOnScreen(w);
-                w.setVisible(true);
-                XmlSecurityRecipientContextEditor.this.pack();
+                DialogDisplayer.display(w, new Runnable() {
+                    public void run() {
+                        XmlSecurityRecipientContextEditor.this.pack();
+                    }
+                });
             }
         });
     }

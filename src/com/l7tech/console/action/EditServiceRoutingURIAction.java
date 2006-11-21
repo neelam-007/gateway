@@ -9,8 +9,10 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -63,49 +65,58 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
             throw new RuntimeException(e);
         }
 
-        boolean changed;
+        Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
+            public void call(Boolean changed) {
+                if (changed) {
+                    serviceNode.clearServiceHolder();
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+                    if (tree != null) {
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.nodeChanged(node);
+                    }
+                }
+            }
+        };
+
         if (svc.isSoap()) {
-            changed = editSoapServiceRoutingURI(svc);
+            editSoapServiceRoutingURI(svc, callback);
         }
         else {
-            changed = editXMLServiceRoutingURI(svc);
-        }
-        if (changed) {
-            serviceNode.clearServiceHolder();
-            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
-            if (tree != null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.nodeChanged(node);
-            }
+            editXMLServiceRoutingURI(svc, callback);
         }
     }
 
-    private boolean editSoapServiceRoutingURI(PublishedService svc) {
+    private void editSoapServiceRoutingURI(final PublishedService svc, final Functions.UnaryVoid<Boolean> resultCallback) {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(mw, svc);
+        final SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(mw, svc);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.wasSubjectAffected()) {
-            try {
-                Registry.getDefault().getServiceManager().savePublishedService(svc);
-            } catch (DuplicateObjectException e) {
-                JOptionPane.showMessageDialog(mw,
-                      "Unable to save the service '" + svc.getName() + "'\n" +
-                      "because an existing service is already using the URI " + svc.getRoutingUri(),
-                      "Service already exists",
-                      JOptionPane.ERROR_MESSAGE);
-            } catch (Exception e) {
-                String msg = "Error while changing routing URI ";
-                logger.log(Level.INFO, msg, e);
-                JOptionPane.showMessageDialog(mw, msg + e.getMessage());
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.wasSubjectAffected()) {
+                    try {
+                        Registry.getDefault().getServiceManager().savePublishedService(svc);
+                    } catch (DuplicateObjectException e) {
+                        JOptionPane.showMessageDialog(mw,
+                              "Unable to save the service '" + svc.getName() + "'\n" +
+                              "because an existing service is already using the URI " + svc.getRoutingUri(),
+                              "Service already exists",
+                              JOptionPane.ERROR_MESSAGE);
+                    } catch (Exception e) {
+                        String msg = "Error while changing routing URI ";
+                        logger.log(Level.INFO, msg, e);
+                        JOptionPane.showMessageDialog(mw, msg + e.getMessage());
+                    }
+                    resultCallback.call(true);
+                    return;
+                }
+                resultCallback.call(false);
+                return;
             }
-            return true;
-        }
-        return false;
+        });
     }
 
-    private boolean editXMLServiceRoutingURI(PublishedService svc) {
+    private void editXMLServiceRoutingURI(PublishedService svc, final Functions.UnaryVoid<Boolean> result) {
         final Frame parent = TopComponents.getInstance().getTopParent();
         String ssgUrl = TopComponents.getInstance().ssgURL();
         if (!ssgUrl.startsWith("http://")) {
@@ -135,10 +146,12 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
             if (newURI != null && !newURI.equals(existingRoutingURI)) {
                 if (newURI.length() <= 0 || newURI.equals("/")) { // non-soap service cannot have null routing uri
                     JOptionPane.showMessageDialog(parent, "Cannot set empty uri on non-soap service");
-                    return false;
+                    result.call(false);
+                    return;
                 } else if (newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
                     JOptionPane.showMessageDialog(parent, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
-                    return false;
+                    result.call(false);
+                    return;
                 } else {
                     if (newURI.length() <= 0) {
                         svc.setRoutingUri(null);
@@ -149,7 +162,8 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
                     }
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
                     updated = true;
-                    return true;
+                    result.call(true);
+                    return;
                 }
             }
         } catch (DuplicateObjectException e) {
@@ -171,6 +185,6 @@ public class EditServiceRoutingURIAction extends ServiceNodeAction {
                 svc.setRoutingUri(previousRoutingURI);
             }
         }
-        return false;
+        result.call(false);
     }
 }

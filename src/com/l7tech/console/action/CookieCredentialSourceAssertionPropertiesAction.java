@@ -6,6 +6,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.CookieCredentialSourceAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.CookieCredentialSourceAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -43,24 +44,27 @@ public class CookieCredentialSourceAssertionPropertiesAction extends SecureActio
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)subject.asAssertion();
-        CookieCredentialSourceAssertionPropertiesDialog dlg =
+        final CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)subject.asAssertion();
+        final CookieCredentialSourceAssertionPropertiesDialog dlg =
                 new CookieCredentialSourceAssertionPropertiesDialog(f, true, assertion);
 
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
 
-        if (!dlg.isConfirmed()) return;
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (!dlg.isConfirmed()) return;
 
-        dlg.getData(assertion);
-        JTree tree = TopComponents.getInstance().getPolicyTree();
-        if (tree != null) {
-            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-            model.assertionTreeNodeChanged(subject);
-            log.finest("model invalidated");
-        } else {
-            log.log(Level.WARNING, "Unable to reach the palette tree.");
-        }
+                dlg.getData(assertion);
+                JTree tree = TopComponents.getInstance().getPolicyTree();
+                if (tree != null) {
+                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                    model.assertionTreeNodeChanged(subject);
+                    log.finest("model invalidated");
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                }
+            }
+        });
     }
 }

@@ -6,6 +6,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.FaultLevelPropertiesDialog;
 import com.l7tech.policy.assertion.FaultLevel;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,18 +45,21 @@ public class FaultLevelPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        FaultLevelPropertiesDialog dlg = new FaultLevelPropertiesDialog(f, (FaultLevel)subject.asAssertion());
+        final FaultLevelPropertiesDialog dlg = new FaultLevelPropertiesDialog(f, (FaultLevel)subject.asAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.oked) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(subject);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the policy tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.oked) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged(subject);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the policy tree.");
+                    }
+                }
             }
-        }
+        });
     }
 }

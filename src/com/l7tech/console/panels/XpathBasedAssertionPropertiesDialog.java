@@ -3,15 +3,17 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.gui.widgets.SpeedIndicator;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.XencAlgorithm;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.Functions;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.xpath.FastXpath;
-import com.l7tech.common.xml.SoapMessageGenerator.Message;
+import com.l7tech.console.util.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.ServiceNode;
@@ -20,6 +22,7 @@ import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
@@ -66,7 +69,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.*;
@@ -230,7 +232,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         addSampleButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                SampleMessage sm;
+                final SampleMessage sm;
                 try {
                     String xml = messageViewer.getContent();
                     try {
@@ -246,35 +248,41 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     throw new RuntimeException("Couldn't find PublishedService", ex);
                 }
 
-                SampleMessageDialog smd = showSampleMessageDialog(sm);
-                if (smd.isOk()) {
-                    try {
-                        long oid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
-                        populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
-                    } catch (SaveException ex) {
-                        throw new RuntimeException("Couldn't save SampleMessage", ex);
-                    } catch (RemoteException ex) {
-                        throw new RuntimeException("Couldn't save SampleMessage", ex);
+                showSampleMessageDialog(sm, new Functions.UnaryVoid<SampleMessageDialog>() {
+                    public void call(SampleMessageDialog smd) {
+                        if (smd.isOk()) {
+                            try {
+                                long oid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
+                                populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
+                            } catch (SaveException ex) {
+                                throw new RuntimeException("Couldn't save SampleMessage", ex);
+                            } catch (RemoteException ex) {
+                                throw new RuntimeException("Couldn't save SampleMessage", ex);
+                            }
+                        }
                     }
-                }
+                });
             }
         });
 
         editSampleButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
+                final SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
                 if (entry == USE_AUTOGEN) return;
-                try {
-                    SampleMessageDialog smd = showSampleMessageDialog(entry.message);
-                    if (smd.isOk()) {
-                        Registry.getDefault().getServiceManager().saveSampleMessage(entry.message);
-                        sampleMessagesCombo.repaint();
+                showSampleMessageDialog(entry.message, new Functions.UnaryVoid<SampleMessageDialog>() {
+                    public void call(SampleMessageDialog smd) {
+                        if (smd.isOk()) {
+                            try {
+                                Registry.getDefault().getServiceManager().saveSampleMessage(entry.message);
+                            } catch (SaveException ex) {
+                                throw new RuntimeException("Couldn't save SampleMessage", ex);
+                            } catch (RemoteException ex) {
+                                throw new RuntimeException("Couldn't save SampleMessage", ex);
+                            }
+                            sampleMessagesCombo.repaint();
+                        }
                     }
-                } catch (SaveException ex) {
-                    throw new RuntimeException("Couldn't save SampleMessage", ex);
-                } catch (RemoteException ex) {
-                    throw new RuntimeException("Couldn't save SampleMessage", ex);
-                }
+                });
             }
         });
 
@@ -336,12 +344,15 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
     }
 
-    private SampleMessageDialog showSampleMessageDialog(SampleMessage sm) {
-        SampleMessageDialog smd = new SampleMessageDialog(this, sm, false);
+    private void showSampleMessageDialog(SampleMessage sm, final Functions.UnaryVoid<SampleMessageDialog> result) {
+        final SampleMessageDialog smd = new SampleMessageDialog(this, sm, false);
         smd.pack();
         Utilities.centerOnScreen(smd);
-        smd.setVisible(true);
-        return smd;
+        DialogDisplayer.display(smd, new Runnable() {
+            public void run() {
+                result.call(smd);
+            }
+        });
     }
 
     private void populateSampleMessages(String operationName, long whichToSelect) {
@@ -412,20 +423,23 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         namespaceButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 List requiredNS = new ArrayList(requiredNamespaces.values());
-                NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this,
+                final NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this,
                         namespaces,
                         requiredNS);
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
-                nseditor.setVisible(true);
-                Map newMap = nseditor.newNSMap();
-                if (newMap != null) {
-                    namespaces = newMap;
+                DialogDisplayer.display(nseditor, new Runnable() {
+                    public void run() {
+                        Map newMap = nseditor.newNSMap();
+                        if (newMap != null) {
+                            namespaces = newMap;
 
-                    // update feedback for new namespaces
-                    JTextField xpathTextField = messageViewerToolBar.getxpathField();
-                    xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
-                }
+                            // update feedback for new namespaces
+                            JTextField xpathTextField = messageViewerToolBar.getxpathField();
+                            xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
+                        }
+                    }
+                });
             }
         });
 

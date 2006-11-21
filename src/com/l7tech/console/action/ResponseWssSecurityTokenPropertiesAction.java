@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.ResponseWssSecurityTokenDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -53,24 +54,27 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone());
+        final ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.wasOKed()) {
-            ResponseWssSecurityToken newAss = (ResponseWssSecurityToken)dlg.getValue();
-            if (newAss == null) return;
-            ResponseWssSecurityToken oldAss = (ResponseWssSecurityToken)node.asAssertion();
-            oldAss.copyFrom(newAss);
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.wasOKed()) {
+                    ResponseWssSecurityToken newAss = (ResponseWssSecurityToken)dlg.getValue();
+                    if (newAss == null) return;
+                    ResponseWssSecurityToken oldAss = (ResponseWssSecurityToken)node.asAssertion();
+                    oldAss.copyFrom(newAss);
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 
 }

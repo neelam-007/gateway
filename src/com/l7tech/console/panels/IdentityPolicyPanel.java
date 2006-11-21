@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -138,7 +139,7 @@ public class IdentityPolicyPanel extends JPanel {
                 d.setModal(true);
                 d.pack();
                 Utilities.centerOnScreen(d);
-                d.setVisible(true);
+                DialogDisplayer.display(d);
             }
         });
 

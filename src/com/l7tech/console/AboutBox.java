@@ -3,6 +3,7 @@ package com.l7tech.console;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.table.MapBackedTableModel;
 
 import javax.swing.*;
@@ -76,7 +77,7 @@ public class AboutBox extends JDialog implements ActionListener {
      */
     public static void showDialog(Frame Owner) {
         AboutBox box = new AboutBox(Owner);
-        box.setVisible(true);
+        DialogDisplayer.display(box);
     }
 
     /**

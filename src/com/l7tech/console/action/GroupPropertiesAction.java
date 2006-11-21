@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.GroupPanel;
 import com.l7tech.console.tree.AssertionsTree;
@@ -65,24 +66,27 @@ public class GroupPropertiesAction extends NodeAction {
                     config = getIdentityProviderConfig((EntityHeaderNode)node);
                 }
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
-                GroupPanel panel = GroupPanel.newInstance(config, header);
+                final GroupPanel panel = GroupPanel.newInstance(config, header);
                 Frame f = TopComponents.getInstance().getTopParent();
                 EditorDialog dialog = new EditorDialog(f, panel, true);
                 try {
                     panel.edit(header, config);
                     dialog.pack();
                     Utilities.centerOnScreen(dialog);
-                    dialog.setVisible(true);
-                    // bugzilla #1989
-                    // catch changes here and update node
-                    if (panel.wasOKed()) {
-                        Group g = panel.getGroup();
-                        EntityHeader nodeobject = (EntityHeader)gn.getUserObject();
-                        nodeobject.setDescription(g.getDescription());
-                        gn.firePropertyChange(nodeobject, null, nodeobject, nodeobject);
-                        // invalidate parent dialog
-                        firePropertyChange(null, null, null);
-                    }
+                    DialogDisplayer.display(dialog, new Runnable() {
+                        public void run() {
+                            // bugzilla #1989
+                            // catch changes here and update node
+                            if (panel.wasOKed()) {
+                                Group g = panel.getGroup();
+                                EntityHeader nodeobject = (EntityHeader)gn.getUserObject();
+                                nodeobject.setDescription(g.getDescription());
+                                gn.firePropertyChange(nodeobject, null, nodeobject, nodeobject);
+                                // invalidate parent dialog
+                                firePropertyChange(null, null, null);
+                            }
+                        }
+                    });
                 } catch (NoSuchElementException e) {
                     // Bugzilla #801 - removing the group from the tree should not be performed 
                     // removeGroupTreeNode(header);

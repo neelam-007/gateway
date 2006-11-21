@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
@@ -145,7 +146,7 @@ public class SearchWsdlDialog extends JDialog {
                 final CancelableOperationDialog dlg =
                         new CancelableOperationDialog(SearchWsdlDialog.this, "Searching WSDL", "Please wait, Searching WSDL...");
 
-                SwingWorker worker = new SwingWorker() {
+                final SwingWorker worker = new SwingWorker() {
 
                     public Object construct() {
                         try {
@@ -167,47 +168,52 @@ public class SearchWsdlDialog extends JDialog {
                     }
 
                     public void finished() {
-                        dlg.setVisible(false);
+                        dlg.dispose();
                     }
                 };
 
                 worker.start();
-                dlg.setVisible(true);
-                worker.interrupt();
-                Object result = worker.get();
-                if (result == null)
-                    return;    // canceled
-                if (result instanceof WsdlInfo[]) {
-                    boolean searchTruncated = false;
-                    Vector urlList = new Vector();
-                    for (int i = 0; i < ((WsdlInfo[])result).length; i++) {
-                        final WsdlInfo wi = ((WsdlInfo[])result)[i];
-                        if (WsdlInfo.MAXED_OUT_WSDL_URL.equals(wi.getWsdlUrl())) {
-                            // Flag value indicating that search results were truncated
-                            searchTruncated = true;
-                        } else {
-                            // Normal result
-                            urlList.add(wi);
+
+
+                DialogDisplayer.display(dlg, new Runnable() {
+                    public void run() {
+                        worker.interrupt();
+                        Object result = worker.get();
+                        if (result == null)
+                            return;    // canceled
+                        if (result instanceof WsdlInfo[]) {
+                            boolean searchTruncated = false;
+                            Vector urlList = new Vector();
+                            for (int i = 0; i < ((WsdlInfo[])result).length; i++) {
+                                final WsdlInfo wi = ((WsdlInfo[])result)[i];
+                                if (WsdlInfo.MAXED_OUT_WSDL_URL.equals(wi.getWsdlUrl())) {
+                                    // Flag value indicating that search results were truncated
+                                    searchTruncated = true;
+                                } else {
+                                    // Normal result
+                                    urlList.add(wi);
+                                }
+                            }
+
+                            // populate the data to the table
+                            ((WsdlTableSorter) wsdlTable.getModel()).setData(urlList);
+                            String warning = "";
+                            if (searchTruncated) {
+                                warning = "  <b>(QUERY TOO BROAD - Only the first " + urlList.size() + " results are presented)</b>";
+                                retrievedRows.setForeground(new Color(255, 64, 64));
+                            } else {
+                                retrievedRows.setForeground(new JLabel().getForeground());
+                            }
+                            retrievedRows.setText("<HTML>Result: " + urlList.size() + warning);
+
+                            return;
                         }
+
+                        retrievedRows.setText("Result: 0");
+
                     }
-
-                    // populate the data to the table
-                    ((WsdlTableSorter) wsdlTable.getModel()).setData(urlList);
-                    String warning = "";
-                    if (searchTruncated) {
-                        warning = "  <b>(QUERY TOO BROAD - Only the first " + urlList.size() + " results are presented)</b>";
-                        retrievedRows.setForeground(new Color(255, 64, 64));
-                    } else {
-                        retrievedRows.setForeground(new JLabel().getForeground());
-                    }
-                    retrievedRows.setText("<HTML>Result: " + urlList.size() + warning);
-
-                    return;
-                }
-
-                retrievedRows.setText("Result: 0");
-
-            };
+                });
+            }
         });
 
         pack();

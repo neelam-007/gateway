@@ -45,7 +45,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
         TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
-        DialogDisplayer.setDefaultSheetHolder(mainWindow);
+
         // Window listener
         mainWindow.setVisible(true);
         mainWindow.toFront();

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
@@ -347,6 +348,7 @@ public class NewGroupDialog extends JDialog {
         SwingUtilities.invokeLater(
                 new Runnable() {
                     public void run() {
+                        boolean disposeNow = true;
                         try {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
@@ -367,13 +369,19 @@ public class NewGroupDialog extends JDialog {
                                     null, Level.WARNING);
                             d.pack();
                             Utilities.centerOnScreen(d);
-                            d.setVisible(true);
+                            disposeNow = false;
+                            DialogDisplayer.display(d, new Runnable() {
+                                public void run() {
+                                    NewGroupDialog.this.dispose();
+                                }
+                            });
                         } catch (Exception e) {
                             ErrorManager.getDefault().
                               notify(Level.WARNING, e, "Error encountered while adding a group {0}\n"+
                                      "The Group {0} has not been created.", new Object[] {group.getName()});
                         }
-                        NewGroupDialog.this.dispose();
+                        if (disposeNow)
+                            NewGroupDialog.this.dispose();
                     }
                 });
 
@@ -414,8 +422,11 @@ public class NewGroupDialog extends JDialog {
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);
-                                dialog.setVisible(true);
-                                insertSuccess = false;
+                                DialogDisplayer.display(dialog, new Runnable() {
+                                    public void run() {
+                                        insertSuccess = false;
+                                    }
+                                });
                             }
                         });
             }

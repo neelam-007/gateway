@@ -5,6 +5,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import org.jaxen.dom.DOMXPath;
@@ -104,14 +105,17 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
     }
 
     private void editNamespaces() {
-        NamespaceMapEditor nseditor = new NamespaceMapEditor(this, namespaces, null);
+        final NamespaceMapEditor nseditor = new NamespaceMapEditor(this, namespaces, null);
         nseditor.pack();
         Utilities.centerOnScreen(nseditor);
-        nseditor.setVisible(true);
-        Map newMap = nseditor.newNSMap();
-        if (newMap != null) {
-            namespaces = newMap;
-        }
+        DialogDisplayer.display(nseditor, new Runnable() {
+            public void run() {
+                Map newMap = nseditor.newNSMap();
+                if (newMap != null) {
+                    namespaces = newMap;
+                }
+            }
+        });
     }
 
     public boolean isAssertionChanged() {

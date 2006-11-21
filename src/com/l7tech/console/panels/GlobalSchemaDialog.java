@@ -8,6 +8,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import static com.l7tech.common.security.rbac.EntityType.SCHEMA_ENTRY;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
@@ -120,6 +121,7 @@ public class GlobalSchemaDialog extends JDialog {
 
         populate();
         enableRemoveBasedOnSelection();
+        TableUtil.adjustColumnWidth(schemaTable, 1);
     }
 
     private void populate() {
@@ -221,46 +223,49 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void add(String systemid) {
-        SchemaEntry newEntry = new SchemaEntry();
+        final SchemaEntry newEntry = new SchemaEntry();
         if (systemid != null) {
             newEntry.setName(systemid);
         }
-        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry, flags.canUpdateSome());
+        final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry, flags.canUpdateSome());
         dlg.pack();
         Dimension dim = dlg.getSize();
         dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
         dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.success) {
-            // save changes to gateway
-            Registry reg = Registry.getDefault();
-            if (reg == null || reg.getSchemaAdmin() == null) {
-                logger.warning("No access to registry. Cannot save.");
-                return;
-            }
-            checkEntryForUnresolvedImports(newEntry);
-            Throwable err = null;
-            try {
-                reg.getSchemaAdmin().saveSchemaEntry(newEntry);
-            } catch (RemoteException e) {
-                err = e;
-            } catch (SaveException e) {
-                err = e;
-            } catch (UpdateException e) {
-                err = e;
-            }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.success) {
+                    // save changes to gateway
+                    Registry reg = Registry.getDefault();
+                    if (reg == null || reg.getSchemaAdmin() == null) {
+                        logger.warning("No access to registry. Cannot save.");
+                        return;
+                    }
+                    checkEntryForUnresolvedImports(newEntry);
+                    Throwable err = null;
+                    try {
+                        reg.getSchemaAdmin().saveSchemaEntry(newEntry);
+                    } catch (RemoteException e) {
+                        err = e;
+                    } catch (SaveException e) {
+                        err = e;
+                    } catch (UpdateException e) {
+                        err = e;
+                    }
 
-            if (err != null) {
-                String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
-                logger.log(Level.WARNING, text, err);
-                showErrorMessage(text);
-            }
+                    if (err != null) {
+                        String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
+                        logger.log(Level.WARNING, text, err);
+                        showErrorMessage(text);
+                    }
 
-            // pickup all changes from gateway
-            populate();
-            TableUtil.adjustColumnWidth(schemaTable, 1);
-        }
+                    // pickup all changes from gateway
+                    populate();
+                    TableUtil.adjustColumnWidth(schemaTable, 1);
+                }
+            }
+        });
     }
 
     private void showErrorMessage(String text) {
@@ -368,40 +373,43 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void edit() {
-        SchemaEntry toedit = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
-        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome());
+        final SchemaEntry toedit = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
+        final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome());
         dlg.pack();
         Dimension dim = dlg.getSize();
         dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
         dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.success) {
-            // save changes to gateway
-            Registry reg = Registry.getDefault();
-            if (reg == null || reg.getSchemaAdmin() == null) {
-                logger.warning("No access to registry. Cannot save.");
-                return;
-            }
-            Throwable err = null;
-            try {
-                checkEntryForUnresolvedImports(toedit);
-                reg.getSchemaAdmin().saveSchemaEntry(toedit);
-                populate();
-            } catch (RemoteException e) {
-                err = e;
-            } catch (SaveException e) {
-                err = e;
-            } catch (UpdateException e) {
-                err = e;
-            }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.success) {
+                    // save changes to gateway
+                    Registry reg = Registry.getDefault();
+                    if (reg == null || reg.getSchemaAdmin() == null) {
+                        logger.warning("No access to registry. Cannot save.");
+                        return;
+                    }
+                    Throwable err = null;
+                    try {
+                        checkEntryForUnresolvedImports(toedit);
+                        reg.getSchemaAdmin().saveSchemaEntry(toedit);
+                        populate();
+                    } catch (RemoteException e) {
+                        err = e;
+                    } catch (SaveException e) {
+                        err = e;
+                    } catch (UpdateException e) {
+                        err = e;
+                    }
 
-            if (err != null) {
-                String mess = "Unable to save edited schema: " + ExceptionUtils.getMessage(err);
-                logger.log(Level.WARNING, mess, err);
-                showErrorMessage(mess);
+                    if (err != null) {
+                        String mess = "Unable to save edited schema: " + ExceptionUtils.getMessage(err);
+                        logger.log(Level.WARNING, mess, err);
+                        showErrorMessage(mess);
+                    }
+                }
             }
-        }
+        });
     }
 
     private void remove() {
@@ -452,13 +460,6 @@ public class GlobalSchemaDialog extends JDialog {
 
     private void help() {
         Actions.invokeHelp(GlobalSchemaDialog.this);
-    }
-
-    public void setVisible(boolean visible) {
-        if(visible) {
-            TableUtil.adjustColumnWidth(schemaTable, 1);
-        }
-        super.setVisible(visible);
     }
 
     public static void main(String[] args) {

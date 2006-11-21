@@ -6,6 +6,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.SamlBrowserArtifactPropertiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -53,18 +54,21 @@ public class EditSamlBrowserArtifactAction extends NodeAction {
 
     protected void performAction() {
         Frame parent = TopComponents.getInstance().getTopParent();
-        SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(samlBrowserArtifactAssertion, parent, true);
+        final SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(samlBrowserArtifactAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.isAssertionChanged()) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.isAssertionChanged()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 }

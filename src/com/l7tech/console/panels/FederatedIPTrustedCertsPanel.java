@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -263,8 +264,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
                 CertSearchPanel sp = new CertSearchPanel(getOwner());
                 sp.addCertListener(certListener);
-                sp.setVisible(true);
                 sp.setSize(400, 600);
+                DialogDisplayer.display(sp);
 
             }
         });
@@ -284,7 +285,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
                     CertPropertiesWindow cpw = new CertPropertiesWindow(getOwner(), (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
-                    cpw.setVisible(true);
+                    DialogDisplayer.display(cpw);
                 }
             }
         });
@@ -369,7 +370,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 w.pack();
                 w.setSize(780, 560);
                 Utilities.centerOnScreen(w);
-                w.setVisible(true);
+                DialogDisplayer.display(w);
             }
         });
 

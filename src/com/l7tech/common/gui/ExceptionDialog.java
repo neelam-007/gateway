@@ -140,6 +140,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         if (neverDisplay) {
             // Fake dialog never displays
             super.setVisible(false);
+            dispose();
             return;
         }
         if (!b) {
@@ -149,6 +150,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             neverDisplay = true;
         }
         super.setVisible(b);
+        if (!b) dispose();
     }
 
     /**
@@ -343,7 +345,6 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         final Object source = e.getSource();
         if (source == close || source == ignore) {
-            this.setVisible(false);
             this.dispose();
         } else if (source == shutdown) {
             System.exit(-1);

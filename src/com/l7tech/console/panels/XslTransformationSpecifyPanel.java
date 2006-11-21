@@ -9,6 +9,7 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.ResourceUtils;
@@ -97,14 +98,17 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
         urlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                OkCancelDialog dlg = new OkCancelDialog(parent, resources.getString("urlDialog.title"), true, new UrlPanel(resources.getString("urlDialog.prompt"), null));
+                final OkCancelDialog dlg = new OkCancelDialog(parent, resources.getString("urlDialog.title"), true, new UrlPanel(resources.getString("urlDialog.prompt"), null));
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
-                dlg.setVisible(true);
-                String url = (String)dlg.getValue();
-                if (url != null) {
-                    readFromUrl(url);
-                }
+                DialogDisplayer.display(dlg, new Runnable() {
+                    public void run() {
+                        String url = (String)dlg.getValue();
+                        if (url != null) {
+                            readFromUrl(url);
+                        }
+                    }
+                });
             }
         });
 

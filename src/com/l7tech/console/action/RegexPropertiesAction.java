@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.RegexDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -71,7 +72,7 @@ public class RegexPropertiesAction extends NodeAction {
         rd.pack();
         rd.setSize(800, 600);
         Utilities.centerOnScreen(rd);
-        rd.setVisible(true);
+        DialogDisplayer.display(rd);
     }
 
     public void assertionChanged() {

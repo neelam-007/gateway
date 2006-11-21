@@ -207,7 +207,7 @@ public class EditServiceNameDialog extends JDialog {
         if (cmd == null) {
             // do nothing
         } else if (cmd.equals(CMD_CANCEL)) {
-            setVisible(false);
+            dispose();
         } else if (cmd.equals(CMD_OK)) {
             if (validateInput()) {
                 changeServiceName(newServiceNameField.getText());

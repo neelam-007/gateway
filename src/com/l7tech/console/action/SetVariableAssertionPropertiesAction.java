@@ -4,6 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.SetVariableAssertionDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -58,12 +59,15 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         SetVariableAssertion sva = (SetVariableAssertion) node.asAssertion();
         Frame f = (JFrame)TopComponents.getInstance().getTopParent();
-        SetVariableAssertionDialog eqd = new SetVariableAssertionDialog(f, sva);
+        final SetVariableAssertionDialog eqd = new SetVariableAssertionDialog(f, sva);
         Utilities.setEscKeyStrokeDisposes(eqd);
         eqd.pack();
         Utilities.centerOnScreen(eqd);
-        eqd.setVisible(true);
-        if (eqd.isAssertionModified()) assertionChanged();
+        DialogDisplayer.display(eqd, new Runnable() {
+            public void run() {
+                if (eqd.isAssertionModified()) assertionChanged();
+            }
+        });
     }
 
     public void assertionChanged() {

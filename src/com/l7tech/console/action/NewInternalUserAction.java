@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.NewInternalUserDialog;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.TopComponents;
@@ -69,7 +70,7 @@ public class NewInternalUserAction extends NodeAction {
                 Frame f = TopComponents.getInstance().getTopParent();
                 NewInternalUserDialog dialog = new NewInternalUserDialog(f);
                 dialog.setResizable(false);
-                dialog.setVisible(true);
+                DialogDisplayer.display(dialog);
             }
         });
     }

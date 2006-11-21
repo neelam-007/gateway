@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.AttemptedOperation;
@@ -610,8 +611,8 @@ public class GenericUserPanel extends UserPanel {
             changePassButton.
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
-                      user.getUserBean(), passwordChangeListener).setVisible(true);
+                    DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
+                      user.getUserBean(), passwordChangeListener));
                     // Refresh the panel (since the Bridge's cert might have been revoked)
                 }
             });

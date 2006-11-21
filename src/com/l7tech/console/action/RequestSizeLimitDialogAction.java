@@ -4,6 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.RequestSizeLimitDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RequestSizeLimitTreeNode;
@@ -46,16 +47,19 @@ public class RequestSizeLimitDialogAction extends NodeAction{
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
-                RequestSizeLimitDialog d;
+                final RequestSizeLimitDialog d;
                 d = new RequestSizeLimitDialog(f, (RequestSizeLimit)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);
-                d.setVisible(true);
-                if (d.isModified()) {
-                    treeNode.setUserObject(d.getAssertion());
-                    fireAssertionChanged();
-                }
+                DialogDisplayer.display(d, new Runnable() {
+                    public void run() {
+                        if (d.isModified()) {
+                            treeNode.setUserObject(d.getAssertion());
+                            fireAssertionChanged();
+                        }
+                    }
+                });
             }
         });
     }

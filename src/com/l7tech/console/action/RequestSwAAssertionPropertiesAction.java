@@ -13,6 +13,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -80,7 +81,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                             d.pack();
                             Utilities.centerOnScreen(d);
                             d.addPolicyListener(listener);
-                            d.setVisible(true);
+                            DialogDisplayer.display(d);
                         }
                     } catch (RemoteException e) {
                         log.log(Level.INFO, "Error getting Published Service", e);

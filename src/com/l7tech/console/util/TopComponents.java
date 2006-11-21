@@ -1,13 +1,12 @@
 package com.l7tech.console.util;
 
+import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.security.PermissionRefreshListener;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.policy.PolicyToolBar;
-import com.l7tech.common.gui.util.Utilities;
-import static com.l7tech.common.gui.util.Utilities.SheetHolder;
+import com.l7tech.console.tree.policy.PolicyTree;
 
 import javax.swing.*;
 import java.awt.*;
@@ -147,7 +146,7 @@ public class TopComponents {
      */
     public SheetHolder getRootSheetHolder() {
         JApplet applet = getMainApplet();
-        if (applet instanceof Utilities.SheetHolder)
+        if (applet instanceof SheetHolder)
             return (SheetHolder)applet;
 
         Frame frame = getTopParent();

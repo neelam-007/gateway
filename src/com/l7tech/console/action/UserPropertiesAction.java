@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.FederatedUserPanel;
 import com.l7tech.console.panels.GenericUserPanel;
@@ -84,7 +85,7 @@ public class UserPropertiesAction extends NodeAction {
                     panel.edit(header, config);
                     dialog.pack();
                     Utilities.centerOnScreen(dialog);
-                    dialog.setVisible(true);
+                    DialogDisplayer.display(dialog);
                 } catch (NoSuchElementException e) {
                     // Bugzilla #801 - removing the user from the tree should not be performed
                     // removeUserFromTree(header);

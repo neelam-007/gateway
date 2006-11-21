@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.NewFederatedUserDialog;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
@@ -63,7 +64,7 @@ public class NewFederatedUserAction extends NodeAction {
                 Frame f = TopComponents.getInstance().getTopParent();
                 NewFederatedUserDialog dialog = new NewFederatedUserDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
-                dialog.setVisible(true);
+                DialogDisplayer.display(dialog);
             }
         });
     }

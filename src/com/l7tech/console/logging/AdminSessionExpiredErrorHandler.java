@@ -4,6 +4,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.MainWindow;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.security.auth.login.FailedLoginException;
 
@@ -29,7 +30,7 @@ public class AdminSessionExpiredErrorHandler implements ErrorHandler {
                                                                       MSG, t, e.getLevel());
             d.pack();
             Utilities.centerOnScreen(d);
-            d.setVisible(true);
+            DialogDisplayer.display(d);
         } else {
             e.handle();
         }

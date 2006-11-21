@@ -3,8 +3,6 @@
  */
 package com.l7tech.common.gui.util;
 
-import com.l7tech.common.util.SyspropUtil;
-
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
@@ -29,6 +27,9 @@ public class Utilities {
     public static final String CONTEXT_COPY = "Copy";
     public static final String CONTEXT_PASTE = "Paste";
     public static final String CONTEXT_SELECT_ALL = "Select All";
+
+    /** Action map entry for setEscKeyDisposes */
+    public static final String KEY_ESCAPE = "escape-action";
 
     /**
      * private constructor, this class cannot be instantiated
@@ -319,10 +320,10 @@ public class Utilities {
     public static void setEscKeyStrokeDisposes(final JDialog d) {
         JLayeredPane layeredPane = d.getLayeredPane();
         final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
-        layeredPane.getActionMap().put("close-it",
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getActionMap().put(KEY_ESCAPE,
                                        new AbstractAction() {
                                            public void actionPerformed(ActionEvent evt) {
                                                d.dispose();
@@ -339,9 +340,9 @@ public class Utilities {
     public static void setEscKeyStrokeDisposes(final JFrame f) {
         JLayeredPane layeredPane = f.getLayeredPane();
         final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
-        layeredPane.getActionMap().put("close-it",
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getActionMap().put(KEY_ESCAPE,
                                        new AbstractAction() {
                                            public void actionPerformed(ActionEvent evt) {
                                                f.dispose();
@@ -359,10 +360,10 @@ public class Utilities {
     public static void setEscAction(final JDialog d, final Action action) {
         JLayeredPane layeredPane = d.getLayeredPane();
         final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
-        layeredPane.getActionMap().put("close-it", action);
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getActionMap().put(KEY_ESCAPE, action);
     }
 
     /**
@@ -391,9 +392,9 @@ public class Utilities {
     public static void setEscAction(final JFrame f, final Action action) {
         JLayeredPane layeredPane = f.getLayeredPane();
         final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
-        layeredPane.getActionMap().put("close-it", action);
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, KEY_ESCAPE);
+        layeredPane.getActionMap().put(KEY_ESCAPE, action);
     }
 
     public static void doWithConfirmation(Component parent, String title, String message, Runnable runnable) {
@@ -590,10 +591,9 @@ public class Utilities {
      * (as long as the component gets the keystroke, and not some other component)
      */
     public static void runActionOnEscapeKey(JComponent comp, Action action) {
-        String ACTION_MAP_KEY_ESCAPE = "ESCAPE";
-        InputMap inputMap = comp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), ACTION_MAP_KEY_ESCAPE);
-        comp.getActionMap().put(ACTION_MAP_KEY_ESCAPE, action);
+        KeyStroke ek = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);
+        comp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ek, KEY_ESCAPE);
+        comp.getActionMap().put(KEY_ESCAPE, action);
     }
 
     /**
@@ -813,119 +813,4 @@ public class Utilities {
             return null;
         }
     }
-
-    public static final String PROPERTY_TRANSLUCENT_SHEETS = "com.l7tech.common.gui.util.translucentSheets";
-
-    public static boolean translucentSheets = SyspropUtil.getBoolean(PROPERTY_TRANSLUCENT_SHEETS);
-
-    public static class SheetBlocker extends JPanel {
-        private MouseListener nullMouseListener = new MouseAdapter(){};
-        private KeyListener nullKeyListener = new KeyAdapter(){};
-        private boolean blockEvents = false;
-
-        public SheetBlocker(boolean blockEvents) {
-            super.setVisible(false);
-            setOpaque(false);
-            this.blockEvents = blockEvents;
-        }
-
-        protected void paintComponent(Graphics g) {
-            if (!translucentSheets) return;
-            Graphics2D gg = (Graphics2D)g;
-            Composite oldComp = gg.getComposite();
-            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-            g.setColor(Color.LIGHT_GRAY);
-            g.fillRect(0, 0, getWidth(), getHeight());
-            gg.setComposite(oldComp);
-        }
-
-        public void setVisible(boolean vis) {
-            boolean wasVis = isVisible();
-            super.setVisible(vis);
-            if (wasVis == vis)
-                return;
-            if (vis) {
-                logger.info("Showing sheet blocker");
-                if (blockEvents) {
-                    addMouseListener(nullMouseListener);
-                    addKeyListener(nullKeyListener);
-                }
-            } else {
-                logger.info("Hiding sheet blocker");
-                if (blockEvents) {
-                    removeMouseListener(nullMouseListener);
-                    removeKeyListener(nullKeyListener);
-                }
-            }
-        }
-    }
-
-    public interface SheetHolder extends RootPaneContainer {
-        /**
-         * Show the specified sheet on this SheetHolder.
-         * <p/>
-         * An implementation is provided: your implementing frame, dialog or applet just invoke
-         * {@link Utilities#showSheet} on itself and the sheet.
-         *
-         * @param sheet  the sheet to show.  May not be null.
-         */
-        void showSheet(Sheet sheet);
-    }
-
-    /**
-     * Display the specified dialog as a sheet attached to the specified RootPaneContainer (which must
-     * also be a JComponenet).
-     *
-     * @param rpc   the RootPaneContainer to hold the sheet.  Must be non-null.
-     * @param sheet    the sheet to display.
-     * @throws ClassCastException if holder isn't a JComponent.
-     */
-    public static void showSheet(final RootPaneContainer rpc, final Sheet sheet) {
-        final JLayeredPane layers = rpc.getLayeredPane();
-
-        Integer layer = (Integer)layers.getClientProperty(PROPERTY_SHEETLAYER);
-        if (layer == null) layer = new Integer(JLayeredPane.PALETTE_LAYER.intValue() + 1);
-        final Integer oldLayer = layer;
-
-        final SheetBlocker blocker;
-        if (sheet.isNeedsBlocker()) {
-            blocker = new SheetBlocker(true);
-            sheet.setBlocker(blocker);
-            layers.add(blocker);
-            layer = new Integer(layer.intValue() + 1);
-            layers.putClientProperty(PROPERTY_SHEETLAYER, layer);
-            layers.setLayer(blocker, layer.intValue(), 0);
-            blocker.setLocation(0, 0);
-            blocker.setSize(layers.getWidth(), layers.getHeight());
-            blocker.addPropertyChangeListener("visible", new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if ("false".equals(evt.getNewValue())) {
-                        layers.remove(blocker);
-                        layers.putClientProperty(PROPERTY_SHEETLAYER, oldLayer);
-                    }
-                }
-            });
-
-            ComponentListener resizeListener = new ComponentAdapter() {
-                public void componentResized(ComponentEvent e) {
-                    blocker.setSize(layers.getParent().getWidth(), layers.getParent().getHeight());
-                    blocker.invalidate();
-                    blocker.validate();
-                }
-            };
-            layers.getParent().addComponentListener(resizeListener);
-
-        } else blocker = null;
-
-        layers.add(sheet);
-        layers.setLayer(sheet, layer.intValue(), 0);
-        sheet.pack();
-        Utilities.centerOnParent(sheet);
-
-        if (blocker != null) blocker.setVisible(true);
-        sheet.setVisible(true);
-    }
-
-    private static final Object PROPERTY_SHEETLAYER = "com.l7tech.common.gui.util.Utilities.sheetLayer";
-
 }

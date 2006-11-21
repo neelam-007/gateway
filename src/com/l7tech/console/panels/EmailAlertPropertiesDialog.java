@@ -58,7 +58,6 @@ public class EmailAlertPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 viewToModel();
                 confirmed = true;
-                setVisible(false);
                 dispose();
             }
         });
@@ -66,7 +65,6 @@ public class EmailAlertPropertiesDialog extends JDialog {
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
-                setVisible(false);
                 dispose();
             }
         });

@@ -5,6 +5,8 @@ import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
@@ -38,7 +40,7 @@ import java.util.logging.Logger;
 * $Id$
 */
 
-public class ClusterStatusWindow extends JFrame implements LogonListener {
+public class ClusterStatusWindow extends JFrame implements LogonListener, SheetHolder {
 
     public static final int STATUS_TABLE_NODE_STATUS_COLUMN_INDEX = 0;
     public static final int STATUS_TABLE_NODE_NAME_COLUMN_INDEX = 1;
@@ -1045,6 +1047,10 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
             return this;
         }
     };
+
+    public void showSheet(Sheet sheet) {
+        Sheet.showSheet(this, sheet);
+    }
 
     private class DeleteNodeEntryAction extends SecureAction {
         private final int tableRow;

@@ -85,13 +85,13 @@ public class RequestSizeLimitDialog extends JDialog {
         sizeAssertion.setEntireMessage(applyToWholeMessage.isSelected());
         modified = true;
         confirmed = true;
-        setVisible(false);
+        dispose();
     }
 
     private void doCancel() {
         modified = false;
         confirmed = false;
-        setVisible(false);
+        dispose();
     }
 
     public RequestSizeLimit getAssertion() {

@@ -3,7 +3,7 @@ package com.l7tech.policy.assertion;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.*;

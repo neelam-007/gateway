@@ -6,6 +6,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.OversizedTextDialog;
 import com.l7tech.console.tree.policy.OversizedTextAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -51,15 +52,18 @@ public class OversizedTextDialogAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
-                OversizedTextDialog d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true);
+                final OversizedTextDialog d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);
-                d.setVisible(true);
-                if (d.isModified()) {
-                    treeNode.setUserObject(d.getAssertion());
-                    fireAssertionChanged();
-                }
+                DialogDisplayer.display(d, new Runnable() {
+                    public void run() {
+                        if (d.isModified()) {
+                            treeNode.setUserObject(d.getAssertion());
+                            fireAssertionChanged();
+                        }
+                    }
+                });
             }
         });
     }

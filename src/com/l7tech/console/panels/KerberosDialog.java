@@ -20,8 +20,7 @@ import com.l7tech.console.util.Registry;
 /**
  * Dialog for displaying Kerberos configuration information.
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * @author Steve Jones
  */
 public class KerberosDialog extends JDialog {
 
@@ -61,7 +60,7 @@ public class KerberosDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
-                KerberosDialog.this.setVisible(false);
+                KerberosDialog.this.dispose();
             }
         });
 

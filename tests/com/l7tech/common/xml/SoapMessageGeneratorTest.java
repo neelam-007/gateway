@@ -1,6 +1,7 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.service.WsdlTest;
+import com.l7tech.console.util.SoapMessageGenerator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -15,7 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Class SoapRequestGeneratorTest tests the {@link com.l7tech.common.xml.SoapMessageGenerator}
+ * Class SoapRequestGeneratorTest tests the {@link com.l7tech.console.util.SoapMessageGenerator}
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */

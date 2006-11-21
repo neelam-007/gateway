@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.beaneditor.BeanEditor;
@@ -90,7 +91,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
             ExceptionDialog ed = ExceptionDialog.createExceptionDialog(frame, "Error editing assertion, please check SecureSpan Gateway configuration.", null, Level.WARNING);
             ed.pack();
             Utilities.centerOnScreen(ed);
-            ed.setVisible(true);
+            DialogDisplayer.display(ed);
         }
     }
 
@@ -111,7 +112,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         dialog.setTitle(ca.getName());
         dialog.pack();
         Utilities.centerOnScreen(dialog);
-        dialog.setVisible(true);
+        DialogDisplayer.display(dialog);
     }
 
     private AssertionEditor getCustomEditor() {

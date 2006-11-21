@@ -11,6 +11,7 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
@@ -137,18 +138,24 @@ public class GlobalSchemaEntryEditor extends JDialog {
                                                                 }
                                                             }));
         enableReadOnlyIfNeeded();
+        if (!dataloaded) {
+            resetData();
+        }
     }
 
     private void uploadFromURL() {
-        OkCancelDialog dlg = new OkCancelDialog(this, "Load Schema From URL",
+        final OkCancelDialog dlg = new OkCancelDialog(this, "Load Schema From URL",
                                                 true, new UrlPanel("Enter URL to read XML Schema from", null));
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        String url = (String)dlg.getValue();
-        if (url != null) {
-            readFromUrl(url);
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                String url = (String)dlg.getValue();
+                if (url != null) {
+                    readFromUrl(url);
+                }
+            }
+        });
     }
 
     private void readFromUrl(String urlstr) {
@@ -312,15 +319,6 @@ public class GlobalSchemaEntryEditor extends JDialog {
             success = true;
         }
         dispose();
-    }
-
-    public void setVisible(boolean visible) {
-        if(visible) {
-            if (!dataloaded) {
-                resetData();
-            }
-        }
-        super.setVisible(visible);
     }
 
     private void resetData() {

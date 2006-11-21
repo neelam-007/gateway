@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.*;
@@ -78,7 +79,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
                 dialog.pack();
                 dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
                 Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
+                DialogDisplayer.display(dialog);
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get associated service", e);

@@ -7,6 +7,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import static com.l7tech.common.security.rbac.EntityType.JMS_ENDPOINT;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
@@ -231,13 +232,16 @@ public class JmsQueuesWindow extends JDialog {
             addButton = new JButton("Add");
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
+                    final JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
                     Utilities.centerOnScreen(amew);
-                    amew.setVisible(true);
+                    DialogDisplayer.display(amew, new Runnable() {
+                        public void run() {
+                            if (!amew.isCanceled()) {
+                                updateEndpointList(amew.getEndpoint());
+                            }
+                        }
+                    });
 
-                    if (!amew.isCanceled()) {
-                        updateEndpointList(amew.getEndpoint());
-                    }
                 }
             });
         }
@@ -249,7 +253,6 @@ public class JmsQueuesWindow extends JDialog {
             closeButton = new JButton("Close");
             closeButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    JmsQueuesWindow.this.setVisible(false);
                     JmsQueuesWindow.this.dispose();
                 }
             });
@@ -266,13 +269,16 @@ public class JmsQueuesWindow extends JDialog {
                     if (row >= 0) {
                         JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
                         if (i != null) {
-                            JmsQueuePropertiesDialog pd =
+                            final JmsQueuePropertiesDialog pd =
                               JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);
                             Utilities.centerOnScreen(pd);
-                            pd.setVisible(true);
-                            if (!pd.isCanceled()) {
-                                updateEndpointList(pd.getEndpoint());
-                            }
+                            DialogDisplayer.display(pd, new Runnable() {
+                                public void run() {
+                                    if (!pd.isCanceled()) {
+                                        updateEndpointList(pd.getEndpoint());
+                                    }
+                                }
+                            });
                         }
                     }
                 }

@@ -7,7 +7,7 @@ package com.l7tech.policy;
 
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EchoRoutingAssertion;

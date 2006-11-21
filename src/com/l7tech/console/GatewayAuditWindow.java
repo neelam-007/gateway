@@ -12,6 +12,8 @@ import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
 import com.l7tech.console.panels.LogPanel;
@@ -42,7 +44,7 @@ import java.util.logging.Level;
  * @author flascelles@layer7-tech.com, $Author$
  * @version $Revision$
  */
-public class GatewayAuditWindow extends JFrame implements LogonListener {
+public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHolder {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private JLabel gatewayLogTitle = null;
@@ -571,5 +573,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
                 }
             }
         }
+    }
+
+    public void showSheet(Sheet sheet) {
+        Sheet.showSheet(this, sheet);
     }
 }

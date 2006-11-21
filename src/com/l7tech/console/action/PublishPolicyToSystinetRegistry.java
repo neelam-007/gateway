@@ -7,6 +7,7 @@ import com.l7tech.console.panels.PublishPolicyToUDDIWizard;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -83,6 +84,6 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
         PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, serviceConsumptionURL, svc.getName());
         wizard.setSize(850, 500);
         Utilities.centerOnScreen(wizard);
-        wizard.setVisible(true);
+        DialogDisplayer.display(wizard);
     }
 }

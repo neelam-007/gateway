@@ -252,7 +252,7 @@ public class PasswordDialog extends JDialog {
         if (cmd == null) {
             // do nothing
         } else if (cmd.equals(CMD_CANCEL)) {
-            setVisible(false);
+            dispose();
         } else if (cmd.equals(CMD_OK)) {
             if (validateInput()) {
                 changePassword(newPasswordField.getPassword());

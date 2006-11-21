@@ -207,6 +207,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
         xmlEditorScrollPane.setLayout(new BorderLayout());
         xmlEditorScrollPane.add(xmlContainer.getView(), BorderLayout.CENTER);
         editor = uiAccessibility.getEditor();
+        editor.initErrorProcessing();
         setInitialData();
     }
 
@@ -293,8 +294,8 @@ public class FaultLevelPropertiesDialog extends JDialog {
         switch (currentselection.level) {
             case SoapFaultLevel.DROP_CONNECTION:
                 description = DROP_LEVEL_DESCRIPTION;
-                xmlContainer.setEditable(false);
                 editor.setText(DROP_LEVEL_SAMPLE);
+                xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(false);
                 break;
             case SoapFaultLevel.GENERIC_FAULT:

@@ -6,6 +6,7 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SslAssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -55,28 +56,12 @@ public class SslPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
-        new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), sslAssertion).setVisible(true);
-        assertionChanged();
-//
-//        String s =
-//          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getTopParent(),
-//            "Select an SSL option:\n",
-//            "SSL Properties",
-//            JOptionPane.PLAIN_MESSAGE,
-//            new ImageIcon(new SslTransportNode(false).getIcon()),
-//            options,
-//            sslAssertion.getOption().getName());
-//
-//        if ((s != null) && (s.length() > 0)) {
-//            for (Iterator iterator = SslAssertion.options().iterator(); iterator.hasNext();) {
-//                SslAssertion.Option option = (SslAssertion.Option)iterator.next();
-//                if (option.getName().equals(s)) {
-//                    sslAssertion.setOption(option);
-//                    assertionChanged();
-//                    break;
-//                }
-//            }
-//        }
+        DialogDisplayer.display(new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), sslAssertion),
+                                new Runnable() {
+                                    public void run() {
+                                        assertionChanged();
+                                    }
+                                });
     }
 
     public void assertionChanged() {

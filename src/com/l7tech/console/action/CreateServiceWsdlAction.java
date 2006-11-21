@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.util.ExceptionUtils;
@@ -104,7 +105,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                     w.pack();
                     w.setSize(850, 500);
                     Utilities.centerOnScreen(w);
-                    w.setVisible(true);
+                    DialogDisplayer.display(w);
                 } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
                     TopComponents.getInstance().showNoPrivilegesErrorMessage();
                 } catch (WSDLException we) {

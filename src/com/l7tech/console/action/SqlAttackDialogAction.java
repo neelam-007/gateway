@@ -4,6 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.SqlAttackDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SqlAttackAssertionTreeNode;
@@ -46,15 +47,18 @@ public class SqlAttackDialogAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
-                SqlAttackDialog d = new SqlAttackDialog(f, (SqlAttackAssertion)node.asAssertion(), true);
+                final SqlAttackDialog d = new SqlAttackDialog(f, (SqlAttackAssertion)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);
-                d.setVisible(true);
-                if (d.isModified()) {
-                    treeNode.setUserObject(d.getAssertion());
-                    fireAssertionChanged();
-                }
+                DialogDisplayer.display(d, new Runnable() {
+                    public void run() {
+                        if (d.isModified()) {
+                            treeNode.setUserObject(d.getAssertion());
+                            fireAssertionChanged();
+                        }
+                    }
+                });
             }
         });
     }

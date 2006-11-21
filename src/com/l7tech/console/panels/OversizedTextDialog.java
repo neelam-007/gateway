@@ -120,7 +120,7 @@ public class OversizedTextDialog extends JDialog {
     private void doCancel() {
         confirmed = false;
         modified = false;
-        setVisible(false);
+        dispose();
     }
 
     private void doSave() {
@@ -186,7 +186,7 @@ public class OversizedTextDialog extends JDialog {
         assertion.setRequireValidSoapEnvelope(soapEnvCheckBox.isSelected());
         confirmed = true;
         modified = true;
-        setVisible(false);
+        dispose();
     }
 
     public boolean isModified() {

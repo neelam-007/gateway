@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.policy.exporter.JMSEndpointReference;
@@ -81,9 +82,11 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     private void manageJMSPressed() {
         JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(this.getOwner());
         Utilities.centerOnScreen(jqw);
-        jqw.setVisible(true);
-        jqw.dispose();
-        populateQueueSelector();
+        DialogDisplayer.display(jqw, new Runnable() {
+            public void run() {
+                populateQueueSelector();
+            }
+        });
     }
 
     public boolean onNextButton() {

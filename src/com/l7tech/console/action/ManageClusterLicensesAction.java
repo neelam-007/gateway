@@ -9,6 +9,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.LicenseDialog;
 import com.l7tech.console.MainWindow;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.awt.*;
 
@@ -41,6 +42,6 @@ public class ManageClusterLicensesAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setModal(true);
-        dlg.setVisible(true);
+        DialogDisplayer.display(dlg);
     }
 }

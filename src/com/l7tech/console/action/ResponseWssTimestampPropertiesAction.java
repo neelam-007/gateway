@@ -4,6 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.ResponseWssTimestampDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -55,25 +56,28 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        ResponseWssTimestamp ass = (ResponseWssTimestamp)node.asAssertion();
+        final ResponseWssTimestamp ass = (ResponseWssTimestamp)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, (ResponseWssTimestamp)(ass.clone()));
+        final ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, (ResponseWssTimestamp)(ass.clone()));
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.wasOKed()) {
-            ResponseWssTimestamp newAss = (ResponseWssTimestamp)dlg.getValue();
-            if (newAss == null) return;
-            ass.copyFrom(newAss);
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.wasOKed()) {
+                    ResponseWssTimestamp newAss = (ResponseWssTimestamp)dlg.getValue();
+                    if (newAss == null) return;
+                    ass.copyFrom(newAss);
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 
 }

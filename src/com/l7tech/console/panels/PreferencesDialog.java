@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.TopComponents;
@@ -325,7 +326,6 @@ public class PreferencesDialog extends JDialog {
         } else {
         }
         if (closeWindow) {
-            setVisible(false);
             dispose();
         }
     }
@@ -443,7 +443,7 @@ public class PreferencesDialog extends JDialog {
             }
         });
         dialog.pack();
-        dialog.setVisible(true);
+        DialogDisplayer.display(dialog);
     }
 }
 

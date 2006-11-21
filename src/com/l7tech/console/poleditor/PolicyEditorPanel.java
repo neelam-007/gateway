@@ -841,14 +841,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private String getHomePath() {
-        String homePath = null;
-        try {
-            homePath = preferences.getHomePath();
-        }
-        catch(UnsupportedOperationException uoe) {
-            // optional op
-        }
-        return homePath;        
+        return TopComponents.getInstance().isApplet() ? null :  preferences.getHomePath();
     }
 
     public Action getSaveAction() {

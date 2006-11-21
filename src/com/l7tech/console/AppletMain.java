@@ -14,6 +14,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.SheetHolder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -32,7 +33,7 @@ import java.security.cert.X509Certificate;
 /**
  * Entry point for applet-based version of SSM.
  */
-public class AppletMain extends JApplet implements Utilities.SheetHolder {
+public class AppletMain extends JApplet implements SheetHolder {
     private static final Logger logger = Logger.getLogger(AppletMain.class.getName());
 
     /** Name we use to register the most recent instance of ourself under TopComponents. */
@@ -69,7 +70,8 @@ public class AppletMain extends JApplet implements Utilities.SheetHolder {
         TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
         TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
 
-        DialogDisplayer.setDefaultSheetHolder(this);
+        // Help DialogDisplayer find the right applet instance
+        DialogDisplayer.putDefaultSheetHolder(appletContainer, this);
 
         repaint();
     }
@@ -217,6 +219,6 @@ public class AppletMain extends JApplet implements Utilities.SheetHolder {
     }
 
     public void showSheet(Sheet sheet) {
-        Utilities.showSheet(this, sheet);
+        Sheet.showSheet(this, sheet);
     }
 }

@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -215,7 +216,7 @@ public class ClusterPropertyDialog extends JDialog {
     }
 
     private void add() {
-        Registry reg = Registry.getDefault();
+        final Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
             if (knownProperties == null) {
@@ -226,73 +227,79 @@ public class ClusterPropertyDialog extends JDialog {
                 }
             }
 
-            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, new ClusterProperty(), knownProperties, flags.canUpdateSome());
+            final CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, new ClusterProperty(), knownProperties, flags.canUpdateSome());
             dlg.pack();
             Utilities.centerOnScreen(dlg);
-            dlg.setVisible(true);
-            if (!dlg.wasOked()) {
-                return;
-            }
+            DialogDisplayer.display(dlg, new Runnable() {
+                public void run() {
+                    if (!dlg.wasOked()) {
+                        return;
+                    }
 
-            try {
-                reg.getClusterStatusAdmin().saveProperty(dlg.getProperty());
-            } catch (RemoteException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            } catch (DuplicateObjectException e) {
-                ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
-                        this, "Cluster-Wide Property Error", null,
-                        "Cannot save duplicate property '"+dlg.getProperty().getName()+"'.",
-                        null, Level.WARNING);
-                dialog.pack();
-                Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-            } catch (SaveException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            } catch (UpdateException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            } catch (DeleteException e) {
-                logger.log(Level.SEVERE, "exception setting property", e);
-            }
+                    try {
+                        reg.getClusterStatusAdmin().saveProperty(dlg.getProperty());
+                    } catch (RemoteException e) {
+                        logger.log(Level.SEVERE, "exception setting property", e);
+                    } catch (DuplicateObjectException e) {
+                        ExceptionDialog dialog = ExceptionDialog.createExceptionDialog(
+                                ClusterPropertyDialog.this, "Cluster-Wide Property Error", null,
+                                "Cannot save duplicate property '"+dlg.getProperty().getName()+"'.",
+                                null, Level.WARNING);
+                        dialog.pack();
+                        Utilities.centerOnScreen(dialog);
+                        DialogDisplayer.display(dialog);
+                    } catch (SaveException e) {
+                        logger.log(Level.SEVERE, "exception setting property", e);
+                    } catch (UpdateException e) {
+                        logger.log(Level.SEVERE, "exception setting property", e);
+                    } catch (DeleteException e) {
+                        logger.log(Level.SEVERE, "exception setting property", e);
+                    }
 
-            populate();
+                    populate();
+                }
+            });
         } else {
             logger.severe("cannot get cluster status admin for removing property");
         }
     }
 
     private void edit() {
-        ClusterProperty prop = properties.get(propsTable.getSelectedRow());
-        Registry reg = Registry.getDefault();
+        final ClusterProperty prop = properties.get(propsTable.getSelectedRow());
+        final Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            boolean canEdit = flags.canUpdateSome();
+            final boolean canEdit = flags.canUpdateSome();
 
             String title = canEdit ? "Edit Cluster Property" : "View Cluster Property";
 
-            CaptureProperty dlg = new CaptureProperty(this, title,
+            final CaptureProperty dlg = new CaptureProperty(this, title,
                     prop.getDescription(), prop, null, canEdit);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
-            dlg.setVisible(true);
-            if (!dlg.wasOked()) {
-                return;
-            }
+            DialogDisplayer.display(dlg, new Runnable() {
+                public void run() {
+                    if (!dlg.wasOked()) {
+                        return;
+                    }
 
-            if (canEdit) {
-                try {
-                    reg.getClusterStatusAdmin().saveProperty(prop);
-                }  catch (RemoteException e) {
-                    logger.log(Level.SEVERE, "exception setting property", e);
-                } catch (SaveException e) {
-                    logger.log(Level.SEVERE, "exception setting property", e);
-                } catch (UpdateException e) {
-                    logger.log(Level.SEVERE, "exception setting property", e);
-                } catch (DeleteException e) {
-                    logger.log(Level.SEVERE, "exception setting property", e);
+                    if (canEdit) {
+                        try {
+                            reg.getClusterStatusAdmin().saveProperty(prop);
+                        }  catch (RemoteException e) {
+                            logger.log(Level.SEVERE, "exception setting property", e);
+                        } catch (SaveException e) {
+                            logger.log(Level.SEVERE, "exception setting property", e);
+                        } catch (UpdateException e) {
+                            logger.log(Level.SEVERE, "exception setting property", e);
+                        } catch (DeleteException e) {
+                            logger.log(Level.SEVERE, "exception setting property", e);
+                        }
+                    }
+
+                    populate();
                 }
-            }
-
-            populate();
+            });
         } else {
             logger.severe("cannot get cluster status admin for editing property");
         }

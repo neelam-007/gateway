@@ -161,13 +161,13 @@ public class ChangePasswordDialog extends JDialog {
         okButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
                 ok = true;
-                setVisible(false);
+                dispose();
             }
         });
 
         cancelButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
-                setVisible(false);
+                dispose();
             }
         });
 

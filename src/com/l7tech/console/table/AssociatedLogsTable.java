@@ -3,6 +3,7 @@ package com.l7tech.console.table;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -256,7 +257,7 @@ public class AssociatedLogsTable extends JTable {
             detailEditButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (value != null) {
-                        new DetailViewDialog(value).setVisible(true);
+                        DialogDisplayer.display(new DetailViewDialog(value));
                     }
                 }
             });

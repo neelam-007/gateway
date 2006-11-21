@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
@@ -61,7 +62,7 @@ public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        PublishedService svc;
+        final PublishedService svc;
         try {
             svc = ((ServiceNode)node).getPublishedService();
         } catch (FindException e) {
@@ -76,48 +77,50 @@ public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
         String existingURL = svc.getWsdlUrl();
         if (existingURL == null) existingURL = "";
 
-        SelectWsdlDialog rwd = new SelectWsdlDialog(mw, "Reset WSDL");
+        final SelectWsdlDialog rwd = new SelectWsdlDialog(mw, "Reset WSDL");
         rwd.setWsdlUrl(existingURL);
         Utilities.centerOnScreen(rwd);
-        rwd.setVisible(true);
-
-        Wsdl wsdl = rwd.getWsdl();
-        if (wsdl != null) {
-            String response = rwd.getWsdlUrl();
-            Document document = rwd.getWsdlDocument();
-            try {
-                svc.setWsdlUrl(response.startsWith("http") ? response : null);
-                svc.setWsdlXml(XmlUtil.nodeToString(document));
-                Registry.getDefault().getServiceManager().savePublishedService(svc);
-                ((ServiceNode)node).clearServiceHolder();
-                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
-                if (tree != null) {
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    model.nodeChanged(node);
+        DialogDisplayer.display(rwd, new Runnable() {
+            public void run() {
+                Wsdl wsdl = rwd.getWsdl();
+                if (wsdl != null) {
+                    String response = rwd.getWsdlUrl();
+                    Document document = rwd.getWsdlDocument();
+                    try {
+                        svc.setWsdlUrl(response.startsWith("http") ? response : null);
+                        svc.setWsdlXml(XmlUtil.nodeToString(document));
+                        Registry.getDefault().getServiceManager().savePublishedService(svc);
+                        ((ServiceNode)node).clearServiceHolder();
+                        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+                        if (tree != null) {
+                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                            model.nodeChanged(node);
+                        }
+                    } catch (MalformedURLException e) {
+                        logger.log(Level.WARNING, "invalid url", e);
+                        throw new RuntimeException("Invalid URL", e);
+                    } catch (RemoteException e) {
+                        logger.log(Level.WARNING, "cannot change wsdl", e);
+                        throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "cannot change wsdl", e);
+                        throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+                    } catch (UpdateException e) {
+                        logger.log(Level.WARNING, "cannot change wsdl", e);
+                        throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+                    } catch (SaveException e) {
+                        logger.log(Level.WARNING, "cannot change wsdl", e);
+                        throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+                    } catch (VersionException e) {
+                        logger.log(Level.WARNING, "version mismatch", e);
+                        throw new RuntimeException("The service's version number is no longer valid. Perhaps " +
+                                                   "another administrator has changed the service since you loaded it?", e);
+                    } catch (PolicyAssertionException e) {
+                        logger.log(Level.WARNING, "policy invalid", e);
+                        throw new RuntimeException("The server policy cannot be created: " + ExceptionUtils.getMessage(e), e);
+                    }
                 }
-            } catch (MalformedURLException e) {
-                logger.log(Level.WARNING, "invalid url", e);
-                throw new RuntimeException("Invalid URL", e);
-            } catch (RemoteException e) {
-                logger.log(Level.WARNING, "cannot change wsdl", e);
-                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "cannot change wsdl", e);
-                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
-            } catch (UpdateException e) {
-                logger.log(Level.WARNING, "cannot change wsdl", e);
-                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
-            } catch (SaveException e) {
-                logger.log(Level.WARNING, "cannot change wsdl", e);
-                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
-            } catch (VersionException e) {
-                logger.log(Level.WARNING, "version mismatch", e);
-                throw new RuntimeException("The service's version number is no longer valid. Perhaps " +
-                                           "another administrator has changed the service since you loaded it?", e);
-            } catch (PolicyAssertionException e) {
-                logger.log(Level.WARNING, "policy invalid", e);
-                throw new RuntimeException("The server policy cannot be created: " + ExceptionUtils.getMessage(e), e);
             }
-        }
+        });
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.KerberosDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.rmi.RemoteException;
 import java.util.logging.Logger;
@@ -52,7 +53,7 @@ public class ManageKerberosAction extends SecureAction {
      */
     protected void performAction() {
         try {
-            new KerberosDialog(TopComponents.getInstance().getTopParent()).setVisible(true);
+            DialogDisplayer.display(new KerberosDialog(TopComponents.getInstance().getTopParent()));
         }
         catch(RemoteException re) {
             throw new RuntimeException("Cannot create kerberos dialog.", re);

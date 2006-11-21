@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.policy.exporter.ExternalSchemaReference;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
@@ -74,34 +75,37 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         GlobalSchemaDialog dlg = new GlobalSchemaDialog((Wizard)component);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // see if resolution is now fixed
-        Registry reg = Registry.getDefault();
-        if (reg == null || reg.getSchemaAdmin() == null) {
-            logger.warning("No access to registry. Cannot check fix.");
-            return;
-        }
-        boolean fixed = false;
-        try {
-            fixed = !reg.getSchemaAdmin().findByName(foreignRef.getName()).isEmpty();
-            if (!fixed) {
-                fixed = !reg.getSchemaAdmin().findByTNS(foreignRef.getTns()).isEmpty();
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // see if resolution is now fixed
+                Registry reg = Registry.getDefault();
+                if (reg == null || reg.getSchemaAdmin() == null) {
+                    logger.warning("No access to registry. Cannot check fix.");
+                    return;
+                }
+                boolean fixed = false;
+                try {
+                    fixed = !reg.getSchemaAdmin().findByName(foreignRef.getName()).isEmpty();
+                    if (!fixed) {
+                        fixed = !reg.getSchemaAdmin().findByTNS(foreignRef.getTns()).isEmpty();
+                    }
+                } catch (RemoteException e) {
+                    logger.log(Level.SEVERE, "cannot check fix", e);
+                    throw new RuntimeException(e);
+                } catch (FindException e) {
+                    logger.log(Level.SEVERE, "cannot check fix", e);
+                    throw new RuntimeException(e);
+                }
+                if (fixed) {
+                    asIsRadio.setEnabled(true);
+                    removeRadio.setEnabled(false);
+                    asIsRadio.setSelected(true);
+                    removeRadio.setSelected(false);
+                    addSchemaButton.setEnabled(false);
+                    // todo, force next?
+                }
             }
-        } catch (RemoteException e) {
-            logger.log(Level.SEVERE, "cannot check fix", e);
-            throw new RuntimeException(e);
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "cannot check fix", e);
-            throw new RuntimeException(e);
-        }
-        if (fixed) {
-            asIsRadio.setEnabled(true);
-            removeRadio.setEnabled(false);
-            asIsRadio.setSelected(true);
-            removeRadio.setSelected(false);
-            addSchemaButton.setEnabled(false);
-            // todo, force next?
-        }
+        });
     }
 
     public String getDescription() {

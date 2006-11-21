@@ -2,6 +2,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
@@ -71,7 +72,7 @@ public class RmiErrorHandler implements ErrorHandler {
             ExceptionDialog d = ExceptionDialog.createExceptionDialog(topParent, "SecureSpan Manager - Gateway error", message, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
-            d.setVisible(true);
+            DialogDisplayer.display(d);
         } else {
             e.handle();
         }

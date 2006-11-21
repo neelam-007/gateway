@@ -338,7 +338,6 @@ public class Wizard extends JDialog {
      * cancel the wizard
      */
     protected void cancel(ActionEvent evt) {
-        setVisible(false);
         dispose();
         fireWizardCanceled();
     }
@@ -350,7 +349,6 @@ public class Wizard extends JDialog {
         if (wizardInput != null) {
             wizardIterator.current().storeSettings(wizardInput);
         }
-        setVisible(false);
         dispose();
         fireWizardFinished();
     }

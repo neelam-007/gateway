@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
@@ -116,7 +117,6 @@ public class CertManagerWindow extends JDialog {
 
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                setVisible(false);
                 dispose();
             }
         });
@@ -140,7 +140,7 @@ public class CertManagerWindow extends JDialog {
                         w.pack();
                         w.setSize(780, 560);
                         Utilities.centerOnScreen(w);
-                        w.setVisible(true);
+                        DialogDisplayer.display(w);
 
                     }
                 });
@@ -169,7 +169,7 @@ public class CertManagerWindow extends JDialog {
                 trustedCertTable.getTableSorter().updateData(sr, updatedTrustedCert);
                 CertPropertiesWindow cpw = new CertPropertiesWindow(CertManagerWindow.this, updatedTrustedCert, flags.canUpdateSome()); // TODO do a permission check for *this* cert
 
-                cpw.setVisible(true);
+                DialogDisplayer.display(cpw);
             }
         });
 
@@ -178,7 +178,7 @@ public class CertManagerWindow extends JDialog {
                 int sr = gatewayCertTable.getSelectedRow();
                 TrustedCert certHolder = (TrustedCert) gatewayCertTable.getTableSorter().getData(sr);
                 CertPropertiesWindow cpw = new CertPropertiesWindow(CertManagerWindow.this, certHolder, false, false);
-                cpw.setVisible(true);
+                DialogDisplayer.display(cpw);
             }
         });
 

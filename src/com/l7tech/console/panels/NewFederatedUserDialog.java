@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.FederatedUserPropertiesAction;
@@ -264,6 +265,7 @@ public class NewFederatedUserDialog extends JDialog {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                boolean disposeNow = true;
                 try {
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.USER);
@@ -287,13 +289,19 @@ public class NewFederatedUserDialog extends JDialog {
                             null, Level.WARNING);
                     d.pack();
                     Utilities.centerOnScreen(d);
-                    d.setVisible(true);
+                    disposeNow = false;
+                    DialogDisplayer.display(d, new Runnable() {
+                        public void run() {
+                            NewFederatedUserDialog.this.dispose();
+                        }
+                    });
                 } catch (Exception e) {
                     ErrorManager.getDefault().
                             notify(Level.WARNING, e, "Error encountered while adding a user\n" +
                             "The user has not been created.");
                 }
-                NewFederatedUserDialog.this.dispose();
+                if (disposeNow)
+                    NewFederatedUserDialog.this.dispose();
             }
         });
 

@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.ComparisonAssertionPolicyNode;
@@ -55,12 +56,15 @@ public class ComparisonAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         ComparisonAssertion eq = (ComparisonAssertion)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        ComparisonAssertionDialog eqd = new ComparisonAssertionDialog(f, eq);
+        final ComparisonAssertionDialog eqd = new ComparisonAssertionDialog(f, eq);
         Utilities.setEscKeyStrokeDisposes(eqd);
         eqd.pack();
         Utilities.centerOnScreen(eqd);
-        eqd.setVisible(true);
-        if (eqd.isAssertionModified()) assertionChanged();
+        DialogDisplayer.display(eqd, new Runnable() {
+            public void run() {
+                if (eqd.isAssertionModified()) assertionChanged();
+            }
+        });
     }
 
     public void assertionChanged() {

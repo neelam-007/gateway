@@ -16,7 +16,7 @@ import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.saml.SamlAssertion;

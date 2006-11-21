@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -156,9 +157,8 @@ public class CertSearchPanel extends JDialog {
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
                     cpw = new CertPropertiesWindow(CertSearchPanel.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                    DialogDisplayer.display(cpw);
                 }
-
-                cpw.setVisible(true);
             }
         });
 

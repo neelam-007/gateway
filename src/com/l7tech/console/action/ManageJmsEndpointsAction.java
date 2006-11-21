@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.panels.JmsQueuesWindow;
@@ -56,8 +57,7 @@ public class ManageJmsEndpointsAction extends SecureAction {
     protected void performAction() {
         JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(TopComponents.getInstance().getTopParent());
         Utilities.centerOnScreen(jqw);
-        jqw.setVisible(true);
-        jqw.dispose();
+        DialogDisplayer.display(jqw);
     }
 
 

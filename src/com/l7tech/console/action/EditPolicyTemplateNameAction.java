@@ -6,6 +6,7 @@ import com.l7tech.console.panels.EditPolicyTemplateNameDialog;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -73,7 +74,7 @@ public class EditPolicyTemplateNameAction extends SecureAction {
 
                   EditPolicyTemplateNameDialog d =
                     new EditPolicyTemplateNameDialog(wm.getTopParent(), nameChangeListener, node.getName());
-                  d.setVisible(true);
+                  DialogDisplayer.display(d);
               }
           });
     }

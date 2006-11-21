@@ -3,7 +3,7 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
-import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.console.tree.policy.PolicyChange;

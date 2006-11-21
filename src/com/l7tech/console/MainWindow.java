@@ -4,9 +4,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.Sheet;
+import com.l7tech.common.gui.util.*;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
@@ -63,7 +61,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class MainWindow extends JFrame implements Utilities.SheetHolder {
+public class MainWindow extends JFrame implements SheetHolder {
     static Logger log = Logger.getLogger(MainWindow.class.getName());
     /**
      * the resource path for the application
@@ -2393,7 +2391,7 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
                     dlg.pack();
                     Utilities.centerOnScreen(dlg);
                     dlg.setModal(true);
-                    dlg.setVisible(true);
+                    DialogDisplayer.display(dlg);
                 }
             }
         });
@@ -2416,9 +2414,9 @@ public class MainWindow extends JFrame implements Utilities.SheetHolder {
     public void showSheet(Sheet sheet) {
         Frame topParent = TopComponents.getInstance().getTopParent();
         if (topParent != this && topParent instanceof RootPaneContainer) {
-            Utilities.showSheet((RootPaneContainer)topParent, sheet);
+            Sheet.showSheet((RootPaneContainer)topParent, sheet);
             return;
         }
-        Utilities.showSheet(this, sheet);
+        Sheet.showSheet(this, sheet);
     }
 }

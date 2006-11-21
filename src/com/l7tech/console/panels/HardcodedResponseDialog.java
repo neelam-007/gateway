@@ -87,7 +87,7 @@ public class HardcodedResponseDialog extends JDialog {
         assertion.responseBodyString(getResponseBodyText(ctype, responseBody.getText()));
         modified = true;
         confirmed = true;
-        setVisible(false);
+        dispose();
     }
 
     private String getResponseBodyText(String contentType, String responseBody) {
@@ -124,7 +124,7 @@ public class HardcodedResponseDialog extends JDialog {
     private void doCancel() {
         modified = false;
         confirmed = false;
-        setVisible(false);
+        dispose();
     }
 
     public HardcodedResponseAssertion getAssertion() {

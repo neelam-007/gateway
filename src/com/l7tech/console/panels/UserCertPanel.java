@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.GuiCertUtil;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -152,7 +153,7 @@ public abstract class UserCertPanel extends JPanel {
                     w.pack();
                     w.setSize(780, 560);
                     Utilities.centerOnScreen(w);
-                    w.setVisible(true);
+                    DialogDisplayer.display(w);
 
                 }
             });

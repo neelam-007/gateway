@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.WsFederationPassiveTokenRequestPropertiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -69,43 +70,46 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
     protected void performAction() {
         Frame frame = TopComponents.getInstance().getTopParent();
 
-        WsFederationPassiveTokenRequestPropertiesDialog dlg =
+        final WsFederationPassiveTokenRequestPropertiesDialog dlg =
                 new WsFederationPassiveTokenRequestPropertiesDialog(wsFedAssertion, isTokenRequest, frame, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.isAssertionChanged()) {
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.isAssertionChanged()) {
 
-            // handle switching of assertion type
-            if (!isTokenRequest || !dlg.isTokenRequest()) {
-                Assertion updatedAssertion = null;
+                    // handle switching of assertion type
+                    if (!isTokenRequest || !dlg.isTokenRequest()) {
+                        final Assertion updatedAssertion;
 
-                if (!dlg.isTokenRequest()) {
-                    WsFederationPassiveTokenExchange wsFederationPassiveTokenExchange = new WsFederationPassiveTokenExchange();
-                    wsFederationPassiveTokenExchange.copyFrom(wsFedAssertion);
-                    updatedAssertion = wsFederationPassiveTokenExchange;
-                }
-                else {
-                    updatedAssertion = wsFedAssertion;
-                }
+                        if (!dlg.isTokenRequest()) {
+                            WsFederationPassiveTokenExchange wsFederationPassiveTokenExchange = new WsFederationPassiveTokenExchange();
+                            wsFederationPassiveTokenExchange.copyFrom(wsFedAssertion);
+                            updatedAssertion = wsFederationPassiveTokenExchange;
+                        }
+                        else {
+                            updatedAssertion = wsFedAssertion;
+                        }
 
-                if (updatedAssertion != null) {
-                    Assertion oldAssertion = node.asAssertion();
-                    node.setUserObject(updatedAssertion);
-                    if (parent != null) {
-                        parent.replaceChild(oldAssertion, updatedAssertion);
+                        if (updatedAssertion != null) {
+                            Assertion oldAssertion = node.asAssertion();
+                            node.setUserObject(updatedAssertion);
+                            if (parent != null) {
+                                parent.replaceChild(oldAssertion, updatedAssertion);
+                            }
+                        }
+                    }
+
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }
                 }
             }
-
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged((AssertionTreeNode)node);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
-            }
-        }
+        });
     }
 
     //- PRIVATE

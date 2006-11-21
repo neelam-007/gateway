@@ -2,7 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -120,10 +122,13 @@ public class HttpFormPostDialog extends JDialog {
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                HttpFormPost.FieldInfo fi = edit(new HttpFormPost.FieldInfo());
-                if (fi != null) {
-                    fieldListModel.addElement(new FieldInfoListElement(fi));
-                }
+                edit(new HttpFormPost.FieldInfo(), new Functions.UnaryVoid<HttpFormPost.FieldInfo>() {
+                    public void call(HttpFormPost.FieldInfo fi) {
+                        if (fi != null) {
+                            fieldListModel.addElement(new FieldInfoListElement(fi));
+                        }
+                    }
+                });
             }
         });
 
@@ -144,25 +149,29 @@ public class HttpFormPostDialog extends JDialog {
     }
 
     private void modify() {
-        FieldInfoListElement el = (FieldInfoListElement) fieldList.getSelectedValue();
+        final FieldInfoListElement el = (FieldInfoListElement) fieldList.getSelectedValue();
         if (el == null) return;
         HttpFormPost.FieldInfo fi = el.fieldInfo;
-        HttpFormPost.FieldInfo edited = edit(fi);
-        if (edited != null) {
-            el.fieldInfo = edited;
-            fieldList.repaint(); // TODO this seems dumb but validate() doesn't cut it
-        }
+        edit(fi, new Functions.UnaryVoid<HttpFormPost.FieldInfo>() {
+            public void call(HttpFormPost.FieldInfo edited) {
+                if (edited != null) {
+                    el.fieldInfo = edited;
+                    fieldList.repaint(); // TODO this seems dumb but validate() doesn't cut it
+                }
+            }
+        });
     }
 
-    private HttpFormPost.FieldInfo edit(HttpFormPost.FieldInfo fi) {
-        HttpPostFormFieldInfoDialog dlg = new HttpPostFormFieldInfoDialog(ownerFrame, fi);
+    private void edit(HttpFormPost.FieldInfo fi,
+                                        final Functions.UnaryVoid<HttpFormPost.FieldInfo> result) {
+        final HttpPostFormFieldInfoDialog dlg = new HttpPostFormFieldInfoDialog(ownerFrame, fi);
         Utilities.centerOnScreen(dlg);
         dlg.pack();
-        dlg.setVisible(true);
-        if (dlg.isChanged())
-            return dlg.getFieldInfo();
-        else
-            return null;
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                result.call(dlg.isChanged() ? dlg.getFieldInfo() : null);
+            }
+        });
     }
 
     private void enableButtons() {

@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -222,7 +223,7 @@ public class WsdlLocationPanel extends JPanel {
             });
             swd.setSize(700, 500);
             swd.setModal(true);
-            swd.setVisible(true);
+            DialogDisplayer.display(swd);
         } catch (RemoteException ex) {
             JOptionPane.showMessageDialog(mainWindow,
                     ex.getMessage(),

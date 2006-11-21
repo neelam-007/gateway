@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
@@ -81,9 +82,9 @@ public class NewLdapProviderAction extends NewProviderAction {
                 addEntityListener(listener);
 
                 w.pack();
-                w.setSize(780, 560);
+                w.setPreferredSize(new Dimension(780, 560));
                 Utilities.centerOnScreen(w);
-                w.setVisible(true);
+                DialogDisplayer.display(w);
             }
         });
 

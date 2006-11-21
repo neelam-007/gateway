@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.panels.CertManagerWindow;
@@ -63,8 +64,7 @@ public class ManageCertificatesAction extends SecureAction {
         try {
             CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getTopParent());
             Utilities.centerOnScreen(cmw);
-            cmw.setVisible(true);
-            cmw.dispose();
+            DialogDisplayer.display(cmw);
         } catch (RemoteException e) {
             String msg = "Error loading cert manager panel.\n" + e.getMessage();
             logger.log(Level.INFO, "error loading CertManagerWindow", e);

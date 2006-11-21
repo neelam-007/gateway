@@ -6,6 +6,7 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
@@ -89,7 +90,7 @@ public class ViewServiceWsdlAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                new WsdlViewDialog(publishedService).setVisible(true);
+                DialogDisplayer.display(new WsdlViewDialog(publishedService));
             }
         });
     }

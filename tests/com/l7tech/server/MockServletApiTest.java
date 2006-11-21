@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;

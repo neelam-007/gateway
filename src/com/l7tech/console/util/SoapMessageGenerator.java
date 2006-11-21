@@ -1,7 +1,7 @@
-package com.l7tech.common.xml;
+package com.l7tech.console.util;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.console.util.Registry;
+import com.l7tech.common.xml.Wsdl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.event.PolicyEvent;
@@ -153,15 +154,18 @@ public class JmsRoutingAssertionDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 JmsEndpoint ep = newlyCreatedEndpoint;
                 JmsConnection conn = newlyCreatedConnection;
-                JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(getOwner(), conn, ep, true);
+                final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(getOwner(), conn, ep, true);
                 Utilities.centerOnScreen(pd);
-                pd.setVisible(true);
-                if (!pd.isCanceled()) {
-                    newlyCreatedEndpoint = pd.getEndpoint();
-                    newlyCreatedConnection = pd.getConnection();
-                    getQueueComboBox().setModel(new DefaultComboBoxModel(loadQueueItems()));
-                    JmsUtilities.selectEndpoint(getQueueComboBox(), newlyCreatedEndpoint);
-                }
+                DialogDisplayer.display(pd, new Runnable() {
+                    public void run() {
+                        if (!pd.isCanceled()) {
+                            newlyCreatedEndpoint = pd.getEndpoint();
+                            newlyCreatedConnection = pd.getConnection();
+                            getQueueComboBox().setModel(new DefaultComboBoxModel(loadQueueItems()));
+                            JmsUtilities.selectEndpoint(getQueueComboBox(), newlyCreatedEndpoint);
+                        }
+                    }
+                });
             }
         });
 

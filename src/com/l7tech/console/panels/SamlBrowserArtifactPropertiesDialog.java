@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
@@ -53,8 +54,11 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
                 SamlBrowserAuthenticationDialog authDialog = new SamlBrowserAuthenticationDialog(ap, owner, true);
                 Utilities.centerOnScreen(authDialog);
                 authDialog.pack();
-                authDialog.setVisible(true);
-                updateAuthenticationSummary();
+                DialogDisplayer.display(authDialog, new Runnable() {
+                    public void run() {
+                        updateAuthenticationSummary();
+                    }
+                });
             }
         });
 

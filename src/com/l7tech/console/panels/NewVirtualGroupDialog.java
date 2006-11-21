@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
@@ -189,7 +190,7 @@ public class NewVirtualGroupDialog extends JDialog {
                                         null, Level.WARNING);
                                 d.pack();
                                 Utilities.centerOnScreen(d);
-                                d.setVisible(true);
+                                DialogDisplayer.display(d);
                             }
                         }
                         NewVirtualGroupDialog.this.dispose();

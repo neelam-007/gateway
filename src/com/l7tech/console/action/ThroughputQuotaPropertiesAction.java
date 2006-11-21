@@ -11,6 +11,7 @@ import com.l7tech.console.tree.policy.ThroughputQuotaTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.ThroughputQuotaForm;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 import javax.swing.*;
@@ -42,20 +43,23 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),
+        final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),
                                                           subject.getAssertion(), null);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.wasOKed()) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(subject);
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.wasOKed()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged(subject);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
+        });
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());

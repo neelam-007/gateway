@@ -27,7 +27,7 @@ public class SoapFaultLevel implements Serializable {
     private int level = GENERIC_FAULT;
     private String faultTemplate;
     private boolean includePolicyDownloadURL = true;
-    private String[] variablesUsed;
+    private String[] variablesUsed = new String[0];
 
 
     /**

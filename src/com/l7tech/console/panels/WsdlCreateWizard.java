@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
@@ -89,7 +90,8 @@ public class WsdlCreateWizard extends Wizard {
                         wsdlWriter.writeWSDL(definition, writer);
 
                         Frame mw = TopComponents.getInstance().getTopParent();
-                        new RawWsdlDialog(mw, writer.toString(), definition.getQName().getLocalPart());
+                        DialogDisplayer.display(
+                                new RawWsdlDialog(mw, writer.toString(), definition.getQName().getLocalPart()));
                     } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
                         TopComponents.getInstance().showNoPrivilegesErrorMessage();    
                     } catch (WSDLException e1) {
@@ -149,7 +151,6 @@ public class WsdlCreateWizard extends Wizard {
             pack();
             setSize(600, 600);
             Utilities.centerOnScreen(this);
-            setVisible(true);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -52,7 +53,7 @@ public class SchemaValidationPropertiesAction extends SecureAction {
         dlg.pack();
         dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
+        DialogDisplayer.display(dlg);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

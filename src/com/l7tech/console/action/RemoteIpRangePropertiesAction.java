@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -49,7 +50,7 @@ public class RemoteIpRangePropertiesAction extends SecureAction {
         dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
+        DialogDisplayer.display(dlg);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

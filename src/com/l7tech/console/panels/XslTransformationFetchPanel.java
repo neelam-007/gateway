@@ -4,7 +4,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.MessageUrlResourceInfo;
 
@@ -72,11 +74,14 @@ public class XslTransformationFetchPanel extends JPanel {
         regexPrompt = parent.getResources().getString("regexDialog.prompt");
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Object val = pop(null);
-                if (val != null) {
-                    regexListModel.addElement(val);
-                    regexList.setSelectedValue(val, true);
-                }
+                pop(null, new Functions.UnaryVoid<Object>() {
+                    public void call(Object val) {
+                        if (val != null) {
+                            regexListModel.addElement(val);
+                            regexList.setSelectedValue(val, true);
+                        }
+                    }
+                });
             }
         });
 
@@ -101,25 +106,32 @@ public class XslTransformationFetchPanel extends JPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    private Object pop(String initialValue) {
-        OkCancelDialog regexDialog = new OkCancelDialog(xslDialog, regexTitle, true, new RegexPanel(regexPrompt, initialValue));
+    private void pop(String initialValue, final Functions.UnaryVoid<Object> result) {
+        final OkCancelDialog regexDialog = new OkCancelDialog(xslDialog, regexTitle, true, new RegexPanel(regexPrompt, initialValue));
         regexDialog.pack();
-        regexDialog.setVisible(true);
         Utilities.centerOnScreen(regexDialog);
-        return regexDialog.getValue();
+        DialogDisplayer.display(regexDialog, new Runnable() {
+            public void run() {
+                result.call(regexDialog.getValue());
+            }
+        });
     }
 
     private void edit() {
-        String oval = (String)regexList.getSelectedValue();
-        int pos = regexList.getSelectedIndex();
+        final String oval = (String)regexList.getSelectedValue();
+        final int pos = regexList.getSelectedIndex();
 
-        String nval = (String)pop(oval);
-        if (nval == null || oval.equals(nval)) return;
+        pop(oval, new Functions.UnaryVoid<Object>() {
+            public void call(Object object) {
+                String nval = (String)object;
+                if (nval == null || oval.equals(nval)) return;
 
-        regexListModel.removeElementAt(pos);
-        regexListModel.add(pos, nval);
-        regexList.setSelectedValue(nval, true);
-        regexList.revalidate();
+                regexListModel.removeElementAt(pos);
+                regexListModel.add(pos, nval);
+                regexList.setSelectedValue(nval, true);
+                regexList.revalidate();
+            }
+        });
     }
 
     private void enableButtons() {

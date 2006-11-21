@@ -77,7 +77,7 @@ public class SqlAttackDialog extends JDialog {
     private void doCancel() {
         confirmed = false;
         modified = false;
-        setVisible(false);
+        dispose();
     }
 
     private void doSave() {
@@ -93,7 +93,7 @@ public class SqlAttackDialog extends JDialog {
         }
         confirmed = true;
         modified = true;
-        setVisible(false);
+        dispose();
     }
 
     public boolean isModified() {

@@ -2,6 +2,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
@@ -29,6 +30,6 @@ public class DefaultErrorHandler implements ErrorHandler {
         ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(), "SecureSpan Manager - Message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);
-        d.setVisible(true);
+        DialogDisplayer.display(d);
     }
 }

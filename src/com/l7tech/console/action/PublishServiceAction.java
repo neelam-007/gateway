@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedCreate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.event.EntityEvent;
@@ -68,7 +69,7 @@ public class PublishServiceAction extends SecureAction {
         dialog.pack();
         dialog.setSize(750, 500);
         Utilities.centerOnScreen(dialog);
-        dialog.setVisible(true);
+        DialogDisplayer.display(dialog);
     }
 
     private EntityListener listener = new EntityListenerAdapter() {

@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.AttemptedOperation;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.NewGroupDialog;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
@@ -88,7 +89,7 @@ public class NewGroupAction extends NodeAction {
                 Frame f = TopComponents.getInstance().getTopParent();
                 NewGroupDialog dialog = new NewGroupDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
-                dialog.setVisible(true);
+                DialogDisplayer.display(dialog);                
             }
         });
     }

@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
@@ -114,7 +115,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                         }
 
                         Utilities.centerOnScreen(w);
-                        w.setVisible(true);
+                        DialogDisplayer.display(w);
 
                     } catch (Exception e1) {
                         ErrorManager.getDefault().

@@ -10,7 +10,7 @@ import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.w3c.dom.Document;

@@ -5,6 +5,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.PermissionDeniedException;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.EntityType;
@@ -44,7 +45,7 @@ public class PermissionDeniedErrorHandler implements ErrorHandler {
             ExceptionDialog d = ExceptionDialog.createExceptionDialog(TopComponents.getInstance().getTopParent(), "Permission Denied", message, null, Level.INFO);
             d.pack();
             Utilities.centerOnScreen(d);
-            d.setVisible(true);
+            DialogDisplayer.display(d);
         } else {
             e.handle();
         }
