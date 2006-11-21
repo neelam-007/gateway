@@ -8,18 +8,6 @@
     <bean id="registry" class="com.l7tech.console.util.registry.RegistryImpl">
     </bean>
 
-    <bean id="httpClient" class="com.l7tech.spring.remoting.http.SecureHttpClient"/>
-
-    <!-- shared invoker properties, inherited with parent= -->
-    <bean id="invokerCommon" abstract="true">
-        <property name="httpInvokerRequestExecutor">
-            <ref bean="httpRequestExecutor"/>
-        </property>
-        <property name="codebaseUrl">
-            <value>must not be empty</value>
-        </property>
-    </bean>
-
     <!--
       NOTE: The actual host we connect to is not called "securespangateway"
             The protocol used in the urls below is ignored, we always connect with https.

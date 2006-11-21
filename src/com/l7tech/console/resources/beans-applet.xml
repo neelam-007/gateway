@@ -10,4 +10,11 @@
 
     <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SimpleBrowserHttpInvokerRequestExecutor"/>
 
+    <!-- shared invoker properties, inherited with parent= -->
+    <bean id="invokerCommon" abstract="true">
+        <property name="httpInvokerRequestExecutor">
+            <ref bean="httpRequestExecutor"/>
+        </property>
+    </bean>
+    
 </beans>

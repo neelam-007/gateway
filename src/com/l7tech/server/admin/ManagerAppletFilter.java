@@ -5,11 +5,7 @@
 
 package com.l7tech.server.admin;
 
-import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
@@ -17,6 +13,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -24,7 +21,6 @@ import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAsserti
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -33,6 +29,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.identity.User;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.beans.BeansException;
 import org.w3c.dom.Document;
 
 import javax.servlet.*;
@@ -52,32 +49,24 @@ public class ManagerAppletFilter implements Filter {
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
     public static final String PROP_USER = "ManagerApplet.authenticatedUser";
     public static final String SESSION_ID_COOKIE_NAME = "sessionId";
+    public static final String DEFAULT_CODEBASE_PREFIX = "/ssg/webadmin/";
 
     private enum AuthResult { OK, CHALLENGED, FAIL }
 
     private WebApplicationContext applicationContext;
-    private AuditContext auditContext;
-    private ServerConfig serverConfig;
-    private ClusterPropertyManager clusterPropertyManager;
-    private LicenseManager licenseManager;
+    private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AdminSessionManager adminSessionManager;
 
     private ServerAssertion dogfoodPolicy;
     private Document fakeDoc;
-
-
-    private Object getBean(String name) throws ServletException {
-        Object obj = applicationContext.getBean(name);
-        if (obj == null)
-            throw new ServletException("Configuration error; could not get bean " + name);
-        return obj;
-    }
+    private String codebasePrefix;
 
     private Object getBean(String name, Class clazz) throws ServletException {
-        Object obj = applicationContext.getBean(name, clazz);
-        if (obj == null)
-            throw new ServletException("Configuration error; could not get bean " + name);
-        return obj;
+        try {
+            return applicationContext.getBean(name, clazz);
+        } catch (BeansException beansException) {
+            throw new ServletException("Configuration error; could not get bean " + name, beansException);
+        }
     }
 
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -85,11 +74,8 @@ public class ManagerAppletFilter implements Filter {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        auditContext = (AuditContext)getBean("auditContext");
-        serverConfig = (ServerConfig)getBean("serverConfig");
-        clusterPropertyManager = (ClusterPropertyManager)getBean("clusterPropertyManager");
-        licenseManager = (LicenseManager)getBean("licenseManager");
-        ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory");
+        customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionsAdmin", CustomAssertionsRegistrar.class);
+        ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory", ServerPolicyFactory.class);
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
 
         CompositeAssertion dogfood = new AllAssertion();
@@ -104,6 +90,11 @@ public class ManagerAppletFilter implements Filter {
         } catch (LicenseException e) {
             throw new RuntimeException(e); // can't happen, license enforcement is disabled
         }
+
+        String codebasePrefix = filterConfig.getInitParameter("codebaseprefix");
+        if (codebasePrefix == null)
+            codebasePrefix = DEFAULT_CODEBASE_PREFIX;
+        this.codebasePrefix = codebasePrefix;
     }
 
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
@@ -132,6 +123,10 @@ public class ManagerAppletFilter implements Filter {
             hresp.sendError(404, "Request must arrive over SSL.");
             return;
         }
+
+        // Note that the user is authenticated before this is run
+        if (handleCustomAssertionClassRequest(hreq, hresp))
+            return;
 
         filterChain.doFilter(req, resp);
     }
@@ -190,7 +185,7 @@ public class ManagerAppletFilter implements Filter {
         // See if a challenge is indicated
         if (hsrespKnob.hasChallenge()) {
             hsrespKnob.beginChallenge();
-            sendChallenge(context, hreq, hresp);
+            sendChallenge(hresp);
             return AuthResult.CHALLENGED;
         }
 
@@ -199,9 +194,7 @@ public class ManagerAppletFilter implements Filter {
         return AuthResult.FAIL;
     }
 
-    private void sendChallenge(PolicyEnforcementContext context,
-                               HttpServletRequest hreq,
-                               HttpServletResponse hresp) throws IOException
+    private void sendChallenge(HttpServletResponse hresp) throws IOException
     {
         ServletOutputStream sos = null;
         try {
@@ -214,4 +207,76 @@ public class ManagerAppletFilter implements Filter {
         }
     }
 
+    private void sendClass(HttpServletResponse hresp, byte[] data) throws IOException {
+        ServletOutputStream sos = null;
+        try {
+            hresp.setContentType("application/java");
+            hresp.setContentLength(data.length);
+            sos = hresp.getOutputStream();
+            sos.write(data);
+            hresp.flushBuffer();
+        } finally {
+            if (sos != null) sos.close();
+        }
+    }
+
+    /**
+     * Handle request for custom assertion classes.
+     *
+     * <p>The user MUST be authenticated before calling this method.</p>
+     *
+     * @param hreq The HttpServletRequest
+     * @param hresp The HttpServletResponse
+     * @return true if the request has been handled (so no further action should be taken)
+     */
+    private boolean handleCustomAssertionClassRequest(final HttpServletRequest hreq,
+                                                      final HttpServletResponse hresp) throws IOException {
+        boolean handled = false;
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+        if (isRequestForCustomAssertionClass(contextPath, filePath)) {
+            String className = getCustomAssertionClassName(contextPath, filePath);
+            if (className != null) {
+                byte[] data = customAssertionsRegistrar.getAssertionClass(className);
+                if (data != null) {
+                    handled = true;
+                    sendClass(hresp, data);
+                }
+            }
+        }
+
+        return handled;
+    }
+
+    /**
+     * We don't know package names here, so just check if the request looks like a class name.
+     *
+     * @param contextPath The context path
+     * @param filePath The request path
+     * @return true if the request could be for a Java class
+     */
+    private boolean isRequestForCustomAssertionClass(final String contextPath, final String filePath) {
+        return filePath != null && filePath.startsWith(contextPath) && filePath.endsWith(".class");
+    }
+
+    /**
+     * Get the class name for the requested class.
+     *
+     * @param contextPath The context path (prefix)
+     * @param filePath The file path (request URI)
+     * @return The class name or null if interpretation failed
+     */
+    private String getCustomAssertionClassName(final String contextPath, final String filePath) {
+        String name = null;
+
+        int prefixLength = contextPath==null ? 0 : contextPath.length();
+        prefixLength += codebasePrefix.length();
+        if (prefixLength+6 < filePath.length()) {
+            String className = filePath.substring(prefixLength);
+            className = className.substring(0, className.length() - 6); // remove .class
+            name = className.replace('/', '.');
+        }
+
+        return name;
+    }    
 }
