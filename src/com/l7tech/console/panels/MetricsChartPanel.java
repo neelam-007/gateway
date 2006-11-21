@@ -1,20 +1,19 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.jfree.*;
 import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.panels.dashboard.DashboardWindow;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.jfree.*;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
-import com.l7tech.cluster.ClusterNodeInfo;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.annotations.XYBoxAnnotation;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.event.AxisChangeEvent;
@@ -28,6 +27,7 @@ import org.jfree.data.time.SimpleTimePeriod;
 import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
 import org.jfree.data.xy.XYDataset;
+import org.jfree.ui.Layer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -747,18 +747,18 @@ public class MetricsChartPanel extends ChartPanel {
         // Customizes the name of the show audits menu item.
         _showAuditsItem.setText(SHOW_AUDITS_ITEM_NAME + " (" + timeRangeAsString(_showAuditsStartDate, _showAuditsEndDate, _timeZone) + ")");
 
-        // Draws outline around selected time period.
-        final XYBoxAnnotation annotation = new XYBoxAnnotation(_showAuditsStartDate.getTime(),
-                                                               0.0,
-                                                               _showAuditsEndDate.getTime(),
-                                                               1.0e6,
-                                                               new BasicStroke(0.0f),
-                                                               Color.BLUE,
-                                                               null);
+        // Paints vertical marker strip in selected time period.
+        IntervalMarker marker = new IntervalMarker(_showAuditsStartDate.getTime(),
+                                                   _showAuditsEndDate.getTime(),
+                                                   new Color(255, 0, 255, 64),
+                                                   new BasicStroke(0.0f),
+                                                   new Color(255, 0, 255, 0),
+                                                   new BasicStroke(0.0f),
+                                                   0.0f);
         // noinspection unchecked
         for (XYPlot plot : (List<XYPlot>)_combinedPlot.getSubplots()) {
-            plot.clearAnnotations();    // Clears outline around previous selection, if any.
-            plot.addAnnotation(annotation);
+            plot.clearDomainMarkers();  // Clears previous selection, if any.
+            plot.addDomainMarker(marker, Layer.FOREGROUND);
         }
 
         _popup.show(this, x, y);
