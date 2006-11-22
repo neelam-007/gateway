@@ -54,6 +54,7 @@ import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.AccessControlException;
 
 
 /**
@@ -209,7 +210,11 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                     public void run() {
                         String url = (String)dlg.getValue();
                         if (url != null) {
-                            readFromUrl(url);
+                            try {
+                                readFromUrl(url);
+                            } catch (AccessControlException ace) {
+                                TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                            }
                         }
                     }
                 });

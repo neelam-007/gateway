@@ -35,6 +35,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.AccessControlException;
 
 /**
  * Part of {@link XslTransformationPropertiesDialog}.
@@ -247,6 +248,9 @@ public class XslTransformationSpecifyPanel extends JPanel {
         InputStream is;
         try {
             is = new URL(urlstr).openStream();
+        } catch (AccessControlException ace) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+            return;
         } catch (IOException e) {
             xslDialog.displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
             return;

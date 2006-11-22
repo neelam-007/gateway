@@ -37,6 +37,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.AccessControlException;
 
 /**
  * Called by the GlobalSchemaDialog, this is used to edit an existing or add a new global schema entry.
@@ -193,6 +194,9 @@ public class GlobalSchemaEntryEditor extends JDialog {
         InputStream is;
         try {
             is = url.openStream();
+        } catch (AccessControlException ace) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+            return;
         } catch (IOException e) {
             displayError("Could not read from " + " " + urlstr, null);
             return;
