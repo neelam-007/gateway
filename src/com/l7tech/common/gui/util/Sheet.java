@@ -88,7 +88,8 @@ public class Sheet extends JInternalFrame {
         dialog.setContentPane(new JPanel());
 
         putClientProperty(PROPERTY_MODAL, Boolean.valueOf(dialog.isModal()));
-        setClosable(!dialog.isModal());
+        setClosable(true);
+        getRootPane().setWindowDecorationStyle(dialog.getRootPane().getWindowDecorationStyle());
         dialog.setModal(false);
 
         dialog.addWindowListener(ourWindowListener);
