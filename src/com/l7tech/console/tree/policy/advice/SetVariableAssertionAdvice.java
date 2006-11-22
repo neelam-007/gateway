@@ -4,6 +4,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SetVariableAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -20,7 +21,7 @@ import java.awt.*;
  * a policy tree to prompt admin for assertion properties.
  */
 public class SetVariableAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SetVariableAssertion)) {
             throw new IllegalArgumentException();
@@ -40,15 +41,18 @@ public class SetVariableAssertionAdvice implements Advice {
         }
 
         final Frame mw = TopComponents.getInstance().getTopParent();
-        SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, subject, beingInsertedAfter);
+        final SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, subject, beingInsertedAfter);
 
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // check that user oked this dialog
-        if (dlg.isAssertionModified()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (dlg.isAssertionModified()) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

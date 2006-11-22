@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.JmsRoutingAssertionDialog;
@@ -34,7 +35,7 @@ public class AddRoutingAssertionAdvice implements Advice {
      * 
      * @param pc The policy change.
      */
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 ||
           !(assertions[0] instanceof RoutingAssertion)) {
@@ -73,13 +74,16 @@ public class AddRoutingAssertionAdvice implements Advice {
             JmsRoutingAssertion ra = (JmsRoutingAssertion) assertions[0];
             if (ra.getEndpointOid() == null) {
                 final Frame mainWindow = TopComponents.getInstance().getTopParent();
-                JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
+                final JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
                 dialog.setModal(true);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
-                dialog.setVisible(true);
-                if (!dialog.isCanceled())
-                    pc.proceed();
+                DialogDisplayer.display(dialog, new Runnable() {
+                    public void run() {
+                        if (!dialog.isCanceled())
+                            pc.proceed();
+                    }
+                });
             } else
                 pc.proceed();
         } else if (assertions[0] instanceof EchoRoutingAssertion) {

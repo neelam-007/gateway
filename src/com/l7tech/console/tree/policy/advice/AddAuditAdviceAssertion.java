@@ -9,6 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +27,7 @@ import java.awt.*;
 public class AddAuditAdviceAssertion implements Advice {
     private static final Logger logger = Logger.getLogger(AddAuditAdviceAssertion.class.getName());
 
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof AuditDetailAssertion)) {
             throw new IllegalArgumentException();
@@ -42,13 +43,15 @@ public class AddAuditAdviceAssertion implements Advice {
 
         AuditDetailAssertion subject = (AuditDetailAssertion)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject, serverLevel);
+        final AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject, serverLevel);
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);
-        aad.setVisible(true);
-        if (aad.isModified()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(aad, new Runnable() {
+            public void run() {
+                if (aad.isModified())
+                    pc.proceed();
+            }
+        });
     }
 }

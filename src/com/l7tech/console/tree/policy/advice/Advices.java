@@ -76,7 +76,7 @@ public class Advices {
          * 
          * @param pc The policy change.
          */
-        public void proceed(PolicyChange pc) throws PolicyException {
+        public void proceed(PolicyChange pc) {
         }
     }
 

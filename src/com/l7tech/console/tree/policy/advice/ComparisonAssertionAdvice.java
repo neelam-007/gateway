@@ -7,6 +7,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.ComparisonAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -22,22 +23,25 @@ import java.awt.*;
  * a policy tree to prompt admin for assertion properties.
  */
 public class ComparisonAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof ComparisonAssertion)) {
             throw new IllegalArgumentException();
         }
         ComparisonAssertion subject = (ComparisonAssertion) assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        ComparisonAssertionDialog dlg = new ComparisonAssertionDialog(mw, subject);
+        final ComparisonAssertionDialog dlg = new ComparisonAssertionDialog(mw, subject);
 
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // check that user oked this dialog
-        if (dlg.isAssertionModified()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (dlg.isAssertionModified()) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

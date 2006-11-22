@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.MappingAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -15,22 +16,25 @@ import java.awt.*;
  * Advice for dragging a MappingAssertion into the tree.
  */
 public class MappingAssertionAdvice implements Advice{
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof MappingAssertion)) {
             throw new IllegalArgumentException();
         }
         MappingAssertion subject = (MappingAssertion) assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        MappingAssertionDialog dlg = new MappingAssertionDialog(mw, subject, true);
+        final MappingAssertionDialog dlg = new MappingAssertionDialog(mw, subject, true);
 
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // check that user oked this dialog
-        if (dlg.isModified()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (dlg.isModified()) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

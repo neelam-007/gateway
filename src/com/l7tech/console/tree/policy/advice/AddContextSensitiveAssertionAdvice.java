@@ -18,7 +18,7 @@ public abstract class AddContextSensitiveAssertionAdvice implements Advice {
 
     //- PUBLIC
 
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1) {
             throw new IllegalArgumentException();
@@ -42,9 +42,8 @@ public abstract class AddContextSensitiveAssertionAdvice implements Advice {
      *
      * @param pc        The policy change event
      * @param assertion The assertion being added.
-     * @throws PolicyException if you like
      */
-    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) throws PolicyException  {
+    protected void notifyPreRouting(PolicyChange pc, Assertion assertion)  {
     }
 
     /**
@@ -54,9 +53,8 @@ public abstract class AddContextSensitiveAssertionAdvice implements Advice {
      *
      * @param pc        The policy change event
      * @param assertion The assertion being added.
-     * @throws PolicyException if you like
      */
-    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) throws PolicyException  {
+    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) {
     }
 
     //- PRIVATE

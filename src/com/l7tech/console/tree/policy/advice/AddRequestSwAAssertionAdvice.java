@@ -48,7 +48,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
      *
      * @param pc The policy change.
      */
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 ||
           !(assertions[0] instanceof RequestSwAAssertion)) {
@@ -69,13 +69,13 @@ public class AddRequestSwAAssertionAdvice implements Advice {
             throw new RuntimeException(e); // can't happen
         } catch (MalformedURLException e) {
             logger.warning("MalformedURLException caught. Unable to parse the WSDL of the service " + service.getName());
-            throw new PolicyException();
+            throw new RuntimeException();
         } catch (IOException e) {
             logger.warning("IOException caught. Unable to parse the WSDL of the service " + service.getName());
-            throw new PolicyException();
+            throw new RuntimeException();
         } catch (SAXException e) {
             logger.warning("SAXException caught. Unable to parse the WSDL of the service " + service.getName());
-            throw new PolicyException();
+            throw new RuntimeException();
         }
 
         pc.proceed();

@@ -13,22 +13,22 @@ public class AddWsiSamlAssertionAdvice extends AddContextSensitiveAssertionAdvic
 
     //- PUBLIC
 
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(PolicyChange pc) {
         super.proceed(pc);
         pc.proceed();
     }
 
     //- PROTECTED
 
-    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) throws PolicyException {
-        if (!(assertion instanceof WsiSamlAssertion)) throw new PolicyException("Expected WS-I SAML assertion.");
+    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) {
+        if (!(assertion instanceof WsiSamlAssertion)) throw new IllegalArgumentException("Expected WS-I SAML assertion.");
         WsiSamlAssertion wsiSamlAssertion = (WsiSamlAssertion) assertion;
         wsiSamlAssertion.setCheckRequestMessages(false);
         wsiSamlAssertion.setCheckResponseMessages(true);
     }
 
-    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) throws PolicyException {
-        if (!(assertion instanceof WsiSamlAssertion)) throw new PolicyException("Expected WS-I SAML assertion.");
+    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) {
+        if (!(assertion instanceof WsiSamlAssertion)) throw new IllegalArgumentException("Expected WS-I SAML assertion.");
         WsiSamlAssertion wsiSamlAssertion = (WsiSamlAssertion) assertion;
         wsiSamlAssertion.setCheckRequestMessages(true);
         wsiSamlAssertion.setCheckResponseMessages(false);

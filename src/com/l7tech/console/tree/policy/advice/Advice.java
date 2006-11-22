@@ -33,5 +33,5 @@ public interface Advice {
      * 
      * @param pc The policy change.
      */
-    void proceed(PolicyChange pc) throws PolicyException;
+    void proceed(PolicyChange pc);
 }

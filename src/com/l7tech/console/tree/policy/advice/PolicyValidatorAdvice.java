@@ -18,7 +18,7 @@ public class PolicyValidatorAdvice implements Advice {
      * 
      * @param pc The policy change.
      */
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(PolicyChange pc) {
         pc.proceed();
         final TopComponents creg = TopComponents.getInstance();
         final WorkSpacePanel cws = creg.getCurrentWorkspace();

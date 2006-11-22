@@ -76,7 +76,7 @@ public class PolicyChange {
      * Invokes next advice in chain. If no advices are left,
      * applies the policy change.
      */
-    public void proceed() throws PolicyException {
+    public void proceed() {
         throw new UnsupportedOperationException();
     }
 

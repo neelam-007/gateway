@@ -13,6 +13,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.awt.*;
 
@@ -20,24 +21,26 @@ import java.awt.*;
  * Advice that displays cookie assertion property dialog.
  */
 public class AddCookieCredentialSourceAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof CookieCredentialSourceAssertion)) {
             throw new IllegalArgumentException();
         }
-        CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)assertions[0];
+        final CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)assertions[0];
 
         final Frame mw = TopComponents.getInstance().getTopParent();
-        CookieCredentialSourceAssertionPropertiesDialog dlg =
+        final CookieCredentialSourceAssertionPropertiesDialog dlg =
                 new CookieCredentialSourceAssertionPropertiesDialog(mw, true, assertion);
 
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-
-        if (dlg.isConfirmed()) {
-            dlg.getData(assertion);
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.isConfirmed()) {
+                    dlg.getData(assertion);
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

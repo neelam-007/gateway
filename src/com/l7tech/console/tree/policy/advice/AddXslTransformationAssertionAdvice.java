@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -25,7 +26,7 @@ import java.awt.*;
  *
  */
 public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAssertionAdvice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof XslTransformation)) {
             throw new IllegalArgumentException();
@@ -33,26 +34,29 @@ public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAsse
         super.proceed(pc);
         XslTransformation assertion = (XslTransformation)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
+        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // make sure a xslt was entered
-        if (dlg.wasOKed()) {
-            pc.proceed();
-        } else {
-            log.info("Xsl Transformation must have been canceled");
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // make sure a xslt was entered
+                if (dlg.wasOKed()) {
+                    pc.proceed();
+                } else {
+                    log.info("Xsl Transformation must have been canceled");
+                }
+            }
+        });
     }
 
-    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) throws PolicyException {
+    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) {
         XslTransformation xslTransformation = (XslTransformation)assertion;
         xslTransformation.setDirection(XslTransformation.APPLY_TO_RESPONSE);
     }
 
-    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) throws PolicyException {
+    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) {
         XslTransformation xslTransformation = (XslTransformation)assertion;
         xslTransformation.setDirection(XslTransformation.APPLY_TO_REQUEST);
     }

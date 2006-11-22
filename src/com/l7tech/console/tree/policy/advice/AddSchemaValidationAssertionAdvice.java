@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -24,7 +25,7 @@ import java.awt.*;
  *
  */
 public class AddSchemaValidationAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SchemaValidation)) {
             throw new IllegalArgumentException();
@@ -32,19 +33,21 @@ public class AddSchemaValidationAssertionAdvice implements Advice {
         SchemaValidation assertion = (SchemaValidation)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
         //SchemaValidationTreeNode fakenode = new SchemaValidationTreeNode(assertion);
-        SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
+        final SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
         // show the dialog
         dlg.pack();
         dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-
-        // make sure a schema was entered
-        if (dlg.isChangesCommitted()) {
-            pc.proceed();
-        } else {
-            log.info("Addition of SchemaValidation must have been canceled");
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // make sure a schema was entered
+                if (dlg.isChangesCommitted()) {
+                    pc.proceed();
+                } else {
+                    log.info("Addition of SchemaValidation must have been canceled");
+                }
+            }
+        });
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());

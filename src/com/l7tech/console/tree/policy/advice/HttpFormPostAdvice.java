@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.HttpFormPostDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
@@ -17,21 +18,24 @@ import java.awt.*;
  * <p/>
  */
 public class HttpFormPostAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof HttpFormPost)) {
             throw new IllegalArgumentException();
         }
         Frame f = TopComponents.getInstance().getTopParent();
         HttpFormPost hfp = (HttpFormPost)assertions[0];
-        HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
+        final HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
-        hfpd.setVisible(true);
-        if (hfpd.isAssertionModified()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(hfpd, new Runnable() {
+            public void run() {
+                if (hfpd.isAssertionModified()) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

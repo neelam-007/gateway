@@ -8,6 +8,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.awt.*;
 
@@ -22,22 +23,25 @@ import java.awt.*;
  * $Id$<br/>
  */
 public class AddTimeRangeAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof TimeRange)) {
             throw new IllegalArgumentException();
         }
         TimeRange subject = (TimeRange)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(mw, true, subject);
+        final TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(mw, true, subject);
 
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // check that user oked this dialog
-        if (dlg.wasOked()) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (dlg.wasOked()) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

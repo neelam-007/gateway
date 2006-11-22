@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SnmpTrapPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -16,22 +17,25 @@ import java.awt.*;
  * an administrator for a value.
  */
 public class AddSnmpTrapAssertionAdvice implements Advice {
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SnmpTrapAssertion)) {
             throw new IllegalArgumentException();
         }
         SnmpTrapAssertion subject = (SnmpTrapAssertion)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        SnmpTrapPropertiesDialog dlg = new SnmpTrapPropertiesDialog(mw, subject);
+        final SnmpTrapPropertiesDialog dlg = new SnmpTrapPropertiesDialog(mw, subject);
 
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        // check that user oked this dialog
-        if (dlg.getResult() != null) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (dlg.getResult() != null) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WSDLOperationPropertiesDialog;
@@ -29,7 +30,7 @@ import java.awt.*;
 public class AddWSDLOperationAssertionAdvice implements Advice {
     private static final Logger logger = Logger.getLogger(AddWSDLOperationAssertionAdvice.class.getName());
 
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof Operation)) {
             throw new IllegalArgumentException();
@@ -55,12 +56,15 @@ public class AddWSDLOperationAssertionAdvice implements Advice {
             return;
         }
 
-        WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, assertion, operations);
+        final WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, assertion, operations);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.setVisible(true);
-        if (dlg.oked) {
-            pc.proceed();
-        }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.oked) {
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

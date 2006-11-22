@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.Wizard;
@@ -23,12 +24,12 @@ import java.awt.*;
 public class AddRequestWssSamlAdvice implements Advice {
     boolean proceed = false;
 
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof RequestWssSaml)) {
             throw new IllegalArgumentException();
         }
-        RequestWssSaml assertion = (RequestWssSaml)assertions[0];
+        final RequestWssSaml assertion = (RequestWssSaml)assertions[0];
         Frame f = TopComponents.getInstance().getTopParent();
 
         IntroductionWizardStepPanel p =
@@ -53,18 +54,21 @@ public class AddRequestWssSamlAdvice implements Advice {
         w.pack();
         w.setSize(850, 500);
         Utilities.centerOnScreen(w);
-        w.setVisible(true);
-        // check that user oked this dialog
-        if (proceed) {
-            if (assertion.getVersion()==null ||
-                assertion.getVersion().intValue()==1) {
-                pc.getNewChild().setUserObject(new RequestWssSaml(assertion));
-            }
-            else {
-                pc.getNewChild().setUserObject(new RequestWssSaml2(assertion));                
-            }
+        DialogDisplayer.display(w, new Runnable() {
+            public void run() {
+                // check that user oked this dialog
+                if (proceed) {
+                    if (assertion.getVersion()==null ||
+                        assertion.getVersion() ==1) {
+                        pc.getNewChild().setUserObject(new RequestWssSaml(assertion));
+                    }
+                    else {
+                        pc.getNewChild().setUserObject(new RequestWssSaml2(assertion));
+                    }
 
-            pc.proceed();
-        }
+                    pc.proceed();
+                }
+            }
+        });
     }
 }

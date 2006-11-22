@@ -25,7 +25,7 @@ import java.awt.*;
  * @author flascelles@layer7-tech.com
  */
 public class AddThroughputQuotaAssertionAdvice implements Advice {
-    public void proceed(final PolicyChange pc) throws PolicyException {
+    public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof ThroughputQuota)) {
             throw new IllegalArgumentException();
@@ -40,14 +40,8 @@ public class AddThroughputQuotaAssertionAdvice implements Advice {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 // check that user oked this dialog
-                if (dlg.wasOKed()) {
-                    try {
-                        pc.proceed();
-                    } catch (PolicyException e) {
-                        // Pass the buck to the event queue
-                        throw new RuntimeException(e);
-                    }
-                }
+                if (dlg.wasOKed())
+                    pc.proceed();
             }
         });
     }

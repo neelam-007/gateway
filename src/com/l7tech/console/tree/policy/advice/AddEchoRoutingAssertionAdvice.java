@@ -15,7 +15,7 @@ public class AddEchoRoutingAssertionAdvice implements Advice {
 
     //- PUBLIC
 
-    public void proceed(PolicyChange pc) throws PolicyException {
+    public void proceed(PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof EchoRoutingAssertion)) {
             throw new IllegalArgumentException("Incorrect assertion type.");

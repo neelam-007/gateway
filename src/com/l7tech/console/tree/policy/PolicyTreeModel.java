@@ -257,8 +257,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
               (AssertionTreeNode)parent, index);
             pc.advices = Advices.getAdvices(a);
             pc.proceed();
-        } catch (PolicyException e) {
-            throw new RuntimeException(e);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         } catch (FindException e) {
@@ -308,8 +306,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
                     policy, event, service, this, newChild, (AssertionTreeNode)parent, index);
             pc.advices = new Advice[]{new PolicyValidatorAdvice()};
             pc.proceed();
-        } catch (PolicyException e) {
-            throw new RuntimeException(e);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         } catch (FindException e) {
@@ -344,7 +340,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             this.childLocation = childLocation;
         }
 
-        public void proceed() throws PolicyException {
+        public void proceed() {
             if (advices == null || this.adviceIndex == advices.length) {
                 treeModel.insertNodeIntoAdvised(newChild, parent, childLocation);
             } else
@@ -372,7 +368,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             super(policy, event, service, treeModel, childNode, parent, childLocation);
         }
 
-        public void proceed() throws PolicyException {
+        public void proceed() {
             if (advices == null || this.adviceIndex == advices.length) {
             } else
                 this.advices[this.adviceIndex++].proceed(this);
@@ -417,11 +413,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
                                                 PolicyTreeModel.this, (AssertionTreeNode)node,
                                                 parent, childIndex[0]);
         pc.advices = new Advice[]{new PolicyValidatorAdvice()};
-        try {
-            pc.proceed();
-        } catch (PolicyException e) {
-            throw new RuntimeException(e);
-        }
+        pc.proceed();
     }
 
     private void checkArgumentIsAssertionTreeNode(MutableTreeNode node) {
@@ -433,6 +425,5 @@ public class PolicyTreeModel extends DefaultTreeModel {
               IllegalArgumentException("Assertion tree node expected, received " + node.getClass());
         }
     }
-
 }
 
