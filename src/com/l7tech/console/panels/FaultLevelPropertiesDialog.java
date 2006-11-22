@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.FaultLevel;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.XmlUtil;
@@ -120,6 +121,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
         super(owner, TITLE, true);
         this.assertion = subject;
         initialize();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     protected void processWindowEvent(WindowEvent e) {

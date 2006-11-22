@@ -40,8 +40,8 @@ public class DialogDisplayer {
 
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
-     * Even if the dialog is modal, this method <b>may return immediately</b>,
-     * without having yet invoked the continuation, if the dialog is being displayed as a sheet.
+     * Even if the dialog is modal, this method <b>may return immediately</b>
+     * if the dialog is being displayed as a sheet.
      *
      * @param dialog  the dialog to display.  Must not be null.
      */

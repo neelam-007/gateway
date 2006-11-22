@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.TopComponents;
 
 import com.japisoft.xmlpad.XMLContainer;
@@ -37,6 +38,7 @@ public class SelectWsdlSchemaDialog extends JDialog {
         anal = new WsdlSchemaAnalizer(wsdl);
         anal.splitInputOutputs();
         initialize();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void initializeXmlContainer() {

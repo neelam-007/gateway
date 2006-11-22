@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.AssertionResourceInfo;
@@ -148,6 +149,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
         });
 */
         add(mainPanel);
+
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private String getCurrentFetchMode() {

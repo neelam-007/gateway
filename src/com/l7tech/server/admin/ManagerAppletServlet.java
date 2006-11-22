@@ -41,7 +41,7 @@ public class ManagerAppletServlet extends HttpServlet {
     private static final String APPLET_OPEN =
             "<applet codebase=\"CODEBASE\"  archive=\"Manager.jar\"\n" +
                     "code=\"com.l7tech.console.AppletMain.class\"\n" +
-                    "        width=\"100%\" height=\"100%\" mayscript>";
+                    "        width=\"100%\" height=\"100%\">";
 
     private static final String APPLET_CLOSE =
             "\n" +

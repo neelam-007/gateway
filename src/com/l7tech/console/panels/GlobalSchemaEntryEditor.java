@@ -66,6 +66,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         this.subject = subject;
         this.canEdit = canEditEntry;
         initialize();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void initialize() {

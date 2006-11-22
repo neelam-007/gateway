@@ -131,6 +131,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         schemaValidationAssertion = node.getAssertion();
         this.service = service;
         initialize();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
@@ -141,6 +142,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         schemaValidationAssertion = assertion;
         this.service = service;
         initialize();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void initialize() {

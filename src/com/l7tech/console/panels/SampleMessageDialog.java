@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.service.SampleMessage;
 
 import javax.swing.*;
@@ -34,6 +35,7 @@ public class SampleMessageDialog extends JDialog {
         this.message = message;
         this.allowOperationChange = allowOperationChange;
         init();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     public SampleMessageDialog(Frame owner, SampleMessage message, boolean allowOperationChange) throws HeadlessException {
@@ -41,6 +43,7 @@ public class SampleMessageDialog extends JDialog {
         this.message = message;
         this.allowOperationChange = allowOperationChange;
         init();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void init() {
