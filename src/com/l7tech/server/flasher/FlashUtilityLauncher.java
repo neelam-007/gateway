@@ -4,6 +4,8 @@ import com.l7tech.server.config.OSDetector;
 
 import java.util.HashMap;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.IOException;
 import java.io.File;
 import java.io.InputStream;
@@ -20,6 +22,7 @@ import java.io.InputStream;
 public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String LOGCONFIG_NAME = "flasherlogging.properties";
+    private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
 
     public static void main(String[] args) {
         if (args == null || args.length < 1) {
@@ -35,17 +38,20 @@ public class FlashUtilityLauncher {
             if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
                 importer.doIt(passedArgs);
-                System.out.println("\n\nImport completed with no errors. You may restart the target SecureSpan Gateway.");
+                System.out.println("\nImport completed with no errors. You may restart the target SecureSpan Gateway.");
             } else if (args[0].toLowerCase().equals("export")) {
                 Exporter exporter = new Exporter();
                 exporter.doIt(passedArgs);
-                System.out.println("\n\nExport of SecureSpan Gateway image completed with no errors.");
+                System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
             }
+            logger.info("Operation complete without errors");
         } catch (InvalidArgumentException e) {
             System.out.println(e.getMessage());
+            logger.log(Level.INFO, "User error. Bad arguments.", e);
             printusage();
         } catch (IOException e) {
-            System.out.println("Error performing the operation.");
+            System.out.println("Error, consult log file.");
+            logger.log(Level.WARNING, "Could not perform operation", e);
             System.out.println(e.getMessage());
         }
     }

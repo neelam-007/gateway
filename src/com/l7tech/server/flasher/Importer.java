@@ -11,6 +11,8 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.BuildInfo;
 
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
@@ -31,6 +33,7 @@ import org.xml.sax.SAXException;
  * Date: Nov 8, 2006<br/>
  */
 public class Importer {
+    private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to import");
     public static final CommandLineOption MODE = new CommandLineOption("-mode", "[clone | stage]");
@@ -57,10 +60,12 @@ public class Importer {
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
         String inputpathval = arguments.get(IMAGE_PATH.name);
         if (inputpathval == null) {
+            logger.info("Error, no image provided for import");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
         }
         String mode = arguments.get(MODE.name);
         if (mode == null) {
+            logger.info("Error, import mode specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + MODE.name);
         }
         if (mode.toLowerCase().equals("clone")) {
@@ -68,27 +73,31 @@ public class Importer {
         } else if (mode.toLowerCase().equals("stage")) {
             fullClone = false;
         } else {
-            throw new FlashUtilityLauncher.InvalidArgumentException("invalid value for " + MODE.name);
+            logger.info("Error, unknown import mode specified: " + mode);
+            throw new FlashUtilityLauncher.InvalidArgumentException(mode + " is invalid value for " + MODE.name);
         }
         // clone only available on linux. check that that we're on linux if mode is clone
         if (fullClone && OSDetector.isWindows()) {
+            logger.info("Error, clone mode requested on windows system");
             throw new FlashUtilityLauncher.InvalidArgumentException("invalid value for " + MODE.name);
         }
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
         tempDirectory = Exporter.createTmpDirectory();
+        logger.info("Uncompressing image to temporary directory " + tempDirectory);
         try {
             System.out.println("Reading SecureSpan image file");
             unzipToDir(inputpathval, tempDirectory);
             if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING)).exists()) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("the file " + inputpathval +
-                                                                        " does not appear to be a valid SSG flash image");
+                logger.info("Error, the image provided does not contain an expected file and is therefore suspicious");
+                throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
             }
 
             // if clone is asked, make sure the image was produced from a linux system
             if (fullClone) {
                 if (!(new File(tempDirectory + File.separator + "hibernate.properties")).exists()) {
-                    throw new FlashUtilityLauncher.InvalidArgumentException("this image cannot be used in clone mode. " +
-                                                                            "perhaps it was created on a windows system");
+                    logger.info("Error, clone mode requested but image was created on windows and therefore cannot be used for cloning");
+                    throw new IOException("this image cannot be used in clone mode. perhaps it was created " +
+                            "on a windows system");
                 }
             }
 
@@ -98,12 +107,13 @@ public class Importer {
             int read = fis.read(buf);
             String imgversion = new String(buf, 0, read);
             if (!BuildInfo.getProductVersion().equals(imgversion)) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("the version of this image is incompatible " +
-                                                                        "with this target system (" + imgversion +
-                                                                        " instead of " + BuildInfo.getProductVersion() +
-                                                                        ")");
+                logger.info("cannot import image because target system is running version " +
+                            BuildInfo.getProductVersion() + " while image to import is of version " + imgversion);
+                throw new IOException("the version of this image is incompatible with this target system (" + imgversion +
+                                      " instead of " + BuildInfo.getProductVersion() + ")");
             }
 
+            logger.info("Proceeding with image");
             System.out.println("SecureSpan image file recognized.");
             // get target partition, make sure it already exists
             partitionName = arguments.get(PARTITION.name);
@@ -112,20 +122,29 @@ public class Importer {
             boolean multiplePartitionSystem = partitionManager.isPartitioned();
             if (multiplePartitionSystem) {
                 // option PARTITION now mandatory
-                if (StringUtils.isEmpty(partitionName))
-                    throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned. The \"" + PARTITION.name + "\" parameter is required");
+                if (StringUtils.isEmpty(partitionName)) {
+                    logger.info("No partition name specified for import on a partitioned system");
+                    throw new IOException("this system is partitioned. The \"" +
+                                          PARTITION.name + "\" parameter is required");
+                }
                 PartitionInformation partitionInfo = partitionManager.getPartition(partitionName);
-                if (partitionInfo == null)
-                    throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned but the partition \"" + partitionName + "\" is not present.");
+                if (partitionInfo == null) {
+                    logger.info("partition requested does not exist on target system " + partitionName);
+                    throw new IOException("this system is partitioned but the " +
+                                          "partition \"" + partitionName + "\" is not present.");
+                }
             } else {
                 // make sure user did not ask for a partition that did not exist
-                if (StringUtils.isNotEmpty(partitionName))
-                    throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition number " + partitionName);
+                if (StringUtils.isNotEmpty(partitionName)) {
+                    logger.info("This system is not partitioned but used asked to import on partition " + partitionName);
+                    throw new IOException("this system is not partitioned. cannot act on partition " + partitionName);
+                }
             }
             if (partitionName == null) partitionName = "";
 
             boolean newDatabaseCreated = false;
             if (fullClone) {
+                logger.info("Checking if we can already connect to target database using image db properties");
                 // if clone mode, check if we can already get connection from the target database
                 Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
                     SsgDatabaseConfigBean.PROP_DB_USERNAME,
@@ -135,6 +154,9 @@ public class Importer {
                 databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
                 databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
                 databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+                logger.info("using database url " + databaseURL);
+                logger.info("using database user " + databaseUser);
+                logger.info("using database passwd " + databasePasswd);
                 boolean databasepresentandkosher = false;
                 try {
                     Connection c = getConnection();
@@ -156,8 +178,10 @@ public class Importer {
 
                 // if the database needs to be created, do it
                 if (databasepresentandkosher) {
+                    logger.info("The database already exists on this system");
                     System.out.println("Existing target database detected");
                 } else {
+                    logger.info("database need to be created");
                     // get root db username and password
                     String rootDBUsername = arguments.get(DB_USER.name);
                     String rootDBPasswd = arguments.get(DB_PASSWD.name);
@@ -180,6 +204,7 @@ public class Importer {
                         dbName = matcher.group(2);
                     }
                     if (StringUtils.isEmpty(dbHost) || StringUtils.isEmpty(dbName)) {
+                        logger.warning("cannot parse host and name from " + databaseURL);
                         throw new IOException("cannot resolve host name or database name from jdbc url in " +
                                               tempDirectory + File.separator + "hibernate.properties");
                     }
@@ -200,6 +225,7 @@ public class Importer {
                     }
                 }
             } else {
+                logger.info("Staging mode");
                 OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
                 Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
                     SsgDatabaseConfigBean.PROP_DB_USERNAME,
@@ -209,6 +235,9 @@ public class Importer {
                 databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
                 databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
                 databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+                logger.info("using database url " + databaseURL);
+                logger.info("using database user " + databaseUser);
+                logger.info("using database passwd " + databasePasswd);
             }
 
             // check that target db is not currently used by an SSG
@@ -216,12 +245,15 @@ public class Importer {
                 try {
                     String connectedNode = checkSSGConnectedToDatabase();
                     if (StringUtils.isNotEmpty(connectedNode)) {
+                        logger.info("cannot import on this database because it is being used by a SSG");
                         throw new IOException("A SecureSpan Gateway is currently running " +
                                               "and connected to the database. Please shutdown " + connectedNode);
                     }
                 } catch (SQLException e) {
+                    logger.log(Level.WARNING, "Error looging for database use ", e);
                     throw new IOException("cannot connect to database" + e.getMessage());
                 }  catch (InterruptedException e) {
+                    logger.log(Level.WARNING, "Error looging for database use ", e);
                     throw new IOException("interrupted!" + e.getMessage());
                 }
             }
@@ -229,6 +261,7 @@ public class Importer {
             // load mapping if requested
             String mappingPath = arguments.get(MAPPING_PATH.name);
             if (mappingPath != null) {
+                logger.info("loading mapping file");
                 System.out.print("Reading mapping file ..");
                 try {
                     mapping = MappingUtil.loadMapping(mappingPath);
@@ -240,14 +273,18 @@ public class Importer {
 
             if (!newDatabaseCreated) {
                 // actually go on with the import
+                logger.info("saving existing license");
                 try {
                     saveExistingLicense();
                 } catch (SQLException e) {
                     throw new IOException("cannot save existing license from database " + e.getMessage());
                 }
+            } else {
+                logger.info("not trying to save license because new database");
             }
 
             // load database dump
+            logger.info("loading database dump");
             try {
                 loadDumpFromExplodedImage();
             } catch (SQLException e) {
@@ -257,14 +294,17 @@ public class Importer {
 
             // if applicable, copy all config files to the right place
             if (fullClone) {
+                logger.info("copying system files from image to target system");
                 copySystemConfigFiles();
             }
 
             // apply mapping if applicable
             if (mapping != null) {
+                logger.info("applying mappings requested");
                 try {
                     MappingUtil.applyMappingChangesToDB(databaseURL, databaseUser, databasePasswd, mapping);
                 } catch (SQLException e) {
+                    logger.log(Level.WARNING, "error mapping target", e);
                     throw new IOException("error mapping staging values " + e.getMessage());
                 }
             }
@@ -273,10 +313,12 @@ public class Importer {
             try {
                 reloadLicense();
             } catch (SQLException e) {
+                logger.log(Level.WARNING, "error resetting license", e);
                 throw new IOException("error resetting license " + e.getMessage());
             }
 
         } finally {
+            logger.info("deleting temp files at " + tempDirectory);
             FileUtils.deleteDir(new File(tempDirectory));
         }
     }

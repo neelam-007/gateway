@@ -14,6 +14,8 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -27,6 +29,7 @@ import java.util.zip.ZipEntry;
  * Date: Nov 8, 2006<br/>
  */
 public class Exporter {
+    private static final Logger logger = Logger.getLogger(Exporter.class.getName());
     // exporter options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to export");
     public static final CommandLineOption AUDIT = new CommandLineOption("-ia", "[yes | no] whether or not to include audit tables in resulting image");
@@ -43,10 +46,12 @@ public class Exporter {
         // check that we can write output at located asked for
         String outputpathval = arguments.get(IMAGE_PATH.name);
         if (outputpathval == null) {
+            logger.info("no target image path specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know where to output the image to.");
         }
         if (!testCanWrite(outputpathval)) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to " + outputpathval);
+            logger.warning("cannot write to the target image path specified: " + outputpathval);
+            throw new IOException("cannot write to " + outputpathval);
         }
 
         // check whether or not we are expected to include audit in export
@@ -64,20 +69,27 @@ public class Exporter {
 
         if (multiplePartitionSystem) {
             // option PARTITION now mandatory
-            if (StringUtils.isEmpty(partitionName))
+            if (StringUtils.isEmpty(partitionName)) {
+                logger.info("no partition name specified");
                 throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned. The \"" + PARTITION.name + "\" parameter is required");
+            }
 
             PartitionInformation partitionInfo = partitionManager.getPartition(partitionName);
-            if (partitionInfo == null)
+            if (partitionInfo == null) {
+                logger.info("the partition to export does not exist: " + partitionName);
                 throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned but the partition \"" + partitionName + "\" is not present.");
+            }
 
         } else {
             // make sure user did not ask for a partition that did not exist
-            if (StringUtils.isNotEmpty(partitionName))
-                throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition number " + partitionName);
+            if (StringUtils.isNotEmpty(partitionName)) {
+                logger.info("there are no partition on this system, yet the user asked to export partition named: " + partitionName);
+                throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition name " + partitionName);
+            }
         }
         if (partitionName == null) partitionName = "";
         tmpDirectory = createTmpDirectory();
+        logger.info("created temporary directory at " + tmpDirectory);
 
         // Read database connection settings for the partition at hand
         OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
@@ -89,13 +101,18 @@ public class Exporter {
         String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
         String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+        logger.info("using database url " + databaseURL);
+        logger.info("using database user " + databaseUser);
+        logger.info("using database passwd " + databasePasswd);
 
         // dump the database
         try {
             DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
         } catch (SQLException e) {
+            logger.log(Level.INFO, "exception dumping database", e);
             throw new IOException("cannot dump the database " + e.getMessage());
         } catch (ClassNotFoundException e) {
+            logger.log(Level.INFO, "database driver unavailable", e);
             throw new IOException("cannot dump the database " + e.getMessage());
         }
 
@@ -115,9 +132,11 @@ public class Exporter {
                 MappingUtil.produceTemplateMappingFileFromDB(databaseURL, databaseUser, databasePasswd, partitionName);
             } catch (SQLException e) {
                 // should not happen
+                logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
                 throw new RuntimeException("problem producing template mapping file", e);
             } catch (SAXException e) {
                 // should not happen
+                logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
                 throw new RuntimeException("problem producing template mapping file", e);
             }
         }
@@ -154,7 +173,9 @@ public class Exporter {
         }
 
         // zip the temp directory into the requested image file (outputpathval)
+        logger.info("compressing image into " + outputpathval);
         zipDir(outputpathval, tmpDirectory);
+        logger.info("cleaning up temp tiels at " + tmpDirectory);
         System.out.println("Cleaning temporary files at " + tmpDirectory);
         FileUtils.deleteDir(new File(tmpDirectory));
     }
@@ -171,6 +192,7 @@ public class Exporter {
             return false;
         }
         (new File(path)).delete();
+        logger.info("tested write permission for " + path);
         return true;
     }
 

@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.File;
 import java.sql.*;
+import java.util.logging.Logger;
 
 /**
  * Methods for dumping
@@ -17,6 +18,7 @@ import java.sql.*;
  * Date: Nov 8, 2006<br/>ma
  */
 public class DBDumpUtil {
+    private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
     private static DBActions dbActions;
     public static final String DBDUMPFILENAME_STAGING = "dbdump_staging.sql";
     public static final String DBDUMPFILENAME_CLONE = "dbdump_clone.sql";
@@ -37,6 +39,7 @@ public class DBDumpUtil {
                             boolean includeAudit, String outputDirectory) throws SQLException, IOException, ClassNotFoundException {
         Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
+            logger.warning("cannot get connection");
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
                                    ", and password: " + databasePasswd);
@@ -121,6 +124,7 @@ public class DBDumpUtil {
                             if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                             break;
                         default:
+                            logger.severe("unexpected java.sql.Type value " + colType);
                             throw new RuntimeException("unhandled column type:" + colType);
                     }
                 }

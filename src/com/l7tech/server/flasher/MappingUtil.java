@@ -16,6 +16,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
  * Date: Nov 8, 2006<br/>
  */
 public class MappingUtil {
-
+    private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     private static final String STAGINGMAPPINGNS = "http://www.layer7tech.com/flashing/stagingmapping";
     private static final String NS_PREFIX = "L7flash";
@@ -62,6 +63,7 @@ public class MappingUtil {
                 for (String fromip : mappingResults.backendIPMapping.keySet()) {
                     if (policy.indexOf("stringValue=\"" + fromip + "\"") >= 0) {
                         String toip = mappingResults.backendIPMapping.get(fromip);
+                        logger.info("changing " + fromip + " to " + toip + " in service named " + selrs.getString(3));
                         System.out.println("\tchanging " + fromip + " to " + toip + " in service named " + selrs.getString(3));
                         policy = policy.replace("stringValue=\"" + fromip + "\"", "stringValue=\"" + toip + "\"");
                         changed = true;
@@ -85,8 +87,10 @@ public class MappingUtil {
                 updateps.setString(2, varname);
                 int res = updateps.executeUpdate();
                 if (res > 0) {
+                    logger.info("Setting cluster property " + varname + " to value " + varval);
                     System.out.println("\tSetting cluster property " + varname + " to value " + varval);
                 } else {
+                    logger.info("Target system does not have cluster property " + varname + ". Ignoring this mapping.");
                     System.out.println("\tTarget system does not have cluster property " + varname + ". Ignoring this mapping.");
                 }
                 updateps.close();
