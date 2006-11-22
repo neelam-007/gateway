@@ -9,7 +9,6 @@ import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.gui.util.Sheet;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
 import org.springframework.context.ApplicationContext;
@@ -85,6 +84,7 @@ public class AppletMain extends JApplet implements SheetHolder {
 
 
     public void start() {
+        setFocusable(true);
         if (!getApplication().getMainWindow().isConnected()) {
             getApplication().getMainWindow().disconnectFromGateway();
             getApplication().getMainWindow().activateLogonDialog();
@@ -137,6 +137,13 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private void gatherAppletParameters() {
+        String port = getParameter("port");
+
+        if (port == null || port.length() < 1) {
+            URL codebase = getCodeBase();
+            if (codebase != null) port = Integer.toString(codebase.getPort());
+        }
+
         String hostname = getParameter("hostname");
 
         if (hostname == null || hostname.length() < 1) {
@@ -145,6 +152,10 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
 
         if (hostname != null && hostname.length() > 0) {
+            if (port != null && port.length() > 0 && isInt(port)) {
+                hostname = hostname.trim() + ":" + port;
+            }
+
             LogonDialog.setPreconfiguredGatewayHostname(hostname);
             helpTarget = "managerAppletHelp_" + hostname;
             logger.info("Preconfigured server hostname: " + hostname);
@@ -167,6 +178,15 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
     }
 
+    private boolean isInt(String port) {
+        try {
+            Integer.parseInt(port);
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+    }
+
     private static ApplicationContext createApplicationContext() {
         String ctxName = "com/l7tech/console/resources/beans-context.xml";
         String appletName = "com/l7tech/console/resources/beans-applet.xml";
@@ -177,11 +197,6 @@ public class AppletMain extends JApplet implements SheetHolder {
         return "Title: SecureSpan Manager Applet \n"
             + "Author: Layer 7 Technologies \n"
             + "Applet version of SecureSpan Manager.";
-    }
-
-    public String[][] getParameterInfo() {
-        return new String[][]{
-        };
     }
 
     public void showHelpTopicsRoot() {
@@ -195,6 +210,6 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     public void showSheet(JInternalFrame sheet) {
-        Sheet.showSheet(this, sheet);
+        DialogDisplayer.showSheet(this, sheet);
     }
 }

@@ -8,9 +8,9 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.OpaqueId;
-import com.l7tech.console.MainWindow;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.util.Registry;
@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.awt.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Action that deletes the audit events older than 48 hours, after getting confirmation.
@@ -99,17 +97,17 @@ public class DownloadAuditEventsAction extends SecureAction {
         }
 
         // Download the audit events
-        FileOutputStream out = null;
+        final FileOutputStream[] out = new FileOutputStream[]{null};
         try {
-            out = new FileOutputStream(outFile, false);
-            final FileOutputStream fout = out;
+            out[0] = new FileOutputStream(outFile, false);
+            final FileOutputStream fout = out[0];
             final JProgressBar progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
             progressBar.setIndeterminate(true);
             final CancelableOperationDialog dlg = new CancelableOperationDialog(mainWindow,
                                                                                 "Downloading Audits",
                                                                                 "Please wait, downloading audits...",
                                                                                 progressBar);
-            SwingWorker worker = new SwingWorker() {
+            final SwingWorker worker = new SwingWorker() {
                 public Object construct() {
                     try {
                         final AuditAdmin aa = Registry.getDefault().getAuditAdmin();
@@ -143,54 +141,65 @@ public class DownloadAuditEventsAction extends SecureAction {
                 }
 
                 public void finished() {
-                    dlg.setVisible(false);
+                    dlg.dispose();
                 }
             };
 
             worker.start();
-            dlg.setVisible(true);
-            worker.interrupt();
-            Object result = worker.get();
-            if (result == null) {
-                // canceled at user request -- clean up silently
-                out.close();
-                out = null;
-                outFile.delete();
-                return;
-            }
-            if (!(result instanceof String)) {
-                // error -- report the problem then clean up
-                String msg;
-                if (result instanceof Throwable) {
-                    msg = "Unable to read exported audit events from Gateway: " + ((Throwable)result).getMessage();
-                    logger.log(Level.WARNING, msg, (Throwable)result);
-                } else {
-                    msg = "Unable to read exported audit events from Gateway: " + result;
-                    logger.log(Level.WARNING, msg);
+            final File outFile1 = outFile;
+            DialogDisplayer.display(dlg, new Runnable() {
+                public void run() {
+                    worker.interrupt();
+                    Object result = worker.get();
+                    if (result == null) {
+                        // canceled at user request -- clean up silently
+                        cleanupPartialFile(out, outFile1);
+                        return;
+                    }
+                    if (!(result instanceof String)) {
+                        // error -- report the problem then clean up
+                        String msg;
+                        if (result instanceof Throwable) {
+                            msg = "Unable to read exported audit events from Gateway: " + ((Throwable)result).getMessage();
+                            logger.log(Level.WARNING, msg, (Throwable)result);
+                        } else {
+                            msg = "Unable to read exported audit events from Gateway: " + result;
+                            logger.log(Level.WARNING, msg);
+                        }
+                        DialogDisplayer.showMessageDialog(null,
+                                                          msg,
+                                                          "Error",
+                                                          JOptionPane.ERROR_MESSAGE,
+                                                          new Runnable() {
+                                                              public void run() {
+                                                                  cleanupPartialFile(out, outFile1);
+                                                              }
+                                                          });
+                        return;
+                    }
+
+
+                    out[0] = null;
+                    JOptionPane.showMessageDialog(mainWindow, "Audit records saved successfully.", "Audit Export", JOptionPane.INFORMATION_MESSAGE);
                 }
-                JOptionPane.showMessageDialog(null,
-                                              msg,
-                                              "Error",
-                                              JOptionPane.ERROR_MESSAGE);
-                out.close();
-                out = null;
-                outFile.delete();
-                return;
-            }
-
-
-            out = null;
-            JOptionPane.showMessageDialog(mainWindow, "Audit records saved successfully.", "Audit Export", JOptionPane.INFORMATION_MESSAGE);
-        } catch (RemoteException e1) {
-            final String msg = "Unable to read exported audit events from Gateway.";
-            log.log(Level.SEVERE, msg, e1);
-            throw new RuntimeException(msg, e1);
+            });
         } catch (IOException e) {
             final String msg = "Unable to save audit events to this file.";
             log.log(Level.SEVERE, msg, e);
+            cleanupPartialFile(out, outFile);
             throw new RuntimeException(msg, e);
-        } finally {
-            if (out != null) try { out.close(); } catch (IOException e) { /* ignore; exception already logged */ }
+        }
+    }
+
+    private void cleanupPartialFile(FileOutputStream[] out, File outFile1) {
+        try {
+            if (out[0] != null)
+                out[0].close();
+            out[0] = null;
+            if (outFile1 != null && outFile1.exists())
+                outFile1.delete();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to clean up save file: " + ExceptionUtils.getMessage(e), e);
         }
     }
 }

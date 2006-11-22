@@ -6,10 +6,7 @@ package com.l7tech.console.panels.dashboard;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.SheetHolder;
-import com.l7tech.common.gui.util.Sheet;
+import com.l7tech.common.gui.util.*;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.LogonListener;
@@ -518,6 +515,6 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     }
 
     public void showSheet(JInternalFrame sheet) {
-        Sheet.showSheet(this, sheet);
+        DialogDisplayer.showSheet(this, sheet);
     }
 }

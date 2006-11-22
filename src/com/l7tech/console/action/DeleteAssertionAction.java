@@ -5,6 +5,7 @@ import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.Functions;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -89,23 +90,29 @@ public class DeleteAssertionAction extends SecureAction {
         }
     }
 
-    private void delete(AssertionTreeNode treeNode) {
-        boolean deleted = Actions.deleteAssertion(treeNode);
-        if (deleted) {
-            JTree tree = (JTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.removeNodeFromParent(treeNode);
-        }
+    private void delete(final AssertionTreeNode treeNode) {
+        Actions.deleteAssertion(treeNode, new Functions.UnaryVoid<Boolean>() {
+            public void call(Boolean deleted) {
+                if (deleted) {
+                    JTree tree = (JTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    model.removeNodeFromParent(treeNode);
+                }
+            }
+        });
     }
 
-    private void delete(AssertionTreeNode[] treeNodes) {
-        boolean deleted = Actions.deleteAssertions(treeNodes);
-        if (deleted) {
-            JTree tree = (JTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            for (int n=0; n<treeNodes.length; n++) {
-                model.removeNodeFromParent(treeNodes[n]);
+    private void delete(final AssertionTreeNode[] treeNodes) {
+        Actions.deleteAssertions(treeNodes, new Functions.UnaryVoid<Boolean>() {
+            public void call(Boolean deleted) {
+                if (deleted) {
+                    JTree tree = (JTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    for (AssertionTreeNode treeNode : treeNodes) {
+                        model.removeNodeFromParent(treeNode);
+                    }
+                }
             }
-        }
+        });
     }
 }

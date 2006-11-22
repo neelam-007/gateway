@@ -3,10 +3,7 @@ package com.l7tech.console;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.SheetHolder;
-import com.l7tech.common.gui.util.Sheet;
+import com.l7tech.common.gui.util.*;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
@@ -1049,7 +1046,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
     };
 
     public void showSheet(JInternalFrame sheet) {
-        Sheet.showSheet(this, sheet);
+        DialogDisplayer.showSheet(this, sheet);
     }
 
     private class DeleteNodeEntryAction extends SecureAction {

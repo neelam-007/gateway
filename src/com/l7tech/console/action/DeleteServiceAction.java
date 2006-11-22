@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
@@ -64,35 +65,39 @@ public class DeleteServiceAction extends ServiceNodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        if (!Actions.deleteService(serviceNode)) return;
+        Actions.deleteService(serviceNode, new Functions.UnaryVoid<Boolean>() {
+            public void call(Boolean confirmed) {
+                if (!confirmed) return;
 
-        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
-        Runnable runnable = new Runnable() {
-            public void run() {
-                final TopComponents creg = TopComponents.getInstance();
-                JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.removeNodeFromParent(node);
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        final TopComponents creg = TopComponents.getInstance();
+                        JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.removeNodeFromParent(node);
 
-                try {
-                    final WorkSpacePanel cws = creg.getCurrentWorkspace();
-                    JComponent jc = cws.getComponent();
-                    if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                        return;
+                        try {
+                            final WorkSpacePanel cws = creg.getCurrentWorkspace();
+                            JComponent jc = cws.getComponent();
+                            if (jc == null || !(jc instanceof PolicyEditorPanel)) {
+                                return;
+                            }
+                            PolicyEditorPanel pe = (PolicyEditorPanel)jc;
+                            PublishedService svc = pe.getServiceNode().getPublishedService();
+                            // if currently edited service was deleted
+                            if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
+                                cws.clearWorkspace();
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                    PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                    PublishedService svc = pe.getServiceNode().getPublishedService();
-                    // if currently edited service was deleted
-                    if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
-                        cws.clearWorkspace();
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                };
+                SwingUtilities.invokeLater(runnable);
             }
-        };
-        SwingUtilities.invokeLater(runnable);
+        });
     }
 
 }

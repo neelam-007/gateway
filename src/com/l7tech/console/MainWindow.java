@@ -663,7 +663,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                */
               public void actionPerformed(ActionEvent event) {
                   SwingUtilities.invokeLater(new Runnable() { public void run() {
-                      LogonDialog.logon(MainWindow.this, logonListenr);
+                      LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
                   }});
               }
           };
@@ -999,7 +999,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                       dialog.pack();
                       Utilities.centerOnScreen(dialog);
                       dialog.setResizable(false);
-                      dialog.setVisible(true);
+                      DialogDisplayer.display(dialog);
                   }});
               }
           };
@@ -1806,22 +1806,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Save the window position preference.  Called when the app is closed.
-     */
-//    private void saveWindowPosition() {
-//        Point curWindowLocation = getLocation();
-//        Dimension curWindowSize = getSize();
-//        try {
-//            Preferences prefs = Preferences.getPreferences();
-//            prefs.setLastWindowLocation(curWindowLocation);
-//            prefs.setLastWindowSize(curWindowSize);
-//            prefs.store();
-//        } catch (IOException e) {
-//            log.log(Level.WARNING, "unable to save window position prefs: ", e);
-//        }
-//    }
-
-    /**
      * Initializes listeners for the form
      */
     private void initListeners() {
@@ -2060,10 +2044,10 @@ public class MainWindow extends JFrame implements SheetHolder {
                         getWorkSpacePanel().clearWorkspace();  // vetoable
                         MainWindow.this.disconnectFromGateway();
                         // add a top level dlg that indicates the connection was closed
-                        JOptionPane.showMessageDialog(MainWindow.this,
+                        DialogDisplayer.showMessageDialog(MainWindow.this,
                                                       "The SecureSpan Manager connection has been closed due\n" +
                                                       "to timeout. Any unsaved work will be lost.",
-                                                      "Connection Timeout", JOptionPane.WARNING_MESSAGE);
+                                                      "Connection Timeout", JOptionPane.WARNING_MESSAGE, null);
                     } catch (ActionVetoException e1) {
                         // swallow, cannot happen from here
                     }
@@ -2384,15 +2368,19 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                int retval = JOptionPane.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION);
-
-                if (retval == JOptionPane.YES_OPTION) {
-                    LicenseDialog dlg = new LicenseDialog(MainWindow.this, preferences.getString(SsmPreferences.SERVICE_URL));
-                    dlg.pack();
-                    Utilities.centerOnScreen(dlg);
-                    dlg.setModal(true);
-                    DialogDisplayer.display(dlg);
-                }
+                DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
+                    public void reportResult(int retval) {
+                        if (retval == JOptionPane.YES_OPTION) {
+                            LicenseDialog dlg = new LicenseDialog(MainWindow.this, preferences.getString(SsmPreferences.SERVICE_URL));
+                            dlg.pack();
+                            Utilities.centerOnScreen(dlg);
+                            dlg.setModal(true);
+                            DialogDisplayer.display(dlg);
+                        }
+                    }
+                };
+                DialogDisplayer.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION,
+                                                  callback);
             }
         });
     }
@@ -2402,22 +2390,22 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public void showNoPrivilegesErrorMessage() {
-        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                       "The requested action could not be performed because the applet is running\n" +
                                       "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
                                       "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
                                       "this applet and reload the page.",
                                       "Disallowed by browser settings",
-                                      JOptionPane.WARNING_MESSAGE);
+                                      JOptionPane.WARNING_MESSAGE, null);
     }
 
     public void showSheet(JInternalFrame sheet) {
         Frame topParent = TopComponents.getInstance().getTopParent();
         if (topParent != this && topParent instanceof RootPaneContainer) {
-            Sheet.showSheet((RootPaneContainer)topParent, sheet);
+            DialogDisplayer.showSheet((RootPaneContainer)topParent, sheet);
             return;
         }
 
-        Sheet.showSheet(this, sheet);
+        DialogDisplayer.showSheet(this, sheet);
     }
 }

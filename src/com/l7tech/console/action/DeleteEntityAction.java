@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import static com.l7tech.common.security.rbac.EntityType.*;
+import com.l7tech.common.util.Functions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WeakEventListenerList;
@@ -141,21 +142,23 @@ public class DeleteEntityAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        boolean deleted;
-        deleted = Actions.deleteEntity(node, config);
-        if (deleted) {
-            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-            JTree tree;
-            if (node instanceof IdentityProviderNode) {
-                tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.removeNodeFromParent(node);
+        Actions.deleteEntity(node, config, new Functions.UnaryVoid<Boolean>() {
+            public void call(Boolean deleted) {
+                if (deleted) {
+                    Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                    JTree tree;
+                    if (node instanceof IdentityProviderNode) {
+                        tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.removeNodeFromParent(node);
+                    }
+                    EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+                    for (EventListener listener : listeners) {
+                        EntityEvent ev = new EntityEvent(this, node.getEntityHeader());
+                        ((EntityListener) listener).entityRemoved(ev);
+                    }
+                }
             }
-            EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-            for (EventListener listener : listeners) {
-                EntityEvent ev = new EntityEvent(this, node.getEntityHeader());
-                ((EntityListener) listener).entityRemoved(ev);
-            }
-        }
+        });
     }
 }

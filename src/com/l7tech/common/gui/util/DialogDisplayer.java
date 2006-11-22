@@ -3,23 +3,28 @@ package com.l7tech.common.gui.util;
 import com.l7tech.common.util.SyspropUtil;
 
 import javax.swing.*;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.awt.event.*;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Display a possibly-modal dialog using a sheet if possible, otherwise just natively using setVisible(true).
  * To work properly with this mechanism, dialogs must be designed to call dispose() on themselves when
  * dismissed.
  *
- * @noinspection ForLoopReplaceableByForEach,unchecked
+ * @noinspection ForLoopReplaceableByForEach,unchecked,UnnecessaryBoxing,MismatchedQueryAndUpdateOfCollection,UnnecessaryUnboxing
  */
 public class DialogDisplayer {
+    protected static final Logger logger = Logger.getLogger(DialogDisplayer.class.getName());
+
     public static final String PROPERTY_FORCE_NATIVE_DIALOG_DISPLAY = "com.l7tech.common.gui.util.forceNativeDialogDisplay";
     private static boolean forceNative = SyspropUtil.getBoolean(PROPERTY_FORCE_NATIVE_DIALOG_DISPLAY);
+
+    public static final String PROPERTY_TRANSLUCENT_SHEETS = "com.l7tech.common.gui.util.DialogDisplayer.translucent";
+    public static boolean translucentSheets = SyspropUtil.getBoolean(PROPERTY_TRANSLUCENT_SHEETS);
 
     /** Look-aside map to find sheet holders associated with applet container frames. */
     private static final Map defaultSheetHolderMap = new HashMap();
@@ -29,6 +34,9 @@ public class DialogDisplayer {
 
     /** Dialog classes that should never be displayed as a sheet. */
     private static final Map suppressSheetDisplayClasses = new WeakHashMap();
+
+    // Client properties stored on layered pane that is hosting sheets
+    public static final String PROPERTY_SHEETSTACK = "com.l7tech.common.gui.util.DialogDisplayer.sheetStack";
 
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
@@ -63,10 +71,10 @@ public class DialogDisplayer {
      * @param title        the title for the dialog or sheet.  Must not be null.
      * @param continuation the continuation to invoke when the option pane is hidden.  Must not be null.
      */
-    public static void display(JOptionPane optionPane, Container parent, String title, Runnable continuation) {
+    public static void display(JOptionPane optionPane, Component parent, String title, Runnable continuation) {
         SheetHolder holder = getSheetHolderAncestor(parent);
         if (holder != null) {
-            JInternalFrame jif = optionPane.createInternalFrame(parent, title);
+            JInternalFrame jif = optionPane.createInternalFrame(holder.getLayeredPane(), title);
             jif.pack();
             Utilities.centerOnParent(jif);
             if (!mustShowNative(jif, holder)) {
@@ -266,5 +274,344 @@ public class DialogDisplayer {
             }
         }
         return false;
+    }
+
+    /**
+     * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     *
+     * @see JOptionPane#showMessageDialog
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param title     title for the dialog.  required
+     * @param messType  message type.  required
+     * @param callback  callback to invoke when dialog is dismissed.  optional
+     */
+    public static void showMessageDialog(Component parent, Object mess, String title, int messType, Runnable callback) {
+        showMessageDialog(parent, mess, title, messType, null,
+                          callback == null ? null : callback);
+    }
+
+    /**
+     * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     *
+     * @see JOptionPane#showMessageDialog
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param title     title for the dialog.  required
+     * @param messType  message type.  required
+     * @param callback  callback to invoke when dialog is dismissed.  optional
+     * @param icon      icon to display.  optional
+     */
+    public static void showMessageDialog(Component parent, Object mess, String title, int messType, Icon icon, final Runnable callback) {
+        showOptionDialog(parent, mess, title, JOptionPane.DEFAULT_OPTION, messType, icon, null, null,
+                         callback == null ? null : new OptionListener() {
+                             public void reportResult(int result) {
+                                 callback.run();
+                             }
+                         });
+    }
+
+    /**
+     * Interface implemented by callers of showOptionDialog.
+     */
+    public interface OptionListener {
+        /**
+         * Report that an option dialog was dismissed with the specified result per {@link JOptionPane}.
+         *
+         * @param option  the result of displaying the dialog.  May be JOptionPane.CLOSED_OPTION, or the index
+         *                of the option that was selected.
+         */
+        void reportResult(int option);
+    }
+
+    /**
+     * Display a confirmation dialog as a sheet if possible, otherwise normally.
+     *
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param title     title for the dialog.  required
+     * @param opType    operation type per JOptionPane
+     * @param result    callback to invoke with the result when dialog is dismissed.  optional
+     */
+    public static void showConfirmDialog(Component parent, Object mess, String title, int opType, OptionListener result) {
+        showConfirmDialog(parent, mess, title, opType, JOptionPane.QUESTION_MESSAGE, result);
+    }
+
+    /**
+     * Display a confirmation dialog as a sheet if possible, otherwise normally.
+     *
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param title     title for the dialog.  required
+     * @param opType    operation type per JOptionPane
+     * @param messType  message type per JOptionPane.  required
+     * @param result    callback to invoke with the result when dialog is dismissed.  optional
+     */
+    public static void showConfirmDialog(Component parent, Object mess, String title, int opType, int messType,
+                                        OptionListener result)
+    {
+        showConfirmDialog(parent, mess, title, opType, messType, null, result);
+    }
+
+    /**
+     * Display a confirmation dialog as a sheet if possible, otherwise normally.
+     *
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param title     title for the dialog.  required
+     * @param opType    operation type per JOptionPane
+     * @param messType  message type per JOptionPane.  required
+     * @param icon      icon per JOptionPane. optional
+     * @param result    callback to invoke with the result when dialog is dismissed.  optional
+     */
+    public static void showConfirmDialog(Component parent, Object mess, String title, int opType, int messType,
+                                        Icon icon, OptionListener result)
+    {
+        showOptionDialog(parent, mess, title, opType, messType, icon, null, null, result);
+    }
+
+    /**
+     * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     *
+     * @see JOptionPane#showOptionDialog
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param title     title for the dialog.  required
+     * @param opType    operation type per JOptionPane
+     * @param messType  message type per JOptionPane.  required
+     * @param icon          icon per JOptionPane. optional
+     * @param options       options array.  required.  may not contain null entries.
+     * @param initialValue  initial value to use.  Should compare equals with one of the options.
+     * @param result    callback to invoke with the result when dialog is dismissed.  optional
+     */
+    public static void showOptionDialog(Component parent,
+                                       Object mess,
+                                       String title,
+                                       int opType,
+                                       int messType,
+                                       Icon icon,
+                                       final Object[] options,
+                                       Object initialValue,
+                                       final OptionListener result)
+    {
+        final JOptionPane pane = new JOptionPane(mess, messType, opType, icon, options, initialValue);
+        pane.setInitialValue(initialValue);
+
+        display(pane, parent, title, result == null ? null : new Runnable() {
+            public void run() {
+                result.reportResult(getValue());
+            }
+
+            private int getValue() {
+                Object val = pane.getValue();
+
+                if (val == null)
+                    return JOptionPane.CLOSED_OPTION;
+
+                if (options == null)
+                    return val instanceof Integer ? ((Integer)val).intValue() : JOptionPane.CLOSED_OPTION;
+
+                for (int i = 0; i < options.length; i++) {
+                    if (options[i].equals(val))
+                        return i;
+                }
+
+                return JOptionPane.CLOSED_OPTION;
+            }
+        });
+    }
+
+    /**
+     * Check if the specified object represents the truth.
+     *
+     * @return true iff. o is Boolean.TRUE or the string "true".
+     * @param o  object to check for truthhood
+     */
+    private static boolean struth(Object o) {
+        return o instanceof Boolean ? ((Boolean)o).booleanValue() : o instanceof String && Boolean.valueOf((String)o).booleanValue();
+    }
+
+    private static class SheetState {
+        private final int layer;  // layer of sheet under this one, or default layer
+        private final Component focusOwner;
+        private final JInternalFrame sheet;
+
+        public SheetState(int layer, Component focusOwner, JInternalFrame sheet) {
+            this.layer = layer;
+            this.focusOwner = focusOwner;
+            this.sheet = sheet;
+        }
+    }
+
+    private static class SheetStack {
+        private final LinkedList stack = new LinkedList();
+
+        /** @return the sheet state on top of the stack, or null if the stack is empty. */
+        private SheetState peek() {
+            if (stack.isEmpty()) return null;
+            Object top = stack.getLast();
+            if (top instanceof SheetState)
+                return (SheetState)top;
+            return null;
+        }
+
+        /**
+         * Creates a new sheet state, makes it the top of the stack, and returns it.
+         *
+         * @param sheet    the sheet that is about to be displayed
+         * @return         the new SheetState object
+         */
+        private SheetState push(JInternalFrame sheet) {
+            SheetState prevTop = peek();
+            int layer = prevTop == null ? JLayeredPane.PALETTE_LAYER.intValue() + 1 : prevTop.layer + 1;
+            Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner();
+            SheetState state = new SheetState(layer, focusOwner, sheet);
+            stack.addLast(state);
+            return state;
+        }
+
+        /**
+         * Removes the specified sheet state, and returns the new top of the sheet stack.
+         *
+         * @param sheet  sheet to remove.  Must not be null.  Must already have been hidden and removed from its host layered pane.
+         * @return the sheet state for the sheet that was removed, or null if the specified sheet was not found on this stack.
+         */
+        private SheetState pop(JInternalFrame sheet) {
+            for (Iterator i = stack.iterator(); i.hasNext();) {
+                final SheetState sheetState = (SheetState)i.next();
+                if (sheetState.sheet == sheet) {
+                    i.remove();
+                    if (sheetState.focusOwner != null) {
+                        sheetState.focusOwner.requestFocus();
+                        sheetState.focusOwner.requestFocusInWindow();
+                    }
+                    return sheetState;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static SheetStack getOrCreateSheetStack(JLayeredPane host) {
+        Object ps = host.getClientProperty(PROPERTY_SHEETSTACK);
+        if (ps instanceof SheetStack)
+            return (SheetStack)ps;
+        SheetStack stack = new SheetStack();
+        host.putClientProperty(PROPERTY_SHEETSTACK, stack);
+        return stack;
+    }
+
+    /**
+     * Display the specified dialog as a sheet attached to the specified RootPaneContainer (which must
+     * also be a JComponenet).
+     *
+     * @param rpc   the RootPaneContainer to hold the sheet.  Must be non-null.
+     * @param sheet    the sheet to display.
+     * @throws ClassCastException if holder isn't a JComponent.
+     */
+    public static void showSheet(final RootPaneContainer rpc, final JInternalFrame sheet) {
+        final JLayeredPane layers = rpc.getLayeredPane();
+        SheetStack sheetStack = getOrCreateSheetStack(layers);
+        final SheetState sheetState = sheetStack.push(sheet);
+        int layer = sheetState.layer;
+
+        final SheetBlocker blocker;
+
+        if ("optionDialog".equals(sheet.getClientProperty("JInternalFrame.frameType")) ||
+            struth(sheet.getClientProperty(Sheet.PROPERTY_MODAL)))
+        {
+            blocker = new SheetBlocker(true);
+            layers.add(blocker);
+            layer++;
+            layers.setLayer(blocker, layer, 0);
+            blocker.setLocation(0, 0);
+            blocker.setSize(layers.getWidth(), layers.getHeight());
+        } else blocker = null;
+
+        Object cobj = sheet.getClientProperty(Sheet.PROPERTY_CONTINUATION);
+        final Runnable continuation;
+        continuation = cobj instanceof Runnable ? (Runnable)cobj : null;
+
+        layers.add(sheet);
+        layers.setLayer(sheet, layer, 0);
+        sheet.pack();
+        Utilities.centerOnParent(sheet);
+
+        final ComponentListener resizeListener = new ComponentAdapter() {
+            public void componentResized(ComponentEvent e) {
+                int pw = layers.getParent().getWidth();
+                int ph = layers.getParent().getHeight();
+
+                Point sp = sheet.getLocation();
+                if (sp.x > pw || sp.y > ph) Utilities.centerOnParent(sheet);
+
+                if (blocker != null) {
+                    blocker.setSize(pw, ph);
+                    blocker.invalidate();
+                    blocker.validate();
+                }
+            }
+        };
+        layers.getParent().addComponentListener(resizeListener);
+
+        sheet.addInternalFrameListener(new InternalFrameAdapter() {
+            public void internalFrameClosed(InternalFrameEvent e) {
+                if (blocker != null) {
+                    blocker.setVisible(false);
+                    layers.remove(blocker);
+                    layers.remove(sheet);
+                    layers.getParent().removeComponentListener(resizeListener);
+                    sheet.removeInternalFrameListener(this);
+                    getOrCreateSheetStack(layers).pop(sheet);
+                }
+                if (continuation != null) continuation.run();
+            }
+        });
+
+        if (blocker != null) blocker.setVisible(true);
+        sheet.setVisible(true);
+        sheet.requestFocusInWindow();
+    }
+
+    public static class SheetBlocker extends JPanel {
+        private MouseListener nullMouseListener = new MouseAdapter(){};
+        private KeyListener nullKeyListener = new KeyAdapter(){};
+        private boolean blockEvents = false;
+
+        public SheetBlocker(boolean blockEvents) {
+            super.setVisible(false);
+            setOpaque(false);
+            this.blockEvents = blockEvents;
+        }
+
+        protected void paintComponent(Graphics g) {
+            if (!translucentSheets) return;
+            Graphics2D gg = (Graphics2D)g;
+            Composite oldComp = gg.getComposite();
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            g.setColor(Color.LIGHT_GRAY);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            gg.setComposite(oldComp);
+        }
+
+        public void setVisible(boolean vis) {
+            boolean wasVis = isVisible();
+            super.setVisible(vis);
+            if (wasVis == vis)
+                return;
+            if (vis) {
+                Sheet.logger.fine("Showing sheet blocker");
+                if (blockEvents) {
+                    addMouseListener(nullMouseListener);
+                    addKeyListener(nullKeyListener);
+                }
+            } else {
+                Sheet.logger.fine("Hiding sheet blocker");
+                if (blockEvents) {
+                    removeMouseListener(nullMouseListener);
+                    removeKeyListener(nullKeyListener);
+                }
+            }
+        }
     }
 }

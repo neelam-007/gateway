@@ -2,16 +2,16 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.VersionException;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.security.InvalidHostCertificateException;
 import com.l7tech.console.security.InvalidHostNameException;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Registry;
@@ -20,7 +20,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 
-import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -59,7 +58,7 @@ public class LogonDialog extends JDialog {
     /**
      *
      */
-    private Set acceptedInvalidHosts = new HashSet();
+    private Set<String> acceptedInvalidHosts = new HashSet<String>();
 
     /**
      * Resource bundle with default locale
@@ -75,11 +74,6 @@ public class LogonDialog extends JDialog {
 
 
     private JButton loginButton = null;
-
-    /**
-     * the dialog title label *
-     */
-    private JLabel dialogTitleLabel = null;
 
     private JLabel serverLabel;
 
@@ -136,7 +130,7 @@ public class LogonDialog extends JDialog {
     private void initComponents() {
 
         setTitle(resources.getString("window.title"));
-        GridBagConstraints constraints = null;
+        GridBagConstraints constraints;
 
         Container contents = getContentPane();
         contents.setLayout(new GridBagLayout());
@@ -161,7 +155,7 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
 
-        dialogTitleLabel = new JLabel();
+        JLabel dialogTitleLabel = new JLabel();
         dialogTitleLabel.setText(resources.getString("dialog.title"));
         dialogTitleLabel.setFont(new Font("Dialog", Font.BOLD, 12));
 
@@ -190,8 +184,7 @@ public class LogonDialog extends JDialog {
         userNameTextField.setDocument(new FilterDocument(200,
                                                          new FilterDocument.Filter() {
                                                              public boolean accept(String str) {
-                                                                 if (str == null) return false;
-                                                                 return true;
+                                                                 return str != null;
                                                              }
                                                          }));
 
@@ -243,7 +236,7 @@ public class LogonDialog extends JDialog {
 
 
         // last ID logic
-        String lastID = null;
+        final String lastID;
         rememberUser = false;
         preferences = TopComponents.getInstance().getPreferences();
         lastID = preferences.rememberLoginId() ?
@@ -358,6 +351,7 @@ public class LogonDialog extends JDialog {
                         URL url = new URL(surl);
                         hostName = url.getHost();
                     } catch (MalformedURLException e) {
+                        // can't happen, but omit from list
                     }
                     serverComboBox.addItem(hostName);
                     if (i == 0) {
@@ -392,6 +386,7 @@ public class LogonDialog extends JDialog {
      * of the dialog
      * <p/>
      * Sets the variable loginButton
+     * @return the new button panel
      */
     private JPanel createButtonPanel() {
 
@@ -493,7 +488,7 @@ public class LogonDialog extends JDialog {
                           progressDialog.dispose();
                       }
                       if (!Thread.currentThread().isInterrupted() && memoException == null) {
-                          return new Boolean(true);
+                          return Boolean.TRUE;
                       }
                       return null;
                   }
@@ -565,9 +560,10 @@ public class LogonDialog extends JDialog {
     /**
      * invoke logon dialog
      *
-     * @param frame
+     * @param frame  parent frame for the logon dialog
+     * @param listener  listener to invoke with the result
      */
-    public static void logon(JFrame frame, LogonListener listener) {
+    public static void logon(Frame frame, LogonListener listener) {
         final LogonDialog dialog = new LogonDialog(frame);
         dialog.logonListener = listener;
         dialog.setResizable(false);
@@ -622,8 +618,7 @@ public class LogonDialog extends JDialog {
     }
 
     private static SecurityProvider getCredentialManager() {
-        SecurityProvider credentialManager = Registry.getDefault().getSecurityProvider();
-        return credentialManager;
+        return Registry.getDefault().getSecurityProvider();
     }
 
     public static void setLastRemoteProtocolVersion(String rv) {
@@ -722,7 +717,8 @@ public class LogonDialog extends JDialog {
     /**
      * handle the logon throwable. Unwrap the exception
      *
-     * @param e
+     * @param e  the throwable to handle
+     * @param host  the host we were trying to connect to
      */
     private void handleLogonThrowable(Throwable e, String host) {
         preconfiguredSessionId = null;
@@ -730,38 +726,32 @@ public class LogonDialog extends JDialog {
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException)cause;
             log.log(Level.WARNING, "logon()", e);
-            String msg = null;
+            String msg;
             if (versionex.getExpectedVersion() != null &&
                 versionex.getExpectedVersion().equals(BuildInfo.getProductVersion())) {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch3"),
-                                           new Object[]{
-                                               "'" + versionex.getReceivedVersion() + "'",
-                                               "'" + versionex.getExpectedVersion() + "'",
-                                               BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
-                                           });
+                                           "'" + versionex.getReceivedVersion() + "'",
+                                           "'" + versionex.getExpectedVersion() + "'",
+                                           BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
             }
             else if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch2"),
-                                           new Object[]{
-                                               "'" + versionex.getReceivedVersion() + "'",
-                                               "'" + versionex.getExpectedVersion() + "'",
-                                               BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
-                                           });
+                                           "'" + versionex.getReceivedVersion() + "'",
+                                           "'" + versionex.getExpectedVersion() + "'",
+                                           BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
             } else {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch"),
-                                           new Object[]{
-                                               BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+                                           BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
             }
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof ConnectException ||
           cause instanceof UnknownHostException) {
             log.log(Level.WARNING, "Could not connect, '"+cause.getMessage()+"'");
-            String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{
-                host});
+            String msg = MessageFormat.format(resources.getString("logon.connect.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
-        else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
+        else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
             log.log(Level.WARNING, "Could not connect, authentication error.");
             showInvalidCredentialsMessage();
         }
@@ -771,25 +761,23 @@ public class LogonDialog extends JDialog {
         }
         else if (cause instanceof RemoteException || cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
-            String msg = MessageFormat.format(resources.getString("service.unavailable.error"), new Object[]{
-                host});
+            String msg = MessageFormat.format(resources.getString("service.unavailable.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof InvalidHostNameException) {
             InvalidHostNameException ihne = (InvalidHostNameException) cause;
             String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
-                                              new Object[]{ihne.getExpectedHost(), ihne.getActualHost()});
+                                              ihne.getExpectedHost(), ihne.getActualHost());
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
             acceptedInvalidHosts.add(ihne.getExpectedHost());
         }
         else if (cause instanceof InvalidHostCertificateException) {
-            String msg = MessageFormat.format(resources.getString("logon.certificate.problem"),
-                                              new Object[]{host});
+            String msg = MessageFormat.format(resources.getString("logon.certificate.problem"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else {
             log.log(Level.WARNING, "logon()", e);
-            String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{host});
+            String msg = MessageFormat.format(resources.getString("logon.connect.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -803,6 +791,7 @@ public class LogonDialog extends JDialog {
          * invoked on successful authentication
          *
          * @param id the id of the authenticated user
+         * @param serverURL  the server URL we connected to
          */
         void onAuthSuccess(String id, String serverURL);
 

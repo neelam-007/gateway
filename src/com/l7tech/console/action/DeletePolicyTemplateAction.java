@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -56,12 +57,15 @@ public class DeletePolicyTemplateAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        boolean deleted = Actions.deletePolicyTemplate(node);
-        if (deleted) {
-            JTree tree =
-              (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.removeNodeFromParent(node);
-        }
+        Actions.deletePolicyTemplate(node, new Functions.UnaryVoid<Boolean>() {
+            public void call(Boolean deleted) {
+                if (deleted) {
+                    JTree tree =
+                      (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    model.removeNodeFromParent(node);
+                }
+            }
+        });
     }
 }

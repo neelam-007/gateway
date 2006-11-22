@@ -408,6 +408,6 @@ public class GuiCertUtil {
         ed.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         ed.pack();
         Utilities.centerOnScreen(ed);
-        ed.setVisible(true);
+        DialogDisplayer.display(ed);
     }
 }

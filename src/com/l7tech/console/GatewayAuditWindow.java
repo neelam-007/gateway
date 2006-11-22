@@ -10,10 +10,7 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.SheetHolder;
-import com.l7tech.common.gui.util.Sheet;
+import com.l7tech.common.gui.util.*;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
 import com.l7tech.console.panels.LogPanel;
@@ -576,6 +573,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     }
 
     public void showSheet(JInternalFrame sheet) {
-        Sheet.showSheet(this, sheet);
+        DialogDisplayer.showSheet(this, sheet);
     }
 }
