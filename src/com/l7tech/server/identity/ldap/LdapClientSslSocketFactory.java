@@ -3,18 +3,17 @@
  */
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.server.transport.http.SslClientTrustManager;
-
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
-import java.util.logging.Logger;
 import java.util.Comparator;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -22,9 +21,9 @@ import java.util.Comparator;
 public class LdapClientSslSocketFactory extends SSLSocketFactory implements Comparator {
     private static final Logger logger = Logger.getLogger(LdapClientSslSocketFactory.class.getName());
     private final SSLContext sslContext;
-    private static SslClientTrustManager trustManager;
+    private static X509TrustManager trustManager;
 
-    synchronized static void setTrustManager(SslClientTrustManager trustManager) {
+    synchronized static void setTrustManager(X509TrustManager trustManager) {
         logger.info("Got SSL Client TrustManager");
         if (trustManager == null) throw new NullPointerException();
         LdapClientSslSocketFactory.trustManager = trustManager;
