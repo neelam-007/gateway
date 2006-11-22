@@ -1510,10 +1510,24 @@
                 <include name="com/l7tech/common/util/FileUtils*"/>
                 <include name="com/l7tech/common/util/ResourceUtils*"/>
                 <include name="com/l7tech/common/util/XmlUtil*"/>
-                <include name="com/l7tech/common/xml/**/*"/>
+                <include name="com/l7tech/common/xml/TooManyChildElementsException*"/>
+                <include name="com/l7tech/common/xml/InvalidDocumentFormatException*"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream*"/>
-                <include name="com/l7tech/server/config/**/*"/>
-                <include name="com/l7tech/server/partition/**/*"/>
+                <include name="com/l7tech/server/config/LinuxSpecificFunctions*"/>
+                <include name="com/l7tech/server/config/OSDetector*"/>
+                <include name="com/l7tech/server/config/OSSpecificFunctions*"/>
+                <include name="com/l7tech/server/config/WindowsSpecificFunctions*"/>
+                <include name="com/l7tech/server/config/PropertyHelper*"/>
+                <include name="com/l7tech/server/config/PropertyHelper*"/>
+                <include name="com/l7tech/server/config/beans/ConfigurationBean*"/>
+                <include name="com/l7tech/server/config/beans/SsgDatabaseConfigBean*"/>
+                <include name="com/l7tech/server/config/beans/BaseConfigurationBean*"/>
+                <include name="com/l7tech/server/config/db/DBActions*"/>
+
+                <include name="com/l7tech/server/config/exceptions/UnsupportedOsException*"/>
+
+                <include name="com/l7tech/server/partition/PartitionInformation*"/>
+                <include name="com/l7tech/server/partition/PartitionManager*"/>
             </fileset>
         </jar>
 
@@ -1761,7 +1775,7 @@
     <target name="testpackage" description="Test classpaths for packages." depends="testpackage.work, testpackage.report">
         <checkfail/>
     </target>
-    <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard"/>
+    <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard, testpackage.report.flasher"/>
     <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
         <echo level="warning">Bridge package test failed.</echo>
         <property name="fail" value="true"/>
@@ -1772,6 +1786,10 @@
     </target>
     <target name="testpackage.report.configwizard" if="testpackage.configwizard.fail">
         <echo level="warning">ConfigWizard package test failed.</echo>
+        <property name="fail" value="true"/>
+    </target>
+    <target name="testpackage.report.flasher" if="testpackage.flasher.fail">
+        <echo level="warning">SSG Flasher package test failed.</echo>
         <property name="fail" value="true"/>
     </target>
 
@@ -1841,6 +1859,23 @@
         <condition property="testpackage.configwizard.fail">
             <not>
                 <equals arg1="0" arg2="${testpackage.configwizard.result}"/>
+            </not>
+        </condition>
+
+        <!-- Testpackage for the flasher utility -->
+        <fileset id="flasher.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="ssgflasher.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/flasher/SSGFlasher.jar"
+                   libfilesetref="flasher.testpackage.fileset"
+                   resultproperty="testpackage.flasher.result"
+                   ignoreclasses="com.l7tech.common.security.prov.luna.LunaJceProviderEngine"
+        />
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.flasher.result" value=""/>
+        <condition property="testpackage.flasher.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.flasher.result}"/>
             </not>
         </condition>
     </target>

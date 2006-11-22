@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,9 +108,11 @@ public class MappingUtil {
         Document mappingDoc = XmlUtil.parse(fis);
         Element simEl = mappingDoc.getDocumentElement();
         if (!simEl.getLocalName().equals(IMPORTMAPPINGELNAME)) {
+            logger.info("Error, provided mapping file is not valid as the root element is not " + IMPORTMAPPINGELNAME);
             throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
         }
         if (!simEl.getNamespaceURI().equals(STAGINGMAPPINGNS)) {
+            logger.info("Error, provided mapping file is not valid as the root element is not of namespace " + STAGINGMAPPINGNS);
             throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
         }
         CorrespondanceMap output = new CorrespondanceMap();
@@ -125,6 +128,7 @@ public class MappingUtil {
                     target = extractIpAddressFromString(target);
                 }
                 if (source == null || target == null) {
+                    logger.info("Error, an element " + IPMAPELNAME + " does not contain expected attributes");
                     throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for ipmap element");
                 }
                 output.backendIPMapping.put(source, target);
@@ -136,11 +140,13 @@ public class MappingUtil {
                 String name = varmapel.getAttribute("name");
                 String target = varmapel.getAttribute(TARGETVALUEATTRNAME);
                 if (name == null || target == null) {
+                    logger.info("Error, an element " + VARMAPELNAME + " does not contain expected attributes");
                     throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for varmap element");
                 }
                 output.varMapping.put(name, target);
             }
         } catch (TooManyChildElementsException e) {
+            logger.log(Level.INFO, "error loading mapping file", e);
             throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file. " + e.getMessage());
         }
         return output;
