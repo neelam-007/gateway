@@ -192,8 +192,8 @@
       System Configuration Wizard library patternset  (also ".")
     -->
     <patternset id="systemconfigurationwizard.libs">
-        <include name="**/lib/commons-lang-1.0.1.jar"/>
-        <include name="**/lib/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-lang-1.0.1.jar"/>
+        <include name="**/commons-logging-1.0.4.jar"/>
     </patternset>
 
     <patternset id="ssgflasher.libs">
@@ -1657,6 +1657,7 @@
         </generate-manifest>
         <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar" manifest="${build.etc}/SystemConfigWizard.mf">
             <fileset dir="${build.classes}">
+                <include name="com/l7tech/common/util/SyspropUtil.class"/>
                 <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
                 <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
                 <include name="com/l7tech/server/config/ui/console/ConfigurationWizard.class"/>
@@ -1775,7 +1776,7 @@
     <target name="testpackage" description="Test classpaths for packages." depends="testpackage.work, testpackage.report">
         <checkfail/>
     </target>
-    <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard, testpackage.report.flasher"/>
+    <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard, testpackage.report.sysconfigwizard, testpackage.report.flasher"/>
     <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
         <echo level="warning">Bridge package test failed.</echo>
         <property name="fail" value="true"/>
@@ -1788,6 +1789,12 @@
         <echo level="warning">ConfigWizard package test failed.</echo>
         <property name="fail" value="true"/>
     </target>
+
+    <target name="testpackage.report.sysconfigwizard" if="testpackage.sysconfigwizard.fail">
+        <echo level="warning">SysConfigWizard package test failed.</echo>
+        <property name="fail" value="true"/>
+    </target>
+
     <target name="testpackage.report.flasher" if="testpackage.flasher.fail">
         <echo level="warning">SSG Flasher package test failed.</echo>
         <property name="fail" value="true"/>
@@ -1859,6 +1866,23 @@
         <condition property="testpackage.configwizard.fail">
             <not>
                 <equals arg1="0" arg2="${testpackage.configwizard.result}"/>
+            </not>
+        </condition>
+
+
+        <!-- Testpackage for System Configuration Wizard -->
+        <fileset id="sysconfigwizard.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="systemconfigurationwizard.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/sysconfigwizard/SystemConfigWizard.jar"
+                   libfilesetref="sysconfigwizard.testpackage.fileset"
+                   resultproperty="testpackage.sysconfigwizard.result"/>
+
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.sysconfigwizard.result" value=""/>
+        <condition property="testpackage.sysconfigwizard.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.sysconfigwizard.result}"/>
             </not>
         </condition>
 
