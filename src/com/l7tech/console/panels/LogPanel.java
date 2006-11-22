@@ -21,8 +21,6 @@ import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import net.sf.nachocalendar.CalendarFactory;
 import net.sf.nachocalendar.components.DateField;
 
@@ -1632,13 +1630,12 @@ public class LogPanel extends JPanel {
         Collections.sort(data);
 
         // write
-        XStream xstream = new XStream(new DomDriver());
         ObjectOutputStream oos = null;
         OutputStream out = null;
         try {
-            out = new BufferedOutputStream(new FileOutputStream(file));
+            out = new FileOutputStream(file);
             out.write(FILE_TYPE);
-            oos = xstream.createObjectOutputStream(new OutputStreamWriter(new GZIPOutputStream(out), "UTF-8"));
+            oos = new ObjectOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)));
             oos.writeObject(BuildInfo.getProductVersion());
             oos.writeObject(BuildInfo.getBuildNumber());
             oos.writeObject(data);
@@ -1666,18 +1663,17 @@ public class LogPanel extends JPanel {
     public boolean importView(File file) throws IOException {
         lpbc.viewHistoricRadioButton.setSelected(true);
 
-        XStream xstream = new XStream(new DomDriver());
         InputStream in = null;
         ObjectInputStream ois = null;
         try {
-            in = new BufferedInputStream(new FileInputStream(file));
+            in = new FileInputStream(file);
             byte[] header = HexUtils.slurpStream(in, FILE_TYPE.length);
             if(header.length < FILE_TYPE.length ||
                !ArrayUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
                 importError("Cannot import file, incorrect type.");
                 return false;
             }
-            ois = xstream.createObjectInputStream(new InputStreamReader(new GZIPInputStream(in), "UTF-8"));
+            ois = new ObjectInputStream(new GZIPInputStream(new BufferedInputStream(in)));
             Object fileProductVersionObj = ois.readObject();
             Object fileBuildNumberObj = ois.readObject();
             Object read = ois.readObject();
@@ -1735,7 +1731,7 @@ public class LogPanel extends JPanel {
         return true;
     }
 
-    public static class WriteableLogMessage implements Comparable {
+    public static class WriteableLogMessage implements Comparable, Serializable {
         private String nodeName;
         private SSGLogRecord ssgLogRecord;
 
