@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
  *
  */
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
+    private static final String PROP_OLD_MULTICAST_GEN = "com.l7tech.cluster.macAddressOldGen"; // true for old
     private static final String PROP_MAC_ADDRESS = "com.l7tech.cluster.macAddress";
     private KeystoreUtils keystore;
 
@@ -578,8 +579,24 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     public static String generateMulticastAddress() {
-        StringBuffer addr = new StringBuffer("224.0.7.");
-        addr.append(Math.abs(random.nextInt() % 256));
+        StringBuffer addr = new StringBuffer();
+
+        if (Boolean.getBoolean(PROP_OLD_MULTICAST_GEN)) {
+            // old method ... not so random
+            addr.append("224.0.7.");
+            addr.append(Math.abs(random.nextInt() % 256));
+        } else {
+            // randomize an address from the 224.0.2.0 - 224.0.255.255 range
+            addr.append("224.0.");
+            int randomVal = 0;
+            while (randomVal < 2) {
+                randomVal = Math.abs(random.nextInt() % 256);
+            }
+            addr.append(randomVal);
+            addr.append(".");
+            addr.append(Math.abs(random.nextInt() % 256));
+        }
+
         return addr.toString();
     }
 
