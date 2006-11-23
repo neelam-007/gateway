@@ -1,0 +1,15 @@
+# -----------------------------------------------------------------------------
+# LAYER 7 TECHNOLOGIES
+# November 2006
+#
+# flasher utility config file
+#
+# controls which os level files are included in ssg image and overwritten at
+# import time when specifying the -os option
+#
+# should not be edited unless instructed to
+# -----------------------------------------------------------------------------
+/etc/hosts
+/etc/sysconfig/network
+/etc/ntp.conf
+/etc/ntp/step-tickers 

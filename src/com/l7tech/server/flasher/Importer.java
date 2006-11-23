@@ -43,8 +43,9 @@ public class Importer {
     public static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
     public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password (only needed if database needs to be created)");
     public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username (only needed if database needs to be created)");
+    public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os", "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)");
 
-    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MODE, PARTITION, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER};
+    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MODE, PARTITION, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE};
 
     private String tempDirectory;
     private String partitionName;
@@ -296,6 +297,11 @@ public class Importer {
             if (fullClone) {
                 logger.info("copying system files from image to target system");
                 copySystemConfigFiles();
+
+                if (arguments.get(OS_OVERWRITE.name) != null) {
+                    // overwrite os level system files
+                    // todo
+                }
             }
 
             // apply mapping if applicable

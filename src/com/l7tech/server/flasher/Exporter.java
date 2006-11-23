@@ -32,7 +32,7 @@ public class Exporter {
     private static final Logger logger = Logger.getLogger(Exporter.class.getName());
     // exporter options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to export");
-    public static final CommandLineOption AUDIT = new CommandLineOption("-ia", "[yes | no] whether or not to include audit tables in resulting image");
+    public static final CommandLineOption AUDIT = new CommandLineOption("-ia", "to include audit tables in resulting image");
     public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it", "path of the output mapping template");
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
@@ -56,7 +56,7 @@ public class Exporter {
 
         // check whether or not we are expected to include audit in export
         String auditval = arguments.get(AUDIT.name);
-        if (auditval != null && auditval.toLowerCase().equals("yes")) {
+        if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
             includeAudit = true;
         }
 
@@ -150,7 +150,7 @@ public class Exporter {
             File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
             File tomcatprops = new File(osFunctions.getTomcatServerConfig());
             File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
-            //String ksdir = osFunctions.getKeystoreDir();
+            // String ksdir = osFunctions.getKeystoreDir();
             String ksdir = "/ssg/etc/keys"; // todo, go back to above once partitioning is fully implemented
             File caCer = new File(ksdir + File.separator + "ca.cer");
             File sslCer = new File(ksdir + File.separator + "ssl.cer");
@@ -170,6 +170,9 @@ public class Exporter {
             FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
             FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
             FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
+            
+            // copy system config files
+            // todo
         }
 
         // zip the temp directory into the requested image file (outputpathval)

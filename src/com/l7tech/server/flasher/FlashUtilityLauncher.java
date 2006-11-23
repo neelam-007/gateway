@@ -63,12 +63,17 @@ public class FlashUtilityLauncher {
             if (!arg.startsWith("-")) {
                 throw new InvalidArgumentException("Invalid argument name: " + arg);
             }
-            i++;
-            if (i >= args.length) {
-                throw new InvalidArgumentException("argument name: " + arg + " not provided a value");
+            if ((i+1) < args.length) {
+                if (args[i+1].startsWith("-")) {
+                    output.put(arg, "");
+                } else {
+                    i++;
+                    String val = args[i];
+                    output.put(arg, val);
+                }
+            } else {
+                output.put(arg, "");
             }
-            String val = args[i];
-            output.put(arg, val);
         }
         return output;
     }
