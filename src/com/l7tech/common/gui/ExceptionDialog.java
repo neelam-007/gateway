@@ -2,6 +2,7 @@ package com.l7tech.common.gui;
 
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.HyperlinkLabel;
 import com.l7tech.common.util.ExceptionUtils;
 
@@ -16,7 +17,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
-import java.security.AccessControlException;
 
 
 /**
@@ -32,6 +32,11 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private static final String CLOSE_HTML = "</html>";
 
     private static ExceptionDialog currentlyDisplayed = null;
+    private static Runnable shutdownHandler = new Runnable() {public void run(){System.exit(-1);}};
+
+    static {
+        DialogDisplayer.suppressSheetDisplay(ExceptionDialog.class);        
+    }
 
     private JPanel main = new JPanel();
     private JPanel messagePanel = new JPanel();
@@ -124,6 +129,13 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
         if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
         return currentlyDisplayed = new ExceptionDialog(parent, title, labelMessage, message, throwable, level);
+    }
+
+    public synchronized static void setShutdownHandler(Runnable handler) {
+        if (handler == null)
+            throw new IllegalArgumentException("handler must not be null");
+
+        shutdownHandler = handler;
     }
 
     private static ExceptionDialog createFakeExceptionDialog(Frame parent) {
@@ -347,7 +359,8 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         if (source == close || source == ignore) {
             this.dispose();
         } else if (source == shutdown) {
-            System.exit(-1);
+            shutdownHandler.run();
+            this.dispose();
         }
     }
 
