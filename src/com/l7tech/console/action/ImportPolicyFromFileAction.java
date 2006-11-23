@@ -7,6 +7,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -126,10 +127,10 @@ public abstract class ImportPolicyFromFileAction extends ServiceNodeAction {
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                           "Could not find policy export in the selected file",
                                           "Policy Not Found",
-                                          JOptionPane.WARNING_MESSAGE);
+                                          JOptionPane.WARNING_MESSAGE, null);
         }
 
         return false;

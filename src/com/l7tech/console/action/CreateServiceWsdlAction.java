@@ -165,18 +165,18 @@ public class CreateServiceWsdlAction extends SecureAction {
             } catch (Exception e) {
                 Frame w = TopComponents.getInstance().getTopParent();
                 if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                    JOptionPane.showMessageDialog(w,
+                    DialogDisplayer.showMessageDialog(w,
                       "Unable to save the service '" + service.getName() + "'\n" +
                       "because there an existing service already using that namespace URI\n" +
                       "and SOAPAction combination.",
                       "Service already exists",
-                      JOptionPane.ERROR_MESSAGE);
+                      JOptionPane.ERROR_MESSAGE, null);
                 } else {
                     log.log(Level.WARNING, "erro saving service", e);
-                    JOptionPane.showMessageDialog(w,
+                    DialogDisplayer.showMessageDialog(w,
                       "Unable to save the service '" + service.getName() + "'\n",
                       "Error",
-                      JOptionPane.ERROR_MESSAGE);
+                      JOptionPane.ERROR_MESSAGE, null);
 
                 }
             }

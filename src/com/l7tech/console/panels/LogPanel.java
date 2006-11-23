@@ -8,6 +8,7 @@ import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
 import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.HexUtils;
@@ -1655,7 +1656,7 @@ public class LogPanel extends JPanel {
                         null, "SecureSpan Manager - Error", dialogMessage, null, Level.WARNING);
                 d.pack();
                 Utilities.centerOnScreen(d);
-                d.setVisible(true);
+                DialogDisplayer.display(d);
             }
         });
     }

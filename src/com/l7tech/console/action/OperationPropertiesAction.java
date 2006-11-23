@@ -55,17 +55,17 @@ public class OperationPropertiesAction extends SecureAction {
         } catch (RemoteException e) {
             String msg = "error retrieving service";
             log.log(Level.WARNING, msg, e);
-            JOptionPane.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
             return;
         } catch (FindException e) {
             String msg = "error retrieving service";
             log.log(Level.WARNING, msg, e);
-            JOptionPane.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
             return;
         }
         if (!svc.isSoap()) {
             String msg = "This assertion is not applicable to non-SOAP services.";
-            JOptionPane.showMessageDialog(f, msg, "Not applicable", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(f, msg, "Not applicable", JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 

@@ -67,11 +67,11 @@ public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
             svc = ((ServiceNode)node).getPublishedService();
         } catch (FindException e) {
             logger.log(Level.WARNING, "error retrieving service", e);
-            JOptionPane.showMessageDialog(mw, "Cannot retrieve published service.");
+            DialogDisplayer.showMessageDialog(mw, "Cannot retrieve published service.", null);
             return;
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "error retrieving service", e);
-            JOptionPane.showMessageDialog(mw, "Cannot retrieve published service.");
+            DialogDisplayer.showMessageDialog(mw, "Cannot retrieve published service.", null);
             return;
         }
         String existingURL = svc.getWsdlUrl();

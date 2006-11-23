@@ -511,7 +511,7 @@ public class DialogDisplayer {
         }
 
         /**
-         * Removes the specified sheet state, and returns the new top of the sheet stack.
+         * Removes the specified sheet state.
          *
          * @param sheet  sheet to remove.  Must not be null.  Must already have been hidden and removed from its host layered pane.
          * @return the sheet state for the sheet that was removed, or null if the specified sheet was not found on this stack.
@@ -547,7 +547,6 @@ public class DialogDisplayer {
      *
      * @param rpc   the RootPaneContainer to hold the sheet.  Must be non-null.
      * @param sheet    the sheet to display.
-     * @throws ClassCastException if holder isn't a JComponent.
      */
     public static void showSheet(final RootPaneContainer rpc, final JInternalFrame sheet) {
         final JLayeredPane layers = rpc.getLayeredPane();
@@ -640,13 +639,13 @@ public class DialogDisplayer {
             if (wasVis == vis)
                 return;
             if (vis) {
-                Sheet.logger.fine("Showing sheet blocker");
+                logger.fine("Showing sheet blocker");
                 if (blockEvents) {
                     addMouseListener(nullMouseListener);
                     addKeyListener(nullKeyListener);
                 }
             } else {
-                Sheet.logger.fine("Hiding sheet blocker");
+                logger.fine("Hiding sheet blocker");
                 if (blockEvents) {
                     removeMouseListener(nullMouseListener);
                     removeKeyListener(nullKeyListener);

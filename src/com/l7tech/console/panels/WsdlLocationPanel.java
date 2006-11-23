@@ -358,7 +358,7 @@ public class WsdlLocationPanel extends JPanel {
                 WSILSelectorPanel chooser = ownerd!=null ? new WSILSelectorPanel(ownerd, resolvedDoc) : new WSILSelectorPanel(ownerf, resolvedDoc);
                 chooser.pack();
                 Utilities.centerOnScreen(chooser);
-                chooser.setVisible(true);
+                chooser.setVisible(true); // TODO change to use DialogDisplayer
                 if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
                     String chooserUrlStr = chooser.selectedWSDLURL();
                     // If previous url contained userinfo stuff but the wsil target does

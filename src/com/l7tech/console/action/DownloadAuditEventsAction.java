@@ -180,7 +180,7 @@ public class DownloadAuditEventsAction extends SecureAction {
 
 
                     out[0] = null;
-                    JOptionPane.showMessageDialog(mainWindow, "Audit records saved successfully.", "Audit Export", JOptionPane.INFORMATION_MESSAGE);
+                    DialogDisplayer.showMessageDialog(mainWindow, "Audit records saved successfully.", "Audit Export", JOptionPane.INFORMATION_MESSAGE, null);
                 }
             });
         } catch (IOException e) {

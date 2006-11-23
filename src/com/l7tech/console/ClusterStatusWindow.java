@@ -1090,58 +1090,59 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
                 selectedRowIndex = getClusterStatusTable().getSelectedRow(); // when called from node menu
             }
             final int selectedRowIndexOld = selectedRowIndex;
-            final String nodeNameSelected;
 
             // save the number of selected message
             if (selectedRowIndexOld >= 0) {
-                nodeNameSelected = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                final String nodeNameSelected = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
 
                 // ask user to confirm                 // Make sure
-                if ((JOptionPane.showConfirmDialog(ClusterStatusWindow.this,
+                DialogDisplayer.showConfirmDialog(ClusterStatusWindow.this,
                   "Are you sure you want to delete " +
                   nodeNameSelected + "?",
                   "Delete Stale Node",
-                  JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
+                  JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
 
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
+                                    if (clusterStatusAdmin == null) {
+                                        logger.warning("ClusterStatusAdmin service is not available. Cannot delete the node: " + nodeNameSelected);
 
-                            if (clusterStatusAdmin == null) {
-                                logger.warning("ClusterStatusAdmin service is not available. Cannot delete the node: " + nodeNameSelected);
+                                        JOptionPane.
+                                          showMessageDialog(ClusterStatusWindow.this,
+                                            dsnDialogResources.getString("delete.stale.node.error.connection.lost"),
+                                            dsnDialogResources.getString("delete.stale.node.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                        return;
+                                    }
 
-                                JOptionPane.
-                                  showMessageDialog(ClusterStatusWindow.this,
-                                    dsnDialogResources.getString("delete.stale.node.error.connection.lost"),
-                                    dsnDialogResources.getString("delete.stale.node.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-                                return;
-                            }
+                                    try {
+                                        clusterStatusAdmin.removeStaleNode((String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
 
-                            try {
-                                clusterStatusAdmin.removeStaleNode((String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
+                                    } catch (DeleteException e) {
+                                        logger.warning("Cannot delete the node: " + nodeNameSelected);
+                                        JOptionPane.
+                                          showMessageDialog(ClusterStatusWindow.this,
+                                            dsnDialogResources.getString("delete.stale.node.error.delete"),
+                                            dsnDialogResources.getString("delete.stale.node.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
 
-                            } catch (DeleteException e) {
-                                logger.warning("Cannot delete the node: " + nodeNameSelected);
-                                JOptionPane.
-                                  showMessageDialog(ClusterStatusWindow.this,
-                                    dsnDialogResources.getString("delete.stale.node.error.delete"),
-                                    dsnDialogResources.getString("delete.stale.node.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
+                                    } catch (RemoteException e) {
+                                        logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
+                                        JOptionPane.
+                                          showMessageDialog(ClusterStatusWindow.this,
+                                            dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
+                                            dsnDialogResources.getString("delete.stale.node.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                    }
+                                }
+                            });
 
-                            } catch (RemoteException e) {
-                                logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
-                                JOptionPane.
-                                  showMessageDialog(ClusterStatusWindow.this,
-                                    dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
-                                    dsnDialogResources.getString("delete.stale.node.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-                            }
                         }
-                    });
 
-                }
-            } else {
-                nodeNameSelected = null;
+                    }
+                });
             }
         }
     }

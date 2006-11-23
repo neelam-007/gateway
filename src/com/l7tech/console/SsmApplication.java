@@ -65,6 +65,15 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
         });
     }
 
+    /**
+     * Try to do something with a JFileChooser, failing with a graceful error message if running as an untrusted applet.
+     *
+     * @param fcu  the code that will be used by the JFileChooser, or null if you intend to use the returned
+     *             JFileChooser yourself.
+     *             Will not be invoked if no JFileChooser can be created.
+     * @return the JFileChooser that was created, or null if one could not be created because this is an untrusted
+     *         applet (in which case an error message has already been displayed).
+     */
     public static JFileChooser doWithJFileChooser(final FileChooserUser fcu) {
         return AccessController.doPrivileged(new PrivilegedAction<JFileChooser>() {
             public JFileChooser run() {

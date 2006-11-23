@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.identity.finder;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
 import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.console.action.*;
@@ -888,7 +889,7 @@ public class FindIdentitiesDialog extends JDialog {
         EditorDialog dialog = new EditorDialog(f, panel);
         dialog.pack();
         Utilities.centerOnScreen(dialog);
-        dialog.setVisible(true);
+        DialogDisplayer.display(dialog);
     }
 
     private DeleteEntityAction getDeleteAction() {

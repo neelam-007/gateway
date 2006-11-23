@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.SsmApplication;
@@ -95,17 +96,17 @@ public class ImportCertificateAction extends SecureAction {
                 importSsgCertificate(fc.getSelectedFile());
             } catch (IOException e) {
                 log.log(Level.WARNING, "Error importing certificate", e);
-                JOptionPane.showMessageDialog(getFrame(),
+                DialogDisplayer.showMessageDialog(getFrame(),
                   "The system was unable to read the specified file.",
                   "Unable to read file",
-                  JOptionPane.ERROR_MESSAGE);
+                  JOptionPane.ERROR_MESSAGE, null);
             } catch (GeneralSecurityException e) {
                 log.log(Level.WARNING, "Error importing certificate", e);
-                JOptionPane.showMessageDialog(getFrame(),
+                DialogDisplayer.showMessageDialog(getFrame(),
                   "The system was unable to import the specified certificate: \n" +
                   e.getMessage(),
                   "Unable to import certificate",
-                  JOptionPane.ERROR_MESSAGE);
+                  JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }
@@ -154,10 +155,10 @@ public class ImportCertificateAction extends SecureAction {
             }
         }
 
-        JOptionPane.showMessageDialog(getFrame(),
+        DialogDisplayer.showMessageDialog(getFrame(),
           "Certificate import was successful. \n" +
           "You'll need to restart the Policy Editor for it to take effect.",
-          "Certificate import successful", JOptionPane.INFORMATION_MESSAGE);
+          "Certificate import successful", JOptionPane.INFORMATION_MESSAGE, null);
     }
 
 }
