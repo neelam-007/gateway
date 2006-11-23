@@ -41,7 +41,7 @@ start() {
 	echo 8192 > /proc/sys/net/ipv4/tcp_max_syn_backlog
 	echo "Setting higher tcp memory limits"
 	echo 16777216 > /proc/sys/net/core/wmem_max
-	echo 16777216> /proc/sys/net/core/rmem_max
+	echo 16777216 > /proc/sys/net/core/rmem_max
 	echo "8192 87380 16777216" > /proc/sys/net/ipv4/tcp_rmem
 	echo "8192 87380 16777216" > /proc/sys/net/ipv4/tcp_wmem
 	echo "8000000 9000000 10000000" > /proc/sys/net/ipv4/tcp_mem
@@ -56,7 +56,9 @@ start() {
     echo 1 > /proc/sys/net/ipv4/tcp_no_metrics_save
     echo "Increase Network backlogs for Gigabit"
     echo 2500> /proc/sys/net/core/netdev_max_backlog
-   
+    echo "Increase maximum connections"
+    echo 1024 > /proc/sys/net/core/somaxconn
+
     echo "Done"
     return 0
 }
