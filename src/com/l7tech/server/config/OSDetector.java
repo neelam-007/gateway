@@ -17,7 +17,7 @@ public class OSDetector {
 
     private static String OSName = System.getProperty("os.name");
 
-    private static OSSpecificFunctions osf_;
+//    private static OSSpecificFunctions osf_;
 
     public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
         return createPartitionAwareOSFunctions("");
@@ -28,17 +28,15 @@ public class OSDetector {
     }
 
     private static OSSpecificFunctions createPartitionAwareOSFunctions(String partitionName) {
-        if (osf_ == null) {
-            if (isWindows()) {
-                osf_ = new WindowsSpecificFunctions(OSName,partitionName);
-            } else if (isLinux()) {
-                osf_ = new LinuxSpecificFunctions(OSName,partitionName);
-            }
-            else {
-                throw new UnsupportedOsException(OSName + " is not a supported operating system.");
-            }
+        if (isWindows()) {
+            return new WindowsSpecificFunctions(OSName,partitionName);
+        } else if (isLinux()) {
+            return new LinuxSpecificFunctions(OSName,partitionName);
         }
-        return osf_;    }
+        else {
+            throw new UnsupportedOsException(OSName + " is not a supported operating system.");
+        }
+    }
 
     public static boolean isWindows() {
         return WINDOWS_PATTERN.matcher(OSName).matches();

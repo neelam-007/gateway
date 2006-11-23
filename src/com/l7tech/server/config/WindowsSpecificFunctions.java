@@ -1,7 +1,5 @@
 package com.l7tech.server.config;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -20,7 +18,7 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
     }
 
     void makeOSSpecificFilenames() {
-        if (StringUtils.isEmpty(installRoot)) {
+        if (isEmptyString(installRoot)) {
             installRoot = "c:/Program Files/Layer 7 Technologies/SecureSpan Gateway/";
         }
         lunaInstallDir = "C:/Program Files/LunaSA/";

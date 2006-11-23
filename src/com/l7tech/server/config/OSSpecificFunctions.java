@@ -1,7 +1,6 @@
 package com.l7tech.server.config;
 
 import com.l7tech.server.partition.PartitionInformation;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 
@@ -57,7 +56,8 @@ public abstract class OSSpecificFunctions {
         }
         this.osName = OSName;
 
-        if (StringUtils.isNotEmpty(partitionName))
+
+        if (!isEmptyString(partitionName))
             this.partitionName = partitionName;
         else
             this.partitionName = "";
@@ -84,7 +84,7 @@ public abstract class OSSpecificFunctions {
         keystoreDir = "keys/";
         ssgSystemPropertiesFile = "system.properties";
 
-        tomcatServerConfig = "tomcat/conf/server.xml";
+        tomcatServerConfig = "server.xml";
         pathToJreLibExt = "jre/lib/ext/";
         pathToJavaLibPath = "lib/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
@@ -129,12 +129,18 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getConfigurationBase() {
-        if (StringUtils.isNotEmpty(getPartitionName()))
-             return getPartitionBase() + getPartitionName() + "/";
-
+        String pname = getPartitionName();
+        if (!isEmptyString(pname))
+             return getPartitionBase() + partitionName + "/";
 
         return getSsgInstallRoot() + NOPARTITION_BASE;
 
+    }
+
+    //Just like StringUtils.isEmpty() without needing to import StringUtils. Since this is a utility class I wanted to
+    //keep the number of imports down.
+    protected boolean isEmptyString(String string) {
+        return (string == null) || "".equals(string);
     }
 
     public String getSsgInstallRoot() {
@@ -160,7 +166,7 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getTomcatServerConfig() {
-        return getSsgInstallRoot() + tomcatServerConfig;
+        return getConfigurationBase() + tomcatServerConfig;
     }
 
     public String getKeystoreDir() {

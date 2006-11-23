@@ -1,7 +1,5 @@
 package com.l7tech.server.config;
 
-import org.apache.commons.lang.StringUtils;
-
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -20,7 +18,7 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
     }
 
     void makeOSSpecificFilenames() {
-        if (StringUtils.isEmpty(installRoot)) {
+        if (isEmptyString(installRoot)) {
             installRoot = "/ssg/";
         }
         lunaInstallDir = "/usr/lunasa";

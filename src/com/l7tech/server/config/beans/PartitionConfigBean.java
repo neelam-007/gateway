@@ -1,5 +1,9 @@
 package com.l7tech.server.config.beans;
 
+import com.l7tech.server.partition.PartitionInformation;
+
+import java.util.List;
+
 /**
  * User: megery
  * Date: Nov 17, 2006
@@ -10,7 +14,7 @@ public class PartitionConfigBean extends BaseConfigurationBean{
     private final static String DESCRIPTION = "Configures Gateway Partitions";
 
     private boolean isNewPartition;
-    private String partitionName;
+    PartitionInformation partitionInfo;
 
     public PartitionConfigBean() {
         super(NAME, DESCRIPTION);
@@ -19,31 +23,25 @@ public class PartitionConfigBean extends BaseConfigurationBean{
 
     public void reset() {
         isNewPartition = false;
-        partitionName = "";
     }
 
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
-        if (isNewPartition)
-            explanations.add(insertTab + "Creating new partition \"" + partitionName + "\"");
-        else
-            explanations.add(insertTab + "Updating partition \"" + partitionName + "\"");
+        String partName = partitionInfo.getPartitionId();
+        List<PartitionInformation.EndpointHolder> endpoints = partitionInfo.getEndpointsList();
+
+        explanations.add(insertTab + (isNewPartition?"Creating new partition \"":"Updating partition \"") + partName + "\"");
+
+        for (PartitionInformation.EndpointHolder endpoint : endpoints) {
+            explanations.add(insertTab + "  Endpoint = " + endpoint);
+        }
     }
 
-
-    public boolean isNewPartition() {
-        return isNewPartition;
+    public void setPartition(PartitionInformation pi) {
+        this.partitionInfo = pi;
     }
 
-    public void setNewPartition(boolean newPartition) {
-        isNewPartition = newPartition;
-    }
-
-    public String getPartitionName() {
-        return partitionName;
-    }
-
-    public void setPartitionName(String partitionName) {
-        this.partitionName = partitionName;
+    public PartitionInformation getPartitionInfo() {
+        return partitionInfo;
     }
 }
