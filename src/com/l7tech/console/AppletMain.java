@@ -8,9 +8,12 @@ package com.l7tech.console;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.logging.AwtErrorHandler;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.ExceptionDialog;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -48,6 +51,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         super.init();
 
         gatherAppletParameters();
+        initializeErrorHandling();
         getApplication().setAutoLookAndFeel();
         getApplication().run();
         setJMenuBar(getAppletMenuBar());
@@ -212,4 +216,60 @@ public class AppletMain extends JApplet implements SheetHolder {
     public void showSheet(JInternalFrame sheet) {
         DialogDisplayer.showSheet(this, sheet);
     }
+
+
+    /**
+     * Event queue installation will work even in an untrusted applet
+     * as long as the java plugin is used.
+     */
+    private void initializeErrorHandling() {
+        // Can't use System.exit on error (kills browser)
+        ExceptionDialog.setShutdownHandler(new Runnable() {
+            public void run() {
+                // Remove applet content
+                setJMenuBar(null);
+                getContentPane().removeAll();
+                JLabel errorLabel = new JLabel("Layer 7 Technologies - SecureSpan Manager (Error; Reload to restart)");
+                errorLabel.setVerticalAlignment(JLabel.TOP);
+                getContentPane().add(errorLabel, BorderLayout.CENTER);
+                validate();
+
+                // Find and destroy dialogs
+                Window[] owned = TopComponents.getInstance().getTopParent().getOwnedWindows();
+                if (owned != null) {
+                    for (Window window : owned) {
+                        window.dispose();
+                    }
+                }
+
+                // Find and dispose windows (gets windows our applet owns)
+                Frame topFrame = TopComponents.getInstance().getTopParent();
+                Frame[] frames = Frame.getFrames();
+                if (frames != null) {
+                    for (Frame frame : frames) {
+                        if (frame != topFrame) {
+                            frame.dispose();
+                        }
+                    }
+                }
+            }
+        });
+
+        // Install error handling event queue
+        EventQueue queue = new EventQueue() {
+            protected void dispatchEvent(AWTEvent e) {
+                try {
+                    super.dispatchEvent(e);
+                } catch(Throwable throwable) {
+                    new AwtErrorHandler().handle(throwable);
+                }
+            }
+        };
+
+        try {
+            Toolkit.getDefaultToolkit().getSystemEventQueue().push(queue);
+        } catch(SecurityException se) {
+            logger.warning("Could not install event queue.");
+        }
+    }    
 }
