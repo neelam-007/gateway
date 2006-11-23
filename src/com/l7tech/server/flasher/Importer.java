@@ -524,6 +524,7 @@ public class Importer {
                 if (directory == null) {
                     if (newFile.isDirectory()) break;
                 }
+                FileUtils.ensurePath((new File(destinationpath + File.separator + entryName)).getParentFile());
                 fileoutputstream = new FileOutputStream(destinationpath + File.separator + entryName);
                 int n;
                 while ((n = zipinputstream.read(buf, 0, 1024)) > -1) {

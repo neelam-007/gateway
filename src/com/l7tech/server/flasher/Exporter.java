@@ -89,98 +89,114 @@ public class Exporter {
         }
         if (partitionName == null) partitionName = "";
         tmpDirectory = createTmpDirectory();
-        logger.info("created temporary directory at " + tmpDirectory);
-
-        // Read database connection settings for the partition at hand
-        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
-        Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
-            SsgDatabaseConfigBean.PROP_DB_USERNAME,
-            SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-            SsgDatabaseConfigBean.PROP_DB_URL,
-        });
-        String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-        String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-        String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-        logger.info("using database url " + databaseURL);
-        logger.info("using database user " + databaseUser);
-        logger.info("using database passwd " + databasePasswd);
-
-        // dump the database
         try {
-            DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
-        } catch (SQLException e) {
-            logger.log(Level.INFO, "exception dumping database", e);
-            throw new IOException("cannot dump the database " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.INFO, "database driver unavailable", e);
-            throw new IOException("cannot dump the database " + e.getMessage());
-        }
+            logger.info("created temporary directory at " + tmpDirectory);
 
-        // record version of this image
-        FileOutputStream fos = new FileOutputStream(tmpDirectory + File.separator + VERSIONFILENAME);
-        fos.write(BuildInfo.getProductVersion().getBytes());
-        fos.close();
+            // Read database connection settings for the partition at hand
+            OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
+            Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[]{
+                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                    SsgDatabaseConfigBean.PROP_DB_URL,
+            });
+            String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
+            String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+            String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            logger.info("using database url " + databaseURL);
+            logger.info("using database user " + databaseUser);
+            logger.info("using database passwd " + databasePasswd);
 
-        // produce template mapping if necessary
-        partitionName = arguments.get(MAPPING_PATH.name);
-        if (partitionName != null) {
-            if (!testCanWrite(partitionName)) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + partitionName);
-            }
-            // read policy files from this dump, collect all potential mapping in order to produce mapping template file
+            // dump the database
             try {
-                MappingUtil.produceTemplateMappingFileFromDB(databaseURL, databaseUser, databasePasswd, partitionName);
+                DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
             } catch (SQLException e) {
-                // should not happen
-                logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
-                throw new RuntimeException("problem producing template mapping file", e);
-            } catch (SAXException e) {
-                // should not happen
-                logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
-                throw new RuntimeException("problem producing template mapping file", e);
+                logger.log(Level.INFO, "exception dumping database", e);
+                throw new IOException("cannot dump the database " + e.getMessage());
+            } catch (ClassNotFoundException e) {
+                logger.log(Level.INFO, "database driver unavailable", e);
+                throw new IOException("cannot dump the database " + e.getMessage());
             }
-        }
 
-        // we dont support full image on windows (windows only supports staging use case)
-        if (!OSDetector.isWindows()) {
-            // copy all config files we want into this temp directory
-            File hibprops = new File(osFunctions.getDatabaseConfig());
-            File clusterprops = new File(osFunctions.getClusterHostFile());
-            File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
-            File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
-            File tomcatprops = new File(osFunctions.getTomcatServerConfig());
-            File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
-            // String ksdir = osFunctions.getKeystoreDir();
-            String ksdir = "/ssg/etc/keys"; // todo, go back to above once partitioning is fully implemented
-            File caCer = new File(ksdir + File.separator + "ca.cer");
-            File sslCer = new File(ksdir + File.separator + "ssl.cer");
-            File caKS = new File(ksdir + File.separator + "ca.ks");
-            File sslKS = new File(ksdir + File.separator + "ssl.ks");
-            FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
-            if (clusterprops.exists()) {
-                FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
-            }
-            if (sysProps.exists()) {
-                FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
-            }
-            FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
-            FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
-            FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
-            FileUtils.copyFile(caCer, new File(tmpDirectory + File.separator + caCer.getName()));
-            FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
-            FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
-            FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
-            
-            // copy system config files
-            OSConfigManager.saveOSConfigFiles(tmpDirectory);
-        }
+            // record version of this image
+            FileOutputStream fos = new FileOutputStream(tmpDirectory + File.separator + VERSIONFILENAME);
+            fos.write(BuildInfo.getProductVersion().getBytes());
+            fos.close();
 
-        // zip the temp directory into the requested image file (outputpathval)
-        logger.info("compressing image into " + outputpathval);
-        zipDir(outputpathval, tmpDirectory);
-        logger.info("cleaning up temp tiels at " + tmpDirectory);
-        System.out.println("Cleaning temporary files at " + tmpDirectory);
-        FileUtils.deleteDir(new File(tmpDirectory));
+            // produce template mapping if necessary
+            partitionName = arguments.get(MAPPING_PATH.name);
+            if (partitionName != null) {
+                if (!testCanWrite(partitionName)) {
+                    throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + partitionName);
+                }
+                // read policy files from this dump, collect all potential mapping in order to produce mapping template file
+                try {
+                    MappingUtil.produceTemplateMappingFileFromDB(databaseURL, databaseUser, databasePasswd, partitionName);
+                } catch (SQLException e) {
+                    // should not happen
+                    logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
+                    throw new RuntimeException("problem producing template mapping file", e);
+                } catch (SAXException e) {
+                    // should not happen
+                    logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
+                    throw new RuntimeException("problem producing template mapping file", e);
+                }
+            }
+
+            // we dont support full image on windows (windows only supports staging use case)
+            if (!OSDetector.isWindows()) {
+                // copy all config files we want into this temp directory
+                File hibprops = new File(osFunctions.getDatabaseConfig());
+                File clusterprops = new File(osFunctions.getClusterHostFile());
+                File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
+                File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
+                File tomcatprops = new File(osFunctions.getTomcatServerConfig());
+                // temp patch to address the half done partition work
+                if (!tomcatprops.exists()) {
+                    logger.warning("tomcat properties are not where expected. this could be caused by an imcomplete partition migration");
+                    tomcatprops = new File("/ssg/tomcat/conf/server.xml");
+                    if (!tomcatprops.exists()) {
+                        throw new IOException("tomcat properties cannot be found anywhere");
+                    }
+                }
+                File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
+                String ksdir = osFunctions.getKeystoreDir();
+                if (!(new File(ksdir)).exists()) {
+                    logger.warning("keystore directory not found where expected. this could be caused by an imcomplete partition migration");
+                    ksdir = "/ssg/etc/keys";
+                    if (!(new File(ksdir)).exists()) {
+                        throw new IOException("keystore directory cannot be found anywhere");
+                    }
+                }
+                File caCer = new File(ksdir + File.separator + "ca.cer");
+                File sslCer = new File(ksdir + File.separator + "ssl.cer");
+                File caKS = new File(ksdir + File.separator + "ca.ks");
+                File sslKS = new File(ksdir + File.separator + "ssl.ks");
+                FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
+                if (clusterprops.exists()) {
+                    FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
+                }
+                if (sysProps.exists()) {
+                    FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
+                }
+                FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
+                FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
+                FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
+                FileUtils.copyFile(caCer, new File(tmpDirectory + File.separator + caCer.getName()));
+                FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
+                FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
+                FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
+
+                // copy system config files
+                OSConfigManager.saveOSConfigFiles(tmpDirectory);
+            }
+            // zip the temp directory into the requested image file (outputpathval)
+            logger.info("compressing image into " + outputpathval);
+            zipDir(outputpathval, tmpDirectory);
+        } finally {
+            logger.info("cleaning up temp files at " + tmpDirectory);
+            System.out.println("Cleaning temporary files at " + tmpDirectory);
+            FileUtils.deleteDir(new File(tmpDirectory));
+        }
     }
 
     private boolean testCanWrite(String path) {

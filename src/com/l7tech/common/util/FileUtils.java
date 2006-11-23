@@ -301,4 +301,13 @@ public class FileUtils {
         // The directory is now empty so delete it
         return dir.delete();
     }
+
+    public static void ensurePath(File in) {
+        if (in.getParentFile() != null) {
+            ensurePath(in.getParentFile());
+        }
+        if (!in.exists()) {
+            in.mkdir();
+        }
+    }
 }

@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 /**
  * Encapsulates import and export of os level system config files.
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
 public class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
     private static final String SETTINGS_PATH = "./cfg/grandmaster_flash";
-    private static final String SUBDIR = File.separator + "os" + File.separator;
+    private static final String SUBDIR = File.separator + "os";
     private final String tmpDirPath;
 
     /**
@@ -57,11 +58,12 @@ public class OSConfigManager {
                     File osconfigfile = new File(tmp);
                     if (osconfigfile.exists()) {
                         logger.info("saving " + osconfigfile.getPath());
-                        File target = new File(tmpDirPath + SUBDIR + osconfigfile.getPath());
-                        ensurePath(target.getParentFile());
+                        File target = new File(tmpDirPath + SUBDIR + File.separator + osconfigfile.getPath());
+                        FileUtils.ensurePath(target.getParentFile());
                         FileUtils.copyFile(osconfigfile, target);
                     } else {
-                        logger.info("os config file " + osconfigfile.getPath() + " does not exist on this system andwill not be included in image");
+                        logger.info("os config file " + osconfigfile.getPath() + " does not exist on this " +
+                                    "system and will not be included in image");
                     }
                 }
             }
@@ -71,18 +73,49 @@ public class OSConfigManager {
         }
     }
 
-    private void ensurePath(File in) {
-        if (in.getParentFile() != null) {
-            ensurePath(in.getParentFile());
+    private void doLoad() throws IOException {
+        final String osfilesroot = tmpDirPath + SUBDIR;
+        ArrayList<String> listofosfiles = listDir(osfilesroot);
+        boolean systemfileoverwritten = false;
+        for (String osfiletorestore : listofosfiles) {
+            String restoretarget;
+            if (osfiletorestore.startsWith(osfilesroot)) {
+                restoretarget = osfiletorestore.substring(osfilesroot.length());
+            } else {
+                // if this happens, it's a bug
+                throw new RuntimeException("unexpected path for " + osfiletorestore);
+            }
+            logger.info("Restoring " + osfiletorestore + " into " + restoretarget);
+            File fromFile = new File(osfiletorestore);
+            File toFile = new File(restoretarget);
+            System.out.println("Overwriting " + restoretarget);
+            toFile.delete();
+            FileUtils.copyFile(fromFile, toFile);
+            systemfileoverwritten = true;
         }
-        if (!in.exists()) {
-            logger.fine("creating " + in.getPath());
-            in.mkdir();
+        if (systemfileoverwritten) {
+            System.out.println("\nCertain system files have been overwritten, please restart the appliance.");
         }
     }
 
-    private void doLoad() throws IOException {
-        // todo
+    private ArrayList<String> listDir(String path) {
+        File dir = new File (path);
+        if (dir.exists() && dir.isDirectory()) {
+            ArrayList<String> output = new ArrayList<String>();
+            String[] children = dir.list();
+            for (String child : children) {
+                File childfile = new File(path + File.separator + child);
+                if (childfile.isDirectory()) {
+                    ArrayList<String> subdirlist = listDir(path + File.separator + child);
+                    if (subdirlist != null) {
+                        output.addAll(subdirlist);
+                    }
+                } else {
+                    output.add(path + File.separator + child);
+                }
+            }
+            return output;
+        } else return null;
     }
 
     private OSConfigManager(String path) {
