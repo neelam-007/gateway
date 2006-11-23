@@ -300,7 +300,7 @@ public class Importer {
 
                 if (arguments.get(OS_OVERWRITE.name) != null) {
                     // overwrite os level system files
-                    // todo
+                    OSConfigManager.restoreOSConfigFiles(tempDirectory);
                 }
             }
 
@@ -360,7 +360,8 @@ public class Importer {
         } else {
             dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING;
         }
-        BufferedReader reader = new BufferedReader(new FileReader(dumpFilePath));
+        FileReader fr = new FileReader(dumpFilePath);
+        BufferedReader reader = new BufferedReader(fr);
         String tmp;
         Connection c = getConnection();
         try {
@@ -380,6 +381,7 @@ public class Importer {
                 c.setAutoCommit(true);
             }
         } finally {
+            fr.close();
             c.close();
         }
         System.out.println(". DONE");

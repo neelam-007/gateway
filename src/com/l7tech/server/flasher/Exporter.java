@@ -172,7 +172,7 @@ public class Exporter {
             FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
             
             // copy system config files
-            // todo
+            OSConfigManager.saveOSConfigFiles(tmpDirectory);
         }
 
         // zip the temp directory into the requested image file (outputpathval)
