@@ -1,8 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.AuditDetailAssertionPropertiesDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
@@ -42,8 +40,9 @@ public class AddAuditAdviceAssertion implements Advice {
         }
 
         AuditDetailAssertion subject = (AuditDetailAssertion)assertions[0];
+        subject.setLevel(serverLevel.getName());
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject, serverLevel);
+        final AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject);
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);

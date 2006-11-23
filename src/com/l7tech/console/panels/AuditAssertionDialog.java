@@ -6,8 +6,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
-import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -37,8 +35,8 @@ public class AuditAssertionDialog extends JDialog {
         currentServerThreshold = Level.parse(serverThreshold);
 
         String[] levels = {
-            Level.INFO.getLocalizedName(),
-            Level.WARNING.getLocalizedName(),
+            Level.INFO.getName(),
+            Level.WARNING.getName(),
         };
 
         levelCombo.setModel(new DefaultComboBoxModel(levels));

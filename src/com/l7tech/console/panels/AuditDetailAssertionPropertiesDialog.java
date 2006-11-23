@@ -1,14 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.policy.assertion.AuditAssertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.logging.Level;
 
 /**
@@ -27,7 +25,6 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
     private JButton okButton;
     private final AuditDetailAssertion assertion;
     private boolean cancelled;
-    private final Level serverDetailThreshold;
 
     private static abstract class ComboAction extends AbstractAction implements ActionListener { }
 
@@ -43,10 +40,9 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         }
     };
 
-    public AuditDetailAssertionPropertiesDialog(Frame owner, AuditDetailAssertion assertion, Level level) {
+    public AuditDetailAssertionPropertiesDialog(Frame owner, AuditDetailAssertion assertion) {
         super(owner, true);
         this.assertion = assertion;
-        this.serverDetailThreshold = level;
         initialize();
     }
 
@@ -56,8 +52,8 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         setTitle("Audit Detail Properties");
 
         String[] levels = {
-            Level.INFO.getLocalizedName(),
-            Level.WARNING.getLocalizedName(),
+            Level.INFO.getName(),
+            Level.WARNING.getName(),
         };
 
         levelComboBox.setModel(new DefaultComboBoxModel(levels));

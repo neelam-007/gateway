@@ -66,7 +66,7 @@ public class AuditAlertConfigBean {
         if (preferences != null) {
             preferences.putProperty(AUDIT_ALERT_ENABLED_PREFERENCE_KEY, String.valueOf(isEnabled()));
             preferences.putProperty(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY, String.valueOf(getAuditCheckInterval()));
-            preferences.putProperty(AUDIT_ALERT_LEVEL_PREFERENCE_KEY, getAuditAlertLevel().getLocalizedName());
+            preferences.putProperty(AUDIT_ALERT_LEVEL_PREFERENCE_KEY, getAuditAlertLevel().getName());
             preferences.store();
         }
     }

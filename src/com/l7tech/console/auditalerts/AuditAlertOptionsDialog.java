@@ -42,10 +42,10 @@ public class AuditAlertOptionsDialog extends JDialog {
         int preferredInterval = configBean.getAuditCheckInterval();
 
         auditLevelChoice.setModel(new DefaultComboBoxModel(new String[] {
-                Level.WARNING.getLocalizedName(),
-                Level.INFO.getLocalizedName()
+                Level.WARNING.getName(),
+                Level.INFO.getName()
         }));
-        auditLevelChoice.setSelectedItem(preferredLevel.getLocalizedName());
+        auditLevelChoice.setSelectedItem(preferredLevel.getName());
 
         intervalChooser.setModel(new DefaultComboBoxModel(new IntervalWrapper[] {
                 new IntervalWrapper(10),

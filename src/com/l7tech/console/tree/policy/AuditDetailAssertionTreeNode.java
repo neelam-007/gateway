@@ -82,17 +82,9 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
             }
 
             protected void performAction() {
-                Level level;
-                try {
-                    level = Registry.getDefault().getAuditAdmin().serverDetailAuditThreshold();
-                } catch (RemoteException e) {
-                    AuditDetailAssertionTreeNode.logger.log(Level.WARNING, "Couldn't get server's detail threshold; using default " + Level.INFO.toString());
-                    level = Level.INFO;
-                }
-
                 AuditDetailAssertionPropertiesDialog aad =
                         new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(),
-                                                                 getAssertion(), level);
+                                                                 getAssertion());
                 aad.pack();
                 Utilities.centerOnScreen(aad);
                 Utilities.setEscKeyStrokeDisposes(aad);
