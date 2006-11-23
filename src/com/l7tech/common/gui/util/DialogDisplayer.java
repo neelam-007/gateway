@@ -279,6 +279,17 @@ public class DialogDisplayer {
     /**
      * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
      *
+     * @param parent    parent component.  required
+     * @param mess      message to display.  required
+     * @param callback  callback to invoke when dialog is dismissed.  optional
+     */
+    public static void showMessageDialog(Component parent, Object mess, Runnable callback) {
+        showMessageDialog(parent, mess, "", JOptionPane.INFORMATION_MESSAGE, callback);
+    }
+
+    /**
+     * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     *
      * @see JOptionPane#showMessageDialog
      * @param parent    parent component.  required
      * @param mess      message to display.  required
@@ -322,6 +333,18 @@ public class DialogDisplayer {
          *                of the option that was selected.
          */
         void reportResult(int option);
+    }
+
+    /**
+     * Interface implemented by callers of showInputDialog.
+     */
+    public interface InputListener {
+        /**
+         * Report that an input dialog was dismissed with the specified result per {@link JOptionPane}.
+         *
+         * @param option the result of displaying the dialog.  May be null.
+         */
+        void reportResult(Object option);
     }
 
     /**
@@ -417,6 +440,23 @@ public class DialogDisplayer {
                 }
 
                 return JOptionPane.CLOSED_OPTION;
+            }
+        });
+    }
+
+    public static void showInputDialog(Component parent, Object mess, String title, int messType, Icon icon, 
+                                         Object[] values, Object initialValue, final InputListener result)
+    {
+        final JOptionPane pane = new JOptionPane(mess, messType, JOptionPane.OK_CANCEL_OPTION, icon, null, null);
+        pane.setWantsInput(true);
+        pane.setSelectionValues(values);
+        pane.setInitialSelectionValue(initialValue);
+        pane.selectInitialValue();
+
+        display(pane, parent, title, new Runnable() {
+            public void run() {
+                Object value = pane.getInputValue();
+                result.reportResult(value == JOptionPane.UNINITIALIZED_VALUE ? null : value);
             }
         });
     }
