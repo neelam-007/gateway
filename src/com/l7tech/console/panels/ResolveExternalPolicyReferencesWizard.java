@@ -51,6 +51,6 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
     }
     public ResolveExternalPolicyReferencesWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
-        setTitle("Resolve external dependencies from exported policy document");
+        setTitle("Resolve External Dependencies Wizard");
     }
 }
