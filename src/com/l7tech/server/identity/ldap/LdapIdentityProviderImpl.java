@@ -320,7 +320,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         return doSearch(filter);
     }
 
-    private Collection<IdentityHeader> doSearch(String filter) {
+    private Collection<IdentityHeader> doSearch(String filter) throws FindException {
         Collection<IdentityHeader> output = new TreeSet<IdentityHeader>();
         DirContext context = null;
         NamingEnumeration answer = null;
@@ -360,6 +360,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
             // dont throw here, we still want to return what we got
         } catch (NamingException e) {
             logger.log(Level.WARNING, "error searching with filter: " + filter, e);
+            throw new FindException("error searching ldap", e);
         } finally {
             if (context != null) {
                 if (answer != null) {
@@ -511,6 +512,9 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
                     env.put(Context.SECURITY_PROTOCOL, "ssl");
                 }
             } catch (NamingException e) {
+                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            } catch (IllegalArgumentException e) {
                 logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             }
