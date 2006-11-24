@@ -76,14 +76,14 @@ public class IpListPanel extends JPanel {
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                Container rootPane = IpListPanel.this.getTopLevelAncestor();
+                Container rootPane = SwingUtilities.getWindowAncestor(IpListPanel.this);
                 final GetIpDialog dlg;
                 if (rootPane instanceof Frame)
                     dlg = new GetIpDialog((Frame)rootPane);
                 else if (rootPane instanceof Dialog)
                     dlg = new GetIpDialog((Dialog)rootPane);
                 else
-                    dlg = new GetIpDialog((Dialog)null);
+                    dlg = new GetIpDialog((Frame)null);
 
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);

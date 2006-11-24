@@ -10,6 +10,7 @@ import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.logging.AwtErrorHandler;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.WeakSet;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.gui.ExceptionDialog;
@@ -24,6 +25,7 @@ import java.net.URLDecoder;
 import java.net.MalformedURLException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Iterator;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -38,31 +40,44 @@ public class AppletMain extends JApplet implements SheetHolder {
     /** Url we try to use for help topics if we aren't given an override as an applet param. */
     private static final String DEFAULT_HELP_ROOT_RELATIVE_URL = "/ssg/webadmin/help/_start.htm";
 
+    private static boolean errorHandlerInstalled = false;
     private static ApplicationContext applicationContext = null;
     private static SsmApplication application = null;
-    private static Container appletPanel = null;
-    private static JMenuBar menuBar = null;
-    private static AppletMain currentPanelOwner = null;
+    private static JRootPane appletRootPane = null;
+    private static AppletMain currentRootPaneOwner = null;
+    private static WeakSet instances = new WeakSet();
 
     private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
     private String helpTarget = "managerAppletHelp";
+    private JRootPane placeholderRootPane = null;
 
-    public void init() {
+    public AppletMain() throws HeadlessException {
+        instances.add(this);
+    }
+
+    public synchronized void init() {
         super.init();
 
         gatherAppletParameters();
         initializeErrorHandling();
+
         getApplication().setAutoLookAndFeel();
         getApplication().run();
-        setJMenuBar(getAppletMenuBar());
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(getAppletPanel(), BorderLayout.CENTER);
-        if (currentPanelOwner != null) currentPanelOwner.notifyContentPaneStolen();
-        currentPanelOwner = this;
 
-        Frame appletContainer = findAppletContainerFrame();
-        if (appletContainer != null)
-                TopComponents.getInstance().registerComponent("topLevelParent", appletContainer);
+        initMainWindowContent();
+        AppletMain oldRootPaneOwner = currentRootPaneOwner;
+        currentRootPaneOwner = this;
+        if (oldRootPaneOwner != null && oldRootPaneOwner != this) {
+            notifyContentPaneStolen();
+        }
+        setRootPane(appletRootPane);
+        placeholderRootPane = null;
+
+        final Frame appletContainer = findAppletContainerFrame();
+        if (appletContainer != null) {
+            TopComponents.getInstance().unregisterComponent("topLevelParent");
+            TopComponents.getInstance().registerComponent("topLevelParent", appletContainer);
+        }
 
         TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
         TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
@@ -70,7 +85,8 @@ public class AppletMain extends JApplet implements SheetHolder {
         // Help DialogDisplayer find the right applet instance
         DialogDisplayer.putDefaultSheetHolder(appletContainer, this);
 
-        repaint();
+        getLayeredPane().updateUI();
+        validate();
     }
 
     private Frame findAppletContainerFrame() {
@@ -95,11 +111,6 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
     }
 
-    public void destroy() {
-        // Can't actually destroy anything, because it can't be destroyed completely (some singleton beans),
-        // and next call to init() would thus fail.
-    }
-
     private ApplicationContext getApplicationContext() {
         if (applicationContext != null) return applicationContext;
         applicationContext = createApplicationContext();
@@ -112,32 +123,49 @@ public class AppletMain extends JApplet implements SheetHolder {
         return application;
     }
 
-    private Container getAppletPanel() {
-        if (appletPanel != null) return appletPanel;
+    public void destroy() {
+        // Can't actually destroy anything, because it can't be destroyed completely (some singleton beans),
+        // and next call to init() would thus fail.
+    }
+
+    private static void notifyContentPaneStolen() {
+        for (Iterator i = instances.iterator(); i.hasNext();) {
+            AppletMain applet = (AppletMain)i.next();
+            if (applet != null && currentRootPaneOwner != applet) {
+                applet.replaceContentPaneWithPlaceholder();
+            }
+        }
+    }
+
+    private void replaceContentPaneWithPlaceholder() {
+        if (placeholderRootPane != null && getRootPane() == placeholderRootPane) return;
+
+        placeholderRootPane = new JRootPane();
+        setRootPane(placeholderRootPane);
+        setLayeredPane(getLayeredPane());
+        setJMenuBar(null);
+        setContentPane(getContentPane());
+        getContentPane().add(new AppletContentStolenPanel(), BorderLayout.CENTER);
+
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window != null) {
+            window.invalidate();
+            window.pack();
+        }
+        getLayeredPane().updateUI();
+        validate();
+    }
+
+    private void initMainWindowContent() {
+        if (appletRootPane != null) return;
 
         // Get the main window, and steal it's content pane
         MainWindow mainWindow = getApplication().getMainWindow();
-        menuBar = mainWindow.getJMenuBar();
-        mainWindow.setJMenuBar(null);
-        setJMenuBar(menuBar);
-        appletPanel = mainWindow.getContentPane();
-        mainWindow.setContentPane(new JPanel());
-        return appletPanel;
-    }
 
-    private void notifyContentPaneStolen() {
-        logger.info("Applet content has been moved to a different browser frame.");
-        getContentPane().removeAll();
-        getContentPane().add(new AppletContentStolenPanel(), BorderLayout.CENTER);
-        setJMenuBar(null);
-        SwingUtilities.getWindowAncestor(this).pack();
-        invalidate();
-        repaint();
-    }
+        appletRootPane = mainWindow.getRootPane();
 
-    private JMenuBar getAppletMenuBar() {
-        getAppletPanel();
-        return menuBar;
+        // Make sure MainWindow knows we have taken itdads stuff
+        mainWindow.notifyRootPaneStolen();
     }
 
     private void gatherAppletParameters() {
@@ -223,14 +251,27 @@ public class AppletMain extends JApplet implements SheetHolder {
      * as long as the java plugin is used.
      */
     private void initializeErrorHandling() {
+        synchronized (AppletMain.class) {
+            if (errorHandlerInstalled)
+                return;
+            errorHandlerInstalled = true;
+        }
+
         // Can't use System.exit on error (kills browser)
         ExceptionDialog.setShutdownHandler(new Runnable() {
             public void run() {
                 // Remove applet content
+                setRootPane(new JRootPane());
+                setGlassPane(getGlassPane());
+                setLayeredPane(getLayeredPane());
+                setContentPane(getContentPane());
                 setJMenuBar(null);
+                if (currentRootPaneOwner == AppletMain.this)
+                    currentRootPaneOwner = null;
+                
                 getContentPane().removeAll();
                 JLabel errorLabel = new JLabel("Layer 7 Technologies - SecureSpan Manager (Error; Reload to restart)");
-                errorLabel.setVerticalAlignment(JLabel.TOP);
+                errorLabel.setVerticalAlignment(JLabel.CENTER);
                 getContentPane().add(errorLabel, BorderLayout.CENTER);
                 validate();
 

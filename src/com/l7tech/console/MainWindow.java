@@ -2385,6 +2385,18 @@ public class MainWindow extends JFrame implements SheetHolder {
         });
     }
 
+    /**
+     * called by the applet after the content has been stolen out of the MainWindow.
+     */
+    public void notifyRootPaneStolen() {
+        setRootPane(new JRootPane());
+        setLayeredPane(getLayeredPane());
+        setGlassPane(getGlassPane());
+        setContentPane(getContentPane());
+        setJMenuBar(null);
+        validate();
+    }
+
     public void showHelpTopicsRoot() {
         ssmApplication.showHelpTopicsRoot();
     }
