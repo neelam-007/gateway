@@ -1499,6 +1499,7 @@
                 <include name="flasherlogging.properties"/>
             </fileset>
         </copy>
+        <chmod file="${build.dir}/flasher/ssgflash.sh" perm="755"/>
         <copy todir="${build.dir}/flasher/cfg">
             <fileset dir="${src.root}/etc">
                 <include name="grandmaster_flash"/>
