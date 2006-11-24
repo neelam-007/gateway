@@ -2414,7 +2414,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         }
                     }
                 };
-                DialogDisplayer.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION,
+                DialogDisplayer.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
                                                   callback);
             }
         });
