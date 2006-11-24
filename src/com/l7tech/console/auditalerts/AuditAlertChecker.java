@@ -29,6 +29,9 @@ public class AuditAlertChecker {
 
     public void setAuditAdmin(AuditAdmin auditAdmin) {
         this.auditAdmin = auditAdmin;
+
+        // reset for new gateway
+        lastAcknowledged = null;
     }
 
     public void addWatcher(AuditWatcher watcher) {
@@ -80,7 +83,7 @@ public class AuditAlertChecker {
         try {
             AuditAdmin admin = auditAdmin;
             if (admin != null) {
-                lastAcknowledged = admin.getLastAcknowledgedAuditDate();
+                lastAcknowledged = admin.markLastAcknowledgedAuditDate();
             }
         } catch (RemoteException e) {
             throw new RuntimeException(e);

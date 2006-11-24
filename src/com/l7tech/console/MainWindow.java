@@ -1357,7 +1357,15 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private Action getGatewayAuditWindowAction() {
         if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
-        viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction();
+        viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction(){
+            protected void performAction() {
+                AuditAlertsNotificationPanel auditAlert = getAuditAlertBar();
+                if( auditAlert != null )
+                    auditAlert.auditsViewed();
+
+                super.performAction();
+            }
+        };
         viewGatewayAuditsWindowAction.setEnabled(false);
         this.addLogonListener(viewGatewayAuditsWindowAction);
         addPermissionRefreshListener(viewGatewayAuditsWindowAction);
