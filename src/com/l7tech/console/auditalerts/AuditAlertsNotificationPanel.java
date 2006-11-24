@@ -20,19 +20,15 @@ import java.util.logging.Level;
 * Time: 2:57:33 PM
 */
 public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher, LogonListener {
-    Frame parentFrame;
-
     private JLabel alertBar;
     private JPanel mainPanel;
 
-    private AuditAlertsDialog alertsDialog;
     private AuditAlertChecker checker;
     private boolean hasClusterPropertyPermissions = false;
     private boolean hasAuditPermissions = false;
 
-    public AuditAlertsNotificationPanel(Frame parent, AuditAlertChecker auditChecker) {
+    public AuditAlertsNotificationPanel(AuditAlertChecker auditChecker) {
         super();
-        this.parentFrame = parent;
         this.checker = auditChecker;
 
         if (checker != null)
@@ -65,15 +61,21 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
 
     private void showPopup() {
         checker.stop();
-        Utilities.centerOnScreen(getAlertsDialog());
-        DialogDisplayer.display(getAlertsDialog());
+
+        AuditAlertsDialog auditAlertDialog = getAlertsDialog();
+        Utilities.centerOnScreen(auditAlertDialog);
+        DialogDisplayer.display(auditAlertDialog);
     }
 
     private AuditAlertsDialog getAlertsDialog() {
-        if (alertsDialog == null)
-            alertsDialog = new AuditAlertsDialog(parentFrame, this);
-
-        return alertsDialog;
+        Window ancestor = SwingUtilities.getWindowAncestor(this);
+        if (ancestor instanceof Frame) {
+            return new AuditAlertsDialog((Frame)ancestor, this);
+        } else if (ancestor instanceof Dialog) {
+            return new AuditAlertsDialog((Dialog)ancestor, this);
+        } else {
+            return new AuditAlertsDialog((Frame)null, this);
+        }
     }
 
     private void setAlertsReady(boolean areAlertsReady) {

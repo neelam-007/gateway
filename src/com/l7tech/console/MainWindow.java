@@ -632,7 +632,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private AuditAlertsNotificationPanel getAuditAlertBar() {
         if (auditAlertBar == null) {
-            auditAlertBar = new AuditAlertsNotificationPanel(this, getAuditChecker());
+            auditAlertBar = new AuditAlertsNotificationPanel(getAuditChecker());
             addLogonListener(auditAlertBar);
         }
         return auditAlertBar;
@@ -1578,6 +1578,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(jcm);
             menu.add(new AboutAction());
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/About16.gif");
+
+            toolBarPane.add(getAuditAlertBar());
         } else {
             tbadd(toolBarPane, getPreferencesAction());
         }
