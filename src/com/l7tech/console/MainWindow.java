@@ -54,6 +54,7 @@ import java.rmi.server.RMIClassLoader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 
 
 /**
@@ -180,6 +181,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * MainWindow constructor comment.
+     * @param app  the application bean
      */
     public MainWindow(SsmApplication app) {
         super(TITLE);
@@ -473,8 +475,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.setMnemonic(KeyEvent.VK_E);
 
             ClipboardActions.CUT_ACTION.putValue(Action.NAME, resapplication.getString("Cut_MenuItem_text"));
-            JMenuItem mi = new JMenuItem(ClipboardActions.CUT_ACTION);
-            //menu.add(mi); // TODO  Cut is disabled because it's problematic to have Cut without Undo
+            JMenuItem mi;
+//            mi = new JMenuItem(ClipboardActions.CUT_ACTION);
+//            menu.add(mi); // TODO  Cut is disabled because it's problematic to have Cut without Undo
 
             ClipboardActions.COPY_ACTION.putValue(Action.NAME, resapplication.getString("Copy_MenuItem_text"));
             mi = new JMenuItem(ClipboardActions.COPY_ACTION);
@@ -518,8 +521,6 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getManageCertificatesMenuItem());
             menu.add(getManageGlobalSchemasMenuItem());
-            // Disabled for 3.4 -- there are currently no cluster properties to manage with this GUI
-            // ("license" is managed with a seperate GUI of its own, and is hidden in the cluster property list.)
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
@@ -1495,6 +1496,44 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
+     * Add an action button to a toolbar.
+     *
+     * @param tb  the toolbar
+     * @param a   the action
+     * @return  the new button
+     */
+    private JButton tbadd(JToolBar tb, Action a) {
+        JButton b = tb.add(a);
+        b.setFont(new Font("Dialog", 1, 10));
+        b.setText((String)a.getValue(Action.NAME));
+        b.setMargin(new Insets(0, 0, 0, 0));
+        b.setHorizontalTextPosition(SwingConstants.RIGHT);
+        b.setFocusable(false);
+        return b;
+    }
+
+    /**
+     * Add a popup menu button to a toolbar.
+     *
+     * @param tb    the toolbar
+     * @param menu  the popup menu
+     * @param iconResource  resource path of icon for menu button
+     */
+    private void tbadd(JToolBar tb, final JPopupMenu menu, String iconResource) {
+        final JButton[] but = new JButton[] { null };
+        final Action showAction = new AbstractAction(menu.getLabel()) {
+            public void actionPerformed(ActionEvent e) {
+                menu.show(but[0], 0, but[0].getHeight());
+            }
+        };
+        if (iconResource != null) {
+            URL loc = cl.getResource(iconResource);
+            if (loc != null) showAction.putValue(Action.SMALL_ICON, new ImageIcon(loc));
+        }
+        but[0] = tbadd(tb, showAction);
+    }
+
+    /**
      * Return the ToolBarPane property value.
      *
      * @return JToolBar
@@ -1508,42 +1547,39 @@ public class MainWindow extends JFrame implements SheetHolder {
         toolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
         toolBarPane.setFloatable(false);
 
-        JButton b = toolBarPane.add(getConnectAction());
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getConnectAction().getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
-        b.setFocusable(false);
+        tbadd(toolBarPane, getConnectAction());
+        tbadd(toolBarPane, getDisconnectAction());
+        tbadd(toolBarPane, getRefreshAction());
+        tbadd(toolBarPane, homeAction);
 
-        b = toolBarPane.add(getDisconnectAction());
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getDisconnectAction().getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
-        b.setFocusable(false);
+        if (isApplet()) {
+            JPopupMenu menu = new JPopupMenu("Manage...");
+            menu.add(getManageCertificatesMenuItem());
+            menu.add(getManageGlobalSchemasMenuItem());
+            menu.add(getManageClusterPropertiesActionMenuItem());
+            menu.add(getManageJmsEndpointsMenuItem());
+            menu.add(getManageKerberosMenuItem());
+            menu.add(getManageRolesMenuItem());
+            menu.add(getManageAuditAlertOptionsMenuItem());
+            menu.add(getManageClusterLicensesMenuItem());
+            tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
-        b = toolBarPane.add(getRefreshAction());
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getRefreshAction().getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setFocusable(false);
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
+            menu = new JPopupMenu("Monitor...");
+            menu.add(getDashboardMenuItem());
+            menu.add(getStatMenuItem());
+            menu.add(getAuditMenuItem());
+            menu.add(getFromFileMenuItem());
+            tbadd(toolBarPane, menu, RESOURCE_PATH + "/AnalyzeGatewayLog16x16.gif");
 
-        b = toolBarPane.add(homeAction);
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)homeAction.getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setFocusable(false);
-
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
-
-        if (!isApplet()) {
-            b = toolBarPane.add(getPreferencesAction());
-            b.setFont(new Font("Dialog", 1, 10));
-            b.setText((String)getPreferencesAction().getValue(Action.NAME));
-            b.setMargin(new Insets(0, 0, 0, 0));
-            b.setHorizontalTextPosition(SwingConstants.RIGHT);
-            b.setFocusable(false);
+            menu = new JPopupMenu("Help...");
+            menu.add(getHelpTopicsMenuItem());
+            JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getPolicyMessageAreaToggle());
+            jcm.setSelected(getPreferences().isPolicyMessageAreaVisible());
+            menu.add(jcm);
+            menu.add(new AboutAction());
+            tbadd(toolBarPane, menu, RESOURCE_PATH + "/About16.gif");
+        } else {
+            tbadd(toolBarPane, getPreferencesAction());
         }
 
         toolBarPane.add(Box.createHorizontalGlue());
@@ -1890,7 +1926,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         });
 
         setName("MainWindow");
-        setJMenuBar(getMainJMenuBar());
+        setJMenuBar(isApplet() ? null : getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
         Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         ImageIcon imageIcon = new ImageIcon(icon);
@@ -1940,7 +1976,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         try {
             SsmPreferences prefs = preferences;
             Boolean maximized = Boolean.valueOf(prefs.getString("last.window.maximized", "false"));
-            if(maximized.booleanValue()) {
+            if(maximized) {
                 maximizeOnStart = true;
             }
             Dimension lastScreenSize = prefs.getLastScreenSize();
@@ -2318,14 +2354,11 @@ public class MainWindow extends JFrame implements SheetHolder {
 
               getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
-              int timeout = 0;
-              timeout = preferences.getInactivityTimeout();
-
-              final int fTimeout = timeout;
+              final int timeout = preferences.getInactivityTimeout();
               SwingUtilities.invokeLater(new Runnable() {
                   public void run() {
                       MainWindow.this.
-                        setInactivitiyTimeout(fTimeout);
+                        setInactivitiyTimeout(timeout);
                       MainWindow.this.fireConnected();
                   }
               });

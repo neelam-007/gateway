@@ -15,10 +15,11 @@ public class AuditAlertConfigBean {
     public static final String AUDIT_ALERT_ENABLED_PREFERENCE_KEY = "com.l7tech.auditalerts.enablealerts";
     public static final String AUDIT_ALERT_LEVEL_PREFERENCE_KEY = "com.l7tech.auditalerts.warninglevel";
     public static final String AUDIT_ALERT_INTERVAL_PREFERENCE_KEY = "com.l7tech.auditalerts.checkinterval";
+    public static final int DEFAULT_CHECK_INTERVAL = 30;
 
     private boolean isEnabled = true;
     private Level auditAlertLevel = Level.WARNING;
-    private int auditCheckInterval = 30;
+    private int auditCheckInterval = DEFAULT_CHECK_INTERVAL;
     private SsmPreferences preferences;
 
     public AuditAlertConfigBean(SsmPreferences ssmPrefs) {
@@ -33,8 +34,13 @@ public class AuditAlertConfigBean {
                 auditAlertLevel = Level.parse(temp);
 
             temp = preferences.getString(AUDIT_ALERT_INTERVAL_PREFERENCE_KEY);
-            if (StringUtils.isNotEmpty(temp))
-                auditCheckInterval = Integer.valueOf(temp);
+            if (StringUtils.isNotEmpty(temp)) {
+                try {
+                    auditCheckInterval = Integer.valueOf(temp);
+                } catch (NumberFormatException nfe) {
+                    auditCheckInterval = DEFAULT_CHECK_INTERVAL;
+                }
+            }
         }
     }
 
