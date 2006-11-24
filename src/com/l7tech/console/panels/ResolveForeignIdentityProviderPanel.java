@@ -118,6 +118,14 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         populatePropsTable();
     }
 
+    private void resetProvList() {
+        if (providerSelector.getModel().getSize() == 0) {
+            manualResolvRadio.setEnabled(false);
+        } else {
+            manualResolvRadio.setEnabled(true);
+        }
+    }
+
     /**
      * invoked when the user clicks the create id provider button
      */
@@ -126,6 +134,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         EntityListener updateProviderListCallback = new EntityListener() {
             public void entityAdded(EntityEvent ev) {
                 populateIdProviders(unresolvedRef.getIdProviderTypeVal());
+                resetProvList();
             }
             public void entityUpdated(EntityEvent ev) {}
             public void entityRemoved(EntityEvent ev) {}
