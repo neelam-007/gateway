@@ -1278,7 +1278,7 @@
         </jar>
         <copy file="${build.dir}/LicenseGenerator.jar" todir="${src.root}/installer/LicenseGenerator-HEAD/"/>
         <copy file="${src.root}/etc/LicenseGenerator.sh" todir="${src.root}/installer/LicenseGenerator-HEAD/"/>
-        <chmod file="${src.root}/installer/LicenseGenerator-HEAD/LicenseGenerator.sh" perm="555"/>
+        <chmod file="${src.root}/installer/LicenseGenerator-HEAD/LicenseGenerator.sh" perm="755"/>
 
         <tar destfile="${src.root}/installer/LicenseGenerator-HEAD.tar.gz"
              basedir="${src.root}/installer/"
@@ -1354,7 +1354,7 @@
               tofile="${build.installer}/Bridge-${build.version}/Bridge.sh"
               preservelastmodified="true"
               granularity="2000"/>
-        <chmod file="${build.installer}/Bridge-${build.version}/Bridge.sh" perm="555"/>
+        <chmod file="${build.installer}/Bridge-${build.version}/Bridge.sh" perm="755"/>
 
         <!-- Help files -->
         <unzip src="${src.root}/webhelp/ssb/help.zip"
