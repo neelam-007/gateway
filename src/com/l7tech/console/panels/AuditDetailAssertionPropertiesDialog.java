@@ -4,6 +4,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,7 +26,7 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JButton okButton;
     private final AuditDetailAssertion assertion;
-    private boolean cancelled;
+    private boolean modified;
 
     private static abstract class ComboAction extends AbstractAction implements ActionListener { }
 
@@ -47,7 +49,7 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
     }
 
     private void initialize() {
-        cancelled = true;
+        modified = false;
         setContentPane(mainPanel);
         setTitle("Audit Detail Properties");
 
@@ -59,34 +61,39 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         levelComboBox.setModel(new DefaultComboBoxModel(levels));
         levelComboBox.setSelectedItem(assertion.getLevel());
         detailTextArea.setText(assertion.getDetail());
+        detailTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { enableButtons(); }
+            public void removeUpdate(DocumentEvent e) { enableButtons(); }
+            public void changedUpdate(DocumentEvent e) { enableButtons(); }
+        });
 
         okButton.addActionListener(okAction);
         cancelButton.addActionListener(cancelAction);
+
+        enableButtons();
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         Utilities.setEnterAction(this, okAction);
         Utilities.setEscAction(this, cancelAction);
     }
 
+    private void enableButtons() {
+        okButton.setEnabled(detailTextArea.getText().length() > 0);
+    }
+
     private void ok() {
-        cancelled = false;
-        if (detailTextArea.getText() == null || detailTextArea.getText().length() < 1) {
-            JOptionPane.showMessageDialog(okButton,
-                                          "Audit detail message cannot be empty",
-                                          "Invalid Audit Detail",
-                                          JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        modified = true;
         assertion.setDetail(detailTextArea.getText());
         assertion.setLevel((String)levelComboBox.getSelectedItem());
-        cancel();
+        dispose();
     }
 
     private void cancel() {
+        modified = false;
         dispose();
     }
 
     public boolean isModified() {
-        return !cancelled;
+        return modified;
     }
 }
