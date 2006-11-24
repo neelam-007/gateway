@@ -13,8 +13,13 @@ import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.cluster.ClusterProperty;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -40,12 +45,15 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
     private static Map<OpaqueId, DownloadContext> downloadContexts = Collections.synchronizedMap(new HashMap<OpaqueId, DownloadContext>());
+    private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
+
 
     private AuditRecordManager auditRecordManager;
     private LogRecordManager logRecordManager;
     private ApplicationContext applicationContext;
     private KeystoreUtils keystore;
     private ServerConfig serverConfig;
+    private ClusterPropertyManager clusterPropertyManager;
 
     private static TimerTask downloadReaperTask = new TimerTask() {
         public void run() {
@@ -78,6 +86,10 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
+    }
+
+    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
@@ -270,6 +282,54 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
                                              throws RemoteException, FindException {
         logger.finest("Get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
         return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, startMsgNumber, endMsgNumber, size));
+    }
+
+    public Date getLastAcknowledgedAuditDate() throws RemoteException {
+        Date date = null;
+        String value = null;
+
+        try {
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(CLUSTER_PROP_LAST_AUDITACK_TIME);
+            if (property != null) {
+                value = property.getValue();
+                date = new Date(Long.parseLong(value));
+            }
+        }
+        catch (FindException fe) {
+            logger.warning("Error getting cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"' message is '"+fe.getMessage()+"'.");            
+        }
+        catch (NumberFormatException nfe) {
+            logger.warning("Error getting cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"' invalid long value '"+value+"'.");            
+        }
+
+        return date;
+    }
+
+    public Date markLastAcknowledgedAuditDate() throws RemoteException {
+        Date date = new Date();
+        String value = Long.toString(date.getTime());
+
+        try {
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(CLUSTER_PROP_LAST_AUDITACK_TIME);
+            if (property == null) {
+                property = new ClusterProperty(CLUSTER_PROP_LAST_AUDITACK_TIME, value);
+                clusterPropertyManager.save(property);
+            } else {
+                property.setValue(value);
+                clusterPropertyManager.update(property);
+            }
+        }
+        catch (FindException fe) {
+            logger.warning("Error getting cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"' message is '"+fe.getMessage()+"'.");
+        }
+        catch (SaveException se) {
+            logger.log(Level.WARNING ,"Error saving cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"'.", se);
+        }
+        catch(UpdateException ue) {
+            logger.log(Level.WARNING ,"Error updating cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"'.", ue);            
+        }
+
+        return date;
     }
 
     public SSGLogRecord[] getSystemLog(final String nodeid,

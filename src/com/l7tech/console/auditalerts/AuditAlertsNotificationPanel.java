@@ -107,7 +107,6 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     public void onLogon(LogonEvent e) {
         updatePermissions();
         if (hasPermissions() && checker != null) {
-            checker.setClusterAdmin(Registry.getDefault().getClusterStatusAdmin());
             checker.setAuditAdmin(Registry.getDefault().getAuditAdmin());
             checker.checkForNewAlerts();
         }
@@ -119,9 +118,8 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
 
     public void onLogoff(LogonEvent e) {
         if (checker != null) {
-            checker.setClusterAdmin(null);
-            checker.setAuditAdmin(null);
             checker.stop();
+            checker.setAuditAdmin(null);
         }
         setAlertsReady(false);
     }

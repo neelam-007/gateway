@@ -84,6 +84,27 @@ public interface AuditAdmin extends GenericLogAdmin {
                                       throws RemoteException, FindException;
 
     /**
+     * Get the date for the last acknowledged audit event.
+     *
+     * @return The date or null if not set
+     * @throws RemoteException if there was a problem communicating with the Gateway
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    Date getLastAcknowledgedAuditDate() throws RemoteException;
+
+    /**
+     * Set and return the date for the last acknowledged audit event.
+     *
+     * <p>The acknowledged time is updated to the current server time.</p>
+     *
+     * @return The date or null if not set
+     * @throws RemoteException if there was a problem communicating with the Gateway
+     */
+    @Secured(stereotype=FIND_ENTITIES)
+    Date markLastAcknowledgedAuditDate() throws RemoteException;
+
+    /**
      * Create a context for downloading audit records.  The context will expire after ten minutes of inactivity.
      * @param chunkSizeInBytes number of bytes per download chunk.  If zero, default of 8192 will be used.
      * @return a OpaqueId for passing to downloadNextChunk().  never null.

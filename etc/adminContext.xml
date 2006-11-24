@@ -228,6 +228,9 @@
         <property name="serverConfig">
             <ref bean="serverConfig"/>
         </property>
+        <property name="clusterPropertyManager">
+            <ref bean="clusterPropertyManager"/>
+        </property>
     </bean>
 
     <!-- service admin servant -->

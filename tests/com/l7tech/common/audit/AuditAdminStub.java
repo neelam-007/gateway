@@ -37,6 +37,14 @@ public class AuditAdminStub implements AuditAdmin {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
+    public Date getLastAcknowledgedAuditDate() {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
+    public Date markLastAcknowledgedAuditDate() {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
     public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
