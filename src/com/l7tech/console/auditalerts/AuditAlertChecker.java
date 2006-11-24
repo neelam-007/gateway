@@ -110,8 +110,7 @@ public class AuditAlertChecker {
 
     private Timer getTimer() {
         if (timer == null) {
-            int interval = configBean.getAuditCheckInterval();
-            timer = new Timer(interval*1000,
+            timer = new Timer(getDelay(),
                 new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         try {
@@ -154,11 +153,18 @@ public class AuditAlertChecker {
         stopTimer();
 
         logger.fine("setting audit alert timer to " + String.valueOf(configBean.getAuditCheckInterval()));
-        getTimer().setDelay(configBean.getAuditCheckInterval() * 1000);
+        Timer timer = getTimer();
+        int delay = getDelay();
+        timer.setInitialDelay(delay);
+        timer.setDelay(delay);
 
         if (configBean.isEnabled())
             startTimer();
         else
             logger.fine("Audit alerts disabled");
+    }
+
+    private int getDelay() {
+        return configBean.getAuditCheckInterval() * 1000;
     }
 }
