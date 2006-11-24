@@ -2449,7 +2449,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                                       "The requested action could not be performed because the applet is running\n" +
                                       "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
                                       "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
-                                      "this applet and reload the page.",
+                                      "this signed applet and then reload the page.",
                                       "Disallowed by browser settings",
                                       JOptionPane.WARNING_MESSAGE, null);
     }

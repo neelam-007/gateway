@@ -142,8 +142,9 @@ public class DialogDisplayer {
         Dimension holderSize = holder.getLayeredPane().getSize();
         if (holderSize == null) return false;
 
-        Dimension sheetSize = dialog.getLayeredPane().getSize();
-        if (sheetSize == null) {
+        Dimension sheetSize;
+        sheetSize = dialog instanceof JDialog ? ((JDialog)dialog).getSize() : dialog.getLayeredPane().getSize();
+        if (sheetSize == null || sheetSize.getWidth() < 1 || sheetSize.getHeight() < 1) {
             if (dialog instanceof JDialog) {
                 JDialog jd = (JDialog)dialog;
                 if (jd.isMinimumSizeSet())
