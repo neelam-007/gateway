@@ -99,6 +99,8 @@ public class GlobalSchemaEntryEditor extends JDialog {
             // Search action tries to get the class loader
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
         }
 
         boolean lastWasSeparator = true; // remove trailing separator
