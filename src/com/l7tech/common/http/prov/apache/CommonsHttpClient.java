@@ -188,9 +188,6 @@ public class CommonsHttpClient implements GenericHttpClient {
             httpMethod.addRequestHeader(header.getName(), header.getFullValue());
         }
 
-        createCookiesFromHeaders(headers, state, targetUrl);
-
-
         final ContentTypeHeader rct = params.getContentType();
         if (rct != null)
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
@@ -391,23 +388,6 @@ public class CommonsHttpClient implements GenericHttpClient {
         return httpState;
     }
 
-    private void createCookiesFromHeaders(List headers, HttpState state, URL targetUrl) {
-        for (Iterator i = headers.iterator(); i.hasNext();) {
-            HttpHeader theHeader = (HttpHeader)i.next();
-            if (HttpConstants.HEADER_COOKIE.equalsIgnoreCase(theHeader.getName())) {
-                String headerVal = theHeader.getFullValue();
-                int indexOfEquals = headerVal.indexOf('=');
-                if (indexOfEquals >= 0) {
-                    String cookieName = headerVal.substring(0, indexOfEquals);
-                    String cookieVal = headerVal.substring(indexOfEquals + 1);
-                    Cookie aCookie = new Cookie(targetUrl.getHost(), cookieName, cookieVal,"",-1,false);
-                    state.addCookie(aCookie);
-                }
-            }
-        }
-
-    }
-
     private static HttpParams getOrBuildCachingHttpParams(final HttpParams params) {
         HttpParams defaultParams = httpParams;
 
@@ -425,19 +405,19 @@ public class CommonsHttpClient implements GenericHttpClient {
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
             protocol = new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
-                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                     return verify(sockFac.createSocket(socket, host, port, autoClose), host);
                 }
 
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
                     return verify(sockFac.createSocket(host, port, clientAddress, clientPort), host);
                 }
 
-                public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                public Socket createSocket(String host, int port) throws IOException {
                     return verify(sockFac.createSocket(host, port), host);
                 }
 
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                     Socket socket = sockFac.createSocket();
                     int connectTimeout = httpConnectionParams.getConnectionTimeout();
 
