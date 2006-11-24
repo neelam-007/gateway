@@ -26,7 +26,7 @@ public class ImportPolicyFromUDDIWizard extends Wizard {
 
     protected ImportPolicyFromUDDIWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
-        setTitle("Pull WS-Policy Document from URL in UDDI Registry");
+        setTitle("Import WS-Policy from URL in UDDI Registry Wizard");
         getButtonHelp().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(ImportPolicyFromUDDIWizard.this);
