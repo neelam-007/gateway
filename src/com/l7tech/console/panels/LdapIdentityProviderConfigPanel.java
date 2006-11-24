@@ -174,7 +174,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         addButt = new JButton("Add");
         addButt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String newUrl = (String)JOptionPane.showInputDialog(null,
+                String newUrl = (String)JOptionPane.showInputDialog(addButt,
                                                             "Enter the LDAP URL:",
                                                             "Add LDAP Host URL  ",
                                                             JOptionPane.PLAIN_MESSAGE,
