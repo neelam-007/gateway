@@ -16,13 +16,13 @@ public class AuditAlertsDialog extends JDialog {
     private AuditWatcher watcher;
 
     public AuditAlertsDialog(Frame owner, AuditWatcher watcher) throws HeadlessException {
-        super(owner);
+        super(owner, "Audit Alerts");
         this.watcher = watcher;
         init();
     }
 
     public AuditAlertsDialog(Dialog owner, AuditWatcher watcher) throws HeadlessException {
-        super(owner);
+        super(owner, "Audit Alerts");
         this.watcher = watcher;
         init();
     }

@@ -22,7 +22,7 @@ public class AuditAlertOptionsDialog extends JDialog {
     private boolean wasCancelled = false;
 
     public AuditAlertOptionsDialog(Frame owner) {
-        super(owner, true);
+        super(owner, "Configure Audit Alerts", true);
         configBean = new AuditAlertConfigBean(TopComponents.getInstance().getPreferences());
         setContentPane(mainPanel);
         getRootPane().setDefaultButton(buttonOK);
