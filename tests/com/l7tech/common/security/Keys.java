@@ -119,7 +119,7 @@ public class Keys {
 
 
         certGen.setSignatureAlgorithm(SIGNATURE_ALGORITHM);
-        certGen.setSerialNumber(new BigInteger(10, new Random()));
+        certGen.setSerialNumber(new BigInteger(10, new Random()).abs().add(new BigInteger("1")));
         if (debug) System.out.println("sign certificate");
         X509Certificate signedCertificate = certGen.generateX509Certificate(signKey, getSecureRandom());
         if (debug) System.out.println("Certificate:\n" + signedCertificate.toString());
