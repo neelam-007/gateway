@@ -35,6 +35,27 @@ public class PartitionInformation{
     Document originalDom;
 
 
+    public enum EndpointType {
+        BASIC_HTTP("Basic HTTP Endpoint"),
+        SSL_HTTP("Luna Keystore"),
+        SSL_HTTP_NOCLIENTCERT(""),
+        ;
+
+        private String endpointName;
+
+        EndpointType(String ksName) {
+            this.endpointName = ksName;
+        }
+
+        public String getName() {
+            return endpointName;
+        }
+
+        public String toString() {
+            return endpointName;
+        }
+    }
+
     public PartitionInformation(String partitionName) {
         this.partitionId = partitionName;
         isNewPartition = true;
