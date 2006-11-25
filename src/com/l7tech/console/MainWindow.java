@@ -854,7 +854,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                   }
                   final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
                   final Component c = kbm.getFocusOwner();
-                  log.finest("the focus owner is " + c.getClass());
+                  log.finest("the focus owner is " + (c==null ? "NULL" : c.getClass()));
                   if (c instanceof Refreshable) {
 
                       try {
