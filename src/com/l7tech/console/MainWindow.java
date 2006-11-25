@@ -1570,6 +1570,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageRolesMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageClusterLicensesMenuItem());
+            Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
             menu = new JPopupMenu("Monitor...");
@@ -1577,6 +1578,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getStatMenuItem());
             menu.add(getAuditMenuItem());
             menu.add(getFromFileMenuItem());
+            Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/AnalyzeGatewayLog16x16.gif");
 
             menu = new JPopupMenu("Help...");
@@ -1585,6 +1587,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             jcm.setSelected(getPreferences().isPolicyMessageAreaVisible());
             menu.add(jcm);
             menu.add(new AboutAction());
+            Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/About16.gif");
 
             toolBarPane.add(getAuditAlertBar());
@@ -1938,9 +1941,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         setName("MainWindow");
         setJMenuBar(isApplet() ? null : getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
-        Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+        Image icon = getSmallLogoImage();
         ImageIcon imageIcon = new ImageIcon(icon);
         setIconImage(imageIcon.getImage());
+        DialogDisplayer.setDefaultFrameIcon(new ImageIcon(icon));
+        DialogDisplayer.setDefaultWindowImages(Arrays.asList(icon));
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(getFrameContentPane(), BorderLayout.CENTER);
@@ -1958,6 +1963,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         initializeWindowPosition();
         initializeHTMLRenderingKit();
         installInactivityTimerEventListener();
+    }
+
+    /**
+     * Get the small logo image, suitable for use as a frame icon.
+     *
+     * @return the small logo image.  Never null
+     * @throws RuntimeException if the icon resource can't be found
+     */
+    public static Image getSmallLogoImage() {
+        String path = RESOURCE_PATH + "/layer7_logo_small_32x32.png";
+        Image icon = ImageCache.getInstance().getIcon(path);
+        if (icon == null) throw new RuntimeException("Missing resource: " + path);
+        return icon;
     }
 
     private void initializeHTMLRenderingKit() {

@@ -8,6 +8,7 @@ import javax.swing.event.InternalFrameEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -37,6 +38,12 @@ public class DialogDisplayer {
 
     // Client properties stored on layered pane that is hosting sheets
     public static final String PROPERTY_SHEETSTACK = "com.l7tech.common.gui.util.DialogDisplayer.sheetStack";
+
+    /** Default icon to use for dialogs. */
+    private static Icon defaultFrameIcon = null;
+
+    /** Default images to use for dialogs. */
+    private static List defaultWindowImages = null;
 
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
@@ -224,6 +231,9 @@ public class DialogDisplayer {
                 }
             });
         }
+        List images = Utilities.getIconImages(dialog);
+        if ((images == null || images.isEmpty()) && defaultWindowImages != null && !defaultWindowImages.isEmpty())
+            Utilities.setIconImages(dialog, defaultWindowImages);        
         dialog.setVisible(true);
     }
 
@@ -321,6 +331,47 @@ public class DialogDisplayer {
                                  callback.run();
                              }
                          });
+    }
+
+    /**
+     * Get the Icon that will be used for the frame icon for dialogs displayed as sheets if no other icon
+     * can be found.
+     *
+     * @return the icon that will be used, or null if the system default (coffee cup) will be be used
+     */
+    public static Icon getDefaultFrameIcon() {
+        return defaultFrameIcon;
+    }
+
+    /**
+     * Set the Icon that will be used for the frame icon for dialogs displayed as sheets if no other icon
+     * can be found.
+     *
+     * @param defaultFrameIcon  the icon to use, or null to fall back to the system default (usually some kind
+     *                          of coffee cup)
+     */
+    public static void setDefaultFrameIcon(Icon defaultFrameIcon) {
+        DialogDisplayer.defaultFrameIcon = defaultFrameIcon;
+    }
+
+    /**
+     * Get the list of Images that will be used for the Window images for dialogs displayed natively if no
+     * Images are already set (and the Java version is at least 1.6).
+     *
+     * @return the image list.  May be empty or null.
+     */
+    public static List getDefaultWindowImages() {
+        return defaultWindowImages;
+    }
+
+    /**
+     * Set the list of Images that will be used for the Window images for dialogs displayed natively if no
+     * Images are already set (and the Java version is at least 1.6).
+     *
+     * @param images  the image list.  May be empty or null.
+     */
+    public static void setDefaultWindowImages(List images) {
+        DialogDisplayer.defaultWindowImages = images;
     }
 
     /**

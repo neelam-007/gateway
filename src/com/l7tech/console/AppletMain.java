@@ -5,28 +5,26 @@
 
 package com.l7tech.console;
 
-import com.l7tech.console.panels.LogonDialog;
-import com.l7tech.console.panels.AppletContentStolenPanel;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.logging.AwtErrorHandler;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.WeakSet;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
-import com.l7tech.common.gui.ExceptionDialog;
-
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.WeakSet;
+import com.l7tech.console.logging.AwtErrorHandler;
+import com.l7tech.console.panels.AppletContentStolenPanel;
+import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.util.TopComponents;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.MalformedURLException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Iterator;
-import java.io.UnsupportedEncodingException;
+import java.util.logging.Logger;
 
 /**
  * Entry point for applet-based version of SSM.
@@ -129,8 +127,8 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private static void notifyContentPaneStolen() {
-        for (Iterator i = instances.iterator(); i.hasNext();) {
-            AppletMain applet = (AppletMain)i.next();
+        for (Object instance : instances) {
+            AppletMain applet = (AppletMain)instance;
             if (applet != null && currentRootPaneOwner != applet) {
                 applet.replaceContentPaneWithPlaceholder();
             }

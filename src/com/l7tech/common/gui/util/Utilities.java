@@ -12,13 +12,17 @@ import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.logging.Logger;
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * This class is a bag of utilites shared by panels.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @noinspection unchecked,RedundantArrayCreation,UnnecessaryUnboxing,ForLoopReplaceableByForEach
  */
 public class Utilities {
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
@@ -454,6 +458,9 @@ public class Utilities {
     public static interface ContextMenuFactory {
         /**
          * Create a pop-up menu for the given text component.
+         *
+         * @param textComponent  the component for which to create the menu.  Must not be null.
+         * @return the created menu.  never null
          */
         JPopupMenu createContextMenu(JTextComponent textComponent);
     }
@@ -589,6 +596,9 @@ public class Utilities {
     /**
      * Configure the specified component to run the specified action when the ESCAPE key is pressed.
      * (as long as the component gets the keystroke, and not some other component)
+     *
+     * @param comp    the component whose input and action maps to adjust.  must not be null
+     * @param action  the action to invoke.  Must not be null
      */
     public static void runActionOnEscapeKey(JComponent comp, Action action) {
         KeyStroke ek = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);
@@ -599,6 +609,8 @@ public class Utilities {
     /**
      * Configure the specified JTextComponent (text field or text area) to automatically do "Select All" whenever
      * it gains keyboard focus.
+     *
+     * @param comp the component on which selectAll() should be invoked whenever it gains focus.  Must not be null.
      */
     public static void enableSelectAllOnFocus(final JTextComponent comp) {
         comp.addFocusListener(new FocusListener() {
@@ -639,7 +651,8 @@ public class Utilities {
     /**
      * Set the font for a component and its children.
      *
-     * @param component the component to be enabled/disabled
+     * @param component the component whose font is to be set, or null to take no action.
+     * @param font  the font to set.  must not be null
      */
     public static void setFont(JComponent component, Font font) {
         if(component != null) {
@@ -699,6 +712,8 @@ public class Utilities {
 
     /**
      * Remove tooltips from all menu items in the specified menu element.
+     *
+     * @param m the menu to scrub of tooltips along with all submenus.  Must not be null
      */
     public static void removeToolTipsFromMenuItems(MenuElement m) {
         MenuElement[] subElements = m.getSubElements();
@@ -786,7 +801,7 @@ public class Utilities {
      *
      * @param runnable the runnable to run on the swing thread.  Must not be null.
      * @throws RuntimeException if the runnable threw an unchecked exception.  The original exception is wrapped.
-     * @throws RuntimeException if the current thread was interrupted while waiting for the target thread.
+     *                          <p/>if the current thread was interrupted while waiting for the target thread.
      *         The InterruptedException is wrapped, and the interrupt status has been reasserted for this thread.
      */
     public static void invokeOnSwingThreadAndWait(Runnable runnable) throws RuntimeException {
@@ -804,7 +819,12 @@ public class Utilities {
         }
     }
 
-    /** Safely return the default toolkit's system selection, or null if there isn't one or it's unavailable. */
+    /**
+     * Safely return the default toolkit's system selection, or null if there isn't one or it's unavailable.
+     *
+     * @return  the system selection, or null if nonexistent or unavailable
+     * @see java.awt.Toolkit#getSystemSelection()
+     */
     public static Clipboard getDefaultSystemSelection() {
         try {
             return Toolkit.getDefaultToolkit().getSystemSelection();
@@ -812,5 +832,81 @@ public class Utilities {
             // Very restrictive security manager
             return null;
         }
+    }
+
+    private static final Method methodSetIconImages;
+    private static final Method methodGetIconImages;
+    static {
+        final Method[] getMethod = new Method[]{null};
+        final Method[] setMethod = new Method[]{null};
+
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                try {
+                    getMethod[0] = Window.class.getMethod("getIconImages", new Class[0]);
+                    setMethod[0] = Window.class.getMethod("setIconImages", new Class[] { java.util.List.class });
+                } catch (NoSuchMethodException e) {
+                    // No can do
+                } catch (AccessControlException e) {
+                    // No can do
+                }
+                return null;
+            }
+        });
+
+        methodSetIconImages = setMethod[0];
+        methodGetIconImages = getMethod[0];
+    }
+
+    /**
+     * Safely get the icon images for the specified window, if running under a supported JRE (Java 1.6 or higher).
+     *
+     * @param window  the window whose icon images to get.  Must not be null.
+     * @return a List of Image instances of various sizes to be used for the Window's frame and taskbar icon.
+     *         May be null or empty if not set or running with a pre-1.6 JRE.
+     */
+    public static java.util.List getIconImages(final Window window) {
+        if (methodGetIconImages == null) return null;
+
+        return (java.util.List)AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                try {
+                    return methodGetIconImages.invoke(window, new Object[0]);
+                } catch (IllegalAccessException e) {
+                    return null;
+                } catch (InvocationTargetException e) {
+                    return null;
+                } catch (AccessControlException e) {
+                    return null;
+                }
+            }
+        });
+    }
+
+    /**
+     * Safely set the icon images for the specified window, if running under a supported JRE (Java 1.6 or higher).
+     *
+     * @param window  the window whose icon images to set.  Must not be null.
+     * @param images  a List of Image instances.  Must not be null or empty, and must not contain nulls.
+     * @return true if the image list was set; false if the operation was not supported.
+     */
+    public static boolean setIconImages(final Window window, final java.util.List images) {
+        if (methodSetIconImages == null) return false;
+
+        Boolean result = (Boolean)AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                try {
+                    methodSetIconImages.invoke(window, new Object[] { images });
+                    return Boolean.TRUE;
+                } catch (IllegalAccessException e) {
+                    return Boolean.FALSE;
+                } catch (InvocationTargetException e) {
+                    return Boolean.FALSE;
+                } catch (AccessControlException e) {
+                    return Boolean.FALSE;
+                }
+            }
+        });
+        return result != null && result.booleanValue();
     }
 }

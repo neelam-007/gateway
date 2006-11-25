@@ -3,6 +3,7 @@ package com.l7tech.common.gui.util;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -65,6 +66,13 @@ public class Sheet extends JInternalFrame {
         super.dispose();
     }
 
+    private JFrame getJFrameOwnerAnscestor(Window dialog) {
+        for (; dialog != null; dialog = dialog.getOwner())
+            if (dialog instanceof JFrame)
+                return (JFrame)dialog;
+        return null;
+    }
+
     private void layoutComponents(final JDialog dialog) {
         // Mine the info out of the dialog before we strip its content
         setTitle(dialog.getTitle());
@@ -80,6 +88,10 @@ public class Sheet extends JInternalFrame {
             setMaximumSize(dialog.getMaximumSize());
         setResizable(dialog.isResizable());
         if (defaultButton != null) getRootPane().setDefaultButton(defaultButton);
+
+        Icon frameIcon = findFrameIcon(dialog);
+        if (frameIcon != null)
+            setFrameIcon(frameIcon);
 
         copyEscKeyAction(dialog);
 
@@ -105,6 +117,26 @@ public class Sheet extends JInternalFrame {
                 }
             }
         });
+    }
+
+    private Icon findFrameIcon(JDialog dialog) {
+        // Check for already-configured Window images (Java 1.6 or higher)
+        List windowImages = Utilities.getIconImages(dialog);
+        if (windowImages != null && windowImages.size() > 0) {
+            // We have no way to know what size would be best, so just use the first one
+            return new ImageIcon((Image)windowImages.iterator().next());
+        }
+
+        // Try to inherit JFrame IconImage from an owner JFrame
+        JFrame ownerFrame = getJFrameOwnerAnscestor(dialog);
+        if (ownerFrame != null) {
+            Image image = ownerFrame.getIconImage();
+            if (image != null)
+                return new ImageIcon(image);
+        }
+
+        // Use the application's default frame icon, if any
+        return DialogDisplayer.getDefaultFrameIcon();
     }
 
     private void copyEscKeyAction(JDialog d) {
