@@ -37,14 +37,14 @@ public class PartitionInformation{
 
     public enum EndpointType {
         BASIC_HTTP("Basic HTTP Endpoint"),
-        SSL_HTTP("Luna Keystore"),
-        SSL_HTTP_NOCLIENTCERT(""),
+        SSL_HTTP("SSL Endpoint"),
+        SSL_HTTP_NOCLIENTCERT("SSL Endpoint With No Client Certitifcate"),
         ;
 
         private String endpointName;
 
-        EndpointType(String ksName) {
-            this.endpointName = ksName;
+        EndpointType(String endpointName) {
+            this.endpointName = endpointName;
         }
 
         public String getName() {
