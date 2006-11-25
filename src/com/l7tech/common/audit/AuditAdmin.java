@@ -90,7 +90,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITIES)
     Date getLastAcknowledgedAuditDate() throws RemoteException;
 
     /**
@@ -101,7 +100,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return The date or null if not set
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
-    @Secured(stereotype=FIND_ENTITIES)
     Date markLastAcknowledgedAuditDate() throws RemoteException;
 
     /**

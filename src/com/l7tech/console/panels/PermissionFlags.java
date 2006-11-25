@@ -3,9 +3,13 @@
  */
 package com.l7tech.console.panels;
 
+import java.util.Collection;
+import java.util.Collections;
+
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.security.SecurityProvider;
 
 /**
  * @author alex
@@ -45,7 +49,17 @@ public class PermissionFlags {
         boolean updateAll = false;
         boolean deleteAll = false;
 
-        for (Permission perm : Registry.getDefault().getSecurityProvider().getUserPermissions()) {
+        Collection<Permission> userPermissions = Collections.emptyList();
+
+        Registry registry = Registry.getDefault();
+        if (registry != null) {
+            SecurityProvider securityProvider = registry.getSecurityProvider();
+
+            if (securityProvider != null)
+                userPermissions = securityProvider.getUserPermissions();
+        }
+
+        for (Permission perm : userPermissions) {
             if (perm.getEntityType() == etype || perm.getEntityType() == EntityType.ANY) {
                 switch (perm.getOperation()) {
                     case CREATE:

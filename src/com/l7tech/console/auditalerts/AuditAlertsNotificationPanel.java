@@ -24,7 +24,6 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     private JPanel mainPanel;
 
     private AuditAlertChecker checker;
-    private boolean hasClusterPropertyPermissions = false;
     private boolean hasAuditPermissions = false;
 
     public AuditAlertsNotificationPanel(AuditAlertChecker auditChecker) {
@@ -113,7 +112,7 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     }
 
     private boolean hasPermissions() {
-        return hasAuditPermissions && hasClusterPropertyPermissions;
+        return hasAuditPermissions;
     }
 
     public void onLogoff(LogonEvent e) {
@@ -125,12 +124,9 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     }
 
     private void updatePermissions() {
-        PermissionFlags perms = PermissionFlags.get(EntityType.CLUSTER_PROPERTY);
-        hasClusterPropertyPermissions = perms.canReadSome() && perms.canUpdateSome();
-
-        hasAuditPermissions =   PermissionFlags.get(EntityType.AUDIT_ADMIN).canReadSome() &&
-                                PermissionFlags.get(EntityType.AUDIT_MESSAGE).canReadSome() &&
-                                PermissionFlags.get(EntityType.AUDIT_RECORD).canReadSome() &&
-                                PermissionFlags.get(EntityType.AUDIT_SYSTEM).canReadSome();
+        hasAuditPermissions = PermissionFlags.get(EntityType.AUDIT_ADMIN).canReadSome() ||
+                              PermissionFlags.get(EntityType.AUDIT_MESSAGE).canReadSome() ||
+                              PermissionFlags.get(EntityType.AUDIT_RECORD).canReadSome() ||
+                              PermissionFlags.get(EntityType.AUDIT_SYSTEM).canReadSome();
     }
 }

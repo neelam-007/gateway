@@ -2,10 +2,11 @@ package com.l7tech.console.auditalerts;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.security.rbac.AttemptedReadAny;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.panels.PermissionFlags;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ public class AuditAlertOptionsAction extends SecureAction {
     private static final Logger logger = Logger.getLogger(AuditAlertOptionsAction.class.getName());
     private static AuditAlertOptionsAction instance;
 
-    private java.util.List<AuditWatcher> auditWatchers;
+    private final java.util.List<AuditWatcher> auditWatchers;
 
     public static AuditAlertOptionsAction getInstance() {
         if (instance == null)
@@ -30,7 +31,7 @@ public class AuditAlertOptionsAction extends SecureAction {
     }
 
     private AuditAlertOptionsAction() {
-        super(new AttemptedReadAny(EntityType.AUDIT_ADMIN));
+        super(null);
         auditWatchers = new ArrayList<AuditWatcher>();
     }
 
@@ -45,6 +46,14 @@ public class AuditAlertOptionsAction extends SecureAction {
 
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
+    }
+
+    public boolean isAuthorized() {
+        return  Registry.getDefault().isAdminContextPresent() && (
+                PermissionFlags.get(EntityType.AUDIT_ADMIN).canReadSome() ||
+                PermissionFlags.get(EntityType.AUDIT_MESSAGE).canReadSome() ||
+                PermissionFlags.get(EntityType.AUDIT_RECORD).canReadSome() ||
+                PermissionFlags.get(EntityType.AUDIT_SYSTEM).canReadSome());
     }
 
     protected void performAction() {
