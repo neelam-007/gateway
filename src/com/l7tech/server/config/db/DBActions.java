@@ -1,7 +1,8 @@
 package com.l7tech.server.config.db;
 
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -74,6 +75,11 @@ public class DBActions {
     // CONSTRUCTOR
     //
     public DBActions() throws ClassNotFoundException {
+        init();
+    }
+
+    public DBActions(OSSpecificFunctions osf) throws ClassNotFoundException {
+        this.osFunctions = osf;
         init();
     }
 
@@ -454,7 +460,7 @@ public class DBActions {
     }
 
     private void init() throws ClassNotFoundException {
-        osFunctions = OSDetector.getOSSpecificFunctions();
+        if (osFunctions == null) osFunctions = OSDetector.getOSSpecificFunctions(PartitionInformation.DEFAULT_PARTITION_NAME);
         initDriver();
         
         ssgDbChecker = new CheckSSGDatabase();
@@ -465,6 +471,8 @@ public class DBActions {
     private void initDriver() throws ClassNotFoundException {
         Properties dbProps = new Properties();
         InputStream is = null;
+        //try to read the database driver from 
+
         try {
             is = new FileInputStream(osFunctions.getDatabaseConfig());
             dbProps.load(is);

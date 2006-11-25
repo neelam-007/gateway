@@ -17,10 +17,8 @@ public class OSDetector {
 
     private static String OSName = System.getProperty("os.name");
 
-//    private static OSSpecificFunctions osf_;
-
     public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
-        return createPartitionAwareOSFunctions("");
+        return getOSSpecificFunctions("");
     }
 
     public static OSSpecificFunctions getOSSpecificFunctions(String partitionName) {

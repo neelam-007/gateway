@@ -47,7 +47,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     public ConfigWizardKeystorePanel(WizardStepPanel next) {
         super(next);
-        init();
+        stepLabel = "Set Up SSG Keystore";
     }
 
     protected void updateModel() {
@@ -75,6 +75,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     protected void updateView() {
+        if (osFunctions == null) init();
+
         boolean isLunaOk = true;
         String[] keystores = getKeystores(isLunaOk);
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
@@ -102,6 +104,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     private void init() {
+        osFunctions = getParentWizard().getOsFunctions();
+
         setShowDescriptionPanel(false);
         java.util.List<KeystoreType> kstypes = new ArrayList<KeystoreType>();
         for (KeystoreType type : KeystoreType.values()) {
@@ -109,7 +113,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                 kstypes.add(type);
         }
         keystoreType.setModel(new DefaultComboBoxModel(kstypes.toArray(new KeystoreType[0])));
-        stepLabel = "Set Up SSG Keystore";
         configBean = new KeystoreConfigBean();
         configCommand = new KeystoreConfigCommand(configBean);
 

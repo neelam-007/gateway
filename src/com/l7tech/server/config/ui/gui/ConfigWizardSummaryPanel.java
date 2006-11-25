@@ -20,21 +20,23 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
 
     private String newline= "\n";
     private JScrollPane summaryScroller;
+    private boolean initialized = false;
 
     public ConfigWizardSummaryPanel(WizardStepPanel next) {
         super(next);
-        init();
+        stepLabel = "SSG Configuration Summary";
     }
 
     private void init() {
         setShowDescriptionPanel(false);
-        stepLabel = "SSG Configuration Summary";
         summaryText.setBackground(mainPanel.getBackground());
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }
 
     protected void updateView() {
+        if (!initialized) init();
+        
         Object input = getParentWizard().getWizardInput();
         if (input instanceof Set) {
             Set<ConfigurationCommand> commands = (Set<ConfigurationCommand>) input;

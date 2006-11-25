@@ -80,7 +80,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = false;
 
-        File dbConfigFile = new File(osFunctions.getDatabaseConfig()); //hibernate config file
+        File dbConfigFile = new File(getOsFunctions().getDatabaseConfig()); //hibernate config file
 
         if (dbConfigFile.exists()) {
             File[] files = new File[]
@@ -115,7 +115,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         try {
             Properties dbProps = PropertyHelper.mergeProperties(
                     dbConfigFile,
-                    new File(dbConfigFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()), 
+                    new File(dbConfigFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);

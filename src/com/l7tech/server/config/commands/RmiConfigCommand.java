@@ -26,7 +26,7 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
 
     public boolean execute() {
         boolean success = true;
-        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
         try {
             updateSystemPropertiesFile(systemPropertiesFile);
@@ -48,7 +48,7 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
 
             Properties props = PropertyHelper.mergeProperties(
                     systemPropertiesFile,
-                    new File(systemPropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()),
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
             
             props.setProperty(PROP_RMI_RANDOMIZE, "true");

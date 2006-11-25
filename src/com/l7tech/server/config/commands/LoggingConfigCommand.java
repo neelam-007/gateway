@@ -29,7 +29,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
 
     public boolean execute() {
         boolean success = true;
-        String ssgLogPropsPath = osFunctions.getSsgLogPropertiesFile();
+        String ssgLogPropsPath = getOsFunctions().getSsgLogPropertiesFile();
         File logProps = new File(ssgLogPropsPath);
         if (logProps.exists()) {
             File[] files = new File[]
@@ -53,10 +53,10 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             File loggingPropertiesFile = new File(ssgLogPropsPath);
             props = PropertyHelper.mergeProperties(
                     loggingPropertiesFile,
-                    new File(ssgLogPropsPath + "." + osFunctions.getUpgradedFileExtension()), 
+                    new File(ssgLogPropsPath + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
-            String fullLogPattern = osFunctions.getSsgInstallRoot() + SSG_LOG_PATTERN;
+            String fullLogPattern = getOsFunctions().getSsgInstallRoot() + SSG_LOG_PATTERN;
             props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);
 
             fos = new FileOutputStream(loggingPropertiesFile);

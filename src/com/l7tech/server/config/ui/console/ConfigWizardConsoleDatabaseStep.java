@@ -85,6 +85,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     }
 
     private void init() {
+        osFunctions = getParentWizard().getOsFunctions();
         try {
             dbActions = new DBActions();
         } catch (ClassNotFoundException e) {

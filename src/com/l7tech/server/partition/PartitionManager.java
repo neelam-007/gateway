@@ -28,11 +28,13 @@ public class PartitionManager {
 
     private Map<String, PartitionInformation> partitions;
 
+    private PartitionInformation activePartition;
+
     public static PartitionManager getInstance() {
-            if (instance == null)
-                instance = new PartitionManager();
-            return instance;
-        }
+        if (instance == null)
+            instance = new PartitionManager();
+        return instance;
+    }
 
     //private constructor - must access this class through getInstance()
     private PartitionManager() {
@@ -101,7 +103,7 @@ public class PartitionManager {
         return partitions.get(partitionId);
     }
 
-    public List<PartitionInformation.EndpointHolder> getEndpoints() {
+    public List<PartitionInformation.EndpointHolder> getAllEndpointsInUse() {
         List<PartitionInformation.EndpointHolder> allEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
 
         Set<Map.Entry<String,PartitionInformation>> entries = partitions.entrySet();
@@ -112,4 +114,24 @@ public class PartitionManager {
         return allEndpoints;
     }
 
+
+    public PartitionInformation getActivePartition() {
+        if (activePartition == null) {
+            //if there's no active partition then return the default one.
+            activePartition = getPartition(PartitionInformation.DEFAULT_PARTITION_NAME);
+        }
+        return activePartition;
+    }
+
+    public void setActivePartition(PartitionInformation newActivePartition) {
+        activePartition = getPartition(newActivePartition.getPartitionId());
+        if (activePartition == null) {
+            partitions.put(newActivePartition.getPartitionId(), newActivePartition);
+            activePartition = getPartition(newActivePartition.getPartitionId());
+        }
+    }
+
+    public void removePartition(String partitionName) {
+        partitions.remove(partitionName);
+    }
 }

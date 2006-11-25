@@ -4,6 +4,8 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import com.l7tech.server.config.ClusteringType;
+import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -36,17 +38,19 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
     public ConfigWizardClusteringPanel(WizardStepPanel next) {
         super(next);
-        init();
+        stepLabel = "Set Up SSG Clustering";
+        setShowDescriptionPanel(false);
     }
 
     private void init() {
-        setShowDescriptionPanel(false);
+        osFunctions = getParentWizard().getOsFunctions();
+        if (osFunctions == null) osFunctions = OSDetector.getOSSpecificFunctions(PartitionInformation.DEFAULT_PARTITION_NAME);
+
         configBean = new ClusteringConfigBean();
         configCommand = new ClusteringConfigCommand(configBean);
 
         clusteringConfigBean = (ClusteringConfigBean) configBean;
-        stepLabel = "Set Up SSG Clustering";
-
+        
         hostnameGroup = new ButtonGroup();
         hostnameGroup.add(useSsgHostnameOption);
         hostnameGroup.add(useNewHostnameOption);
@@ -65,6 +69,8 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     }
 
     protected void updateView() {
+
+        if (osFunctions == null) init();
 
         emptyHostnameLabel.setVisible(false);
 

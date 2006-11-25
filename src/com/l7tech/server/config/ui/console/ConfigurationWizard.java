@@ -181,4 +181,12 @@ public class ConfigurationWizard {
     public List<String> getManualSteps() {
         return manualStepsManager.getManualSteps();
     }
+
+    public OSSpecificFunctions getOsFunctions() {
+        return osFunctions;
+    }
+
+    public void setOsFunctions(OSSpecificFunctions osFunctions) {
+        this.osFunctions = osFunctions;
+    }
 }

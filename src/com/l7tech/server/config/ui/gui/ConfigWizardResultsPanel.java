@@ -40,17 +40,19 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 
     public ConfigWizardResultsPanel(WizardStepPanel next) {
         super(next);
-        init();
+        stepLabel = "Configuration Results";
+        setShowDescriptionPanel(false);
     }
 
     private void init() {
+
+        osFunctions = getParentWizard().getOsFunctions();
+
         stepsBuffer = new StringBuilder();
         eol = osFunctions.isWindows()?"\r\n":"\n";
 
-        setShowDescriptionPanel(false);
         configBean = null;
         configCommand = null;
-        stepLabel = "Configuration Results";
         saveButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent event) {
@@ -198,6 +200,8 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     }
 
     private void doUpdateView() {
+        if (osFunctions == null) init();        
+
         getParentWizard().getBackButton().setEnabled(false);
         getParentWizard().getNextButton().setEnabled(false);
         getParentWizard().getFinishButton().setEnabled(false);

@@ -1,10 +1,13 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.server.partition.PartitionManager;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -23,7 +26,6 @@ import java.util.zip.ZipOutputStream;
 public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     private static final Logger logger = Logger.getLogger(BaseConfigurationCommand.class.getName());
 
-    protected OSSpecificFunctions osFunctions;
     protected ConfigurationBean configBean;
     DateFormat formatter;
 
@@ -31,9 +33,7 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
 
     protected BaseConfigurationCommand(ConfigurationBean bean) {
         this.configBean = bean;
-        osFunctions = OSDetector.getOSSpecificFunctions();
         formatter = new SimpleDateFormat("E_MMM_d_yyyy_HH_mm");
-
     }
 
     protected void backupFiles(File[] files, String backupName) {
@@ -42,7 +42,7 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
         }
 
         String backupFileName = backupName + "_" + formatter.format(currentTime);
-        String fullBackupPath = osFunctions.getSsgInstallRoot() + "configwizard/" + backupFileName + ".zip";
+        String fullBackupPath = getOsFunctions().getSsgInstallRoot() + "configwizard/" + backupFileName + ".zip";
         if (files != null && files.length > 0) {
             logger.info("creating ZIP file: " + fullBackupPath);
 
@@ -79,9 +79,12 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
         }
     }
 
+    protected OSSpecificFunctions getOsFunctions() {
+        return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
+    }
+
     public String[] getActions() {
-        if (configBean != null) return configBean.explain();
-        return null;
+        return (configBean != null)?configBean.explain():null;
     }
 
 }

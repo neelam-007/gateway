@@ -52,8 +52,8 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
 
         boolean configureCluster = clusterBean.getClusterType() != ClusteringType.CLUSTER_NONE;
 
-        File clusterHostNameFile = configureCluster? new File(osFunctions.getClusterHostFile()):null;
-        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
+        File clusterHostNameFile = configureCluster? new File(getOsFunctions().getClusterHostFile()):null;
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
         File[] files = new File[]
         {   clusterHostNameFile,
@@ -86,7 +86,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         OutputStream fos = null;
         try {
             Properties props = PropertyHelper.mergeProperties(systemPropertiesFile,
-                    new File(systemPropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()),
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
             props.setProperty(PROP_RMI_HOSTNAME, hostname);

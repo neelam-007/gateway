@@ -1,7 +1,7 @@
 package com.l7tech.server.config.beans;
 
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.partition.PartitionManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,8 +22,7 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
 
     protected String elementName;
     protected String elementDescription;
-    protected OSSpecificFunctions osFunctions;
-
+    
     protected List<String> explanations;
 
     protected String insertTab = "\t";
@@ -33,7 +32,6 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
         affectedObjects = new HashMap();
         elementName = name;
         elementDescription = description;
-        osFunctions = OSDetector.getOSSpecificFunctions();
         explanations = new ArrayList<String>();
     }
 
@@ -55,6 +53,11 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
         explanations.clear();
         populateExplanations();
         return explanations.toArray(new String[explanations.size()]);
+    }
+
+
+    protected OSSpecificFunctions getOsFunctions() {
+        return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
     }
 
     protected abstract void populateExplanations();

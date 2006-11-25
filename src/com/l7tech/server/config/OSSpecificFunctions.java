@@ -112,7 +112,7 @@ public abstract class OSSpecificFunctions {
     }
 
     protected String getClusterHostNamePath() {
-        return getSsgInstallRoot() + clusterHostFile;
+        return getConfigurationBase() + clusterHostFile;
     }
 
     public String getOSName() {

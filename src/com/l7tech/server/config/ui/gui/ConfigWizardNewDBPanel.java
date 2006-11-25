@@ -1,22 +1,25 @@
 package com.l7tech.server.config.ui.gui;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBActionsListener;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
@@ -71,36 +74,26 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     private Map dbProps;
 
 
-    private Map getDbProps() {
-        if (dbProps == null) {
-            try {
-                dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
-                        SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                        SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                        SsgDatabaseConfigBean.PROP_DB_URL
-                });
-            } catch (FileNotFoundException e) {
-                logger.warning(CONFIG_FILE_NOT_FOUND_MSG);
-                logger.warning(e.getMessage());
-            } catch (IOException e) {
-                logger.warning(CONFIG_FILE_IO_ERROR_MSG);
-                logger.warning(e.getMessage());
-            }
-        }
-        return dbProps;
-    }
-
     public ConfigWizardNewDBPanel(WizardStepPanel next) {
         super(next);
-        init();
+        stepLabel = "Set Up The SSG Database";
+        setShowDescriptionPanel(false);
     }
 
     private void init() {
-        setShowDescriptionPanel(false);
+
         configBean = new SsgDatabaseConfigBean();
         configCommand = new SsgDatabaseConfigCommand(configBean);
+
+        //before creating the dbactions, make sure the files that it needs are going to be there ...
+        //otherwise it won't be able to parse things well
+
+        osFunctions = getParentWizard().getOsFunctions();
+        if (!new File(osFunctions.getPartitionBase() + osFunctions.getPartitionName()).exists())
+            osFunctions = OSDetector.getOSSpecificFunctions(PartitionInformation.TEMPLATE_PARTITION_NAME);
+
         try {
-            dbActions = new DBActions();
+            dbActions = new DBActions(osFunctions);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(MYSQL_CLASS_NOT_FOUND_MSG);
         }
@@ -119,15 +112,31 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
             createNewDb.setSelected(true);
         }
 
-        stepLabel = "Set Up The SSG Database";
-
         errorMessagePane.setBackground(mainPanel.getBackground());
         errorMessagePane.setForeground(Color.RED);
         errorMessagePane.setVisible(false);
 
-
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private Map getDbProps() {
+        if (dbProps == null) {
+            try {
+                dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
+                        SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                        SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                        SsgDatabaseConfigBean.PROP_DB_URL
+                });
+            } catch (FileNotFoundException e) {
+                logger.warning(CONFIG_FILE_NOT_FOUND_MSG);
+                logger.warning(e.getMessage());
+            } catch (IOException e) {
+                logger.warning(CONFIG_FILE_IO_ERROR_MSG);
+                logger.warning(e.getMessage());
+            }
+        }
+        return dbProps;
     }
 
     private boolean checkIsNewDb(Map props) {
@@ -195,6 +204,8 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     }
 
     protected void updateView() {
+        if (osFunctions == null) init();
+
         if (!createNewDb.isSelected()) {
             populateExistingDbFields();
         }

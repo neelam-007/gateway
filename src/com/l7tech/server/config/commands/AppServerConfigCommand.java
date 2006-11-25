@@ -1,16 +1,15 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.*;
 import java.util.logging.Logger;
 
@@ -50,7 +49,7 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = false;
 
-        File tomcatServerConfigFile = new File(osFunctions.getTomcatServerConfig());
+        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
         if (tomcatServerConfigFile.exists()) {
             File[] files = new File[]
             {
@@ -150,7 +149,7 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
         boolean didSomething = false;
         if (connectors != null && connectors.getLength() > 0) {
             //there are some insecure connector nodes so lets see if they already have the attributes set.
-            for (int x = 0; x < connectors.getLength(); ++x) {
+        for (int x = 0; x < connectors.getLength(); ++x) {
                 Element connector = (Element) connectors.item(x);
                 if (!connector.hasAttribute(attributeName) || !connector.getAttribute(attributeName).equals(attributeValue)) {
                     //the attribute doesn't exist so add it.

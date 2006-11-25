@@ -127,7 +127,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 Security.addProvider(new com.sun.security.sasl.Provider());
             }
         } else if (ksType == KeystoreType.LUNA_KEYSTORE_NAME) {
-            File classDir = new File(osFunctions.getPathToJreLibExt());
+            File classDir = new File(getOsFunctions().getPathToJreLibExt());
             if (!classDir.exists()) {
                 throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
             }
@@ -190,17 +190,24 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         char[] ksPassword = ksBean.getKsPassword();
         boolean doBothKeys = ksBean.isDoBothKeys();
 
-        String ksDir = osFunctions.getKeystoreDir();
-        File keystorePropertiesFile = new File(osFunctions.getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(osFunctions.getTomcatServerConfig());
+        String ksDir = getOsFunctions().getKeystoreDir();
+        File keystoreDir = new File(ksDir);
+        if (!keystoreDir.exists() && !keystoreDir.mkdir()) {
+            String msg = "Could not create the directory: \"" + ksDir + "\". Cannot generate keystores";
+            logger.severe(msg);
+            throw new IOException(msg);
+        }
+
+        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
         File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
         File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
         File caCertFile = new File(ksDir + CA_CERT_FILE);
         File sslCertFile = new File(ksDir + SSL_CERT_FILE);
-        File javaSecFile = new File(osFunctions.getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
+        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
 
-        File newJavaSecFile  = new File(osFunctions.getPathToJavaSecurityFile() + ".new");
+        File newJavaSecFile  = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
 
         File[] files = new File[]
         {
@@ -235,14 +242,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         //we don't actually care what the password is for Luna, so make it obvious.
         ksPassword = new String("ignoredbyluna").toCharArray();
 
-        String ksDir = osFunctions.getKeystoreDir();
+        String ksDir = getOsFunctions().getKeystoreDir();
 
-        File newJavaSecFile = new File(osFunctions.getPathToJavaSecurityFile() + ".new");
+        File newJavaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
 
-        File javaSecFile = new File(osFunctions.getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
-        File keystorePropertiesFile = new File(osFunctions.getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(osFunctions.getTomcatServerConfig());
+        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
+        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
         File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
         File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
         File caCertFile = new File(ksDir + CA_CERT_FILE);
@@ -329,7 +336,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         BufferedReader reader = null;
         PrintWriter writer = null;
-        File newFile = new File(osFunctions.getSsgSystemPropertiesFile() + ".confignew");
+        File newFile = new File(getOsFunctions().getSsgSystemPropertiesFile() + ".confignew");
 
         try {
             if (!systemPropertiesFile.exists()) {
@@ -470,8 +477,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void copyLunaJars(KeystoreConfigBean ksBean) {
         String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
-        String jreLibExtdestination = osFunctions.getPathToJreLibExt();
-        String javaLibPathDestination = osFunctions.getPathToJavaLibPath();
+        String jreLibExtdestination = getOsFunctions().getPathToJreLibExt();
+        String javaLibPathDestination = getOsFunctions().getPathToJavaLibPath();
 
         File srcDir = new File(lunaJarSourcePath);
 
@@ -517,7 +524,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void setLunaSystemProps(KeystoreConfigBean ksBean) {
-        System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + osFunctions.getLunaCmuPath());
+        System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + getOsFunctions().getLunaCmuPath());
     }
 
     private void truncateKeystores(File caKeyStore, File sslKeyStore) {
@@ -631,11 +638,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         try {
             Properties keystoreProps = PropertyHelper.mergeProperties(
                     keystorePropertiesFile,
-                    new File(keystorePropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()), 
+                    new File(keystorePropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
             keystoreProps.setProperty(PROP_KS_TYPE, getKsType());
-            keystoreProps.setProperty(PROP_KEYSTORE_DIR, osFunctions.getKeystoreDir());
+            keystoreProps.setProperty(PROP_KEYSTORE_DIR, getOsFunctions().getKeystoreDir());
             keystoreProps.setProperty(PROP_CA_KS_PASS, new String(ksPassword));
             keystoreProps.setProperty(PROP_SSL_KS_PASS, new String(ksPassword));
 

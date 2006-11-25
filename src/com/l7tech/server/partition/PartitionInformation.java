@@ -3,13 +3,13 @@ package com.l7tech.server.partition;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,18 +18,22 @@ import java.util.List;
  * Date: Nov 10, 2006
  * Time: 10:15:56 AM
  */
-public class PartitionInformation {
+public class PartitionInformation{
 
     private static final String CONNECTOR_XPATH = "/Server/Service/Connector";
 
     public static final String PARTITIONS_BASE = "etc/conf/partitions/";
     public static final String TEMPLATE_PARTITION_NAME = "partitiontemplate_";
-    String partitionId = "";
+    public static final String DEFAULT_PARTITION_NAME = "default_";
+
+    String partitionId;
+    String oldPartitionId;
     boolean isNewPartition = false;
+
     List<EndpointHolder> endpointsList;
     OSSpecificFunctions osf;
-
     Document originalDom;
+
 
     public PartitionInformation(String partitionName) {
         this.partitionId = partitionName;
@@ -47,6 +51,7 @@ public class PartitionInformation {
     }
 
     private void parseConnectors(Document doc) throws XPathExpressionException {
+        setOriginalDom(doc);
         XPath xpath = XPathFactory.newInstance().newXPath();
         NodeList connectors = (NodeList) xpath.evaluate(CONNECTOR_XPATH, doc, XPathConstants.NODESET);
         for (int nodeIndex = 0; nodeIndex < connectors.getLength(); nodeIndex++) {
@@ -65,12 +70,17 @@ public class PartitionInformation {
         return osf;
     }
 
-    public void setPartitionId(String partitionId) {
-        this.partitionId = partitionId;
+    public void setPartitionId(String newId) {
+        oldPartitionId = partitionId;
+        partitionId = newId;
     }
 
     public String getPartitionId() {
         return partitionId;
+    }
+
+    public String getOldPartitionId() {
+        return oldPartitionId;
     }
 
     public void setNewPartition(boolean newPartition) {
@@ -93,7 +103,23 @@ public class PartitionInformation {
         return partitionId;
     }
 
+
+    public Document getOriginalDom() {
+        return originalDom;
+    }
+
+    public void setOriginalDom(Document originalDom) {
+        this.originalDom = originalDom;
+    }
+
     public static class EndpointHolder {
+        private static String[] headings = new String[] {
+            "IP Address",
+            "Port",
+            "Uses SSL",
+            "Uses Client Certificate",
+        };
+
         public String ipAddress;
         public String port;
 
@@ -142,6 +168,56 @@ public class PartitionInformation {
             sb.append((isSecure?", SSL":""));
             sb.append((isClientCert?", With Client Cert":""));
             return sb.toString();
+        }
+
+        public static String[] getHeadings() {
+            return headings;
+        }
+
+        public Object getValue(int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    return ipAddress;
+                case 1:
+                    return port;
+                case 2:
+                    return isSecure;
+                case 3:
+                    return isClientCert;
+                default:
+                    return null;
+            }
+        }
+
+        public void setValueAt(int columnIndex, Object aValue) {
+            switch(columnIndex) {
+                case 0:
+                    ipAddress = String.valueOf(aValue);
+                    break;
+                case 1:
+                    port = String.valueOf(aValue);
+                    break;
+                case 2:
+                    isSecure = ((Boolean)aValue).booleanValue();
+                    break;
+                case 3:
+                    isClientCert = ((Boolean)aValue).booleanValue();
+            }
+        }
+
+        public static Class<?> getClassAt(int columnIndex) {
+            switch(columnIndex) {
+                case 0:
+                    return String.class;
+                case 1:
+                    return Short.class;
+                case 2:
+                    return Boolean.class;
+                case 3:
+                    return Boolean.class;
+                default:
+                    return String.class;
+            }
         }
     }
 }

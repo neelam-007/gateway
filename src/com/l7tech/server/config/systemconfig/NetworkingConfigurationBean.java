@@ -86,7 +86,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             logger.info("Determining existing interface information.");
             networkingConfigs = new ArrayList<NetworkConfig>();
 
-            File parentDir = new File(osFunctions.getNetworkConfigurationDirectory());
+            File parentDir = new File(getOsFunctions().getNetworkConfigurationDirectory());
             File[] configFiles = parentDir.listFiles(new FilenameFilter() {
                     public boolean accept(File file, String s) {
                         return s.toLowerCase().startsWith("ifcfg-") && !s.toLowerCase().equals("ifcfg-lo");

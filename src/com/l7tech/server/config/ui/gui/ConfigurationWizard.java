@@ -14,6 +14,8 @@ import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
+import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.partition.PartitionInformation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,7 +50,7 @@ public class ConfigurationWizard extends Wizard {
     static Logger log = Logger.getLogger(ConfigurationWizard.class.getName());
 
     private boolean isNewInstall;
-    private static OSSpecificFunctions osFunctions;
+//    private OSSpecificFunctions osFunctions;
     private String hostname;
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
@@ -59,7 +61,7 @@ public class ConfigurationWizard extends Wizard {
     private Set<ConfigurationCommand> additionalCommands;
     private ManualStepsManager manualSteps;
     private ClusteringType clusteringType;
-
+//    private String partitionName;
 
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
@@ -85,7 +87,7 @@ public class ConfigurationWizard extends Wizard {
      * @param panel
      */
     public void init(WizardStepPanel panel) {
-        setTitle("SSG Configuration Wizard for " + osFunctions.getOSName() + " (Version " + getCurrentVersion() + ")");
+        setTitle("SSG Configuration Wizard for " + OSDetector.getOSSpecificFunctions().getOSName() + " (Version " + getCurrentVersion() + ")");
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
         wizardInput = new HashSet<ConfigurationCommand>();
@@ -259,7 +261,7 @@ public class ConfigurationWizard extends Wizard {
         ImageIcon imageIcon = new ImageIcon(icon);
         mainFrame.setIconImage(imageIcon.getImage());
         try {
-            osFunctions = OSDetector.getOSSpecificFunctions();
+//            osFunctions = OSDetector.getOSSpecificFunctions();
             ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
             wizard.setSize(780, 560);
             Utilities.centerOnScreen(wizard);
@@ -296,5 +298,17 @@ public class ConfigurationWizard extends Wizard {
 
     public static String getCurrentVersion() {
         return currentVersion;
+    }
+
+    public String getPartitionName() {
+        return PartitionManager.getInstance().getActivePartition().getPartitionId();
+    }
+
+    public void setPartitionName(PartitionInformation partition) {
+        PartitionManager.getInstance().setActivePartition(partition);
+    }
+
+    public OSSpecificFunctions getOsFunctions() {
+        return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
     }
 }

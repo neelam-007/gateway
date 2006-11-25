@@ -14,21 +14,19 @@ import java.awt.*;
  */
 public class ConfigWizardStartPanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
+    private JLabel introLabel;
+    boolean initialized = false;
 
     public ConfigWizardStartPanel(WizardStepPanel next) {
         super(next);
-        init();
+        stepLabel = "Introduction";
+        setShowDescriptionPanel(false);
+        setLayout(new BorderLayout());
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     protected boolean isValidated() {
         return true;
-    }
-
-    private void init() {
-        setShowDescriptionPanel(false);
-        stepLabel = "Introduction";
-        setLayout(new BorderLayout());
-        add(mainPanel, BorderLayout.CENTER);
     }
 
     protected void updateView() {}
