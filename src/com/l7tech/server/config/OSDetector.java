@@ -44,4 +44,20 @@ public class OSDetector {
         return LINUX_PATTERN.matcher(OSName).matches();
     }
 
+    public static void main(String[] args) {
+        //this should return EITHER the default partition information or the original, pre SSG configuration
+        OSSpecificFunctions osf = getOSSpecificFunctions("");
+
+        //now list all the stuff that it returns
+        System.out.println("SSG Root = " + osf.getSsgInstallRoot());
+        System.out.println("Configuration Directory = " + osf.getConfigurationBase());
+        System.out.println("Partitition Base = " + osf.getPartitionBase());
+        System.out.println("Partitition Name = " + osf.getPartitionName());
+        System.out.println("DB Configuration = " + osf.getDatabaseConfig());
+        System.out.println("Logging Configuration = " + osf.getSsgLogPropertiesFile());
+        System.out.println("System Properties = " + osf.getSsgSystemPropertiesFile());
+        System.out.println("Keystore Properties = " + osf.getKeyStorePropertiesFile());
+        System.out.println("Keystore Directory = " + osf.getKeystoreDir());
+        System.out.println("Tomcat Server Configuratioin = " + osf.getTomcatServerConfig());
+    }
 }

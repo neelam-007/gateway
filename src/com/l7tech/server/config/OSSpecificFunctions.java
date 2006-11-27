@@ -43,6 +43,7 @@ public abstract class OSSpecificFunctions {
     private String partitionName;
     public static final String PARTITION_BASE = "etc/conf/partitions";
     public static final String NOPARTITION_BASE = "etc/conf/";
+    private boolean hasPartitions;
 
     public OSSpecificFunctions(String OSName) {
         this(OSName, "");
@@ -64,6 +65,11 @@ public abstract class OSSpecificFunctions {
         
         makeOSSpecificFilenames();
         makeFilenames();
+        hasPartitions = checkIsPartitioned();
+    }
+
+    private boolean checkIsPartitioned() {
+        return new File(getPartitionBase()).exists();
     }
 
     public boolean isWindows() {
@@ -166,10 +172,16 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getTomcatServerConfig() {
+        if (!hasPartitions) {
+            return getSsgInstallRoot() + "tomcat/conf/server.xml";
+        }                                                        
         return getConfigurationBase() + tomcatServerConfig;
     }
 
     public String getKeystoreDir() {
+        if (!hasPartitions) {
+            return getSsgInstallRoot() + "etc/keys/";
+        }
         return getConfigurationBase() + keystoreDir;
     }
 
