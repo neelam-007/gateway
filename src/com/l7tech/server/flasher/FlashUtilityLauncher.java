@@ -60,19 +60,21 @@ public class FlashUtilityLauncher {
         HashMap<String, String> output = new HashMap<String, String>();
         for (int i = 1; i < args.length; i++) {
             String arg = args[i];
-            if (!arg.startsWith("-")) {
-                throw new InvalidArgumentException("Invalid argument name: " + arg);
-            }
-            if ((i+1) < args.length) {
-                if (args[i+1].startsWith("-")) {
-                    output.put(arg, "");
-                } else {
-                    i++;
-                    String val = args[i];
-                    output.put(arg, val);
+            if (arg != null && arg.length() > 0) {
+                if (!arg.startsWith("-")) {
+                    throw new InvalidArgumentException("Invalid argument name: " + arg);
                 }
-            } else {
-                output.put(arg, "");
+                if ((i+1) < args.length) {
+                    if (args[i+1].startsWith("-")) {
+                        output.put(arg, "");
+                    } else {
+                        i++;
+                        String val = args[i];
+                        output.put(arg, val);
+                    }
+                } else {
+                    output.put(arg, "");
+                }
             }
         }
         return output;
