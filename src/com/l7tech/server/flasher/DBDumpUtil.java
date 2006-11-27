@@ -1,6 +1,7 @@
 package com.l7tech.server.flasher;
 
 import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.OSSpecificFunctions;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,10 +35,13 @@ public class DBDumpUtil {
      * @param databasePasswd database password
      * @param includeAudit whether or not audit tables should be included
      * @param outputDirectory the directory path where the dump files should go to
+     * @param osFunctions for the partition at hand
+     * @throws java.sql.SQLException problem getting data out of db
+     * @throws java.io.IOException problem with dump files
      */
-    public static void dump(String databaseURL, String databaseUser, String databasePasswd,
-                            boolean includeAudit, String outputDirectory) throws SQLException, IOException, ClassNotFoundException {
-        Connection c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
+    public static void dump(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd,
+                            boolean includeAudit, String outputDirectory) throws SQLException, IOException {
+        Connection c = getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             logger.warning("cannot get connection");
             throw new SQLException("could not connect using url: " + databaseURL +
@@ -158,9 +162,14 @@ public class DBDumpUtil {
         return false;
     }
 
-    private static DBActions getDBActions() throws ClassNotFoundException {
-        if (dbActions == null)
-            dbActions = new DBActions();
+    private static DBActions getDBActions(OSSpecificFunctions osFunctions) throws SQLException {
+        if (dbActions == null) {
+            try {
+                dbActions = new DBActions(osFunctions);
+            } catch (ClassNotFoundException e) {
+                throw new SQLException(e.getMessage());
+            }
+        }
         return dbActions;
     }
 }

@@ -108,12 +108,9 @@ public class Exporter {
 
             // dump the database
             try {
-                DBDumpUtil.dump(databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
+                DBDumpUtil.dump(osFunctions, databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory);
             } catch (SQLException e) {
                 logger.log(Level.INFO, "exception dumping database", e);
-                throw new IOException("cannot dump the database " + e.getMessage());
-            } catch (ClassNotFoundException e) {
-                logger.log(Level.INFO, "database driver unavailable", e);
                 throw new IOException("cannot dump the database " + e.getMessage());
             }
 
@@ -130,7 +127,7 @@ public class Exporter {
                 }
                 // read policy files from this dump, collect all potential mapping in order to produce mapping template file
                 try {
-                    MappingUtil.produceTemplateMappingFileFromDB(databaseURL, databaseUser, databasePasswd, partitionName);
+                    MappingUtil.produceTemplateMappingFileFromDB(osFunctions, databaseURL, databaseUser, databasePasswd, partitionName);
                 } catch (SQLException e) {
                     // should not happen
                     logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);

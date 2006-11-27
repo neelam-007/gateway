@@ -49,6 +49,7 @@ public class Importer {
 
     private String tempDirectory;
     private String partitionName;
+    private OSSpecificFunctions osFunctions;
     private boolean fullClone = false;
     private String databaseURL;
     private String databaseUser;
@@ -142,6 +143,7 @@ public class Importer {
                 }
             }
             if (partitionName == null) partitionName = "";
+            osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
 
             boolean newDatabaseCreated = false;
             if (fullClone) {
@@ -212,7 +214,7 @@ public class Importer {
 
                     System.out.print("The target database does not exist. Creating it now ...");
                     try {
-                        DBActions.DBActionsResult res = getDBActions().createDb(rootDBUsername, rootDBPasswd,
+                        DBActions.DBActionsResult res = getDBActions(osFunctions).createDb(rootDBUsername, rootDBPasswd,
                                                                                 dbHost, dbName, databaseUser,
                                                                                 databasePasswd, null, false, true);
                         if (res.getStatus() != DBActions.DB_SUCCESS) {
@@ -220,14 +222,13 @@ public class Importer {
                         }
                         newDatabaseCreated = true;
                         System.out.println(" DONE");
-                    } catch (ClassNotFoundException e) {
+                    } catch (SQLException e) {
                         System.out.println(" Error " + e.getMessage());
                         throw new IOException("cannot create new database " + e.getMessage());
                     }
                 }
             } else {
                 logger.info("Staging mode");
-                OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
                 Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
                     SsgDatabaseConfigBean.PROP_DB_USERNAME,
                     SsgDatabaseConfigBean.PROP_DB_PASSWORD,
@@ -308,7 +309,7 @@ public class Importer {
             if (mapping != null) {
                 logger.info("applying mappings requested");
                 try {
-                    MappingUtil.applyMappingChangesToDB(databaseURL, databaseUser, databasePasswd, mapping);
+                    MappingUtil.applyMappingChangesToDB(osFunctions, databaseURL, databaseUser, databasePasswd, mapping);
                 } catch (SQLException e) {
                     logger.log(Level.WARNING, "error mapping target", e);
                     throw new IOException("error mapping staging values " + e.getMessage());
@@ -424,11 +425,7 @@ public class Importer {
 
     private Connection getConnection() throws SQLException {
         Connection c;
-        try {
-            c = getDBActions().getConnection(databaseURL, databaseUser, databasePasswd);
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("cannot get driver " + e.getMessage());
-        }
+        c = getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
@@ -538,9 +535,14 @@ public class Importer {
         zipinputstream.close();
     }
 
-    private DBActions getDBActions() throws ClassNotFoundException {
-        if (dbActions == null)
-            dbActions = new DBActions();
+    private DBActions getDBActions(OSSpecificFunctions osFunctions) throws SQLException {
+        if (dbActions == null) {
+            try {
+                dbActions = new DBActions(osFunctions);
+            } catch (ClassNotFoundException e) {
+                throw new SQLException(e.getMessage());
+            }
+        }
         return dbActions;
     }
 }

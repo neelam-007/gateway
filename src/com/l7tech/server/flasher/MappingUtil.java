@@ -3,6 +3,7 @@ package com.l7tech.server.flasher;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -49,9 +50,9 @@ public class MappingUtil {
         public HashMap<String, String> varMapping = new HashMap<String, String>();
     }
 
-    public static void applyMappingChangesToDB(String dburl, String dbuser, String dbpasswd,
+    public static void applyMappingChangesToDB(OSSpecificFunctions osFunctions, String dburl, String dbuser, String dbpasswd,
                                                CorrespondanceMap mappingResults) throws SQLException {
-        Connection c = getConnection(dburl, dbuser, dbpasswd);
+        Connection c = getConnection(osFunctions, dburl, dbuser, dbpasswd);
         try {
             System.out.println("Applying mappings");
             Statement selStatement = c.createStatement();
@@ -152,13 +153,9 @@ public class MappingUtil {
         return output;
     }
 
-    private static Connection getConnection(String databaseURL, String databaseUser, String databasePasswd) throws SQLException {
+    private static Connection getConnection(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd) throws SQLException {
         Connection c;
-        try {
-            c = getDbActions().getConnection(databaseURL, databaseUser, databasePasswd);
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("cannot get driver " + e.getMessage());
-        }
+        c = getDbActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
@@ -167,10 +164,10 @@ public class MappingUtil {
         return c;
     }
 
-    public static void produceTemplateMappingFileFromDB(String dburl, String dbuser,
+    public static void produceTemplateMappingFileFromDB(OSSpecificFunctions osFunctions, String dburl, String dbuser,
                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
 
-        Connection c = getConnection(dburl, dbuser, dbpasswd);
+        Connection c = getConnection(osFunctions, dburl, dbuser, dbpasswd);
         ArrayList<String> ipaddressesInRoutingAssertions = new ArrayList<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         try {
@@ -246,8 +243,14 @@ public class MappingUtil {
         fos.close();
     }
 
-    private static DBActions getDbActions() throws ClassNotFoundException {
-        if (dbActions == null) dbActions = new DBActions();
+    private static DBActions getDbActions(OSSpecificFunctions osFunctions) throws SQLException {
+        if (dbActions == null) {
+            try {
+                dbActions = new DBActions(osFunctions);
+            } catch (ClassNotFoundException e) {
+                throw new SQLException(e.getMessage());
+            }
+        }
         return dbActions;
     }
 
