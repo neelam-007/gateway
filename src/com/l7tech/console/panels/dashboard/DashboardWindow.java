@@ -6,7 +6,10 @@ package com.l7tech.console.panels.dashboard;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.gui.util.*;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.LogonListener;
@@ -15,6 +18,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
@@ -153,6 +157,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
 
         try {
             currentServiceHeaders = getServiceAdmin().findAllPublishedServices();
+            appendUriToServiceName(currentServiceHeaders);
             EntityHeader[] comboItems = new EntityHeader[currentServiceHeaders.length + 1];
             System.arraycopy(currentServiceHeaders, 0, comboItems, 1, currentServiceHeaders.length);
             comboItems[0] = ALL_SERVICES;
@@ -305,6 +310,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
 
             newServiceHeaders = serviceAdmin.findAllPublishedServices();
+            appendUriToServiceName(newServiceHeaders);
             if (!Arrays.equals(currentServiceHeaders, newServiceHeaders)) {
                 updateComboModel(currentServiceHeaders, newServiceHeaders, serviceComboModel);
             }
@@ -512,6 +518,20 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             this.serviceAdmin = sa;
         }
         return sa;
+    }
+
+    /**
+     * If a published service has a custom routing URI, append it to the name to
+     * better distinguish from the first version published, when displayed.
+     */
+    private void appendUriToServiceName(EntityHeader[] headers)
+            throws RemoteException, FindException {
+        for (EntityHeader header : headers) {
+            final PublishedService ps = getServiceAdmin().findServiceByID(header.getStrId());
+            if (ps != null && ps.getRoutingUri() != null) {
+                header.setName(ps.getName() + " [" + ps.getRoutingUri() + "]");
+            }
+        }
     }
 
     public void showSheet(JInternalFrame sheet) {

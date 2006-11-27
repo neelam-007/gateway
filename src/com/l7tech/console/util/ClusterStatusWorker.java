@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.cluster.ClusterStatusAdmin;
@@ -189,7 +190,12 @@ public class ClusterStatusWorker extends SwingWorker {
 
                     ServiceUsage su = new ServiceUsage();
                     su.setServiceid(header.getOid());
-                    su.setName(header.getName());
+                    final PublishedService ps = serviceManager.findServiceByID(Long.toString(header.getOid()));
+                    if (ps != null && ps.getRoutingUri() != null) {
+                        su.setName(header.getName() + " [" + ps.getRoutingUri() + "]");
+                    } else {
+                        su.setName(header.getName());
+                    }
 
                     // add the stats to the list
                     statsList.put(new Long(su.getServiceid()), su);
