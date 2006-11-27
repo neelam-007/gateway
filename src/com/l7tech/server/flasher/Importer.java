@@ -81,7 +81,7 @@ public class Importer {
         // clone only available on linux. check that that we're on linux if mode is clone
         if (fullClone && OSDetector.isWindows()) {
             logger.info("Error, clone mode requested on windows system");
-            throw new FlashUtilityLauncher.InvalidArgumentException("invalid value for " + MODE.name);
+            throw new IOException("Clone mode not supported on Windows systems");
         }
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
         tempDirectory = Exporter.createTmpDirectory();
