@@ -23,9 +23,10 @@ import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
-
 
 /*
  * This class creates a statistics panel.
@@ -128,7 +129,7 @@ public class StatisticsPanel extends JPanel {
 
         statTable.setShowHorizontalLines(false);
         statTable.setShowVerticalLines(false);
-        statTable.setRowSelectionAllowed(false);
+        statTable.setRowSelectionAllowed(true);
         statTable.getTableHeader().setReorderingAllowed(false);
 
         return statTable;
@@ -244,6 +245,10 @@ public class StatisticsPanel extends JPanel {
     }
 
 
+    /** Names of services selected. Used by {@link #updateStatisticsTable} only.
+        Declared as member field instead of local variable to avoid reinstantiation. */
+    private Set selected = new HashSet();
+
     public void updateStatisticsTable(Vector rawStatsList) {
 
         statsList = new Vector();
@@ -273,9 +278,24 @@ public class StatisticsPanel extends JPanel {
             totalNumSuccessLastMinute += lastMinuteCompletedCount;
         }
 
+        /** Saves row selections before changing data. */
+        selected.clear();
+        for (int row = 0; row < getStatTable().getRowCount(); ++ row) {
+            if (getStatTable().getSelectionModel().isSelectedIndex(row)) {
+                selected.add(getStatTableModel().getValueAt(row, 0));
+            }
+        }
+
         getStatTableModel().setData(statsList);
         getStatTableModel().getRealModel().setRowCount(statsList.size());
         getStatTableModel().fireTableDataChanged();
+
+        /** Re-applies row selections after changing data. */
+        for (int row = 0; row < getStatTable().getRowCount(); ++ row) {
+            if (selected.contains(getStatTable().getValueAt(row, 0))) {
+                getStatTable().addRowSelectionInterval(row, row);
+            }
+        }
 
         updateRequestsTotal();
 
