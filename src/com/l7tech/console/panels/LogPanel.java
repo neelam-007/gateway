@@ -955,6 +955,7 @@ public class LogPanel extends JPanel {
             msgTable.setShowVerticalLines(false);
             msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             msgTable.setRowSelectionAllowed(true);
+            msgTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
             addMouseListenerToHeaderInTable(msgTable);
         }
@@ -1167,11 +1168,11 @@ public class LogPanel extends JPanel {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
         tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 20;
-        tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 30;
-        tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 100;
-        tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 15;
-        tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 20;
-        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 20;
+        tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 50;
+        tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 140;
+        tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 20;
+        tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 40;
+        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 120;
         tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX] = 400;
 
         // Add columns according to configuration
@@ -1197,6 +1198,22 @@ public class LogPanel extends JPanel {
             tc.setHeaderRenderer(iconHeaderRenderer);
             tc.setHeaderValue(getLogTableModel().getColumnName(tc.getModelIndex()));
         }
+
+        // Tooltip for details
+        columnModel.getColumn(LOG_MSG_DETAILS_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if(comp instanceof JLabel) {
+                    String detailText = ((JLabel)comp).getText();
+                    if (detailText == null || detailText.trim().length() == 0) {
+                        ((JComponent)comp).setToolTipText(null);
+                    } else {
+                        ((JComponent)comp).setToolTipText(detailText);
+                    }
+                }
+                return comp;
+            }
+        });
 
         return columnModel;
     }
