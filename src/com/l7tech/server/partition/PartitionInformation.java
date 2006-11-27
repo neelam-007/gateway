@@ -10,8 +10,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: megery
@@ -30,7 +29,7 @@ public class PartitionInformation{
     String oldPartitionId;
     boolean isNewPartition = false;
 
-    List<EndpointHolder> endpointsList;
+    Map<EndpointType, EndpointHolder> endpointsList;
     OSSpecificFunctions osf;
     Document originalDom;
 
@@ -43,30 +42,25 @@ public class PartitionInformation{
 
         private String endpointName;
 
-        EndpointType(String endpointName) {
-            this.endpointName = endpointName;
-        }
-
-        public String getName() {
-            return endpointName;
-        }
-
-        public String toString() {
-            return endpointName;
-        }
+        EndpointType(String endpointName) {this.endpointName = endpointName;}
+        public String getName() {return endpointName;}
+        public String toString() {return endpointName;}
     }
 
     public PartitionInformation(String partitionName) {
         this.partitionId = partitionName;
         isNewPartition = true;
+        endpointsList = new TreeMap<EndpointType, EndpointHolder>();
+        EndpointHolder.populateDefaultEndpoints(endpointsList);
     }
 
     public PartitionInformation(String partitionId, Document doc, boolean isNew) throws XPathExpressionException {
         this.partitionId = partitionId;
         isNewPartition = isNew;
-        endpointsList = new ArrayList<EndpointHolder>();
-        //pass false to isNew since, if we have a doc then it's not a new partition.
+        endpointsList = new TreeMap<EndpointType, EndpointHolder>();
+        EndpointHolder.populateDefaultEndpoints(endpointsList);
 
+        //pass false to isNew since, if we have a doc then it's not a new partition.
         //now navigate the doc to get the Connector/port information
         parseConnectors(doc);
     }
@@ -77,12 +71,29 @@ public class PartitionInformation{
         NodeList connectors = (NodeList) xpath.evaluate(CONNECTOR_XPATH, doc, XPathConstants.NODESET);
         for (int nodeIndex = 0; nodeIndex < connectors.getLength(); nodeIndex++) {
             Element connectorNode = (Element) connectors.item(nodeIndex);
+
             boolean isSecure = connectorNode.hasAttribute("secure") && connectorNode.getAttribute("secure").equals("true");
-            boolean isClientCert = isSecure && connectorNode.hasAttribute("clientAuth") && !connectorNode.getAttribute("clientAuth").equals("false");
+            boolean wantClientCert = isSecure && connectorNode.hasAttribute("clientAuth") && !connectorNode.getAttribute("clientAuth").equals("false");
 
             String portNumber = connectorNode.hasAttribute("port")?connectorNode.getAttribute("port"):"";
             String ipAddress = connectorNode.hasAttribute("address")?connectorNode.getAttribute("address"):"*";
-            endpointsList.add(new EndpointHolder(ipAddress, portNumber, isSecure, isClientCert));
+
+            updateEndpoint(ipAddress, portNumber, isSecure, wantClientCert);
+        }
+    }
+
+    private void updateEndpoint(String ip, String portNumber, boolean isSecure, boolean isClientCertWanted) {
+
+        EndpointHolder holder;
+        if (!isSecure) holder = endpointsList.get(EndpointType.BASIC_HTTP);
+        else {
+            if (isClientCertWanted) holder = endpointsList.get(EndpointType.SSL_HTTP);
+            else holder = endpointsList.get(EndpointType.SSL_HTTP_NOCLIENTCERT);
+        }
+
+        if (holder != null) {
+            holder.ipAddress = ip;
+            holder.port = portNumber;
         }
     }
 
@@ -112,11 +123,11 @@ public class PartitionInformation{
         return isNewPartition;
     }
 
-    public List<EndpointHolder> getEndpointsList() {
+    public Map<EndpointType, EndpointHolder> getEndpoints() {
         return endpointsList;
     }
 
-    public void setEndpointsList(List<EndpointHolder> endpointsList) {
+    public void setEndpointsList(Map<EndpointType, EndpointHolder> endpointsList) {
         this.endpointsList = endpointsList;
     }
 
@@ -135,27 +146,29 @@ public class PartitionInformation{
 
     public static class EndpointHolder {
         private static String[] headings = new String[] {
+            "Endpoint Type",
             "IP Address",
             "Port",
-            "Uses SSL",
-            "Uses Client Certificate",
+//            "Uses SSL",
+//            "Uses Client Certificate",
         };
 
+        private EndpointType endpointType;
         public String ipAddress;
         public String port;
 
-        public boolean isSecure;
+//        public boolean isSecure;
+//        public boolean isClientCert;
 
-        public boolean isClientCert;
+//        public EndpointHolder(String ipAddress, String port, boolean secure, boolean isClientCert) {
+//            this.ipAddress = ipAddress;
+//            this.port = port;
+//            this.isSecure = secure;
+//            this.isClientCert = isClientCert;
+//        }
 
-        public EndpointHolder() {
-        }
-
-        public EndpointHolder(String ipAddress, String port, boolean secure, boolean isClientCert) {
-            this.ipAddress = ipAddress;
-            this.port = port;
-            this.isSecure = secure;
-            this.isClientCert = isClientCert;
+        public EndpointHolder(EndpointType type) {
+            this.endpointType = type;
         }
 
         public boolean equals(Object o) {
@@ -164,8 +177,9 @@ public class PartitionInformation{
 
             EndpointHolder that = (EndpointHolder) o;
 
-            if (isClientCert != that.isClientCert) return false;
-            if (isSecure != that.isSecure) return false;
+            if (endpointType != that.endpointType) return false;
+//            if (isClientCert != that.isClientCert) return false;
+//            if (isSecure != that.isSecure) return false;
             if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
             if (port != null ? !port.equals(that.port) : that.port != null) return false;
 
@@ -176,18 +190,20 @@ public class PartitionInformation{
             int result;
             result = (ipAddress != null ? ipAddress.hashCode() : 0);
             result = 31 * result + (port != null ? port.hashCode() : 0);
-            result = 31 * result + (isSecure ? 1 : 0);
-            result = 31 * result + (isClientCert ? 1 : 0);
+            result = 31 * result + endpointType.getName().hashCode();
+//            result = 31 * result + (isSecure ? 1 : 0);
+//            result = 31 * result + (isClientCert ? 1 : 0);
             return result;
         }
 
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
+            sb.append(endpointType.getName());
             sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(", ");
             sb.append(port);
-            sb.append((isSecure?", SSL":""));
-            sb.append((isClientCert?", With Client Cert":""));
+//            sb.append((isSecure?", SSL":""));
+//            sb.append((isClientCert?", With Client Cert":""));
             return sb.toString();
         }
 
@@ -198,13 +214,13 @@ public class PartitionInformation{
         public Object getValue(int columnIndex) {
             switch (columnIndex) {
                 case 0:
-                    return ipAddress;
+                    return endpointType.getName();
                 case 1:
-                    return port;
+                    return ipAddress;
                 case 2:
-                    return isSecure;
-                case 3:
-                    return isClientCert;
+                    return port;
+//                case 3:
+//                    return isClientCert;
                 default:
                     return null;
             }
@@ -213,32 +229,45 @@ public class PartitionInformation{
         public void setValueAt(int columnIndex, Object aValue) {
             switch(columnIndex) {
                 case 0:
-                    ipAddress = String.valueOf(aValue);
                     break;
                 case 1:
-                    port = String.valueOf(aValue);
+                    ipAddress = String.valueOf(aValue);
                     break;
                 case 2:
-                    isSecure = ((Boolean)aValue).booleanValue();
+                    port = String.valueOf(aValue);
                     break;
-                case 3:
-                    isClientCert = ((Boolean)aValue).booleanValue();
+//                case 2:
+//                    isSecure = ((Boolean)aValue).booleanValue();
+//                    break;
+//                case 3:
+//                    isClientCert = ((Boolean)aValue).booleanValue();
             }
         }
 
         public static Class<?> getClassAt(int columnIndex) {
             switch(columnIndex) {
                 case 0:
-                    return String.class;
+                    return EndpointType.class;
                 case 1:
-                    return Short.class;
+                    return String.class;
                 case 2:
-                    return Boolean.class;
-                case 3:
-                    return Boolean.class;
+                    return Short.class;
+//                case 3:
+//                    return Boolean.class;
                 default:
                     return String.class;
             }
+        }
+
+        public static void populateDefaultEndpoints(Map<EndpointType, EndpointHolder> endpoints) {
+            endpoints.put(PartitionInformation.EndpointType.BASIC_HTTP,
+                    new PartitionInformation.EndpointHolder(PartitionInformation.EndpointType.BASIC_HTTP));
+
+            endpoints.put(PartitionInformation.EndpointType.SSL_HTTP,
+                    new PartitionInformation.EndpointHolder(PartitionInformation.EndpointType.SSL_HTTP));
+
+            endpoints.put(PartitionInformation.EndpointType.SSL_HTTP_NOCLIENTCERT,
+                    new PartitionInformation.EndpointHolder(PartitionInformation.EndpointType.SSL_HTTP_NOCLIENTCERT));
         }
     }
 }

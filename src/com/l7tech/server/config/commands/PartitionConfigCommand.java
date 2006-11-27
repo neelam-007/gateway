@@ -6,14 +6,14 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -43,7 +43,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
 
     private void updatePartitionEndpoints(PartitionInformation pInfo) throws IOException, SAXException {
 
-        List<PartitionInformation.EndpointHolder> newEndpoints = pInfo.getEndpointsList();
+        Map<PartitionInformation.EndpointType,PartitionInformation.EndpointHolder> newEndpoints = pInfo.getEndpoints();
         Document serverConfigDom = pInfo.getOriginalDom();
         if (serverConfigDom == null) {
             serverConfigDom = getDomFromServerConfig(pInfo);

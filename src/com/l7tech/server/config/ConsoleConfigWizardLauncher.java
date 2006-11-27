@@ -80,6 +80,7 @@ public class ConsoleConfigWizardLauncher {
         List<ConfigWizardConsoleStep> stepsList = new ArrayList<ConfigWizardConsoleStep>();
 
         stepsList.add(new ConfigWizardConsoleStartStep(consoleWizard));
+        stepsList.add(new ConfigWizardConsolePartitioningStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleClusteringStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleDatabaseStep(consoleWizard));
         stepsList.add(new ConfigWizardConsoleKeystoreStep(consoleWizard));

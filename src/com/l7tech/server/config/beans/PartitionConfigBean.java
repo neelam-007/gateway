@@ -2,7 +2,7 @@ package com.l7tech.server.config.beans;
 
 import com.l7tech.server.partition.PartitionInformation;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * User: megery
@@ -28,12 +28,12 @@ public class PartitionConfigBean extends BaseConfigurationBean{
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
         String partName = partitionInfo.getPartitionId();
-        List<PartitionInformation.EndpointHolder> endpoints = partitionInfo.getEndpointsList();
+        Map<PartitionInformation.EndpointType,PartitionInformation.EndpointHolder> endpoints = partitionInfo.getEndpoints();
 
         explanations.add(insertTab + (isNewPartition?"Creating new partition \"":"Updating partition \"") + partName + "\"");
 
-        for (PartitionInformation.EndpointHolder endpoint : endpoints) {
-            explanations.add(insertTab + "  Endpoint = " + endpoint);
+        for (PartitionInformation.EndpointType endpointType : endpoints.keySet()) {
+            explanations.add(insertTab + "  Endpoint = " + endpoints.get(endpointType));
         }
     }
 

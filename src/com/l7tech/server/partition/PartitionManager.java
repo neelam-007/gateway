@@ -68,9 +68,9 @@ public class PartitionManager {
         try {
             is = new FileInputStream(serverXmlPath);
             Document dom = XmlUtil.parse(is);
-            PartitionInformation pi = null;
+            PartitionInformation pi;
             pi = new PartitionInformation(partitionName, dom, false);
-            partitions.put(new String(pi.getPartitionId()), pi);
+            partitions.put(pi.getPartitionId(), pi);
         } catch (FileNotFoundException e) {
             logger.warning("Could not find a server.xml for partition \"" + partitionDir.getName() + "\". This partition " +
                     "will not be enumerated");
@@ -103,16 +103,16 @@ public class PartitionManager {
         return partitions.get(partitionId);
     }
 
-    public List<PartitionInformation.EndpointHolder> getAllEndpointsInUse() {
-        List<PartitionInformation.EndpointHolder> allEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
-
-        Set<Map.Entry<String,PartitionInformation>> entries = partitions.entrySet();
-        for (Map.Entry<String, PartitionInformation> entry : entries) {
-            PartitionInformation pInfo = entry.getValue();
-            allEndpoints.addAll(pInfo.getEndpointsList());
-        }
-        return allEndpoints;
-    }
+//    public List<PartitionInformation.EndpointHolder> getAllEndpointsInUse() {
+//        List<PartitionInformation.EndpointHolder> allEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
+//
+//        Set<Map.Entry<String,PartitionInformation>> entries = partitions.entrySet();
+//        for (Map.Entry<String, PartitionInformation> entry : entries) {
+//            PartitionInformation pInfo = entry.getValue();
+//            allEndpoints.addAll(pInfo.getEndpoints());
+//        }
+//        return allEndpoints;
+//    }
 
 
     public PartitionInformation getActivePartition() {

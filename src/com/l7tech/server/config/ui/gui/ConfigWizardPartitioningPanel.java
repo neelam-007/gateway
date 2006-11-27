@@ -25,9 +25,8 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -48,21 +47,20 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private JPanel propertiesPanel;
     private JTextField partitionName;
-    private JButton addEndpoint;
-    private JButton editEndpoint;
-    private JButton removeHttpEndpoint;
+//    private JButton removeHttpEndpoint;
     private JTable endpointsTable;
-    private JTable table1;
+    private JTable otherEndpointsTable;
     private JButton removeOtherEndpoint;
     private PartitionListModel partitionListModel;
 
     PartitionConfigBean partitionBean;
 
-    private EndpointTableModel endpointListModel;
+    private EndpointTableModel endpointTableModel;
 
     public ConfigWizardPartitioningPanel(WizardStepPanel next) {
         super(next);
         stepLabel = "Configure Partitions";
+        setShowDescriptionPanel(false);
     }
 
     private void init() {
@@ -71,15 +69,14 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
         configBean = new PartitionConfigBean();
         configCommand = new PartitionConfigCommand(configBean);
+
         partitionListModel = new PartitionListModel();
         partitionList.setModel(partitionListModel);
 
-        endpointListModel = new EndpointTableModel();
-        endpointsTable.setModel(endpointListModel);
-        TableColumn col = endpointsTable.getColumnModel().getColumn(0);
+        endpointTableModel = new EndpointTableModel();
+        endpointsTable.setModel(endpointTableModel);
+        TableColumn col = endpointsTable.getColumnModel().getColumn(1);
         col.setCellEditor(new DefaultCellEditor(new JComboBox(getAvailableIpAddresses())));
-
-        setShowDescriptionPanel(false);
 
         initListeners();
 
@@ -174,23 +171,11 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
         addPartition.addActionListener(managePartitionActionListener);
         removePartition.addActionListener(managePartitionActionListener);
-
-//        addEndpoint.addActionListener(new ActionListener() {
+//        removeHttpEndpoint.addActionListener(new ActionListener() {
 //            public void actionPerformed(ActionEvent e) {
-//                doAddEndpoint();
+//                doRemoveEndpoint();
 //            }
-//        });
-//
-//        editEndpoint.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                doEditEndpoint();            }
-//        });
-
-        removeHttpEndpoint.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                doRemoveEndpoint();
-            }
-        });        
+//        });        
     }
 
     private void enableButtons() {
@@ -209,12 +194,11 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
         boolean validRowSelected = size != 0 &&
                  index > 0 && index < size;
-        removeHttpEndpoint.setEnabled(validRowSelected);
+//        removeHttpEndpoint.setEnabled(validRowSelected);
 //        editEndpoint.setEnabled(validRowSelected);
     }
 
     private void enablePartitionButtons() {
-        enableNextButton();
         enableEditDeletePartitionButtons();
     }
 
@@ -225,13 +209,8 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         if (o != null) {
             PartitionInformation pi = (PartitionInformation) o;
             partitionName.setText(pi.getPartitionId());
-            endpointListModel.clear();
-            List<PartitionInformation.EndpointHolder> ehList = pi.getEndpointsList();
-            if (ehList != null) {
-                for (PartitionInformation.EndpointHolder endpoint : ehList) {
-                    endpointListModel.add(endpoint);
-                }
-            }
+//            endpointTableModel.clear();
+            endpointTableModel.addEndpoints(pi.getEndpoints());
         }
         enableButtons();
     }
@@ -244,7 +223,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         PartitionInformation pi = getSelectedPartition();
 
         pi.setPartitionId(partitionName.getText());
-        pi.setEndpointsList(endpointListModel.getEndpoints());
+        pi.setEndpointsList(endpointTableModel.getEndpoints());
 
         PartitionConfigBean partBean = (PartitionConfigBean) configBean;
         partBean.setPartition(pi);
@@ -262,27 +241,32 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private void enableEditDeletePartitionButtons() {
         int size = partitionListModel.getSize();
         int index = partitionList.getSelectedIndex();
+        
+        //if nothing is selected yet, select the first element
+        if (index < 0) {
+            index = 0;
+            partitionList.setSelectedIndex(index);
+        }
 
-        boolean validRowSelected = size != 0 &&
-                 index >= 0 && index < size;
+        boolean validRowSelected = (size != 0) && (0 <= index) && (index < size);
         removePartition.setEnabled(validRowSelected);
     }
 
-    private void doRemoveEndpoint() {
-        Utilities.doWithConfirmation(
-            getParentWizard(),
-            "Remove Endpoint", "Are you sure you want to remove the selected endpoint?", new Runnable() {
-            public void run() {
-                EndpointTableModel model = (EndpointTableModel) endpointsTable.getModel();
-                List<PartitionInformation.EndpointHolder> selectedEndpoints = model.getEndpointsAt(endpointsTable.getSelectedRows());
-                for (PartitionInformation.EndpointHolder holder : selectedEndpoints) {
-                    PartitionInformation.EndpointHolder ep = (PartitionInformation.EndpointHolder) holder;
-                    endpointListModel.remove(ep);
-                }
-                enableButtons();
-            }
-        });
-    }
+//    private void doRemoveEndpoint() {
+//        Utilities.doWithConfirmation(
+//            getParentWizard(),
+//            "Remove Endpoint", "Are you sure you want to remove the selected endpoint?", new Runnable() {
+//            public void run() {
+//                EndpointTableModel model = (EndpointTableModel) endpointsTable.getModel();
+//                List<PartitionInformation.EndpointHolder> selectedEndpoints = model.getEndpointsAt(endpointsTable.getSelectedRows());
+//                for (PartitionInformation.EndpointHolder holder : selectedEndpoints) {
+//                    PartitionInformation.EndpointHolder ep = (PartitionInformation.EndpointHolder) holder;
+//                    endpointTableModel.remove(ep);
+//                }
+//                enableButtons();
+//            }
+//        });
+//    }
 
     protected boolean isValidated() {
         boolean isValid = true;
@@ -307,7 +291,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             if (oldPartitionId == null || oldPartitionId.equals(pInfo.getPartitionId())) {
                 isValid = true;
             } else {
-
                 try {
                     partActions.changeDirName(pInfo.getOldPartitionId(), pInfo.getPartitionId());
                 } catch (IOException e) {
@@ -360,7 +343,10 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             }
         }
 
-        public void update(int itemIndex, String partitionName, String description, List<PartitionInformation.EndpointHolder> endpoints) {
+        public void update(int itemIndex,
+                           String partitionName,
+                           String description,
+                           Map<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder> endpoints) {
             if (itemIndex > 0 && itemIndex < partitions.size()) {
                 PartitionInformation oldInformation = (PartitionInformation) partitionList.getSelectedValue();
 
@@ -390,14 +376,15 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private class EndpointTableModel extends AbstractTableModel {
 
-        java.util.List<PartitionInformation.EndpointHolder> endpoints;
+        Map<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder> endpoints;
 
         public EndpointTableModel() {
-            endpoints = new ArrayList<PartitionInformation.EndpointHolder>();
+            endpoints = new TreeMap<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder>();
+//            PartitionInformation.EndpointHolder.populateDefaultEndpoints(endpoints);
         }
 
         public int getRowCount() {
-            return endpoints.size();
+            return (endpoints == null?0:endpoints.size());
         }
 
         public int getColumnCount() {
@@ -405,7 +392,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            PartitionInformation.EndpointHolder holder = endpoints.get(rowIndex);
+            PartitionInformation.EndpointHolder holder = getEndpointAt(rowIndex);
             return holder.getValue(columnIndex);
         }
 
@@ -431,7 +418,18 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         public PartitionInformation.EndpointHolder getEndpointAt(int selectedRow) {
-            return endpoints.get(selectedRow);
+            Set<Map.Entry<PartitionInformation.EndpointType,PartitionInformation.EndpointHolder>> entries =
+                    endpoints.entrySet();
+
+            int index = 0;
+            Map.Entry<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder> rightEntry = null;
+            for (Map.Entry<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder> entry : entries) {
+                rightEntry = entry;
+                if (index++ == selectedRow) break;
+            }
+
+            assert rightEntry != null;
+            return rightEntry.getValue();
         }
 
         public List<PartitionInformation.EndpointHolder> getEndpointsAt(int[] selectedRows) {
@@ -442,22 +440,27 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             return selectedOnes;
         }
 
-        public void remove(PartitionInformation.EndpointHolder holder) {
-            endpoints.remove(holder);
-        }
+//        public void remove(PartitionInformation.EndpointHolder holder) {
+//            endpoints.remove(holder);
+//        }
 
-        public void add(PartitionInformation.EndpointHolder holder) {
-            if (!endpoints.contains(holder))
-                endpoints.add(holder);
-            fireTableDataChanged();
-        }
+//        public void add(PartitionInformation.EndpointHolder holder) {
+//            if (!endpoints.contains(holder.get))
+//                endpoints.add(holder);
+//            fireTableDataChanged();
+//        }
 
-        java.util.List<PartitionInformation.EndpointHolder> getEndpoints() {
+        Map<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder> getEndpoints() {
             return endpoints;
         }
 
         public void clear() {
             endpoints.clear();
+            fireTableDataChanged();
+        }
+
+        public void addEndpoints(Map<PartitionInformation.EndpointType, PartitionInformation.EndpointHolder> ehList) {
+            endpoints = ehList;
             fireTableDataChanged();
         }
     }
