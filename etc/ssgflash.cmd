@@ -12,5 +12,5 @@ set SSG_ROOT="%CD%"
 set JAVA_HOME=%SSG_ROOT%\jdk
 popd
 
-echo "using %SSG_ROOT% as the SSG_ROOT"
+echo Using %SSG_ROOT% as SSG_ROOT
 %JAVA_HOME%\bin\java -Dcom.l7tech.server.home=%SSG_ROOT% -jar SSGFlasher.jar %*
