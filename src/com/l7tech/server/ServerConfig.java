@@ -46,6 +46,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_HIBERNATE = "hibernatePropertiesPath";
     public static final String PARAM_IPS = "ipAddresses";
     public static final String PARAM_HOSTNAME = "hostname";
+    public static final String PARAM_HTTPPORT = "httpPort";
+    public static final String PARAM_HTTPSPORT = "httpsPort";
     public static final String PARAM_SYSTEMPROPS = "systemPropertiesPath";
     public static final String PARAM_SERVERCOMPONENTS = "serverComponents";
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";

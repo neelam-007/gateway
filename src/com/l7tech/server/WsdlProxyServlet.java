@@ -73,8 +73,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private ServerConfig serverConfig;
     private FilterManager wsspFilterManager;
     private FilterManager clientPolicyFilterManager;
-    SoapActionResolver sactionResolver = new SoapActionResolver();
-    UrnResolver nsResolver = new UrnResolver();
+    private SoapActionResolver sactionResolver = new SoapActionResolver();
+    private UrnResolver nsResolver = new UrnResolver();
+    private int httpPort;
+    private int httpsPort;
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -86,6 +88,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         serverConfig = (ServerConfig)appcontext.getBean("serverConfig", ServerConfig.class);
         clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
+
+        httpPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPPORT, 8080);
+        httpsPort = serverConfig.getIntProperty(ServerConfig.PARAM_HTTPSPORT, 8443);
     }
 
     protected String getFeature() {
@@ -415,11 +420,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         // change url of the wsdl
         // direct to http by default. choose http port based on port used for this request.
+        final boolean secureRequest = req.isSecure();
         int port = req.getServerPort();
-        String proto = req.isSecure() ? "https" : "http";
+        String proto = secureRequest ? "https" : "http";
 
-        if (("http".equals(proto) && (port==80 || port==8080)) ||
-            ("https".equals(proto) && (port==443 || port==8443))) {
+        if (("http".equals(proto) && (port==80 || port==httpPort)) ||
+            ("https".equals(proto) && (port==443 || port==httpsPort))) {
             // then see if we should switch protocols for the endpoint
             User user = null;
             if (results != null && results.length == 1) {
@@ -434,12 +440,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 Assertion rootAssertion = WspReader.parsePermissively(svc.getPolicyXml());
                 Assertion effectivePolicy = clientPolicyFilterManager.applyAllFilters(user, rootAssertion);
                 SslAssertion sslAssertion = (SslAssertion) getFirstChild(effectivePolicy, SslAssertion.class);
-                if ("http".equals(proto) && sslAssertion != null && sslAssertion.getOption()==SslAssertion.REQUIRED) {
-                    port = port==80 ? 443 : 8443;
+                if (!secureRequest && sslAssertion != null && sslAssertion.getOption()==SslAssertion.REQUIRED) {
+                    port = port==80 ? 443 : httpsPort;
                     proto = "https";
                 }
-                else if("https".equals(proto) && sslAssertion != null && sslAssertion.getOption()==SslAssertion.FORBIDDEN) {
-                    port = port==443 ? 80 : 8080;
+                else if(secureRequest && sslAssertion != null && sslAssertion.getOption()==SslAssertion.FORBIDDEN) {
+                    port = port==443 ? 80 : httpPort;
                     proto = "http";
                 }
             }
@@ -480,7 +486,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) throws IOException {
         String uri = req.getRequestURI();
         uri = uri.replaceAll("wsil", "wsdl");
-        String output = createWSILDoc(req, services, req.getServerName(), Integer.toString(req.getServerPort()), uri);
+        String output = createWSILDoc(req, services, req.getServerName(), req.getServerPort(), uri);
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         ServletOutputStream os = res.getOutputStream();
         os.print(output);
@@ -610,7 +616,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return false;
     }
 
-    private String createWSILDoc(HttpServletRequest req, Collection services, String host, String port, String uri) {
+    private String createWSILDoc(HttpServletRequest req, Collection services, String host, int port, String uri) {
         /*  Format of document:
             <?xml version="1.0"?>
             <inspection xmlns="http://schemas.xmlsoap.org/ws/2001/10/inspection/">
@@ -621,8 +627,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             </inspection>
         */
         boolean isResModeRequested = isResModeRequested(req);
-        String protocol = "http";
-        if (port.equals("8443") || port.equals("443")) protocol = "https";
+        String protocol = req.isSecure() ? "https" : "http";
         StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
           "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL() + "\"?>\n" +
           "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");

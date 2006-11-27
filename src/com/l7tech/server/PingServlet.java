@@ -97,12 +97,13 @@ public class PingServlet extends AuthenticatableHttpServlet {
         }
 
         final int port = request.getServerPort();
-        final String protocol = request.isSecure() ? "https" : "http";
+        final boolean secure = request.isSecure();
+        final String protocol = secure ? "https" : "http";
 
         if (mode == Mode.REQUIRE_CREDS) {
-            if ("http".equals(protocol) && port == 8080) {
+            if (!secure) {
                 respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
-            } else if ("https".equals(protocol) && port == 8443) {
+            } else {
                 final boolean hasCredentials = findCredentialsBasic(request) != null;
                 if (!hasCredentials) {
                     respondChallenge(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port + ", hasCredentials=" + hasCredentials);
@@ -142,9 +143,9 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 }
             }
         } else if (mode == Mode.OPEN) {
-            if ("http".equals(protocol) && port == 8080) {
+            if (!secure) {
                 respondMinimal(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
-            } else if ("https".equals(protocol) && port == 8443) {
+            } else {
                 respondFull(response, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
             }
         }
@@ -166,7 +167,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         final PrintWriter out = response.getWriter();
         try {
             try {
-                Collection nodeInfos = _clusterInfoManager.retrieveClusterStatus();
+                _clusterInfoManager.retrieveClusterStatus();
             } catch (Exception e) {
                 respondDatabaseFailureMinimal(response, details);
                 if (_logger.isLoggable(Level.FINE)) {
