@@ -204,6 +204,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         switch(httpType) {
             case BASIC_HTTP:
                 newNode.setAttribute("secure", "true");
+                break;
             case SSL_HTTP:
                 newNode.setAttribute("secure", "true");
                 newNode.setAttribute("clientAuth", "want");
