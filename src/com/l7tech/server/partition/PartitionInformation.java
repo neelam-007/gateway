@@ -5,6 +5,7 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.apache.commons.lang.StringUtils;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -29,20 +30,33 @@ public class PartitionInformation{
     String oldPartitionId;
     boolean isNewPartition = false;
 
-    Map<EndpointType, EndpointHolder> endpointsList;
+    List<HttpEndpointHolder> httpEndpointsList;
+    List<OtherEndpointHolder> otherEndpointsList;
+    
     OSSpecificFunctions osf;
     Document originalDom;
 
-
-    public enum EndpointType {
-        BASIC_HTTP("Basic HTTP Endpoint"),
-        SSL_HTTP("SSL Endpoint"),
-        SSL_HTTP_NOCLIENTCERT("SSL Endpoint With No Client Certitifcate"),
+    public enum OtherEndpointType {
+        RMI_ENDPOINT("Inter-Node Communication"),
+        TOMCAT_MANAGEMENT_ENDPOINT("Shutdown Port"),
         ;
 
         private String endpointName;
 
-        EndpointType(String endpointName) {this.endpointName = endpointName;}
+        OtherEndpointType(String endpointName) {this.endpointName = endpointName;}
+        public String getName() {return endpointName;}
+        public String toString() {return endpointName;}
+    }
+
+    public enum HttpEndpointType {
+        BASIC_HTTP("Basic HTTP Endpoint"),
+        SSL_HTTP("SSL Endpoint"),
+        SSL_HTTP_NOCLIENTCERT("SSL Endpoint (No Client Certitifcate)"),
+        ;
+
+        private String endpointName;
+
+        HttpEndpointType(String endpointName) {this.endpointName = endpointName;}
         public String getName() {return endpointName;}
         public String toString() {return endpointName;}
     }
@@ -50,16 +64,19 @@ public class PartitionInformation{
     public PartitionInformation(String partitionName) {
         this.partitionId = partitionName;
         isNewPartition = true;
-        endpointsList = new TreeMap<EndpointType, EndpointHolder>();
-        EndpointHolder.populateDefaultEndpoints(endpointsList);
+        httpEndpointsList = new ArrayList<HttpEndpointHolder>();
+        otherEndpointsList = new ArrayList<OtherEndpointHolder>();
+        HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
+        OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
     }
 
     public PartitionInformation(String partitionId, Document doc, boolean isNew) throws XPathExpressionException {
         this.partitionId = partitionId;
         isNewPartition = isNew;
-        endpointsList = new TreeMap<EndpointType, EndpointHolder>();
-        EndpointHolder.populateDefaultEndpoints(endpointsList);
-
+        httpEndpointsList = new ArrayList<HttpEndpointHolder>();
+        otherEndpointsList = new ArrayList<OtherEndpointHolder>();
+        HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
+        OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
         //pass false to isNew since, if we have a doc then it's not a new partition.
         //now navigate the doc to get the Connector/port information
         parseConnectors(doc);
@@ -84,17 +101,26 @@ public class PartitionInformation{
 
     private void updateEndpoint(String ip, String portNumber, boolean isSecure, boolean isClientCertWanted) {
 
-        EndpointHolder holder;
-        if (!isSecure) holder = endpointsList.get(EndpointType.BASIC_HTTP);
+        HttpEndpointHolder holder;
+        if (!isSecure) holder = getHttpEndPointByType(HttpEndpointType.BASIC_HTTP);
         else {
-            if (isClientCertWanted) holder = endpointsList.get(EndpointType.SSL_HTTP);
-            else holder = endpointsList.get(EndpointType.SSL_HTTP_NOCLIENTCERT);
+            if (isClientCertWanted) holder = getHttpEndPointByType(HttpEndpointType.SSL_HTTP);
+            else holder = getHttpEndPointByType(HttpEndpointType.SSL_HTTP_NOCLIENTCERT);
         }
 
         if (holder != null) {
             holder.ipAddress = ip;
             holder.port = portNumber;
         }
+    }
+
+    private HttpEndpointHolder getHttpEndPointByType(HttpEndpointType endpointType) {
+        for (HttpEndpointHolder endpointHolder : httpEndpointsList) {
+            if (endpointHolder.endpointType == endpointType) {
+                return endpointHolder;
+            }
+        }
+        return null;
     }
 
     public OSSpecificFunctions getOSSpecificFunctions() {
@@ -123,18 +149,26 @@ public class PartitionInformation{
         return isNewPartition;
     }
 
-    public Map<EndpointType, EndpointHolder> getEndpoints() {
-        return endpointsList;
+    public List<HttpEndpointHolder> getHttpEndpoints() {
+        return httpEndpointsList;
     }
 
-    public void setEndpointsList(Map<EndpointType, EndpointHolder> endpointsList) {
-        this.endpointsList = endpointsList;
+    public List<OtherEndpointHolder> getOtherEndpoints() {
+        return otherEndpointsList;
+    }
+
+
+    public void setHttpEndpointsList(List<HttpEndpointHolder> httpEndpointsList) {
+        this.httpEndpointsList = httpEndpointsList;
+    }
+
+    public void setOtherEndpointsList(List<OtherEndpointHolder> otherEndpointsList) {
+        this.otherEndpointsList = otherEndpointsList;
     }
 
     public String toString() {
         return partitionId;
     }
-
 
     public Document getOriginalDom() {
         return originalDom;
@@ -144,30 +178,78 @@ public class PartitionInformation{
         this.originalDom = originalDom;
     }
 
-    public static class EndpointHolder {
+    public static class OtherEndpointHolder {
+        public OtherEndpointType endpointType;
+        public String port; 
+
+        public OtherEndpointHolder(OtherEndpointType endpointType) {
+            this.endpointType = endpointType;
+        }
+
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            OtherEndpointHolder that = (OtherEndpointHolder) o;
+
+            if (endpointType != that.endpointType) return false;
+            if (port != null ? !port.equals(that.port) : that.port != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result;
+            result = (endpointType != null ? endpointType.hashCode() : 0);
+            result = 31 * result + (port != null ? port.hashCode() : 0);
+            return result;
+        }
+
+
+        public String toString() {
+            return endpointType.getName() + port;
+        }
+
+        public static void populateDefaultEndpoints(List<OtherEndpointHolder> endpoints) {
+            endpoints.add(new OtherEndpointHolder(PartitionInformation.OtherEndpointType.RMI_ENDPOINT));
+            endpoints.add(new OtherEndpointHolder(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT));
+        }
+
+        public void setValueAt(int columnIndex, Object aValue) {
+            switch(columnIndex) {
+                case 0:
+                    break;
+                case 1:
+                    port = String.valueOf(aValue);
+                    break;
+            }
+        }
+
+        public static Class<?> getClassAt(int columnIndex) {
+            switch(columnIndex) {
+                case 0:
+                    return OtherEndpointType.class;
+                case 1:
+                    return Integer.class;
+                default:
+                    return String.class;
+            }
+        }
+    }
+
+    public static class HttpEndpointHolder {
         private static String[] headings = new String[] {
             "Endpoint Type",
             "IP Address",
             "Port",
-//            "Uses SSL",
-//            "Uses Client Certificate",
         };
 
-        private EndpointType endpointType;
+        public HttpEndpointType endpointType;
         public String ipAddress;
         public String port;
 
-//        public boolean isSecure;
-//        public boolean isClientCert;
-
-//        public EndpointHolder(String ipAddress, String port, boolean secure, boolean isClientCert) {
-//            this.ipAddress = ipAddress;
-//            this.port = port;
-//            this.isSecure = secure;
-//            this.isClientCert = isClientCert;
-//        }
-
-        public EndpointHolder(EndpointType type) {
+        public HttpEndpointHolder(HttpEndpointType type) {
             this.endpointType = type;
         }
 
@@ -175,11 +257,9 @@ public class PartitionInformation{
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            EndpointHolder that = (EndpointHolder) o;
+            HttpEndpointHolder that = (HttpEndpointHolder) o;
 
             if (endpointType != that.endpointType) return false;
-//            if (isClientCert != that.isClientCert) return false;
-//            if (isSecure != that.isSecure) return false;
             if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
             if (port != null ? !port.equals(that.port) : that.port != null) return false;
 
@@ -191,19 +271,18 @@ public class PartitionInformation{
             result = (ipAddress != null ? ipAddress.hashCode() : 0);
             result = 31 * result + (port != null ? port.hashCode() : 0);
             result = 31 * result + endpointType.getName().hashCode();
-//            result = 31 * result + (isSecure ? 1 : 0);
-//            result = 31 * result + (isClientCert ? 1 : 0);
             return result;
         }
 
 
         public String toString() {
+            if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
+                return "";
+            }
             StringBuilder sb = new StringBuilder();
             sb.append(endpointType.getName());
             sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(", ");
             sb.append(port);
-//            sb.append((isSecure?", SSL":""));
-//            sb.append((isClientCert?", With Client Cert":""));
             return sb.toString();
         }
 
@@ -219,8 +298,6 @@ public class PartitionInformation{
                     return ipAddress;
                 case 2:
                     return port;
-//                case 3:
-//                    return isClientCert;
                 default:
                     return null;
             }
@@ -236,38 +313,26 @@ public class PartitionInformation{
                 case 2:
                     port = String.valueOf(aValue);
                     break;
-//                case 2:
-//                    isSecure = ((Boolean)aValue).booleanValue();
-//                    break;
-//                case 3:
-//                    isClientCert = ((Boolean)aValue).booleanValue();
             }
         }
 
         public static Class<?> getClassAt(int columnIndex) {
             switch(columnIndex) {
                 case 0:
-                    return EndpointType.class;
+                    return HttpEndpointType.class;
                 case 1:
                     return String.class;
                 case 2:
-                    return Short.class;
-//                case 3:
-//                    return Boolean.class;
+                    return Integer.class;
                 default:
                     return String.class;
             }
         }
 
-        public static void populateDefaultEndpoints(Map<EndpointType, EndpointHolder> endpoints) {
-            endpoints.put(PartitionInformation.EndpointType.BASIC_HTTP,
-                    new PartitionInformation.EndpointHolder(PartitionInformation.EndpointType.BASIC_HTTP));
-
-            endpoints.put(PartitionInformation.EndpointType.SSL_HTTP,
-                    new PartitionInformation.EndpointHolder(PartitionInformation.EndpointType.SSL_HTTP));
-
-            endpoints.put(PartitionInformation.EndpointType.SSL_HTTP_NOCLIENTCERT,
-                    new PartitionInformation.EndpointHolder(PartitionInformation.EndpointType.SSL_HTTP_NOCLIENTCERT));
+        public static void populateDefaultEndpoints(List<HttpEndpointHolder> endpoints) {
+            endpoints.add(new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.BASIC_HTTP));
+            endpoints.add(new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP));
+            endpoints.add(new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT));
         }
     }
 }
