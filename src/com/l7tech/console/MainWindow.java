@@ -1561,6 +1561,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         tbadd(toolBarPane, homeAction);
 
         if (isApplet()) {
+            // Ensure that clipboard actions get initialized properly, even though we won't display this menu
+            // (side effects, hack hack)
+            getEditMenu();
+
             JPopupMenu menu = new JPopupMenu("Manage...");
             menu.add(getManageCertificatesMenuItem());
             menu.add(getManageGlobalSchemasMenuItem());
