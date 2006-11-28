@@ -9,6 +9,11 @@ import java.util.*;
  * Contains CertUtils utility methods that require Java 1.5 or higher, and hence can't be included with the Bridge.
  */
 class DnParserJava15 implements CertUtils.DnParser {
+    public DnParserJava15() {
+        // Force early failure if parser not working
+        dnToAttributeMap("cn=blah");
+    }
+
     public Map dnToAttributeMap(String dn) {
         LdapName name = null;
         try {

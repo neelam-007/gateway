@@ -13,6 +13,11 @@ import java.util.List;
  * with the SSM applet.  This class is used by the Bridge and must run under JRE 1.4.
  */
 class DnParserBc implements CertUtils.DnParser {
+    public DnParserBc() {
+        // Force early failure if parser isn't present
+        dnToAttributeMap("cn=blah");
+    }
+
     public Map dnToAttributeMap(String dn) {
         X509Name x509name = new X509Name(dn);
         Map map = new HashMap();
