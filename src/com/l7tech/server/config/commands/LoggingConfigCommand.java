@@ -2,6 +2,8 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.partition.PartitionInformation;
 
 import java.io.*;
 import java.util.Properties;
@@ -18,17 +20,20 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
     static Logger logger = Logger.getLogger(LoggingConfigCommand.class.getName());
 
 
-    private static final String SSG_LOG_PATTERN = "logs/ssg_%g_%u.log";
+    private static final String SSG_LOG_DIR = "logs/";
+    private static final String SSG_LOG_PATTERN = "ssg_%g_%u.log";
     private static final String BACKUP_FILE_NAME = "logging_config_backups";
     private static final String LOG_PATTERN_PROPERTY = "java.util.logging.FileHandler.pattern";
     private static final String PROPERTY_COMMENT = "this file was updated by the SSG configuration utility";
-
+    private String partitionName;
     public LoggingConfigCommand(ConfigurationBean bean) {
         super(bean);
     }
 
     public boolean execute() {
         boolean success = true;
+        PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+        partitionName = (pi == null)?"default_":pi.getPartitionId();
         String ssgLogPropsPath = getOsFunctions().getSsgLogPropertiesFile();
         File logProps = new File(ssgLogPropsPath);
         if (logProps.exists()) {
@@ -56,7 +61,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                     new File(ssgLogPropsPath + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
-            String fullLogPattern = getOsFunctions().getSsgInstallRoot() + SSG_LOG_PATTERN;
+            String fullLogPattern = getOsFunctions().getSsgInstallRoot() + SSG_LOG_DIR + partitionName + "-" + SSG_LOG_PATTERN;
             props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);
 
             fos = new FileOutputStream(loggingPropertiesFile);
