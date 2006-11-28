@@ -7,10 +7,7 @@ package com.l7tech.console.util;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.FlavorListener;
-import java.awt.datatransfer.FlavorEvent;
-import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.InputEvent;
@@ -33,46 +30,34 @@ import java.security.AccessControlException;
 public class ClipboardActions {
     private static final Logger logger = Logger.getLogger(ClipboardActions.class.getName());
 
-    /**
-     * Global "cut" action, enabled if current focus owner has a transfer handler allowing cut.
-     * <p/>
-     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
-     */
-    public static final Action CUT_ACTION = new ClipboardMutatingProxyAction(TransferHandler.getCutAction(),
-                                                            KeyEvent.VK_T,
-                                                            KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
+    private static final Action L7_CUT_ACTION = new L7TransferAction("l7cut", KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
+    private static final Action L7_COPY_ACTION = new L7TransferAction("l7copy", KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK));
+    private static final Action L7_PASTE_ACTION = new L7TransferAction("l7paste", KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
 
-    /**
-     * Global "copy" action, enabled if current focus owner has a transfedr handler allowing copy.
-     * <p/>
-     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
-     */
-    public static final Action COPY_ACTION = new ClipboardMutatingProxyAction(TransferHandler.getCopyAction(),
-                                                            KeyEvent.VK_C,
-                                                            KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK));
 
-    /**
-     * Global "copyAll" action, enabled if current focus owner has a transfer handler allowing copy and
-     * has specifically added "copyAll" to its actionMap.
-     * <p/>
-     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
-     */
-    public static final Action COPY_ALL_ACTION = new ClipboardMutatingProxyAction("copyAll",
-                                                            KeyEvent.VK_L,
-                                                            KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK));
+    private static final Action GLOBAL_CUT_ACTION = new ClipboardMutatingProxyAction(
+            getCutAction(),
+            TransferHandler.getCutAction(),
+            KeyEvent.VK_T,
+            KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
 
-    /**
-     * Global "paste" action, enabled if current focus owner has a transfer handler that will accept paste of
-     * any dataflavor currently on the clipboard.
-     * <p/>
-     * If the system clipboard isn't available, this action will always be enabled if the focus owner has
-     * a transfer handler.
-     * <p/>
-     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
-     */
-    public static final Action PASTE_ACTION = new ProxyAction(TransferHandler.getPasteAction(),
-                                                            KeyEvent.VK_P,
-                                                            KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
+    private static final Action GLOBAL_COPY_ACTION = new ClipboardMutatingProxyAction(
+            getCopyAction(),
+            TransferHandler.getCopyAction(),
+            KeyEvent.VK_C,
+            KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK));
+
+    private static final Action GLOBAL_COPY_ALL_ACTION = new ClipboardMutatingProxyAction(
+            "copyAll",
+            KeyEvent.VK_L,
+            KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK));
+
+    private static final Action GLOBAL_PASTE_ACTION = new ProxyAction(
+            getPasteAction(),
+            TransferHandler.getPasteAction(),
+            KeyEvent.VK_P,
+            KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
+
 
     /** Explicit hint, as a client property.  May be "true" or "false".  If not present will guess. */
     public static final String CUT_HINT = "com.l7tech.clipboard.cut.enable";
@@ -83,15 +68,87 @@ public class ClipboardActions {
     /** Explicit hint, as a client property.  May be "true" or "false".  If not present will guess. */
     public static final String PASTE_HINT = "com.l7tech.clipboard.paste.enable";
 
+
     private static boolean focusListenerInstalled = false;
     private static WeakReference<JComponent> focusOwner = null;
     private static boolean noClipAccess = false;
     private static boolean checkedClipboard = false;
     private static DataFlavor[] clipboardFlavors = null;
-    private static final String cutName = (String)CUT_ACTION.getValue(Action.NAME);
-    private static final String copyName = (String)COPY_ACTION.getValue(Action.NAME);
-    private static final String copyAllName = (String)COPY_ALL_ACTION.getValue(Action.NAME);
-    private static final String pasteName = (String)PASTE_ACTION.getValue(Action.NAME);
+    private static Clipboard lastSystemClipboard = null;
+    private static final FlavorListener FLAVOR_LISTENER = new FlavorListener() {
+        public void flavorsChanged(FlavorEvent e) {
+            final Clipboard clip = (Clipboard)e.getSource();
+            updateClipboardFlavors(clip);
+            updateClipboardActions();
+        }
+    };
+
+
+    /**
+     * Global "cut" action, enabled if current focus owner has a transfer handler allowing cut.
+     * <p/>
+     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
+     *
+     * @return a proxy action that runs "cut" on the currently-focused component.
+     */
+    public static Action getGlobalCutAction() {
+        return GLOBAL_CUT_ACTION;
+    }
+
+    /**
+     * Global "copy" action, enabled if current focus owner has a transfedr handler allowing copy.
+     * <p/>
+     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
+     *
+     * @return a proxy action that runs "copy" on the currently-focused component.
+     */
+    public static Action getGlobalCopyAction() {
+        return GLOBAL_COPY_ACTION;
+    }
+
+    /**
+     * Global "copyAll" action, enabled if current focus owner has a transfer handler allowing copy and
+     * has specifically added "copyAll" to its actionMap.
+     * <p/>
+     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
+     *
+     * @return a proxy action that runs "copyAll" on the currently-focused component.
+     */
+    public static Action getGlobalCopyAllAction() {
+        return GLOBAL_COPY_ALL_ACTION;
+    }
+
+    /**
+     * Global "paste" action, enabled if current focus owner has a transfer handler that will accept paste of
+     * any dataflavor currently on the clipboard.
+     * <p/>
+     * If the system clipboard isn't available, this action will always be enabled if the focus owner has
+     * a transfer handler.
+     * <p/>
+     * Your app may want to customize the SHORT_DESCRIPTION and LONG_DESCRIPTION properties of this action.
+     *
+     * @return a proxy action that runs "copy" on the currently-focused component.
+     */
+    public static Action getGlobalPasteAction() {
+        return GLOBAL_PASTE_ACTION;
+    }
+
+    private static final boolean initialClipboardAccess = getClipboard() != null;
+
+    /** @return a version of TransferHandler.getCutAction() that works when running as signed applet. */
+    public static Action getCutAction() {
+        return initialClipboardAccess ? L7_CUT_ACTION : TransferHandler.getCutAction();
+    }
+
+    /** @return a version of TransferHandler.getCopyAction() that works when running as signed applet. */
+    public static Action getCopyAction() {
+        return initialClipboardAccess ? L7_COPY_ACTION : TransferHandler.getCopyAction();
+    }
+
+    /** @return a version of TransferHandler.getPasteAction() that works when running as signed applet. */
+    public static Action getPasteAction() {
+        return initialClipboardAccess ? L7_PASTE_ACTION : TransferHandler.getPasteAction();
+    }
 
     /**
      * Set up our static focus and clipboard listeners, if we haven't already done so.
@@ -111,13 +168,6 @@ public class ClipboardActions {
 
             Clipboard clip = getClipboard();
             if (clip != null) {
-                clip.addFlavorListener(new FlavorListener() {
-                    public void flavorsChanged(FlavorEvent e) {
-                        final Clipboard clip = (Clipboard)e.getSource();
-                        updateClipboardFlavors(clip);
-                        updateClipboardActions();
-                    }
-                });
                 updateClipboardFlavors(clip);
             }
 
@@ -135,23 +185,31 @@ public class ClipboardActions {
 
     private static void updateClipboardFlavors(final Clipboard clip) {
         try {
-            clipboardFlavors = clip == null ? null : clip.getAvailableDataFlavors();
+            clipboardFlavors = getFlavors(clip);
             logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors);
         } catch (IllegalStateException es) {
             // Windows clipboard is busy (or maybe just non-reentrant).  Do it later.
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     try {
-                        clipboardFlavors = clip == null ? null : clip.getAvailableDataFlavors();
+                        clipboardFlavors = getFlavors(clip);
                         logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors);
                     } catch (IllegalStateException e) {
                         // Well, at least we tried (and retried, even)
                         clipboardFlavors = null;
-                        logger.info("Updated cached clipboard flavors for " + clip + ": " + clipboardFlavors + " (gave up - system clipboard was too busy)");
+                        logger.warning("Failed to update cached clipboard flavors for " + clip + ": " + clipboardFlavors + " (gave up - system clipboard was too busy)");
                     }
                 }
             });
         }
+    }
+
+    private static DataFlavor[] getFlavors(final Clipboard clip) throws IllegalStateException {
+        return AccessController.doPrivileged(new PrivilegedAction<DataFlavor[]>() {
+            public DataFlavor[] run() {
+                return clip == null ? null : clip.getAvailableDataFlavors();
+            }
+        });
     }
 
     /**
@@ -183,29 +241,33 @@ public class ClipboardActions {
             if (copyHint != null)
                 acceptCopy = copyHint;
             else
-                acceptCopy = am.get(copyName) != null && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
+                acceptCopy = hasAction(am, "l7copy", "copy") && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
 
-            acceptCopyAll = am.get(copyAllName) != null && acceptCopy;
+            acceptCopyAll = hasAction(am, "copyAll", null) && acceptCopy;
 
             Boolean cutHint = checkProp(jc, CUT_HINT);
             if (cutHint != null)
                 acceptCut = cutHint;
             else
-                acceptCut = am.get(cutName) != null && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
+                acceptCut = hasAction(am, "l7cut", "cut") && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
 
             Boolean pasteHint = checkProp(jc, PASTE_HINT);
             if (pasteHint != null)
                 acceptPaste = pasteHint;
             else
-                acceptPaste = am.get(pasteName) != null && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
+                acceptPaste = hasAction(am, "l7paste", "paste") && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
 
-            logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (am.get(pasteName) != null) + "  clipboard=" + getClipboard() + "  flavors:" + clipboardFlavors);
+            logger.fine("focus owner: " + jc.getClass().getName() + "  paste action:" + (hasAction(am, "l7paste", "paste")) + "  clipboard=" + getClipboard() + "  flavors:" + clipboardFlavors);
         } finally {
-            CUT_ACTION.setEnabled(acceptCut);
-            COPY_ACTION.setEnabled(acceptCopy);
-            COPY_ALL_ACTION.setEnabled(acceptCopyAll);
-            PASTE_ACTION.setEnabled(acceptPaste);
+            GLOBAL_CUT_ACTION.setEnabled(acceptCut);
+            GLOBAL_COPY_ACTION.setEnabled(acceptCopy);
+            GLOBAL_COPY_ALL_ACTION.setEnabled(acceptCopyAll);
+            GLOBAL_PASTE_ACTION.setEnabled(acceptPaste);
         }
+    }
+
+    private static boolean hasAction(ActionMap am, String a, String b) {
+        return am.get(a) != null || (b != null && am.get(b) != null);
     }
 
     private static Boolean checkProp(JComponent jc, String prop) {
@@ -228,17 +290,31 @@ public class ClipboardActions {
         if (GraphicsEnvironment.isHeadless()) {
             // (Of course, nothing else in the SSM is likely to work, either..)
             noClipAccess = true;
+            logger.info("Running headless - no clipboard access");
             return null;
         }
 
-        return getSystemClipboard();
+        Clipboard sys = getSystemClipboard();
+        logger.info(sys == null ? "No access to system clipboard" : "Will use system clipboard");
+        return sys;
     }
 
     private static Clipboard getSystemClipboard() {
         return AccessController.doPrivileged(new PrivilegedAction<Clipboard>() {
             public Clipboard run() {
                 try {
-                    return Toolkit.getDefaultToolkit().getSystemClipboard();
+                    Clipboard old = lastSystemClipboard;
+                    Clipboard clip = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    lastSystemClipboard = clip;
+                    if (clip != null && clip != old) {
+                        FlavorListener[] flavs = clip.getFlavorListeners();
+                        for (FlavorListener flav : flavs) {
+                            if (flav == FLAVOR_LISTENER)
+                                return clip;
+                        }
+                        clip.addFlavorListener(FLAVOR_LISTENER);
+                    }
+                    return clip;
                 } catch (AccessControlException ace) {
                     noClipAccess = true;
                     return null;
@@ -254,20 +330,27 @@ public class ClipboardActions {
      * Takes no action if there is no currently-focused component or the currently-focused component doesn't
      * map the specified action command.
      *
-     * @param actionCommand the action to dispatch, for example "cut".  Must not be null.
+     * @param actionCommand the action to dispatch, for example "l7cut".  Must not be null.
+     * @param backupActionCommand  action to fall back to if the primary action command is unmapped, for example "cut",
+     *                             or null if there's no fallback option.
      */
-    private static void runActionCommandOnFocusedComponent(String actionCommand) {
+    private static void runActionCommandOnFocusedComponent(String actionCommand, String backupActionCommand) {
         if (focusOwner == null)
             return;
         JComponent focusComponent = focusOwner.get();
         if (focusComponent == null)
             return;
 
-        Action a = focusComponent.getActionMap().get(actionCommand);
+        final ActionMap actionMap = focusComponent.getActionMap();
+        Action a = actionMap.get(actionCommand);
+        if (a == null && backupActionCommand != null) {
+            actionCommand = backupActionCommand;
+            a = actionMap.get(actionCommand);
+        }
         if (a != null) {
             a.actionPerformed(new ActionEvent(focusComponent,
                                               ActionEvent.ACTION_PERFORMED,
-                                              null));
+                                              actionCommand));
         }
     }
 
@@ -277,24 +360,29 @@ public class ClipboardActions {
      */
     private static class ProxyAction extends AbstractAction {
         private final String actionCommand;
+        private final String backupActionCommand;
 
-        public ProxyAction(String actionCommand, int mnemonic, KeyStroke accelerator) {
+        public ProxyAction(String actionCommand, String backupActionCommand, int mnemonic, KeyStroke accelerator) {
             super(actionCommand);
             this.actionCommand = actionCommand;
+            this.backupActionCommand = backupActionCommand;
             if (mnemonic > 0) putValue(Action.MNEMONIC_KEY, new Integer(mnemonic));
             if (accelerator != null) putValue(Action.ACCELERATOR_KEY, accelerator);
             maybeInstallGlobalListeners();
         }
 
-        public ProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
-            this((String)actionToRun.getValue(Action.NAME), mnemonic, accelerator);
+        public ProxyAction(Action actionToRun, Action backupAction, int mnemonic, KeyStroke accelerator) {
+            this((String)actionToRun.getValue(Action.NAME),
+                 backupAction == null ? null : (String)backupAction.getValue(Action.NAME),
+                 mnemonic,
+                 accelerator);
         }
 
         public void actionPerformed(ActionEvent e) {
             if (logger.isLoggable(Level.FINE)) logger.fine("Dispatching action command: " + actionCommand);
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {
-                    runActionCommandOnFocusedComponent(actionCommand);
+                    runActionCommandOnFocusedComponent(actionCommand, backupActionCommand);
                     return null;
                 }
             });
@@ -307,16 +395,65 @@ public class ClipboardActions {
 
     private static class ClipboardMutatingProxyAction extends ProxyAction {
         public ClipboardMutatingProxyAction(String actionCommand, int mnemonic, KeyStroke accelerator) {
-            super(actionCommand, mnemonic, accelerator);
+            super(actionCommand, null, mnemonic, accelerator);
         }
 
-        public ClipboardMutatingProxyAction(Action actionToRun, int mnemonic, KeyStroke accelerator) {
-            super(actionToRun, mnemonic, accelerator);
+        public ClipboardMutatingProxyAction(Action actionToRun, Action backupActionToRun, int mnemonic, KeyStroke accelerator) {
+            super(actionToRun, backupActionToRun, mnemonic, accelerator);
         }
 
         protected void afterActionPerformed() {
             updateClipboardFlavors(getClipboard());
             updateClipboardActions();
+        }
+    }
+
+    /**
+     * Used for the Layer 7 versions of the cut/copy/paste actions, which bypass
+     */
+    static class L7TransferAction extends AbstractAction {
+        L7TransferAction(String name, KeyStroke accelerator) {
+            super(name);
+            if (accelerator != null) putValue(Action.ACCELERATOR_KEY, accelerator);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            Object src = e.getSource();
+            if (!(src instanceof JComponent))
+                return;
+
+            JComponent component = (JComponent) src;
+            Clipboard clipboard = getClipboard();
+            String name = (String)getValue(Action.NAME);
+            if (name == null) return;
+
+            if (clipboard == null) {
+                logger.info("No access to system clipboard -- falling back to TransferHandler's actions");
+                // Have to fallback to the transferhandler's actions
+                if ("cut".equals(name) || "l7cut".equals(name)) {
+                    TransferHandler.getCutAction().actionPerformed(e);
+                } else if ("copy".equals(name) || "l7copy".equals(name)) {
+                    TransferHandler.getCopyAction().actionPerformed(e);
+                } else if ("paste".equals(name) || "l7paste".equals(name)) {
+                    TransferHandler.getPasteAction().actionPerformed(e);
+                }
+                return;
+            }
+
+            TransferHandler transferHandler = component.getTransferHandler();
+            if (transferHandler == null) return;
+
+            try {
+                if ("cut".equals(name) || "l7cut".equals(name)) {
+                    transferHandler.exportToClipboard(component, clipboard, TransferHandler.MOVE);
+                } else if ("copy".equals(name) || "l7copy".equals(name)) {
+                    transferHandler.exportToClipboard(component, clipboard, TransferHandler.COPY);
+                } else if ("paste".equals(name) || "l7paste".equals(name)) {
+                    transferHandler.importData(component, clipboard.getContents(null));
+                }
+            } catch (IllegalStateException ise) {
+                UIManager.getLookAndFeel().provideErrorFeedback(component);
+            }
         }
     }
 }

@@ -135,7 +135,7 @@ public class WspReader {
      * @throws IOException if the policy was not valid, even if unrecognized assertions are preserved as {@link com.l7tech.policy.assertion.UnknownAssertion}.
      */
     public static Assertion parsePermissively(String wspXml) throws IOException {
-        return parse(wspXml, PermissiveWspVisitor.INSTANCE);
+        return parse(wspXml.trim(), PermissiveWspVisitor.INSTANCE);
     }
 
     static Assertion parse(String wspXml, WspVisitor visitor) throws IOException {

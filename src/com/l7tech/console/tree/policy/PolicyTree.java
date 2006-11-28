@@ -134,18 +134,22 @@ public class PolicyTree extends JTree implements DragSourceListener,
             getSelectionModel().addTreeSelectionListener(tsl);
 
         ActionMap map = this.getActionMap();
-        map.put(TransferHandler.getCutAction().getValue(Action.NAME),
-                TransferHandler.getCutAction());
-        map.put(TransferHandler.getCopyAction().getValue(Action.NAME),
-                TransferHandler.getCopyAction());
-        map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
-                TransferHandler.getPasteAction());
+        final Object cutName = ClipboardActions.getCutAction().getValue(Action.NAME);
+        map.put(cutName, ClipboardActions.getCutAction());
+        map.put(ClipboardActions.getCopyAction().getValue(Action.NAME), ClipboardActions.getCopyAction());
+        map.put(ClipboardActions.getPasteAction().getValue(Action.NAME), ClipboardActions.getPasteAction());
+        if (!"cut".equals(cutName)) {
+            // Make sure standard names are hooked up as well
+            map.put("cut", ClipboardActions.getCutAction());
+            map.put("copy", ClipboardActions.getCopyAction());
+            map.put("paste", ClipboardActions.getPasteAction());
+        }
 
         // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
         map.put("copyAll", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 getSelectionModel().clearSelection();
-                TransferHandler.getCopyAction().actionPerformed(e);
+                ClipboardActions.getCopyAction().actionPerformed(e);
             }
         });
 
@@ -426,15 +430,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         }
 
-        if (ClipboardActions.COPY_ACTION.isEnabled()) {
+        if (ClipboardActions.getGlobalCopyAction().isEnabled()) {
             pm.add(new JPopupMenu.Separator());
-            pm.add(ClipboardActions.COPY_ACTION);
+            pm.add(ClipboardActions.getGlobalCopyAction());
             empty = false;
-            if (ClipboardActions.COPY_ALL_ACTION.isEnabled())
-                pm.add(ClipboardActions.COPY_ALL_ACTION);
+            if (ClipboardActions.getGlobalCopyAllAction().isEnabled())
+                pm.add(ClipboardActions.getGlobalCopyAllAction());
             // To prevent obvious UI tragedy, we never add Paste as first item unless Copy is safely above it
-            if (ClipboardActions.PASTE_ACTION.isEnabled())
-                pm.add(ClipboardActions.PASTE_ACTION);
+            if (ClipboardActions.getGlobalPasteAction().isEnabled())
+                pm.add(ClipboardActions.getGlobalPasteAction());
         }
 
         if (empty) { // no items have been added

@@ -18,6 +18,7 @@ import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.io.InputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -312,6 +313,26 @@ public class XmlUtilTest extends TestCase {
         System.out.println("Normalized:\n" + XmlUtil.nodeToFormattedString(normalizedDoc));
     }
 
+    public void testLeadingWhitespace() {
+        InputStream pis = new ByteArrayInputStream(XML_WITH_LEADING_WHITESPACE.getBytes());
+        try {
+            XmlUtil.parse(pis);
+            fail("XML parser failed to reject stream with leading whitespace");
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            fail("Unexpected exception was thrown");
+        } catch (SAXException e) {
+            // Ok
+        }
+    }
+
+    public static final String XML_WITH_LEADING_WHITESPACE =
+            "\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <L7p:ThroughputQuota>\n" +
+            "        <L7p:CounterName stringValue=\"asdfasdf\"/>\n" +
+            "    </L7p:ThroughputQuota>\n" +
+            "</wsp:Policy>";
 
     public static final String DOC_WITH_SEC_HEADERS = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                                                   "    <s:Header>\n" +

@@ -474,21 +474,21 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.setText(resapplication.getString("Edit"));
             menu.setMnemonic(KeyEvent.VK_E);
 
-            ClipboardActions.CUT_ACTION.putValue(Action.NAME, resapplication.getString("Cut_MenuItem_text"));
+            ClipboardActions.getGlobalCutAction().putValue(Action.NAME, resapplication.getString("Cut_MenuItem_text"));
             JMenuItem mi;
-//            mi = new JMenuItem(ClipboardActions.CUT_ACTION);
+//            mi = new JMenuItem(ClipboardActions.GLOBAL_CUT_ACTION);
 //            menu.add(mi); // TODO  Cut is disabled because it's problematic to have Cut without Undo
 
-            ClipboardActions.COPY_ACTION.putValue(Action.NAME, resapplication.getString("Copy_MenuItem_text"));
-            mi = new JMenuItem(ClipboardActions.COPY_ACTION);
+            ClipboardActions.getGlobalCopyAction().putValue(Action.NAME, resapplication.getString("Copy_MenuItem_text"));
+            mi = new JMenuItem(ClipboardActions.getGlobalCopyAction());
             menu.add(mi);
 
-            ClipboardActions.COPY_ALL_ACTION.putValue(Action.NAME, resapplication.getString("CopyAll_MenuItem_text"));
-            mi = new JMenuItem(ClipboardActions.COPY_ALL_ACTION);
+            ClipboardActions.getGlobalCopyAllAction().putValue(Action.NAME, resapplication.getString("CopyAll_MenuItem_text"));
+            mi = new JMenuItem(ClipboardActions.getGlobalCopyAllAction());
             menu.add(mi);
 
-            ClipboardActions.PASTE_ACTION.putValue(Action.NAME, resapplication.getString("Paste_MenuItem_text"));
-            mi = new JMenuItem(ClipboardActions.PASTE_ACTION);
+            ClipboardActions.getGlobalPasteAction().putValue(Action.NAME, resapplication.getString("Paste_MenuItem_text"));
+            mi = new JMenuItem(ClipboardActions.getGlobalPasteAction());
             menu.add(mi);
 
             editMenu = menu;
