@@ -277,13 +277,30 @@ public class DialogDisplayer {
             Window[] windows = frame.getOwnedWindows();
             for (int j = 0; j < windows.length; j++) {
                 Window window = windows[j];
-                if (window instanceof Dialog) {
-                    Dialog dialog = (Dialog)window;
-                    if (dialog.isModal() && dialog.isVisible())
-                        return true;
-                }
+                if (isModal(window))
+                    return true;
             }
         }
+        return false;
+    }
+
+    private static boolean isModal(Window window) {
+        // Is this window a modal dialog?
+        if (window instanceof Dialog) {
+            Dialog dialog = (Dialog)window;
+            if (dialog.isModal() && dialog.isVisible())
+                return true;
+        }
+
+        // Is one of this window's descendants a modal dialog?
+        Window[] kids = window.getOwnedWindows();
+        for (int i = 0; i < kids.length; i++) {
+            Window kid = kids[i];
+            if (isModal(kid))
+                return true;
+        }
+
+        // Nope, we're clear
         return false;
     }
 
