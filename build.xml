@@ -1620,6 +1620,7 @@
                 <include name="com/l7tech/objectmodel/imp/NamedEntityImp.class"/>
                 <include name="com/l7tech/objectmodel/imp/PersistentEntityImp.class"/>
 
+                <include name="com/l7tech/server/partition/*.class"/>
                 <include name="com/l7tech/server/config/**/*"/>
                 <include name="com/l7tech/server/util/MakeLunaCerts*.class"/>
                 <include name="com/l7tech/server/util/SetKeys*.class"/>
