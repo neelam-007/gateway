@@ -1006,6 +1006,7 @@
 
             <!-- Include the manager jars in the Gateway, for the applet admin mode. -->
             <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssg/webadmin"/>
+            <zipfileset dir="${src.root}/etc" includes="favicon.ico"/>
             <zipfileset dir="${build.dir}/lib" prefix="ssg/webadmin/lib">
                 <patternset>
                     <exclude name="**/systinet-*"/>
