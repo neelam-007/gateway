@@ -457,6 +457,7 @@ public class LogonDialog extends JDialog {
         final String sHost = selectedHost;
 
         boolean threw = true;
+        LogonInProgressDialog progressDialog = null;
         try {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -466,7 +467,8 @@ public class LogonDialog extends JDialog {
             // fla change: remember this url even if the login wont be successfull (requirement #729)
             serverUrlHistory.add(sHost);
 
-            final LogonInProgressDialog progressDialog = buildLogonInProgressDialog((Frame)getOwner(), sHost);
+            progressDialog = buildLogonInProgressDialog((Frame)getOwner(), sHost);
+            final LogonInProgressDialog progressDialog1 = progressDialog;
             final SwingWorker sw =
               new SwingWorker() {
                   private Throwable memoException = null;
@@ -485,7 +487,7 @@ public class LogonDialog extends JDialog {
                           }
                       }
                       finally {
-                          progressDialog.dispose();
+                          progressDialog1.dispose();
                       }
                       if (!Thread.currentThread().isInterrupted() && memoException == null) {
                           return Boolean.TRUE;
@@ -510,7 +512,7 @@ public class LogonDialog extends JDialog {
                               logonListener.onAuthSuccess(authenticationCredentials.getUserName(), sHost);
                           }
                       } else {
-                          if (!progressDialog.isCancelled()) {
+                          if (!progressDialog1.isCancelled()) {
                               if (logonListener != null) {
                                   logonListener.onAuthFailure();
                               }
@@ -525,6 +527,7 @@ public class LogonDialog extends JDialog {
             DialogDisplayer.display(progressDialog, new Runnable() {
                 public void run() {
                     parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    progressDialog1.dispose();
                 }
             });
 
@@ -532,8 +535,10 @@ public class LogonDialog extends JDialog {
         } catch (Exception e) {
             handleLogonThrowable(e, sHost);
         } finally {
-            if (threw)
+            if (threw) {
                 parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                if (progressDialog != null) progressDialog.dispose();
+            }
         }
     }
 
