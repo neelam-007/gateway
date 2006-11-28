@@ -2,6 +2,7 @@ package com.l7tech.server.partition;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -133,5 +134,35 @@ public class PartitionManager {
 
     public void removePartition(String partitionName) {
         partitions.remove(partitionName);
+    }
+
+    public void doMigration() {
+        OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions("");
+        File oldSsgConfigDirectory = new File(osf.getSsgInstallRoot() + "etc/conf");
+        File oldKeystoreDirectory = new File(osf.getSsgInstallRoot() + "etc/keys");
+        File oldTomcatServerConfig = new File(osf.getSsgInstallRoot() + "tomcat/conf/server.xml");
+        File partitionsBaseDir = new File(osf.getPartitionBase());
+        File defaultPartitionDir = new File(partitionsBaseDir, PartitionInformation.DEFAULT_PARTITION_NAME);
+        File templatePartitionDir = new File(partitionsBaseDir, PartitionInformation.TEMPLATE_PARTITION_NAME);
+
+        System.out.println("doing partition migration");
+        System.out.println("Old SSG Configuration: " + oldSsgConfigDirectory.getAbsolutePath());
+        System.out.println("Old SSG Keystore Directory: " + oldKeystoreDirectory.getAbsolutePath());
+        System.out.println("Old Tomcat Server Config: " + oldTomcatServerConfig.getAbsolutePath());
+        System.out.println("Partition Base Directory: " + partitionsBaseDir.getAbsolutePath());
+        System.out.println("Default Partition Directory: " + defaultPartitionDir.getAbsolutePath());
+        System.out.println("Template Partition Directory: " + templatePartitionDir.getAbsolutePath());
+
+        if (!partitionsBaseDir.exists()) partitionsBaseDir.mkdir();
+        if (!defaultPartitionDir.exists()) defaultPartitionDir.mkdir();
+        if (!templatePartitionDir.exists()) templatePartitionDir.mkdir();
+
+        if (defaultPartitionDir.listFiles().length == 0) {
+            System.out.println("the default partition needs to be migrated");
+        }
+
+        if (templatePartitionDir.listFiles().length == 0) {
+            System.out.println("creating the template partition");
+        }
     }
 }

@@ -24,13 +24,6 @@ import java.util.logging.Logger;
  * Time: 10:51:03 AM
  */
 public class PartitionConfigCommand extends BaseConfigurationCommand{
-//    String[] basicHttpConnectorAttributes
-//    maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
-//               enableLookups="false" redirectPort="8443" acceptCount="100"
-//               connectionTimeout="20000" disableUploadTimeout="true"
-//               socketFactory="com.l7tech.server.tomcat.SsgServerSocketFactory"/>
-
-
     private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
     PartitionConfigBean partitionBean;
 
@@ -227,8 +220,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private boolean existsInNewEndpoints(Element connector, List<PartitionInformation.HttpEndpointHolder> endpoints) {
         boolean isSecure = StringUtils.equals(connector.getAttribute("secure"), "true");
         boolean needsClientCert = StringUtils.equals(connector.getAttribute("clientAuth"),"want");
-        String ipAddress = connector.hasAttribute("address")?"":connector.getAttribute("address");
-        String port = connector.hasAttribute("port")?"":connector.getAttribute("port");
 
         PartitionInformation.HttpEndpointHolder holder= null;
         if (isSecure) {

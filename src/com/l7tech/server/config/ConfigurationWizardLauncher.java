@@ -1,5 +1,7 @@
 package com.l7tech.server.config;
 
+import com.l7tech.server.partition.PartitionManager;
+
 /**
  * User: megery
  * Date: Feb 22, 2006
@@ -7,6 +9,7 @@ package com.l7tech.server.config;
  */
 public class ConfigurationWizardLauncher {
     private static final String EOL_CHAR = System.getProperty("line.separator");
+    private static final String PARTITION_UPGRADE = "-partitionMigrate";
     private static final String GRAPHICAL_MODE = "-graphical";
     private static final String CONSOLE_MODE = "-console";
 
@@ -30,6 +33,8 @@ public class ConfigurationWizardLauncher {
 
         if (CONSOLE_MODE.equalsIgnoreCase(launchType)) {
             ConsoleConfigWizardLauncher.launch(newArgs);
+        } else if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
+            PartitionManager.getInstance().doMigration();
         } else if (null == launchType || "".equals(launchType) || GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
             GuiConfigWizardLauncher.launch(newArgs);
         }
