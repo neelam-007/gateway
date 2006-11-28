@@ -84,7 +84,7 @@
     <bean id="adminSessionInvocationFactory" class="com.l7tech.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
     <bean id="rmiPort" class="com.l7tech.spring.factory.config.SystemPropertyFactoryBean" depends-on="systemProperties">
-        <property name="propertyName" value="com.l7tech.server.rmiPort"/>
+        <property name="propertyName" value="com.l7tech.server.clusterPort"/>
         <property name="propertyDefault" value="2124"/>
     </bean>
 

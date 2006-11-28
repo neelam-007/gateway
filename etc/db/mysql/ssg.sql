@@ -175,15 +175,18 @@ CREATE TABLE service_resolution (
 DROP TABLE IF EXISTS cluster_info;
 
 CREATE TABLE cluster_info (
+  nodeid varchar(32) NOT NULL,
   mac varchar(18) NOT NULL,
+  partition_name varchar(128) NOT NULL,
   name varchar(128) NOT NULL,
   address varchar(16) NOT NULL,
   multicast_address varchar(16),
+  cluster_port integer NOT NULL,
   ismaster TINYINT(1) NOT NULL,
   uptime bigint NOT NULL,
   avgload double NOT NULL,
   statustimestamp bigint NOT NULL,
-  PRIMARY KEY(mac)
+  PRIMARY KEY(nodeid)
 )  TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -197,7 +200,7 @@ CREATE TABLE cluster_info (
 DROP TABLE IF EXISTS service_usage;
 CREATE TABLE service_usage (
   serviceid bigint NOT NULL,
-  nodeid varchar(18) NOT NULL,
+  nodeid varchar(32) NOT NULL,
   requestnr bigint NOT NULL,
   authorizedreqnr bigint NOT NULL,
   completedreqnr bigint NOT NULL,
@@ -335,7 +338,7 @@ CREATE TABLE fed_group_virtual (
 DROP TABLE IF EXISTS audit_main;
 CREATE TABLE audit_main (
   objectid bigint(20) NOT NULL,
-  nodeid varchar(18) NOT NULL,
+  nodeid varchar(32) NOT NULL,
   time bigint(20) NOT NULL,
   audit_level varchar(12) NOT NULL,
   name varchar(255),
@@ -494,7 +497,7 @@ CREATE TABLE sample_messages (
 
 DROP TABLE IF EXISTS service_metrics;
 CREATE TABLE service_metrics (
-  nodeid VARCHAR(18) NOT NULL,
+  nodeid VARCHAR(32) NOT NULL,
   published_service_oid BIGINT(20) NOT NULL,
   resolution INTEGER NOT NULL,
   period_start BIGINT(20) NOT NULL,

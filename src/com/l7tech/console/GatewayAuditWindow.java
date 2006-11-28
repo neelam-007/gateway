@@ -176,7 +176,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             try {
                 final ClusterNodeInfo[] nodeInfos = registry.getClusterStatusAdmin().getClusterStatus();
                 for (ClusterNodeInfo nodeInfo : nodeInfos) {
-                    nodeIdNames.put(nodeInfo.getMac(), nodeInfo.getName());
+                    nodeIdNames.put(nodeInfo.getNodeIdentifier(), nodeInfo.getName());
                 }
             } catch (RemoteException e) {
                 // Leave the map empty.

@@ -25,3 +25,20 @@ alter table rbac_role modify description mediumtext;
 -- Change role description from varchar(255) to mediumtext for better compatilibity with MySQL 5.0 in strict mode
 alter table rbac_role modify column description mediumtext;
 
+-- Add partition data to cluster info entry
+alter table cluster_info add column nodeid varchar(32);
+alter table cluster_info add column partition_name varchar(128);
+alter table cluster_info add column cluster_port integer NOT NULL default 2124;
+update cluster_info set partition_name='default_', nodeid=MD5(CONCAT(mac, '-default_'));
+alter table cluster_info modify nodeid varchar(32) NOT NULL;
+alter table cluster_info modify partition_name varchar(128) NOT NULL;
+alter table cluster_info drop primary key;
+alter table cluster_info add primary key (nodeid);
+
+alter table service_usage modify column nodeid varchar(32) NOT NULL;
+alter table audit_main modify column nodeid varchar(32) NOT NULL;
+alter table service_metrics modify column nodeid varchar(32) NOT NULL;
+
+update service_usage set nodeid = MD5(CONCAT(nodeid, '-default_'));
+update audit_main set nodeid = MD5(CONCAT(nodeid, '-default_'));
+update service_metrics set nodeid = MD5(CONCAT(nodeid, '-default_'));

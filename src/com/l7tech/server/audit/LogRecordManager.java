@@ -104,7 +104,7 @@ public class LogRecordManager {
 
         Collection<ClusterNodeInfo> ClusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
         for (ClusterNodeInfo currentNodeInfo : ClusterNodeInfos) {
-            if (nodeId.equals(currentNodeInfo.getMac())) {
+            if (nodeId.equals(currentNodeInfo.getNodeIdentifier())) {
                 clusterNodeInfo = currentNodeInfo;
                 break;
             }
@@ -123,7 +123,14 @@ public class LogRecordManager {
      *
      */
     private NamingURL getNamingURLForNode(ClusterNodeInfo clusterNodeInfo) throws MalformedURLException {
-        return NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + clusterNodeInfo.getAddress() + "/ClusterLogin");
+        String host = clusterNodeInfo.getAddress();
+        int port = clusterNodeInfo.getClusterPort();
+        String portStr = "";
+        if (port > 0) {
+            portStr = ":" + port;            
+        }
+
+        return NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + host + portStr + "/ClusterLogin");
     }
 
     /**
@@ -154,7 +161,7 @@ public class LogRecordManager {
             ssgLrs = (SSGLogRecord[]) Subject.doAs(null, new PrivilegedExceptionAction(){
                 // It saves around 10ms if we don't serialize the subject (which we don't use).
                 public Object run() throws Exception {
-                    GenericLogAdmin gla = nodeLogAdmins.get(clusterNodeInfo.getMac());
+                    GenericLogAdmin gla = nodeLogAdmins.get(clusterNodeInfo.getNodeIdentifier());
                     if(gla==null) {
                         NamingURL adminServiceNamingURL = getNamingURLForNode(clusterNodeInfo);
                         ResettableRmiProxyFactoryBean pfb = new ResettableRmiProxyFactoryBean();
@@ -168,10 +175,10 @@ public class LogRecordManager {
                         ClusterLogin cl = (ClusterLogin) pfb.getObject();
                         gla = cl.login().getLogAdmin();
                         synchronized(nodeLogAdmins) {
-                            nodeLogAdmins.put(clusterNodeInfo.getMac(), gla);
+                            nodeLogAdmins.put(clusterNodeInfo.getNodeIdentifier(), gla);
                         }
                     }
-                    return gla.getSystemLog(clusterNodeInfo.getMac(), -1, startOid, null, null, size);
+                    return gla.getSystemLog(clusterNodeInfo.getNodeIdentifier(), -1, startOid, null, null, size);
                 }
             });
         }
@@ -181,18 +188,18 @@ public class LogRecordManager {
                 throw (FindException) cause;
             }
             if(ExceptionUtils.causedBy(cause, ConnectException.class)) {
-                logger.log(Level.INFO, "Unable to connect to remote node '"+clusterNodeInfo.getMac()+"', for retrieval of logs.");            
+                logger.log(Level.INFO, "Unable to connect to remote node '"+clusterNodeInfo.getNodeIdentifier()+"', for retrieval of logs.");            
             } else {
-                logger.log(Level.WARNING, "Error during retrieval of logs from remote node '"+clusterNodeInfo.getMac()+"'", cause);
+                logger.log(Level.WARNING, "Error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", cause);
             }
             synchronized(nodeLogAdmins) {
-                nodeLogAdmins.remove(clusterNodeInfo.getMac()); //remove reference so it is refreshed
+                nodeLogAdmins.remove(clusterNodeInfo.getNodeIdentifier()); //remove reference so it is refreshed
             }
         }
         catch(Exception e) {
-            logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getMac()+"'", e);
+            logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", e);
             synchronized(nodeLogAdmins) {
-                nodeLogAdmins.remove(clusterNodeInfo.getMac()); //remove reference so it is refreshed
+                nodeLogAdmins.remove(clusterNodeInfo.getNodeIdentifier()); //remove reference so it is refreshed
             }
         }
 

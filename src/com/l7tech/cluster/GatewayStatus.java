@@ -310,7 +310,7 @@ public class GatewayStatus {
      * @return String  The node Id.
      */
     public String getNodeId() {
-        return clusterInfo.getMac();
+        return clusterInfo.getNodeIdentifier();
     }
 
     /**

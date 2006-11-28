@@ -340,7 +340,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             if (currentNode == null || currentNode == ALL_NODES)
                 whichNode = null;
             else
-                whichNode = currentNode.getMac();
+                whichNode = currentNode.getNodeIdentifier();
 
             // Find all current data that hasn't been charted yet, and add it to the chart
             SortedMap periodMap = currentRange.getAllPeriods();

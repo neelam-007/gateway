@@ -176,8 +176,11 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="serverConfig">
+            <ref local="serverConfig"/>
+        </property>
         <property name="keystore">
-            <ref local='keystore'/>
+            <ref local="keystore"/>
         </property>
     </bean>
     <!-- server side Service Usage  manager -->

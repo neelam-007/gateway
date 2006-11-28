@@ -18,17 +18,52 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 public class ClusterNodeInfo extends NamedEntityImp {
 
     /**
-     * mac address of the node that uniquely identifies this node in the cluster
+     * Identifier for the node.
+     *
+     * <p>This is an opaque id generated from the unique mac address / partition
+     * name combination.</p>
+     */
+    public String getNodeIdentifier() {
+        return nodeId;
+    }
+
+    /**
+     * Identifier for the node
+     */
+    public void setNodeIdentifier(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    /**
+     * mac address of the node
      */
     public String getMac() {
         return mac;
     }
 
     /**
-     * mac address of the node that uniquely identifies this node in the cluster
+     * mac address of the node
      */
     public void setMac(String mac) {
         this.mac = mac;
+    }
+
+    /**
+     * Get the name of the partition.
+     *
+     * @return The partition name.
+     */
+    public String getPartitionName() {
+        return partitionName;
+    }
+
+    /**
+     * Set the name of the partition.
+     *
+     * @param partitionName The partition name.
+     */
+    public void setPartitionName(String partitionName) {
+        this.partitionName = partitionName;
     }
 
     /**
@@ -43,6 +78,24 @@ public class ClusterNodeInfo extends NamedEntityImp {
      */
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    /**
+     * Get the port for cluster rmi.
+     *
+     * @return The cluster rmi port.
+     */
+    public int getClusterPort() {
+        return clusterPort;
+    }
+
+    /**
+     * Set the port for cluster rmi.
+     *
+     * @param clusterPort The cluster rmi port.
+     */
+    public void setClusterPort(int clusterPort) {
+        this.clusterPort = clusterPort;
     }
 
     /**
@@ -161,10 +214,13 @@ public class ClusterNodeInfo extends NamedEntityImp {
     }
 
     private static final long serialVersionUID = 3387085760350960428L;
-    
+
+    private String nodeId;
     private String mac;
+    private String partitionName;
     private String address;
     private String multicastAddress;
+    private int clusterPort;
     private boolean isMaster;
     private long boottime;
     private long uptime;

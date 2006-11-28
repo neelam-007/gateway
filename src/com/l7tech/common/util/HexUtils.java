@@ -100,7 +100,18 @@ public class HexUtils {
     }
 
     public static byte[] encodeUtf8(String text) {
-        return UTF8_CHARSET.encode(text).array();
+        ByteBuffer buffer = UTF8_CHARSET.encode(text);
+        byte[] backingArray = buffer.array();
+        byte[] encoded;
+        
+        if (backingArray.length == buffer.limit()) {
+            encoded = backingArray;
+        } else {
+            encoded = new byte[buffer.limit()];
+            buffer.get(encoded);
+        }
+
+        return encoded;
     }
 
     public static String decodeUtf8(byte[] encodedText) {
