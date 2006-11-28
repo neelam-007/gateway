@@ -405,8 +405,7 @@ public class Importer {
         // copy system properties
         restoreConfigFile(osFunctions.getSsgSystemPropertiesFile());
         // copy keystores and certs
-        //String ksdir = osFunctions.getKeystoreDir();
-        String ksdir = "/ssg/etc/keys"; // todo, go back to above once partitioning is fully implemented
+        String ksdir = osFunctions.getKeystoreDir();
         restoreConfigFile(ksdir + File.separator + "ca.cer");
         restoreConfigFile(ksdir + File.separator + "ssl.cer");
         restoreConfigFile(ksdir + File.separator + "ca.ks");
@@ -418,8 +417,21 @@ public class Importer {
         File toFile = new File(destination);
         File fromFile = new File(tempDirectory + File.separator + toFile.getName());
         if (fromFile.exists()) {
-            toFile.delete();
+            if (!toFile.getParentFile().exists()) {
+                logger.warning("the parent directory for the target file " + toFile.getPath() + " does not " +
+                               "exist on this target system. perhaps this system is not configured properly. " +
+                               "trying to create directory");
+                FileUtils.ensurePath(toFile.getParentFile());
+            }
+            if (toFile.exists()) {
+                logger.info("overwriting local " + toFile.getPath());
+                toFile.delete();
+            } else {
+                logger.info("adding local file " + toFile.getPath());
+            }
             FileUtils.copyFile(fromFile, toFile);
+        } else {
+            logger.info("image does not contain config file " + fromFile.getName() + " leaving this file alone");
         }
     }
 
