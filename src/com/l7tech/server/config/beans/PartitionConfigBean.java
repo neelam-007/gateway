@@ -17,9 +17,6 @@ public class PartitionConfigBean extends BaseConfigurationBean{
     public static final String SYSTEM_PROP_SSLPORT = "com.l7tech.server.httpsPort";
     public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
     public static final String SYSTEM_PROP_RMIPORT = "com.l7tech.server.clusterPort";
-    public static final String SYSTEM_PROP_TOMCATSHUTDOWNPORT = "otherendpoint.shutdown";
-
-
 
     private boolean isNewPartition;
     PartitionInformation partitionInfo;
@@ -39,10 +36,14 @@ public class PartitionConfigBean extends BaseConfigurationBean{
         List<PartitionInformation.HttpEndpointHolder> httpEndpoints = partitionInfo.getHttpEndpoints();
         List<PartitionInformation.OtherEndpointHolder> otherEndpoints = partitionInfo.getOtherEndpoints();
 
-        explanations.add(insertTab + (isNewPartition?"Creating new partition \"":"Updating partition \"") + partName + "\"");
+        explanations.add(insertTab + (isNewPartition?"Creating new partition \"" + partName + "\"":"Updating \"" + partName + "\" partition"));
 
         for (PartitionInformation.HttpEndpointHolder endpoint : httpEndpoints) {
-            explanations.add(insertTab + "  Endpoint = " + endpoint.endpointType);
+            explanations.add(insertTab + "    " + endpoint);
+        }
+
+        for (PartitionInformation.OtherEndpointHolder otherEndpoint : otherEndpoints) {
+            explanations.add(insertTab + "    " + otherEndpoint.endpointType.getName() + "=" + otherEndpoint.port);
         }
     }
 

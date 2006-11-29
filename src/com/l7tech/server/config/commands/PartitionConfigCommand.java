@@ -80,9 +80,9 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             if (StringUtils.isNotEmpty(rmiEndpoint.port))
                 prop.setProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT, rmiEndpoint.port);
 
-            PartitionInformation.OtherEndpointHolder shutdownEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
-            if (StringUtils.isNotEmpty(rmiEndpoint.port))
-                prop.setProperty(PartitionConfigBean.SYSTEM_PROP_TOMCATSHUTDOWNPORT, shutdownEndpoint.port);
+//            PartitionInformation.OtherEndpointHolder shutdownEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
+//            if (StringUtils.isNotEmpty(shutdownEndpoint.port))
+//                prop.setProperty(PartitionConfigBean.SYSTEM_PROP_TOMCATSHUTDOWNPORT, shutdownEndpoint.port);
 
             prop.setProperty(PartitionConfigBean.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
 

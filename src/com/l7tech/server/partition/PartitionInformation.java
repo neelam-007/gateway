@@ -2,16 +2,24 @@ package com.l7tech.server.partition;
 
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.beans.PartitionConfigBean;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.apache.commons.lang.StringUtils;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Logger;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * User: megery
@@ -20,6 +28,7 @@ import java.util.*;
  */
 public class PartitionInformation{
 
+    private static final Logger logger = Logger.getLogger(PartitionInformation.class.getName());
     private static final String CONNECTOR_XPATH = "/Server/Service/Connector";
 
     public static final String PARTITIONS_BASE = "etc/conf/partitions/";
@@ -37,7 +46,7 @@ public class PartitionInformation{
     Document originalDom;
 
     public enum OtherEndpointType {
-        RMI_ENDPOINT("Inter-Node Communication"),
+        RMI_ENDPOINT("Inter-Node Communication Port"),
         TOMCAT_MANAGEMENT_ENDPOINT("Shutdown Port"),
         ;
 
@@ -77,7 +86,33 @@ public class PartitionInformation{
         makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
         //pass false to isNew since, if we have a doc then it's not a new partition.
         //now navigate the doc to get the Connector/port information
-        parseConnectors(doc);
+        parseDomForEndpoints(doc);
+        parseOtherEndpoints();
+    }
+
+    private void parseOtherEndpoints() {
+        File sysProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getSsgSystemPropertiesFile());
+        FileInputStream fis = null;
+        try {
+            Properties props = new Properties();
+            fis = new FileInputStream(sysProps);
+            props.load(fis);
+            String rmiPort = props.getProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT);
+            if (StringUtils.isNotEmpty(rmiPort)) {
+                getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).port = rmiPort;
+            }
+        } catch (FileNotFoundException e) {
+            logger.warning("no system properties file found for partition: " + partitionId);
+        } catch (IOException e) {
+            logger.warning("Error while reading the system properties file for partition: " + partitionId);
+            logger.warning(e.getMessage());
+        } finally {
+            if (fis != null)
+                try {
+                    fis.close();
+                } catch (IOException e) {}
+        }
+
     }
 
     private void makeDefaultEndpoints(List<HttpEndpointHolder> httpEndpointsList, List<OtherEndpointHolder> otherEndpointsList) {
@@ -89,7 +124,7 @@ public class PartitionInformation{
         }
     }
 
-    private void parseConnectors(Document doc) throws XPathExpressionException {
+    private void parseDomForEndpoints(Document doc) throws XPathExpressionException {
         setOriginalDom(doc);
         XPath xpath = XPathFactory.newInstance().newXPath();
         NodeList connectors = (NodeList) xpath.evaluate(CONNECTOR_XPATH, doc, XPathConstants.NODESET);
@@ -103,6 +138,14 @@ public class PartitionInformation{
             String ipAddress = connectorNode.hasAttribute("address")?connectorNode.getAttribute("address"):"*";
 
             updateEndpoint(ipAddress, portNumber, isSecure, wantClientCert);
+        }
+
+        NodeList nodes = doc.getElementsByTagName("Server");
+
+        if ((nodes != null && nodes.getLength() == 1)) {
+            Element serverElement = (Element) nodes.item(0);
+            if (serverElement != null && serverElement.hasAttribute("port"))
+                getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).port = serverElement.getAttribute("port");
         }
     }
 
@@ -202,7 +245,6 @@ public class PartitionInformation{
             this.endpointType = endpointType;
         }
 
-
         public OtherEndpointHolder(String port, OtherEndpointType endpointType) {
             this.port = port;
             this.endpointType = endpointType;
@@ -229,7 +271,7 @@ public class PartitionInformation{
 
 
         public String toString() {
-            return endpointType.getName() + port;
+            return endpointType.getName() + " = " + port;
         }
 
         public static void populateDefaultEndpoints(List<OtherEndpointHolder> endpoints) {
@@ -301,8 +343,8 @@ public class PartitionInformation{
                 return "";
             }
             StringBuilder sb = new StringBuilder();
-            sb.append(endpointType.getName());
-            sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(", ");
+            sb.append(endpointType.getName()).append(" = ");
+            sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(",");
             sb.append(port);
             return sb.toString();
         }
