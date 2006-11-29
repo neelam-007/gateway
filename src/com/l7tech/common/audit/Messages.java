@@ -55,6 +55,7 @@ public class Messages {
         new BootMessages();
         new MessageProcessingMessages();
         new SystemMessages();
+        new ServiceMessages();
     }
 
     protected Messages() { }
