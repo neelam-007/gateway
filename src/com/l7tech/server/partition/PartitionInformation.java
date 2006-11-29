@@ -66,8 +66,7 @@ public class PartitionInformation{
         isNewPartition = true;
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
-        HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
-        OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
+        makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
     }
 
     public PartitionInformation(String partitionId, Document doc, boolean isNew) throws XPathExpressionException {
@@ -75,11 +74,19 @@ public class PartitionInformation{
         isNewPartition = isNew;
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
-        HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
-        OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
+        makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
         //pass false to isNew since, if we have a doc then it's not a new partition.
         //now navigate the doc to get the Connector/port information
         parseConnectors(doc);
+    }
+
+    private void makeDefaultEndpoints(List<HttpEndpointHolder> httpEndpointsList, List<OtherEndpointHolder> otherEndpointsList) {
+        HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
+        OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
+        if (partitionId.equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
+            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).port = "2124";
+            getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).port = "8005";
+        }
     }
 
     private void parseConnectors(Document doc) throws XPathExpressionException {
@@ -112,6 +119,15 @@ public class PartitionInformation{
             holder.ipAddress = ip;
             holder.port = portNumber;
         }
+    }
+
+    private OtherEndpointHolder getOtherEndPointByType(OtherEndpointType endpointType) {
+        for (OtherEndpointHolder endpointHolder : otherEndpointsList) {
+            if (endpointHolder.endpointType == endpointType) {
+                return endpointHolder;
+            }
+        }
+        return null;
     }
 
     private HttpEndpointHolder getHttpEndPointByType(HttpEndpointType endpointType) {
@@ -186,6 +202,11 @@ public class PartitionInformation{
             this.endpointType = endpointType;
         }
 
+
+        public OtherEndpointHolder(String port, OtherEndpointType endpointType) {
+            this.port = port;
+            this.endpointType = endpointType;
+        }
 
         public boolean equals(Object o) {
             if (this == o) return true;

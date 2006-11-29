@@ -241,6 +241,15 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private void enableEditDeletePartitionButtons() {
         int size = partitionListModel.getSize();
+        if (size == 8) {
+            addPartition.setEnabled(false);
+            addPartition.setToolTipText("A maximum of 8 partitions is supported");
+        } else {
+            addPartition.setEnabled(true);
+            addPartition.setToolTipText("Click to add a new partition");
+        }
+
+
         int index = partitionList.getSelectedIndex();
         
         //if nothing is selected yet, select the first element
