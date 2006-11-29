@@ -309,6 +309,7 @@ public class ConfigurationWizard extends Wizard {
     }
 
     public OSSpecificFunctions getOsFunctions() {
-        return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
+        PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+        return (pi == null?OSDetector.getOSSpecificFunctions(""):pi.getOSSpecificFunctions());
     }
 }

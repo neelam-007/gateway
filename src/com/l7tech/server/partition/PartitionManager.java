@@ -1,6 +1,7 @@
 package com.l7tech.server.partition;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Document;
@@ -104,18 +105,6 @@ public class PartitionManager {
         return partitions.get(partitionId);
     }
 
-//    public List<PartitionInformation.EndpointHolder> getAllEndpointsInUse() {
-//        List<PartitionInformation.EndpointHolder> allEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
-//
-//        Set<Map.Entry<String,PartitionInformation>> entries = partitions.entrySet();
-//        for (Map.Entry<String, PartitionInformation> entry : entries) {
-//            PartitionInformation pInfo = entry.getValue();
-//            allEndpoints.addAll(pInfo.getEndpoints());
-//        }
-//        return allEndpoints;
-//    }
-
-
     public PartitionInformation getActivePartition() {
         if (activePartition == null) {
             //if there's no active partition then return the default one.
@@ -141,28 +130,104 @@ public class PartitionManager {
         File oldSsgConfigDirectory = new File(osf.getSsgInstallRoot() + "etc/conf");
         File oldKeystoreDirectory = new File(osf.getSsgInstallRoot() + "etc/keys");
         File oldTomcatServerConfig = new File(osf.getSsgInstallRoot() + "tomcat/conf/server.xml");
-        File partitionsBaseDir = new File(osf.getPartitionBase());
-        File defaultPartitionDir = new File(partitionsBaseDir, PartitionInformation.DEFAULT_PARTITION_NAME);
-        File templatePartitionDir = new File(partitionsBaseDir, PartitionInformation.TEMPLATE_PARTITION_NAME);
+        final File partitionsBaseDir = new File(osf.getPartitionBase());
+        final File defaultPartitionDir = new File(partitionsBaseDir, PartitionInformation.DEFAULT_PARTITION_NAME);
+        final File templatePartitionDir = new File(partitionsBaseDir, PartitionInformation.TEMPLATE_PARTITION_NAME);
 
-        System.out.println("doing partition migration");
-        System.out.println("Old SSG Configuration: " + oldSsgConfigDirectory.getAbsolutePath());
-        System.out.println("Old SSG Keystore Directory: " + oldKeystoreDirectory.getAbsolutePath());
-        System.out.println("Old Tomcat Server Config: " + oldTomcatServerConfig.getAbsolutePath());
-        System.out.println("Partition Base Directory: " + partitionsBaseDir.getAbsolutePath());
-        System.out.println("Default Partition Directory: " + defaultPartitionDir.getAbsolutePath());
-        System.out.println("Template Partition Directory: " + templatePartitionDir.getAbsolutePath());
+        try {
+            List<File> originalFiles = new ArrayList<File>(Arrays.asList(oldSsgConfigDirectory.listFiles(new FileFilter() {
+                public boolean accept(File pathname) {
+                    return  !pathname.getName().equals(partitionsBaseDir.getName()) &&
+                            !pathname.getName().equals(templatePartitionDir.getName()) &&
+                           !pathname.getName().equals(defaultPartitionDir.getName());
+                }
+            })));
+            originalFiles.add(oldTomcatServerConfig);
+            originalFiles.add(oldKeystoreDirectory);
 
-        if (!partitionsBaseDir.exists()) partitionsBaseDir.mkdir();
-        if (!defaultPartitionDir.exists()) defaultPartitionDir.mkdir();
-        if (!templatePartitionDir.exists()) templatePartitionDir.mkdir();
+            if (!partitionsBaseDir.exists()) {
+                System.out.println("Creating Partition Root Directory");
+                if (!partitionsBaseDir.mkdir()) {
+                    throw new PartitionException("COULD NOT CREATE PARTITION ROOT DIRECTORY - Please check file permissions and re-run this tool.");
+                }
+            }
+            if (!defaultPartitionDir.exists()) {
+                System.out.println("Creating Default Partition Directory");
+                if (!defaultPartitionDir.mkdir()) {
+                    throw new PartitionException("COULD NOT CREATE THE DEFAULT PARTITION. The SSG will not run without a default partition. Please check file permissions and re-run this tool.");
+                }
+            }
+            if (!templatePartitionDir.exists()) {
+                System.out.println("Creating Template Partition Directory");
+                if (!templatePartitionDir.mkdir()) {
+                    throw new PartitionException("COULD NOT CREATE THE PARTITION TEMPLATE DIRECTORY. New partitions cannot be created without the partition template. Please check file permissions and re-run this tool.");
+                }
+            }
 
-        if (defaultPartitionDir.listFiles().length == 0) {
-            System.out.println("the default partition needs to be migrated");
+            if (templatePartitionDir.listFiles().length == 0) {
+                System.out.println("Copying original configuration files to the template partition.");
+                try {
+                    copyConfigurations(originalFiles, templatePartitionDir);
+                } catch (IOException e) {
+                    System.out.println("Error while creating the template partition: " + e.getMessage());
+                    System.exit(1);
+                }
+            }
+
+            if (defaultPartitionDir.listFiles().length == 0) {
+                System.out.println("Copying original configuration files to the default partition.");
+                try {
+                    copyConfigurations(originalFiles, defaultPartitionDir);
+                } catch (IOException e) {
+                    System.out.println("Error while creating the default partition: " + e.getMessage());
+                    System.exit(1);
+                }
+            } else {
+                System.out.println("the default partition does not need to be migrated");
+            }
+            removeOriginalConfiguations(originalFiles);
+
+        } catch (PartitionException pe) {
+            System.out.println(pe.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private void copyConfigurations(List<File> filesToCopy, File destinationDir) throws IOException {
+        if (!destinationDir.exists()) destinationDir.mkdir();
+        for (File currentFile : filesToCopy) {
+            if (currentFile.isDirectory()) {
+                copyConfigurations(new ArrayList<File>(Arrays.asList(currentFile.listFiles())), new File(destinationDir, currentFile.getName()));
+            } else {
+                File newFile = new File(destinationDir, currentFile.getName());
+                FileUtils.copyFile(currentFile, newFile);
+            }
+        }
+    }
+
+    private void removeOriginalConfiguations(List<File> filesToRemove) {
+        for (File file : filesToRemove) {
+            if (file.exists())
+                FileUtils.deleteFileSafely(file.getAbsolutePath());
+        }
+    }
+
+    public static class PartitionException extends Exception {
+
+        public PartitionException() {
+            super();
         }
 
-        if (templatePartitionDir.listFiles().length == 0) {
-            System.out.println("creating the template partition");
+        public PartitionException(String message) {
+            super(message);
+        }
+
+        public PartitionException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public PartitionException(Throwable cause) {
+            super(cause);
         }
     }
 }

@@ -1,7 +1,7 @@
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.6.5
-Release: 1
+Release: 4
 Group: Applications/Internet
 License: Copyright Layer7 Technologies 2003-2006
 URL: http://www.layer7tech.com
@@ -181,6 +181,9 @@ chmod -Rf 775 /ssg/etc/keys
 chmod -Rf 775 /ssg/tomcat/conf
 chmod -Rf 775 /ssg/jdk/jre/lib/security/
 
+#migrate the structure to the new partitioning scheme using the configuration wizard
+/ssg/configwizard/ssgconfig.sh -partitionMigrate
+
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
@@ -221,6 +224,8 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog
+* Tue Nov 28 2006 MJE
+- added partition migration step to %post
 * Fri Oct 13 2006 CY
 - 3.7m1
 * Mon Sep 25 2006 CY

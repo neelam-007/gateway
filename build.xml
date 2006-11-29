@@ -1605,7 +1605,7 @@
                 <include name="com/l7tech/common/gui/widgets/PleaseWaitDialog.class"/>
                 <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
                 <include name="com/l7tech/common/xml/*.class"/>
-
+                <include name="com/l7tech/console/text/MaxLengthDocument*.class"/>
                 <include name="com/l7tech/console/panels/Wizard*.class"/>
                 <include name="com/l7tech/console/event/Wizard*.class"/>
                 <include name="com/l7tech/console/event/WeakEventListenerList.class"/>
@@ -2380,6 +2380,8 @@
         <property name="install.rel.logs" value="logs"/>
         <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
+        <property name="install.rel.partitions" value="partitions"/>
+        <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
         <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
 
@@ -2398,6 +2400,8 @@
         <property name="install.src.sql" value="${install.src.base}/${install.rel.sql}"/>
 
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
+        <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
+        <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>        
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
@@ -2437,6 +2441,8 @@
         <mkdir dir="${install.src.bin}"/>
         <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
+        <mkdir dir="${install.src.partitions}"/>
+        <mkdir dir="${install.src.partitionTemplate}"/>
         <mkdir dir="${install.src.logs}"/>
         <mkdir dir="${install.src.var}"/>
         <mkdir dir="${install.src.var.attachments}"/>
