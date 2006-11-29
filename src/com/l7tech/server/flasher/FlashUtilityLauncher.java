@@ -21,7 +21,7 @@ import java.io.InputStream;
  */
 public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
-    private static final String LOGCONFIG_NAME = "flasherlogging.properties";
+    private static final String LOGCONFIG_NAME = "migrationlogging.properties";
     private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
 
     public static void main(String[] args) {
@@ -107,9 +107,9 @@ public class FlashUtilityLauncher {
     private static void printusage() {
         StringBuffer output = new StringBuffer();
         if (OSDetector.isWindows()) {
-            output.append("usage: ssgflash.cmd [import | export] [OPTIONS]").append(EOL_CHAR);
+            output.append("usage: ssgmigration.cmd [import | export] [OPTIONS]").append(EOL_CHAR);
         } else {
-            output.append("usage: ssgflash.sh [import | export] [OPTIONS]").append(EOL_CHAR);
+            output.append("usage: ssgmigration.sh [import | export] [OPTIONS]").append(EOL_CHAR);
         }
         output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
         for (CommandLineOption option : Importer.ALLOPTIONS) {

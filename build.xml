@@ -1491,28 +1491,28 @@
 
     <!-- Package the ssg flasher utility -->
     <target name="package.ssgflasher" unless="ssg.only" depends="compile">
-        <mkdir dir="${build.dir}/flasher"/>
-        <mkdir dir="${build.dir}/flasher/lib"/>
-        <mkdir dir="${build.dir}/flasher/cfg"/>
-        <copy todir="${build.dir}/flasher">
+        <mkdir dir="${build.dir}/migration"/>
+        <mkdir dir="${build.dir}/migration/lib"/>
+        <mkdir dir="${build.dir}/migration/cfg"/>
+        <copy todir="${build.dir}/migration">
             <fileset dir="${src.root}/etc">
-                <include name="ssgflash.sh"/>
-                <include name="ssgflash.cmd"/>
-                <include name="flasherlogging.properties"/>
+                <include name="ssgmigration.sh"/>
+                <include name="ssgmigration.cmd"/>
+                <include name="migrationlogging.properties"/>
             </fileset>
         </copy>
-        <chmod file="${build.dir}/flasher/ssgflash.sh" perm="755"/>
-        <copy todir="${build.dir}/flasher/cfg">
+        <chmod file="${build.dir}/migration/ssgmigration.sh" perm="755"/>
+        <copy todir="${build.dir}/migration/cfg">
             <fileset dir="${src.root}/etc">
                 <include name="grandmaster_flash"/>
             </fileset>
         </copy>
-        <generate-manifest propertyPrefix="ssgflasher" filename="SSGFlasher.mf" pathPrefix=". ">
+        <generate-manifest propertyPrefix="ssgflasher" filename="SSGMigration.mf" pathPrefix=". ">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.server.flasher.FlashUtilityLauncher"/>
             </section>
         </generate-manifest>
-        <jar jarfile="${build.dir}/flasher/SSGFlasher.jar"  manifest="${build.etc}/SSGFlasher.mf">
+        <jar jarfile="${build.dir}/migration/SSGMigration.jar"  manifest="${build.etc}/SSGMigration.mf">
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/server/flasher/**/*"/>
                 <include name="com/l7tech/common/BuildInfo*"/>
@@ -1541,7 +1541,7 @@
             </fileset>
         </jar>
 
-        <copy todir="${build.dir}/flasher/lib">
+        <copy todir="${build.dir}/migration/lib">
             <fileset dir="${build.lib}">
                 <patternset refid="ssgflasher.libs"/>
             </fileset>
@@ -1901,7 +1901,7 @@
         <fileset id="flasher.testpackage.fileset" dir="${build.lib}">
             <patternset refid="ssgflasher.libs"/>
         </fileset>
-        <checkdeps jarfile="build/flasher/SSGFlasher.jar"
+        <checkdeps jarfile="build/migration/SSGMigration.jar"
                    libfilesetref="flasher.testpackage.fileset"
                    resultproperty="testpackage.flasher.result"
                    ignoreclasses="com.l7tech.common.security.prov.luna.LunaJceProviderEngine"
@@ -2422,7 +2422,7 @@
 
         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
         <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
-        <property name="install.src.flasher" value="${install.src.base}/flasher"/>
+        <property name="install.src.flasher" value="${install.src.base}/migration"/>
         <property name="install.src.sysconfigwizard" value="${install.src.base}/sysconfigwizard"/>
 
         <echo>Making directories...</echo>
@@ -2484,7 +2484,7 @@
 
         <!--copy the ssg flasher -->
         <copy todir="${install.src.flasher}">
-            <fileset dir="${build.dir}/flasher">
+            <fileset dir="${build.dir}/migration">
                 <include name="**/*"/>
             </fileset>
         </copy>

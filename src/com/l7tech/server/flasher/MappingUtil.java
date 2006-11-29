@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 public class MappingUtil {
     private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-    private static final String STAGINGMAPPINGNS = "http://www.layer7tech.com/flashing/stagingmapping";
+    private static final String STAGINGMAPPINGNS = "http://www.layer7tech.com/migration/stagingmapping";
     private static final String NS_PREFIX = "L7flash";
     private static final String IMPORTMAPPINGELNAME = "ssgimportmapping";
     private static final String BACKENDIPMAPPINGELNAME = "backendipmapping";

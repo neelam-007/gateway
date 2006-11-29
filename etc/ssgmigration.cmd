@@ -1,7 +1,7 @@
 :: -----------------------------------------------------------------------------
 :: LAYER 7 TECHNOLOGIES
 :: November 2006
-:: Launches the SSG Flasher Utility
+:: Launches the SSG Migration Utility
 :: -----------------------------------------------------------------------------
 @echo off
 
@@ -13,4 +13,4 @@ set JAVA_HOME=%SSG_ROOT%\jdk
 popd
 
 echo Using %SSG_ROOT% as SSG_ROOT
-%JAVA_HOME%\bin\java -Dcom.l7tech.server.home=%SSG_ROOT% -jar SSGFlasher.jar %*
+%JAVA_HOME%\bin\java -Dcom.l7tech.server.home=%SSG_ROOT% -jar SSGMigration.jar %*

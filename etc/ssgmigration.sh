@@ -3,7 +3,7 @@
 # LAYER 7 TECHNOLOGIES
 # November 2006
 #
-# Launches the SSG Flasher Utility
+# Launches the SSG Migration Utility
 # -----------------------------------------------------------------------------
 #
 
@@ -21,9 +21,9 @@ if [ $UID -eq 0 ]; then
     # assume location of the jdk
     JAVA_HOME=${SSG_ROOT}/jdk
     # invoke flasher
-    ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGFlasher.jar $*
+    ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
     # chown all files that could potentially have been overwritten
     chown -R $SSG_USER ..
 else
-    echo "Must be root to invoke ssgflash.sh"
+    echo "Must be root to invoke ssgmigration.sh"
 fi
