@@ -6,6 +6,7 @@ import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
 import com.l7tech.server.partition.PartitionInformation;
@@ -309,6 +310,14 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             InetAddress[] localAddresses = InetAddress.getAllByName(localHostName);
             for (InetAddress localAddress : localAddresses) {
                 allIpAddresses.add(localAddress.getHostAddress());
+            }
+
+            NetworkingConfigurationBean netBean = new NetworkingConfigurationBean("","");
+            List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = netBean.getAllNetworkInterfaces();
+            if (networkConfigs != null) {
+                for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
+                    allIpAddresses.add(networkConfig.getIpAddress());
+                }
             }
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not determine the network interfaces for this gateway. Please run the system configuration wizard");

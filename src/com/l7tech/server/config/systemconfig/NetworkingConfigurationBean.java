@@ -82,6 +82,18 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     }
 
     private void getExistingInterfaces() {
+        if (getOsFunctions().isLinux()) {
+            getExistingInterfacesLinux();
+        } else if (getOsFunctions().isWindows()){
+            getExistingInterfacesWindows();            
+        }
+    }
+
+    private void getExistingInterfacesWindows() {
+        System.out.println("getting interfaces on windows");
+    }
+
+    private void getExistingInterfacesLinux() {
         if (networkingConfigs == null) {
             logger.info("Determining existing interface information.");
             networkingConfigs = new ArrayList<NetworkConfig>();
