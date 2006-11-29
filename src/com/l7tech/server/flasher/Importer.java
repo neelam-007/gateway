@@ -36,7 +36,7 @@ public class Importer {
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to import");
-    public static final CommandLineOption MODE = new CommandLineOption("-mode", "[clone | stage]");
+    public static final CommandLineOption MODE = new CommandLineOption("-mode", "[restore | migrate]");
     public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping", "location of the staging mapping file");
     public static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name");
@@ -70,9 +70,9 @@ public class Importer {
             logger.info("Error, import mode specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + MODE.name);
         }
-        if (mode.toLowerCase().equals("clone")) {
+        if (mode.toLowerCase().equals("restore")) {
             fullClone = true;
-        } else if (mode.toLowerCase().equals("stage")) {
+        } else if (mode.toLowerCase().equals("migrate")) {
             fullClone = false;
         } else {
             logger.info("Error, unknown import mode specified: " + mode);
@@ -97,9 +97,9 @@ public class Importer {
             // if clone is asked, make sure the image was produced from a linux system
             if (fullClone) {
                 if (!(new File(tempDirectory + File.separator + "hibernate.properties")).exists()) {
-                    logger.info("Error, clone mode requested but image was created on windows and therefore cannot be used for cloning");
-                    throw new IOException("this image cannot be used in clone mode. perhaps it was created " +
-                            "on a windows system");
+                    logger.info("Error, restore mode requested but image was created on windows and therefore cannot be used for restoring");
+                    throw new IOException("this image cannot be used in restore mode. perhaps it was created " +
+                                          "on a windows system");
                 }
             }
 
