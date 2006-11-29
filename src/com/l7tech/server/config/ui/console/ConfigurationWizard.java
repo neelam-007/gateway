@@ -5,6 +5,8 @@ import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.InputStream;
@@ -188,5 +190,9 @@ public class ConfigurationWizard {
 
     public void setOsFunctions(OSSpecificFunctions osFunctions) {
         this.osFunctions = osFunctions;
+    }
+
+    public void setPartitionName(PartitionInformation partition) {
+        PartitionManager.getInstance().setActivePartition(partition);
     }
 }

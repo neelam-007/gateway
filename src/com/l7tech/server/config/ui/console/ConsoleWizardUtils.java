@@ -79,7 +79,8 @@ public class ConsoleWizardUtils {
         do {
             isValidInput = true;
             printText(promptLines);
-            input = readLine().trim();
+            input = readLine();
+            if (input != null) input = input.trim();
             handleInput(input, isNavAware);
 
             if (StringUtils.isEmpty(input)) {

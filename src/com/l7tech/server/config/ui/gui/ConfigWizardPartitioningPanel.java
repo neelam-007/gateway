@@ -303,7 +303,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private ComboBoxModel getAvailableIpAddresses() {
         String localHostName;
-        java.util.List<String> allIpAddresses = new ArrayList<String>();
+        Set<String> allIpAddresses = new HashSet<String>();
         allIpAddresses.add("*");
         try {
             localHostName = InetAddress.getLocalHost().getCanonicalHostName();
@@ -316,7 +316,8 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = netBean.getAllNetworkInterfaces();
             if (networkConfigs != null) {
                 for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
-                    allIpAddresses.add(networkConfig.getIpAddress());
+                    if (!networkConfig.getBootProto().equals(NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO))
+                        allIpAddresses.add(networkConfig.getIpAddress());
                 }
             }
         } catch (UnknownHostException e) {

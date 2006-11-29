@@ -42,11 +42,21 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         try {
             updatePartitionEndpoints(pInfo);
             updateSystemProperties(pInfo);
+            updateStartupScripts(pInfo);
             updateFirewallRules(pInfo);
         } catch (Exception e) {
             success = false;
         }
         return success;
+    }
+
+    private void updateStartupScripts(PartitionInformation pInfo) {
+        //TODO modify the startup script for this partition
+        String startupScript = pInfo.getOSSpecificFunctions().getConfigurationBase() + "partitionStart.sh";
+        System.out.println("Startup Script = " + startupScript);
+
+        String stopScript = pInfo.getOSSpecificFunctions().getConfigurationBase() + "partitionStop.sh";
+        System.out.println("Shutdown Script = " + stopScript);
     }
 
     private void updateFirewallRules(PartitionInformation pInfo) {
