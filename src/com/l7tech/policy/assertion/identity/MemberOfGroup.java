@@ -49,6 +49,10 @@ public class MemberOfGroup extends IdentityAssertion {
         return headers2;
     }
 
+    public String loggingIdentity() {
+        return getGroupName();
+    }
+
     public String toString() {
         return super.toString() + " " + getGroupName();
     }

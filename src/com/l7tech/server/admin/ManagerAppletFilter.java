@@ -282,7 +282,7 @@ public class ManagerAppletFilter implements Filter {
         }
 
         // Nope, it just done did failed
-        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FAILED, new String[] { result.toString() });        
+        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FAILED, new String[] { result.getMessage() });        
         return AuthResult.FAIL;
     }
 

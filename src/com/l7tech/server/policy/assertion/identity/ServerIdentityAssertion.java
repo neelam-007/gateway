@@ -12,9 +12,7 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.*;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -154,23 +152,17 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
             if (cert != null) name = cert.getSubjectDN().getName();
         }
 
-        String identityToAssert = null;
-        if (identityAssertion instanceof SpecificUser) {
-            SpecificUser su = (SpecificUser)identityAssertion;
-            String idtomatch = su.getUserLogin();
-            if (idtomatch == null) {
-                idtomatch = su.getUserName();
-            }
-            identityToAssert = idtomatch;
-            logger.info("could not verify identity " + idtomatch + " with credentials from " + name);
-        } else if (identityAssertion instanceof MemberOfGroup) {
-            MemberOfGroup mog = (MemberOfGroup)identityAssertion;
-            String groupname = mog.getGroupName();
-            identityToAssert = groupname;
-            logger.info("cound not verify membership of group " + groupname + " with credentials from " + name);
-        }
+        String logid = identityAssertion.loggingIdentity();
 
-        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {identityToAssert});
+        // Preserve old logging behavior until there's a compelling reason to change it 
+        if (identityAssertion instanceof MemberOfGroup)
+            logger.info("could not verify membership of group " + logid + " with credentials from " + name);
+        else if (identityAssertion instanceof SpecificUser)
+            logger.info("could not verify identity " + logid + " with credentials from " + name);
+        else
+            logger.info("could not verify " + logid + " with credentials from " + name);
+
+        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] { logid });
         return AssertionStatus.AUTH_FAILED;
     }
 

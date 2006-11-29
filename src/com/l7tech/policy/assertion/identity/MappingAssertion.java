@@ -16,6 +16,7 @@ public class MappingAssertion extends IdentityAssertion implements SetsVariables
     private String searchAttributeName;
     private boolean validForUsers;
     private boolean validForGroups;
+    private String loggingIdentity;
 
     public String getVariableName() {
         return variableName;
@@ -23,6 +24,7 @@ public class MappingAssertion extends IdentityAssertion implements SetsVariables
 
     public void setVariableName(String variableName) {
         this.variableName = variableName;
+        updateLoggingIdentity();
     }
 
     public String getRetrieveAttributeName() {
@@ -79,6 +81,14 @@ public class MappingAssertion extends IdentityAssertion implements SetsVariables
         System.arraycopy(headers, 0, headers2, 0, headers.length);
         headers2[headers.length] = new EntityHeader(Long.toString(attributeConfigOid), EntityType.ATTRIBUTE_CONFIG, null, null);
         return headers2;
+    }
+
+    private void updateLoggingIdentity() {
+        loggingIdentity = "variable " + getVariableName();
+    }
+
+    public String loggingIdentity() {
+        return loggingIdentity;
     }
 
     public VariableMetadata[] getVariablesSet() {

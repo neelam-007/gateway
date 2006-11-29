@@ -67,6 +67,13 @@ public class SpecificUser extends IdentityAssertion {
         return headers2;
     }
 
+    public String loggingIdentity() {
+        String idtomatch = getUserLogin();
+        if (idtomatch == null)
+            idtomatch = getUserName();
+        return idtomatch;
+    }
+
     public String toString() {
         StringBuffer sb = new StringBuffer(super.toString());
         sb.append(" ");

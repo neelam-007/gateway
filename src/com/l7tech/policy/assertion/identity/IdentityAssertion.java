@@ -49,5 +49,16 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
         return new EntityHeader[] { new EntityHeader(Long.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }
 
+    /**
+     * The identity to use when logging a failed authentication.  For a specific user, this will be the user name
+     * or login; for a group, this will be the group name; and for other identity assertions it will be some other
+     * useful indication of which identity assertion just failed to authenticate.
+     *
+     * @return  a String representing this identity assertion, typically a user or group name, or null if no such
+     *          information is available.  (Implementors are discouraged from returning null if there is anything
+     *          at all useful they could return instead.)
+     */
+    public abstract String loggingIdentity();
+
     protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
 }
