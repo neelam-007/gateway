@@ -193,7 +193,7 @@ public class ManagerAppletFilter implements Filter {
             if (seHolder[0] != null) throw seHolder[0];
         } finally {
             try {
-                Level level = Level.INFO;
+                Level level = Level.FINE;
                 String message = "Admin applet request";
                 if (!passed) {
                     message = "Applet applet request filter failed: status = " + status;
