@@ -80,8 +80,8 @@ public class Importer {
         }
         // clone only available on linux. check that that we're on linux if mode is clone
         if (fullClone && OSDetector.isWindows()) {
-            logger.info("Error, clone mode requested on windows system");
-            throw new IOException("Clone mode not supported on Windows systems");
+            logger.info("Error, restore mode requested on windows system");
+            throw new IOException("Restore mode not supported on Windows systems");
         }
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
         tempDirectory = Exporter.createTmpDirectory();
@@ -228,7 +228,7 @@ public class Importer {
                     }
                 }
             } else {
-                logger.info("Staging mode");
+                logger.info("Migration mode");
                 Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
                     SsgDatabaseConfigBean.PROP_DB_USERNAME,
                     SsgDatabaseConfigBean.PROP_DB_PASSWORD,
