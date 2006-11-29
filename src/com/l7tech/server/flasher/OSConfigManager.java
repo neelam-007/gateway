@@ -24,7 +24,7 @@ import java.util.ArrayList;
 public class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
     private static final String SETTINGS_PATH = "./cfg/grandmaster_flash";
-    private static final String SYSCONFIGFILES_PATH = "../sysconfigwizard/configfiles";
+    private static final String SYSTMP_PATH = "../migration/configfiles";
     private static final String SUBDIR = File.separator + "os";
     private final String tmpDirPath;
 
@@ -44,9 +44,9 @@ public class OSConfigManager {
      * @param source the exploded image
      * @throws IOException if something goes wrong
      */
-    public static void restoreOSConfigFiles(String source) throws IOException {
+    public static void restoreOSConfigFilesToTmpTarget(String source) throws IOException {
         OSConfigManager me = new OSConfigManager(source);
-        me.doLoad();
+        me.doLoadToTmpTarget();
     }
 
     private void doSave() throws IOException {
@@ -74,47 +74,32 @@ public class OSConfigManager {
         }
     }
 
-    private void doLoad() throws IOException {
+    private void doLoadToTmpTarget() throws IOException {
         final String osfilesroot = tmpDirPath + SUBDIR;
         ArrayList<String> listofosfiles = listDir(osfilesroot);
         boolean systemfileoverwritten = false;
         for (String osfiletorestore : listofosfiles) {
-            String restoretarget;
+            String tmptarget;
             if (osfiletorestore.startsWith(osfilesroot)) {
-                restoretarget = osfiletorestore.substring(osfilesroot.length());
+                tmptarget = SYSTMP_PATH + osfiletorestore.substring(osfilesroot.length());
             } else {
                 // if this happens, it's a bug
                 throw new RuntimeException("unexpected path for " + osfiletorestore);
             }
-            logger.info("Restoring " + osfiletorestore + " into " + restoretarget);
+            logger.info("Restoring " + osfiletorestore + " into " + tmptarget);
             File fromFile = new File(osfiletorestore);
-            File toFile = new File(restoretarget);
-            // todo, change this code to use the ssgconfig
-            System.out.println("TODO Overwriting " + restoretarget);
-            /*
-            toFile.delete();
+            File toFile = new File(tmptarget);
+            System.out.println("Overwriting " + tmptarget);
+            if (toFile.exists()) {
+                toFile.delete();
+            }
+            FileUtils.ensurePath(toFile.getParentFile());
             FileUtils.copyFile(fromFile, toFile);
             systemfileoverwritten = true;
-            */
         }
         if (systemfileoverwritten) {
-            // check if the sysconfig has pending overwrites
-            ArrayList<String> res = listDir(SYSCONFIGFILES_PATH);
-            if (res != null && res.size() > 0) {
-                String issue = "System files have been overwritten but there seems to be pending sysconfig " +
-                               "overwrites which may conflict. You may need to reboot SecureSpan Gateway and " +
-                               "try restore afterwards.";
-                logger.warning(issue);
-                System.out.println(issue);
-                StringBuffer buf = new StringBuffer("List of pending sysconfig overwrites: ");
-                for (String s : res) {
-                    buf.append(s).append(", ");
-                }
-                logger.warning(buf.toString());
-            } else {
-                System.out.println("\nCertain system files have been overwritten, you may need to reboot the " +
-                                   "SecureSpan Gateway.");
-            }
+            System.out.println("\nCertain system files have been overwritten, you may need to reboot the " +
+                               "SecureSpan Gateway.");
         }
     }
 

@@ -301,7 +301,7 @@ public class Importer {
 
                 if (arguments.get(OS_OVERWRITE.name) != null) {
                     // overwrite os level system files
-                    OSConfigManager.restoreOSConfigFiles(tempDirectory);
+                    OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
                 }
             } else if (arguments.get(OS_OVERWRITE.name) != null) {
                 String issue = "Ignoring option " + OS_OVERWRITE.name + " because it is only supported in restore mode";
