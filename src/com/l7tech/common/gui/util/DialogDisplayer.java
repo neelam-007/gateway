@@ -83,8 +83,10 @@ public class DialogDisplayer {
         if (holder != null) {
             JInternalFrame jif = optionPane.createInternalFrame(holder.getLayeredPane(), title);
             jif.pack();
-            Utilities.centerOnParent(jif);
             if (!mustShowNative(jif, holder)) {
+                Utilities.centerOnParent(jif);
+                Icon icon = findFrameIcon(holder);
+                if (icon != null) jif.setFrameIcon(icon);
                 jif.putClientProperty(Sheet.PROPERTY_CONTINUATION, continuation);
                 holder.showSheet(jif);
                 return;
@@ -389,6 +391,42 @@ public class DialogDisplayer {
      */
     public static void setDefaultWindowImages(List images) {
         DialogDisplayer.defaultWindowImages = images;
+    }
+
+    static JFrame getJFrameOwnerAnscestor(Window dialog) {
+        for (; dialog != null; dialog = dialog.getOwner())
+            if (dialog instanceof JFrame)
+                return (JFrame)dialog;
+        return null;
+    }
+
+    static Icon findFrameIcon(RootPaneContainer rpc) {
+        if (rpc instanceof Window) {
+            // Check for already-configured Window images (Java 1.6 or higher)
+            List windowImages = Utilities.getIconImages((Window)rpc);
+            if (windowImages != null && windowImages.size() > 0) {
+                // We have no way to know what size would be best, so just use the first one
+                return new ImageIcon((Image)windowImages.iterator().next());
+            }
+
+            // Try to inherit JFrame IconImage from an owner JFrame
+            JFrame ownerFrame = getJFrameOwnerAnscestor((Window)rpc);
+            if (ownerFrame != null) {
+                Image image = ownerFrame.getIconImage();
+                if (image != null)
+                    return new ImageIcon(image);
+            }
+        }
+
+        if (rpc instanceof JInternalFrame) {
+            JInternalFrame jf = (JInternalFrame)rpc;
+            Icon icon = jf.getFrameIcon();
+            if (icon != null)
+                return icon;
+        }
+
+        // Use the application's default frame icon, if any
+        return getDefaultFrameIcon();
     }
 
     /**
