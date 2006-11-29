@@ -25,7 +25,7 @@ public class AuditAdminStub implements AuditAdmin {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
-    public Collection find(AuditSearchCriteria criteria) throws FindException, RemoteException {
+    public Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException, RemoteException {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 

@@ -18,8 +18,8 @@ class PeriodData {
     private final int resolution;
     private final int interval;
 
-    private final Map binsByNodeId = new HashMap();
-    private final Map binsByServiceOid = new HashMap();
+    private final Map<String, Set<MetricsBin>> binsByNodeId = new HashMap<String, Set<MetricsBin>>();
+    private final Map<Long, Set<MetricsBin>> binsByServiceOid = new HashMap<Long, Set<MetricsBin>>();
 
     private final MetricsBin bigBin;
 
@@ -66,9 +66,9 @@ class PeriodData {
         bigBin.setSumBackendResponseTime(bigBin.getSumBackendResponseTime() + newBin.getSumBackendResponseTime());
 
         {
-            Set bins = (Set)binsByNodeId.get(newBin.getClusterNodeId());
+            Set<MetricsBin> bins = binsByNodeId.get(newBin.getClusterNodeId());
             if (bins == null) {
-                bins = new HashSet();
+                bins = new HashSet<MetricsBin>();
                 binsByNodeId.put(newBin.getClusterNodeId(), bins);
             }
             bins.add(newBin);
@@ -76,9 +76,9 @@ class PeriodData {
 
         {
             Long serviceOid = new Long(newBin.getServiceOid());
-            Set bins = (Set)binsByServiceOid.get(serviceOid);
+            Set<MetricsBin> bins = binsByServiceOid.get(serviceOid);
             if (bins == null) {
-                bins = new HashSet();
+                bins = new HashSet<MetricsBin>();
                 binsByServiceOid.put(serviceOid, bins);
             }
             bins.add(newBin);
@@ -87,49 +87,48 @@ class PeriodData {
     }
 
     synchronized MetricsBin get(String nodeId, Long serviceOid) {
-        Set binsToAdd = null;
+        Set<MetricsBin> binsToAdd = null;
         if (nodeId == null && serviceOid == null) {
             return bigBin;
         } else if (nodeId != null && serviceOid != null) {
-            Set sbins = (Set)binsByServiceOid.get(serviceOid);
+            Set<MetricsBin> sbins = binsByServiceOid.get(serviceOid);
             if (sbins != null) {
-                Set nbins = (Set)binsByNodeId.get(nodeId);
+                Set<MetricsBin> nbins = binsByNodeId.get(nodeId);
                 if (nbins == null) {
                     sbins.clear();
                 } else {
                     sbins.retainAll(nbins);
                 }
-                if (sbins.size() != 1) logger.warning(sbins.size() + " bins for period " + periodStart);
+                if (sbins.size() != 1)
+                    logger.warning("Found " + sbins.size() + " bins for period " +
+                                   periodStart + ". Expecting 1 only. (nodeId=" +
+                                   nodeId + ", serviceOid=" + serviceOid + ")");
                 binsToAdd = sbins;
             }
         } else if (nodeId != null) {
-            binsToAdd = (Set)binsByNodeId.get(nodeId);
+            binsToAdd = binsByNodeId.get(nodeId);
         } else {
-            binsToAdd = (Set)binsByServiceOid.get(serviceOid);
+            binsToAdd = binsByServiceOid.get(serviceOid);
         }
 
-        if (binsToAdd == null) binsToAdd = Collections.EMPTY_SET;
-        Iterator bins = binsToAdd.iterator();
+        if (binsToAdd == null) binsToAdd = Collections.emptySet();
 
-        if (binsToAdd.size() == 1) return (MetricsBin)bins.next();
+        if (binsToAdd.size() == 1) return binsToAdd.iterator().next();
 
-        MetricsBin megabin;
         int numAttempted = 0, numAuthorized = 0, numCompleted = 0;
         int backTime = 0, frontTime = 0, backMin = 0, frontMin = 0;
         int backMax = 0, frontMax = 0;
         long start = 0;
         long end = 0;
 
-        while (bins.hasNext()) {
-            MetricsBin bin = (MetricsBin)bins.next();
+        for (MetricsBin bin : binsToAdd) {
             if (nodeId == null || bin.getClusterNodeId().equals(nodeId) ||
                 serviceOid == null || bin.getServiceOid() == serviceOid.longValue()) {
 
                 if (numAttempted == 0) {
                     frontMin = bin.getMinFrontendResponseTime();
                     frontMax = bin.getMaxFrontendResponseTime();
-                }
-                else {
+                } else {
                     if (bin.getNumAttemptedRequest() != 0) {
                         frontMin = Math.min(frontMin, bin.getMinFrontendResponseTime());
                         frontMax = Math.max(frontMax, bin.getMaxFrontendResponseTime());
@@ -139,8 +138,7 @@ class PeriodData {
                 if (numCompleted == 0) {
                     backMin = bin.getMinBackendResponseTime();
                     backMax = bin.getMaxBackendResponseTime();
-                }
-                else {
+                } else {
                     if (bin.getNumCompletedRequest() != 0) {
                         backMin = Math.min(backMin, bin.getMinBackendResponseTime());
                         backMax = Math.max(backMax, bin.getMaxBackendResponseTime());
@@ -162,9 +160,11 @@ class PeriodData {
         if (frontMax == Integer.MAX_VALUE) frontMax = 0;
         if (end == Integer.MAX_VALUE) end = start;
 
-        megabin = new MetricsBin(periodStart, interval, resolution,
-                nodeId == null ? null : nodeId,
-                serviceOid == null ? -1 : serviceOid.longValue());
+        MetricsBin megabin = new MetricsBin(periodStart,
+                                            interval,
+                                            resolution,
+                                            nodeId == null ? null : nodeId,
+                                            serviceOid == null ? -1 : serviceOid.longValue());
         megabin.setStartTime(start);
         megabin.setSumBackendResponseTime(backTime);
         megabin.setSumFrontendResponseTime(frontTime);

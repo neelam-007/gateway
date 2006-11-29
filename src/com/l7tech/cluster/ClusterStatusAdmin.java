@@ -183,7 +183,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
-    List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart,
+    List<MetricsBin> findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart,
                          Integer resolution, Long serviceOid) throws RemoteException, FindException;
 
     /**
@@ -201,7 +201,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
-    List findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid)
+    List<MetricsBin> findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid)
             throws RemoteException, FindException;
 
     /**

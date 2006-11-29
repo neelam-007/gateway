@@ -220,7 +220,7 @@ public class MetricsChartPanel extends ChartPanel {
     private static GatewayAuditWindow _gatewayAuditWindow;
 
     /** Holding area for metrics bins waiting to be added; when {@link #_updateSuspended} is true. */
-    private final SortedSet _binsToAdd = new TreeSet();
+    private final SortedSet<MetricsBin> _binsToAdd = new TreeSet<MetricsBin>();
 
     /** Indicates if chart data updating is currently suspended. */
     private boolean _updateSuspended = false;
@@ -510,14 +510,14 @@ public class MetricsChartPanel extends ChartPanel {
         _ratesYAxis.setAutoRange(true);
         _ratesYAxis.setRangeType(RangeType.POSITIVE);
         _ratesYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
-        final StackedXYBarRenderer _ratesRenderer = new StackedXYBarRendererEx();
-        _ratesRenderer.setDrawBarOutline(false);
-        _ratesRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
-        _ratesRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
-        _ratesRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
+        final StackedXYBarRenderer ratesRenderer = new StackedXYBarRendererEx();
+        ratesRenderer.setDrawBarOutline(false);
+        ratesRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
+        ratesRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
+        ratesRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
         final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator();
-        _ratesRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
-        final XYPlot ratesPlot = new XYPlot(_messageRates, null, _ratesYAxis, _ratesRenderer);
+        ratesRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
+        final XYPlot ratesPlot = new XYPlot(_messageRates, null, _ratesYAxis, ratesRenderer);
 
         //
         // Now combine all plots to share the same time (x-)axis.
@@ -585,10 +585,10 @@ public class MetricsChartPanel extends ChartPanel {
 
     /**
      * Stores away metrics bins waiting to be added (when chart data updating is suspended).
-     * @param metricsBins   metrics bins waiting to be added
+     * @param bins   metrics bins waiting to be added
      */
-    private void storeBinsToAdd(List metricsBins) {
-        _binsToAdd.addAll(metricsBins);
+    private void storeBinsToAdd(List<MetricsBin> bins) {
+        _binsToAdd.addAll(bins);
 
         // Limits the memory used by bins waiting to be added; by removing bins
         // older than our maximum allowed time range.
@@ -610,11 +610,11 @@ public class MetricsChartPanel extends ChartPanel {
     /**
      * Adds metric bins to the dataset and update the plots.
      *
-     * @param metricsBins new data to be added
+     * @param bins new data to be added
      */
-    public synchronized void addData(List metricsBins) {
+    public synchronized void addData(List<MetricsBin> bins) {
         if (_updateSuspended) {
-            storeBinsToAdd(metricsBins);
+            storeBinsToAdd(bins);
             return;
         }
 
@@ -624,7 +624,7 @@ public class MetricsChartPanel extends ChartPanel {
         _chart.setNotify(false);
 
         // Adds new data from the MetricsBin's to our JFreeChart data structures.
-        Iterator itor = metricsBins.iterator();
+        Iterator itor = bins.iterator();
         while (itor.hasNext()) {
             final MetricsBin bin = (MetricsBin) itor.next();
 
@@ -847,7 +847,7 @@ public class MetricsChartPanel extends ChartPanel {
 
         // Now adds bins waiting to be added.
         if (! _binsToAdd.isEmpty()) {
-            addData(Arrays.asList(_binsToAdd.toArray()));
+            addData(Arrays.asList(_binsToAdd.toArray(new MetricsBin[0])));
             _binsToAdd.clear();
         }
     }

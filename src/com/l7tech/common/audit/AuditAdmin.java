@@ -49,7 +49,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
-    Collection find(AuditSearchCriteria criteria) throws FindException, RemoteException;
+    Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException, RemoteException;
 
     /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.

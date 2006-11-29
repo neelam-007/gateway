@@ -343,13 +343,13 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 whichNode = currentNode.getNodeIdentifier();
 
             // Find all current data that hasn't been charted yet, and add it to the chart
-            SortedMap periodMap = currentRange.getAllPeriods();
+            SortedMap<Long, PeriodData> periodMap = currentRange.getAllPeriods();
             if (! periodMap.isEmpty()) {
-                List chartBins = new ArrayList();
+                List<MetricsBin> chartBins = new ArrayList<MetricsBin>();
 
                 Long lastestPeriodStart = (Long)periodMap.lastKey();
                 Map currentPeriods = periodMap.tailMap(new Long(lastestPeriodStart.longValue() - currentRange.getChartRange()));
-                final Set chartedPeriods = currentRange.getChartedPeriods();
+                final Set<Long> chartedPeriods = currentRange.getChartedPeriods();
                 for (Iterator i = currentPeriods.keySet().iterator(); i.hasNext();) {
                     Long period = (Long)i.next();
                     if (!chartedPeriods.contains(period)) {
@@ -366,7 +366,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             if (currentRange == FINE) {
                 // RHS stuff is the latest FINE bin
                 if (!FINE.getAllPeriods().isEmpty()) {
-                    Long lastPeriod = (Long)FINE.getAllPeriods().lastKey();
+                    Long lastPeriod = FINE.getAllPeriods().lastKey();
                     if (lastPeriod != null) {
                         PeriodData data = (PeriodData)periodMap.get(lastPeriod);
                         rightPanelBin = data.get(whichNode, whichService);
@@ -470,7 +470,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private void addBin(Range range, MetricsBin bin) {
         Long ps = new Long(bin.getPeriodStart());
         synchronized(range) {
-            TreeMap allPeriods = range.getAllPeriods();
+            TreeMap<Long, PeriodData> allPeriods = range.getAllPeriods();
             PeriodData data = (PeriodData)allPeriods.get(ps);
             if (data == null) {
                 data = new PeriodData(bin.getResolution(), bin.getPeriodStart(), bin.getInterval());
@@ -480,25 +480,27 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         }
     }
 
-    private void updateComboModel(Object[] oldObjs, Object[] newObjs, DefaultComboBoxModel comboModel) {
-        Set news = new HashSet(Arrays.asList(newObjs));
-        Set olds = new HashSet(Arrays.asList(oldObjs));
-        Set olds2 = new HashSet(Arrays.asList(oldObjs));
+    private <T> void updateComboModel(T[] oldObjs, T[] newObjs, DefaultComboBoxModel comboModel) {
+        Set<T> news = new HashSet<T>(Arrays.asList(newObjs));
+        Set<T> olds = new HashSet<T>(Arrays.asList(oldObjs));
+        Set<T> olds2 = new HashSet<T>(Arrays.asList(oldObjs));
 
         // Remove deleted stuff from model
         olds.removeAll(news);
-        for (Iterator i = olds.iterator(); i.hasNext();) {
-            Object o = i.next();
-            logger.info(o + " has been removed");
+        for (T o : olds) {
             comboModel.removeElement(o);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Removed from ComboBox model:" + o);
+            }
         }
 
         // Add new stuff to model
         news.removeAll(olds2);
-        for (Iterator i = news.iterator(); i.hasNext();) {
-            Object o = i.next();
-            logger.info(o + " is new");
+        for (T o : news) {
             comboModel.addElement(o);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Added to ComboBox model: " + o);
+            }
         }
     }
 

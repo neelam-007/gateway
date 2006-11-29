@@ -65,6 +65,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /**
      * Gets the service metrics for a given published service.
      *
+     * @param serviceOid    OID of published service
      * @return null if service metrics processing is disabled
      */
     public ServiceMetrics getServiceMetrics(final long serviceOid) {
@@ -87,12 +88,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     }
 
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
-    public List findBins(final String nodeId, final Long minPeriodStart,
-                         final Long maxPeriodStart, final Integer resolution,
-                         final Long serviceOid)
+    public List<MetricsBin> findBins(final String nodeId,
+                                     final Long minPeriodStart,
+                                     final Long maxPeriodStart,
+                                     final Integer resolution,
+                                     final Long serviceOid)
             throws FindException
     {
         try {
+            // noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     Criteria crit = session.createCriteria(MetricsBin.class);
@@ -148,7 +152,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 duration, resolution, clusterNodeId,
                 serviceOid == null ? -1 : serviceOid.longValue());
 
-        List bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+        // noinspection unchecked
+        List<MetricsBin> bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             public Object doInHibernateReadOnly(Session session) throws HibernateException {
                 final Criteria criteria = session.createCriteria(MetricsBin.class);
                 criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
@@ -385,6 +390,12 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * integer, constrained by the given lower and upper limits. If the system
      * property does not exist, or is not parsable as an integer, then the given
      * default value is returned instead.
+     *
+     * @param name          property name
+     * @param lower         lower limit
+     * @param upper         upper limit
+     * @param defaultValue  default value
+     * @return property value
      */
     private static long getLongProperty(final String name, final long lower, final long upper, final long defaultValue) {
         final String value = System.getProperty(name);

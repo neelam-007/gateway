@@ -20,8 +20,8 @@ class Range {
     private final String rightPanelTitle;
 
     private final MetricsChartPanel metricsChartPanel;
-    private final Set chartedPeriods = new HashSet();
-    private final TreeMap allPeriods = new TreeMap();
+    private final Set<Long> chartedPeriods = new HashSet<Long>();
+    private final TreeMap<Long, PeriodData> allPeriods = new TreeMap<Long, PeriodData>();
 
     /** End time of last metrics bin downloaded; -1 to mean no data downloaded yet. */
     private volatile long lastPeriodDownloaded;
@@ -71,11 +71,11 @@ class Range {
         return metricsChartPanel;
     }
 
-    synchronized Set getChartedPeriods() {
+    synchronized Set<Long> getChartedPeriods() {
         return chartedPeriods;
     }
 
-    TreeMap getAllPeriods() {
+    TreeMap<Long, PeriodData> getAllPeriods() {
         return allPeriods;
     }
 

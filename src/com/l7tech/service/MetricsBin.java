@@ -2,15 +2,14 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * A statistical bin for collecting service metrics. Conceptually, a bin has
@@ -214,7 +213,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *                  and resolution are left unmodified
      * @throws IllegalArgumentException if <code>bins</code> is empty
      */
-    public static void combine(final List bins, final MetricsBin result) {
+    public static void combine(final List<MetricsBin> bins, final MetricsBin result) {
         if (bins.size() == 0) {
             throw new IllegalArgumentException("Must have at least one metrics bin.");
         }
@@ -234,8 +233,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         long sumBackendResponseTime = 0;
 
         boolean first = true;
-        for (Iterator itor = bins.iterator(); itor.hasNext();) {
-            final MetricsBin bin = (MetricsBin) itor.next();
+        for (MetricsBin bin : bins) {
             if (first) {
                 periodStart = bin.getPeriodStart();
                 periodEnd = bin.getPeriodEnd();
@@ -720,7 +718,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     public void merge(MetricsBin other) {
         if (other != null) {
             if (this.equals(other)) {
-                List bins = new ArrayList();
+                List<MetricsBin> bins = new ArrayList<MetricsBin>();
                 bins.add(this);
                 bins.add(other);
                 combine(bins, this);

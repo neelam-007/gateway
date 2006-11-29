@@ -96,7 +96,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return auditRecordManager.findByPrimaryKey(oid);
     }
 
-    public Collection find(final AuditSearchCriteria criteria) throws FindException, RemoteException {
+    public Collection<AuditRecord> find(final AuditSearchCriteria criteria) throws FindException, RemoteException {
         return auditRecordManager.find(criteria);
     }
 
