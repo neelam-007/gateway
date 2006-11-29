@@ -100,7 +100,7 @@ public class AdminLoginImpl
 
             AdminContext adminContext = makeAdminContext();
 
-            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, perms));
+            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
 
             String cookie = sessionManager.createSession(user);
 

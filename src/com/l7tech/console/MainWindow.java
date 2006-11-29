@@ -228,13 +228,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void fireConnected() {
         User u = Registry.getDefault().getSecurityProvider().getUser();
         if (u == null) throw new IllegalStateException("Logon apparently worked, but no User is available");
-        Set<Permission> perms;
-        try {
-            perms = new HashSet<Permission>(Registry.getDefault().getRbacAdmin().findCurrentUserPermissions());
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't get permissions for logged on user");
-        }
-        LogonEvent event = new LogonEvent(this, LogonEvent.LOGON, perms);
+        LogonEvent event = new LogonEvent(this, LogonEvent.LOGON);
         LogonListener[] listeners = listenerList.getListeners(LogonListener.class);
         for (LogonListener listener : listeners) {
             listener.onLogon(event);

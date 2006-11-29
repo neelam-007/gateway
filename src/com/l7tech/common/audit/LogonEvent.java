@@ -5,11 +5,7 @@
  */
 package com.l7tech.common.audit;
 
-import com.l7tech.common.security.rbac.Permission;
 import org.springframework.context.ApplicationEvent;
-
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * This class represents the logon events.
@@ -23,7 +19,6 @@ public class LogonEvent extends ApplicationEvent {
 
 
     private final int type;
-    private final Set<Permission> permissions;
 
     /**
      * create the connection event
@@ -34,23 +29,6 @@ public class LogonEvent extends ApplicationEvent {
     public LogonEvent(Object source, int type) {
         super(source);
         this.type = type;
-        this.permissions = Collections.emptySet();
-    }
-
-    /**
-     * create the connection event
-     *
-     * @param source the event source
-     * @param type   the event type
-     * @param permissions the set of {@link Permission}s granted to the logged-on user
-     */
-    public LogonEvent(Object source, int type, Set<Permission> permissions) {
-        super(source);
-        this.type = type;
-        if (type == LOGON)
-            this.permissions = Collections.unmodifiableSet(permissions);
-        else
-            this.permissions = Collections.emptySet();
     }
 
     /**
@@ -58,9 +36,5 @@ public class LogonEvent extends ApplicationEvent {
      */
     public int getType() {
         return type;
-    }
-
-    public Set<Permission> getPermissions() {
-        return permissions;
     }
 }

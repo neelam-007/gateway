@@ -6,9 +6,10 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.HttpServletResponseKnob;
-import com.l7tech.common.message.Message;
+import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.ServiceMessages;
+import com.l7tech.common.message.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -26,7 +27,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.event.system.AdminAppletEvent;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.spring.remoting.RemoteUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.beans.BeansException;
@@ -56,6 +63,9 @@ public class ManagerAppletFilter implements Filter {
     private WebApplicationContext applicationContext;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AdminSessionManager adminSessionManager;
+    private RoleManager roleManager;
+    private AuditContext auditContext;
+    private SoapFaultManager soapFaultManager;
 
     private ServerAssertion dogfoodPolicy;
     private Document fakeDoc;
@@ -63,7 +73,9 @@ public class ManagerAppletFilter implements Filter {
 
     private Object getBean(String name, Class clazz) throws ServletException {
         try {
-            return applicationContext.getBean(name, clazz);
+            final Object o = applicationContext.getBean(name, clazz);
+            if (o == null) throw new ServletException("Configurationerror; could not find bean " + name);
+            return o;
         } catch (BeansException beansException) {
             throw new ServletException("Configuration error; could not get bean " + name, beansException);
         }
@@ -77,6 +89,9 @@ public class ManagerAppletFilter implements Filter {
         customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionsAdmin", CustomAssertionsRegistrar.class);
         ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory", ServerPolicyFactory.class);
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
+        roleManager = (RoleManager)getBean("roleManager", RoleManager.class);
+        auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
+        soapFaultManager = (SoapFaultManager)getBean("soapFaultManager", SoapFaultManager.class);
 
         CompositeAssertion dogfood = new AllAssertion();
         dogfood.addChild(new HttpBasic());
@@ -97,7 +112,7 @@ public class ManagerAppletFilter implements Filter {
         this.codebasePrefix = codebasePrefix;
     }
 
-    public void doFilter(ServletRequest req, ServletResponse resp, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(final ServletRequest req, final ServletResponse resp, final FilterChain filterChain) throws IOException, ServletException {
         if (!(req instanceof HttpServletRequest))
             throw new ServletException("Request not HTTP request");
         if (!(resp instanceof HttpServletResponse))
@@ -106,36 +121,104 @@ public class ManagerAppletFilter implements Filter {
         HttpServletResponse hresp = (HttpServletResponse)resp;
         HttpServletRequest hreq = (HttpServletRequest)req;
 
-        AuthResult authResult = authenticate(hreq, hresp);
-        if (authResult == AuthResult.CHALLENGED) {
-            // Already sent challenge
-            return;
+        Auditor auditor = new Auditor(this, applicationContext, logger);
+
+        PolicyEnforcementContext context = null;
+        int status = 500;
+        boolean passed = false;
+        try {
+            Message request = new Message();
+            request.initialize(fakeDoc);
+            request.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
+
+            Message response = new Message();
+            HttpServletResponseKnob hsrespKnob = new HttpServletResponseKnob(hresp);
+            response.attachHttpResponseKnob(hsrespKnob);
+
+            context = new PolicyEnforcementContext(request, response);
+            context.setReplyExpected(true);
+            context.setAuditContext(auditContext);
+            context.setSoapFaultManager(soapFaultManager);
+
+            AuthResult authResult = authenticate(hreq, hresp, context, auditor);
+            if (authResult == AuthResult.CHALLENGED) {
+                // Already audited a detail message and sent challenge
+                passed = true;
+                return;
+            }
+
+            if (authResult != AuthResult.OK) {
+                // Already audited a detail message
+                hresp.setStatus(status = 401);
+                hresp.sendError(401, "Not authorized");
+                return;
+            }
+
+            if (!hreq.isSecure()) {
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_SSL);
+                hresp.setStatus(status = 404);
+                hresp.sendError(404, "Request must arrive over SSL.");
+                return;
+            }
+
+            passed = true;
+
+            // Note that the user is authenticated before this is run
+            if (handleCustomAssertionClassRequest(hreq, hresp, auditor)) {
+                return;
+            }
+
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FILTER_PASSED);
+            final IOException[] ioeHolder = new IOException[1];
+            final ServletException[] seHolder = new ServletException[1];
+            RemoteUtils.runWithClientHost(hreq.getRemoteAddr(), new Runnable(){
+                public void run() {
+                    try {
+                        filterChain.doFilter(req, resp);
+                    } catch (IOException e) {
+                        ioeHolder[0] = e;
+                    } catch (ServletException e) {
+                        seHolder[0] = e;
+                    }
+                }
+            });
+            if (ioeHolder[0] != null) throw ioeHolder[0];
+            if (seHolder[0] != null) throw seHolder[0];
+        } finally {
+            try {
+                Level level = Level.INFO;
+                String message = "Admin applet request";
+                if (!passed) {
+                    message = "Applet applet request filter failed: status = " + status;
+                    level = Level.WARNING;
+                }
+                User user = (User)hreq.getAttribute(PROP_USER);
+                if (user == null) user = new UserBean();
+                applicationContext.publishEvent(
+                        new AdminAppletEvent(this,
+                                             level,
+                                             req.getRemoteAddr(),
+                                             message,
+                                             user.getProviderId(),
+                                             getName(user),
+                                             user.getId()));
+                auditContext.flush();
+            } finally {
+                if (context != null) context.close();
+            }
         }
+    }
 
-        if (authResult != AuthResult.OK) {
-            hresp.setStatus(401);
-            hresp.sendError(401, "Not authorized");
-            return;
-        }
-
-        if (!hreq.isSecure()) {
-            hresp.setStatus(404);
-            hresp.sendError(404, "Request must arrive over SSL.");
-            return;
-        }
-
-        // Note that the user is authenticated before this is run
-        if (handleCustomAssertionClassRequest(hreq, hresp))
-            return;
-
-        filterChain.doFilter(req, resp);
+    private static String getName(User user) {
+        return user.getName() == null ? user.getLogin() : user.getName();
     }
 
     public void destroy() {
         // No action required at this time
     }
 
-    private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
+    // If this method returns, an audit detail message has been added.
+    private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp, PolicyEnforcementContext context, Auditor auditor) throws IOException {
         // Check for provided session ID and, if its valid and arrived over SSL, bypass authentication
         Cookie[] cookies = hreq.getCookies();
         if (cookies != null) for (Cookie cookie : cookies) {
@@ -151,46 +234,48 @@ public class ManagerAppletFilter implements Filter {
                                 CookieCredentialSourceAssertion.class);
                         hreq.setAttribute(PROP_CREDS, creds);
                         hreq.setAttribute(PROP_USER, user);
+                        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_COOKIE_SUCCESS, new String[] { getName(user) });
                         return AuthResult.OK;
                     }
                 }
             }
         }
 
-        Message request = new Message();
-        request.initialize(fakeDoc);
-        request.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
-
-        Message response = new Message();
-        HttpServletResponseKnob hsrespKnob = new HttpServletResponseKnob(hresp);
-        response.attachHttpResponseKnob(hsrespKnob);
-
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-
         final AssertionStatus result;
         try {
             result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE && context.getCredentials() != null) {
+                final User user = context.getAuthenticatedUser();
+                if (roleManager.getAssignedRoles(user).isEmpty()) {
+                    auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_ROLES, new String[] { getName(user) });
+                    return AuthResult.FAIL;
+                }
                 hreq.setAttribute(PROP_CREDS, context.getCredentials());
-                hreq.setAttribute(PROP_USER, context.getAuthenticatedUser());
+                hreq.setAttribute(PROP_USER, user);
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, new String[] { getName(user) });
                 return AuthResult.OK;
             }
 
         } catch (PolicyAssertionException e) {
-            // TODO audit this!
-            logger.log(Level.WARNING, "Dogfood policy failed for admin applet: " + ExceptionUtils.getMessage(e), e);
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
+            return AuthResult.FAIL;
+        } catch (FindException e) {
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_DB_ERROR, new String[] {ExceptionUtils.getMessage(e)}, e);
             return AuthResult.FAIL;
         }
 
         // See if a challenge is indicated
-        if (hsrespKnob.hasChallenge()) {
+        HttpServletResponseKnob hsrespKnob =
+                (HttpServletResponseKnob)context.getResponse().getKnob(HttpServletResponseKnob.class);
+        if (hsrespKnob != null && hsrespKnob.hasChallenge()) {
             hsrespKnob.beginChallenge();
             sendChallenge(hresp);
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CHALLENGE);
             return AuthResult.CHALLENGED;
         }
 
         // Nope, it just done did failed
-        logger.log(Level.WARNING, "Failed authentication for admin applet (status " + result + ")");
+        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FAILED, new String[] { result.toString() });        
         return AuthResult.FAIL;
     }
 
@@ -227,10 +312,13 @@ public class ManagerAppletFilter implements Filter {
      *
      * @param hreq The HttpServletRequest
      * @param hresp The HttpServletResponse
+     * @param auditor The auditor to which a detail message will be added if a class is downloaded 
      * @return true if the request has been handled (so no further action should be taken)
+     * @throws java.io.IOException if there is a problem loading or transmitting the class
      */
     private boolean handleCustomAssertionClassRequest(final HttpServletRequest hreq,
-                                                      final HttpServletResponse hresp) throws IOException {
+                                                      final HttpServletResponse hresp,
+                                                      final Auditor auditor) throws IOException {
         boolean handled = false;
         String filePath = hreq.getRequestURI();
         String contextPath = hreq.getContextPath();
@@ -240,6 +328,7 @@ public class ManagerAppletFilter implements Filter {
                 byte[] data = customAssertionsRegistrar.getAssertionClass(className);
                 if (data != null) {
                     handled = true;
+                    auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CLASS_DOWNLOAD, new String[] {className});
                     sendClass(hresp, data);
                 }
             }
@@ -278,5 +367,5 @@ public class ManagerAppletFilter implements Filter {
         }
 
         return name;
-    }    
+    }
 }

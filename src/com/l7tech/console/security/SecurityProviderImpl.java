@@ -228,7 +228,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
         LogonDialog.setLastRemoteSoftwareVersion(remoteSoftwareVersion);
         LogonDialog.setLastRemoteProtocolVersion(remoteVersion);
-        LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON, perms);
+        LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON);
         applicationContext.publishEvent(le);
     }
 
