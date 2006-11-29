@@ -22,6 +22,11 @@ popd > /dev/null
 # assume location of the jdk
 JAVA_HOME=${SSG_ROOT}/jdk
 
+if [ "$1" == "cfgdeamon" ]; then
+    ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
+    exit
+fi
+
 # This must be run as ssgconfig
 if [ $UID -eq 0 ]; then
     # invoke flasher as ssgconfig

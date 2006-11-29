@@ -43,6 +43,14 @@ public class FlashUtilityLauncher {
                 Exporter exporter = new Exporter();
                 exporter.doIt(passedArgs);
                 System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
+            } else if (args[0].toLowerCase().equals("cfgdeamon")) {
+                System.out.println("to do cfgdeamon");
+            } else if (args[0] != null) {
+                String issue = "unsupported option " + args[0];
+                logger.warning(issue);
+                System.out.println(issue);
+                printusage();
+                return;
             }
             logger.info("Operation complete without errors");
         } catch (InvalidArgumentException e) {

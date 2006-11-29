@@ -22,6 +22,8 @@ start() {
 		echo "${MESSAGE}: "
         (${ssgconfigutil})
         RETVAL=$?
+        # plugin of migration utility copying system files at the right place
+        . ${SSGHOME}/migration/ssgmigration.sh cfgdeamon
 	else
 		echo "Need to be root to run this script";
 		exit
