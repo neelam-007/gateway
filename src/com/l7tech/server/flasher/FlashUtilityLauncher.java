@@ -38,7 +38,7 @@ public class FlashUtilityLauncher {
             if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
                 importer.doIt(passedArgs);
-                System.out.println("\nImport completed with no errors. You may restart the target SecureSpan Gateway.");
+                System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
                 Exporter exporter = new Exporter();
                 exporter.doIt(passedArgs);

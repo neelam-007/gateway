@@ -303,6 +303,10 @@ public class Importer {
                     // overwrite os level system files
                     OSConfigManager.restoreOSConfigFiles(tempDirectory);
                 }
+            } else if (arguments.get(OS_OVERWRITE.name) != null) {
+                String issue = "Ignoring option " + OS_OVERWRITE.name + " because it is only supported in restore mode";
+                logger.warning(issue);
+                System.out.println(issue);
             }
 
             // apply mapping if applicable

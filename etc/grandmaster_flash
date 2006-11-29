@@ -11,5 +11,7 @@
 # -----------------------------------------------------------------------------
 /etc/hosts
 /etc/sysconfig/network
+/etc/sysconfig/network-scripts/ifcfg-eth0
+/etc/sysconfig/network-scripts/ifcfg-eth1
 /etc/ntp.conf
 /etc/ntp/step-tickers 

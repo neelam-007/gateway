@@ -24,6 +24,7 @@ import java.util.ArrayList;
 public class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
     private static final String SETTINGS_PATH = "./cfg/grandmaster_flash";
+    private static final String SYSCONFIGFILES_PATH = "../sysconfigwizard/configfiles";
     private static final String SUBDIR = File.separator + "os";
     private final String tmpDirPath;
 
@@ -94,7 +95,23 @@ public class OSConfigManager {
             systemfileoverwritten = true;
         }
         if (systemfileoverwritten) {
-            System.out.println("\nCertain system files have been overwritten, please restart the appliance.");
+            // check if the sysconfig has pending overwrites
+            ArrayList<String> res = listDir(SYSCONFIGFILES_PATH);
+            if (res != null && res.size() > 0) {
+                String issue = "System files have been overwritten but there seems to be pending sysconfig " +
+                               "overwrites which may conflict. You may need to reboot SecureSpan Gateway and " +
+                               "try restore afterwards.";
+                logger.warning(issue);
+                System.out.println(issue);
+                StringBuffer buf = new StringBuffer("List of pending sysconfig overwrites: ");
+                for (String s : res) {
+                    buf.append(s).append(", ");
+                }
+                logger.warning(buf.toString());
+            } else {
+                System.out.println("\nCertain system files have been overwritten, you may need to reboot the " +
+                                   "SecureSpan Gateway.");
+            }
         }
     }
 
