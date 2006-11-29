@@ -46,6 +46,7 @@ import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Set;
 import java.security.Principal;
 
 /**
@@ -60,6 +61,7 @@ public class ManagerAppletFilter implements Filter {
 
     private enum AuthResult { OK, CHALLENGED, FAIL }
 
+    private FilterConfig filterConfig;
     private WebApplicationContext applicationContext;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AdminSessionManager adminSessionManager;
@@ -82,6 +84,7 @@ public class ManagerAppletFilter implements Filter {
     }
 
     public void init(FilterConfig filterConfig) throws ServletException {
+        this.filterConfig = filterConfig;
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
@@ -165,6 +168,10 @@ public class ManagerAppletFilter implements Filter {
 
             // Note that the user is authenticated before this is run
             if (handleCustomAssertionClassRequest(hreq, hresp, auditor)) {
+                return;
+            }
+
+            if (handleJarRequest(hreq, hresp)) {
                 return;
             }
 
@@ -368,4 +375,48 @@ public class ManagerAppletFilter implements Filter {
 
         return name;
     }
+
+
+    /**
+     * Handle request for JAR files.
+     *
+     * <p>The user MUST be authenticated before calling this method.</p>
+     *
+     * <p>This will redirect to the Pack200 version of the file if one is
+     * available</p>
+     *
+     * @param hreq The HttpServletRequest
+     * @param hresp The HttpServletResponse
+     * @return true if the request has been handled (so no further action should be taken)
+     */
+    private boolean handleJarRequest(final HttpServletRequest hreq,
+                                     final HttpServletResponse hresp) throws IOException, ServletException {
+        boolean handled = false;
+
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+        String encodingHeader = hreq.getHeader("Accept-Encoding");
+
+        if (filterConfig != null && filePath != null && contextPath != null && encodingHeader != null &&
+                filePath.endsWith(".jar") && encodingHeader.contains("pack200-gzip")) {
+            ServletContext context = filterConfig.getServletContext();
+            String resourceName = filePath.substring(contextPath.length());
+
+            int dirIndex = resourceName.lastIndexOf('/');
+            if (dirIndex > 0) {
+                Set resources = context.getResourcePaths(resourceName.substring(0, dirIndex+1));
+                String pack200Resource = resourceName + ".pack.gz";
+                if (resources.contains(pack200Resource)) {
+                    RequestDispatcher dispatcher = context.getRequestDispatcher(pack200Resource);
+                    if (dispatcher != null) {
+                        handled = true;
+                        hresp.addHeader("Content-Encoding", "pack200-gzip");
+                        dispatcher.forward(hreq, hresp);
+                    }
+                }
+            }
+        }
+
+        return handled;
+    }    
 }

@@ -77,6 +77,14 @@
              classname="com.intellij.ant.Javac2"
              classpathref="uidesigner.classpath"/>
 
+    <!--
+      Task definition for Pack 200 
+    -->
+    <taskdef name="pack200"
+             classname="org.jdesktop.deployment.ant.pack200.Pack200Task"
+    	     classpath="lib/tools/deployment-ant-pack200-1.0beta.jar"/>
+
+
     <macrodef name="javac2">
         <attribute name="srcdir"/>
         <attribute name="destdir"/>
@@ -244,6 +252,9 @@
 
     <!--
       Manager library patternset
+
+      NOTE: If you add JARs to the manager you may want to Pack200 them for
+            faster Manager Applet downloads (search for PACMANAGERJARSHERE)
     -->
     <patternset id="manager.libs">
         <include name="**/BrowserLauncher2-10rc4.jar"/>
@@ -836,10 +847,82 @@
     -->
     <target name="gateway" description="Build and package the SSG" depends="package.gateway"/>
 
+    <target name="pack.manager" depends="pack.manager.copy, pack.manager.compress"/>
+
+    <target name="pack.manager.copy">
+        <mkdir dir="${build.dir}/managerlibs"/>
+        <copy todir="${build.dir}/managerlibs">
+            <fileset dir="${build.dir}/lib">
+                <patternset>
+                    <exclude name="**/systinet-*"/>
+                </patternset>
+                <patternset refid="manager.libs"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <macrodef name="pack-mac">
+        <attribute name="jarfile"/>
+        <attribute name="packfile" default="@{jarfile}.pack.gz"/>
+        <sequential>
+            <pack200 src="@{jarfile}" destfile="@{packfile}" segmentlimit="-1" gzipoutput="true"/>
+        </sequential>
+    </macrodef>
+
+    <target name="pack.manager.compress" depends="pack.manager.copy" if="pack200">
+        <pack-mac jarfile="${build.dir}/Manager.jar"/>
+
+        <!--
+          Note that the build does not fail if any of these are missing, but a
+          warning is logged.
+        -->
+        <pack-mac jarfile="${build.dir}/managerlibs/0500-wsdl4j.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/activation.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/antlr-2.7.7-l7p1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/aopalliance.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/BrowserLauncher2-10rc4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-codec-1.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-collections-2.1.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-discovery.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-httpclient-3.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-lang-1.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-logging-1.0.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/concurrent-1.3.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/dom4j-1.6.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/forms_rt-l7p1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/hibernate3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/jaxen-1.1-beta-10.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/jaxrpc.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/jcommon-1.0.5.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/jfreechart-1.0.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/jsr173_1.0_api.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/kunststoff.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/log4j-1.2.14.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/looks-1.1.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/nachocalendar-0.23.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/policy-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/saaj-impl.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/saaj.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/saxpath.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-aop.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-beans.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-context.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-core.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-dao.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-remoting.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/whirlycache-1.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/xalan-2.5.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/xercesImpl.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/xmlpad.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/xmlpad-res.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/xss4j.jar"/>
+        <!-- label: PACMANAGERJARSHERE [can delete if no longer referenced in this file] -->
+    </target>
+
     <!--
       Package the SSG (WAR).
     -->
-    <target name="package.gateway" depends="compile, configure_properties.dev, package.manager">
+    <target name="package.gateway" depends="compile, configure_properties.dev, package.manager, pack.manager">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
@@ -1005,14 +1088,9 @@
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
 
             <!-- Include the manager jars in the Gateway, for the applet admin mode. -->
-            <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssg/webadmin"/>
+            <zipfileset dir="${build.dir}" includes="Manager.jar*" prefix="ssg/webadmin"/>
             <zipfileset dir="${src.root}/etc" includes="favicon.ico"/>
-            <zipfileset dir="${build.dir}/lib" prefix="ssg/webadmin/lib">
-                <patternset>
-                    <exclude name="**/systinet-*"/>
-                </patternset>
-                <patternset refid="manager.libs"/>
-            </zipfileset>
+            <zipfileset dir="${build.dir}/managerlibs" prefix="ssg/webadmin/lib"/>
             <zipfileset src="${src.root}/webhelp/ssm/help.zip" prefix="ssg/webadmin"/>
         </war>
 
@@ -1139,7 +1217,7 @@
     <!--
       Package the SSM (JAR)
     -->
-    <target name="package.manager" unless="ssg.only" depends="compile">
+    <target name="package.manager.jar" depends="compile">
         <generate-manifest propertyPrefix="manager" filename="Manager.mf">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.console.Main"/>
@@ -1235,6 +1313,21 @@
                 <exclude name="com/l7tech/spring/remoting/http/SecureRemoteInvocationExecutor*.class"/>
             </fileset>
         </jar>
+    </target>
+
+    <target name="package.manager.jar.pack200" depends="package.manager.jar" if="pack200">
+
+        <move file="${build.dir}/Manager.jar" tofile="${build.dir}/Manager.nopack.jar"/>
+
+        <pack200 src="${build.dir}/Manager.nopack.jar"
+                 destfile="${build.dir}/Manager.jar"
+                 segmentlimit="-1"
+                 repack="true"/>
+
+        <delete file="${build.dir}/Manager.nopack.jar"/>
+    </target>
+
+    <target name="package.manager" unless="ssg.only" depends="package.manager.jar, package.manager.jar.pack200">
 
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
             <fileset dir="${build.dir}" includes="Manager.jar"/>
@@ -2428,6 +2521,8 @@
         <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
         <property name="install.src.flasher" value="${install.src.base}/migration"/>
         <property name="install.src.sysconfigwizard" value="${install.src.base}/sysconfigwizard"/>
+
+        <property name="pack200" value="true"/>
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
