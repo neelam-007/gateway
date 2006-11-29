@@ -58,9 +58,15 @@ public class PolicyExporter {
     public void exportToFile(Assertion rootAssertion, File outputFile) throws IOException, SAXException {
         Document doc = exportToDocument(rootAssertion);
         // write doc to file
-        FileOutputStream fos = new FileOutputStream(outputFile);
-        fos.write(XmlUtil.nodeToFormattedString(doc).getBytes());
-        fos.close();
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(outputFile);
+            XmlUtil.nodeToFormattedOutputStream(doc,fos);
+            fos.flush();
+        }
+        finally {
+            if (fos != null) try{ fos.close(); }catch(IOException ioe){ /* */ }
+        }
     }
 
     /**

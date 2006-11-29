@@ -16,6 +16,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
@@ -105,7 +106,7 @@ public class LicenseDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                result.call(new ByteArrayInputStream(licenseTextArea.getText().getBytes()), null);
+                result.call(new ByteArrayInputStream(HexUtils.encodeUtf8(licenseTextArea.getText())), null);
                 dispose();
             }
         });

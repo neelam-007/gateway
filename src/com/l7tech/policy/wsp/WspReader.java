@@ -5,12 +5,12 @@ import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.policy.assertion.Assertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Build a policy tree from an XML document.
@@ -19,7 +19,6 @@ import java.util.logging.Logger;
  * Time: 3:44:19 PM
  */
 public class WspReader {
-    private static final Logger log = Logger.getLogger(WspReader.class.getName());
 
     private WspReader() {
     }
@@ -90,8 +89,12 @@ public class WspReader {
     }
 
     static Assertion parse(InputStream wspStream, WspVisitor visitor) throws IOException {
+        return parse(new InputSource(wspStream), visitor);        
+    }
+
+    static Assertion parse(InputSource inputSource, WspVisitor visitor) throws IOException {
         try {
-            Document doc = XmlUtil.parse(wspStream);
+            Document doc = XmlUtil.parse(inputSource, false);
             Element root = findPolicyElement(doc.getDocumentElement());
             if (!WspConstants.POLICY_ELNAME.equals(root.getLocalName()))
                 throw new InvalidPolicyStreamException("Document element local name is not Policy");
@@ -141,7 +144,7 @@ public class WspReader {
     static Assertion parse(String wspXml, WspVisitor visitor) throws IOException {
         if (wspXml == null)
             throw new IllegalArgumentException("wspXml may not be null");
-        return parse(new ByteArrayInputStream(wspXml.getBytes()), visitor);
+        return parse(new InputSource(new StringReader(wspXml)), visitor);
     }
 
 }

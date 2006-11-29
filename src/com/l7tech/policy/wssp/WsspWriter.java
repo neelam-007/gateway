@@ -31,6 +31,7 @@ import org.w3c.dom.NodeList;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.DOMResultXMLStreamWriter;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -824,7 +825,7 @@ public class WsspWriter {
         try {
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
             pw.writePolicy(policy, baos);
-            return (Element) target.importNode(XmlUtil.stringToDocument(new String(baos.toByteArray())).getDocumentElement(), true);
+            return (Element) target.importNode(XmlUtil.stringToDocument(HexUtils.decodeUtf8(baos.toByteArray())).getDocumentElement(), true);
         }
         catch(org.xml.sax.SAXException se) {
             throw new PolicyAssertionException(null, "Could not create DOM from WS-SecurityPolicy", se);

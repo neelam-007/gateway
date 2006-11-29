@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -18,7 +17,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -301,19 +299,14 @@ public class PasswordDialog extends JDialog {
             return false;
         }
 
-        try {
-            if (user.getPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String((new String(newPass)).getBytes(), SecureSpanConstants.PASSWORD_ENCODING), HttpDigest.REALM))) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        resources.getString("sameOldPassord.question"),
-                        resources.getString("sameOldPassord.title"),
-                        JOptionPane.ERROR_MESSAGE);
-                newPasswordField.setText("");
-                confirmPasswordField.setText("");
-                return false;
-            }
-        } catch (UnsupportedEncodingException e) {
-            log.log(Level.WARNING, "validateInput()", e);
+        if (user.getPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HttpDigest.REALM))) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    resources.getString("sameOldPassord.question"),
+                    resources.getString("sameOldPassord.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            newPasswordField.setText("");
+            confirmPasswordField.setText("");
             return false;
         }
 

@@ -82,7 +82,7 @@ public class IdProviderReference extends ExternalReference {
         String b64edProps = getParamFromEl(el, PROPS_EL_NAME);
         if (b64edProps != null) {
             try {
-                output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true));
+                output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true), "UTF-8");
             } catch (IOException e) {
                 throw new InvalidDocumentFormatException("could not un-b64 the provider props");
             }
@@ -113,7 +113,7 @@ public class IdProviderReference extends ExternalReference {
         Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
         if (idProviderConfProps != null) {
             // base 64 the props
-            String encoded = HexUtils.encodeBase64(idProviderConfProps.getBytes());
+            String encoded = HexUtils.encodeBase64(HexUtils.encodeUtf8(idProviderConfProps));
             txt = XmlUtil.createTextNode(referencesParentElement, encoded);
             propsEl.appendChild(txt);
         }
@@ -209,10 +209,10 @@ public class IdProviderReference extends ExternalReference {
         }
         if (props2 == null || props2.equals("")) return false;
 
-        ByteArrayInputStream in = new ByteArrayInputStream(props1.getBytes());
+        ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(props1));
         java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
         Map map1 = (Map)decoder.readObject();
-        in = new ByteArrayInputStream(props2.getBytes());
+        in = new ByteArrayInputStream(HexUtils.encodeUtf8(props2));
         decoder = new java.beans.XMLDecoder(in);
         Map map2 = (Map)decoder.readObject();
 

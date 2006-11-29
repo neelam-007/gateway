@@ -89,14 +89,14 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 
     public String messageString() {
         try {
-            return new String(HexUtils.decodeBase64(base64message, true));
+            return new String(HexUtils.decodeBase64(base64message, true), "UTF-8");
         } catch (IOException e) {
             return base64message;
         }
     }
 
     public void messageString(String text) {
-        setBase64message(HexUtils.encodeBase64(text.getBytes(), true));
+        setBase64message(HexUtils.encodeBase64(HexUtils.encodeUtf8(text), true));
     }
 
     /** @return the source email address.  May be empty but never null. */

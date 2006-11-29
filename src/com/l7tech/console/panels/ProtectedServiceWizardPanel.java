@@ -173,7 +173,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
           new HttpRoutingAssertion(
             getServiceUrlTextField().getText(),
             getIdentityTextField().getText(),
-            new String(getCredentials()), getRealmTextField().getText());
+            getCredentials(), getRealmTextField().getText());
         collect.setRoutingAssertion(ra);
     }
 
@@ -206,9 +206,9 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      * todo: deal with certificates too
      * @return the credentialsd byte array
      */
-    private byte[] getCredentials() {
+    private String getCredentials() {
         char[] cpass = getIdentityPasswordField().getPassword();
-        return String.valueOf(cpass).getBytes();
+        return String.valueOf(cpass);
     }
 
     /**

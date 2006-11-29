@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.ByteArrayInputStream;
@@ -77,7 +78,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
                     encoder.writeObject(props);
                     encoder.close(); // writes closing XML tag
                     encoder = null;
-                    propsXml = output.toString();
+                    propsXml = output.toString("UTF-8");
                 }
                 finally {
                     if(encoder!=null) encoder.close();
@@ -98,7 +99,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
         if (serializedProps == null || serializedProps.length() < 2) {
             props.clear();
         } else {
-            ByteArrayInputStream in = new ByteArrayInputStream(serializedProps.getBytes());
+            ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedProps));
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
             //noinspection unchecked
             props = (Map<String, Object>) decoder.readObject();

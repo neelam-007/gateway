@@ -35,14 +35,14 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
 
     public String responseBodyString() {
         try {
-            return new String(HexUtils.decodeBase64(base64ResponseBody, true));
+            return new String(HexUtils.decodeBase64(base64ResponseBody, true), "UTF-8");
         } catch (IOException e) {
             return base64ResponseBody;
         }
     }
 
     public void responseBodyString(String responseBody) {
-        setBase64ResponseBody(HexUtils.encodeBase64(responseBody.getBytes(), true));;
+        setBase64ResponseBody(HexUtils.encodeBase64(HexUtils.encodeUtf8(responseBody), true));
     }
 
     public String[] getVariablesUsed() {

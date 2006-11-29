@@ -134,7 +134,7 @@ public final class Service {
                 try {
                     resStream = url.openStream();
                     int read = HexUtils.slurpStream(resStream, data);
-                    StringTokenizer dataStr = new StringTokenizer(new String(data, 0, read));
+                    StringTokenizer dataStr = new StringTokenizer(new String(data, 0, read, "UTF-8"));
                     if(dataStr.hasMoreTokens()) {
                         String className = dataStr.nextToken();
                         if(classes.containsKey(className)) {

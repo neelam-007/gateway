@@ -10,6 +10,7 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.common.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -158,7 +159,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         model.addColumn("Value");
         String szedProps = unresolvedRef.getIdProviderConfProps();
         if (szedProps != null) {
-            ByteArrayInputStream in = new ByteArrayInputStream(szedProps.getBytes());
+            ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(szedProps));
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
             Map props = (Map)decoder.readObject();
             Set keys = props.keySet();
