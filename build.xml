@@ -1327,7 +1327,7 @@
         <delete file="${build.dir}/Manager.nopack.jar"/>
     </target>
 
-    <target name="package.manager" unless="ssg.only" depends="package.manager.jar, package.manager.jar.pack200">
+    <target name="package.manager" unless="ssg.only" depends="package.manager.jar, obfuscate.manager, package.manager.jar.pack200">
 
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
             <fileset dir="${build.dir}" includes="Manager.jar"/>
@@ -2799,7 +2799,7 @@
     <!--
       SecureSpan Manager obfuscation target
     -->
-    <target name="obfuscate.manager" depends="obfuscate.init" if="obfuscate">
+    <target name="obfuscate.manager" depends="obfuscate.manager.init" if="obfuscate">
         <echo>Obfuscating Manager.jar</echo>
         <Zelix scriptFileName="build/etc/manager.zkm"
                logFileName="build/obfuscation/managerobfuscation.log"
@@ -2872,9 +2872,12 @@
 
         <echo>Setting classpaths in zkm scripts</echo>
         <build-zkm filename="bridge.zkm" propertyPrefix="bridge"/>
-        <build-zkm filename="manager.zkm" propertyPrefix="manager"/>
         <build-zkm filename="ssg.zkm" propertyPrefix="gateway" libDir="build/ROOT_exploded/WEB-INF/lib"
                    pathExtra="    &quot;build/lib/servlet-api.jar&quot;${line.separator}    &quot;build/lib/catalina.jar&quot;${line.separator}    &quot;build/layer7-api.jar&quot;${line.separator}    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
+    </target>
+
+    <target name="obfuscate.manager.init" if="obfuscate">
+        <build-zkm filename="manager.zkm" propertyPrefix="manager"/>
     </target>
 
     <target name="obfuscate" description="Enable obfuscated build (when packaging)">
