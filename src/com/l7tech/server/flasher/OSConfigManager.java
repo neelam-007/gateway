@@ -49,6 +49,11 @@ public class OSConfigManager {
         me.doLoadToTmpTarget();
     }
 
+    public static void restoreOSConfigFilesForReal() throws IOException {
+        OSConfigManager me = new OSConfigManager("");
+        me.doLoadToRealTarget();
+    }
+
     private void doSave() throws IOException {
         FileReader fr = new FileReader(SETTINGS_PATH);
         BufferedReader grandmasterreader = new BufferedReader(fr);
@@ -74,6 +79,37 @@ public class OSConfigManager {
         }
     }
 
+    private void doLoadToRealTarget() throws IOException {
+        logger.info("Listing files that potentially need restore");
+        ArrayList<String> listofosfiles = listDir(SYSTMP_PATH);
+        if (listofosfiles != null) for (String osfiletorestore : listofosfiles) {
+            String tmptarget;
+            if (osfiletorestore.startsWith(SYSTMP_PATH)) {
+                tmptarget = osfiletorestore.substring(SYSTMP_PATH.length());
+            } else {
+                // if this happens, it's a bug
+                throw new RuntimeException("unexpected path for " + osfiletorestore);
+            }
+            logger.info("Restoring " + osfiletorestore + " into " + tmptarget);
+            File fromFile = new File(osfiletorestore);
+            File toFile = new File(tmptarget);
+            if (toFile.canWrite()) {
+                if (toFile.exists()) {
+                    toFile.delete();
+                }
+                FileUtils.ensurePath(toFile.getParentFile());
+                FileUtils.copyFile(fromFile, toFile);
+            } else {
+                logger.severe("cannot restore " + tmptarget + " because i dont have necessary permissions. perhaps " +
+                              "this was incorrectly invoked at non-root user");
+            }
+        }
+        File tmp = new File(SYSTMP_PATH);
+        if (tmp.exists()) {
+            FileUtils.deleteDir(tmp);
+        }
+    }
+
     private void doLoadToTmpTarget() throws IOException {
         final String osfilesroot = tmpDirPath + SUBDIR;
         ArrayList<String> listofosfiles = listDir(osfilesroot);
@@ -89,7 +125,7 @@ public class OSConfigManager {
             logger.info("Restoring " + osfiletorestore + " into " + tmptarget);
             File fromFile = new File(osfiletorestore);
             File toFile = new File(tmptarget);
-            System.out.println("Overwriting " + tmptarget);
+            System.out.println("Flagging " + toFile.getName() + " for deamon overwrite");
             if (toFile.exists()) {
                 toFile.delete();
             }
