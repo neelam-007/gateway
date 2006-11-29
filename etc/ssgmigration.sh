@@ -11,19 +11,23 @@ if [ ! "$SSG_USER" ]; then
     SSG_USER=gateway.gateway
 fi
 
+# set the current working directory to where this script lives
+cd `dirname $0`
+
+# assume we're running from SSG_ROOT/flasher and deduct SSG_ROOT from there
+pushd .. > /dev/null
+SSG_ROOT=`pwd`
+popd > /dev/null
+
+# assume location of the jdk
+JAVA_HOME=${SSG_ROOT}/jdk
+
+# This must be run as ssgconfig
 if [ $UID -eq 0 ]; then
-    # set the current working directory to where this script lives
-    cd `dirname $0`
-    # assume we're running from SSG_ROOT/flasher and deduct SSG_ROOT from there
-    pushd .. > /dev/null
-    SSG_ROOT=`pwd`
-    popd > /dev/null
-    # assume location of the jdk
-    JAVA_HOME=${SSG_ROOT}/jdk
-    # invoke flasher
+    # invoke flasher as ssgconfig
+    su ssgconfig -c "${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*"
+elif [ "$USER" == "ssgconfig" ]; then
     ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
-    # chown all files that could potentially have been overwritten
-    chown -R $SSG_USER ..
 else
-    echo "Must be root to invoke ssgmigration.sh"
+	echo "Must be ssgconfig to invoke ssgmigration.sh"
 fi

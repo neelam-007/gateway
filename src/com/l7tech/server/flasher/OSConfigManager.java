@@ -89,10 +89,13 @@ public class OSConfigManager {
             logger.info("Restoring " + osfiletorestore + " into " + restoretarget);
             File fromFile = new File(osfiletorestore);
             File toFile = new File(restoretarget);
-            System.out.println("Overwriting " + restoretarget);
+            // todo, change this code to use the ssgconfig
+            System.out.println("TODO Overwriting " + restoretarget);
+            /*
             toFile.delete();
             FileUtils.copyFile(fromFile, toFile);
             systemfileoverwritten = true;
+            */
         }
         if (systemfileoverwritten) {
             // check if the sysconfig has pending overwrites
