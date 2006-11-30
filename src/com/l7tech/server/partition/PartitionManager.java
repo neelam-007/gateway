@@ -26,6 +26,19 @@ public class PartitionManager {
 
     private static final Logger logger = Logger.getLogger(PartitionManager.class.getName());
 
+    //only these files will be copied. Anything else left in SSG_ROOT/etc/conf is likley custom, like a custom assertion
+    private static String[] whitelistConfigFiles = new String[] {
+        "hibernate.properties",
+        "keystore.properties",
+        "uddi.properties",
+        "ssglog.properties",
+        "system.properties",
+        "krb5.conf",
+        "login.config",
+        "cluster_hostname-dist",
+        "cluster_hostname",
+    };
+
     private static PartitionManager instance;
 
     private Map<String, PartitionInformation> partitions;
@@ -134,14 +147,16 @@ public class PartitionManager {
         final File defaultPartitionDir = new File(partitionsBaseDir, PartitionInformation.DEFAULT_PARTITION_NAME);
         final File templatePartitionDir = new File(partitionsBaseDir, PartitionInformation.TEMPLATE_PARTITION_NAME);
 
+        final Set<String> whitelist = new HashSet<String>(Arrays.asList(whitelistConfigFiles));
         try {
-            List<File> originalFiles = new ArrayList<File>(Arrays.asList(oldSsgConfigDirectory.listFiles(new FileFilter() {
-                public boolean accept(File pathname) {
-                    return  !pathname.getName().equals(partitionsBaseDir.getName()) &&
-                            !pathname.getName().equals(templatePartitionDir.getName()) &&
-                           !pathname.getName().equals(defaultPartitionDir.getName());
-                }
-            })));
+            List<File> originalFiles = new ArrayList<File>(
+                    Arrays.asList(oldSsgConfigDirectory.listFiles(new FileFilter() {
+                        public boolean accept(File pathname) {
+                            return  whitelist.contains(pathname.getName());
+                        }
+                    }
+            )));
+
             originalFiles.add(oldTomcatServerConfig);
             originalFiles.add(oldKeystoreDirectory);
 

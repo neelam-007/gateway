@@ -53,8 +53,7 @@ public class PartitionActions {
     }
 
     public void copyTemplateFiles(File partitionPath) throws IOException {
-        File outputDirectory = partitionPath;
-        if (!outputDirectory.isDirectory()) {
+        if (!partitionPath.isDirectory()) {
             throw new IllegalArgumentException("Partition destination must be a directory");
         }
 
@@ -63,7 +62,7 @@ public class PartitionActions {
             throw new FileNotFoundException("Could not find \"" + templateDir.getName() + "\". Cannot copy template configuration files");
         }
 
-        copyFilesInDirectory(templateDir, outputDirectory);
+        copyFilesInDirectory(templateDir, partitionPath);
     }
 
     private void copyFilesInDirectory(File sourceDirectory, File destination) throws IOException {
