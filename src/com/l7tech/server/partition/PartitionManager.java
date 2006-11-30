@@ -54,37 +54,37 @@ public class PartitionManager {
             if (partitionDirectories != null) {
                 for (File partitionDir : partitionDirectories) {
                     if (partitionDir.isDirectory()) {
-                        if (!partitionDir.getName().equals(PartitionInformation.TEMPLATE_PARTITION_NAME))
-                            addExistingPartition(partitionDir);
+                        String partitionName = partitionDir.getName();
+                        if (!partitionName.equals(PartitionInformation.TEMPLATE_PARTITION_NAME))
+                            addPartition(partitionName);
                     }
                 }
             }
         }
     }
 
-    private void addExistingPartition(File partitionDir) {
+    public void addPartition(String partitionId) {
         //inside partitionDir is a server.xml that we need to parse
-        String partitionName = partitionDir.getName();
-        String serverXmlPath = OSDetector.getOSSpecificFunctions(partitionName).getTomcatServerConfig();
+        String serverXmlPath = OSDetector.getOSSpecificFunctions(partitionId).getTomcatServerConfig();
         InputStream is = null;
         try {
             is = new FileInputStream(serverXmlPath);
             Document dom = XmlUtil.parse(is);
             PartitionInformation pi;
-            pi = new PartitionInformation(partitionName, dom, false);
+            pi = new PartitionInformation(partitionId, dom, false);
             partitions.put(pi.getPartitionId(), pi);
         } catch (FileNotFoundException e) {
-            logger.warning("Could not find a server.xml for partition \"" + partitionDir.getName() + "\". This partition " +
+            logger.warning("Could not find a server.xml for partition \"" + partitionId + "\". This partition " +
                     "will not be enumerated");
             logger.warning(e.getMessage());
         } catch (XPathExpressionException e) {
-            logger.warning("There was an error while reading the configuration of partition \"" + partitionName + "\". This partition will not be enumerated");
+            logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
             logger.warning(e.getMessage());
         } catch (SAXException e) {
-            logger.warning("There was an error while reading the configuration of partition \"" + partitionName + "\". This partition will not be enumerated");
+            logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
             logger.warning(e.getMessage());
         } catch (IOException e) {
-            logger.warning("There was an error while reading the configuration of partition \"" + partitionName + "\". This partition will not be enumerated");
+            logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
             logger.warning(e.getMessage());
         } finally {
             if (is != null) try {

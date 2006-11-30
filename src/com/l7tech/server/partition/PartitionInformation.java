@@ -237,7 +237,7 @@ public class PartitionInformation{
         this.originalDom = originalDom;
     }
 
-    public static class OtherEndpointHolder {
+    public static class OtherEndpointHolder extends EndpointHolder{
         public OtherEndpointType endpointType;
         public String port; 
 
@@ -269,8 +269,7 @@ public class PartitionInformation{
             return result;
         }
 
-
-        public String toString() {
+        public String describe() {
             return endpointType.getName() + " = " + port;
         }
 
@@ -300,8 +299,16 @@ public class PartitionInformation{
             }
         }
     }
+    
+    public static abstract class EndpointHolder {
+        public String toString() {
+            return describe();
+        }
 
-    public static class HttpEndpointHolder {
+        public abstract String describe();
+    }
+    
+    public static class HttpEndpointHolder extends EndpointHolder {
         private static String[] headings = new String[] {
             "Endpoint Type",
             "IP Address",
@@ -338,13 +345,13 @@ public class PartitionInformation{
         }
 
 
-        public String toString() {
+        public String describe() {
             if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
                 return "";
             }
             StringBuilder sb = new StringBuilder();
             sb.append(endpointType.getName()).append(" = ");
-            sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(",");
+            sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(", ");
             sb.append(port);
             return sb.toString();
         }

@@ -1,11 +1,18 @@
 package com.l7tech.server.config;
 
-import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.server.partition.PartitionInformation;
 
-import java.io.IOException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
@@ -76,5 +83,30 @@ public class PartitionActions {
     public boolean removePartitionDirectory(PartitionInformation partitionToRemove) {
         File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
         return FileUtils.deleteDir(deleteMe);
+    }
+
+    public static Vector<String> getAvailableIpAddresses() {
+        String localHostName;
+        Set<String> allIpAddresses = new HashSet<String>();
+        allIpAddresses.add("*");
+        try {
+            localHostName = InetAddress.getLocalHost().getCanonicalHostName();
+            InetAddress[] localAddresses = InetAddress.getAllByName(localHostName);
+            for (InetAddress localAddress : localAddresses) {
+                allIpAddresses.add(localAddress.getHostAddress());
+            }
+
+            NetworkingConfigurationBean netBean = new NetworkingConfigurationBean("","");
+            List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = netBean.getAllNetworkInterfaces();
+            if (networkConfigs != null) {
+                for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
+                    if (!networkConfig.getBootProto().equals(NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO))
+                        allIpAddresses.add(networkConfig.getIpAddress());
+                }
+            }
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Could not determine the network interfaces for this gateway. Please run the system configuration wizard");
+        }
+        return new Vector<String>(allIpAddresses);
     }
 }

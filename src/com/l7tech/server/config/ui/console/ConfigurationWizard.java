@@ -185,7 +185,8 @@ public class ConfigurationWizard {
     }
 
     public OSSpecificFunctions getOsFunctions() {
-        return osFunctions;
+        PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+        return (pi == null?OSDetector.getOSSpecificFunctions(""):pi.getOSSpecificFunctions());
     }
 
     public void setOsFunctions(OSSpecificFunctions osFunctions) {

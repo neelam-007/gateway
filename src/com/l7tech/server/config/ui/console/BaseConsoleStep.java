@@ -1,11 +1,11 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -39,15 +39,17 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         return eolChar;
     }
 
-
-
     public BaseConsoleStep(ConfigurationWizard parent_) {
         this.parent = parent_;
-        osFunctions = OSDetector.getOSSpecificFunctions();
+        osFunctions = null;
         consoleWizardUtils = parent.getWizardUtils();
     }
 
     public void showStep(boolean validated) throws WizardNavigationException {
+        if (osFunctions == null) {
+            osFunctions = PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
+        }
+
         doUserInterview(validated);
         boolean isValid = validateStep();
         if (!isValid)
@@ -192,5 +194,17 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     protected String getVersionString() {
         return "(Version " + getParentWizard().getCurrentVersion() + ")";
+    }
+
+    protected boolean getConfirmationFromUser(String message) throws IOException, WizardNavigationException {
+        String[] prompts = new String[] {
+                message + " : [n]",
+        };
+
+        String input = getData(prompts, "n");
+        if (input != null) {
+            return (isYes(input));
+        }
+        return false;
     }
 }

@@ -49,7 +49,7 @@ public class ConsoleWizardUtils {
             isValidInput = true;
             printText(promptLines);
             input = readLine();
-            input = input.trim();
+            if (input != null) input = input.trim();
             handleInput(input, isNavAware);
 
             if (StringUtils.isEmpty(input)) {

@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import com.l7tech.server.config.db.DBActions;
@@ -63,19 +64,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         return TITLE;
     }
 
-    private boolean getConfirmationFromUser(String message) throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-                message + " : [n]",
-        };
-
-        String input = getData(prompts, "n");
-        if (input != null) {
-            return (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y"));
-        }
-        return false;
-
-    }
-
 
     private String selectDefault(String fromBean, String fromProps) {
         if (StringUtils.isEmpty(fromBean))
@@ -85,9 +73,9 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     }
 
     private void init() {
-        osFunctions = getParentWizard().getOsFunctions();
+        OSSpecificFunctions osf = getParentWizard().getOsFunctions();
         try {
-            dbActions = new DBActions();
+            dbActions = new DBActions(osf);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(DBActions.MYSQL_CLASS_NOT_FOUND_MSG);
         }

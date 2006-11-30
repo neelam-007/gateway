@@ -6,7 +6,6 @@ import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
-import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
 import com.l7tech.server.partition.PartitionInformation;
@@ -27,11 +26,10 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * User: megery
@@ -87,8 +85,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         otherEndpointsTable.setModel(otherEndpointTableModel);
 
         TableColumn col = httpEndpointsTable.getColumnModel().getColumn(1);
-        col.setCellEditor(new DefaultCellEditor(new JComboBox(getAvailableIpAddresses())));
-
+        col.setCellEditor(new DefaultCellEditor(new JComboBox(new DefaultComboBoxModel(PartitionActions.getAvailableIpAddresses()))));
         initListeners();
 
         setLayout(new BorderLayout());
@@ -299,31 +296,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private PartitionInformation getSelectedPartition() {
         return (PartitionInformation) partitionList.getSelectedValue();
-    }
-
-    private ComboBoxModel getAvailableIpAddresses() {
-        String localHostName;
-        Set<String> allIpAddresses = new HashSet<String>();
-        allIpAddresses.add("*");
-        try {
-            localHostName = InetAddress.getLocalHost().getCanonicalHostName();
-            InetAddress[] localAddresses = InetAddress.getAllByName(localHostName);
-            for (InetAddress localAddress : localAddresses) {
-                allIpAddresses.add(localAddress.getHostAddress());
-            }
-
-            NetworkingConfigurationBean netBean = new NetworkingConfigurationBean("","");
-            List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = netBean.getAllNetworkInterfaces();
-            if (networkConfigs != null) {
-                for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
-                    if (!networkConfig.getBootProto().equals(NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO))
-                        allIpAddresses.add(networkConfig.getIpAddress());
-                }
-            }
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Could not determine the network interfaces for this gateway. Please run the system configuration wizard");
-        }
-        return new DefaultComboBoxModel(allIpAddresses.toArray(new String[0]));
     }
 
     //Models for the lists on this form
