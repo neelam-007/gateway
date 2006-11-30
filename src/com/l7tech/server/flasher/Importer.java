@@ -11,6 +11,7 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.BuildInfo;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -123,11 +124,19 @@ public class Importer {
             PartitionManager partitionManager = PartitionManager.getInstance();
             boolean multiplePartitionSystem = partitionManager.isPartitioned();
             if (multiplePartitionSystem) {
-                // option PARTITION now mandatory
+                Set<String> partitions = partitionManager.getPartitionNames();
+                // option PARTITION now mandatory (unless there is only one)
                 if (StringUtils.isEmpty(partitionName)) {
-                    logger.info("No partition name specified for import on a partitioned system");
-                    throw new IOException("this system is partitioned. The \"" +
+                    if (partitions.size() == 1) {
+                        partitionName = partitions.iterator().next();
+                        String feedback = "No partition requested, assuming partition " + partitionName;
+                        logger.info(feedback);
+                        System.out.println(feedback);
+                    } else {
+                        logger.info("No partition name specified for import on a partitioned system");
+                        throw new IOException("this system is partitioned. The \"" +
                                           PARTITION.name + "\" parameter is required");
+                    }
                 }
                 PartitionInformation partitionInfo = partitionManager.getPartition(partitionName);
                 if (partitionInfo == null) {

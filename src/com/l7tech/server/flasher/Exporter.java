@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.zip.ZipOutputStream;
@@ -68,10 +69,18 @@ public class Exporter {
         boolean multiplePartitionSystem = partitionManager.isPartitioned();
 
         if (multiplePartitionSystem) {
-            // option PARTITION now mandatory
+            Set<String> partitions = partitionManager.getPartitionNames();
+            // option PARTITION now mandatory (unless there is only one)
             if (StringUtils.isEmpty(partitionName)) {
-                logger.info("no partition name specified");
-                throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned. The \"" + PARTITION.name + "\" parameter is required");
+                if (partitions.size() == 1) {
+                    partitionName = partitions.iterator().next();
+                    String feedback = "No partition requested, assuming partition " + partitionName;
+                    logger.info(feedback);
+                    System.out.println(feedback);
+                } else {
+                    logger.info("no partition name specified");
+                    throw new FlashUtilityLauncher.InvalidArgumentException("this system is partitioned. The \"" + PARTITION.name + "\" parameter is required");
+                }
             }
 
             PartitionInformation partitionInfo = partitionManager.getPartition(partitionName);
