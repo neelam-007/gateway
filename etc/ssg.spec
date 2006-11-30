@@ -180,6 +180,7 @@ chmod -Rf 775 /ssg/etc/conf
 chmod -Rf 775 /ssg/etc/keys
 chmod -Rf 775 /ssg/tomcat/conf
 chmod -Rf 775 /ssg/jdk/jre/lib/security/
+chmod -Rf 775 /ssg/migration
 
 #migrate the structure to the new partitioning scheme using the configuration wizard
 /ssg/configwizard/ssgconfig.sh -partitionMigrate
