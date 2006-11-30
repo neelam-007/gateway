@@ -51,30 +51,40 @@ chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
 
 %files
+# Root owned OS components
 %defattr(-,root,root)
 /etc/init.d/ssg
 /etc/init.d/ssgsysconfig
 /etc/init.d/tcp_tune
 /etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh
+# Config components, owned by root
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
-%defattr(-,gateway,gateway)
-/ssg/*
-%defattr(775,gateway,gateway)
+# Main tree, owned by gateway
+# Group writable config files
+%defattr(0775,gateway,gateway)
 %config(noreplace) /ssg/etc/conf/
 %config(noreplace) /ssg/etc/conf/*
 %config(noreplace) /ssg/etc/keys/
 %config(noreplace) /ssg/tomcat/conf/*
-%config(noreplace) /ssg/configwizard
-%config(noreplace) /ssg/configwizard/*
-%config(noreplace) /ssg/sysconfigwizard
-%config(noreplace) /ssg/sysconfigwizard/*
 %config(noreplace) /ssg/jdk/jre/lib/ext/*
 %config(noreplace) /ssg/jdk/jre/lib/security/
 %config(noreplace) /ssg/jdk/jre/lib/security/java.security
-%defattr(-,ssgconfig,gateway)
-/home/ssgconfig/.bashrc
+
+# Group writeable directories and files
+%attr(0775,ssgconfig,gateway) /ssg/configwizard
+%attr(0775,ssgconfig,gateway) /ssg/configwizard/*
+%attr(0775,ssgconfig,gateway) /ssg/sysconfigwizard
+%attr(0775,ssgconfig,gateway) /ssg/sysconfigwizard/*
+%attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
+# Group writable for migration stuff
+%defattr(0775,gateway,gateway) 
+/ssg/migration
+/ssg/migration/*
+%defattr(-,gateway,gateway)
+/ssg/
+/ssg/*
 
 %pre
 if [ `grep ^gateway: /etc/passwd` ]; then
