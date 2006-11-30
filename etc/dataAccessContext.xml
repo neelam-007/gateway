@@ -14,8 +14,9 @@
     system property.
     -->
     <bean id="hibernateProperties"
-          class="com.l7tech.spring.factory.config.PropertiesFactoryBean"
+          class="org.springframework.beans.factory.config.PropertiesFactoryBean"
           depends-on="serverConfig">
+        <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>
                 <value>classpath:hibernate.properties</value>

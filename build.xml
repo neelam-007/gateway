@@ -1066,6 +1066,10 @@
                 <exclude name="com/l7tech/policy/assertion/ext/ServiceInvocation.class"/>
             </classes>
 
+            <classes dir="${src.root}/etc/db">
+                <include name="hibernate.properties"/>
+            </classes>
+
             <zipfileset dir="${src.root}/web" includes="*" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="*"/>
             <zipfileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml" prefix="ssg"/>
