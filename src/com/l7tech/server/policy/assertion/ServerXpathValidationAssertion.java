@@ -341,7 +341,7 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
                             if(isFailOnNonCompliantResponse()) break;
                         }
                     }
-                    result = success | !isFailOnNonCompliantResponse()
+                    result = success || !isFailOnNonCompliantResponse()
                             ? AssertionStatus.NONE
                             : AssertionStatus.FALSIFIED;
 

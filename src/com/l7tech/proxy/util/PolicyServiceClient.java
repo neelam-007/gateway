@@ -229,24 +229,6 @@ public class PolicyServiceClient {
         return parseGetPolicyResponse(originalRequest, response, result.getElementsThatWereSigned());
     }
 
-    /**
-     * Examine a response from the policy service and extract the policy.  This variant does no checking
-     * of signatures in the response.
-     *
-     * @param originalRequest the original request as sent to the policy service.
-     *                        Used to verify that the correlation ID matches up in the reply (preventing replay attacks).
-     * @param response the reponse from the policy service, which may or may not have been signed.
-     * @return the Policy retrieved from the policy service
-     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
-     * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
-     * @deprecated This method might not be needed.  If it isn't, we'll remove it completely.
-     */
-    private static Policy parseGetPolicyResponse(Document originalRequest, Document response)
-            throws InvalidDocumentFormatException, BadCredentialsException
-    {
-        return parseGetPolicyResponse(originalRequest, response, (ParsedElement[])null);
-    }
-
     private static Policy parseGetPolicyResponse(Document originalRequest, Document response, ParsedElement[] elementsThatWereSigned)
             throws InvalidDocumentFormatException, BadCredentialsException
     {

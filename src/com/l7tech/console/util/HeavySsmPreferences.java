@@ -87,19 +87,6 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         }
     }
 
-
-
-    /**
-     * simple log (no log4j used here)
-     *
-     * @param msg the message to log
-     */
-    private void log(String msg) {
-        if (debug) {
-            System.err.println(msg);
-        }
-    }
-
     /**
      * simple log (no logger used here)
      *

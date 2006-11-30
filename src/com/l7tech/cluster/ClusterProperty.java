@@ -53,6 +53,7 @@ public class ClusterProperty extends NamedEntityImp {
 
     public boolean equals(Object other) {
         ClusterProperty cp = (ClusterProperty)other;
+        if (cp == null) return false;
         if (_oid != cp._oid) return false;
         if (!(_name.equals(cp._name))) return false;
         if (!(value.equals(cp.value))) return false;

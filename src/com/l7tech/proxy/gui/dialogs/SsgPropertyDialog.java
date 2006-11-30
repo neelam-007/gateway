@@ -90,7 +90,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         pack();
     }
 
-    public void finalize() throws Throwable {
+    protected void finalize() throws Throwable {
         ssg.removeSsgListener(this);
         super.finalize();
     }

@@ -75,7 +75,6 @@ class KerberosConfig {
 
     static Keytab getKeytab(boolean nullIfMissing) throws KerberosException {
         File keytabFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
-        String principal = null;
         try {
             if (!keytabFile.exists()) {
                 if (nullIfMissing) return null;
@@ -275,8 +274,6 @@ class KerberosConfig {
     }
 
     private static void generateKrb5Config(File file) {
-        File keytabFile = getKeytabFile();
-
         String ucRealm = getRealm();
         if (ucRealm == null) return; // no information availble to create config.
 

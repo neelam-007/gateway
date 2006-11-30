@@ -83,7 +83,7 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
         if (!methodMatches) {
             final String msg = "Authentication method not matched expected/received: {0}/{1}";
             validationResults.add(new SamlAssertionValidate.Error(msg, authenticationStatementType.toString(),
-                                                                  new Object[] {methods.length == 1 ? methods[0].toString()
+                                                                  new Object[] {methods.length == 1 ? methods[0]
                                                                                 : Arrays.asList(methods).toString(), authenticationMethod}, null));
             logger.finer(msg);
         }

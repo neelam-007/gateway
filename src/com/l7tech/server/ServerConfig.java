@@ -484,7 +484,7 @@ public class ServerConfig implements ClusterPropertyListener {
                 try {
                     hostname = InetAddress.getLocalHost().getHostName();
                 } catch (UnknownHostException e) {
-                    logger.info("HostName parameter not set, assigning hostname " + hostname);
+                    logger.warning("HostName parameter not set and discovery failed.");
                 }
             }
 

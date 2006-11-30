@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.StringTokenizer;
-import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Collection;
@@ -127,7 +126,6 @@ public final class Service {
         try {
             Iterator resUrlIter = new EnumerationIterator(cl.getResources(resourcePath));
             byte[] data = new byte[1024];
-            HashSet providers = new LinkedHashSet();
             while (resUrlIter.hasNext()) {
                 URL url = (URL) resUrlIter.next();
                 InputStream resStream = null;

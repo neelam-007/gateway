@@ -73,6 +73,7 @@ public final class ImmutableClusterProperty extends ClusterProperty {
 
     public boolean equals(Object other) {
         ClusterProperty cp = (ClusterProperty)other;
+        if (cp == null) return false;
         if (_oid != cp.getOid()) return false;
         if (!_name.equals(cp.getName())) return false;
         if (!value.equals(cp.getValue())) return false;

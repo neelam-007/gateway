@@ -145,8 +145,6 @@ public class FederationPassiveClient {
         if(httpParams.getTargetUrl()==null) throw new IllegalArgumentException("httpParams targetUrl must not be null");
 
         Document result = null;
-        URL ipStsUrl = httpParams.getTargetUrl();
-
         String requestBody = buildRequestBody(requestorToken, context, addTimestamp);
 
         try {
@@ -305,24 +303,6 @@ public class FederationPassiveClient {
     private static final Short NEKO_VALUE_LOWERCASE = new Short((short)2);
 
     /**
-     *
-     */
-    private static String getSessionCookiesHeaderValue(HttpCookie[] sessionCookies) {
-        StringBuffer sb = new StringBuffer();
-
-        if (sessionCookies != null) {
-            for (int i = 0; i < sessionCookies.length; i++) {
-                HttpCookie cook = sessionCookies[i];
-
-                if (i > 0) sb.append("; ");
-                sb.append(cook.getV0CookieHeaderPart());
-            }
-        }
-
-        return sb.toString();
-    }
-
-    /**
      * Currently only SamlAssertion is supported.
      */
     private static SamlAssertion parseFederationToken(Document token) throws IOException {
@@ -378,7 +358,6 @@ public class FederationPassiveClient {
             htmlparser.parse(new InputSource(new StringReader(html)));
 
             Element docEl = htmlparser.getDocument().getDocumentElement();
-            NodeList forms = docEl.getElementsByTagName(HtmlConstants.ELE_FORM);
 
             // DO NOT get the inputs from below the form due to a bug in ADFS (form element is empty)
             String xmlText = null;
