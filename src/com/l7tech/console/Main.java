@@ -146,7 +146,7 @@ public class Main {
 
     private void setInitialEnvironment() {
         // AWT event dispatching thread error handler
-        System.setProperty("sun.awt.exception.handler", "com.l7tech.console.logging.AwtErrorHandler");
+        System.setProperty("sun.awt.exception.handler", com.l7tech.console.logging.AwtErrorHandler.class.getName());
 
         // Build information
         System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());

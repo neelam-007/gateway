@@ -295,21 +295,12 @@ public class AppletMain extends JApplet implements SheetHolder {
             }
         });
 
-        // Install error handling event queue
-        EventQueue queue = new EventQueue() {
-            protected void dispatchEvent(AWTEvent e) {
-                try {
-                    super.dispatchEvent(e);
-                } catch(Throwable throwable) {
-                    new AwtErrorHandler().handle(throwable);
-                }
-            }
-        };
-
+        // Set AWT error handler
         try {
-            Toolkit.getDefaultToolkit().getSystemEventQueue().push(queue);
-        } catch(SecurityException se) {
-            logger.warning("Could not install event queue.");
+            System.setProperty("sun.awt.exception.handler", com.l7tech.console.logging.AwtErrorHandler.class.getName());
         }
-    }    
+        catch(SecurityException se) {
+            logger.warning("Could not install AWT exception handler.");            
+        }
+    }
 }
