@@ -19,6 +19,7 @@
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>
+                <value>classpath:hibernate_default.properties</value>
                 <value>classpath:hibernate.properties</value>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
             </list>
