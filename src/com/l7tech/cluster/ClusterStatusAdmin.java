@@ -170,6 +170,14 @@ public interface ClusterStatusAdmin {
     void installNewLicense(String newLicenseXml) throws RemoteException, UpdateException, InvalidLicenseException;
 
     /**
+     * Gets the time interval (in milliseconds) of the service metrics fine resolution bin.
+     *
+     * @return the fine bin interval in milliseconds
+     * @throws RemoteException on remote communication error
+     */
+    int getMetricsFineInterval() throws RemoteException;
+
+    /**
      * Finds {@link com.l7tech.service.MetricsBin} instances from the database using the specified
      * query parameters.  All parameters are optional--pass null in all parameters to find all
      * MetricsBin instances in the database.

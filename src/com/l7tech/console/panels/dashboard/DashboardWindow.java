@@ -10,6 +10,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.LogonListener;
@@ -51,9 +52,37 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private static final int hourlyChartRange = 60 * 60 * 60 * 1000; // 60 hours
     private static final long dailyChartRange = 60 * 24 * 60 * 60 * 1000L; // 60 days
 
-    private final Range FINE = new Range(MetricsBin.RES_FINE, fineChartRange, 5 * 1000, resources.getString("resolutionCombo.fineValue"), resources.getString("rightPanel.fineTitle"), this);
-    private final Range HOURLY = new Range(MetricsBin.RES_HOURLY, hourlyChartRange, 60 * 60 * 1000, resources.getString("resolutionCombo.hourlyValue"), resources.getString("rightPanel.hourlyTitle"), this);
-    private final Range DAILY = new Range(MetricsBin.RES_DAILY, dailyChartRange, 24 * 60 * 60 * 1000, resources.getString("resolutionCombo.dailyValue"), resources.getString("rightPanel.dailyTitle"), this);
+    /** Fine resolution bin interval (in milliseconds). */
+    private final int fineInterval;
+    {
+        int tmp;
+        try {
+            tmp = getClusterStatusAdmin().getMetricsFineInterval();
+        } catch (RemoteException e) {
+            ExceptionDialog.createExceptionDialog(this, "Cannot get fine metrics bin interval from gateway. Defaulting to 5 seconds.", e, Level.WARNING);
+            tmp = 5 * 1000;
+        }
+        fineInterval = tmp;
+    }
+
+    private final Range FINE = new Range(MetricsBin.RES_FINE,
+                                         fineChartRange,
+                                         fineInterval,
+                                         MessageFormat.format(resources.getString("resolutionCombo.fineValue"), fineInterval / 1000.),
+                                         MessageFormat.format(resources.getString("rightPanel.fineTitle"), fineInterval / 1000.),
+                                         this);
+    private final Range HOURLY = new Range(MetricsBin.RES_HOURLY,
+                                           hourlyChartRange,
+                                           60 * 60 * 1000,
+                                           resources.getString("resolutionCombo.hourlyValue"),
+                                           resources.getString("rightPanel.hourlyTitle"),
+                                           this);
+    private final Range DAILY = new Range(MetricsBin.RES_DAILY,
+                                          dailyChartRange,
+                                          24 * 60 * 60 * 1000,
+                                          resources.getString("resolutionCombo.dailyValue"),
+                                          resources.getString("rightPanel.dailyTitle"),
+                                          this);
 
     private final Range[] ALL_RANGES = {FINE, HOURLY, DAILY};
 

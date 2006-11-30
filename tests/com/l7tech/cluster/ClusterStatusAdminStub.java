@@ -116,7 +116,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         return "No name from test stub";
     }
 
-    public Collection getAllProperties() throws RemoteException, FindException {
+    public Collection<ClusterProperty> getAllProperties() throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
@@ -148,11 +148,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         }
     }
 
-    public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+    public int getMetricsFineInterval() throws RemoteException {
         throw new UnsupportedOperationException();
     }
 
-    public List findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+    public List<MetricsBin> findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public List<MetricsBin> findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 

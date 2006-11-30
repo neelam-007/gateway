@@ -87,6 +87,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
     }
 
+    public int getFineInterval() {
+        return _fineBinInterval;
+    }
+
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
     public List<MetricsBin> findBins(final String nodeId,
                                      final Long minPeriodStart,
@@ -247,7 +251,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private final Object _enableLock = new Object();
 
     /** Fine resolution bin interval (in milliseconds). */
-    private int _fineBinInterval;
+    private final int _fineBinInterval = (int)getLongClusterProperty("metricsFineInterval",
+                                                                     MIN_FINE_BIN_INTERVAL,
+                                                                     MAX_FINE_BIN_INTERVAL,
+                                                                     DEF_FINE_BIN_INTERVAL);
 
     /** One timer for all tasks. */
     private final ManagedTimer _timer;
@@ -287,8 +294,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             final long now = System.currentTimeMillis();
 
             // Sets fine resolution timer to excecute every fine interval; starting at the next fine period.
-            _fineBinInterval = (int)getLongProperty("com.l7tech.service.metrics.fineBinInterval", MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL);
-            _logger.config("Fine archive interval is " + _fineBinInterval + "ms");
+            _logger.config("Fine resolution bin interval is " + _fineBinInterval + " ms");
             final Date nextFineStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_FINE, _fineBinInterval, now));
             _fineArchiver = new FineTask();
             _timer.scheduleAtFixedRate(_fineArchiver, nextFineStart, _fineBinInterval);
@@ -338,9 +344,9 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             // Schedules timer tasks to delete old metrics bins from database.
             //
 
-            final long fineTtl = getLongProperty("com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE);
-            final long hourlyTtl = getLongProperty("com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE);
-            final long dailyTtl = getLongProperty("com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE);
+            final long fineTtl = getLongSystemProperty("com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE);
+            final long hourlyTtl = getLongSystemProperty("com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE);
+            final long dailyTtl = getLongSystemProperty("com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE);
 
             _fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
             _timer.schedule(_fineDeleter, MINUTE, 5 * MINUTE);
@@ -386,7 +392,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     }
 
     /**
-     * Convenience method to return a system property value parsed into an
+     * Convenience method to return a system property value parsed into a long
      * integer, constrained by the given lower and upper limits. If the system
      * property does not exist, or is not parsable as an integer, then the given
      * default value is returned instead.
@@ -397,9 +403,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * @param defaultValue  default value
      * @return property value
      */
-    private static long getLongProperty(final String name, final long lower, final long upper, final long defaultValue) {
+    private static long getLongSystemProperty(final String name, final long lower, final long upper, final long defaultValue) {
         final String value = System.getProperty(name);
         if (value == null) {
+            _logger.info("Using default value (" + defaultValue + ") for missing system property: " + name);
             return defaultValue;
         } else {
             try {
@@ -413,9 +420,39 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 }
                 return longValue;
             } catch (NumberFormatException e) {
-                _logger.info("Using default value (" + defaultValue + ") for missing system property: " + name);
+                _logger.info("Using default value (" + defaultValue + ") for non-numeric system property: " + name);
                 return defaultValue;
             }
+        }
+    }
+
+    /**
+     * Convenience method to return a cluster property value parsed into a long
+     * integer, constrained by the given lower and upper limits. If the property
+     * value is not parsable as an integer, then the given default value is
+     * returned instead.
+     *
+     * @param name          property name
+     * @param lower         lower limit
+     * @param upper         upper limit
+     * @param defaultValue  default value
+     * @return property value
+     */
+    private static long getLongClusterProperty(final String name, final long lower, final long upper, final long defaultValue) {
+        final String value = ServerConfig.getInstance().getProperty(name);
+        try {
+            final long longValue = Long.parseLong(value);
+            if (longValue < lower) {
+                _logger.warning("Imposing lower constraint (" + lower + ") on cluster property value (" + longValue + "): " + name);
+                return lower;
+            } else if (longValue > upper) {
+                _logger.warning("Imposing upper constraint (" + upper + ") on cluster property value (" + longValue + "): " + name);
+                return upper;
+            }
+            return longValue;
+        } catch (NumberFormatException e) {
+            _logger.info("Using default value (" + defaultValue + ") for non-numeric cluster property: " + name);
+            return defaultValue;
         }
     }
 

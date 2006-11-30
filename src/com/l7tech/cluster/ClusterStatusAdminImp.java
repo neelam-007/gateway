@@ -203,6 +203,10 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         licenseManager.installNewLicense(newLicenseXml);
     }
 
+    public int getMetricsFineInterval() throws RemoteException {
+        return serviceMetricsManager.getFineInterval();
+    }
+
     public List<MetricsBin> findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         checkLicense();
         return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
