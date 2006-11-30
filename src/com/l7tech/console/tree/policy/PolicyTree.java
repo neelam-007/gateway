@@ -421,7 +421,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         }
 
-        if (ClipboardActions.getGlobalCopyAction().isEnabled()) {
+        // If system clipboard is unavailable, the context menu would go to the "fake" clipboard,
+        // but keyboard shortcuts might still work properly with the "real" system clipboard.
+        // To prevent this confusing behavior, we'll just suppress the context menu Copy/Paste if
+        // the system clipboard isn't accessible to our code.
+        if (ClipboardActions.isSystemClipboardAvailable() && ClipboardActions.getGlobalCopyAction().isEnabled()) {
             pm.add(new JPopupMenu.Separator());
             pm.add(ClipboardActions.getGlobalCopyAction());
             empty = false;
