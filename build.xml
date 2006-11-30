@@ -1217,7 +1217,7 @@
     <!--
       Package the SSM (JAR)
     -->
-    <target name="package.manager.jar" depends="compile">
+    <target name="package.manager.jar" unless="ssg.only" depends="compile">
         <generate-manifest propertyPrefix="manager" filename="Manager.mf">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.console.Main"/>
@@ -1315,7 +1315,7 @@
         </jar>
     </target>
 
-    <target name="package.manager.jar.pack200" depends="package.manager.jar" if="pack200">
+    <target name="package.manager.jar.pack200" depends="package.manager.jar" if="pack200" unless="ssg.only">
 
         <move file="${build.dir}/Manager.jar" tofile="${build.dir}/Manager.nopack.jar"/>
 
