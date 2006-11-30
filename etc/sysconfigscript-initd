@@ -10,7 +10,7 @@ if [ -z "$SSGHOME" ]; then
 fi
 
 ssgconfigutil="/usr/bin/perl ${SSGHOME}/sysconfigwizard/ssg_sys_config.pl"
-migrationdeamon=". ${SSGHOME}/migration/ssgmigration.sh cfgdeamon"
+migrationdeamon="${SSGHOME}/migration/ssgmigration.sh cfgdeamon"
 
 MESSAGE="Applying Network (Re)Configuration"
 USER=`whoami`
