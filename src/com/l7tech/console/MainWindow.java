@@ -21,6 +21,7 @@ import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.PermissionRefreshListener;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -686,7 +687,20 @@ public class MainWindow extends JFrame implements SheetHolder {
               public void actionPerformed(ActionEvent event) {
                   try {
                       getWorkSpacePanel().clearWorkspace(); // vetoable
+
+                      // Must disable actions first, since doing so may attempt to make admin calls
                       disconnectFromGateway();
+
+                      SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+                      if (securityProvider != null) securityProvider.logoff();
+                      LogonDialog.setPreconfiguredSessionId(null);
+
+                      if (isApplet()) {
+                          DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                            "To securely log out, close all browser windows now.\n",
+                                                            "Secure Log Out",
+                                                            JOptionPane.WARNING_MESSAGE, null);
+                      }
                   } catch (ActionVetoException e) {
                       // action vetoed
                   }

@@ -190,9 +190,9 @@ public class SecurityProviderImpl extends SecurityProvider
         } catch (MalformedURLException e) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
         } catch (AuthenticationException e) {
-            throw (LoginException) new LoginException("Session has lost admin permissions").initCause(e);
+            throw (LoginException) new LoginException("Session invalid or has lost admin permissions").initCause(e);
         } catch (SecurityException e) {
-            throw (LoginException) new LoginException("Session has lost admin permissions").initCause(e);
+            throw (LoginException) new LoginException("Session invalid or has lost admin permissions").initCause(e);
         } finally {
             if (!authenticated) {
                 resetCredentials();
@@ -208,6 +208,7 @@ public class SecurityProviderImpl extends SecurityProvider
         resetCredentials();
 
         getConfigurableHttpInvokerRequestExecutor().setSession(getHost(remoteHost), getPort(remoteHost), sessionCookie);
+        this.sessionCookie = sessionCookie;
 
         AdminContext ac = new AdminContextBean(
                         (IdentityAdmin) applicationContext.getBean("identityAdmin"),
@@ -238,6 +239,28 @@ public class SecurityProviderImpl extends SecurityProvider
     public void logoff() {
         LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
         applicationContext.publishEvent(le);
+        if (sessionCookie != null && sessionCookie.trim().length() > 0) {
+            final String cookie = sessionCookie;
+            final AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
+            if (adminLogin != null) {
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            adminLogin.logout(cookie);
+                        } catch (RemoteException e) {
+                            logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
+                        } finally {
+                            getConfigurableHttpInvokerRequestExecutor().clearSessionIfMatches(cookie);
+                        }
+                    }
+                }).start();
+            }
+        }
+        sessionCookie = null;
+    }
+
+    public String getSessionCookie() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /**
@@ -284,6 +307,7 @@ public class SecurityProviderImpl extends SecurityProvider
     private final Map<String, X509Certificate> certsByHost;
     private ApplicationContext applicationContext;
     private X509Certificate[] serverCertificateChain;
+    private String sessionCookie;
 
     /**
      * Initialize the SSL logic around login. This registers the trust failure handler

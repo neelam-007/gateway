@@ -26,19 +26,33 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
     }
 
     public void setSession(String host, int port, String sessionId) {
-        this.host = host;
-        this.port = port;
-        this.sessionId = sessionId;
+        synchronized (this) {
+            this.host = host;
+            this.port = port;
+            this.sessionId = sessionId;
+        }
     }
 
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
+    }
+
+    public void clearSessionIfMatches(String sessionId) {
+        synchronized (this) {
+            if (sessionId != null && sessionId.equals(this.sessionId)) {
+                this.sessionId = null;
+                this.host = null;
+                this.port = 0;
+            }
+        }
     }
 
     //- PROTECTED
         
     protected HttpURLConnection openConnection(HttpInvokerClientConfiguration config) throws IOException {
         HttpURLConnection connection = super.openConnection(new HttpInvokerClientConfigurationImpl(config));
-        connection.setRequestProperty("X-Layer7-SessionId", sessionId);
+        synchronized (this) {
+            connection.setRequestProperty("X-Layer7-SessionId", sessionId);
+        }
         return connection;
     }
 

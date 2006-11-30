@@ -50,14 +50,26 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     }
 
     public void setSession(String host, int port, String sessionId) {
-        this.host = host;
-        this.port = port;
-        this.sessionId = sessionId;
+        synchronized (this) {
+            this.host = host;
+            this.port = port;
+            this.sessionId = sessionId;
+        }
     }
 
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
         this.trustFailureHandler = failureHandler;
-    }    
+    }
+
+    public void clearSessionIfMatches(String sessionId) {
+        synchronized (this) {
+            if (sessionId != null && sessionId.equals(this.sessionId)) {
+                this.sessionId = null;
+                this.host = null;
+                this.port = 0;
+            }
+        }
+    }
 
     //- PROTECTED
 
@@ -116,7 +128,9 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         Protocol protocol = httpClient.getHostConfiguration().getProtocol();
         HostConfiguration hostConfiguration = new HostConfiguration();
         hostConfiguration.setHost(host, port, protocol);
-        postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
+        synchronized (this) {
+            postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
+        }
         httpClient.executeMethod(hostConfiguration, postMethod);
     }
 

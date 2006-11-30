@@ -55,11 +55,21 @@ public interface AdminLogin extends Remote {
      * Method that allows admin to login using an existing session.
      *
      * @param sessionId the session to resume
-     * @return
-     * @throws RemoteException
-     * @throws AccessControlException
-     * @throws LoginException
+     * @return an AdminLoginResult describing the resumed session.  Never null.
+     * @throws AuthenticationException if the specified session ID is invalid or no longer valid
+     * @throws RemoteException  on remote communication error
      */
     public AdminLoginResult resume(String sessionId)
-            throws RemoteException, AuthenticationException, LoginException;
+            throws RemoteException, AuthenticationException;
+
+
+    /**
+     * Method that allows admin to destroy an existing session.  After this method, the specified session ID
+     * will not work for resume or for authentication of admin requests.
+     *
+     * @param sessionId the session to resume.  If this is not a valid, current session ID this method will
+     *                  silently take no action.
+     * @throws RemoteException  on remote communication error
+     */
+    public void logout(String sessionId) throws RemoteException;
 }

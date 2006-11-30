@@ -24,4 +24,12 @@ public interface ConfigurableHttpInvokerRequestExecutor {
      * @param failureHandler The handler to use for trust failures.
      */
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler);
+
+    /**
+     * Clear the session if the session ID is stil the same.
+     * Takes no action if a new session has since been established.
+     *
+     * @param sessionId  the session ID to clear.
+     */
+    public void clearSessionIfMatches(String sessionId);
 }

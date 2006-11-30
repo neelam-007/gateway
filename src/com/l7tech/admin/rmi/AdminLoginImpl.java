@@ -141,11 +141,11 @@ public class AdminLoginImpl
                     BuildInfo.getProductVersion());
     }
 
-    public AdminLoginResult resume(String sessionId) throws RemoteException, AuthenticationException, LoginException {
+    public AdminLoginResult resume(String sessionId) throws RemoteException, AuthenticationException {
         Principal userObj = sessionManager.resumeSession(sessionId);
         if (!(userObj instanceof User)) {
             logger.log(Level.WARNING,  "Authentication failed: attempt to resume unrecognized session");
-            throw new AccessControlException("Authentication failed");
+            throw new AuthenticationException("Authentication failed");
         }
 
         try {
@@ -160,6 +160,10 @@ public class AdminLoginImpl
             logger.log(Level.WARNING, "User no longer has any admin permissions", e);
             throw new AuthenticationException("User no longer has any admin permissions", e);
         }
+    }
+
+    public void logout(String sessionId) throws RemoteException {
+        sessionManager.destroySession(sessionId);
     }
 
     public void setRoleManager(RoleManager roleManager) {
