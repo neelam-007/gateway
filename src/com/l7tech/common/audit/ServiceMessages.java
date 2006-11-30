@@ -4,6 +4,7 @@ import java.util.logging.Level;
 
 /**
  * Message catalog for messages audited by anciliary servlets and services (token service, applet filter, etc).
+ * The message range 3500 - 3999 (inclusive) is reserved for these messages.
  */
 public class ServiceMessages extends Messages {
     public static final M APPLET_AUTH_FAILED            = m(3500, Level.WARNING, "Admin applet authentication policy failed: assertion status: {0}");

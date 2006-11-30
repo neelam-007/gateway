@@ -1,11 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.ClipboardActions;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.policy.PolicyTransferable;
-import com.l7tech.console.util.ClipboardActions;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;

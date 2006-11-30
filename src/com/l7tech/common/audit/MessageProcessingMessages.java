@@ -4,7 +4,7 @@ import java.util.logging.Level;
 
 /**
  * Message catalog for messages audited by the message processor.
- * The ID range 3000-3999 inclusive is reserved for these messages.
+ * The ID range 3000-3499 inclusive is reserved for these messages.
  *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
@@ -35,4 +35,5 @@ public class MessageProcessingMessages extends Messages {
     public static final M REQUEST_INVALID_XML_FORMAT_WITH_DETAIL  = m(3022, Level.WARNING, "Request XML is not well-formed [{0}]");
     public static final M MULTIPART_NOT_ALLOWED       = m(3023, Level.WARNING, "Service does not accept multipart data.");
     public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.WARNING, "HTTP method {0} not allowed");
+    // MAX -                                            m(3499
 }

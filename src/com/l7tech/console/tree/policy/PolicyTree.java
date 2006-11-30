@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.ClipboardActions;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
@@ -133,20 +134,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if (Utilities.getDefaultSystemSelection() != null)
             getSelectionModel().addTreeSelectionListener(tsl);
 
-        ActionMap map = this.getActionMap();
-        final Object cutName = ClipboardActions.getCutAction().getValue(Action.NAME);
-        map.put(cutName, ClipboardActions.getCutAction());
-        map.put(ClipboardActions.getCopyAction().getValue(Action.NAME), ClipboardActions.getCopyAction());
-        map.put(ClipboardActions.getPasteAction().getValue(Action.NAME), ClipboardActions.getPasteAction());
-        if (!"cut".equals(cutName)) {
-            // Make sure standard names are hooked up as well
-            map.put("cut", ClipboardActions.getCutAction());
-            map.put("copy", ClipboardActions.getCopyAction());
-            map.put("paste", ClipboardActions.getPasteAction());
-        }
+        ClipboardActions.replaceClipboardActionMap(this);
 
         // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
-        map.put("copyAll", new AbstractAction() {
+        getActionMap().put("copyAll", new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 getSelectionModel().clearSelection();
                 ClipboardActions.getCopyAction().actionPerformed(e);

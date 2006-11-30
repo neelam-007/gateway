@@ -1217,7 +1217,7 @@
     <!--
       Package the SSM (JAR)
     -->
-    <target name="package.manager.jar" unless="ssg.only" depends="compile">
+    <target name="package.manager.jar" depends="compile">
         <generate-manifest propertyPrefix="manager" filename="Manager.mf">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.console.Main"/>
@@ -1327,7 +1327,7 @@
         <delete file="${build.dir}/Manager.nopack.jar"/>
     </target>
 
-    <target name="package.manager" unless="ssg.only" depends="package.manager.jar, obfuscate.manager, package.manager.jar.pack200">
+    <target name="package.manager" depends="package.manager.jar, obfuscate.manager, package.manager.jar.pack200">
 
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
             <fileset dir="${build.dir}" includes="Manager.jar"/>

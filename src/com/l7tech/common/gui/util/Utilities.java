@@ -466,6 +466,43 @@ public class Utilities {
     }
 
     /**
+     * Responds to ActionEvents by sending a new ActionEvent to the specified action, with the specified
+     * JTextComponent as its source.
+     */
+    private static class RetargetedAction extends AbstractAction {
+        private final JTextComponent tc;
+        private final Action wrapped;
+        private final boolean mustBeEditable;
+
+        public RetargetedAction(final JTextComponent tc, boolean mustBeEditable, Action wrapped) {
+            this.tc = tc;
+            this.wrapped = wrapped;
+            this.mustBeEditable = mustBeEditable;
+            copyValue(wrapped, Action.ACCELERATOR_KEY);
+            copyValue(wrapped, Action.ACTION_COMMAND_KEY);
+            copyValue(wrapped, Action.LONG_DESCRIPTION);
+            copyValue(wrapped, Action.MNEMONIC_KEY);
+            copyValue(wrapped, Action.NAME);
+            copyValue(wrapped, Action.SHORT_DESCRIPTION);
+            copyValue(wrapped, Action.SMALL_ICON);
+        }
+
+        private void copyValue(Action source, String key) {
+            Object value = source.getValue(key);
+            if (value != null) this.putValue(key, value);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (mustBeEditable && !tc.isEditable())
+                return;
+
+            wrapped.actionPerformed(new ActionEvent(tc,
+                                              ActionEvent.ACTION_PERFORMED,
+                                              (String)wrapped.getValue(Action.NAME)));
+        }
+    }
+
+    /**
      * Creates default pop-up menus for text components.
      */
     public static class DefaultContextMenuFactory implements ContextMenuFactory {
@@ -479,36 +516,24 @@ public class Utilities {
         public JPopupMenu createContextMenu(final JTextComponent tc) {
             JPopupMenu contextMenu = new JPopupMenu();
 
-            if (tc.isEditable() && shouldIncludeMenu(tc, CONTEXT_CUT)) {
-                JMenuItem cutItem = new JMenuItem(CONTEXT_CUT);
-                cutItem.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        tc.cut();
-                    }
-                });
-                contextMenu.add(cutItem);
+            boolean sys = ClipboardActions.isSystemClipboardAvailable();
+
+            if (sys && tc.isEditable() && shouldIncludeMenu(tc, CONTEXT_CUT)) {
+                JMenuItem item = new JMenuItem(CONTEXT_CUT);
+                item.addActionListener(new RetargetedAction(tc, true, ClipboardActions.getCutAction()));
+                contextMenu.add(item);
             }
 
-            if (shouldIncludeMenu(tc, CONTEXT_COPY)) {
-                JMenuItem copyItem = new JMenuItem(CONTEXT_COPY);
-                copyItem.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        tc.copy();
-                    }
-                });
-                contextMenu.add(copyItem);
+            if (sys && shouldIncludeMenu(tc, CONTEXT_COPY)) {
+                JMenuItem item = new JMenuItem(CONTEXT_COPY);
+                item.addActionListener(new RetargetedAction(tc, false, ClipboardActions.getCopyAction()));
+                contextMenu.add(item);
             }
 
-            if (tc.isEditable()) {
-                if (shouldIncludeMenu(tc, CONTEXT_PASTE)) {
-                    JMenuItem pasteItem = new JMenuItem(CONTEXT_PASTE);
-                    pasteItem.addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            tc.paste();
-                        }
-                    });
-                    contextMenu.add(pasteItem);
-                }
+            if (sys && tc.isEditable() && shouldIncludeMenu(tc, CONTEXT_PASTE)) {
+                JMenuItem item = new JMenuItem(CONTEXT_PASTE);
+                item.addActionListener(new RetargetedAction(tc, true, ClipboardActions.getPasteAction()));
+                contextMenu.add(item);
             }
 
             if (shouldIncludeMenu(tc, CONTEXT_SELECT_ALL)) {
@@ -522,6 +547,8 @@ public class Utilities {
                     contextMenu.add(new JSeparator());
                 contextMenu.add(selectAllItem);
             }
+
+            removeToolTipsFromMenuItems(contextMenu);
 
             return contextMenu;
         }
@@ -540,10 +567,27 @@ public class Utilities {
     }
 
     /**
+     * Set up cut/copy/paste keyboard shortcuts for the textcomponent that invoke the applet-friendly
+     * actions instead of the default actions.  Shortcuts will always be added for cut, copy, and paste;
+     * however, the actions for cut and paste will do nothing if the text component is not editable at
+     * that time.
+     *
+     * @param tc  the text component whose ActionMap to adjust
+     */
+    public static void attachClipboardKeyboardShortcuts(final JTextComponent tc) {
+        // If running as untrusted applet, our only hope is to let the default components do their default thing
+        if (!ClipboardActions.isSystemClipboardAvailable())
+            return;
+
+        ClipboardActions.replaceClipboardActionMap(tc);
+    }
+
+    /**
      * Configure the specified text component with a default context menu containing Cut, Copy, Paste, and Select All.
      * @param tc the JTextComponent to configure.  Must not be null.
      */
     public static void attachDefaultContextMenu(final JTextComponent tc) {
+        attachClipboardKeyboardShortcuts(tc);
         tc.addMouseListener(createContextMenuMouseListener(tc));
     }
 
@@ -557,6 +601,7 @@ public class Utilities {
      * @return the newly created MouseListener
      */
     public static MouseListener createContextMenuMouseListener(final JTextComponent tc) {
+        attachClipboardKeyboardShortcuts(tc);
         return createContextMenuMouseListener(tc, new DefaultContextMenuFactory());
     }
 
@@ -571,6 +616,7 @@ public class Utilities {
      */
     public static MouseListener createContextMenuMouseListener(final JTextComponent tc,
                                                                final ContextMenuFactory factory) {
+        attachClipboardKeyboardShortcuts(tc);
         return new MouseAdapter() {
             public void mousePressed(final MouseEvent ev) {
                 checkPopup(ev);

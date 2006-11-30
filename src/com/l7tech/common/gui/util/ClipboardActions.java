@@ -3,9 +3,10 @@
  *
  */
 
-package com.l7tech.console.util;
+package com.l7tech.common.gui.util;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.awt.event.ActionEvent;
@@ -26,6 +27,7 @@ import java.security.AccessControlException;
  * recently owned the permanent focus.
  * <p/>
  * The actions exported from this class are not thread safe and must be used only on the Swing thread.
+ * @noinspection unchecked,ForLoopReplaceableByForEach,UnnecessaryUnboxing,UnnecessaryBoxing
  */
 public class ClipboardActions {
     private static final Logger logger = Logger.getLogger(ClipboardActions.class.getName());
@@ -70,7 +72,7 @@ public class ClipboardActions {
 
 
     private static boolean focusListenerInstalled = false;
-    private static WeakReference<JComponent> focusOwner = null;
+    private static WeakReference focusOwner = null;
     private static boolean noClipAccess = false;
     private static boolean checkedClipboard = false;
     private static DataFlavor[] clipboardFlavors = null;
@@ -150,6 +152,11 @@ public class ClipboardActions {
         return initialClipboardAccess ? L7_PASTE_ACTION : TransferHandler.getPasteAction();
     }
 
+    /** @return true if the system clipboard is available from the security context containing this ClipboardActions class, if privileges are asserted. */
+    public static boolean isSystemClipboardAvailable() {
+        return initialClipboardAccess;
+    }
+
     /**
      * Set up our static focus and clipboard listeners, if we haven't already done so.
      */
@@ -160,7 +167,7 @@ public class ClipboardActions {
                 public void propertyChange(PropertyChangeEvent evt) {
                     Object fo = evt.getNewValue();
                     if (fo instanceof JComponent) {
-                        focusOwner = new WeakReference<JComponent>((JComponent)fo);
+                        focusOwner = new WeakReference(fo);
                         updateClipboardActions();
                     }
                 }
@@ -205,8 +212,8 @@ public class ClipboardActions {
     }
 
     private static DataFlavor[] getFlavors(final Clipboard clip) throws IllegalStateException {
-        return AccessController.doPrivileged(new PrivilegedAction<DataFlavor[]>() {
-            public DataFlavor[] run() {
+        return (DataFlavor[])AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
                 return clip == null ? null : clip.getAvailableDataFlavors();
             }
         });
@@ -225,7 +232,7 @@ public class ClipboardActions {
         try {
             if (focusOwner == null)
                 return;
-            JComponent jc = focusOwner.get();
+            JComponent jc = (JComponent)focusOwner.get();
             if (jc == null)
                 return;
             ActionMap am = jc.getActionMap();
@@ -239,7 +246,7 @@ public class ClipboardActions {
 
             Boolean copyHint = checkProp(jc, COPY_HINT);
             if (copyHint != null)
-                acceptCopy = copyHint;
+                acceptCopy = copyHint.booleanValue();
             else
                 acceptCopy = hasAction(am, "l7copy", "copy") && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
 
@@ -247,13 +254,13 @@ public class ClipboardActions {
 
             Boolean cutHint = checkProp(jc, CUT_HINT);
             if (cutHint != null)
-                acceptCut = cutHint;
+                acceptCut = cutHint.booleanValue();
             else
                 acceptCut = hasAction(am, "l7cut", "cut") && ((actions & TransferHandler.MOVE) != TransferHandler.NONE);
 
             Boolean pasteHint = checkProp(jc, PASTE_HINT);
             if (pasteHint != null)
-                acceptPaste = pasteHint;
+                acceptPaste = pasteHint.booleanValue();
             else
                 acceptPaste = hasAction(am, "l7paste", "paste") && (noClipAccess || (clipboardFlavors != null && th.canImport(jc, clipboardFlavors)));
 
@@ -274,7 +281,7 @@ public class ClipboardActions {
         Object value = jc.getClientProperty(prop);
         if (value instanceof String) {
             String s = (String)value;
-            return "true".equalsIgnoreCase(s);
+            return Boolean.valueOf("true".equalsIgnoreCase(s));
         }
         return null;
     }
@@ -300,15 +307,16 @@ public class ClipboardActions {
     }
 
     private static Clipboard getSystemClipboard() {
-        return AccessController.doPrivileged(new PrivilegedAction<Clipboard>() {
-            public Clipboard run() {
+        return (Clipboard)AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
                 try {
                     Clipboard old = lastSystemClipboard;
                     Clipboard clip = Toolkit.getDefaultToolkit().getSystemClipboard();
                     lastSystemClipboard = clip;
                     if (clip != null && clip != old) {
                         FlavorListener[] flavs = clip.getFlavorListeners();
-                        for (FlavorListener flav : flavs) {
+                        for (int i = 0; i < flavs.length; i++) {
+                            FlavorListener flav = flavs[i];
                             if (flav == FLAVOR_LISTENER)
                                 return clip;
                         }
@@ -337,7 +345,7 @@ public class ClipboardActions {
     private static void runActionCommandOnFocusedComponent(String actionCommand, String backupActionCommand) {
         if (focusOwner == null)
             return;
-        JComponent focusComponent = focusOwner.get();
+        JComponent focusComponent = (JComponent)focusOwner.get();
         if (focusComponent == null)
             return;
 
@@ -351,6 +359,39 @@ public class ClipboardActions {
             a.actionPerformed(new ActionEvent(focusComponent,
                                               ActionEvent.ACTION_PERFORMED,
                                               actionCommand));
+        }
+    }
+
+    /**
+     * Installs Ctrl-C, Ctrl-V, Ctrl-X keyboard shortcuts into the specified component's action map that
+     * invoke ClipboardActions.getCopyAction(), .getPasteAction(), and .getCutAction(), respectively.
+     *
+     * @param component  the component whose ActionMap to adjust
+     */
+    public static void replaceClipboardActionMap(JComponent component) {
+        ActionMap map = component.getActionMap();
+        final Action copyAction = getCopyAction();
+        final Object copyName = copyAction.getValue(Action.NAME);
+        map.put(copyName, copyAction);
+        final Action cutAction = getCutAction();
+        final Action pasteAction = getPasteAction();
+        map.put(cutAction.getValue(Action.NAME), cutAction);
+        map.put(pasteAction.getValue(Action.NAME), pasteAction);
+        if (!"copy".equals(copyName)) {
+            // Make sure standard names are hooked up as well
+            map.put("copy", copyAction);
+            map.put("cut", cutAction);
+            map.put("paste", pasteAction);
+        }
+
+        if (component instanceof JTextComponent) {
+            final JTextComponent tc = (JTextComponent)component;
+            map.put("copyAll", new AbstractAction() {
+                public void actionPerformed(ActionEvent e) {
+                    tc.selectAll();
+                    ClipboardActions.getCopyAction().actionPerformed(e);
+                }
+            });
         }
     }
 
@@ -380,7 +421,7 @@ public class ClipboardActions {
 
         public void actionPerformed(ActionEvent e) {
             if (logger.isLoggable(Level.FINE)) logger.fine("Dispatching action command: " + actionCommand);
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
                     runActionCommandOnFocusedComponent(actionCommand, backupActionCommand);
                     return null;

@@ -5,11 +5,10 @@
 
 package com.l7tech.console.action;
 
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.LicenseDialog;
-import com.l7tech.console.MainWindow;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.panels.LicenseDialog;
+import com.l7tech.console.util.TopComponents;
 
 import java.awt.*;
 
@@ -34,7 +33,6 @@ public class ManageClusterLicensesAction extends SecureAction {
     }
 
     protected void performAction() {
-        // TODO find the real gateway name
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
         final String ssgUrl = TopComponents.getInstance().ssgURL();
         LicenseDialog dlg = new LicenseDialog(mainWindow, ssgUrl);

@@ -76,7 +76,7 @@ public class ManagerAppletFilter implements Filter {
     private Object getBean(String name, Class clazz) throws ServletException {
         try {
             final Object o = applicationContext.getBean(name, clazz);
-            if (o == null) throw new ServletException("Configurationerror; could not find bean " + name);
+            if (o == null) throw new ServletException("Configuration error; could not find bean " + name);
             return o;
         } catch (BeansException beansException) {
             throw new ServletException("Configuration error; could not get bean " + name, beansException);

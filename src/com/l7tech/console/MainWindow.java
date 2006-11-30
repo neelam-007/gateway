@@ -5,7 +5,6 @@ import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.*;
-import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.auditalerts.AuditAlertChecker;
