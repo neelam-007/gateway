@@ -33,4 +33,4 @@ PARTITION_ROOT_DIR=${PWD}
 CONFIG_FILE="${PARTITION_ROOT_DIR}/server.xml"
 PARTITION_NAME=`basename ${PWD}`
 export CATALINA_OPTS=-Dcom.l7tech.server.partitionName=${PARTITION_NAME}
-(/ssg/tomcat/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE})
+(${SSG_ROOT}/tomcat/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE})
