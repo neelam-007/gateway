@@ -254,6 +254,7 @@ Section "SecureSpan Gateway" SecCopyUI
   ; run the gateway configurator
   SetOutPath "$INSTDIR/configwizard"
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd" -partitionMigrate' $0
+  DetailPrint "configwizard partition migration returned with code $0"
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
   DetailPrint "configwizard returned with code $0"
 
