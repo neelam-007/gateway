@@ -84,12 +84,8 @@ public class LicenseDialog extends JDialog {
         JDialog textDlg = new JDialog(this, "License XML", true);
         textDlg.setLayout(new BorderLayout());
         textDlg.add(new JLabel("Paste the new license XML below:"), BorderLayout.NORTH);
-        final JTextArea licenseTextArea = new JTextArea(15, 80);
-        Utilities.attachDefaultContextMenu(licenseTextArea);
-        textDlg.add(new JScrollPane(licenseTextArea,
-                                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                                    JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS),
-                    BorderLayout.CENTER);
+        final TextArea licenseTextArea = new TextArea(15, 80);
+        textDlg.add(licenseTextArea, BorderLayout.CENTER);
         JPanel buttons = new JPanel();
         buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
 
