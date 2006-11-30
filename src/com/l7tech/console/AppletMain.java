@@ -259,6 +259,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         ExceptionDialog.setShutdownHandler(new Runnable() {
             public void run() {
                 // Remove applet content
+                getApplication().getMainWindow().disconnectFromGateway();
                 setRootPane(new JRootPane());
                 setGlassPane(getGlassPane());
                 setLayeredPane(getLayeredPane());
