@@ -4,8 +4,13 @@ import com.l7tech.server.config.beans.BaseConfigurationBean;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Enumeration;
 import java.util.logging.Logger;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.InetAddress;
 
 /**
  * User: megery
@@ -90,7 +95,26 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     }
 
     private void getExistingInterfacesWindows() {
-        System.out.println("getting interfaces on windows");
+        if (networkingConfigs == null) {
+            logger.info("Determining existing interface information.");
+            networkingConfigs = new ArrayList<NetworkConfig>();
+
+            try {
+                Enumeration<NetworkInterface> allInterfaces = NetworkInterface.getNetworkInterfaces();
+                while (allInterfaces.hasMoreElements()) {
+                    NetworkInterface networkInterface = allInterfaces.nextElement();
+                    Enumeration<InetAddress> addressesForInterface   = networkInterface.getInetAddresses();
+                    while (addressesForInterface.hasMoreElements()) {
+                        InetAddress inetAddress = addressesForInterface.nextElement();
+                        NetworkConfig nc = new NetworkConfig();
+                        nc.setIpAddress(inetAddress.getHostAddress());
+                        networkingConfigs.add(nc);
+                    }
+                }
+            } catch (SocketException e) {
+                logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
+            }
+        }
     }
 
     private void getExistingInterfacesLinux() {
@@ -189,6 +213,9 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
         private String gateway;
         private String[] nameservers;
         private boolean dirtyFlag;
+
+
+        public NetworkConfig() {}
 
         public NetworkConfig(String interfaceName, String bootProto) {
             this.interfaceName = interfaceName;

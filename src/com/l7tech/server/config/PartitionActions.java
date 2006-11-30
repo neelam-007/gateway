@@ -3,6 +3,7 @@ package com.l7tech.server.config;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -99,7 +100,9 @@ public class PartitionActions {
             List<NetworkingConfigurationBean.NetworkConfig> networkConfigs = netBean.getAllNetworkInterfaces();
             if (networkConfigs != null) {
                 for (NetworkingConfigurationBean.NetworkConfig networkConfig : networkConfigs) {
-                    if (!networkConfig.getBootProto().equals(NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO))
+                    String bootProto = networkConfig.getBootProto();
+
+                    if (!StringUtils.equals(bootProto, NetworkingConfigurationBean.DYNAMIC_BOOT_PROTO))
                         allIpAddresses.add(networkConfig.getIpAddress());
                 }
             }
