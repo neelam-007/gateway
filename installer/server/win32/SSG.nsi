@@ -17,7 +17,7 @@
   ; Do not edit this version number
   ; If you want to build a different version use a flag:
   ;  /DMUI_VERSION=XXX
-  !define MUI_VERSION "%%%BUILD_VERSION%%%"
+  !define MUI_VERSION "HEAD"
 !endif
 
 !ifndef BUILD_DIR
@@ -253,6 +253,7 @@ Section "SecureSpan Gateway" SecCopyUI
 
   ; run the gateway configurator
   SetOutPath "$INSTDIR/configwizard"
+  ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd" -partitionMigrate' $0
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
   DetailPrint "configwizard returned with code $0"
 
