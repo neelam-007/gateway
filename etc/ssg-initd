@@ -23,6 +23,8 @@ prog="SSG"
 tries=3
 count=0
 USER=`whoami`
+partition_base="$SSG_HOME/etc/conf/partitions/"
+partition_control="partitionControl.sh"
 
 # handle 3 different cases:
 # Run as root, run as a regular user, run as same user as ssguser.
@@ -32,47 +34,60 @@ USER=`whoami`
 start() {
 	find_tomcat
 	if [ -n "$pid" ] ; then
-		echo "SSG Already Running"
+		echo "At least one SSG Partition is already running. Please stop and restart."
 		exit
 	fi
-
-        echo -n $"Starting $prog: "
-	if [ "$USER" = "root" ]; then
-        	su - $ssguser -c "$ssg start" &>/dev/null <&-
-        	RETVAL=$?
-	elif [ "$USER" = "$ssguser" ]; then
-		$ssg start &>/dev/null <&-
-		RETVAL=$?
-	else
-		echo "Need to be root or $ssguser to run this script";
-		exit
-	fi	
-        echo
+	find_partitions		
+		
+	for partition_dir in ${ALL_PARTITIONS}
+	do
+		echo -n $"Starting $prog (`basename ${partition_dir}`): "
+		. $partition_base/$partition_dir/partition_defs.sh true ${PARTITION_COUNT}
+		JAVA_OPTS="${JAVA_OPTS} ${partition_opts}"
+		echo "java_opts for this partition = ${JAVA_OPTS}"
+		if [ "$USER" = "root" ]; then
+        		su - $ssguser -c "$partition_base/$partition_dir/$partition_control start" &>/dev/null <&-
+        		RETVAL=$?
+		elif [ "$USER" = "$ssguser" ]; then
+			$partition_base/$partition_dir/$partition_control start &>/dev/null <&-
+			RETVAL=$?
+		else
+			echo"Need to be root or $ssguser to run this script";
+			exit
+		fi	
+        	echo
+	done
         # [ $RETVAL = 0 ] && touch /var/lock/subsys/ssg
         return $RETVAL
 }
+
 stop() {
 	find_tomcat;
 	if [ -z "$pid" ] ; then
-		echo "SSG Not Running"
+		echo "No SSG Partitions are Currently Running"
 		return
 	fi
-	echo -n $"Stopping $prog: "
-	if [ "$USER" = "root" ]; then
-        	su - $ssguser -c "$ssg stop -force" > /dev/null 2>&1
-        	RETVAL=$?
-	elif [ "$USER" = "$ssguser" ]; then
-		$ssg stop > /dev/null 2>&1
-		RETVAL=$?
-	else
-		echo "Need to be root or $ssguser to run this script";
-		exit
-	fi	
+	find_partitions
+	for partition_dir in $ALL_PARTITIONS
+	do
+		echo -n $"Stopping $prog (`basename $partition_dir`): "
+		if [ "$USER" = "root" ]; then
+        		su - $ssguser -c "$partition_base/$partition_dir/$partition_control stop -force" > /dev/null 2>&1
+        		RETVAL=$?
+		elif [ "$USER" = "$ssguser" ]; then
+			$partition_base/$partition_dir/$partition_control stop > /dev/null 2>&1
+			RETVAL=$?
+		else
+			echo "Need to be root or $ssguser to run this script";
+			exit
+		fi
+	done
+	#after shutting down all the partitions, make sure they are all fully stopped
 	if [ $RETVAL = 0 ]; then 
 		sleep 7;
 		find_tomcat;
 		if [ -z "$pid" ] ; then
- 			echo "Success"
+			echo "Success"
 			return
 		fi
 		count=`expr $count + 1`
@@ -81,7 +96,7 @@ stop() {
 			return
 		fi  
 		stop;
-		
+	
 	else
 		sleep 2;
 		count=`expr $count + 1`
@@ -92,11 +107,18 @@ stop() {
 		stop;
 	fi 
 	echo
+
 	return $RETVAL
 }
 
 find_tomcat() {
 	pid=`pidof ${JAVA_HOME}/bin/java`
+}
+
+
+find_partitions() {
+	ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
+	PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -l`
 }
 
 reallystop() {

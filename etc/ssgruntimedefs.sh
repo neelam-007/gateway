@@ -60,36 +60,6 @@ if [ -e "/opt/oracle" ] ; then
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib
 	export NLS_LANG=AMERICAN_AMERICA.US7ASCII
 fi
-#########################################################################
-# Per-Partition
-#
-system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
-# Maximum amount of RAM for _SINGLE_ partition
-multiplier="2/3"
-# 
-let java_ram="$system_ram*$multiplier" 
-if [ `expr $java_ram \> 2074412` == 1 ]; then
-	# we have more ram than java can use
-	# FIXME: when we start running 64 bit JVM
-	java_ram=2074412;
-	# CAP at 2 gigs
-fi
-
-if [ "${this_is_a_partition}" == "true" && ${number_of_partitions} > 1 ]; then
-	let java_ram ="$system_ram*$multiplier/$number_of_partitions"
-fi
-
-CATALINA_PID=/ssg/etc/conf/ssg.pid
-
-
-default_java_opts="$default_java_opts -Xmx${java_ram}k -Xss256k "
-
-unset system_ram
-unset multiplier
-unset java_ram
-
-# End Per-Partition
-#########################################################################
 
 JAVA_OPTS=$default_java_opts;
 
