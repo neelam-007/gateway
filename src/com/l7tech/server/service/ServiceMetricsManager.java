@@ -108,8 +108,20 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     if (minPeriodStart != null)
                         crit.add(Restrictions.ge("periodStart", minPeriodStart));
 
-                    if (maxPeriodStart != null)
+                    if (maxPeriodStart == null) {
+                        // This means caller wants up to the latest period.
+                        //
+                        // To prevent the case where not all bins of the latest
+                        // period are fetched because the query was made before
+                        // all latest bins of all published services have been
+                        // saved to database. Otherwise, this can cause a gap
+                        // to show up in the Dashboard chart if only one service
+                        // (the one that hasn't been written to database when
+                        // queried) is receiving requests.
+                        crit.add(Restrictions.le("periodStart", System.currentTimeMillis() - getFineInterval() - 1000));
+                    } else {
                         crit.add(Restrictions.le("periodStart", maxPeriodStart));
+                    }
 
                     if (nodeId != null)
                         crit.add(Restrictions.eq("clusterNodeId", nodeId));
