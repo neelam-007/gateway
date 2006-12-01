@@ -73,10 +73,19 @@ set JVMOPTIONS=^
 -XX:NewSize=%maxnewsize%M;^
 -XX:+DisableExplicitGC
 
+set PARTITIONNAMEPROPERTY=%2
+if ( not "%PARTITIONNAMEPROPERTY%"=="" ) set JVMOPTIONS=%JVMOPTIONS%;%PARTITIONNAMEPROPERTY%
+
 :: WARNING: %DLL_DIR% can contain only one folder. That's because of the
 ::          unfortunate choice by PRUNSRV to use ";" as a separator in the
 ::          --Environment option. Fortunately, Tomcat doesn't need anything on
 ::          the PATH.
+
+set STARTPARAMS="start"
+set STOPPARAMS="stop"
+set CONFIGFILEPARAM=%3
+if ( not "%CONFIGFILEPARAM%"=="" ) set STARTPARAMS=%STARTPARAMS%;%CONFIGFILEPARAM%
+if ( not "%CONFIGFILEPARAM%"=="" ) set STOPPARAMS=%STOPPARAMS%;%CONFIGFILEPARAM%
 
 "%PRUNSRV%" //IS//%SERVICE_NAME% ^
 --Environment "PATH=%DLL_DIR%" ^
@@ -84,8 +93,8 @@ set JVMOPTIONS=^
 --JvmMs %java_ram% ^
 --JvmMx %java_ram% ^
 --JvmSs 256 ^
---StartClass org.apache.catalina.startup.Bootstrap --StartParams start ^
---StopClass  org.apache.catalina.startup.Bootstrap --StopParams  stop  --StopTimeout 12
+--StartClass org.apache.catalina.startup.Bootstrap --StartParams %STARTPARAMS% ^
+--StopClass  org.apache.catalina.startup.Bootstrap --StopParams  %STOPPARAMS%  --StopTimeout 12
 
 if not errorlevel 1 goto installed
 echo ERROR: Failed to install "%SERVICE_NAME%" service.
