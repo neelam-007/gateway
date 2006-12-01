@@ -173,6 +173,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
      */
     private void start(Session session) throws Exception {
         tree.startService(); // kick start tree cache
+        logger.log(Level.INFO, "Using GMS address {0}", tree.getLocalAddress());
 
         // Perturb delay to avoid synchronization with other cluster nodes
         long when = GC_PERIOD * 2 + new Random().nextInt(1 + GC_PERIOD /4);

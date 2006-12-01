@@ -35,7 +35,7 @@
         -->
         <UDP mcast_addr="228.1.2.3" mcast_port="45566" ip_ttl="64" ip_mcast="true"
            mcast_send_buf_size="150000" mcast_recv_buf_size="80000" ucast_send_buf_size="150000"
-           ucast_recv_buf_size="80000" loopback="false" />
+           ucast_recv_buf_size="80000" loopback="false" enable_diagnostics="false" /> 
         <PING timeout="2000" num_initial_members="3" up_thread="false" down_thread="false" />
         <MERGE2 min_interval="10000" max_interval="20000" />
         <FD shun="true" up_thread="true" down_thread="true" />
@@ -45,7 +45,7 @@
         <UNICAST timeout="600,1200,2400" down_thread="false"/>
         <pbcast.STABLE desired_avg_gossip="20000" up_thread="false" down_thread="false" />
         <FRAG frag_size="8192" down_thread="false" up_thread="false" />
-        <pbcast.GMS join_timeout="5000" join_retry_timeout="2000" shun="true" print_local_addr="true" />
+        <pbcast.GMS join_timeout="5000" join_retry_timeout="2000" shun="true" print_local_addr="false" />
         <pbcast.STATE_TRANSFER up_thread="false" down_thread="false" />
       </config>
     </attribute>
