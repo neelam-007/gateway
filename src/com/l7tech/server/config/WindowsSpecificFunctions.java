@@ -37,11 +37,11 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
     }
 
     public String getOriginalPartitionControlScriptName() {
-        return getSsgInstallRoot() + "bin\\" + partitionControlScriptName;
+        return getSsgInstallRoot() + "bin/" + partitionControlScriptName;
     }
 
     public String getSpecificPartitionControlScriptName() {
-        return getPartitionBase() + getPartitionName() + "\\" + partitionControlScriptName;
+        return getPartitionBase() + getPartitionName() + "/" + partitionControlScriptName;
     }
 
     public String getNetworkConfigurationDirectory() {

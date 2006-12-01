@@ -1,6 +1,5 @@
 package com.l7tech.server.config.commands;
 
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -18,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * User: megery
@@ -30,13 +28,12 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     PartitionConfigBean partitionBean;
 
     //TODO add some useful patterns here
-    private final static Pattern SERVICE_NAME_PATTERN = Pattern.compile("");
-    private static final Pattern SERVICE_DISPLAY_NAME_PATTERN = Pattern.compile("");
-    private static final Pattern SERVICE_DESCRIPTION_PATTERN = Pattern.compile("");
-    private static final Pattern SERVICE_LOGPREFIX_PATTERN = Pattern.compile("");
-    private static final Pattern SERVICE_LOG_PATTERN = Pattern.compile("");
-    private static final Pattern SERVICE_ERRLOG_PATTERN = Pattern.compile("");
-    private static final Pattern SERVICE_JVM_OPTIONS_PATTERN= Pattern.compile("^-XX:+DisableExplicitGC$");
+    private static final String SERVICE_NAME_KEY = "SERVICE_NAME";
+    private static final String SERVICE_DISPLAY_NAME_KEY = "PR_DISPLAYNAME";
+    private static final String SERVICE_LOGPREFIX_KEY = "PR_LOGPREFIX";
+    private static final String SERVICE_LOG_KEY = "PR_STDOUTPUT";
+    private static final String SERVICE_ERRLOG_KEY = "PR_STDERROR";
+    private static final String PARTITION_NAME_KEY = "PARTITIONNAMEPROPERTY";
 
     private interface ConnectorMatcher {
         boolean matchesCriteria(Element connector);
@@ -71,24 +68,24 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         //TODO change anything needed in the startup script for windows. Change service.cmd to use different identifiers.
         //update the contents of service.cmd
         String serviceCommandFile = pInfo.getOSSpecificFunctions().getSpecificPartitionControlScriptName();
-        updateWindowsServiceFile(pInfo.getPartitionId(), serviceCommandFile);
+        writeWindowsServiceConfigFile(pInfo.getPartitionId(), serviceCommandFile);
         installWindowsService(serviceCommandFile, pInfo);
     }
 
     private void installWindowsService(String serviceCommandFile, PartitionInformation pInfo) throws InterruptedException, IOException {
-            if (pInfo.isNewPartition()) {
+        if (pInfo.isNewPartition()) {
             String[] cmdArray = new String[] {
                     serviceCommandFile,
                     "install",
-                    "-Dcom.l7tech.server.partitionName="+pInfo.getPartitionId(),
-                    "-config="+pInfo.getOSSpecificFunctions().getTomcatServerConfig(),
-                };
+            };
 
             //install the service
             try {
                 Process p = null;
                 try {
-                    p = Runtime.getRuntime().exec(cmdArray);
+                    logger.info("Installing windows service for \"" + pInfo.getPartitionId() + "\" partition.");
+                    File parentDir = new File(serviceCommandFile).getParentFile();
+                    p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
                     p.waitFor();
                 } finally {
                     if (p != null)
@@ -98,48 +95,36 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
                 logger.warning("Could not install the SSG service for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
                 throw e;
             } catch (InterruptedException e) {
-                logger.warning("Could not install the SSG service for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                
                 throw e;
             }
         }
     }
 
-    private void updateWindowsServiceFile(String partitionName, String serviceCommandFile) throws IOException {
+    private void writeWindowsServiceConfigFile(String partitionName, String serviceCommandFile) throws IOException {
         File f = new File(serviceCommandFile);
-        InputStream is = null;
-        OutputStream os = null;
+        File configFile = new File(f.getParentFile(),"partition_config.cmd");
+        PrintStream os = null;
+        logger.info("Modifying the windows service configuration for " + partitionName);
         try {
-            is = new FileInputStream(f);
-            byte[] bytes = HexUtils.slurpStream(is);
-            String wholeFile = new String(bytes);
-
-            wholeFile = wholeFile.replaceAll(SERVICE_NAME_PATTERN.pattern(), "SSG_"+partitionName);
-            wholeFile = wholeFile.replaceAll(SERVICE_DISPLAY_NAME_PATTERN.pattern(), "SecureSpan Gateway - " + partitionName + " Partition");
-            wholeFile = wholeFile.replaceAll(SERVICE_DESCRIPTION_PATTERN.pattern(), "Layer 7 Technologies SecureSpan Gateway - "  + partitionName + " Partition");
-            wholeFile = wholeFile.replaceAll(SERVICE_LOGPREFIX_PATTERN.pattern(), partitionName + "_ssg_service.log");
-            wholeFile = wholeFile.replaceAll(SERVICE_LOG_PATTERN.pattern(), "%TOMCAT_HOME%\\logs\\catalina.out." + partitionName);
-            wholeFile = wholeFile.replaceAll(SERVICE_ERRLOG_PATTERN.pattern(), "%TOMCAT_HOME%\\logs\\catalina.err." + partitionName);
-
-            //we'll replace the JVMOPTIONS elsewhere
-            os = new FileOutputStream(f);
-            os.write(wholeFile.getBytes());
+            //write out a config file that will set some variables needed by the service installer.
+            os = new PrintStream(new FileOutputStream(configFile));
+            os.println("set " + PARTITION_NAME_KEY + "=" + partitionName);
+            os.println("set " + SERVICE_NAME_KEY + "=" + "SSG"+partitionName);
+            os.println("set " + SERVICE_DISPLAY_NAME_KEY + "=" + "SecureSpan Gateway - " + partitionName + " Partition");
+            os.println("set " + SERVICE_LOGPREFIX_KEY + "=" + partitionName + "_ssg_service.log");
+            os.println("set " + SERVICE_LOG_KEY + "=" + "%TOMCAT_HOME%\\logs\\catalina.out." + partitionName);
+            os.println("set " + SERVICE_ERRLOG_KEY + "=" + "%TOMCAT_HOME%\\logs\\catalina.err." + partitionName);
             os.flush();
         } catch (FileNotFoundException e) {
-            logger.warning("Could not create a windows service for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
+            logger.warning("Error while modifying the windows service configuration for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
             throw e;
         } catch (IOException e) {
-            logger.warning("Could not create a windows service for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
+            logger.warning("Error while modifying the windows service configuration for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
             throw e;
         } finally {
-            if (is != null)
-                try {
-                    is.close();
-                } catch (IOException e) {}
-
             if (os != null)
-                try {
-                    os.close();
-                } catch (IOException e) {}
+                os.close();
         }
     }
 

@@ -81,11 +81,43 @@ public class PartitionActions {
     }
 
     public boolean removePartition(PartitionInformation partitionToRemove) {
+        boolean success = false;
         File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
         if (partitionToRemove.getOSSpecificFunctions().isWindows()) {
-            //TODO invoke the service.cmd uninstall for this partition on windows
+            try {
+                uninstallService(partitionToRemove.getOSSpecificFunctions());
+                success = FileUtils.deleteDir(deleteMe);
+            } catch (IOException e) {
+                logger.warning("Could not install the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                success = false;
+            } catch (InterruptedException e) {
+                logger.warning("Could not install the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                success = false;                                
+            }
         }
-        return FileUtils.deleteDir(deleteMe);
+        return success;
+    }
+
+    private void uninstallService(OSSpecificFunctions osSpecificFunctions) throws IOException, InterruptedException {
+        String commandFile = osSpecificFunctions.getSpecificPartitionControlScriptName();
+        String partitionName = osSpecificFunctions.getPartitionName();
+        String[] cmdArray = new String[] {
+            commandFile,
+            "uninstall",
+        };
+
+        //install the service
+
+        Process p = null;
+        try {
+            logger.info("Uninstalling windows service for \"" + partitionName + "\" partition.");
+            File parentDir = new File(commandFile).getParentFile();
+            p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
+            p.waitFor();
+        } finally {
+            if (p != null)
+                p.destroy();
+        }
     }
 
     public static Vector<String> getAvailableIpAddresses() {

@@ -159,10 +159,7 @@ public class PartitionManager {
 
             originalFiles.add(oldTomcatServerConfig);
             originalFiles.add(oldKeystoreDirectory);
-
-
-            File partitionControlFile = new File(osf.getOriginalPartitionControlScriptName());
-            originalFiles.add(partitionControlFile);
+            originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
 
             if (!partitionsBaseDir.exists()) {
                 System.out.println("Creating Partition Root Directory");
@@ -204,7 +201,7 @@ public class PartitionManager {
             } else {
                 System.out.println("the default partition does not need to be migrated");
             }
-            removeOriginalConfiguations(originalFiles);
+//            removeOriginalConfiguations(originalFiles);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());
