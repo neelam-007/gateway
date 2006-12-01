@@ -17,7 +17,7 @@
   ; Do not edit this version number
   ; If you want to build a different version use a flag:
   ;  /DMUI_VERSION=XXX
-  !define MUI_VERSION "HEAD"
+  !define MUI_VERSION "%%%BUILD_VERSION%%%"
 !endif
 
 !ifndef BUILD_DIR
