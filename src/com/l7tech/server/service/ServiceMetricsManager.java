@@ -109,16 +109,24 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                         crit.add(Restrictions.ge("periodStart", minPeriodStart));
 
                     if (maxPeriodStart == null) {
-                        // This means caller wants up to the latest period.
+                        // This means caller wants up to the latest completed period.
                         //
                         // To prevent the case where not all bins of the latest
                         // period are fetched because the query was made before
                         // all latest bins of all published services have been
-                        // saved to database. Otherwise, this can cause a gap
-                        // to show up in the Dashboard chart if only one service
-                        // (the one that hasn't been written to database when
-                        // queried) is receiving requests.
-                        crit.add(Restrictions.le("periodStart", System.currentTimeMillis() - getFineInterval() - 1000));
+                        // saved to database, we relax by 1000 milliseconds for
+                        // all database writes to complete. Otherwise, this can
+                        // cause a gap to show up in the Dashboard chart if only
+                        // one service (the one that hasn't been written to
+                        // database when queried) is receiving requests.
+                        final long currentTime = System.currentTimeMillis() - 1000;
+                        final long currentPeriodStart = MetricsBin.periodStartFor(resolution,
+                                                                                  getFineInterval(),
+                                                                                  currentTime);
+                        final long lastestCompletedPeriodStart = MetricsBin.periodStartFor(resolution,
+                                                                                           getFineInterval(),
+                                                                                           currentPeriodStart - 1);
+                        crit.add(Restrictions.le("periodStart", lastestCompletedPeriodStart));
                     } else {
                         crit.add(Restrictions.le("periodStart", maxPeriodStart));
                     }
