@@ -1,16 +1,13 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.event.PolicyListenerAdapter;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.SchemaValidationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,26 +45,26 @@ public class SchemaValidationPropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
-        dlg.addPolicyListener(listener);
+        final SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
         dlg.pack();
         dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg);
-    }
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (!dlg.isChangesCommitted())
+                    return;
 
-    private final PolicyListener listener = new PolicyListenerAdapter() {
-        public void assertionsChanged(PolicyEvent e) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(node);
-                log.finest("model invalidated");
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+                JTree tree = TopComponents.getInstance().getPolicyTree();
+                if (tree != null) {
+                    PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                    model.assertionTreeNodeChanged(node);
+                    log.finest("model invalidated");
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                }
             }
-        }
-    };
+        });
+    }
 
     private final Logger log = Logger.getLogger(getClass().getName());
     private SchemaValidationTreeNode node;

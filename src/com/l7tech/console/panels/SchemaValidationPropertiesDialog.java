@@ -5,27 +5,23 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
 import com.l7tech.common.xml.schema.SchemaEntry;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
@@ -41,7 +37,6 @@ import org.xml.sax.SAXParseException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.EventListenerList;
 import javax.wsdl.Binding;
 import javax.wsdl.WSDLException;
 import java.awt.*;
@@ -51,10 +46,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.security.AccessControlException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.AccessControlException;
 
 
 /**
@@ -103,7 +98,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private PublishedService service;
 
     private final Logger log = Logger.getLogger(getClass().getName());
-    private final EventListenerList listenerList = new EventListenerList();
 
     // cached values
     private boolean wsdlBindingSoapUseIsLiteral;
@@ -131,7 +125,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         schemaValidationAssertion = node.getAssertion();
         this.service = service;
         initialize();
-        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
@@ -142,10 +135,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         schemaValidationAssertion = assertion;
         this.service = service;
         initialize();
-        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void initialize() {
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
 
         setTitle(resources.getString("window.title"));
 
@@ -494,48 +487,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         // save new schema
         schemaValidationAssertion.setApplyToArguments(rbApplyToArgs.isSelected());
-        fireEventAssertionChanged(schemaValidationAssertion);
+
         // exit
         changesCommitted = true;
         SchemaValidationPropertiesDialog.this.dispose();
-    }
-
-    /**
-     * notfy the listeners
-     *
-     * @param a the assertion
-     */
-    private void fireEventAssertionChanged(final Assertion a) {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
-                  PolicyEvent event = new
-                    PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
-                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((PolicyListener)listeners[i]).assertionsChanged(event);
-                  }
-              }
-          });
-    }
-
-    /**
-     * add the PolicyListener
-     *
-     * @param listener the PolicyListener
-     */
-    public void addPolicyListener(PolicyListener listener) {
-        listenerList.add(PolicyListener.class, listener);
-    }
-
-    /**
-     * remove the the PolicyListener
-     *
-     * @param listener the PolicyListener
-     */
-    public void removePolicyListener(PolicyListener listener) {
-        listenerList.remove(PolicyListener.class, listener);
     }
 
     private boolean docIsSchema(Document doc) {
