@@ -2444,9 +2444,20 @@
     </target>
 
     <!--
+      Initialize full install (before anything is done, ie. packaging)
+    -->
+    <target name="INTERNAL-ssg-install-init-pre">
+        <fail unless="install.build.number"
+              message="Set the install.build.number property before running this target!"/>
+
+        <echo level="info" message="Enabling Pack200"/>
+        <property name="pack200" value="true"/>
+    </target>
+
+    <!--
       Initialize full install
     -->
-    <target name="INTERNAL-ssg-install-init" depends="clean, package, init">
+    <target name="INTERNAL-ssg-install-init" depends="INTERNAL-ssg-install-init-pre, clean, package, init">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
         <property file="etc/install.properties"/>
@@ -2523,8 +2534,6 @@
         <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
         <property name="install.src.flasher" value="${install.src.base}/migration"/>
         <property name="install.src.sysconfigwizard" value="${install.src.base}/sysconfigwizard"/>
-
-        <property name="pack200" value="true"/>
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
