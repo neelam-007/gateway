@@ -2644,6 +2644,7 @@
                 <include name="snmpd.conf"/>
                 <include name="configuser_bashrc"/>
                 <include name="sysconfigscript-initd"/>
+                <include name="partitionControl.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
