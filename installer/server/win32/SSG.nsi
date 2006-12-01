@@ -221,10 +221,6 @@ Section "SecureSpan Gateway" SecCopyUI
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
-  ; install the service
-  ExecWait '"$INSTDIR\bin\service.cmd" install' $0
-  DetailPrint "service.cmd install returned with code $0"
-
   ; substitute overwritten config files
   IfFileExists "$INSTDIR\etc\conf\hibernate.properties.old" 0 +4
     CopyFiles "$INSTDIR\etc\conf\hibernate.properties" "$INSTDIR\etc\conf\hibernate.properties.new"
@@ -255,6 +251,11 @@ Section "SecureSpan Gateway" SecCopyUI
   SetOutPath "$INSTDIR/configwizard"
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd" -partitionMigrate' $0
   DetailPrint "configwizard partition migration returned with code $0"
+
+ ; install the service. We do this here so that the default_ partition already exists.
+  ExecWait '"$INSTDIR\etc\conf\partitions\default_\service.cmd" install' $0
+  DetailPrint "service.cmd install returned with code $0"
+  
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
   DetailPrint "configwizard returned with code $0"
 
@@ -286,7 +287,7 @@ Section "Uninstall"
   ExecWait 'net stop SSG' $0
   DetailPrint "net stop SSG returned with code $0"
 
-  ExecWait '"$INSTDIR\bin\service.cmd" uninstall' $0
+  ExecWait '"$INSTDIR\etc\conf\partitions\default_\service.cmd" uninstall' $0
   DetailPrint "service.cmd uninstall returned with code $0"
 
   RMDir /r "$INSTDIR"
