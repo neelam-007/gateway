@@ -4,7 +4,6 @@ import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
 import org.springframework.remoting.RemoteAccessException;
 
@@ -20,7 +19,6 @@ import java.awt.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class RmiErrorHandler implements ErrorHandler {
-    private MainWindow mainFrame;
      private static final String ERROR_MESSAGE =
       "<html><b>The SecureSpan Manager encountered an " +
       "gateway error or communication error and was unable to complete the operation.</b><br></html>";
@@ -41,7 +39,8 @@ public class RmiErrorHandler implements ErrorHandler {
             rex instanceof ConnectIOException ||
             rex instanceof NoSuchObjectException ||
             rex instanceof UnknownHostException ||
-            throwable instanceof AccessControlException) {
+            throwable instanceof AccessControlException ||
+            (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
             // prevent error cascade during repaint if it's a network problem
             e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
             TopComponents.getInstance().disconnectFromGateway();
@@ -49,7 +48,8 @@ public class RmiErrorHandler implements ErrorHandler {
 
         if (throwable instanceof RemoteException ||
             throwable instanceof SocketException ||
-            throwable instanceof AccessControlException) {
+            throwable instanceof AccessControlException ||
+            (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
 
             Throwable t = e.getThrowable();
             String message = ERROR_MESSAGE;
@@ -63,7 +63,8 @@ public class RmiErrorHandler implements ErrorHandler {
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
-                     (raex != null && throwable instanceof java.net.SocketException)) {
+                     (raex != null && throwable instanceof java.net.SocketException) ||
+                    (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
                 level = Level.WARNING;
                 t = null;

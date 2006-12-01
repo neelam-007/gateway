@@ -9,6 +9,7 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
@@ -16,7 +17,6 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -81,8 +81,8 @@ public class Actions {
                                                       ExceptionUtils.getMessage(e),
                                                       "User Cannot Be Deleted",
                                                       JOptionPane.ERROR_MESSAGE, null);
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, "Error deleting user", e);
+                } catch (ObjectModelException ome) {
+                    log.log(Level.SEVERE, "Error deleting user", ome);
                     // Error deleting realm - display error msg
                     DialogDisplayer.showMessageDialog(getTopParent(),
                                                       "Error encountered while deleting " +
@@ -90,6 +90,8 @@ public class Actions {
                                                       ". Please try again later.",
                                                       "Delete User",
                                                       JOptionPane.ERROR_MESSAGE, null);
+                } catch (Throwable throwable) {
+                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting user");
                 }
                 result.call(false);
             }
@@ -121,28 +123,23 @@ public class Actions {
                     Registry.getDefault().getIdentityAdmin().deleteGroup(config.getOid(), eh.getStrId());
                     result.call(true);
                     return;
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, "Error deleting group", e);
+                } catch (ObjectModelException ome) {
+                    log.log(Level.SEVERE, "Error deleting group", ome);
                     // Error deleting realm - display error msg
                     String msg;
-                    DeleteException de = getDeleteException(e);
+                    DeleteException de = (DeleteException) ExceptionUtils.getCauseIfCausedBy(ome, DeleteException.class);
                     if (de != null) {
                         msg = de.getMessage();
                     } else
                         msg = "Error encountered while deleting " + node.getName() + ". Please try again later.";
                     DialogDisplayer.showMessageDialog(getTopParent(), msg, "Delete Group", JOptionPane.ERROR_MESSAGE, null);
+                } catch (Throwable throwable) {
+                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting group");
                 }
                 result.call(false);
             }
         });
     }
-
-    private static DeleteException getDeleteException(Throwable e) {
-        if (e == null) return null;
-        if (e instanceof DeleteException) return (DeleteException)e;
-        return getDeleteException(e.getCause());
-    }
-
 
     // Deletes the given user
     private static void deleteProvider(final IdentityProviderNode nodeIdentity, final Functions.UnaryVoid<Boolean> result) {
@@ -165,8 +162,8 @@ public class Actions {
                     Registry.getDefault().getIdentityAdmin().deleteIdentityProviderConfig(eh.getOid());
                     result.call(true);
                     return;
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, "Error deleting provider", e);
+                } catch (ObjectModelException ome) {
+                    log.log(Level.SEVERE, "Error deleting provider", ome);
                     // Error deleting realm - display error msg
                     DialogDisplayer.showMessageDialog(getTopParent(),
                       "Error encountered while deleting " +
@@ -174,6 +171,8 @@ public class Actions {
                       ". Please try again later.",
                       "Delete Provider",
                       JOptionPane.ERROR_MESSAGE, null);
+                } catch (Throwable throwable) {
+                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting provider");
                 }
                 result.call(false);
             }
@@ -201,14 +200,16 @@ public class Actions {
                     serviceManager.deletePublishedService(Long.toString(node.getPublishedService().getOid()));
                     result.call(true);
                     return;
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, "Error deleting service", e);
+                } catch (ObjectModelException ome) {
+                    log.log(Level.WARNING, "Error deleting service", ome);
                     DialogDisplayer.showMessageDialog(getTopParent(),
                       "Error encountered while deleting " +
                       node.getName() +
                       ". Please try again later.",
                       "Delete Service",
                       JOptionPane.ERROR_MESSAGE, null);
+                } catch (Throwable throwable) {
+                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting service");
                 }
                 result.call(false);
             }

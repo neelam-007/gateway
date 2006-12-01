@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.console.logging.ErrorManager;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -8,6 +9,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class provides default implementations for the application
@@ -220,7 +222,12 @@ public abstract class BaseAction extends AbstractAction {
         }
         VetoableActionEvent vev = VetoableActionEvent.create(ev);
         fireActionWillPerform(vev);
-        performAction();
-        fireActionPerformed(ev);
+        try {
+            performAction();
+            fireActionPerformed(ev);
+        }
+        catch(Throwable throwable) {
+            ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error");   
+        }
     }
 }

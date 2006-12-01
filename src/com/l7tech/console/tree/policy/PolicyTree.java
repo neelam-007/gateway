@@ -15,6 +15,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.*;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -769,17 +770,21 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         public void drop(DropTargetDropEvent e) {
-            DataFlavor[] flavors = e.getCurrentDataFlavors();
-            for (int i = 0; i < flavors.length; i++) {
-                DataFlavor flavor = flavors[i];
-                if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
-                    dropTreePath(e);
-                    break;
-                } else if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flavor)) {
-                    dropAssertion(e);
+            try {
+                DataFlavor[] flavors = e.getCurrentDataFlavors();
+                for (int i = 0; i < flavors.length; i++) {
+                    DataFlavor flavor = flavors[i];
+                    if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
+                        dropTreePath(e);
+                        break;
+                    } else if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flavor)) {
+                        dropAssertion(e);
+                    }
                 }
             }
-
+            catch(Throwable throwable) {
+                ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error");     
+            }
         }
 
         private void dropAssertion(DropTargetDropEvent e) {
