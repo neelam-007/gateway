@@ -10,6 +10,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.util.MakeLunaCerts;
 import com.l7tech.server.util.SetKeys;
+import com.l7tech.server.partition.PartitionManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -105,6 +106,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 }
             } catch (Exception e) {
                 success = false;
+            }
+        } else {
+            if (PartitionManager.getInstance().getActivePartition().isNewPartition()) {
+                String partitionName = PartitionManager.getInstance().getActivePartition().getPartitionId();
+                logger.warning("The \"" + partitionName + "\" partition has been created but no keystore has been specified.");
+                logger.warning("The \"" + partitionName + "\" partition will not be able to start without a keystore");
             }
         }
         return success;

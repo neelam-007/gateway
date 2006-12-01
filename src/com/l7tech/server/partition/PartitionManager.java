@@ -161,6 +161,10 @@ public class PartitionManager {
             originalFiles.add(oldKeystoreDirectory);
             originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
 
+            if (osf.isLinux()) {
+                originalFiles.add(new File(osf.getSsgInstallRoot() + "bin/" + "partition_defs.sh"));
+            }
+
             if (!partitionsBaseDir.exists()) {
                 System.out.println("Creating Partition Root Directory");
                 if (!partitionsBaseDir.mkdir()) {

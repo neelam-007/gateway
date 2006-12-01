@@ -2635,6 +2635,7 @@
                 <include name="buildVersion.txt"/>
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
+                <include name="partition_defs.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
