@@ -11,6 +11,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 . /etc/profile.d/ssgruntimedefs.sh
+ORIGINAL_JAVA_OPTS="${JAVA_OPTS}"
 
 if [ -z "$TOMCAT_HOME" ]; then 
 	TOMCAT_HOME="/ssg/tomcat/"
@@ -37,14 +38,13 @@ start() {
 		echo "At least one SSG Partition is already running. Please stop and restart."
 		exit
 	fi
-	find_partitions		
-		
+	find_partitions
+
 	for partition_dir in ${ALL_PARTITIONS}
 	do
 		echo -n $"Starting $prog (`basename ${partition_dir}`): "
 		. $partition_base/$partition_dir/partition_defs.sh true ${PARTITION_COUNT}
-		JAVA_OPTS="${JAVA_OPTS} ${partition_opts}"
-		echo "java_opts for this partition = ${JAVA_OPTS}"
+		JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts}"
 		if [ "$USER" = "root" ]; then
         		su - $ssguser -c "$partition_base/$partition_dir/$partition_control start" &>/dev/null <&-
         		RETVAL=$?
@@ -118,7 +118,7 @@ find_tomcat() {
 
 find_partitions() {
 	ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
-	PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -l`
+	PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -w`
 }
 
 reallystop() {
