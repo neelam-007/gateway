@@ -381,7 +381,7 @@ public class PolicyService extends ApplicationObjectSupport {
             if (signResponse)
                 signresponse(responseDoc, pver, rte);
             else
-                SoapUtil.addTimestamp(header, SoapUtil.WSU_NAMESPACE, null, 0);
+                SoapUtil.addTimestamp(header, SoapUtil.WSU_NAMESPACE, null, 0, 0);
             return responseDoc;
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen

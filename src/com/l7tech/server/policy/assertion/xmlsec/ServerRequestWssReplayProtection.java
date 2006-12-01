@@ -6,6 +6,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssTimestamp;
+import com.l7tech.common.security.xml.processor.WssTimestampDate;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -80,12 +81,14 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
             return AssertionStatus.BAD_REQUEST;
         }
 
-        if (timestamp.getCreated() == null) {
+        final WssTimestampDate createdTimestamp = timestamp.getCreated();
+        if (createdTimestamp == null) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT);
             return AssertionStatus.BAD_REQUEST;
         }
 
-        final long created = timestamp.getCreated().asDate().getTime();
+        final String createdIsoString = createdTimestamp.asIsoString().trim();
+        final long created = createdTimestamp.asDate().getTime();
         final long now = System.currentTimeMillis();
         long expires;
         if (timestamp.getExpires() != null) {
@@ -120,7 +123,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
                 // Use cert info as sender id
                 try {
                     MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    md.update(Long.toString(created).getBytes("UTF-8"));
+                    md.update(createdIsoString.getBytes("UTF-8"));
                     md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
                     md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
                     md.update(skiToString(signingCert).getBytes("UTF-8"));
@@ -138,7 +141,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
 
                 // Use session ID as sender ID
                 StringBuffer sb = new StringBuffer();
-                sb.append(created);
+                sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("SessionID=");
                 sb.append(sessionID);
@@ -149,7 +152,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
                 String encryptedKeySha1 = ((EncryptedKey)signingToken).getEncryptedKeySHA1();
 
                 StringBuffer sb = new StringBuffer();
-                sb.append(created);
+                sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("EncryptedKeySHA1=");
                 sb.append(encryptedKeySha1);

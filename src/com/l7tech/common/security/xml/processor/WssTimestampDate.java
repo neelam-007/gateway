@@ -15,4 +15,5 @@ import java.util.Date;
  */
 public interface WssTimestampDate extends ParsedElement {
     Date asDate();
+    String asIsoString();
 }

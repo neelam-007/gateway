@@ -879,15 +879,20 @@ public class WssProcessorImpl implements WssProcessor {
 
     private static class TimestampDate extends ParsedElementImpl implements WssTimestampDate {
         Date date;
+        String dateString;
 
         TimestampDate(Element createdOrExpiresElement) throws ParseException {
             super(createdOrExpiresElement);
-            String dateString = XmlUtil.getTextValue(createdOrExpiresElement);
+            dateString = XmlUtil.getTextValue(createdOrExpiresElement);
             date = ISO8601Date.parse(dateString);
         }
 
         public Date asDate() {
             return date;
+        }
+
+        public String asIsoString() {
+            return dateString;
         }
     }
 

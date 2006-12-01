@@ -37,6 +37,9 @@ import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.util.Date;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * @author mike
@@ -333,6 +336,32 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[0],
                                 new Element[]{c.body});
+    }
+
+    public void testSigningHirezTimestamps() throws Exception {
+        TestDocument td = getSigningOnlyTestDocument();
+
+        WssDecorator decorator = new WssDecoratorImpl();
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSenderMessageSigningCertificate(td.senderCert);
+        dreq.setSenderMessageSigningPrivateKey(td.senderKey);
+        dreq.setTimestampCreatedDate(new Date());
+        dreq.setIncludeTimestamp(true);
+        dreq.setSignTimestamp();
+
+        Pattern findCreated = Pattern.compile("<[^ :>]*:?created[^<]*", Pattern.CASE_INSENSITIVE);
+
+        for (int i = 0; i < 10; ++i) {
+            final Document doc = XmlUtil.stringToDocument(XmlUtil.nodeToString(td.c.message));
+            dreq.getElementsToSign().clear();
+            dreq.getElementsToSign().add(SoapUtil.getBodyElement(doc));
+            decorator.decorateMessage(doc,
+                                      dreq);
+            final Matcher matcher = findCreated.matcher(XmlUtil.nodeToString(doc));
+            if (matcher.find()) {
+                System.out.println(matcher.group());
+            }
+        }
     }
 
     public void testEncryptionOnly() throws Exception {

@@ -1056,9 +1056,10 @@ public class SoapUtil {
      * @param parent      element which will contain the new timestamp subelement
      * @param wsuUri      which wsu: namespace URI to use
      * @param timestamp   time that should be marked in this timestamp.  if null, uses current time
+     * @param timestampNanos   number of nanoseconds to add to the millisecond-granular timestamp
      * @param timeoutSec  after how many seconds this timestamp should expirel.  If zero, uses 5 min.
      */
-    public static Element addTimestamp(Element parent, String wsuUri, Date timestamp, int timeoutSec) {
+    public static Element addTimestamp(Element parent, String wsuUri, Date timestamp, long timestampNanos, int timeoutSec) {
         Document message = parent.getOwnerDocument();
         Element timestampEl = message.createElementNS(wsuUri,
                                                       TIMESTAMP_EL_NAME);
@@ -1068,17 +1069,17 @@ public class SoapUtil {
         Calendar now = Calendar.getInstance();
         if (timestamp != null)
             now.setTime(timestamp);
-        timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime()));
+        timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime(), timestampNanos));
         now.add(Calendar.MILLISECOND, timeoutSec != 0 ? timeoutSec : 300000);
-        timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime()));
+        timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime(), 0));
         return timestampEl;
     }
 
-    private static Element makeTimestampChildElement(Element parent, String createdElName, Date time) {
+    private static Element makeTimestampChildElement(Element parent, String createdElName, Date time, long nanos) {
         Document factory = parent.getOwnerDocument();
         Element element = factory.createElementNS(parent.getNamespaceURI(), createdElName);
         element.setPrefix(parent.getPrefix());
-        element.appendChild(XmlUtil.createTextNode(factory, ISO8601Date.format(time)));
+        element.appendChild(XmlUtil.createTextNode(factory, ISO8601Date.format(time, nanos)));
         return element;
     }
 

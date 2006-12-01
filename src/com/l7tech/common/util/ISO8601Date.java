@@ -178,7 +178,11 @@ public class ISO8601Date {
     }
 
     public static String format(Date date) {
-        return format(date, UTC);
+        return format(date, 0, UTC);
+    }
+
+    public static String format(Date date, long nanos) {
+        return format(date, nanos, UTC);
     }
 
     /**
@@ -186,7 +190,7 @@ public class ISO8601Date {
      * @param date a Date instance
      * @return a string representing the date in the ISO 8601 format
      */
-    public static String format(Date date, TimeZone tz) {
+    public static String format(Date date, long nanos, TimeZone tz) {
         Calendar calendar = new GregorianCalendar(tz);
         calendar.setTime(date);
         StringBuffer buffer = new StringBuffer();
@@ -203,6 +207,8 @@ public class ISO8601Date {
         buffer.append(twoDigit(calendar.get(Calendar.SECOND)));
         buffer.append(".");
         buffer.append(threeDigit(calendar.get(Calendar.MILLISECOND)));
+        buffer.append(threeDigit((int)((nanos % 1000000L) / 1000L)));
+        buffer.append(threeDigit((int)(nanos % 1000L)));
         if (tz == UTC)
             buffer.append("Z");
         else {

@@ -35,9 +35,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -49,6 +48,10 @@ public class WssDecoratorImpl implements WssDecorator {
     public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
     private static final int OLD_DERIVED_KEY_LENGTH = 16;
+
+    private static Random random = new SecureRandom();
+    private static long lastCreatedDate = -2;
+    private static long dateUniqueness = 0;
 
     public WssDecoratorImpl() {
     }
@@ -66,6 +69,25 @@ public class WssDecoratorImpl implements WssDecorator {
                     ? SoapUtil.ENCODINGTYPE_BASE64BINARY
                     : SoapUtil.ENCODINGTYPE_BASE64BINARY_2;     // lyonsm: ??? what is this for?  It hardcodes wsse: prefix!
         }
+    }
+
+    /**
+     * @param d  the time to check
+     * @return extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
+     */
+    private static long getExtraTime(long d) {
+        long extra = random.nextInt(1000) * 1000;
+        synchronized (WssDecoratorImpl.class) {
+            if (lastCreatedDate == d) {
+                // Add two digits of serial number
+                dateUniqueness++;
+                extra += dateUniqueness;
+            } else {
+                lastCreatedDate = d;
+                dateUniqueness = 0;
+            }
+        }
+        return extra;
     }
 
     /**
@@ -87,11 +109,15 @@ public class WssDecoratorImpl implements WssDecorator {
         int timeoutMillis = dreq.getTimestampTimeoutMillis();
         if (timeoutMillis < 1)
             timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
-        if (dreq.isIncludeTimestamp())
+        if (dreq.isIncludeTimestamp()) {
+            Date createdDate = dreq.getTimestampCreatedDate();
+            // Have to add some uniqueness to this timestamp
             timestamp = SoapUtil.addTimestamp(securityHeader,
                 c.nsf.getWsuNs(),
-                dreq.getTimestampCreatedDate(), // null ok
+                createdDate, // null ok
+                createdDate == null ? random.nextInt(1000) : getExtraTime(createdDate.getTime()),
                 timeoutMillis);
+        }
 
         // If we aren't signing the entire message, find extra elements to sign
         if (dreq.isSignTimestamp() || !signList.isEmpty()) {
@@ -99,6 +125,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 timestamp = SoapUtil.addTimestamp(securityHeader,
                     c.nsf.getWsuNs(),
                     dreq.getTimestampCreatedDate(), // null ok
+                    dreq.getTimestampCreatedDate() == null ? random.nextInt(1000000) : getExtraTime(dreq.getTimestampCreatedDate().getTime()),
                     timeoutMillis);
             signList.add(timestamp);
         }
