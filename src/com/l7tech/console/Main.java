@@ -7,6 +7,7 @@ import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.SyspropUtil;
@@ -53,6 +54,7 @@ public class Main {
                 ensureNoSecurityManager();
 
                 initializeUIPreferences();
+                DialogDisplayer.setForceNative(true);
 
 
                 /* load user preferences and merge them with system props */
