@@ -44,7 +44,7 @@ class TimeVariableUtils {
                 return ISO8601Date.format(date);
             } else {
                 TimeZone tz = ("local".equals(zone)) ? TimeZone.getDefault() : UTC;
-                return ISO8601Date.format(date, 0, tz);
+                return ISO8601Date.format(date, -1, tz);
             }
         } else {
             SimpleDateFormat sdf = new SimpleDateFormat(format);

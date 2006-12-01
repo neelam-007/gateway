@@ -6,6 +6,7 @@ package com.l7tech.common.util;
 
 import java.text.ParseException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Date parser for ISO 8601 format 
@@ -101,6 +102,7 @@ public class ISO8601Date {
                         while(nt.length() < 3) {
                             nt += "0";
                         }
+                        if (nt.length() > 3) assertIsNumbers(nt.substring(3));
                         nt = nt.substring( 0, 3 ); //Cut trailing chars..
                         int millisec = Integer.parseInt(nt);
                         //int millisec = Integer.parseInt(st.nextToken()) * 10;
@@ -147,7 +149,14 @@ public class ISO8601Date {
             throw new ParseException("["+ex.getMessage()+
                                      "] is not an integer", 0);
         }
+        if (st.hasMoreTokens()) throw new ParseException("Contains extra material after timezone", 0);
         return calendar;
+    }
+
+    private static final Pattern MATCH_NOT_NUMBER = Pattern.compile("[^0-9]");
+    private static void assertIsNumbers(String s) throws ParseException {
+        if (MATCH_NOT_NUMBER.matcher(s).find())
+            throw new ParseException("contains non-numeric characters before timezone", 0);
     }
 
     /**
@@ -178,7 +187,7 @@ public class ISO8601Date {
     }
 
     public static String format(Date date) {
-        return format(date, 0, UTC);
+        return format(date, -1, UTC);
     }
 
     public static String format(Date date, long nanos) {
@@ -188,6 +197,8 @@ public class ISO8601Date {
     /**
      * Generate a ISO 8601 date 
      * @param date a Date instance
+     * @param nanos nanoseconds to include, or -1 to use only millisecond-granular timestamp.
+     *              Will be taken modulo 1000000.
      * @return a string representing the date in the ISO 8601 format
      */
     public static String format(Date date, long nanos, TimeZone tz) {
@@ -207,8 +218,10 @@ public class ISO8601Date {
         buffer.append(twoDigit(calendar.get(Calendar.SECOND)));
         buffer.append(".");
         buffer.append(threeDigit(calendar.get(Calendar.MILLISECOND)));
-        buffer.append(threeDigit((int)((nanos % 1000000L) / 1000L)));
-        buffer.append(threeDigit((int)(nanos % 1000L)));
+        if (nanos >= 0) {
+            buffer.append(threeDigit((int)((nanos % 1000000L) / 1000L)));
+            buffer.append(threeDigit((int)(nanos % 1000L)));
+        }
         if (tz == UTC)
             buffer.append("Z");
         else {
