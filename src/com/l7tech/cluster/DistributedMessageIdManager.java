@@ -46,10 +46,11 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     /**
      * Initialize the service using the specified multicast IP address and port
      * @param address the IP address to use for multicast UDP communications
-     * @param port the UDP port to use for multicast communications
+     * @param port the UDP port to use for multicast communications (IN)
+     * @param interfaceAddress The IP address of the primary interface
      * @throws Exception
      */
-    public void initialize(String address, int port) throws Exception {
+    public void initialize(String address, int port, String interfaceAddress) throws Exception {
         if (initialized) {
             throw new IllegalStateException("Already Initialized");
         }
@@ -60,6 +61,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         String props = tree.getClusterProperties();
         props = props.replaceFirst("mcast_addr=[0-9\\.]+", "mcast_addr=" + address);
         props = props.replaceFirst("mcast_port=[0-9]+", "mcast_port=" + port);
+        props = props.replaceFirst("bind_addr=[0-9\\.]+","bind_addr=" + interfaceAddress);
         tree.setClusterProperties(props);
         tree.setTransactionManagerLookup(new TransactionManagerLookup(){
             public TransactionManager getTransactionManager() throws Exception {
