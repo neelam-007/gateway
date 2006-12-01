@@ -36,7 +36,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -50,8 +49,6 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final int OLD_DERIVED_KEY_LENGTH = 16;
 
     private static Random random = new SecureRandom();
-    private static long lastCreatedDate = -2;
-    private static long dateUniqueness = 0;
 
     public WssDecoratorImpl() {
     }
@@ -72,22 +69,10 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     /**
-     * @param d  the time to check
-     * @return extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
+     * @return random extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
      */
-    private static long getExtraTime(long d) {
-        long extra = random.nextInt(1000) * 1000;
-        synchronized (WssDecoratorImpl.class) {
-            if (lastCreatedDate == d) {
-                // Add two digits of serial number
-                dateUniqueness++;
-                extra += dateUniqueness;
-            } else {
-                lastCreatedDate = d;
-                dateUniqueness = 0;
-            }
-        }
-        return extra;
+    private static long getExtraTime() {
+        return (long)random.nextInt(1000000);
     }
 
     /**
@@ -115,7 +100,7 @@ public class WssDecoratorImpl implements WssDecorator {
             timestamp = SoapUtil.addTimestamp(securityHeader,
                 c.nsf.getWsuNs(),
                 createdDate, // null ok
-                createdDate == null ? random.nextInt(1000) : getExtraTime(createdDate.getTime()),
+                getExtraTime(),
                 timeoutMillis);
         }
 
@@ -125,7 +110,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 timestamp = SoapUtil.addTimestamp(securityHeader,
                     c.nsf.getWsuNs(),
                     dreq.getTimestampCreatedDate(), // null ok
-                    dreq.getTimestampCreatedDate() == null ? random.nextInt(1000000) : getExtraTime(dreq.getTimestampCreatedDate().getTime()),
+                    getExtraTime(),
                     timeoutMillis);
             signList.add(timestamp);
         }
