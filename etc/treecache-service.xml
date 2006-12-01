@@ -42,7 +42,7 @@
         <UDP mcast_addr="228.1.2.3" mcast_port="45566" ip_ttl="64" ip_mcast="true"
            mcast_send_buf_size="150000" mcast_recv_buf_size="80000" ucast_send_buf_size="150000"
            ucast_recv_buf_size="80000" loopback="false" enable_diagnostics="false"
-           bind_addr="127.0.0.1" bind_port="0" port_range="1"/> 
+           bind_addr="127.0.0.1" bind_port="7001" port_range="99"/> 
         <PING timeout="2000" num_initial_members="3" up_thread="false" down_thread="false" />
         <MERGE2 min_interval="10000" max_interval="20000" />
         <FD shun="true" up_thread="true" down_thread="true" />
