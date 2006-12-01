@@ -1,5 +1,6 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -12,11 +13,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.*;
-import java.util.List;
-import java.util.Properties;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * User: megery
@@ -26,6 +28,15 @@ import java.util.logging.Logger;
 public class PartitionConfigCommand extends BaseConfigurationCommand{
     private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
     PartitionConfigBean partitionBean;
+
+    //TODO add some useful patterns here
+    private final static Pattern SERVICE_NAME_PATTERN = Pattern.compile("");
+    private static final Pattern SERVICE_DISPLAY_NAME_PATTERN = Pattern.compile("");
+    private static final Pattern SERVICE_DESCRIPTION_PATTERN = Pattern.compile("");
+    private static final Pattern SERVICE_LOGPREFIX_PATTERN = Pattern.compile("");
+    private static final Pattern SERVICE_LOG_PATTERN = Pattern.compile("");
+    private static final Pattern SERVICE_ERRLOG_PATTERN = Pattern.compile("");
+    private static final Pattern SERVICE_JVM_OPTIONS_PATTERN= Pattern.compile("^-XX:+DisableExplicitGC$");
 
     private interface ConnectorMatcher {
         boolean matchesCriteria(Element connector);
@@ -51,7 +62,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     }
 
     private void updateStartupScripts(PartitionInformation pInfo) throws IOException, InterruptedException {
-        //TODO modify the startup script for this partition
         if (pInfo.getOSSpecificFunctions().isWindows()) {
             updateStartupScriptWindows(pInfo);
         }
@@ -60,12 +70,19 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private void updateStartupScriptWindows(PartitionInformation pInfo) throws IOException, InterruptedException {
         //TODO change anything needed in the startup script for windows. Change service.cmd to use different identifiers.
         //update the contents of service.cmd
-        if (pInfo.isNewPartition()) {
-            String fullCommand = pInfo.getOSSpecificFunctions().getSpecificPartitionControlScriptName();
+        String serviceCommandFile = pInfo.getOSSpecificFunctions().getSpecificPartitionControlScriptName();
+        updateWindowsServiceFile(pInfo.getPartitionId(), serviceCommandFile);
+        installWindowsService(serviceCommandFile, pInfo);
+    }
+
+    private void installWindowsService(String serviceCommandFile, PartitionInformation pInfo) throws InterruptedException, IOException {
+            if (pInfo.isNewPartition()) {
             String[] cmdArray = new String[] {
-                    fullCommand,
-                    "install"
-            };
+                    serviceCommandFile,
+                    "install",
+                    "-Dcom.l7tech.server.partitionName="+pInfo.getPartitionId(),
+                    "-config="+pInfo.getOSSpecificFunctions().getTomcatServerConfig(),
+                };
 
             //install the service
             try {
@@ -84,6 +101,45 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
                 logger.warning("Could not install the SSG service for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
                 throw e;
             }
+        }
+    }
+
+    private void updateWindowsServiceFile(String partitionName, String serviceCommandFile) throws IOException {
+        File f = new File(serviceCommandFile);
+        InputStream is = null;
+        OutputStream os = null;
+        try {
+            is = new FileInputStream(f);
+            byte[] bytes = HexUtils.slurpStream(is);
+            String wholeFile = new String(bytes);
+
+            wholeFile = wholeFile.replaceAll(SERVICE_NAME_PATTERN.pattern(), "SSG_"+partitionName);
+            wholeFile = wholeFile.replaceAll(SERVICE_DISPLAY_NAME_PATTERN.pattern(), "SecureSpan Gateway - " + partitionName + " Partition");
+            wholeFile = wholeFile.replaceAll(SERVICE_DESCRIPTION_PATTERN.pattern(), "Layer 7 Technologies SecureSpan Gateway - "  + partitionName + " Partition");
+            wholeFile = wholeFile.replaceAll(SERVICE_LOGPREFIX_PATTERN.pattern(), partitionName + "_ssg_service.log");
+            wholeFile = wholeFile.replaceAll(SERVICE_LOG_PATTERN.pattern(), "%TOMCAT_HOME%\\logs\\catalina.out." + partitionName);
+            wholeFile = wholeFile.replaceAll(SERVICE_ERRLOG_PATTERN.pattern(), "%TOMCAT_HOME%\\logs\\catalina.err." + partitionName);
+
+            //we'll replace the JVMOPTIONS elsewhere
+            os = new FileOutputStream(f);
+            os.write(wholeFile.getBytes());
+            os.flush();
+        } catch (FileNotFoundException e) {
+            logger.warning("Could not create a windows service for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
+            throw e;
+        } catch (IOException e) {
+            logger.warning("Could not create a windows service for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
+            throw e;
+        } finally {
+            if (is != null)
+                try {
+                    is.close();
+                } catch (IOException e) {}
+
+            if (os != null)
+                try {
+                    os.close();
+                } catch (IOException e) {}
         }
     }
 
