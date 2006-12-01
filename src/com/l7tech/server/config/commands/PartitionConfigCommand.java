@@ -1,5 +1,6 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -50,12 +51,23 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         try {
             updatePartitionEndpoints(pInfo);
             updateSystemProperties(pInfo);
+            if (pInfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
+                copyDefaultServerConfig(pInfo);
+            }
             updateStartupScripts(pInfo);
             updateFirewallRules(pInfo);
         } catch (Exception e) {
             success = false;
         }
         return success;
+    }
+
+    private void copyDefaultServerConfig(PartitionInformation pInfo) throws IOException {
+        if (pInfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
+            File source = new File(pInfo.getOSSpecificFunctions().getTomcatServerConfig());
+            File destination = new File(pInfo.getOSSpecificFunctions().getSsgInstallRoot() + "/tomcat/conf/server.xml");
+            FileUtils.copyFile(source, destination);
+        }
     }
 
     private void updateStartupScripts(PartitionInformation pInfo) throws IOException, InterruptedException {
@@ -65,8 +77,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     }
 
     private void updateStartupScriptWindows(PartitionInformation pInfo) throws IOException, InterruptedException {
-        //TODO change anything needed in the startup script for windows. Change service.cmd to use different identifiers.
-        //update the contents of service.cmd
         String serviceCommandFile = pInfo.getOSSpecificFunctions().getSpecificPartitionControlScriptName();
         writeWindowsServiceConfigFile(pInfo.getPartitionId(), serviceCommandFile);
         installWindowsService(serviceCommandFile, pInfo);
