@@ -73,10 +73,10 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %config(noreplace) /ssg/jdk/jre/lib/security/java.security
 
 # Group writeable directories and files
-%attr(0775,ssgconfig,gateway) /ssg/configwizard
-%attr(0775,ssgconfig,gateway) /ssg/configwizard/*
-%attr(0775,ssgconfig,gateway) /ssg/sysconfigwizard
-%attr(0775,ssgconfig,gateway) /ssg/sysconfigwizard/*
+%attr(0775,gateway,gateway) /ssg/configwizard
+%attr(0775,gateway,gateway) /ssg/configwizard/*
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard/*
 %attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
 # Group writable for migration stuff
 %defattr(0775,gateway,gateway) 
