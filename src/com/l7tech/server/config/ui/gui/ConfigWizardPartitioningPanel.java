@@ -341,7 +341,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             try {
                 if (partitions.size() != 0 && partitions.contains(partitionToRemove)) {
                     PartitionActions partActions = new PartitionActions(partitionToRemove.getOSSpecificFunctions());
-                    if (partActions.removePartitionDirectory(partitionToRemove))
+                    if (partActions.removePartition(partitionToRemove))
                         partitions.remove(partitionToRemove);
                 }
             } finally {

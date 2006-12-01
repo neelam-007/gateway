@@ -160,6 +160,10 @@ public class PartitionManager {
             originalFiles.add(oldTomcatServerConfig);
             originalFiles.add(oldKeystoreDirectory);
 
+
+            File partitionControlFile = new File(osf.getOriginalPartitionControlScriptName());
+            originalFiles.add(partitionControlFile);
+
             if (!partitionsBaseDir.exists()) {
                 System.out.println("Creating Partition Root Directory");
                 if (!partitionsBaseDir.mkdir()) {

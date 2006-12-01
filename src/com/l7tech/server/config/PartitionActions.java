@@ -80,8 +80,11 @@ public class PartitionActions {
         }
     }
 
-    public boolean removePartitionDirectory(PartitionInformation partitionToRemove) {
+    public boolean removePartition(PartitionInformation partitionToRemove) {
         File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
+        if (partitionToRemove.getOSSpecificFunctions().isWindows()) {
+            //TODO invoke the service.cmd uninstall for this partition on windows
+        }
         return FileUtils.deleteDir(deleteMe);
     }
 

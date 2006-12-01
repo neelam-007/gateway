@@ -45,6 +45,8 @@ public abstract class OSSpecificFunctions {
     public static final String NOPARTITION_BASE = "etc/conf/";
     private boolean hasPartitions;
 
+    String partitionControlScriptName;
+
     public OSSpecificFunctions(String OSName) {
         this(OSName, "");
     }
@@ -228,6 +230,10 @@ public abstract class OSSpecificFunctions {
     public String getPathToDBCreateFile() {
         return getSsgInstallRoot() + pathToDBCreateFile;
     }
+
+
+    public abstract String getOriginalPartitionControlScriptName();
+    public abstract String getSpecificPartitionControlScriptName();
 
     public abstract String getNetworkConfigurationDirectory();
 

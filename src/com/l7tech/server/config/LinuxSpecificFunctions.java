@@ -25,6 +25,7 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
         lunaJSPDir = "/usr/lunasa/jsp";
         lunaCmuPath = "bin/cmu";
         pathToJdk = "jdk/";
+        partitionControlScriptName = "partitionControl.sh";
     }
 
     public String[] getKeystoreTypes() {
@@ -33,6 +34,14 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
             KeystoreType.DEFAULT_KEYSTORE_NAME.getName(),
             KeystoreType.LUNA_KEYSTORE_NAME.getName()
         };
+    }
+
+    public String getOriginalPartitionControlScriptName() {
+        return getSsgInstallRoot() + "bin/" + partitionControlScriptName;
+    }
+
+    public String getSpecificPartitionControlScriptName() {
+        return getPartitionBase() + getPartitionName() + "/" + partitionControlScriptName;
     }
 
     public String getNetworkConfigurationDirectory() {

@@ -50,19 +50,47 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         return success;
     }
 
-    private void updateStartupScripts(PartitionInformation pInfo) {
+    private void updateStartupScripts(PartitionInformation pInfo) throws IOException, InterruptedException {
         //TODO modify the startup script for this partition
-        String startupScript = pInfo.getOSSpecificFunctions().getConfigurationBase() + "partitionStart.sh";
-        System.out.println("Startup Script = " + startupScript);
+        if (pInfo.getOSSpecificFunctions().isWindows()) {
+            updateStartupScriptWindows(pInfo);
+        }
+    }
 
-        String stopScript = pInfo.getOSSpecificFunctions().getConfigurationBase() + "partitionStop.sh";
-        System.out.println("Shutdown Script = " + stopScript);
+    private void updateStartupScriptWindows(PartitionInformation pInfo) throws IOException, InterruptedException {
+        //TODO change anything needed in the startup script for windows. Change service.cmd to use different identifiers.
+        //update the contents of service.cmd
+        if (pInfo.isNewPartition()) {
+            String fullCommand = pInfo.getOSSpecificFunctions().getSpecificPartitionControlScriptName();
+            String[] cmdArray = new String[] {
+                    fullCommand,
+                    "install"
+            };
+
+            //install the service
+            try {
+                Process p = null;
+                try {
+                    p = Runtime.getRuntime().exec(cmdArray);
+                    p.waitFor();
+                } finally {
+                    if (p != null)
+                        p.destroy();
+                }
+            } catch (IOException e) {
+                logger.warning("Could not install the SSG service for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                throw e;
+            } catch (InterruptedException e) {
+                logger.warning("Could not install the SSG service for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                throw e;
+            }
+        }
     }
 
     private void updateFirewallRules(PartitionInformation pInfo) {
-        //TODO write an appropriate iptables fragment for this partition
-        String firewallFile = pInfo.getOSSpecificFunctions().getConfigurationBase() + "firewall-rules.txt";
-        System.out.println("Firewall file = " + firewallFile);
+        if (pInfo.getOSSpecificFunctions().isLinux()) {
+            //TODO write an appropriate iptables fragment for this partition
+        }
     }
 
     private void updateSystemProperties(PartitionInformation pInfo) throws IOException {

@@ -25,6 +25,7 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         lunaJSPDir = "C:/Program Files/LunaSA/JSP";
         lunaCmuPath = "cmu.exe";
         pathToJdk = "jdk/";
+        partitionControlScriptName= "service.cmd";
     }
 
     public String[] getKeystoreTypes() {
@@ -33,6 +34,14 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
             KeystoreType.DEFAULT_KEYSTORE_NAME.getName(),
             KeystoreType.LUNA_KEYSTORE_NAME.getName()
         };
+    }
+
+    public String getOriginalPartitionControlScriptName() {
+        return getSsgInstallRoot() + "bin\\" + partitionControlScriptName;
+    }
+
+    public String getSpecificPartitionControlScriptName() {
+        return getPartitionBase() + getPartitionName() + "\\" + partitionControlScriptName;
     }
 
     public String getNetworkConfigurationDirectory() {
