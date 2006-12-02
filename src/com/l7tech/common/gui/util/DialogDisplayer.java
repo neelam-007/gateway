@@ -225,13 +225,20 @@ public class DialogDisplayer {
      * @param dialog  the dialog to display.  Must not be null.
      * @param continuation  code to invoke when the dialog is disposed.
      */
-    private static void displayNatively(JDialog dialog, final Runnable continuation) {
+    private static void displayNatively(JDialog dialog, Runnable continuation) {
         if (continuation != null) {
-            dialog.addWindowListener(new WindowAdapter() {
+            final Runnable[] continuationHolder = new Runnable[]{continuation};
+            final Window window = dialog;
+            final WindowAdapter windowAdapter = new WindowAdapter() {
                 public void windowClosed(WindowEvent e) {
-                    continuation.run();
+                    window.removeWindowListener(this);
+                    Runnable runnable = continuationHolder[0];
+                    continuationHolder[0] = null;
+                    runnable.run();
                 }
-            });
+            };
+
+            dialog.addWindowListener(windowAdapter);
         }
         List images = Utilities.getIconImages(dialog);
         if ((images == null || images.isEmpty()) && defaultWindowImages != null && !defaultWindowImages.isEmpty())
@@ -661,22 +668,22 @@ public class DialogDisplayer {
         final SheetState sheetState = sheetStack.push(sheet);
         int layer = sheetState.layer;
 
-        final SheetBlocker blocker;
+        final SheetBlocker[] blocker = new SheetBlocker[1];
 
         if ("optionDialog".equals(sheet.getClientProperty("JInternalFrame.frameType")) ||
             struth(sheet.getClientProperty(Sheet.PROPERTY_MODAL)))
         {
-            blocker = new SheetBlocker(true);
-            layers.add(blocker);
+            blocker[0] = new SheetBlocker(true);
+            layers.add(blocker[0]);
             layer++;
-            layers.setLayer(blocker, layer, 0);
-            blocker.setLocation(0, 0);
-            blocker.setSize(layers.getWidth(), layers.getHeight());
-        } else blocker = null;
+            layers.setLayer(blocker[0], layer, 0);
+            blocker[0].setLocation(0, 0);
+            blocker[0].setSize(layers.getWidth(), layers.getHeight());
+        } else blocker[0] = null;
 
         Object cobj = sheet.getClientProperty(Sheet.PROPERTY_CONTINUATION);
-        final Runnable continuation;
-        continuation = cobj instanceof Runnable ? (Runnable)cobj : null;
+        final Runnable[] continuation = new Runnable[1];
+        continuation[0] = cobj instanceof Runnable ? (Runnable)cobj : null;
 
         layers.add(sheet);
         layers.setLayer(sheet, layer, 0);
@@ -691,10 +698,11 @@ public class DialogDisplayer {
                 Point sp = sheet.getLocation();
                 if (sp.x > pw || sp.y > ph) Utilities.centerOnParent(sheet);
 
-                if (blocker != null) {
-                    blocker.setSize(pw, ph);
-                    blocker.invalidate();
-                    blocker.validate();
+                SheetBlocker sheetBlocker = blocker[0];
+                if (sheetBlocker != null) {
+                    sheetBlocker.setSize(pw, ph);
+                    sheetBlocker.invalidate();
+                    sheetBlocker.validate();
                 }
             }
         };
@@ -702,19 +710,25 @@ public class DialogDisplayer {
 
         sheet.addInternalFrameListener(new InternalFrameAdapter() {
             public void internalFrameClosed(InternalFrameEvent e) {
-                if (blocker != null) {
-                    blocker.setVisible(false);
-                    layers.remove(blocker);
+                SheetBlocker sheetBlocker = blocker[0];
+                blocker[0] = null;
+                if (sheetBlocker != null) {
+                    sheetBlocker.setVisible(false);
+                    layers.remove(sheetBlocker);
                     layers.remove(sheet);
                     layers.getParent().removeComponentListener(resizeListener);
                     sheet.removeInternalFrameListener(this);
                     getOrCreateSheetStack(layers).pop(sheet);
                 }
-                if (continuation != null) continuation.run();
+                Runnable runnit = continuation[0];
+                continuation[0] = null;
+                if (runnit != null) {
+                    runnit.run();
+                }
             }
         });
 
-        if (blocker != null) blocker.setVisible(true);
+        if (blocker[0] != null) blocker[0].setVisible(true);
         sheet.setVisible(true);
         sheet.requestFocusInWindow();
     }
