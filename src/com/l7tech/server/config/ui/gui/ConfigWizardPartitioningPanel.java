@@ -136,6 +136,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                     Object o = partitionList.getSelectedValue();
                     PartitionInformation partition = (PartitionInformation) o;
                     partitionListModel.remove(partition);
+                    enableEditDeletePartitionButtons();
                 }
         }
         );
@@ -170,6 +171,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         partitionList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
                 updateProperties();
+                enableNameField();
             }
         });
         
@@ -187,6 +189,12 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
         addPartition.addActionListener(managePartitionActionListener);
         removePartition.addActionListener(managePartitionActionListener);
+    }
+
+    private void enableNameField() {
+        PartitionInformation pi = getSelectedPartition();
+        boolean isEnabled = pi != null && !pi.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME);
+        partitionName.setEditable(isEnabled);
     }
 
     private void enableButtons() {
@@ -257,7 +265,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         boolean validRowSelected = (size != 0) && (0 <= index) && (index < size);
-        removePartition.setEnabled(validRowSelected);
+        PartitionInformation pi = getSelectedPartition();
+
+        removePartition.setEnabled(validRowSelected && pi != null && !pi.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME));
     }
 
     protected boolean isValidated() {
@@ -306,7 +316,10 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         public Object getElementAt(int index) {
-            return partitions.get(index);
+            if (index < partitions.size() && index > 0)
+                return partitions.get(index);
+            else
+                return partitions.get(0);
         }
         
         public void add(PartitionInformation newpartition) {
