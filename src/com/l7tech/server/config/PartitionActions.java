@@ -83,10 +83,10 @@ public class PartitionActions {
     public boolean removePartition(PartitionInformation partitionToRemove) {
         boolean success = false;
         File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
+        success = FileUtils.deleteDir(deleteMe);
         if (partitionToRemove.getOSSpecificFunctions().isWindows()) {
             try {
                 uninstallService(partitionToRemove.getOSSpecificFunctions());
-                success = FileUtils.deleteDir(deleteMe);
             } catch (IOException e) {
                 logger.warning("Could not install the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
                 success = false;
