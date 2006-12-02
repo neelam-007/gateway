@@ -80,15 +80,15 @@ set JVMOPTIONS=^
 -XX:NewSize=%maxnewsize%M;^
 -XX:+DisableExplicitGC
 
-if not "%PARTITIONNAMEPROPERTY%"=="" set JVMOPTIONS=%JVMOPTIONS%;%PARTITIONNAMEPROPERTY%
+if not "%PARTITIONNAMEPROPERTY%"=="" set JVMOPTIONS=%JVMOPTIONS%;-Dcom.l7tech.server.partitionName=%PARTITIONNAMEPROPERTY%
 
 :: WARNING: %DLL_DIR% can contain only one folder. That's because of the
 ::          unfortunate choice by PRUNSRV to use ";" as a separator in the
 ::          --Environment option. Fortunately, Tomcat doesn't need anything on
 ::          the PATH.
 
-if "%STARTPARAMS%"=="" set STARTPARAMS=start;-config="%~dp0\server.xml"
-if "%STOPPARAMS%"=="" set STOPPARAMS=stop;-config="%~dp0\server.xml"
+if "%STARTPARAMS%"=="" set STARTPARAMS=-config;%~dp0\server.xml;start
+if "%STOPPARAMS%"=="" set STOPPARAMS=-config;%~dp0\server.xml;stop
 
 
 "%PRUNSRV%" //IS//%SERVICE_NAME% ^
@@ -96,14 +96,21 @@ if "%STOPPARAMS%"=="" set STOPPARAMS=stop;-config="%~dp0\server.xml"
 --JvmOptions "%JVMOPTIONS%" ^
 --JvmMx %java_ram% ^
 --JvmSs 256 ^
---StartClass org.apache.catalina.startup.Bootstrap --StartParams %STARTPARAMS% ^
---StopClass org.apache.catalina.startup.Bootstrap --StopParams  %STOPPARAMS%  --StopTimeout 12
+--StartClass org.apache.catalina.startup.Bootstrap --StartParams="%STARTPARAMS%" ^
+--StopClass org.apache.catalina.startup.Bootstrap --StopParams="%STOPPARAMS%"  --StopTimeout 12
 
 if not errorlevel 1 goto installed
 echo ERROR: Failed to install "%SERVICE_NAME%" service.
 goto end
 :installed
 echo Installed service "%SERVICE_NAME%".
+set PARTITIONNAMEPROPERTY=""
+set SERVICE_NAME=""
+set PR_DISPLAYNAME=""
+set PR_LOGPREFIX=""
+set PR_STDOUTPUT=""
+set PR_STDERROR=""
+
 goto end
 
 
