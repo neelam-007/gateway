@@ -12,6 +12,7 @@ import com.l7tech.console.GatewayLogWindow;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.ExceptionDialog;
 
 /**
@@ -77,6 +78,15 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
             }
             catch(IOException ioe) {
                 log.log(Level.WARNING, "Error reading file.", ioe);
+                ExceptionDialog exceptionDialog = ExceptionDialog.createExceptionDialog(
+                        TopComponents.getInstance().getTopParent(),
+                        "SecureSpan Manager - Error",
+                        "Error reading file: \n  " + file.getName(), 
+                        null,
+                        Level.WARNING);
+                exceptionDialog.pack();
+                Utilities.centerOnScreen(exceptionDialog);
+                DialogDisplayer.display(exceptionDialog);
             }
         }
         return accepted;
