@@ -1699,7 +1699,7 @@
                 <include name="com/l7tech/common/gui/widgets/PleaseWaitDialog.class"/>
                 <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
                 <include name="com/l7tech/common/xml/*.class"/>
-                <include name="com/l7tech/console/text/MaxLengthDocument*.class"/>
+                <include name="com/l7tech/console/text/FilterDocument*.class"/>
                 <include name="com/l7tech/console/panels/Wizard*.class"/>
                 <include name="com/l7tech/console/event/Wizard*.class"/>
                 <include name="com/l7tech/console/event/WeakEventListenerList.class"/>

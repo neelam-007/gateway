@@ -41,7 +41,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         
     private JPanel mainPanel;
     private JList partitionList;
-    private JPanel partitionSelectionPanel;
     private JButton addPartition;
     private JButton removePartition;
 
