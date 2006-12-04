@@ -1,7 +1,7 @@
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.6.5
-Release: 4
+Release: 5
 Group: Applications/Internet
 License: Copyright Layer7 Technologies 2003-2006
 URL: http://www.layer7tech.com
@@ -163,7 +163,7 @@ fi
 
 %post
 
-echo "Layer 7 SecureSpan(tm) Gateway v3.7" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v3.6.5" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
 SSGEXISTS=`/sbin/chkconfig --list | grep "ssg\b"`
@@ -237,8 +237,8 @@ fi
 %changelog
 * Tue Nov 28 2006 MJE
 - added partition migration step to %post
-* Fri Oct 13 2006 CY
-- 3.7m1
+* Tue Nov 14 2006 MJE
+- 3.6.5
 * Mon Sep 25 2006 CY
 - 3.6rc4
 * Mon Aug 21 2006 CY
