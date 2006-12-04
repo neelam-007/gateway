@@ -2,7 +2,7 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.text.MaxLengthDocument;
+import com.l7tech.console.text.FilterDocument;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
@@ -56,6 +56,10 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private HttpEndpointTableModel httpEndpointTableModel;
     private OtherEndpointTableModel otherEndpointTableModel;
 
+    private FilterDocument.Filter partitionNameFilter;
+    public static String pathSeparator = File.separator;
+
+
     ActionListener managePartitionActionListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
             doManagePartition(e);
@@ -64,6 +68,11 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     public ConfigWizardPartitioningPanel(WizardStepPanel next) {
         super(next);
+        partitionNameFilter = new FilterDocument.Filter() {
+            public boolean accept(String s) {
+                return !s.contains(pathSeparator);
+            }
+        };
         stepLabel = "Configure Partitions";
         setShowDescriptionPanel(false);
     }
@@ -166,7 +175,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             }
         });
 
-        partitionName.setDocument(new MaxLengthDocument(128));
+        partitionName.setDocument(new FilterDocument(128, partitionNameFilter));
 
         partitionList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
