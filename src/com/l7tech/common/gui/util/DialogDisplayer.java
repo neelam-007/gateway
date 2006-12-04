@@ -78,7 +78,7 @@ public class DialogDisplayer {
      * @param title        the title for the dialog or sheet.  Must not be null.
      * @param continuation the continuation to invoke when the option pane is hidden.  Must not be null.
      */
-    public static void display(JOptionPane optionPane, Component parent, String title, Runnable continuation) {
+    public static void display(final JOptionPane optionPane, Component parent, String title, Runnable continuation) {
         SheetHolder holder = getSheetHolderAncestor(parent);
         if (holder != null) {
             JInternalFrame jif = optionPane.createInternalFrame(holder.getLayeredPane(), title);
@@ -93,10 +93,11 @@ public class DialogDisplayer {
             }
         }
 
-        JDialog dlg = optionPane.createDialog(parent, title);
+        final JDialog dlg = optionPane.createDialog(parent, title);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        displayNatively(dlg, continuation);
+        displayNatively(dlg, null);
+        if (continuation != null) continuation.run();
     }
 
     /**
@@ -234,7 +235,8 @@ public class DialogDisplayer {
                     window.removeWindowListener(this);
                     Runnable runnable = continuationHolder[0];
                     continuationHolder[0] = null;
-                    runnable.run();
+                    if (runnable != null)
+                        runnable.run();
                 }
             };
 
