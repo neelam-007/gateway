@@ -38,6 +38,9 @@ public class WssRoundTripTest extends TestCase {
     private static final String SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
     private static final WsiBSPValidator validator = new WsiBSPValidator();
 
+    static {
+        System.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
+    }
 
     public WssRoundTripTest(String name) {
         super(name);
@@ -401,7 +404,7 @@ public class WssRoundTripTest extends TestCase {
             log.info("Element " + elementToEncrypt.getLocalName() + " succesfully verified as either empty or encrypted.");
         }
 
-        assertTrue("XML message passed WS-I BSP tests.", isValid);        
+        assertTrue("WS-I BSP check.", isValid);        
     }
 
     private SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
