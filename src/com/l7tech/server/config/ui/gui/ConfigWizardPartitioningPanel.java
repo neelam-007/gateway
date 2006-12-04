@@ -19,6 +19,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -280,6 +281,14 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     protected boolean isValidated() {
         boolean isValid = true;
+        TableCellEditor editor = httpEndpointsTable.getCellEditor();
+        if (editor != null)
+            editor.stopCellEditing();
+
+        editor = otherEndpointsTable.getCellEditor();
+        if (editor != null)
+            editor.stopCellEditing();
+
         PartitionInformation pInfo = getSelectedPartition();
         OSSpecificFunctions partitionFunctions = pInfo.getOSSpecificFunctions();
         String partitionDirectory = partitionFunctions.getPartitionBase() + pInfo.getPartitionId();
