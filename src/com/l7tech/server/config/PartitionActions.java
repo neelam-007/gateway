@@ -8,12 +8,10 @@ import org.apache.commons.lang.StringUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -145,5 +143,29 @@ public class PartitionActions {
             throw new RuntimeException("Could not determine the network interfaces for this gateway. Please run the system configuration wizard");
         }
         return new Vector<String>(allIpAddresses);
+    }
+
+    public void setLinuxFilePermissions(String[] files, String permissions, File workingDir, OSSpecificFunctions osf) throws IOException, InterruptedException {
+        if (!osf.isLinux())
+            return;
+
+        List<String> commandLine = new ArrayList<String>();
+        commandLine.add("chmod");
+        commandLine.add(permissions);
+        for (String file : files) {
+            commandLine.add(file);
+        }
+
+
+        Process changer = null;
+        InputStream is = null;
+        try {
+            String[] commandsArray = commandLine.toArray(new String[0]);
+            changer = Runtime.getRuntime().exec(commandsArray, null, workingDir);
+            changer.waitFor();
+        } finally {
+            if (changer != null)
+                changer.destroy();
+        }
     }
 }

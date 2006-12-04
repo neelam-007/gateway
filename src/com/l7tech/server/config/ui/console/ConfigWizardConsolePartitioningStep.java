@@ -120,6 +120,18 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             PartitionActions pa = new PartitionActions(osFunctions);
             File newPartDir = pa.createNewPartition(osFunctions.getPartitionBase() + newPartitionName);
             pa.copyTemplateFiles(newPartDir);
+            try {
+                pa.setLinuxFilePermissions(
+                    new String[] {
+                        newPartDir.getAbsolutePath() + "/partitionControl.sh",
+                        newPartDir.getAbsolutePath() + "/partition_defs.sh",
+                    },
+                    "775",
+                    newPartDir, osFunctions);
+            } catch (InterruptedException e) {
+                logger.warning("Error while setting execute permissions on the startup scripts for partition \"" + pi.getPartitionId() + "\": " + e.getMessage());
+            }
+
             PartitionManager.getInstance().addPartition(newPartitionName);
             partitionNames = PartitionManager.getInstance().getPartitionNames();
             pi = PartitionManager.getInstance().getPartition(newPartitionName);

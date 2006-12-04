@@ -4,6 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PartitionActions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -184,13 +185,23 @@ public class PartitionManager {
                 }
             }
 
+            PartitionActions pActions = new PartitionActions(osf);
             if (templatePartitionDir.listFiles().length == 0) {
                 System.out.println("Copying original configuration files to the template partition.");
                 try {
                     copyConfigurations(originalFiles, templatePartitionDir);
+                    pActions.setLinuxFilePermissions(
+                        new String[] {
+                            templatePartitionDir.getAbsolutePath() + "/partitionControl.sh",
+                            templatePartitionDir.getAbsolutePath() + "/partition_defs.sh",
+                        },
+                        "775",
+                        templatePartitionDir, osf);
                 } catch (IOException e) {
                     System.out.println("Error while creating the template partition: " + e.getMessage());
                     System.exit(1);
+                } catch (InterruptedException e) {
+                    System.out.println("Error while setting execute permissions on the startup scripts for templatepartition: " + e.getMessage());
                 }
             }
 
@@ -198,9 +209,19 @@ public class PartitionManager {
                 System.out.println("Copying original configuration files to the default partition.");
                 try {
                     copyConfigurations(originalFiles, defaultPartitionDir);
+                    pActions.setLinuxFilePermissions(
+                        new String[] {
+                            defaultPartitionDir.getAbsolutePath() + "/partitionControl.sh",
+                            defaultPartitionDir.getAbsolutePath() + "/partition_defs.sh",
+                        },
+                        "775",
+                        defaultPartitionDir, osf);
+
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);
+                } catch (InterruptedException e) {
+                    System.out.println("Error while setting execute permissions on the startup scripts for default_ partition : " + e.getMessage());
                 }
             } else {
                 System.out.println("the default partition does not need to be migrated");

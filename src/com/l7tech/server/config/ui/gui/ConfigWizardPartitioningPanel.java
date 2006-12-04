@@ -283,9 +283,18 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             try {
                 File newPartDir = partActions.createNewPartition(partitionDirectory);
                 partActions.copyTemplateFiles(newPartDir);
+                partActions.setLinuxFilePermissions(
+                    new String[] {
+                        newPartDir.getAbsolutePath() + "/partitionControl.sh",
+                        newPartDir.getAbsolutePath() + "/partition_defs.sh",
+                    },
+                    "775",
+                    newPartDir, osFunctions);
             } catch (IOException e) {
                 logger.severe("Error while creating the new partition \"" + pInfo.getPartitionId() + "\": " + e.getMessage());
                 isValid = false;
+            } catch (InterruptedException e) {
+                logger.warning("Error while setting execute permissions on the startup scripts for partition \"" + pInfo.getPartitionId() + "\": " + e.getMessage());
             }
         } else {
             //check if the name has changed

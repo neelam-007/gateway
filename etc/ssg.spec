@@ -72,6 +72,8 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %config(noreplace) /ssg/jdk/jre/lib/security/
 %config(noreplace) /ssg/jdk/jre/lib/security/java.security
 
+%attr(0775,gateway,gateway) /ssg/bin/partition*.sh
+
 # Group writeable directories and files
 %attr(0775,gateway,gateway) /ssg/configwizard
 %attr(0775,gateway,gateway) /ssg/configwizard/*
