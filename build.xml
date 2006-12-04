@@ -401,9 +401,7 @@
     <!--
       Undeploy from Tomcat
     -->
-    <target name="undeploy" depends="init">
-        <fail unless="tomcat.home">Property is not defined: 'tomcat.home'</fail>
-
+    <target name="undeploy" depends="deploy-init, init">
         <delete dir="${tomcat.home}/webapps/ROOT"/>
         <delete file="${war}"/>
     </target>
@@ -412,6 +410,10 @@
       Deploy target initialization
     -->
     <target name="deploy-init">
+        <fail unless="tomcat.home">Property is not defined: 'tomcat.home'</fail>
+        <available property="tomcat.home.available" file="${tomcat.home}"/>
+        <fail unless="tomcat.home.available">Tomcat home does not exist: 'tomcat.home'</fail>
+
         <property name="dev.build" value="true"/>
         <property name="ssg.only" value="true"/>
     </target>
@@ -422,8 +424,6 @@
       the WAR into ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
     -->
     <target name="deploy" depends="deploy-init, package">
-        <fail unless="tomcat.home">Property is not defined: 'tomcat.home'</fail>
-
         <copy todir="${tomcat.home}/webapps">
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>

@@ -44,12 +44,16 @@ fi
 PATH="$JAVA_HOME/bin:$PATH"; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
 if [ ! -e "$TOMCAT_HOME/bin/startup.sh" ]; then
-    echo ""
-    echo "The Tomcat Server wasn't found in directory ${TOMCAT_HOME}."
-    echo "Please set your environment so that the TOMCAT_HOME variable "
-    echo "refers to the Tomcat home installation directory."
-    echo ""
-    exit 1
+    if [ -z "${TOMCAT_HOME}" ] ; then
+        echo "WARNING! TOMCAT_HOME is not set!"
+    else   
+        echo "WARNING! Invalid TOMCAT_HOME [${TOMCAT_HOME}]"
+        echo ""
+        echo "The Tomcat Server wasn't found in directory ${TOMCAT_HOME}."
+        echo "Please set your environment so that the TOMCAT_HOME variable "
+        echo "refers to the Tomcat home installation directory."
+        echo ""
+    fi
 fi
 
 if [ ! -e $SRC_ROOT/build.sh ]; then
