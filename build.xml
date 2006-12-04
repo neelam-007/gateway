@@ -2753,15 +2753,6 @@
     -->
     <target name="INTERNAL-buildinfo-version" if="build.version">
         <buildinforeplace token="PRODUCT_VERSION" value="${build.version}"/>
-
-        <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
-        <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
-            <fileset dir="${src.root}">
-                <include name="installer/proxy/win32/Bridge.nsi"/>
-                <include name="installer/console/win32/Manager.nsi"/>
-                <include name="installer/server/win32/SSG.nsi"/>
-            </fileset>
-        </replaceregexp>
     </target>
 
     <!--
