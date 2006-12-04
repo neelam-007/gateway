@@ -107,7 +107,9 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
     public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
         // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
-        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
+        if (currentlyDisplayed != null) {
+            return createFakeExceptionDialog(parent);
+        }
         return currentlyDisplayed = new ExceptionDialog(parent, title, message, throwable, level);
     }
 
@@ -149,6 +151,11 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     }
 
     public void setVisible(boolean b) {
+        if (!b) {
+            synchronized (ExceptionDialog.class) {
+                currentlyDisplayed = null;
+            }
+        }
         if (neverDisplay) {
             // Fake dialog never displays
             super.setVisible(false);
@@ -156,9 +163,6 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             return;
         }
         if (!b) {
-            synchronized (ExceptionDialog.class) {
-                currentlyDisplayed = null;
-            }
             neverDisplay = true;
         }
         super.setVisible(b);
@@ -358,6 +362,9 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         final Object source = e.getSource();
         if (source == close || source == ignore) {
             this.dispose();
+            synchronized (ExceptionDialog.class) {
+                currentlyDisplayed = null;
+            }
         } else if (source == shutdown) {
             shutdownHandler.run();
             this.dispose();
