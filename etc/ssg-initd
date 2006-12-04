@@ -46,10 +46,10 @@ start() {
 		. $partition_base/$partition_dir/partition_defs.sh true ${PARTITION_COUNT}
 		JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts}"
 		if [ "$USER" = "root" ]; then
-        		su - $ssguser -c "$partition_base/$partition_dir/$partition_control start" &>/dev/null <&-
+        		su $ssguser -c "sh $partition_base/$partition_dir/$partition_control start" &>/dev/null <&-
         		RETVAL=$?
 		elif [ "$USER" = "$ssguser" ]; then
-			$partition_base/$partition_dir/$partition_control start &>/dev/null <&-
+			sh $partition_base/$partition_dir/$partition_control start &>/dev/null <&-
 			RETVAL=$?
 		else
 			echo"Need to be root or $ssguser to run this script";
