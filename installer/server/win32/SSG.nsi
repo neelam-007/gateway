@@ -180,6 +180,7 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\configwizard"
+  File /r "${BUILD_DIR}\install\ssg\migration"
 
   SetOutPath "$INSTDIR/configwizard"
   File "${BUILD_DIR}\..\installer\server\win32\SecureSpanConfigWizard.exe"
