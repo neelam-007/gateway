@@ -49,6 +49,7 @@ public class WsdlUtils {
             // See if we are trusted
             try {
                 AccessController.checkPermission(new PropertyPermission("file.encoding", "read"));
+                AccessController.checkPermission(new PropertyPermission("line.separator", "read"));
             }
             catch(AccessControlException ace) {
                 throw new WSDLFactoryNotTrustedException(WSDLException.OTHER_ERROR, "Insufficient permissions for factory use.");
@@ -60,6 +61,7 @@ public class WsdlUtils {
                 final CodeSource cs = new CodeSource(new URL("file:/resource/wsdl"), (Certificate[])null);
                 final Permissions permissions = new Permissions();
                 permissions.add(new PropertyPermission("file.encoding", "read"));
+                permissions.add(new PropertyPermission("line.separator", "read"));
 
                 final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, "com.ibm.wsdl")){
                     private ProtectionDomain pd;
