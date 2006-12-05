@@ -2451,7 +2451,9 @@ public class MainWindow extends JFrame implements SheetHolder {
                         }
                     }
                 };
-                DialogDisplayer.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                                                  message.toString(), "Gateway Not Licensed",
+                                                  JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
                                                   callback);
             }
         });
@@ -2484,6 +2486,14 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public void showSheet(JInternalFrame sheet) {
+        if (isApplet()) {
+            AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+            if (applet == null)
+                throw new IllegalStateException("Running as applet but there's no applet");
+            DialogDisplayer.showSheet(applet, sheet);
+            return;
+        }
+
         Frame topParent = TopComponents.getInstance().getTopParent();
         if (topParent != this && topParent instanceof RootPaneContainer) {
             DialogDisplayer.showSheet((RootPaneContainer)topParent, sheet);
