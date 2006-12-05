@@ -1465,6 +1465,7 @@
             </tarfileset>
             <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
                 <include name="Bridge-${build.version}/**/*"/>
+                <exclude name="Bridge-${build.version}/Bridge.sh"/>
             </tarfileset>
         </tar>
     </target>
@@ -1530,6 +1531,7 @@
             </tarfileset>
             <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
                 <include name="Manager-${build.version}/**/*"/>
+                <exclude name="Manager-${build.version}/Manager.sh"/>
             </tarfileset>
         </tar>
     </target>
