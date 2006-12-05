@@ -108,6 +108,11 @@ public class PolicyProcessingTest extends TestCase {
         super(name);
     }
 
+    protected void setUp() throws Exception {
+        // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
+        System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+    }
+
     /**
      *
      */

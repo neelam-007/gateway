@@ -19,9 +19,6 @@ public class OversizedTextAssertion extends Assertion {
     private static final String XPATH_TEXT_START = "(//*/text())[string-length() > ";
     private static final String XPATH_TEXT_END = "][1]";
 
-    private static final String XPATH_ATTR_START = "//*/@*[string-length() > ";
-    private static final String XPATH_ATTR_END = "][1]";
-
     private static final String XPATH_NESTING_STEP = "/*";
 
     private static final String XPATH_PAYLOAD_START = " /*[local-name() = 'Envelope']/*[local-name() = \"Body\"]/*[";
@@ -109,14 +106,6 @@ public class OversizedTextAssertion extends Assertion {
      */
     public String makeTextXpath() {
         return isLimitTextChars() ? XPATH_TEXT_START + maxTextChars + XPATH_TEXT_END : null;
-    }
-
-    /**
-     * @return an XPath 1.0 expression that matches the first attribute node that exceeds the size limit,
-     *         or null if limitAttrChars is false.
-     */
-    public String makeAttrXpath() {
-        return isLimitAttrChars() ? XPATH_ATTR_START + maxAttrChars + XPATH_ATTR_END : null;
     }
 
     /**

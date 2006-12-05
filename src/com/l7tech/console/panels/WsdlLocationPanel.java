@@ -431,8 +431,7 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     private String gatewayFetchWsdlUrl(final String wsdlUrl) throws IOException {
-        Dialog rootDialog = (Dialog) SwingUtilities.getWindowAncestor(this);
-        final CancelableOperationDialog dlg = new CancelableOperationDialog(rootDialog,
+        final CancelableOperationDialog dlg = new CancelableOperationDialog(TopComponents.getInstance().getTopParent(),
                                                                             "Resolving target",
                                                                             "Please wait, resolving target...");
         SwingWorker worker = new SwingWorker() {
