@@ -69,9 +69,19 @@ public class SslPeerHttpClient implements GenericHttpClient {
         }
 
         final GenericHttpRequest request = client.createRequest(method, p);
-        return new GenericHttpRequest() {
+        return new RerunnableHttpRequest() {
             public void setInputStream(InputStream bodyInputStream) {
                 request.setInputStream(bodyInputStream);
+            }
+
+            public void setInputStreamFactory(InputStreamFactory isf) {
+                if (request instanceof RerunnableHttpRequest) {
+                    RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) request;
+                    rerunnableHttpRequest.setInputStreamFactory(isf);
+                }
+                else { // fallback
+                    request.setInputStream(isf.getInputStream());    
+                }
             }
 
             public GenericHttpResponse getResponse() throws GenericHttpException {

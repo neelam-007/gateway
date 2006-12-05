@@ -646,9 +646,7 @@ public class MessageProcessor {
                 }
             }
 
-            final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
-            httpRequest.setInputStream(bodyInputStream);
 
             // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
             // everything in RAM
@@ -665,6 +663,9 @@ public class MessageProcessor {
                         }
                     }
                 });
+            } else {
+                final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                httpRequest.setInputStream(bodyInputStream);                
             }
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);

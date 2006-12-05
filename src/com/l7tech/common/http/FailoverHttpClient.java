@@ -12,7 +12,6 @@ import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -34,7 +33,7 @@ public class FailoverHttpClient implements GenericHttpClient {
      * Create a wrapped HTTP client that fails over on unsuccessful requests.  A request that gets an answer
      * with a status code of 500 is <b>NOT</b> considered unsuccessful.
      * <p>
-     * If possible, callers are strongly advised to set an {@link InputStreamFactory} on the created requests, even
+     * If possible, callers are strongly advised to set an {@link RerunnableHttpRequest.InputStreamFactory} on the created requests, even
      * if this requires type checking and downcasting to FailoverHttpRequest.  Without an InputStreamFactory,
      * all POST request bodies will be buffered in RAM in case they need to retransmitted for failover.
      *
@@ -60,7 +59,7 @@ public class FailoverHttpClient implements GenericHttpClient {
 
     /**
      * Identical to {@link #createRequest} except saves the caller the trouble of downcasting to
-     * {@link FailoverHttpRequest} if they will be doing so anyway to set an {@link InputStreamFactory} on the
+     * {@link FailoverHttpRequest} if they will be doing so anyway to set an {@link RerunnableHttpRequest.InputStreamFactory} on the
      * request.  Without an InputStreamFactory, a failover request must read and buffer the entire request body
      * in memory before making the first attempt, in caes it fails and needs to be retried.
      *
@@ -131,53 +130,62 @@ public class FailoverHttpClient implements GenericHttpClient {
                     request = client.createRequest(method, params);
 
                     if (method.needsRequestBody()) {
-                        final InputStream bis; // must find one or fail
+                        final InputStreamFactory factory; // must find one or fail
 
                         if (bodyBytes != null) {
-                            bis = new ByteArrayInputStream(bodyBytes);
-                        } else {
-                            if (inputStream == null && inputStreamFactory == null) {
-                                // We don't have one at all.  Create an empty body.
-                                logger.warning("No request InputStream provided -- transmitting empty body request");
-                                params.setContentLength(new Long(0));
-                                bis = new EmptyInputStream();
-                            } else if (inputStreamFactory == null) {
-                                // inputStreamFactory == null, inputStream != null
-
-                                // Need to buffer the input stream ourselves before using it up
-                                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
-                                logger.finer("Buffering request body");
-                                try {
-                                    HexUtils.copyStream(inputStream, baos);
-                                    bodyBytes = baos.toByteArray();
-                                    bis = new ByteArrayInputStream(bodyBytes);
-                                    inputStream = null;
-                                } catch (IOException e) {
-                                    final String msg = "Unable to read request InputStream -- failover terminated";
-                                    logger.log(Level.WARNING, msg, e);
-                                    lastFailure = new GenericHttpException(msg);
-                                    break;
-                                } finally {
-                                    baos.close();
+                            final byte[] body = bodyBytes;
+                            factory = new InputStreamFactory() {
+                                public InputStream getInputStream() {
+                                    return new ByteArrayInputStream(body);
                                 }
-                             } else if (inputStream == null) {
-                                // inputStream == null, inputStreamFactory != null
-
-                                // Can just get a new input stream for this attempt
-                                bis = inputStreamFactory.getInputStream();
-                            } else {
-                                // inputStream != null, inputStreamFactory != null
-
-                                // Use up the existing InputStream; we'll get a new one from the factory if needed
-                                bis = inputStream;
+                            };
+                        } else if (inputStreamFactory != null) {
+                            factory = inputStreamFactory;
+                        } else if (inputStream != null) {
+                            // Need to buffer the input stream ourselves before using it up
+                            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                            if (logger != null)
+                                logger.finer("Buffering request body");
+                            try {
+                                HexUtils.copyStream(inputStream, baos);
                                 inputStream = null;
+                                bodyBytes = baos.toByteArray();
+                                final byte[] body = bodyBytes;
+                                factory = new InputStreamFactory() {
+                                    public InputStream getInputStream() {
+                                        return new ByteArrayInputStream(body);
+                                    }
+                                };
+                            } catch (IOException e) {
+                                final String msg = "Unable to read request InputStream -- failover terminated";
+                                if (logger != null)
+                                    logger.log(Level.WARNING, msg, e);
+                                lastFailure = new GenericHttpException(msg);
+                                break;
+                            } finally {
+                                baos.close();
                             }
+                        } else {
+                            // We don't have one at all.  Create an empty body.
+                            if (logger != null)
+                                logger.warning("No request InputStream provided -- transmitting empty body request");
+                            params.setContentLength(new Long(0));
+                            factory = new InputStreamFactory() {
+                                public InputStream getInputStream() {
+                                    return new EmptyInputStream();
+                                }
+                            };
                         }
 
-                        request.setInputStream(bis);
+                        if (request instanceof RerunnableHttpRequest) {
+                            ((RerunnableHttpRequest)request).setInputStreamFactory(factory);
+                        } else {
+                            request.setInputStream(factory.getInputStream());
+                        }
                     }
 
-                    logger.finer("Attempting HTTP request to " + host);
+                    if (logger != null)
+                        logger.finer("Attempting HTTP request to " + host);
                     response = request.getResponse();
                     
                     // Success!  Report success and hand off the response to our caller
