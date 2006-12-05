@@ -108,16 +108,16 @@ class KerberosConfig {
 
     private static final Logger logger = Logger.getLogger(KerberosConfig.class.getName());
 
-    private static final String SYSPROP_SSG_HOME = "com.l7tech.server.home";
+    private static final String SYSPROP_SSG_HOME = "com.l7tech.server.configDirectory";
     private static final String SYSPROP_LINE_SEP = "line.separator";
     private static final String SYSPROP_LOGINCFG_PATH = "java.security.auth.login.config";
     private static final String SYSPROP_KRB5CFG_PATH = "java.security.krb5.conf";
     private static final String SYSPROP_KRB5_KDC = "java.security.krb5.kdc";
     private static final String SYSPROP_KRB5_REALM = "java.security.krb5.realm";
 
-    private static final String PATH_KEYTAB = "/etc/conf/kerberos.keytab";
-    private static final String PATH_LOGINCFG = "/etc/conf/login.config";
-    private static final String PATH_KRB5CFG = "/etc/conf/krb5.conf";
+    private static final String PATH_KEYTAB = "/kerberos.keytab";
+    private static final String PATH_LOGINCFG = "/login.config";
+    private static final String PATH_KRB5CFG = "/krb5.conf";
 
     private static final String RESOURCE_SSB_LOGINCFG = "/login.config";
     private static final String FILE_NAME_KRB5CFG = "krb5.conf";

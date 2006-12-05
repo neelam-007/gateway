@@ -101,7 +101,7 @@ public class UddiAgentFactory {
      * Read config file props into the given properties object.
      */
     private void addUDDIConfig(Properties props) throws UddiAgentException {
-        String ssgConfigPath = serverConfig.getPropertyCached("ssg.conf");
+        String ssgConfigPath = serverConfig.getPropertyCached("configDirectory");
         String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
 
         FileInputStream propStream = null;
