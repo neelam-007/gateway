@@ -213,10 +213,28 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             }
         } else if (urlConnRadioButton.isSelected()) {
 
+            String certURL = "";
             String hostnameURL = "";
             try {
-                URL url = new URL(urlConnTextField.getText().trim());
+                certURL = urlConnTextField.getText().trim();
+                if (!certURL.startsWith("https://") && !certURL.startsWith("ldaps://")) {
+                    JOptionPane.showMessageDialog(this, resources.getString("view.error.urlNotSsl"),
+                                                  resources.getString("view.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+
+                boolean wasLdap = false;
+                if (certURL.startsWith("ldaps://")) {
+                    wasLdap = true;
+                    certURL = "https://" + certURL.substring(8);
+                }
+                URL url = new URL(certURL);
                 hostnameURL = url.getHost();
+                if (wasLdap && url.getPort()==-1) {
+                    certURL = "https://" + hostnameURL + ":636/";
+                    url = new URL(certURL);
+                }
             } catch (MalformedURLException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
                                               resources.getString("view.error.title"),
@@ -226,7 +244,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             try {
 
-                X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(urlConnTextField.getText().trim(), true);
+                X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(certURL, true);
                 cert = certs[0];
 
             } catch (TrustedCertAdmin.HostnameMismatchException e) {
