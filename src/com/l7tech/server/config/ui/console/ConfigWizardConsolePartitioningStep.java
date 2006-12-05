@@ -36,6 +36,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     public static final String ADD_NEW_PARTITION = ") Add a new Partition: " + getEolChar();
     public static final String DELETE_PARTITION = ") Delete a Partition: " + getEolChar();
     private Set<String> partitionNames;
+    private String pathSeparator = File.separator;
 
 
     public ConfigWizardConsolePartitioningStep(ConfigurationWizard parentWiz) {
@@ -112,8 +113,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         String defaultValue = "New Partition";
         prompts.add("Enter the name of the new partition: ["+ defaultValue + "]");
             
-        Pattern allowedEntries = Pattern.compile(".{0,128}+");
-        String newPartitionName = getData(prompts.toArray(new String[0]), "New Partition", allowedEntries);
+        Pattern allowedEntries = Pattern.compile("[^" + pathSeparator +"]{1,128}");
+        String newPartitionName = getData(prompts.toArray(new String[0]), "New Partition", allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
 
         PartitionInformation pi = null;
         if (StringUtils.isNotEmpty(newPartitionName)) {
