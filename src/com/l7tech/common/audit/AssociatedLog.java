@@ -11,13 +11,15 @@ public class AssociatedLog {
     private final String message;
     private final String severity;
     private final String exception;
+    private final int messageId;
     private final int ordinal;
 
-    public AssociatedLog(long timeStamp, String severity, String message, String exception, int ordinal) {
+    public AssociatedLog(long timeStamp, String severity, String message, String exception, int messageId, int ordinal) {
         this.timeStamp = timeStamp;
         this.severity = severity;
         this.message = message;
         this.exception = exception;
+        this.messageId = messageId;
         this.ordinal = ordinal;
     }
 
@@ -35,6 +37,10 @@ public class AssociatedLog {
 
     public String getSeverity() {
         return severity;
+    }
+
+    public int getMessageId() {
+        return messageId;
     }
 
     public int getOrdinal() {

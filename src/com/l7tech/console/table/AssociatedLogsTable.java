@@ -25,7 +25,7 @@ import java.util.EventObject;
  */
 public class AssociatedLogsTable extends JTable {
 
-    private static int[] DEFAULT_COLUMN_WIDTHS ={175, 100, 80, 420};
+    private static int[] DEFAULT_COLUMN_WIDTHS ={175, 80, 80, 40, 400};
 
     private AssociatedLogsTableSorter associatedLogsTableModel = null;
     private Icon upArrowIcon = new ArrowIcon(0);
@@ -78,7 +78,8 @@ public class AssociatedLogsTable extends JTable {
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[0]));
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_SECURITY_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[1]));
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_DETAIL_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[2]));
-        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[3]));
+        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_CODE_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[3]));
+        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[4]));
 
         columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_DETAIL_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
             JButton detailRenderButton = buildButton();
@@ -138,7 +139,7 @@ public class AssociatedLogsTable extends JTable {
             return associatedLogsTableModel;
         }
 
-        String[] cols = {"Time", "Severity", "Detail", "Message"};
+        String[] cols = {"Time", "Severity", "Detail", "Code", "Message"};
         String[][] rows = new String[][]{};
 
         associatedLogsTableModel = new AssociatedLogsTableSorter(new DefaultTableModel(rows, cols)) {
