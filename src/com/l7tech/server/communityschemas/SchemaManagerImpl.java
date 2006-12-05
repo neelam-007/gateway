@@ -940,7 +940,14 @@ public class SchemaManagerImpl implements SchemaManager {
                     maybeRebuildHardwareCache();
                 }
             };
-            maintenanceTimer.schedule(task, delay);
+            try {
+                maintenanceTimer.schedule(task, delay);
+            } catch (IllegalStateException e) {
+                // bugzilla #3179, avoid sending this RTE to SSM, note the problem in the log and go
+                // for independant one shot timer. the task manages its own lock
+                logger.log(Level.WARNING, "the maintenance timer was unexpectedly cancelled", e);
+                (new Timer("Schema cache maintenance", true)).schedule(task, delay);
+            }
         }
     }
 
