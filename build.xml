@@ -1953,14 +1953,14 @@
         </sequential>
     </macrodef>
 
-    <target name="testpackage.work" depends="testpackage.bridge, testpackage.manager, testpackage.config"/>
+    <target name="testpackage.work" depends="package, testpackage.bridge, testpackage.manager, testpackage.config"/>
 
-	<target name="testpackage.init">
+    <target name="testpackage.init">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" verbose="no"/>
-	</target>
+    </target>
 
-	<target name="testpackage.bridge" depends="testpackage.init, package.bridge">
+    <target name="testpackage.bridge" depends="testpackage.init, package.bridge">
         <!-- Testpackage for SecureSpan Bridge -->
         <fileset id="bridge.testpackage.fileset" dir="${build.lib}">
             <patternset refid="bridge.libs"/>
@@ -1975,9 +1975,9 @@
                 <equals arg1="0" arg2="${testpackage.bridge.result}"/>
             </not>
         </condition>
-	</target>
+    </target>
 
-	<target name="testpackage.manager" depends="testpackage.init, package.manager">
+    <target name="testpackage.manager" depends="testpackage.init, package.manager">
         <!-- Testpackage for SecureSpan Manager -->
         <fileset id="manager.testpackage.fileset" dir="${build.lib}">
             <patternset refid="manager.libs"/>
@@ -1992,9 +1992,9 @@
                 <equals arg1="0" arg2="${testpackage.manager.result}"/>
             </not>
         </condition>
-	</target>
+    </target>
 
-	<target name="testpackage.config" depends="testpackage.init, package.configwiz, package.systemconfigwiz, package.ssgflasher">
+    <target name="testpackage.config" depends="testpackage.init, package.configwiz, package.systemconfigwiz, package.ssgflasher">
         <!-- Testpackage for Configuration Wizard -->
         <fileset id="configwizard.testpackage.fileset" dir="${build.lib}">
             <patternset refid="configurationwizard.libs"/>
