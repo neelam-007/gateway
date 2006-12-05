@@ -1895,21 +1895,30 @@
     </target>
 
     <!--
-      Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
+      Ensure that all classes in the various jar files are loadable when the classpath
       contains only the jars and their declared dependency jars.
     -->
     <target name="testpackage" description="Test classpaths for packages." depends="testpackage.work, testpackage.report">
         <checkfail/>
     </target>
-    <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard, testpackage.report.sysconfigwizard, testpackage.report.flasher"/>
+
+    <target name="testpackage.report" 
+            depends="testpackage.report.bridge, 
+                     testpackage.report.manager, 
+                     testpackage.report.configwizard, 
+                     testpackage.report.sysconfigwizard, 
+                     testpackage.report.flasher"/>
+
     <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
         <echo level="warning">Bridge package test failed.</echo>
         <property name="fail" value="true"/>
     </target>
+
     <target name="testpackage.report.manager" if="testpackage.manager.fail">
         <echo level="warning">Manager package test failed.</echo>
         <property name="fail" value="true"/>
     </target>
+
     <target name="testpackage.report.configwizard" if="testpackage.configwizard.fail">
         <echo level="warning">ConfigWizard package test failed.</echo>
         <property name="fail" value="true"/>
@@ -1944,24 +1953,14 @@
         </sequential>
     </macrodef>
 
-    <target name="testpackage.work" depends="package">
+    <target name="testpackage.work" depends="testpackage.bridge, testpackage.manager, testpackage.config"/>
+
+	<target name="testpackage.init">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" verbose="no"/>
-        <!-- Testpackage for SecureSpan Manager -->
-        <fileset id="manager.testpackage.fileset" dir="${build.lib}">
-            <patternset refid="manager.libs"/>
-        </fileset>
-        <checkdeps jarfile="build/Manager.jar"
-                   libfilesetref="manager.testpackage.fileset"
-                   resultproperty="testpackage.manager.result"/>
-        <!-- This just stops idea complaining -->
-        <property name="testpackage.manager.result" value=""/>
-        <condition property="testpackage.manager.fail">
-            <not>
-                <equals arg1="0" arg2="${testpackage.manager.result}"/>
-            </not>
-        </condition>
+	</target>
 
+	<target name="testpackage.bridge" depends="testpackage.init, package.bridge">
         <!-- Testpackage for SecureSpan Bridge -->
         <fileset id="bridge.testpackage.fileset" dir="${build.lib}">
             <patternset refid="bridge.libs"/>
@@ -1976,7 +1975,26 @@
                 <equals arg1="0" arg2="${testpackage.bridge.result}"/>
             </not>
         </condition>
+	</target>
 
+	<target name="testpackage.manager" depends="testpackage.init, package.manager">
+        <!-- Testpackage for SecureSpan Manager -->
+        <fileset id="manager.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="manager.libs"/>
+        </fileset>
+        <checkdeps jarfile="build/Manager.jar"
+                   libfilesetref="manager.testpackage.fileset"
+                   resultproperty="testpackage.manager.result"/>
+        <!-- This just stops idea complaining -->
+        <property name="testpackage.manager.result" value=""/>
+        <condition property="testpackage.manager.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.manager.result}"/>
+            </not>
+        </condition>
+	</target>
+
+	<target name="testpackage.config" depends="testpackage.init, package.configwiz, package.systemconfigwiz, package.ssgflasher">
         <!-- Testpackage for Configuration Wizard -->
         <fileset id="configwizard.testpackage.fileset" dir="${build.lib}">
             <patternset refid="configurationwizard.libs"/>
@@ -1993,7 +2011,6 @@
                 <equals arg1="0" arg2="${testpackage.configwizard.result}"/>
             </not>
         </condition>
-
 
         <!-- Testpackage for System Configuration Wizard -->
         <fileset id="sysconfigwizard.testpackage.fileset" dir="${build.lib}">
