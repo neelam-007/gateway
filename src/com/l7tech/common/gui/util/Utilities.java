@@ -453,6 +453,71 @@ public class Utilities {
     }
 
     /**
+     * Get the closest JInternalFrame ancestor of the specified component, if any.
+     *
+     * @param c the component to examine.  Must not be null.
+     * @return the nearest enclosing JInternalFrame, or null if not inside a JInternalFrame.
+     */
+    public static JInternalFrame getInternalFrameAncestor(Component c) {
+        for (Container p = c.getParent(); p != null; p = p.getParent()) {
+            if (p instanceof JInternalFrame) return (JInternalFrame)p;
+        }
+        return null;
+    }
+
+    /**
+     * Get the closest RootPaneContainer ancestor of the specified component, if any.
+     *
+     * @param c the component to examine.  Must not be null.
+     * @return the nearest enclosing RootPaneContainer, or null if not inside a RootPaneContainer.
+     */
+    public static RootPaneContainer getRootPaneContainerAncestor(Component c) {
+        for (Container p = c.getParent(); p != null; p = p.getParent()) {
+            if (p instanceof RootPaneContainer) return (RootPaneContainer)p;
+        }
+        return null;
+    }
+
+
+    /**
+     * Set the title of the specified RootPaneContainer, if it is a Frame, Dialog, or JInternalFrame.
+     * Takes no action if rpc is not one of these types or if it is null.
+     *
+     * @param rpc  the RootPaneContainer to examine, or null to take no action.
+     * @param title  the new title to set.
+     */
+    public static void setTitle(RootPaneContainer rpc, String title) {
+        if (rpc instanceof Frame) {
+            Frame frame = (Frame)rpc;
+            frame.setTitle(title);
+        } else if (rpc instanceof Dialog) {
+            Dialog dialog = (Dialog)rpc;
+            dialog.setTitle(title);
+        } else if (rpc instanceof JInternalFrame) {
+            JInternalFrame jif = (JInternalFrame)rpc;
+            jif.setTitle(title);
+        }
+    }
+
+
+    /**
+     * Disposes the specified RootPaneContainer, if it is a Window or a JInternalFrame.  Takes no action
+     * if rpc is some other type, or null.
+     *
+     * @param rpc  the RootPaneContainer to dispose, or null to take no action.
+     */
+    public static void dispose(RootPaneContainer rpc) {
+        if (rpc instanceof Window) {
+            Window window = (Window)rpc;
+            window.dispose();
+        } else if (rpc instanceof JInternalFrame) {
+            JInternalFrame jif = (JInternalFrame)rpc;
+            jif.dispose();
+        }
+    }
+
+
+    /**
      * Creates pop-up menus for text components.
      */
     public static interface ContextMenuFactory {

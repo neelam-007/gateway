@@ -738,7 +738,7 @@ public class GenericUserPanel extends UserPanel {
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            SwingUtilities.windowForComponent(GenericUserPanel.this).dispose();
+            Utilities.dispose(Utilities.getRootPaneContainerAncestor(GenericUserPanel.this));
         }
     };
 
@@ -767,9 +767,7 @@ public class GenericUserPanel extends UserPanel {
                     }
                 }
             }
-            Window dlg = SwingUtilities.windowForComponent(GenericUserPanel.this);
-            dlg.setVisible(false);
-            dlg.dispose();
+            Utilities.dispose(Utilities.getRootPaneContainerAncestor(GenericUserPanel.this));
         }
 
         /**
@@ -832,16 +830,14 @@ public class GenericUserPanel extends UserPanel {
             long flags = e.getChangeFlags();
 
             if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
-              ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
+                ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
                 if (GenericUserPanel.this.isDisplayable()) {
-                    JDialog d = (JDialog)SwingUtilities.windowForComponent(GenericUserPanel.this);
-                    if (d != null) {
-                        d.setTitle(userHeader.getName() + " Properties");
-                    }
+                    Utilities.setTitle(Utilities.getRootPaneContainerAncestor(GenericUserPanel.this),
+                                       userHeader.getName() + " Properties");
                 }
             }
         }
-    };
+      };
 
 
 }

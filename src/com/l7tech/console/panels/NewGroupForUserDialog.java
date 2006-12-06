@@ -48,9 +48,19 @@ public class NewGroupForUserDialog extends JDialog {
      *
      * @param parent the GroupPanel parent.
      */
-    public NewGroupForUserDialog(JDialog owner, UserGroupsPanel parent, IdentityProviderConfig ipc) {
+    public NewGroupForUserDialog(Dialog owner, UserGroupsPanel parent, IdentityProviderConfig ipc) {
         // Init UI
         super(owner, true);
+        init(parent, ipc);
+    }
+
+    public NewGroupForUserDialog(Frame owner, UserGroupsPanel parent, IdentityProviderConfig ipc) {
+        // Init UI
+        super(owner, true);
+        init(parent, ipc);
+    }
+
+    private void init(UserGroupsPanel parent, IdentityProviderConfig ipc) {
         this.parent = parent;
         this.ipc = ipc;
         initResources();

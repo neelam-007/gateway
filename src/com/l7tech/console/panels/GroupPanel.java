@@ -77,7 +77,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            SwingUtilities.windowForComponent(GroupPanel.this).dispose();
+            Utilities.dispose(Utilities.getRootPaneContainerAncestor(GroupPanel.this));
         }
     };
 
@@ -559,9 +559,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
                     }
                 }
             }
-            Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
-            dlg.setVisible(false);
-            dlg.dispose();
+            Utilities.dispose(Utilities.getRootPaneContainerAncestor(GroupPanel.this));
             wasoked = true;
         }
 
@@ -602,10 +600,8 @@ public abstract class GroupPanel extends EntityEditorPanel {
               if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
                 ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
                   if (GroupPanel.this.isDisplayable()) {
-                      JDialog d = (JDialog)SwingUtilities.windowForComponent(GroupPanel.this);
-                      if (d != null) {
-                          d.setTitle(groupHeader.getName() + " Properties");
-                      }
+                      Utilities.setTitle(Utilities.getRootPaneContainerAncestor(GroupPanel.this),
+                                         groupHeader.getName() + " Properties");
                   }
               }
           }

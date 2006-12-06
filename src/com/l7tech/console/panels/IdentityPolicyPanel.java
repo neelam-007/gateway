@@ -192,8 +192,7 @@ public class IdentityPolicyPanel extends JPanel {
     }
 
     private void exitHandler() {
-        Window w = SwingUtilities.windowForComponent(this);
-        w.dispose();
+        Utilities.dispose(Utilities.getRootPaneContainerAncestor(this));
     }
 
     /**

@@ -80,7 +80,7 @@ public class FederatedUserPanel extends UserPanel {
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
-            SwingUtilities.windowForComponent(FederatedUserPanel.this).dispose();
+            Utilities.dispose(Utilities.getRootPaneContainerAncestor(FederatedUserPanel.this));
         }
     };
     private boolean canUpdate = false;
@@ -594,9 +594,7 @@ public class FederatedUserPanel extends UserPanel {
                             // Error - just return
                             return;
                         }
-                        Window dlg = SwingUtilities.windowForComponent(FederatedUserPanel.this);
-                        dlg.setVisible(false);
-                        dlg.dispose();
+                        Utilities.dispose(Utilities.getRootPaneContainerAncestor(FederatedUserPanel.this));
                     }
                 });
             } else {
@@ -726,10 +724,8 @@ public class FederatedUserPanel extends UserPanel {
               if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
                 ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
                   if (FederatedUserPanel.this.isDisplayable()) {
-                      JDialog d = (JDialog)SwingUtilities.windowForComponent(FederatedUserPanel.this);
-                      if (d != null) {
-                          d.setTitle(userHeader.getName() + " Properties");
-                      }
+                      Utilities.setTitle(Utilities.getRootPaneContainerAncestor(FederatedUserPanel.this),
+                                         userHeader.getName() + " Properties");
                   }
                   X509Certificate cert = certPanel.getUserCert();
                   getX509SubjectNameTextField().setEditable(cert == null);

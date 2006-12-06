@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -377,9 +378,10 @@ class UserGroupsPanel extends JPanel {
 
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    JDialog d = (JDialog)SwingUtilities.windowForComponent(UserGroupsPanel.this);
-
-                    JDialog dialog = new NewGroupForUserDialog(d, UserGroupsPanel.this, ipc);
+                    Window d = SwingUtilities.windowForComponent(UserGroupsPanel.this);                    
+                    JDialog dialog = d instanceof Dialog
+                        ? new NewGroupForUserDialog((Dialog)d, UserGroupsPanel.this, ipc)
+                        : new NewGroupForUserDialog(TopComponents.getInstance().getTopParent(), UserGroupsPanel.this, ipc);
                     dialog.setResizable(false);
                     DialogDisplayer.display(dialog, new Runnable() {
                         public void run() {

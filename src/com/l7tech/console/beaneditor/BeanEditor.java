@@ -88,14 +88,7 @@ public class BeanEditor extends JPanel {
      * Dispose the editor Invokde the dispose on the container (JDialog or JFrame)
      */
     public void dispose() {
-        Window w = SwingUtilities.windowForComponent(this);
-        if (w instanceof JFrame) {
-            JFrame jf = (JFrame)w;
-            jf.dispose();
-        } else if (w instanceof JDialog) {
-            JDialog jd = (JDialog)w;
-            jd.dispose();
-        }
+        Utilities.dispose(Utilities.getRootPaneContainerAncestor(this));
     }
 
     public BeanEditor(Object bean, Class stopClass, Options options) {
