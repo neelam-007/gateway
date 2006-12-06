@@ -21,8 +21,8 @@ import java.util.logging.Logger;
 public class DBDumpUtil {
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
     private static DBActions dbActions;
-    public static final String DBDUMPFILENAME_STAGING = "dbdump_staging.sql";
-    public static final String DBDUMPFILENAME_CLONE = "dbdump_clone.sql";
+    public static final String DBDUMPFILENAME_STAGING = "dbdump_migrate.sql";
+    public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
     public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
     private static final String[] TABLE_NOT_IN_STAGING = {"client_cert"};
     private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "service_usage", "message_id", "service_metrics"};
