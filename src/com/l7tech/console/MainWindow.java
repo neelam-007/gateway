@@ -1897,7 +1897,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                   if ("lookAndFeel".equals(evt.getPropertyName())) {
                       SwingUtilities.invokeLater(new Runnable() {
                           public void run() {
-                              SwingUtilities.updateComponentTreeUI(MainWindow.this);
+                              SwingUtilities.updateComponentTreeUI(TopComponents.getInstance().getTopParent());
                           }
                       });
                   }
@@ -2443,7 +2443,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
                     public void reportResult(int retval) {
                         if (retval == JOptionPane.YES_OPTION) {
-                            LicenseDialog dlg = new LicenseDialog(MainWindow.this, preferences.getString(SsmPreferences.SERVICE_URL));
+                            LicenseDialog dlg = new LicenseDialog(TopComponents.getInstance().getTopParent(),
+                                                                  preferences.getString(SsmPreferences.SERVICE_URL));
                             dlg.pack();
                             Utilities.centerOnScreen(dlg);
                             dlg.setModal(true);
