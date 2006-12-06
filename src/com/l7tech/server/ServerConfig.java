@@ -654,7 +654,7 @@ public class ServerConfig implements ClusterPropertyListener {
         // export as system property. This is required so custom assertions
         // do not need to import in the ServerConfig and the clases referred by it
         // (LogManager, TransportProtocol) to read the single property.  - em20040506
-        String cfgDirectory = getPropertyCached(PARAM_CONFIG_DIRECTORY);
+        String cfgDirectory = getPropertyCached("ssg.conf");
         if (cfgDirectory !=null) {
             System.setProperty("ssg.config.dir", cfgDirectory);
         } else {
