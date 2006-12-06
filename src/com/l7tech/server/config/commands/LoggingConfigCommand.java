@@ -34,7 +34,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
         partitionName = (pi == null)?"default_":pi.getPartitionId();
-        String ssgLogPropsPath = getOsFunctions().getSsgLogPropertiesFile();
+        String ssgLogPropsPath = pi.getOSSpecificFunctions().getSsgLogPropertiesFile();
         File logProps = new File(ssgLogPropsPath);
         if (logProps.exists()) {
             File[] files = new File[]

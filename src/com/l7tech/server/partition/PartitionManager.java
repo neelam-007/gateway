@@ -79,13 +79,15 @@ public class PartitionManager {
 
     public void addPartition(String partitionId) {
         //inside partitionDir is a server.xml that we need to parse
-        String serverXmlPath = OSDetector.getOSSpecificFunctions(partitionId).getTomcatServerConfig();
+        OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(partitionId);
+        String serverXmlPath = osf.getTomcatServerConfig();
         InputStream is = null;
         try {
             is = new FileInputStream(serverXmlPath);
             Document dom = XmlUtil.parse(is);
             PartitionInformation pi;
             pi = new PartitionInformation(partitionId, dom, false);
+            pi.setEnabled(new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).exists());
             partitions.put(pi.getPartitionId(), pi);
         } catch (FileNotFoundException e) {
             logger.warning("Could not find a server.xml for partition \"" + partitionId + "\". This partition " +
@@ -150,7 +152,9 @@ public class PartitionManager {
 
         final Set<String> whitelist = new HashSet<String>(Arrays.asList(whitelistConfigFiles));
         try {
-            List<File> originalFiles = new ArrayList<File>(
+            List<File> originalFiles = new ArrayList<File>();
+
+            List<File> deletableOriginalFiles = new ArrayList<File>(
                     Arrays.asList(oldSsgConfigDirectory.listFiles(new FileFilter() {
                         public boolean accept(File pathname) {
                             return  whitelist.contains(pathname.getName());
@@ -158,13 +162,16 @@ public class PartitionManager {
                     }
             )));
 
-            originalFiles.add(oldTomcatServerConfig);
-            originalFiles.add(oldKeystoreDirectory);
-            originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
+            deletableOriginalFiles.add(oldKeystoreDirectory);
 
-            if (osf.isLinux()) {
-                originalFiles.add(new File(osf.getSsgInstallRoot() + "bin/" + "partition_defs.sh"));
-            }
+            originalFiles.addAll(deletableOriginalFiles);
+            originalFiles.add(oldTomcatServerConfig);
+            if (osf.isWindows())
+                originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
+
+//            if (osf.isLinux()) {
+//                originalFiles.add(new File(osf.getSsgInstallRoot() + "bin/" + "partition_defs.sh"));
+//            }
 
             if (!partitionsBaseDir.exists()) {
                 System.out.println("Creating Partition Root Directory");
@@ -226,7 +233,7 @@ public class PartitionManager {
             } else {
                 System.out.println("the default partition does not need to be migrated");
             }
-//            removeOriginalConfiguations(originalFiles);
+//            removeOriginalConfiguations(deletableOriginalFiles);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());

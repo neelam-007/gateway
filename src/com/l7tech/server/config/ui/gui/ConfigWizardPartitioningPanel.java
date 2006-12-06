@@ -59,7 +59,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private FilterDocument.Filter partitionNameFilter;
     public static String pathSeparator = File.separator;
 
-
+    private List<PartitionInformation> partitionsAdded;
+    private int newPartitionIndex = 0;
+    
     ActionListener managePartitionActionListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
             doManagePartition(e);
@@ -75,6 +77,8 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         };
         stepLabel = "Configure Partitions";
         setShowDescriptionPanel(false);
+        partitionList.setCellRenderer(new PartitionListRenderer());
+        partitionsAdded = new ArrayList<PartitionInformation>();
     }
 
     private void init() {
@@ -128,27 +132,36 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     }
 
     private void doAddPartition() {
-        String newName = "New Partition";
+        String newName;
+        do {
+            newName = "New Partition" + (newPartitionIndex == 0?"":" " + String.valueOf(newPartitionIndex));
+            newPartitionIndex++;
+        } while (partitionListModel.contains(newName));
+
         PartitionInformation pi = new PartitionInformation(newName);
         partitionListModel.add(pi);
         partitionList.setSelectedValue(pi, true);
         partitionName.requestFocus();
         partitionName.setSelectionStart(0);
         partitionName.setSelectionEnd(newName.length());
+        partitionsAdded.add(pi);
     }
 
     private void doRemovePartition() {
-        Utilities.doWithConfirmation(
+        Object[] deleteThem = partitionList.getSelectedValues();
+        for (Object o : deleteThem) {
+            final PartitionInformation pi = (PartitionInformation) o;
+            Utilities.doWithConfirmation(
                 ConfigWizardPartitioningPanel.this,
-                "Remove Partition", "Are you sure you want to remove the selected partition? This cannot be undone.", new Runnable() {
-                public void run() {
-                    Object o = partitionList.getSelectedValue();
-                    PartitionInformation partition = (PartitionInformation) o;
-                    partitionListModel.remove(partition);
-                    enableEditDeletePartitionButtons();
+                "Remove Partition", "Are you sure you want to remove the \"" + pi.getPartitionId() + "\" partition? This cannot be undone.",
+                new Runnable() {
+                    public void run() {
+                        partitionListModel.remove(pi);
+                    }
                 }
+            );
         }
-        );
+        enableEditDeletePartitionButtons();
     }
 
     private void enableNextButton() {
@@ -168,9 +181,17 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private void initListeners() {
         partitionName.addFocusListener(new FocusAdapter() {
             public void focusLost(FocusEvent e) {
+                String newname = partitionName.getText();
                 int index = partitionList.getSelectedIndex();
                 if (index > 0 && index < partitionListModel.getSize()) {
-                    partitionListModel.update(index, partitionName.getText(), null, null);
+                    if (!partitionListModel.contains(newname))
+                        partitionListModel.update(index, newname, null, null);
+                    else
+                        JOptionPane.showMessageDialog(
+                                ConfigWizardPartitioningPanel.this,
+                                "There is already a \"" + newname + "\" partition",
+                                "Duplicate Partition Name",
+                                JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -245,7 +266,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         partBean.setPartition(pi);
 
         osFunctions = pi.getOSSpecificFunctions();
-        getParentWizard().setPartitionName(pi);
+        getParentWizard().setActivePartition(pi);
     }
 
     protected void updateView() {
@@ -281,39 +302,16 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     protected boolean isValidated() {
         boolean isValid = true;
-        TableCellEditor editor = httpEndpointsTable.getCellEditor();
-        if (editor != null)
-            editor.stopCellEditing();
-
-        editor = otherEndpointsTable.getCellEditor();
-        if (editor != null)
-            editor.stopCellEditing();
+        saveEditsToCurrentPartition();
 
         PartitionInformation pInfo = getSelectedPartition();
         OSSpecificFunctions partitionFunctions = pInfo.getOSSpecificFunctions();
         String partitionDirectory = partitionFunctions.getPartitionBase() + pInfo.getPartitionId();
 
         PartitionActions partActions = new PartitionActions(partitionFunctions);
+        boolean createPartitionsSuccess = createNewPartitions(partActions);
 
-        if (pInfo.isNewPartition()) {
-            logger.info("Creating \"" + partitionDirectory + "\" Directory");
-            try {
-                File newPartDir = partActions.createNewPartition(partitionDirectory);
-                partActions.copyTemplateFiles(newPartDir);
-                partActions.setLinuxFilePermissions(
-                    new String[] {
-                        newPartDir.getAbsolutePath() + "/partitionControl.sh",
-                        newPartDir.getAbsolutePath() + "/partition_defs.sh",
-                    },
-                    "775",
-                    newPartDir, osFunctions);
-            } catch (IOException e) {
-                logger.severe("Error while creating the new partition \"" + pInfo.getPartitionId() + "\": " + e.getMessage());
-                isValid = false;
-            } catch (InterruptedException e) {
-                logger.warning("Error while setting execute permissions on the startup scripts for partition \"" + pInfo.getPartitionId() + "\": " + e.getMessage());
-            }
-        } else {
+        if (!pInfo.isNewPartition()) {
             //check if the name has changed
             String oldPartitionId = pInfo.getOldPartitionId();
             if (oldPartitionId == null || oldPartitionId.equals(pInfo.getPartitionId())) {
@@ -330,6 +328,30 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         return isValid;
     }
 
+    private boolean createNewPartitions(PartitionActions partActions) {
+        boolean hadErrors = false;
+        for (PartitionInformation newPartition : partitionsAdded) {
+            try {
+                File newPartDir = partActions.createNewPartition(newPartition.getPartitionId());
+                partActions.copyTemplateFiles(newPartDir);
+            } catch (IOException e) {
+                logger.severe("Error while creating the new partition \"" + newPartition + "\": " + e.getMessage());
+                hadErrors = true;
+            }
+        }
+        return hadErrors;
+    }
+
+    private void saveEditsToCurrentPartition() {
+        TableCellEditor editor = httpEndpointsTable.getCellEditor();
+        if (editor != null)
+            editor.stopCellEditing();
+
+        editor = otherEndpointsTable.getCellEditor();
+        if (editor != null)
+            editor.stopCellEditing();
+    }
+
     private PartitionInformation getSelectedPartition() {
         return (PartitionInformation) partitionList.getSelectedValue();
     }
@@ -339,6 +361,10 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         java.util.List<PartitionInformation> partitions = new ArrayList<PartitionInformation>();
         public int getSize() {
             return partitions.size();
+        }
+
+        public boolean contains(String partitionName) {
+            return partitions.contains(new PartitionInformation(partitionName));
         }
 
         public Object getElementAt(int index) {
@@ -372,20 +398,35 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             }
         }
 
-        public void clear() {
-            partitions.clear();
-        }
-
         public void remove(PartitionInformation partitionToRemove) {
             try {
+                boolean removed = false;
                 if (partitions.size() != 0 && partitions.contains(partitionToRemove)) {
+                    int index = partitions.indexOf(partitionToRemove);
+
                     PartitionActions partActions = new PartitionActions(partitionToRemove.getOSSpecificFunctions());
-                    if (partActions.removePartition(partitionToRemove))
+                    File partitionDir = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
+                    if (!(partitionDir.exists())) {
+                        //we are removing something from the list that isn't yet on disk so remove only the entry
+                        // from the model
                         partitions.remove(partitionToRemove);
+                        removed = true;
+                    }
+                    else {
+                        if (partActions.removePartition(partitionToRemove)) {
+                            partitions.remove(partitionToRemove);
+                            removed = true;
+                        }
+                    }
+                    if (removed) partitionList.setSelectedIndex(index == 0?0:index-1);
                 }
             } finally {
                 fireContentsChanged(partitionList, 0, partitions.size());
             }
+        }
+
+        public void clear() {
+            partitions.clear();
         }
     }
 
@@ -530,6 +571,20 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         public void addEndpoints(List<PartitionInformation.OtherEndpointHolder> ehList) {
             otherEndpoints = ehList;
             fireTableDataChanged();
+        }
+    }
+
+    class PartitionListRenderer extends DefaultListCellRenderer {
+
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof PartitionInformation) {
+                PartitionInformation partitionInformation = (PartitionInformation) value;
+                if (!partitionInformation.isEnabled()) {
+                    label.setForeground(Color.GRAY);
+                }
+            }
+            return label;
         }
     }
 }

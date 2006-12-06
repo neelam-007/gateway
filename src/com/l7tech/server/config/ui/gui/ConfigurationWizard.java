@@ -301,11 +301,15 @@ public class ConfigurationWizard extends Wizard {
     }
 
     public String getPartitionName() {
-        return PartitionManager.getInstance().getActivePartition().getPartitionId();
+        return getActivePartition().getPartitionId();
     }
 
-    public void setPartitionName(PartitionInformation partition) {
-        PartitionManager.getInstance().setActivePartition(partition);
+    public PartitionInformation getActivePartition() {
+        return PartitionManager.getInstance().getActivePartition();
+    }
+
+    public void setActivePartition(PartitionInformation pInfo) {
+        PartitionManager.getInstance().setActivePartition(pInfo);
     }
 
     public OSSpecificFunctions getOsFunctions() {

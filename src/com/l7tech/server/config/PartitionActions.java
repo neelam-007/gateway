@@ -41,12 +41,11 @@ public class PartitionActions {
     }
 
     public File createNewPartition(String partitionDir) throws IOException {
-        File newPartitionDir = new File(partitionDir);
-        if (newPartitionDir.exists()) {
-            logger.info("The directory \"" + partitionDir + "\" already exists");
-        } else {
-            logger.info("Creating directory \"" + partitionDir + "\"");
-            newPartitionDir .mkdir();
+        String fullPath = osFunctions.getPartitionBase() + partitionDir;
+        File newPartitionDir = new File(fullPath);
+        if (!newPartitionDir.exists()) {
+            logger.info("Creating \"" + partitionDir + "\" Directory");;
+            newPartitionDir.mkdir();
         }
         return newPartitionDir;
     }

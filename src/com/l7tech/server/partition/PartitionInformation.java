@@ -34,14 +34,16 @@ public class PartitionInformation{
     public static final String PARTITIONS_BASE = "etc/conf/partitions/";
     public static final String TEMPLATE_PARTITION_NAME = "partitiontemplate_";
     public static final String DEFAULT_PARTITION_NAME = "default_";
-
+    public static final String ENABLED_FILE = "enabled";
+    
     String partitionId;
     String oldPartitionId;
     boolean isNewPartition = false;
-
+    boolean isEnabled = false;
+    private boolean shouldDisable = false;
+    
     List<HttpEndpointHolder> httpEndpointsList;
     List<OtherEndpointHolder> otherEndpointsList;
-    
     OSSpecificFunctions osf;
     Document originalDom;
 
@@ -190,6 +192,7 @@ public class PartitionInformation{
     public void setPartitionId(String newId) {
         oldPartitionId = partitionId;
         partitionId = newId;
+        getOSSpecificFunctions().setPartitionName(partitionId);
     }
 
     public String getPartitionId() {
@@ -206,6 +209,23 @@ public class PartitionInformation{
 
     public boolean isNewPartition() {
         return isNewPartition;
+    }
+
+
+    public boolean isEnabled() {
+        return isEnabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        isEnabled = enabled;
+    }
+
+    public boolean shouldDisable() {
+        return shouldDisable;
+    }
+
+    public void setShouldDisable(boolean shouldDisable) {
+        this.shouldDisable = shouldDisable;
     }
 
     public List<HttpEndpointHolder> getHttpEndpoints() {
@@ -226,7 +246,26 @@ public class PartitionInformation{
     }
 
     public String toString() {
+        if (getOSSpecificFunctions().isLinux())
+            return partitionId + (isEnabled?"":" (Disabled)");
+
         return partitionId;
+    }
+
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PartitionInformation that = (PartitionInformation) o;
+
+        if (partitionId != null ? !partitionId.equals(that.partitionId) : that.partitionId != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        return (partitionId != null ? partitionId.hashCode() : 0);
     }
 
     public Document getOriginalDom() {

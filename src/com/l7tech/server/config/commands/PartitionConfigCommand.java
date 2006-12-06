@@ -56,6 +56,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             }
             updateStartupScripts(pInfo);
             updateFirewallRules(pInfo);
+            enablePartitionForStartup(pInfo);
         } catch (Exception e) {
             success = false;
         }
@@ -105,7 +106,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
                 logger.warning("Could not install the SSG service for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
                 throw e;
             } catch (InterruptedException e) {
-                
+
                 throw e;
             }
         }
@@ -141,6 +142,25 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private void updateFirewallRules(PartitionInformation pInfo) {
         if (pInfo.getOSSpecificFunctions().isLinux()) {
             //TODO write an appropriate iptables fragment for this partition
+        }
+    }
+
+    private void enablePartitionForStartup(PartitionInformation pInfo) throws IOException {
+        OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
+        if (osf.isLinux()) {
+            File enableStartupFile = new File(osf.getPartitionBase() + pInfo.getPartitionId(), PartitionInformation.ENABLED_FILE);
+            if (pInfo.shouldDisable()) {
+                logger.warning("Disabling the \"" + pInfo.getPartitionId() + "\" partition.");
+                enableStartupFile.delete();
+            } else {
+                try {
+                    logger.warning("Enabling the \"" + pInfo.getPartitionId() + "\" partition.");
+                    enableStartupFile.createNewFile();
+                } catch (IOException e) {
+                    logger.warning("Error while enabling the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+                    throw e;
+                }
+            }
         }
     }
 

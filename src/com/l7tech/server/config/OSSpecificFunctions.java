@@ -119,17 +119,21 @@ public abstract class OSSpecificFunctions {
         return hostname;
     }
 
-    protected String getClusterHostNamePath() {
-        return getConfigurationBase() + clusterHostFile;
-    }
-
     public String getOSName() {
         return osName;
     }
 
-
     public String getPartitionName() {
         return partitionName;
+    }
+
+
+    public void setPartitionName(String partitionName) {
+        this.partitionName = partitionName;
+    }
+
+    protected String getClusterHostNamePath() {
+        return getConfigurationBase() + clusterHostFile;
     }
 
     public String getPartitionBase() {

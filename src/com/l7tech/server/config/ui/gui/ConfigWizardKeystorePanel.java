@@ -5,6 +5,7 @@ import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.partition.PartitionInformation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -194,14 +195,18 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
             KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
             return ksPanel.validateInput();
         } else {
-            if (PartitionManager.getInstance().getActivePartition().isNewPartition()) {
-                JOptionPane.showMessageDialog(
+            PartitionInformation pinfo = getParentWizard().getActivePartition();
+
+            if (pinfo != null) {
+                if (PartitionManager.getInstance().getActivePartition().isNewPartition()) {
+                    JOptionPane.showMessageDialog(
                         this,
                         "Warning: You are configuring a new partition without a keystore. \nThis partition will not be able to start without a keystore.",
                         "New Partition With No Keystore",
                         JOptionPane.WARNING_MESSAGE);
+                }
+                pinfo.setShouldDisable(true);
             }
-
         }
         return true;
     }
