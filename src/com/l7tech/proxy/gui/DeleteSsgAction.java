@@ -83,7 +83,7 @@ class DeleteSsgAction extends AbstractAction {
                                                   null, options, options[1]);
         if (result == 0) {
             if (!ssg.isFederatedGateway() && ssg.getClientCertificate() != null) {
-                Object[] certoptions = { "Destroy Certificate", "Cancel" };
+                Object[] certoptions = { "Destroy Certificate", "Cancel Account Deletion" };
                 int res2 = JOptionPane.showOptionDialog(null,
                                                         "You have a Client Certificate assigned from this Gateway. \n" +
                                                         "If you delete it, you will not be able to get another one \n" +
