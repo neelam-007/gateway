@@ -189,12 +189,14 @@ public class MappingUtil {
                 for (Element ra : routingAssertionElements) {
                     Element cia = XmlUtil.findFirstChildElementByName(ra, "http://www.layer7tech.com/ws/policy",
                                                                           "CustomIpAddresses");
-                    List listofitems = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
-                    for (Object listofitem : listofitems) {
-                        Element el = (Element) listofitem;
-                        String val = el.getAttribute("stringValue");
-                        if (val != null && !ipaddressesInRoutingAssertions.contains(val)) {
-                            ipaddressesInRoutingAssertions.add(val);
+                    if (cia != null) {
+                        List listofitems = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
+                        for (Object listofitem : listofitems) {
+                            Element el = (Element) listofitem;
+                            String val = el.getAttribute("stringValue");
+                            if (val != null && !ipaddressesInRoutingAssertions.contains(val)) {
+                                ipaddressesInRoutingAssertions.add(val);
+                            }
                         }
                     }
                 }
