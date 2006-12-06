@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
+ * @noinspection ForLoopReplaceableByForEach,unchecked
  */
 public class XmlUtil {
     public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
@@ -264,8 +265,7 @@ public class XmlUtil {
 
     private static ThreadLocal encodingXMLSerializer = new ThreadLocal() {
         protected synchronized Object initialValue() {
-            XMLSerializer xmlSerializer = new XMLSerializer();
-            return xmlSerializer;
+            return new XMLSerializer();
         }
     };
 
@@ -703,7 +703,7 @@ public class XmlUtil {
 
         if (parent != null && parent.hasChildNodes()) {
             Node child = parent.getFirstChild();
-            while (child != null && hasChildNodesOfType == false) {
+            while (child != null && !hasChildNodesOfType) {
                 if (child.getNodeType() == nodeType) {
                     hasChildNodesOfType = true;
                 }
@@ -1264,7 +1264,6 @@ public class XmlUtil {
 
     public static Map findAllNamespaces(Element element) {
         Map entries = new HashMap();
-        boolean result1;
         NamedNodeMap foo = element.getAttributes();
         // Find xmlns:foo, xmlns=
         for (int j = 0; j < foo.getLength(); j++) {
@@ -1289,8 +1288,7 @@ public class XmlUtil {
         for (int i = 0; i < nodes.getLength(); i++) {
             Node n = nodes.item(i);
             if (n.getNodeType() == Node.ELEMENT_NODE) {
-                boolean result;
-                NamedNodeMap foo1 = ((Element)n).getAttributes();
+                NamedNodeMap foo1 = n.getAttributes();
                 // Find xmlns:foo, xmlns=
                 for (int j = 0; j < foo1.getLength(); j++) {
                     Attr attrNode = (Attr) foo1.item(j);
@@ -1439,7 +1437,6 @@ public class XmlUtil {
     }
 
     public static void softXSLTransform(Document source, Result result, Transformer transformer, Map params) throws TransformerException {
-        final Result outputTarget = result;
         if (params != null && !params.isEmpty()) {
             for (Iterator i = params.keySet().iterator(); i.hasNext();) {
                 String name = (String) i.next();
@@ -1449,7 +1446,7 @@ public class XmlUtil {
                 transformer.setParameter(name, value);
             }
         }
-        transformer.transform(new DOMSource(source), outputTarget);
+        transformer.transform(new DOMSource(source), result);
     }
 
     /**
@@ -1512,7 +1509,7 @@ public class XmlUtil {
      * @return The Schema for validating XML Schema documents.
      * @throws SAXException if there's something wrong with the build ...
      */
-    private static final Schema getSchemaSchema() throws SAXException {
+    private static Schema getSchemaSchema() throws SAXException {
         Schema schemaSchema = SCHEMA_SCHEMA;
         if (schemaSchema == null) {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
