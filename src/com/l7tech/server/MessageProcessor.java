@@ -218,7 +218,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                 // Check the request method
                 String requestMethod = httpRequestKnob.getMethod();
-                if (!service.isMethodAllowed(requestMethod)) {
+                if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
                     String[] auditArgs = new String[] { requestMethod, service.getName() };
                     Object[] faultArgs = new Object[] { requestMethod };
                     auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
