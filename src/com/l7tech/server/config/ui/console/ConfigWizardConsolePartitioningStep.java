@@ -114,25 +114,22 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         prompts.add("Enter the name of the new partition: ["+ defaultValue + "]");
             
         Pattern allowedEntries = Pattern.compile("[^" + pathSeparator +"]{1,128}");
-        String newPartitionName = getData(prompts.toArray(new String[0]), "New Partition", allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
+
+        String newPartitionName = "";
+        do {
+            newPartitionName = getData(prompts.toArray(new String[0]), "New Partition", allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
+            if (partitionNames.contains(newPartitionName))
+                printText(new String[] {
+                    "*** " + newPartitionName + " already exists. Please choose another name ***" + getEolChar(),
+                    ""
+                });
+        } while (partitionNames.contains(newPartitionName));
 
         PartitionInformation pi = null;
         if (StringUtils.isNotEmpty(newPartitionName)) {
             PartitionActions pa = new PartitionActions(osFunctions);
             File newPartDir = pa.createNewPartition(newPartitionName);
             pa.copyTemplateFiles(newPartDir);
-//            try {
-//                pa.setLinuxFilePermissions(
-//                    new String[] {
-//                        newPartDir.getAbsolutePath() + "/partitionControl.sh",
-//                        newPartDir.getAbsolutePath() + "/partition_defs.sh",
-//                    },
-//                    "775",
-//                    newPartDir, osFunctions);
-//            } catch (InterruptedException e) {
-//                logger.warning("Error while setting execute permissions on the startup scripts for partition \"" + pi.getPartitionId() + "\": " + e.getMessage());
-//            }
-
             PartitionManager.getInstance().addPartition(newPartitionName);
             partitionNames = PartitionManager.getInstance().getPartitionNames();
             pi = PartitionManager.getInstance().getPartition(newPartitionName);
