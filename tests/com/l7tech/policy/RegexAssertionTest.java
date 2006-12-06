@@ -65,15 +65,21 @@ public class RegexAssertionTest extends TestCase {
      */
     public static Test suite() throws Exception {
         TestSuite suite = new TestSuite(RegexAssertionTest.class);
-        servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
-        servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
-        messageProcessor = (TestMessageProcessor)servletApi.getApplicationContext().getBean("messageProcessor");
         return suite;
+    }
+
+    private static ServicesHelper getServicesHelper() {
+        if (servicesHelper == null) {
+            servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
+            servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
+            messageProcessor = (TestMessageProcessor)servletApi.getApplicationContext().getBean("messageProcessor");
+        }
+        return servicesHelper;
     }
 
     public void setUp() throws Exception {
         tokenCount = 0;
-        servicesHelper.deleteAllServices();
+        getServicesHelper().deleteAllServices();
     }
 
     public void tearDown() throws Exception {
