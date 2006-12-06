@@ -27,6 +27,13 @@ public interface ServiceResponse {
     void setDocument(Document document);
 
     /**
+     * Get the copy of the document that is associated with the current request.
+     *
+     * @return the DOM <code>Document</code> attached to this service request.
+     */
+    Document getRequestDocument();
+
+    /**
      * Get the security context associated with the request
      *
      * @return the security context associated with the request.

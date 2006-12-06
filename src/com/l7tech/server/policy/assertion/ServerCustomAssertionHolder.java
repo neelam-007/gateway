@@ -115,7 +115,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob)pec.getResponse().getKnob(HttpServletResponseKnob.class);
         final HttpServletResponse httpServletResponse = hsResponseKnob == null ? null : hsResponseKnob.getHttpServletResponse();
         if (httpServletResponse != null)
-            context.put("httpResponse", wrap(httpServletResponse, pec, context));
+            context.put("httpResponse", wrap(httpServletResponse, pec));
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -291,7 +291,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
      * Wrap the HTTP Servlet Response to intercept any cookies and save them in the
      * context for later.
      */
-    private static HttpServletResponse wrap(HttpServletResponse response, final PolicyEnforcementContext pec, final Map context) {
+    private static HttpServletResponse wrap(HttpServletResponse response, final PolicyEnforcementContext pec) {
         return new HttpServletResponseWrapper(response){
 
             /**
@@ -334,11 +334,13 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
         private final Document document;
+        private final Document requestDocument;
         private final SecurityContext securityContext;
 
         public CustomServiceResponse(PolicyEnforcementContext pec) throws IOException, SAXException {
             this.pec = pec;
             this.document = (Document)pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+            this.requestDocument = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
 
             saveServletKnobs(pec, context);
 
@@ -362,6 +364,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
         public Document getDocument() {
             return document;
+        }
+
+        public Document getRequestDocument() {
+            return requestDocument;    
         }
 
         public void setDocument(Document document) {
