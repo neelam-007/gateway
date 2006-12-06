@@ -9,14 +9,18 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.EchoRoutingAssertion;
-import com.l7tech.policy.assertion.Regex;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.TestLicenseManager;
+import com.l7tech.common.LicenseException;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.server.TestMessageProcessor;
 import com.l7tech.server.MessageProcessorListener;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
@@ -25,11 +29,15 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.wsdl.Definition;
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -193,6 +201,48 @@ public class RegexAssertionTest extends TestCase {
             }
         }
         assertEquals(verifiedTokens, tokenCount);
+    }
+
+
+    public void testPrependXmlDeclNoWhitespace() throws Exception {
+        String message = "<foo><bar/></foo>";
+
+        Regex regex = new Regex();
+        regex.setProceedIfPatternMatches(true);
+        regex.setRegex("^(.*)$");
+        regex.setReplace(true);
+        regex.setReplacement("<?xml version=\"1.0\" encoding=\"UTF-8\"?>$1");
+
+        testReplacement(message, regex);
+    }
+
+
+    public void testPrependXmlDeclWithWhitespace() throws Exception {
+        String message = "\n<foo><bar/></foo>";
+
+        Regex regex = new Regex();
+        regex.setProceedIfPatternMatches(true);
+        regex.setRegex("^(.*)$");
+        regex.setReplace(true);
+        regex.setReplacement(" <?xml version=\"1.0\" encoding=\"UTF-8\"?>$1");
+
+        try {
+            testReplacement(message, regex);
+            fail("SAXParseException was not thrown for whitesapce in front of XML declaration");
+        } catch (SAXParseException e) {
+            // Ok
+        }
+    }
+
+
+    private void testReplacement(String message, Regex regex) throws SAXException, LicenseException, IOException, PolicyAssertionException {
+        Message request = new Message(XmlUtil.stringToDocument(message));
+        Message response = new Message();
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        ServerAssertion sass = new ServerPolicyFactory(new TestLicenseManager()).compilePolicy(regex, false);
+        AssertionStatus result = sass.checkRequest(context);
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        assertEquals(AssertionStatus.NONE, result);
     }
 
 
