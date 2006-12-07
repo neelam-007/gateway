@@ -548,6 +548,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             for (String s : currentNodeList.keySet()) {
                 GatewayStatus gatewayStatus = currentNodeList.get(s);
 
+                if (nodeId != null && !nodeId.equals(gatewayStatus.getNodeId()))
+                    continue;
+
                 Collection<LogMessage> logCache = rawLogCache.get(gatewayStatus.getNodeId());
                 long highest = -1;
                 if (logCache != null && logCache.size() > 0) {
