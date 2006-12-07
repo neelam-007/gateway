@@ -36,15 +36,21 @@ import org.xml.sax.SAXException;
 public class Importer {
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
-    public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to import");
+    public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
+                                                                             "location of image file to import",
+                                                                             true, false);
     public static final CommandLineOption MODE = new CommandLineOption("-mode", "[restore | migrate]");
     public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
-    public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping", "location of the staging mapping file");
+    public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping",
+                                                                               "location of the staging mapping file",
+                                                                               true, false);
     public static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name");
     public static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
     public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password (only needed if database needs to be created)");
     public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username (only needed if database needs to be created)");
-    public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os", "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)");
+    public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
+                                                                               "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)",
+                                                                               false, true);
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MODE, PARTITION, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE};
 

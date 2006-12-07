@@ -3,6 +3,8 @@ package com.l7tech.server.flasher;
 import com.l7tech.server.config.OSDetector;
 
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -23,6 +25,8 @@ public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String LOGCONFIG_NAME = "migrationlogging.properties";
     private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
+    private static ArrayList<CommandLineOption> allRuntimeOptions = null;
+    private static int argparseri = 0;
 
     public static void main(String[] args) {
         if (args == null || args.length < 1) {
@@ -66,26 +70,45 @@ public class FlashUtilityLauncher {
 
     private static HashMap<String, String> parseArguments(String[] args) throws InvalidArgumentException {
         HashMap<String, String> output = new HashMap<String, String>();
-        for (int i = 1; i < args.length; i++) {
-            String arg = args[i];
+        for (argparseri = 1; argparseri < args.length; argparseri++) {
+            String arg = args[argparseri];
+            boolean isPath = isOptionPath(arg);
+            boolean hasNoValue = hasOptionNoValue(arg);
             if (arg != null && arg.length() > 0) {
                 if (!arg.startsWith("-")) {
                     throw new InvalidArgumentException("Invalid argument name: " + arg);
                 }
-                if ((i+1) < args.length) {
-                    if (args[i+1].startsWith("-")) {
-                        output.put(arg, "");
-                    } else {
-                        i++;
-                        String val = args[i];
-                        output.put(arg, val);
-                    }
-                } else {
+                if (hasNoValue) {
                     output.put(arg, "");
+                } else {
+                    if ((argparseri+1) >= args.length) {
+                        throw new InvalidArgumentException("A value must be specified for option: " + arg);
+                    }
+                    argparseri++;
+                    String val = getFullValue(args, isPath);
+                    logger.info(arg + " with value _" + val + "_");
+                    output.put(arg, val);
                 }
             }
         }
         return output;
+    }
+
+    private static String getFullValue(String[] in, boolean ispath) {
+        if (OSDetector.isWindows() || !ispath) {
+            return in[argparseri];
+        } else {
+            String tmp = in[argparseri];
+            while ((argparseri+1) < in.length) {
+                if (tmp.endsWith("\\")) tmp = tmp.substring(0, tmp.length() - 1);
+                if (!isOption(in[argparseri+1])) {
+                    tmp = tmp + " " + in[argparseri+1];
+                    argparseri++;
+                } else break;
+            }
+            logger.info("reconstructing option value " + tmp);
+            return tmp;
+        }
     }
 
     private static void initializeLogging() {
@@ -133,5 +156,48 @@ public class FlashUtilityLauncher {
 
     public static class InvalidArgumentException extends Exception {
         public InvalidArgumentException(String reason) {super(reason);}
+    }
+
+    public static boolean isOptionPath(String optionname) throws InvalidArgumentException {
+        getOptions();
+        for (CommandLineOption commandLineOption : allRuntimeOptions) {
+            if (commandLineOption.name.equals(optionname)) {
+                return commandLineOption.isValuePath;
+            }
+        }
+        throw new InvalidArgumentException("option " + optionname + " is invalid");
+    }
+
+    private static ArrayList<CommandLineOption> getOptions() {
+        if (allRuntimeOptions == null) {
+            allRuntimeOptions = new ArrayList<CommandLineOption>();
+            for (CommandLineOption aALLOPTIONS : Importer.ALLOPTIONS) {
+                allRuntimeOptions.add(aALLOPTIONS);
+            }
+            for (CommandLineOption aALLOPTIONS1 : Exporter.ALLOPTIONS) {
+                allRuntimeOptions.add(aALLOPTIONS1);
+            }
+        }
+        return allRuntimeOptions;
+    }
+
+    public static boolean hasOptionNoValue(String optionname) throws InvalidArgumentException {
+        getOptions();
+        for (CommandLineOption commandLineOption : allRuntimeOptions) {
+            if (commandLineOption.name.equals(optionname)) {
+                return commandLineOption.hasNoValue;
+            }
+        }
+        throw new InvalidArgumentException("option " + optionname + " is invalid");
+    }
+
+    private static boolean isOption(String optionname) {
+        getOptions();
+        for (CommandLineOption commandLineOption : allRuntimeOptions) {
+            if (commandLineOption.name.equals(optionname)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

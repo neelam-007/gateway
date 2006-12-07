@@ -32,10 +32,19 @@ import java.util.zip.ZipEntry;
 public class Exporter {
     private static final Logger logger = Logger.getLogger(Exporter.class.getName());
     // exporter options
-    public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image", "location of image file to export");
-    public static final CommandLineOption AUDIT = new CommandLineOption("-ia", "to include audit tables in resulting image");
-    public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
-    public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it", "path of the output mapping template");
+    public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
+                                                                             "location of image file to export",
+                                                                             true,
+                                                                             false);
+    public static final CommandLineOption AUDIT = new CommandLineOption("-ia",
+                                                                        "to include audit tables in resulting image",
+                                                                        false,
+                                                                        true);
+    public static final CommandLineOption PARTITION = new CommandLineOption("-p",
+                                                                            "partition name to import to");
+    public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
+                                                                               "path of the output mapping template",
+                                                                               true, false);
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
     public static final String VERSIONFILENAME = "version";
 

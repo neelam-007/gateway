@@ -14,6 +14,14 @@ public class CommandLineOption {
         this.name = name;
         this.description = desc;
     }
+    CommandLineOption(String name, String desc, boolean isValuePath, boolean hasNoValue) {
+        this.name = name;
+        this.description = desc;
+        this.isValuePath = isValuePath;
+        this.hasNoValue = hasNoValue;
+    }
     String name;
     String description;
+    boolean isValuePath = false;
+    boolean hasNoValue = false;
 }
