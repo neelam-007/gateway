@@ -36,6 +36,21 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private static final String SERVICE_ERRLOG_KEY = "PR_STDERROR";
     private static final String PARTITION_NAME_KEY = "PARTITIONNAMEPROPERTY";
 
+    private static final String BASIC_IP_MARKER = "<HTTP_BASIC_IP>";
+    private static final String BASIC_PORT_MARKER = "<HTTP_BASIC_PORT>";
+    private static final String SSL_IP_MARKER = "<SSL_IP>";
+    private static final String SSL_PORT_MARKER = "<SSL_PORT>";
+    private static final String NOAUTH_SSL_IP_MARKER = "<SSL_NOAUTH_IP>";
+    private static final String NOAUTH_SSL_PORT_MARKER = "<SSL_NOAUTH_PORT>";
+    private static final String RMI_PORT_MARKER = "<RMI_PORT>";
+
+    private static String firewallRules = new String(
+        "[0:0] -I INPUT $Rule_Insert_Point -d "+ BASIC_IP_MARKER +" -p tcp -m tcp --dport " + BASIC_PORT_MARKER +" -j ACCEPT\n" +
+        "[0:0] -I INPUT $Rule_Insert_Point -d " + SSL_IP_MARKER +" -p tcp -m tcp --dport " + SSL_PORT_MARKER + " -j ACCEPT\n" +
+        "[0:0] -I INPUT $Rule_Insert_Point -d " + NOAUTH_SSL_IP_MARKER + " -p tcp -m tcp --dport " + NOAUTH_SSL_PORT_MARKER + " -j ACCEPT\n" +
+        "[0:0] -I INPUT $Rule_Insert_Point -p tcp -m tcp --dport " + RMI_PORT_MARKER + " -j ACCEPT\n"
+    );
+
     private interface ConnectorMatcher {
         boolean matchesCriteria(Element connector);
     }
@@ -141,11 +156,62 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
 
     private void updateFirewallRules(PartitionInformation pInfo) {
         if (pInfo.getOSSpecificFunctions().isLinux()) {
-            //TODO write an appropriate iptables fragment for this partition
+            List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
+            List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
+
+            PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
+            PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
+            PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
+            PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
+
+            String rules = firewallRules;
+            if (basicEndpoint.ipAddress.equals("*"))
+                rules = rules.replaceAll("-d " +BASIC_IP_MARKER, "");
+            else
+                rules = rules.replaceAll(BASIC_IP_MARKER, basicEndpoint.ipAddress);
+            rules = rules.replaceAll(BASIC_PORT_MARKER, basicEndpoint.port);
+
+            if (sslEndpoint.ipAddress.equals("*"))
+                rules = rules.replaceAll("-d " +SSL_IP_MARKER, "");
+            else
+                rules = rules.replaceAll(SSL_IP_MARKER, sslEndpoint.ipAddress);
+            rules = rules.replaceAll(SSL_PORT_MARKER, sslEndpoint.port);
+
+            if (noAuthSslEndpoint.ipAddress.equals("*"))
+                rules = rules.replaceAll("-d " +NOAUTH_SSL_IP_MARKER, "");
+            else
+                rules = rules.replaceAll(NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.ipAddress);
+            rules = rules.replaceAll(NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.port);
+
+            rules = rules.replaceAll(RMI_PORT_MARKER, rmiEndpoint.port);
+
+            FileOutputStream fos = null;
+            String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
+            try {
+                fos = new FileOutputStream(fileName);
+                fos.write(rules.getBytes());
+            } catch (FileNotFoundException e) {
+                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+                logger.severe("The partition will be disabled");
+                pInfo.setShouldDisable(true);
+                enablePartitionForStartup(pInfo);
+            } catch (IOException e) {
+                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+                logger.severe("The partition will be disabled");
+                pInfo.setShouldDisable(true);
+                enablePartitionForStartup(pInfo);
+            } finally {
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (IOException e) {}
+                }
+            }
+
         }
     }
 
-    private void enablePartitionForStartup(PartitionInformation pInfo) throws IOException {
+    private void enablePartitionForStartup(PartitionInformation pInfo){
         OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
         if (osf.isLinux()) {
             File enableStartupFile = new File(osf.getPartitionBase() + pInfo.getPartitionId(), PartitionInformation.ENABLED_FILE);
@@ -158,7 +224,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
                     enableStartupFile.createNewFile();
                 } catch (IOException e) {
                     logger.warning("Error while enabling the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-                    throw e;
                 }
             }
         }
