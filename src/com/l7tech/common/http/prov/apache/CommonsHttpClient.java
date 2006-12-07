@@ -212,7 +212,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                     }
 
                     public String getContentType() {
-                        return rct.getFullValue();
+                        return rct != null ? rct.getFullValue() : null;
                     }
 
                     public boolean isRepeatable() {
@@ -243,7 +243,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                     }
 
                     public String getContentType() {
-                        return rct.getFullValue();
+                        return rct != null ? rct.getFullValue() : null;
                     }
 
                     public boolean isRepeatable() {
