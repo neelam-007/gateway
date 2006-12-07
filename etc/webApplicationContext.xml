@@ -841,4 +841,7 @@
     <bean id="whirlyLife" class="com.l7tech.server.WhirlyLifecycle"/>
 
     <bean id="timerLife" class="com.l7tech.server.ManagedTimerLifecycle"/>
+
+    <bean id="exceptionLogger" class="com.l7tech.server.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
+
 </beans>
