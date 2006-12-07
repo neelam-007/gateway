@@ -93,12 +93,12 @@ public class FlashUtilityLauncher {
     }
 
     private static String getFullValue(String[] in, boolean ispath) {
-        if (OSDetector.isWindows() || !ispath) {
+        if (!ispath) {
             return in[argparseri];
         } else {
             String tmp = in[argparseri];
             while ((argparseri+1) < in.length) {
-                if (tmp.endsWith("\\")) tmp = tmp.substring(0, tmp.length() - 1);
+                if (!OSDetector.isWindows() && tmp.endsWith("\\")) tmp = tmp.substring(0, tmp.length() - 1);
                 if (!isOption(in[argparseri+1])) {
                     tmp = tmp + " " + in[argparseri+1];
                     argparseri++;
