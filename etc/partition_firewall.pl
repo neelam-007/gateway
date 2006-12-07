@@ -21,7 +21,7 @@ if ( -e $fname ) {
 	exit 1;
 }
 
-if ( $mode !~/[(stop)|(start)]/ ) {
+if ( $mode !~/[(stop)|(start)|(runt)]/ ) {
 	print "Mode is incorrect: $mode\n";
 	exit 1;
 }
