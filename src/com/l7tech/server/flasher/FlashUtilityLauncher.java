@@ -4,7 +4,6 @@ import com.l7tech.server.config.OSDetector;
 
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -86,7 +85,6 @@ public class FlashUtilityLauncher {
                     }
                     argparseri++;
                     String val = getFullValue(args, isPath);
-                    logger.info(arg + " with value _" + val + "_");
                     output.put(arg, val);
                 }
             }
@@ -106,7 +104,7 @@ public class FlashUtilityLauncher {
                     argparseri++;
                 } else break;
             }
-            logger.info("reconstructing option value " + tmp);
+            logger.fine("reconstructing option value " + tmp);
             return tmp;
         }
     }
