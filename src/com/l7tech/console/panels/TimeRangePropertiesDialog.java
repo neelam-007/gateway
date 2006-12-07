@@ -56,12 +56,14 @@ public class TimeRangePropertiesDialog extends JDialog {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
-                  PolicyEvent event = new
-                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  if (listeners != null && listeners.length > 0) {
+                      int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                      PolicyEvent event = new
+                              PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                      for (int i = 0; i < listeners.length; i++) {
+                          ((PolicyListener)listeners[i]).assertionsChanged(event);
+                      }
                   }
               }
           });
