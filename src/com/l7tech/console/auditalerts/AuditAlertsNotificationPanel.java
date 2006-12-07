@@ -10,8 +10,8 @@ import com.l7tech.console.panels.PermissionFlags;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.logging.Level;
 
 /**
@@ -20,8 +20,8 @@ import java.util.logging.Level;
 * Time: 2:57:33 PM
 */
 public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher, LogonListener {
-    private JLabel alertBar;
     private JPanel mainPanel;
+    private JButton auditAlertsButton;
 
     private AuditAlertChecker checker;
     private boolean hasAuditPermissions = false;
@@ -43,16 +43,12 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     }
 
     private void setupAlertBar() {
-            alertBar.setVisible(false);
-            alertBar.setToolTipText("There are audit alerts that require your attention.");
-            alertBar.setOpaque(true);
-            alertBar.setForeground(Color.BLACK);
-            alertBar.setBackground(Color.RED);
-            alertBar.setRequestFocusEnabled(true);
-
-            alertBar.addMouseListener(new MouseAdapter() {
-                public void mouseClicked(MouseEvent e) {
-                    if (e.getClickCount() == 1)
+            mainPanel.setVisible(false);
+            Icon icon = new ImageIcon(
+                    AuditAlertsNotificationPanel.class.getResource("/com/l7tech/console/resources/Alert16x16.gif"));
+            auditAlertsButton.setIcon(icon);
+            auditAlertsButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
                         showPopup();
                 }
             });
@@ -79,9 +75,9 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
 
     private void setAlertsReady(boolean areAlertsReady) {
         if (areAlertsReady)
-            alertBar.setVisible(true);
+            mainPanel.setVisible(true);
         else
-            alertBar.setVisible(false);
+            mainPanel.setVisible(false);
     }
 
     public void auditsViewed() {

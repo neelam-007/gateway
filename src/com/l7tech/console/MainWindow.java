@@ -1284,7 +1284,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             mainJMenuBar.add(getViewMenu());
             //           mainJMenuBar.add(getWindowMenu());
             mainJMenuBar.add(getHelpMenu());
-            mainJMenuBar.add(getAuditAlertBar());
             Utilities.removeToolTipsFromMenuItems(mainJMenuBar);
         }
         return mainJMenuBar;
@@ -1600,13 +1599,12 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(new AboutAction());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/About16.gif");
-
-            toolBarPane.add(getAuditAlertBar());
         } else {
             tbadd(toolBarPane, getPreferencesAction());
         }
 
         toolBarPane.add(Box.createHorizontalGlue());
+        toolBarPane.add(getAuditAlertBar());
 
         return toolBarPane;
     }
