@@ -155,6 +155,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
                 JmsEndpoint ep = newlyCreatedEndpoint;
                 JmsConnection conn = newlyCreatedConnection;
                 final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(getOwner(), conn, ep, true);
+                pd.pack();
                 Utilities.centerOnScreen(pd);
                 DialogDisplayer.display(pd, new Runnable() {
                     public void run() {

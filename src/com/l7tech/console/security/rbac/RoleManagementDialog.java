@@ -320,6 +320,7 @@ public class RoleManagementDialog extends JDialog {
         }
 
         final EditRoleDialog dlg = new EditRoleDialog(selectedRole, this);
+        dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {

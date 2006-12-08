@@ -103,7 +103,6 @@ public class CreateServiceWsdlAction extends SecureAction {
                     w.addWizardListener(wizardListener);
                     Utilities.setEscKeyStrokeDisposes(w);
                     w.pack();
-                    w.setSize(850, 500);
                     Utilities.centerOnScreen(w);
                     DialogDisplayer.display(w);
                 } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {

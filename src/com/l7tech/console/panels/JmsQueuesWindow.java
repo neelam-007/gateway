@@ -233,6 +233,7 @@ public class JmsQueuesWindow extends JDialog {
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
                     final JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, null, null, false);
+                    amew.pack();
                     Utilities.centerOnScreen(amew);
                     DialogDisplayer.display(amew, new Runnable() {
                         public void run() {
@@ -271,6 +272,7 @@ public class JmsQueuesWindow extends JDialog {
                         if (i != null) {
                             final JmsQueuePropertiesDialog pd =
                               JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);
+                            pd.pack();
                             Utilities.centerOnScreen(pd);
                             DialogDisplayer.display(pd, new Runnable() {
                                 public void run() {

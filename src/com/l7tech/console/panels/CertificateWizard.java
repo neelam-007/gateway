@@ -34,7 +34,7 @@ public class CertificateWizard extends Wizard {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", locale);
     }
 
-        protected final JPanel createButtonPanel() {
+    protected final JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBorder(new EtchedBorder());

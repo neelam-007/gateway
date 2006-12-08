@@ -427,6 +427,7 @@ public class EditRoleDialog extends JDialog {
 
     private Permission showEditPermissionDialog(Permission perm) {
         EditPermissionsDialog dlg = new EditPermissionsDialog(perm, this);
+        dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         return dlg.getPermission();

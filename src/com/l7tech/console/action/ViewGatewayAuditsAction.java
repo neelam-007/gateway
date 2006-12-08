@@ -94,6 +94,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
             }
         });
 
+        gatewayAuditWindow.pack();
         Utilities.centerOnScreen(gatewayAuditWindow);
         return gatewayAuditWindow;
     }

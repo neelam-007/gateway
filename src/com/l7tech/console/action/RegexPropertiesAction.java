@@ -70,7 +70,6 @@ public class RegexPropertiesAction extends NodeAction {
 
         Utilities.setEscKeyStrokeDisposes(rd);
         rd.pack();
-        rd.setSize(800, 600);
         Utilities.centerOnScreen(rd);
         DialogDisplayer.display(rd);
     }

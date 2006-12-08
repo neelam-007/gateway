@@ -232,7 +232,6 @@ public class AssociatedLogsTable extends JTable {
                 }
             });
             pack();
-            setSize(720, 600);
             Utilities.centerOnScreen(this);
         }
     }

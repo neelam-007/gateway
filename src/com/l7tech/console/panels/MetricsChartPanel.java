@@ -802,6 +802,7 @@ public class MetricsChartPanel extends ChartPanel {
 
                 if (_gatewayAuditWindow == null) {
                     _gatewayAuditWindow = new GatewayAuditWindow(false);
+                    _gatewayAuditWindow.pack();
                     Utilities.centerOnScreen(_gatewayAuditWindow);
                 }
 

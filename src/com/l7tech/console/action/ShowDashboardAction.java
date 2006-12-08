@@ -50,6 +50,7 @@ public class ShowDashboardAction extends SecureAction {
                     dashboardWindow = null;
                 }
             });
+            dw.pack();
             Utilities.centerOnScreen(dw);
             dw.setVisible(true);
             dashboardWindow = dw;

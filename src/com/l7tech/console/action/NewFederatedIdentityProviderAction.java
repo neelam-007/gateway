@@ -85,7 +85,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                 // register itself to listen to the addEvent
                 addEntityListener(listener);
 
-                w.setSize(850, 500);
+                w.pack();
                 Utilities.centerOnScreen(w);
                 DialogDisplayer.display(w);
             }

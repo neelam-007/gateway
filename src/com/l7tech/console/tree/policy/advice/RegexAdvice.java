@@ -39,7 +39,6 @@ public class RegexAdvice implements Advice {
 
         Utilities.setEscKeyStrokeDisposes(rd);
         rd.pack();
-        rd.setSize(800, 600);
         Utilities.centerOnScreen(rd);
         DialogDisplayer.display(rd, new Runnable() {
             public void run() {

@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.gui.util.Utilities;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -35,14 +34,11 @@ public class AddCertificateWizard extends CertificateWizard {
         setResizable(true);
         setTitle("Add Certificate Wizard");
         setShowDescription(false);
-        Utilities.setEscKeyStrokeDisposes(this);
 
         // create a holder for the new identity provider
         // NOTE: we only support creating LDAP provider
 
         wizardInput = new TrustedCert();
-
-        pack();
 
         getButtonHelp().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

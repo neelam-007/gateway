@@ -73,6 +73,7 @@ public class ViewClusterStatusAction extends SecureAction {
                 clusterStatusWindow = null;
             }
         });
+        clusterStatusWindow.pack();
         Utilities.centerOnScreen(clusterStatusWindow);
         return clusterStatusWindow;
     }

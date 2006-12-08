@@ -27,7 +27,6 @@ public class ResolveForeignIdentityProviderPanelTest {
         //Wizard wiz = new Wizard(null, panel);
         ResolveExternalPolicyReferencesWizard wiz = ResolveExternalPolicyReferencesWizard.fromReferences(null, new ExternalReference[]{ref, ref2});
         wiz.pack();
-        wiz.setSize(1000, 500);
         Utilities.centerOnScreen(wiz);
         wiz.setModal(true);
         wiz.setVisible(true);

@@ -77,7 +77,6 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
             if (n.getService() != null) {
                 XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
                 dialog.pack();
-                dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog);
             }

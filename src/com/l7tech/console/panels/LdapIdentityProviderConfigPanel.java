@@ -34,6 +34,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         initResources();
         setLayout(new BorderLayout());
         add(getTypePanel(), BorderLayout.NORTH);
+        add(Box.createRigidArea(new Dimension(420, 320)), BorderLayout.CENTER);
     }
 
     /**

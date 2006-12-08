@@ -40,6 +40,7 @@ public class ManageRolesAction extends SecureAction {
 
     protected void performAction() {
         JDialog dlg = new RoleManagementDialog(TopComponents.getInstance().getTopParent());
+        dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg);
     }

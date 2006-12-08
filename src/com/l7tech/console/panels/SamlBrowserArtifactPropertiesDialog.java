@@ -52,8 +52,8 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 AuthenticationProperties ap = authProperties;
                 SamlBrowserAuthenticationDialog authDialog = new SamlBrowserAuthenticationDialog(ap, owner, true);
-                Utilities.centerOnScreen(authDialog);
                 authDialog.pack();
+                Utilities.centerOnScreen(authDialog);
                 DialogDisplayer.display(authDialog, new Runnable() {
                     public void run() {
                         updateAuthenticationSummary();

@@ -107,18 +107,21 @@ public class ViewServiceWsdlAction extends NodeAction {
             setTitle(ps.getName());
             JPanel panel = new JPanel(new BorderLayout());
             JPanel wsdlPanel = new JPanel();
-            wsdlPanel.setLayout(new BoxLayout(wsdlPanel, BoxLayout.X_AXIS));
+            wsdlPanel.setLayout(new BorderLayout());
             panel.add(wsdlPanel, BorderLayout.NORTH);
 
             final JLabel l = new JLabel("WSDL URL: ");
             l.setFont(l.getFont().deriveFont(Font.BOLD));
-            wsdlPanel.add(l);
+            wsdlPanel.add(l, BorderLayout.WEST);
 
             final String wsdlUrl = ps.getWsdlUrl();
             final JTextField tf = new ContextMenuTextField(wsdlUrl);
             tf.setBorder(BorderFactory.createEmptyBorder());
             tf.setEditable(false);
-            wsdlPanel.add(tf);
+            tf.setPreferredSize(new Dimension(500, (int)tf.getPreferredSize().getHeight()));
+            tf.setCaretPosition(0);
+            wsdlPanel.add(tf, BorderLayout.CENTER);
+            wsdlPanel.add(Box.createHorizontalStrut(12), BorderLayout.EAST);
 
             final CompoundBorder border =
               BorderFactory.createCompoundBorder(
@@ -179,6 +182,8 @@ public class ViewServiceWsdlAction extends NodeAction {
             }
 
             panel.add(xmlContainer.getView(), BorderLayout.CENTER);
+            panel.add(Box.createVerticalStrut(720), BorderLayout.WEST);
+            panel.add(Box.createHorizontalStrut(540), BorderLayout.SOUTH);
 
             getContentPane().add(panel, BorderLayout.CENTER);
             Utilities.setEscKeyStrokeDisposes(this);
@@ -188,8 +193,6 @@ public class ViewServiceWsdlAction extends NodeAction {
                 }
             });
             pack();
-            final int labelWidth = (int)(l.getSize().getWidth() + 20);
-            setSize(Math.max(600, labelWidth), 800);
             Utilities.centerOnScreen(this);
         }
 

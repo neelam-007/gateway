@@ -107,13 +107,6 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                         addEntityListener(entityListener);
 
                         w.pack();
-
-                        if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                            w.setSize(850, 500);
-                        } else {
-                            w.setSize(780, 560);
-                        }
-
                         Utilities.centerOnScreen(w);
                         DialogDisplayer.display(w);
 

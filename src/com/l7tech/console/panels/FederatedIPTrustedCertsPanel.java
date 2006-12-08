@@ -264,7 +264,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
                 CertSearchPanel sp = new CertSearchPanel(getOwner());
                 sp.addCertListener(certListener);
-                sp.setSize(400, 600);
+                sp.pack();
+                Utilities.centerOnScreen(sp);
                 DialogDisplayer.display(sp);
 
             }
@@ -368,7 +369,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                     public void wizardCanceled(WizardEvent e) {}
                 });
                 w.pack();
-                w.setSize(780, 560);
                 Utilities.centerOnScreen(w);
                 DialogDisplayer.display(w);
             }

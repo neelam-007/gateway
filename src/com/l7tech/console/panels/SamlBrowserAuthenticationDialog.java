@@ -220,10 +220,10 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
     private void edit(final FieldInfo fieldInfo) {
         if (fieldInfo != null) {
             final SamlBrowserArtifactFieldDialog fieldDialog = new SamlBrowserArtifactFieldDialog(this, true);
-            Utilities.centerOnScreen(fieldDialog);
             fieldDialog.getNameField().setText(fieldInfo.name);
             fieldDialog.getValueField().setText(fieldInfo.value);
             fieldDialog.pack();
+            Utilities.centerOnScreen(fieldDialog);
             DialogDisplayer.display(fieldDialog, new Runnable() {
                 public void run() {
                     if (fieldDialog.isModified()) {

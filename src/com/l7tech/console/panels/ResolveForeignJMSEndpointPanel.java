@@ -81,6 +81,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
      */
     private void manageJMSPressed() {
         JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(this.getOwner());
+        jqw.pack();
         Utilities.centerOnScreen(jqw);
         DialogDisplayer.display(jqw, new Runnable() {
             public void run() {

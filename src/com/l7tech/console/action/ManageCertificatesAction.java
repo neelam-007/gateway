@@ -63,6 +63,7 @@ public class ManageCertificatesAction extends SecureAction {
     protected void performAction() {
         try {
             CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getTopParent());
+            cmw.pack();
             Utilities.centerOnScreen(cmw);
             DialogDisplayer.display(cmw);
         } catch (RemoteException e) {

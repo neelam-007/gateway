@@ -56,6 +56,7 @@ public class ManageJmsEndpointsAction extends SecureAction {
      */
     protected void performAction() {
         JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(TopComponents.getInstance().getTopParent());
+        jqw.pack();
         Utilities.centerOnScreen(jqw);
         DialogDisplayer.display(jqw);
     }

@@ -58,6 +58,7 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
         checker.stop();
 
         AuditAlertsDialog auditAlertDialog = getAlertsDialog();
+        auditAlertDialog.pack();
         Utilities.centerOnScreen(auditAlertDialog);
         DialogDisplayer.display(auditAlertDialog);
     }

@@ -165,8 +165,8 @@ public class HttpFormPostDialog extends JDialog {
     private void edit(HttpFormPost.FieldInfo fi,
                                         final Functions.UnaryVoid<HttpFormPost.FieldInfo> result) {
         final HttpPostFormFieldInfoDialog dlg = new HttpPostFormFieldInfoDialog(ownerFrame, fi);
-        Utilities.centerOnScreen(dlg);
         dlg.pack();
+        Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 result.call(dlg.isChanged() ? dlg.getFieldInfo() : null);

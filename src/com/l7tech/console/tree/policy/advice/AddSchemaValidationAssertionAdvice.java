@@ -36,7 +36,6 @@ public class AddSchemaValidationAssertionAdvice implements Advice {
         final SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
         // show the dialog
         dlg.pack();
-        dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {

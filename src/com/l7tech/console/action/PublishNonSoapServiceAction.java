@@ -54,7 +54,6 @@ public class PublishNonSoapServiceAction extends SecureAction {
         final Frame mw = TopComponents.getInstance().getTopParent();
         PublishNonSoapServiceWizard wiz = PublishNonSoapServiceWizard.getInstance(mw);
         wiz.pack();
-        wiz.setSize(new Dimension(800, 480));
         Utilities.centerOnScreen(wiz);
         wiz.addEntityListener(listener);
         wiz.setModal(true);

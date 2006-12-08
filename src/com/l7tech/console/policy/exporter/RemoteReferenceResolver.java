@@ -54,7 +54,6 @@ public class RemoteReferenceResolver {
             ResolveExternalPolicyReferencesWizard wiz =
                     ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
             wiz.pack();
-            wiz.setSize(1000, 560);
             Utilities.centerOnScreen(wiz);
             wiz.setModal(true);
             wiz.setVisible(true);

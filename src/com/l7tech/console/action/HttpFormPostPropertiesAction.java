@@ -61,7 +61,6 @@ public class HttpFormPostPropertiesAction extends NodeAction {
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
-        hfpd.setSize(800, 600);
         Utilities.centerOnScreen(hfpd);
         DialogDisplayer.display(hfpd, new Runnable() {
             public void run() {

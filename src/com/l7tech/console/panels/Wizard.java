@@ -20,6 +20,7 @@ import java.awt.event.KeyEvent;
 import java.util.EventListener;
 import java.util.NoSuchElementException;
 import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * The <code>Wizard</code> that drives the wizard step panels.
@@ -33,6 +34,33 @@ public class Wizard extends JDialog {
     protected Object wizardInput;
     private boolean wasCanceled = false;
     private boolean enableBackButton = true;
+    private boolean showDescription;
+
+    private JPanel mainPanel;
+    private JPanel stepLabelsPanel;
+    private JPanel wizardStepPanel;
+    private JScrollPane descScrollPane;
+    private JTextPane stepDescriptionTextPane;
+    private JButton buttonFinish;
+    private JButton cancelButton;
+    private JButton buttonNext;
+    private JButton buttonBack;
+    private JButton buttonHelp;
+
+    protected EventListenerList listenerList = new EventListenerList();
+
+    /**
+     * Creates new wizard
+     */
+    public Wizard(Frame parent, WizardStepPanel panel) {
+        super(parent, true);
+        initialize(panel);
+    }
+
+    public Wizard(Dialog parent, WizardStepPanel panel) {
+        super(parent, true);
+        initialize(panel);
+    }
 
     /**
      * is show description enabled for the panel steps
@@ -50,23 +78,6 @@ public class Wizard extends JDialog {
      */
     public void setShowDescription(boolean b) {
         this.showDescription = b;
-    }
-
-    private boolean showDescription;
-
-    protected EventListenerList listenerList = new EventListenerList();
-
-    /**
-     * Creates new wizard
-     */
-    public Wizard(Frame parent, WizardStepPanel panel) {
-        super(parent, true);
-        initialize(panel);
-    }
-
-    public Wizard(Dialog parent, WizardStepPanel panel) {
-        super(parent, true);
-        initialize(panel);
     }
 
     /**
@@ -147,7 +158,8 @@ public class Wizard extends JDialog {
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 14));
-        titlePanel.add(titleLabel);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        titlePanel.add(Box.createHorizontalStrut(780), BorderLayout.NORTH);
 
         mainPanel.add(titlePanel, BorderLayout.NORTH);
 
@@ -193,8 +205,12 @@ public class Wizard extends JDialog {
             addWizardListener(l);
             p = p.nextPanel();
         }
-        mainPanel.add(stepLabelsPanel, BorderLayout.WEST);
 
+        JPanel sizedStepPanel = new JPanel();
+        sizedStepPanel.setLayout(new BorderLayout());
+        sizedStepPanel.add(Box.createVerticalStrut(420), BorderLayout.WEST);
+        sizedStepPanel.add(stepLabelsPanel, BorderLayout.CENTER);
+        mainPanel.add(sizedStepPanel, BorderLayout.WEST);
 
         // the wizard step panel
         wizardStepPanel = new JPanel();
@@ -208,7 +224,11 @@ public class Wizard extends JDialog {
         da.setBackground(descScrollPane.getBackground());
         descScrollPane.setViewportView(da);
         descScrollPane.setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(10, 0, 0, 0)), new LineBorder(Color.GRAY)));
-        wizardStepPanel.add(descScrollPane, BorderLayout.SOUTH);
+        JPanel descriptionPanel = new JPanel();
+        descriptionPanel.setLayout(new BorderLayout());
+        descriptionPanel.add(descScrollPane, BorderLayout.CENTER);
+        descriptionPanel.add(Box.createVerticalStrut(100), BorderLayout.WEST);
+        wizardStepPanel.add(descriptionPanel, BorderLayout.SOUTH);
 
         mainPanel.add(wizardStepPanel, BorderLayout.CENTER);
         mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
@@ -238,17 +258,43 @@ public class Wizard extends JDialog {
             WizardStepPanel p = it.next();
             initializePanel(p);
         }
-        SwingUtilities.invokeLater(
-          new Runnable() {
-            public void run() {
-                final WizardStepPanel next = wizardIterator.current();
 
-                if (wizardInput != null) {
-                    next.readSettings(wizardInput);
+        Runnable runnable = new Runnable() {
+            public void run() {
+                WizardStepPanel next = wizardIterator.current();
+                if (next != null) {
+                    selectWizardPanel(null, next);
                 }
-                selectWizardPanel(null, next);
             }
-        });
+        };
+
+        // run this now to ensure that the first panel is in place before
+        // any call to pack()
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(runnable);
+            }
+            catch(InterruptedException ie) {
+                Thread.currentThread().interrupt();                
+            }
+            catch(InvocationTargetException ite) {
+                throw new RuntimeException(ite.getCause());
+            }
+        }
+
+        // have to run this later since input will not be available yet ..
+        Runnable wizardInputInit = new Runnable() {
+            public void run() {
+                WizardStepPanel next = wizardIterator.current();
+                if (wizardInput != null && next != null) {
+                    next.readSettings(wizardInput);
+                    updateWizardControls(next);
+                }
+            }
+        };
+        SwingUtilities.invokeLater(wizardInputInit);
     }
 
     /**
@@ -420,12 +466,13 @@ public class Wizard extends JDialog {
         if (next == null) {
             throw new IllegalArgumentException("next == null");
         }
+        descScrollPane.setVisible(next.isShowDescriptionPanel());
         if (current != null) {
             wizardStepPanel.remove(current);
         }
         wizardStepPanel.add(next, BorderLayout.CENTER);
-        descScrollPane.setVisible(next.isShowDescriptionPanel());
         updateWizardControls(next);
+        validate();
         fireSelectionChanged(next);
     }
 
@@ -481,10 +528,7 @@ public class Wizard extends JDialog {
                 stepDescriptionTextPane.setCaretPosition(0);
             }
         });
-        Dimension pd = stepDescriptionTextPane.getPreferredSize();
-        int fh = 10;
-        if (getFont() != null) fh = getFontMetrics(getFont()).getHeight();
-        stepDescriptionTextPane.setPreferredSize(new Dimension(pd.width, fh * 5));
+
         return stepDescriptionTextPane;
     }
 
@@ -563,6 +607,15 @@ public class Wizard extends JDialog {
             buttonHelp.setText("Help");
         }
         return buttonHelp;
+    }
+
+    public boolean isEnableBackButton() {
+        return enableBackButton;
+    }
+
+    public void setEnableBackButton(boolean enableBackButton) {
+        this.enableBackButton = enableBackButton;
+        getButtonBack().setEnabled(enableBackButton);
     }
 
     /**
@@ -711,27 +764,5 @@ public class Wizard extends JDialog {
          */
         public void wizardCanceled(WizardEvent e) {
         }
-    }
-
-    private JPanel mainPanel;
-    private JPanel stepLabelsPanel;
-    private JPanel wizardStepPanel;
-    private JScrollPane descScrollPane;
-
-    private JTextPane stepDescriptionTextPane;
-    private JButton buttonFinish;
-    private JButton cancelButton;
-    private JButton buttonNext;
-    private JButton buttonBack;
-    private JButton buttonHelp;
-
-
-    public boolean isEnableBackButton() {
-        return enableBackButton;
-    }
-
-    public void setEnableBackButton(boolean enableBackButton) {
-        this.enableBackButton = enableBackButton;
-        getButtonBack().setEnabled(enableBackButton);
     }
 }

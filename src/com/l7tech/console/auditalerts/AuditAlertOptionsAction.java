@@ -58,8 +58,8 @@ public class AuditAlertOptionsAction extends SecureAction {
 
     protected void performAction() {
         final AuditAlertOptionsDialog dlg = new AuditAlertOptionsDialog(TopComponents.getInstance().getTopParent());
-        Utilities.centerOnScreen(dlg);
         dlg.pack();
+        Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (!dlg.wasCancelled()) {

@@ -82,7 +82,7 @@ public class PublishPolicyToSystinetRegistry extends NodeAction {
         }
         assert(policyURL != null);
         PublishPolicyToUDDIWizard wizard = PublishPolicyToUDDIWizard.getInstance(f, policyURL, serviceConsumptionURL, svc.getName());
-        wizard.setSize(850, 500);
+        wizard.pack();
         Utilities.centerOnScreen(wizard);
         DialogDisplayer.display(wizard);
     }

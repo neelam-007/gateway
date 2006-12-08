@@ -151,7 +151,6 @@ public abstract class UserCertPanel extends JPanel {
                     //addEntityListener(listener);
 
                     w.pack();
-                    w.setSize(780, 560);
                     Utilities.centerOnScreen(w);
                     DialogDisplayer.display(w);
 

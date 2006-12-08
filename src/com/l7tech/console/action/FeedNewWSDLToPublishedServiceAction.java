@@ -79,6 +79,7 @@ public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
 
         final SelectWsdlDialog rwd = new SelectWsdlDialog(mw, "Reset WSDL");
         rwd.setWsdlUrl(existingURL);
+        rwd.pack();
         Utilities.centerOnScreen(rwd);
         DialogDisplayer.display(rwd, new Runnable() {
             public void run() {

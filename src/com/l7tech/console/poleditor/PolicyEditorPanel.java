@@ -919,7 +919,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
             protected void performAction() {
                 ImportPolicyFromUDDIWizard wiz = ImportPolicyFromUDDIWizard.getInstance(TopComponents.getInstance().getTopParent());
-                wiz.setSize(850, 500);
+                wiz.pack();
                 Utilities.centerOnScreen(wiz);
                 wiz.setVisible(true);
                 if (wiz.importedPolicy() != null) {

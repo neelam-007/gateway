@@ -138,6 +138,7 @@ public class WsdlCreateWizard extends Wizard {
             super(mw, true);
             setTitle(title);
             Viewer viewer = Viewer.createMessageViewer(wsdlString);
+            viewer.setPreferredSize(new Dimension(580, 640));
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(viewer, BorderLayout.CENTER);
 
@@ -149,7 +150,6 @@ public class WsdlCreateWizard extends Wizard {
                 }
             });
             pack();
-            setSize(600, 600);
             Utilities.centerOnScreen(this);
         }
     }

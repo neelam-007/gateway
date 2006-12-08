@@ -7,13 +7,11 @@ import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.saml.*;
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 
-import javax.swing.*;
 import java.awt.*;
 
 /**
@@ -52,7 +50,6 @@ public class AddRequestWssSamlAdvice implements Advice {
 
         Utilities.setEscKeyStrokeDisposes(w);
         w.pack();
-        w.setSize(850, 500);
         Utilities.centerOnScreen(w);
         DialogDisplayer.display(w, new Runnable() {
             public void run() {

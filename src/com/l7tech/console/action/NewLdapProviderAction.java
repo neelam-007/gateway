@@ -82,7 +82,6 @@ public class NewLdapProviderAction extends NewProviderAction {
                 addEntityListener(listener);
 
                 w.pack();
-                w.setSize(new Dimension(780, 560));
                 Utilities.centerOnScreen(w);
                 DialogDisplayer.display(w);
             }

@@ -47,7 +47,6 @@ public class SchemaValidationPropertiesAction extends SecureAction {
         Frame f = TopComponents.getInstance().getTopParent();
         final SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
         dlg.pack();
-        dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
