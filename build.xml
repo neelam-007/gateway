@@ -1861,7 +1861,9 @@
                 <exclude name="com/l7tech/policy/assertion/Assertion.java"/>
                 <exclude name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
                 <exclude name="com/l7tech/policy/assertion/composite/**.java"/>
-                <exclude name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>
+                <exclude name="com/l7tech/policy/assertion/ext/CustomAuditor.java"/>
+                <exclude name="com/l7tech/policy/assertion/ext/Category.java"/>
+                <exclude name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
             </fileset>
         </javadoc>
     </target>
