@@ -46,7 +46,7 @@ foreach my $rule (@existing_rules) {
 
 if ( $insert_point == 0) {
 	# Didn't find the rule, gtfot
-	print "Correct ruleset not found";
+	print "Correct ruleset not found\n";
 	exit 1;
 }
 
