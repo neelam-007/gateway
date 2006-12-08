@@ -399,7 +399,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             try {
                 return pec.getVariable(name);
             } catch (NoSuchVariableException e) {
-                logger.log(Level.INFO, "bad variable requested by custom assertion", e);
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{name});
             }
             return null;
         }
@@ -494,7 +494,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             try {
                 return pec.getVariable(name);
             } catch (NoSuchVariableException e) {
-                logger.log(Level.INFO, "bad variable requested by custom assertion", e);
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{name});
             }
             return null;
         }
