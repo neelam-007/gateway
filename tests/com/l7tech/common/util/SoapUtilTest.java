@@ -96,7 +96,7 @@ public class SoapUtilTest extends TestCase {
                 return null;
             }
             public HttpCookie[] getCookies() {return new HttpCookie[0];}
-            public String getMethod() {return null;}
+            public String getMethod() {return "POST";}
             public String getRequestUri() {return null;}
             public String getRequestUrl() {return null;}
             public URL getRequestURL() {return null;}
