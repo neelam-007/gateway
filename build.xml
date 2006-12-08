@@ -2531,7 +2531,6 @@
         <property name="install.rel.partitions" value="partitions"/>
         <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
         <property name="install.rel.defaultPartition" value="default_"/>
-        <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
 
         <!-- Absolute source paths -->
@@ -2545,7 +2544,6 @@
         <property name="install.src.tomcat" value="${install.src.base}/${install.rel.tomcat}"/>
 
         <property name="install.src.etc" value="${install.src.base}/${install.rel.etc}"/>
-        <property name="install.src.keys" value="${install.src.base}/${install.rel.keys}"/>
         <property name="install.src.sql" value="${install.src.base}/${install.rel.sql}"/>
 
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
@@ -2568,7 +2566,6 @@
         <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
-        <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
         <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
         <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
         <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
@@ -2589,7 +2586,6 @@
         <mkdir dir="${install.src.sql}"/>
         <mkdir dir="${install.src.ldap}"/>
         <mkdir dir="${install.src.bin}"/>
-        <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.partitions}"/>
         <mkdir dir="${install.src.partitionTemplate}"/>
