@@ -360,6 +360,12 @@
         </path>
 
         <available property="makensis.available" file="${build.install.compiler}"/>
+        <condition property="makensis.enabled">
+            <and>
+                <isset property="makensis.available"/>
+                <isset property="makensis"/>
+            </and>
+        </condition>
     </target>
 
     <!--
@@ -800,7 +806,7 @@
     -->
     <target name="make_installers"
             description="Create the SSG WAR file and SSB/SSM Win32 installers (was make_installers.pl -b)."
-            depends="package.installbridge.work, package.installmanager.work, package.installgateway.work">
+            depends="makensis, package.installbridge.work, package.installmanager.work, package.installgateway.work">
     </target>
 
     <!--
@@ -1477,7 +1483,7 @@
             </tarfileset>
         </tar>
     </target>
-    <target name="package.installbridge.work.nsis" if="makensis.available">
+    <target name="package.installbridge.work.nsis" if="makensis.enabled">
         <!-- Update NSI file -->
         <generate-nsi nsiFile="Bridge.nsi"
                       nsiPath="proxy/win32/"
@@ -1543,7 +1549,7 @@
             </tarfileset>
         </tar>
     </target>
-    <target name="package.installmanager.work.nsis" if="makensis.available">
+    <target name="package.installmanager.work.nsis" if="makensis.enabled">
         <!-- Update NSI file -->
         <generate-nsi nsiFile="Manager.nsi"
                       nsiPath="console/win32/"
@@ -1566,7 +1572,7 @@
       - Generate start script from template
       - Run makensis (wine?)
     -->
-    <target name="package.installgateway.work" depends="package.readversion.unsafe"  if="makensis.available">
+    <target name="package.installgateway.work" depends="package.readversion.unsafe"  if="makensis.enabled">
         <!-- Update NSI file -->
         <generate-nsi nsiFile="SSG.nsi"
                       nsiPath="server/win32/"
@@ -2443,8 +2449,8 @@
       Official build
     -->
     <target name="ssg-install-full"
-            description="Offical build target [optionally use with obfuscate]"
-            depends="INTERNAL-ssg-install">
+            description="Offical build target [optionally use with obfuscate and makensis]"
+            depends="INTERNAL-ssg-install,package.installgateway.work">
     </target>
 
     <!--
@@ -2929,6 +2935,11 @@
     <target name="obfuscate" description="Enable obfuscated build (when packaging)">
         <echo level="info">Enabling obfuscation for build.</echo>
         <property name="obfuscate" value="true"/>
+    </target>
+
+    <target name="makensis" description="Enable building of Win32 installers">
+        <echo level="info">Enabling Win32 installers for build.</echo>
+        <property name="makensis" value="true"/>
     </target>
 
     <!--
