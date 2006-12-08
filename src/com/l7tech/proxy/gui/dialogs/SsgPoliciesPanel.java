@@ -69,7 +69,7 @@ class SsgPoliciesPanel extends JPanel {
     /** How many columns in the table. */
     private static final int COL_COUNT = 5;
 
-    private static final String MATCH_EQUALS = "equals";
+    private static final String MATCH_EQUALS = "exact match";
     private static final String MATCH_STARTSWITH = "begins with";
     private static final String[] MATCH_TYPES = new String[] { MATCH_EQUALS, MATCH_STARTSWITH };
 
