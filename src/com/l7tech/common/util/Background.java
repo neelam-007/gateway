@@ -49,6 +49,10 @@ public final class Background {
 
     /**
      * Schedule the task for repeated execution after the specified delay, every period.
+     *
+     * <p>Note that a task scheduled in this way cannot {@link TimerTask#cancel() cancel()}
+     * itself.</p>
+     *
      * @see Timer#schedule(java.util.TimerTask, long, long) 
      */
     public static void scheduleRepeated(TimerTask timerTask, long delay, long period) {
