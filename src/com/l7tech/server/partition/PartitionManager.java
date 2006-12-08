@@ -4,6 +4,7 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PartitionActions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -200,13 +201,22 @@ public class PartitionManager {
                 }
             }
 
+            PartitionActions pa = new PartitionActions(osf);
+            List<String> fileNames = new ArrayList<String>();
             if (templatePartitionDir.listFiles().length == 0) {
                 System.out.println("Copying original configuration files to the template partition.");
                 try {
                     copyConfigurations(originalFiles, templatePartitionDir);
+                    for (File originalFile : originalFiles) {
+                        fileNames.add(originalFile.getName());
+                    }
+                    pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", templatePartitionDir, osf);
+
                 } catch (IOException e) {
                     System.out.println("Error while creating the template partition: " + e.getMessage());
                     System.exit(1);
+                } catch (InterruptedException e) {
+                    System.out.println("Error while setting the file permissions for the template partition: " + e.getMessage());
                 }
             }
 
@@ -220,13 +230,30 @@ public class PartitionManager {
                         templateFiles.addAll(Arrays.asList(templatePartitionDir.listFiles()));
 
                         copyConfigurations(templateFiles, defaultPartitionDir);
+                        fileNames.clear();
+                        for (File templateFile : templateFiles) {
+                            fileNames.add(templateFile.getName());
+                        }
+                        pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
                     } else {
                         copyConfigurations(originalFiles, defaultPartitionDir);
+                        fileNames.clear();
+                        for (File originalFile : originalFiles) {
+                            fileNames.add(originalFile.getName());
+                        }
+                        pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "755", defaultPartitionDir, osf);
                         renameUpgradeFiles(defaultPartitionDir, ".rpmsave");
+                    }
+                    if (osf.isLinux()) {
+                        File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
+                        if (!f.exists())
+                            f.createNewFile();
                     }
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);
+                } catch (InterruptedException e) {
+                    System.out.println("Error while setting the file permissions for the template partition: " + e.getMessage());
                 }
             } else {
                 System.out.println("the default partition does not need to be migrated");
