@@ -43,6 +43,11 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
+mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
+mv %{buildroot}/ssg/etc/conf/*.conf %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
+mv %{buildroot}/ssg/etc/conf/*.config %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
+mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
+mv %{buildroot}/ssg/tomcat/conf/server.xml %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 
 # Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
@@ -66,7 +71,6 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %defattr(0775,gateway,gateway)
 %config(noreplace) /ssg/etc/conf/
 %config(noreplace) /ssg/etc/conf/*
-%config(noreplace) /ssg/etc/keys/
 %config(noreplace) /ssg/tomcat/conf/*
 %config(noreplace) /ssg/jdk/jre/lib/ext/*
 %config(noreplace) /ssg/jdk/jre/lib/security/
@@ -189,7 +193,6 @@ fi
 chmod -Rf 775 /ssg/configwizard
 chmod -Rf 775 /ssg/sysconfigwizard
 chmod -Rf 775 /ssg/etc/conf
-chmod -Rf 775 /ssg/etc/keys
 chmod -Rf 775 /ssg/tomcat/conf
 chmod -Rf 775 /ssg/jdk/jre/lib/security/
 chmod -Rf 775 /ssg/migration

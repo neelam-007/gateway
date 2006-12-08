@@ -34,7 +34,7 @@ public class ConfigurationWizardLauncher {
         if (CONSOLE_MODE.equalsIgnoreCase(launchType)) {
             ConsoleConfigWizardLauncher.launch(newArgs);
         } else if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
-            PartitionManager.getInstance().doMigration();
+            PartitionManager.doMigration();
         } else if (null == launchType || "".equals(launchType) || GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
             GuiConfigWizardLauncher.launch(newArgs);
         }

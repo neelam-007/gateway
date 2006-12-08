@@ -1,10 +1,9 @@
 package com.l7tech.server.partition;
 
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.PartitionActions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -28,16 +27,25 @@ public class PartitionManager {
     private static final Logger logger = Logger.getLogger(PartitionManager.class.getName());
 
     //only these files will be copied. Anything else left in SSG_ROOT/etc/conf is likley custom, like a custom assertion
-    private static String[] whitelistConfigFiles = new String[] {
+    private static String[] configFileWhitelist = new String[] {
+        "hibernate.properties.rpmsave",
         "hibernate.properties",
+        "keystore.properties.rpmsave",
         "keystore.properties",
+        "uddi.properties.rpmsave",
         "uddi.properties",
+        "ssglog.properties.rpmsave",
         "ssglog.properties",
+        "system.properties.rpmsave",
         "system.properties",
+        "krb5.conf.rpmsave",
         "krb5.conf",
+        "login.config.rpmsave",
         "login.config",
-        "cluster_hostname-dist",
+        "cluster_hostname.rpmsave",
         "cluster_hostname",
+        "cluster_hostname-dist.rpmsave",
+        "cluster_hostname-dist",
     };
 
     private static PartitionManager instance;
@@ -141,26 +149,28 @@ public class PartitionManager {
         partitions.remove(partitionName);
     }
 
-    public void doMigration() {
+    public static void doMigration() {
         OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions("");
         File oldSsgConfigDirectory = new File(osf.getSsgInstallRoot() + "etc/conf");
         File oldKeystoreDirectory = new File(osf.getSsgInstallRoot() + "etc/keys");
-        File oldTomcatServerConfig = new File(osf.getSsgInstallRoot() + "tomcat/conf/server.xml");
+        File oldTomcatServerConfig = new File(osf.getSsgInstallRoot() + "tomcat/conf/server.xml.rpmsave");
         final File partitionsBaseDir = new File(osf.getPartitionBase());
         final File defaultPartitionDir = new File(partitionsBaseDir, PartitionInformation.DEFAULT_PARTITION_NAME);
         final File templatePartitionDir = new File(partitionsBaseDir, PartitionInformation.TEMPLATE_PARTITION_NAME);
 
-        final Set<String> whitelist = new HashSet<String>(Arrays.asList(whitelistConfigFiles));
+        final Set<String> whitelist = new HashSet<String>(Arrays.asList(configFileWhitelist));
+        
         try {
             List<File> originalFiles = new ArrayList<File>();
 
-            List<File> deletableOriginalFiles = new ArrayList<File>(
-                    Arrays.asList(oldSsgConfigDirectory.listFiles(new FileFilter() {
+            File[] filesInOldConfigDirectory = oldSsgConfigDirectory.listFiles(
+                    new FileFilter() {
                         public boolean accept(File pathname) {
-                            return  whitelist.contains(pathname.getName());
+                            return whitelist.contains(pathname.getName());
                         }
-                    }
-            )));
+                    });
+
+            List<File> deletableOriginalFiles = new ArrayList<File>(Arrays.asList(filesInOldConfigDirectory));
 
             deletableOriginalFiles.add(oldKeystoreDirectory);
 
@@ -169,22 +179,20 @@ public class PartitionManager {
             if (osf.isWindows())
                 originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
 
-//            if (osf.isLinux()) {
-//                originalFiles.add(new File(osf.getSsgInstallRoot() + "bin/" + "partition_defs.sh"));
-//            }
-
             if (!partitionsBaseDir.exists()) {
                 System.out.println("Creating Partition Root Directory");
                 if (!partitionsBaseDir.mkdir()) {
                     throw new PartitionException("COULD NOT CREATE PARTITION ROOT DIRECTORY - Please check file permissions and re-run this tool.");
                 }
             }
+
             if (!defaultPartitionDir.exists()) {
                 System.out.println("Creating Default Partition Directory");
                 if (!defaultPartitionDir.mkdir()) {
                     throw new PartitionException("COULD NOT CREATE THE DEFAULT PARTITION. The SSG will not run without a default partition. Please check file permissions and re-run this tool.");
                 }
             }
+
             if (!templatePartitionDir.exists()) {
                 System.out.println("Creating Template Partition Directory");
                 if (!templatePartitionDir.mkdir()) {
@@ -192,48 +200,38 @@ public class PartitionManager {
                 }
             }
 
-            PartitionActions pActions = new PartitionActions(osf);
             if (templatePartitionDir.listFiles().length == 0) {
                 System.out.println("Copying original configuration files to the template partition.");
                 try {
                     copyConfigurations(originalFiles, templatePartitionDir);
-                    pActions.setLinuxFilePermissions(
-                        new String[] {
-                            templatePartitionDir.getAbsolutePath() + "/partitionControl.sh",
-                            templatePartitionDir.getAbsolutePath() + "/partition_defs.sh",
-                        },
-                        "775",
-                        templatePartitionDir, osf);
                 } catch (IOException e) {
                     System.out.println("Error while creating the template partition: " + e.getMessage());
                     System.exit(1);
-                } catch (InterruptedException e) {
-                    System.out.println("Error while setting execute permissions on the startup scripts for templatepartition: " + e.getMessage());
                 }
             }
 
             if (defaultPartitionDir.listFiles().length == 0) {
-                System.out.println("Copying original configuration files to the default partition.");
+                System.out.println("Copying configuration files to the default partition.");
                 try {
-                    copyConfigurations(originalFiles, defaultPartitionDir);
-                    pActions.setLinuxFilePermissions(
-                        new String[] {
-                            defaultPartitionDir.getAbsolutePath() + "/partitionControl.sh",
-                            defaultPartitionDir.getAbsolutePath() + "/partition_defs.sh",
-                        },
-                        "775",
-                        defaultPartitionDir, osf);
+                    if (filesInOldConfigDirectory.length <= 1) {//no originals, this is a new install, copy the ones from the partition template
+                        List<File> templateFiles = new ArrayList<File>();
+                        templateFiles.add(oldKeystoreDirectory);
+                        templateFiles.add(oldTomcatServerConfig);
+                        templateFiles.addAll(Arrays.asList(templatePartitionDir.listFiles()));
 
+                        copyConfigurations(templateFiles, defaultPartitionDir);
+                    } else {
+                        copyConfigurations(originalFiles, defaultPartitionDir);
+                        renameUpgradeFiles(defaultPartitionDir, ".rpmsave");
+                    }
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);
-                } catch (InterruptedException e) {
-                    System.out.println("Error while setting execute permissions on the startup scripts for default_ partition : " + e.getMessage());
                 }
             } else {
                 System.out.println("the default partition does not need to be migrated");
             }
-//            removeOriginalConfiguations(deletableOriginalFiles);
+            removeOriginalConfigurations(deletableOriginalFiles);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());
@@ -241,19 +239,35 @@ public class PartitionManager {
         }
     }
 
-    private void copyConfigurations(List<File> filesToCopy, File destinationDir) throws IOException {
+    private static void renameUpgradeFiles(File directory, final String pattern) {
+        File[] list = directory.listFiles(new FileFilter() {
+            public boolean accept(File pathname) {
+                return pathname.getName().endsWith(pattern);
+            }
+        });
+
+        for (File file : list) {
+            String oldName = file.getName();
+            String newName = oldName.replace(pattern, "");
+            File newFile = new File(directory, newName);
+            file.renameTo(newFile);
+        }
+    }
+
+    private static void copyConfigurations(List<File> filesToCopy, File destinationDir) throws IOException {
         if (!destinationDir.exists()) destinationDir.mkdir();
         for (File currentFile : filesToCopy) {
             if (currentFile.isDirectory()) {
                 copyConfigurations(new ArrayList<File>(Arrays.asList(currentFile.listFiles())), new File(destinationDir, currentFile.getName()));
             } else {
                 File newFile = new File(destinationDir, currentFile.getName());
-                FileUtils.copyFile(currentFile, newFile);
+                if (currentFile.exists())
+                    FileUtils.copyFile(currentFile, newFile);
             }
         }
     }
 
-    private void removeOriginalConfiguations(List<File> filesToRemove) {
+    private static void removeOriginalConfigurations(List<File> filesToRemove) {
         for (File file : filesToRemove) {
             if (file.exists())
                 FileUtils.deleteFileSafely(file.getAbsolutePath());

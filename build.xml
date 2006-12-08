@@ -2526,6 +2526,7 @@
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
         <property name="install.rel.partitions" value="partitions"/>
         <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
+        <property name="install.rel.defaultPartition" value="default_"/>
         <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
 
@@ -2546,6 +2547,7 @@
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
         <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
         <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>        
+        <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>        
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
@@ -2587,6 +2589,7 @@
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.partitions}"/>
         <mkdir dir="${install.src.partitionTemplate}"/>
+        <mkdir dir="${install.src.defaultPartition}"/>
         <mkdir dir="${install.src.logs}"/>
         <mkdir dir="${install.src.var}"/>
         <mkdir dir="${install.src.var.attachments}"/>
@@ -2694,6 +2697,7 @@
                 <include name="configuser_bashrc"/>
                 <include name="sysconfigscript-initd"/>
                 <include name="partitionControl.sh"/>
+                <include name="partition_firewall.pl"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>

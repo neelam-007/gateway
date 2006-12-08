@@ -62,6 +62,8 @@ if [ -e "/opt/oracle" ] ; then
 fi
 
 JAVA_OPTS=$default_java_opts;
+ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
+PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -w`
 
 unset default_java_opts
 
@@ -71,6 +73,8 @@ export JAVA_HOME
 export TOMCAT_HOME
 export JAVA_OPTS
 export CATALINA_PID
+export ALL_PARTITIONS
+export PARTITION_COUNT
 
 # define tomcat home
 export PATH
