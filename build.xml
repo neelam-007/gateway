@@ -142,6 +142,8 @@
       Patternset used for Layer 7 API compilation/javadoc
     -->
     <patternset id="layer7api.sources">
+        <include name="com/l7tech/policy/assertion/UsesVariables.java"/>
+        <include name="com/l7tech/policy/assertion/SetsVariables.java"/>
         <include name="com/l7tech/policy/assertion/Assertion.java"/>
         <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
         <include name="com/l7tech/policy/assertion/composite/**"/>
