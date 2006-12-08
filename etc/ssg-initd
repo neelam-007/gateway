@@ -31,7 +31,7 @@ SINGLE_PARTITION=""
 
 # See how we were called.
 if [ $USER != "root" ] ; then
-    echo"Need to be root or $ssguser to run this script";
+    echo "Need to be root to run this script";
     exit
 fi
 
@@ -106,7 +106,7 @@ stop() {
 stop_ssg() {
     which_partition=$1
     echo -n $"Stopping $prog (`basename "${which_partition}"`): "
-	su $ssguser -c "sh $PARTITION_CONTROL stop ${which_partition} -force" > /dev/null 2>&1
+	(sh $PARTITION_CONTROL stop ${which_partition} -force > /dev/null 2>&1)
     RETVAL=$?
 }
 
@@ -114,7 +114,7 @@ start_ssg() {
     which_partition=$1
     echo -n $"Starting $prog (`basename "${which_partition}"`): "
 
-    su $ssguser -c "sh $PARTITION_CONTROL start ${which_partition}" &>/dev/null <&-
+    (sh $PARTITION_CONTROL start ${which_partition} &>/dev/null <&-)
     RETVAL=$?
     echo
 }
