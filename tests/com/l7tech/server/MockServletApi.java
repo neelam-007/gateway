@@ -45,6 +45,7 @@ public class MockServletApi {
         servletResponseMock = new MockHttpServletResponse();
         servletRequestMock.addHeader("Authorization", new String[] {});
         servletRequestMock.addHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, new String[] {});
+        servletRequestMock.setMethod("POST");
     }
 
     private MockServletApi(String contextLocation) {
