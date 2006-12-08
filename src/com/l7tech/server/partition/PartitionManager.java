@@ -6,6 +6,8 @@ import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -243,11 +245,12 @@ public class PartitionManager {
                         }
                         pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "755", defaultPartitionDir, osf);
                         renameUpgradeFiles(defaultPartitionDir, ".rpmsave");
-                    }
-                    if (osf.isLinux()) {
-                        File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
-                        if (!f.exists())
-                            f.createNewFile();
+                        fixKeystorePaths(defaultPartitionDir);
+                        if (osf.isLinux()) {
+                            File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
+                            if (!f.exists())
+                                f.createNewFile();
+                        }
                     }
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
@@ -264,6 +267,73 @@ public class PartitionManager {
             System.out.println(pe.getMessage());
             System.exit(1);
         }
+    }
+
+    private static void fixKeystorePaths(File partitionDir) throws FileNotFoundException {
+        File serverConfig = new File(partitionDir, "server.xml");
+        File keystoreProperties = new File(partitionDir, "keystore.properties");
+        FileInputStream serverConfigFis = null;
+        FileInputStream keystoreConfigFis = null;
+
+        FileOutputStream serverConfigFos = null;
+        FileOutputStream keystoreConfigFos = null;
+        try {
+            File newKeystorePath = new File(partitionDir, "keys");
+
+            serverConfigFis = new FileInputStream(serverConfig);
+            Document serverConfigDom = XmlUtil.parse(serverConfigFis);
+            NodeList nodes = serverConfigDom.getElementsByTagName("Connector");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Element connectorNode = (Element) nodes.item(i);
+                if (connectorNode.hasAttribute("keystoreFile")) {
+                    String keystorePath = connectorNode.getAttribute("keystoreFile");
+                    int keystoreFileIndex = keystorePath.indexOf("ssl.ks");
+
+                    String newKsFile = newKeystorePath.getAbsolutePath() + "/" + keystorePath.substring(keystoreFileIndex);
+                    connectorNode.setAttribute("keystoreFile", newKsFile);
+                }
+            }
+            serverConfigFos = new FileOutputStream(serverConfig);
+            XmlUtil.nodeToOutputStream(serverConfigDom, serverConfigFos);
+
+            keystoreConfigFis = new FileInputStream(keystoreProperties);
+            Properties props = new Properties();
+            props.load(keystoreConfigFis);
+            props.setProperty("keystoredir", newKeystorePath.getAbsolutePath());
+            keystoreConfigFos = new FileOutputStream(keystoreProperties);
+            props.store(keystoreConfigFos, "");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } finally {
+            if (serverConfigFis != null) {
+                try {
+                    serverConfigFis.close();
+                } catch (IOException e) {}
+            }
+
+            if (serverConfigFos != null) {
+                try {
+                    serverConfigFos.close();
+                } catch (IOException e) {}
+            }
+
+            if (keystoreConfigFis != null) {
+                try {
+                    keystoreConfigFis.close();
+                } catch (IOException e) {}
+            }
+
+            if (keystoreConfigFos != null) {
+                try {
+                    keystoreConfigFos.close();
+                } catch (IOException e) {}
+            }
+        }
+
+
     }
 
     private static void renameUpgradeFiles(File directory, final String pattern) {
