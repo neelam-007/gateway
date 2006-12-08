@@ -190,7 +190,7 @@ public class Gui {
     }
 
     /** @return true if this Gui is running in configuration-only mode, not attached to an in-process ClientProxy instance. */
-    private boolean isConfigOnly() {
+    public boolean isConfigOnly() {
         return configOnly;
     }
 

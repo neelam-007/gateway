@@ -8,9 +8,9 @@ package com.l7tech.proxy.gui.dialogs;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -43,11 +43,7 @@ import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
@@ -93,6 +89,10 @@ class SsgPoliciesPanel extends JPanel {
     public void setPolicyCache(PolicyManager policyCache) {
         this.policyCache = policyCache;
         updatePolicyPanel();
+    }
+
+    private boolean isConfigOnly() {
+        return Gui.getInstance().isConfigOnly();
     }
 
     private void init() {
@@ -157,7 +157,7 @@ class SsgPoliciesPanel extends JPanel {
         colMt.setCellEditor(new ComboBoxCellEditor(MATCH_TYPES));
         setColumnSize(colMt, " Match Type ", new JComboBox(MATCH_TYPES));
         colLk.setHeaderValue("Lock");
-        colLk.setCellRenderer(policyTable.getDefaultRenderer(Boolean.class));
+        colLk.setCellRenderer(new LockCellRenderer());
         colLk.setCellEditor(policyTable.getDefaultEditor(Boolean.class));
         setColumnSize(colLk, "  Lock  ", new JCheckBox());
         policyTable.getTableHeader().setReorderingAllowed(false);
@@ -424,7 +424,7 @@ class SsgPoliciesPanel extends JPanel {
                             Policy newPolicy = new Policy(rootAssertion, null);
                             PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
                                                                                              "Import Policy: Policy Attachment Key",
-                                                                                             true);
+                                                                                             true, isConfigOnly());
                             PolicyAttachmentKey oldPak = getSelectedPolicy();
                             if (oldPak != null) {
                                 oldPak = new PolicyAttachmentKey(oldPak); // make copy first
@@ -553,7 +553,7 @@ class SsgPoliciesPanel extends JPanel {
                     if (policy == null) return;
                     PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
                                                                                      "Configure Policy Attachment Key",
-                                                                                     true);
+                                                                                     true, isConfigOnly());
                     pakDlg.setPolicyAttachmentKey(pak);
                     Utilities.centerOnScreen(pakDlg);
                     pakDlg.setVisible(true);
@@ -612,6 +612,7 @@ class SsgPoliciesPanel extends JPanel {
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             switch (columnIndex) {
                 case COL_LOCK:
+                    return !isConfigOnly();
                 case COL_MATCHTYPE:
                     return true;
             }
@@ -713,7 +714,7 @@ class SsgPoliciesPanel extends JPanel {
         }
         getChangeButton().setEnabled(policy != null);
         getExportButton().setEnabled(policy != null);
-        getDeleteButton().setEnabled(policy != null && lastSelectedPolicy != null && !lastSelectedPolicy.isPersistent());
+        getDeleteButton().setEnabled(policy != null && lastSelectedPolicy != null && (isConfigOnly() || !lastSelectedPolicy.isPersistent()));
     }
 
     /** Update the policy display panel with information from the Ssg bean. */
@@ -730,6 +731,16 @@ class SsgPoliciesPanel extends JPanel {
             }
         }
         displaySelectedPolicy();
+    }
+
+    private class LockCellRenderer implements TableCellRenderer {
+        private final TableCellRenderer delegate = policyTable.getDefaultRenderer(Boolean.class);
+
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = delegate.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (isConfigOnly()) c.setEnabled(false);
+            return c;
+        }
     }
 
     private static class ComboBoxCellRenderer extends JComboBox implements TableCellRenderer {

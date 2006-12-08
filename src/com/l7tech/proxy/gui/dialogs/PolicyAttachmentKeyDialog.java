@@ -31,15 +31,18 @@ public class PolicyAttachmentKeyDialog extends JDialog {
     private JComboBox cbMatchType;
     private JCheckBox cbLock;
 
+    private final boolean forceLock;
     private PolicyAttachmentKey result = null;
 
-    public PolicyAttachmentKeyDialog(Frame owner, String title, boolean modal) throws HeadlessException {
+    public PolicyAttachmentKeyDialog(Frame owner, String title, boolean modal, boolean forceLock) throws HeadlessException {
         super(owner, title, modal);
+        this.forceLock = forceLock;
         initialize();
     }
 
-    public PolicyAttachmentKeyDialog(Dialog owner, String title, boolean modal) throws HeadlessException {
+    public PolicyAttachmentKeyDialog(Dialog owner, String title, boolean modal, boolean forceLock) throws HeadlessException {
         super(owner, title, modal);
+        this.forceLock = forceLock;
         initialize();
     }
 
@@ -56,7 +59,7 @@ public class PolicyAttachmentKeyDialog extends JDialog {
 
                 result = new PolicyAttachmentKey(nsuri, sa, path);
                 result.setBeginsWithMatch(cbMatchType.getSelectedItem().equals(MATCH_STARTSWITH));
-                result.setPersistent(cbLock.isSelected());
+                result.setPersistent(forceLock || cbLock.isSelected());
                 setVisible(false);
                 dispose();
             }
@@ -77,6 +80,11 @@ public class PolicyAttachmentKeyDialog extends JDialog {
         Utilities.runActionOnEscapeKey(policyAttachmentKeyPanel, closeAction);
         setPolicyAttachmentKey(null);
         pack();
+
+        if (forceLock) {
+            cbLock.setSelected(true);
+            cbLock.setEnabled(false);
+        }
     }
 
     /**
@@ -94,7 +102,7 @@ public class PolicyAttachmentKeyDialog extends JDialog {
     public void setPolicyAttachmentKey(PolicyAttachmentKey pak) {
         if (pak == null) pak = new PolicyAttachmentKey();
         cbMatchType.setSelectedItem(pak.isBeginsWithMatch() ? MATCH_STARTSWITH : MATCH_EQUALS);
-        cbLock.setSelected(pak.isPersistent());
+        cbLock.setSelected(forceLock || pak.isPersistent());
         namespaceUriTextField.setText(cn(pak.getUri()));
         soapActionTextField.setText(cn(pak.getSoapAction()));
         localPathTextField.setText(cn(pak.getProxyUri()));
