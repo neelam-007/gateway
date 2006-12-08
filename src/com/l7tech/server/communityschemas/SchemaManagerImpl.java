@@ -123,6 +123,18 @@ public class SchemaManagerImpl implements SchemaManager {
 
     private final Timer maintenanceTimer;
 
+    private abstract class SafeTimerTask extends TimerTask {
+        public final void run() {
+            try {
+                doRun();
+            } catch (Throwable e) {
+                logger.log(Level.SEVERE, "Unexpected exception on schema cache maintenance thread: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
+        protected abstract void doRun();
+    }
+
     public SchemaManagerImpl(HttpClientFactory httpClientFactory, Timer timer) {
         if (httpClientFactory == null) throw new NullPointerException();
 
@@ -142,16 +154,16 @@ public class SchemaManagerImpl implements SchemaManager {
         if (timer == null)
             timer = new Timer("Schema cache maintenance", true);
         maintenanceTimer = timer;
-        TimerTask cacheCleanupTask = new TimerTask() {
-            public void run() {
+        SafeTimerTask cacheCleanupTask = new SafeTimerTask() {
+            public void doRun() {
                 cacheCleanup();
             }
         };
         maintenanceTimer.schedule(cacheCleanupTask, 4539, maxCacheAge * 2 + 263);
 
         if (tarariSchemaHandler != null) {
-            final TimerTask hardwareReloadTask = new TimerTask() {
-                public void run() {
+            final SafeTimerTask hardwareReloadTask = new SafeTimerTask() {
+                public void doRun() {
                     maybeRebuildHardwareCache();
                 }
             };
@@ -935,19 +947,12 @@ public class SchemaManagerImpl implements SchemaManager {
     private void scheduleOneShotRebuildCheck(long delay) {
         if (delay < 1) throw new IllegalArgumentException("Rebuild check delay must be positive");
         if (maintenanceTimer != null) {
-            TimerTask task = new TimerTask() {
-                public void run() {
+            SafeTimerTask task = new SafeTimerTask() {
+                public void doRun() {
                     maybeRebuildHardwareCache();
                 }
             };
-            try {
-                maintenanceTimer.schedule(task, delay);
-            } catch (IllegalStateException e) {
-                // bugzilla #3179, avoid sending this RTE to SSM, note the problem in the log and go
-                // for independant one shot timer. the task manages its own lock
-                logger.log(Level.WARNING, "the maintenance timer was unexpectedly cancelled", e);
-                (new Timer("Schema cache maintenance", true)).schedule(task, delay);
-            }
+            maintenanceTimer.schedule(task, delay);
         }
     }
 
