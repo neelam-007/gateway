@@ -220,7 +220,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
                 enableStartupFile.delete();
             } else {
                 try {
-                    logger.warning("Enabling the \"" + pInfo.getPartitionId() + "\" partition.");
+                    logger.info("Enabling the \"" + pInfo.getPartitionId() + "\" partition.");
                     enableStartupFile.createNewFile();
                 } catch (IOException e) {
                     logger.warning("Error while enabling the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
