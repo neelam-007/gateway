@@ -2,6 +2,7 @@ package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.partition.PartitionInformation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +58,13 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
 
 
     protected OSSpecificFunctions getOsFunctions() {
-        return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
+        PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+        if (pi == null) {
+            //SSG might not be migrated to partitioning yet so migrate it.
+            PartitionManager.doMigration();
+            pi = PartitionManager.getInstance().getActivePartition();
+        }
+        return pi.getOSSpecificFunctions();
     }
 
     protected abstract void populateExplanations();

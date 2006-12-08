@@ -70,6 +70,7 @@ public class PartitionManager {
     }
 
     private void enumeratePartitions() {
+        partitions.clear();
         String partitionRoot = OSDetector.getOSSpecificFunctions().getPartitionBase();
 
         File partitionBaseDir = new File(partitionRoot);
@@ -134,6 +135,7 @@ public class PartitionManager {
 
     public PartitionInformation getActivePartition() {
         if (activePartition == null) {
+            enumeratePartitions();
             //if there's no active partition then return the default one.
             activePartition = getPartition(PartitionInformation.DEFAULT_PARTITION_NAME);
         }

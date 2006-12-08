@@ -6,6 +6,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -47,7 +48,12 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     public void showStep(boolean validated) throws WizardNavigationException {
         if (osFunctions == null) {
-            osFunctions = PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
+            PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
+            if (pi == null) {
+                PartitionManager.doMigration();
+                pi = PartitionManager.getInstance().getActivePartition();
+            }
+            osFunctions = pi.getOSSpecificFunctions();
         }
 
         doUserInterview(validated);

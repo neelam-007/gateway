@@ -473,26 +473,43 @@ public class DBActions {
         InputStream is = null;
         //try to read the database driver from 
 
+        File templatePartitionDir = new File(osFunctions.getPartitionBase() + "partitiontemplate_");
+        File oldConfigLocation = new File(osFunctions.getSsgInstallRoot() + "etc/conf");
+
         try {
-            is = new FileInputStream(osFunctions.getDatabaseConfig());
+            is = new FileInputStream(new File(templatePartitionDir, "hibernate.properties")) ;
+        } catch (FileNotFoundException e) {
+            //couldn't find the configuration for the default partition so lets try the old location
+            try {
+                is = new FileInputStream(new File(oldConfigLocation, "hibernate.properties"));
+            } catch (FileNotFoundException e1) {
+                throw new RuntimeException(
+                        "could not load the database configuration file. Tried: " +
+                                oldConfigLocation.getAbsolutePath() + " and " + templatePartitionDir.getAbsolutePath());
+            }
+        }
+
+        try {
             dbProps.load(is);
+            String driverName = dbProps.getProperty(PROP_HIBERNATE_DRIVER_CLASS);
+            if (StringUtils.isEmpty(driverName))
+                throw new RuntimeException("Could not determine database driver name ");
+            if (driverName.equals(DEFAULT_DB_DRIVER_PROP))
+                throw new RuntimeException("Could not determine database driver name [found " + DEFAULT_DB_DRIVER_PROP + "]");
+
+            //instantiate the driver class
+            Class.forName(JDBC_DRIVER_NAME);
         } catch (IOException e) {
-            throw new RuntimeException("could not load the database configuration file: " + e.getMessage());
+            logger.severe("Error while reading the database configuration file: " + e.getMessage());
+            throw new RuntimeException(
+                        "could not load the database configuration file. Tried: " +
+                                oldConfigLocation.getAbsolutePath() + " and " + templatePartitionDir.getAbsolutePath());
         } finally {
             if (is != null)
                 try {
                     is.close();
                 } catch (IOException e) {}
         }
-
-        String driverName = dbProps.getProperty(PROP_HIBERNATE_DRIVER_CLASS);
-        if (StringUtils.isEmpty(driverName))
-            throw new RuntimeException("Could not determine database driver name ");
-        if (driverName.equals(DEFAULT_DB_DRIVER_PROP))
-            throw new RuntimeException("Could not determine database driver name [found " + DEFAULT_DB_DRIVER_PROP + "]");
-
-        //instantiate the driver class
-        Class.forName(JDBC_DRIVER_NAME);
     }
 
     private Set<String> getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
