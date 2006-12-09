@@ -7,9 +7,18 @@ SSG_ROOT=`pwd`
 popd > /dev/null
 
 JAVA_HOME=${SSG_ROOT}/jdk
+launchtype=${1}
 
-#check if we're root
-if [ $UID -eq 0 ]; then
+launch_wizard(){
+	#check if we're root
+	if [ $UID -eq 0 ]; then
+        	su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
+    	else
+        	su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
+    	fi
+}
+
+if [ -z "${launchtype}" ] || [ ${launchtype} == "-graphical" ]; then
     #check if xhost exists
     which xhost &> /dev/null
     if [ $? -eq 0 ]; then
@@ -18,11 +27,13 @@ if [ $UID -eq 0 ]; then
             export DISPLAY=:0.0
         fi
         xhost +local: > /dev/null
-        su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
     else
         #if there's no xhosts, then there's no X so force the console mode
-        su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar -console $*"
+	    echo "No graphical environment found, running in console only mode"
+	    launchtype="-console"
     fi
-else
-    ${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*
+    launch_wizard "${launchtype}"
+else 
+	launch_wizard "${launchtype}"
 fi
+
