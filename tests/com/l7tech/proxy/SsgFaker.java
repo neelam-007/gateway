@@ -85,7 +85,7 @@ public class SsgFaker {
         httpServer.addListener(socketListener);
 
         // Set up SSL listener
-        SunJsseListener sslListener = new SunJsseListener() {
+        SocketListener sslListener = new SocketListener() {
             protected SSLServerSocketFactory createFactory()
               throws Exception {
                 SSLContext sslc = SSLContext.getInstance("SSL");

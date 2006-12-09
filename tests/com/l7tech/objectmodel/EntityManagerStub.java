@@ -7,6 +7,7 @@ package com.l7tech.objectmodel;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * Stub Entity Manager
@@ -51,7 +52,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity> implements 
          * @return A <code>Collection</code> of Entity objects.
          */
     public Collection<ET> findAll() throws FindException {
-        throw new UnsupportedOperationException();
+        return Collections.EMPTY_LIST;
     }
 
     /**
