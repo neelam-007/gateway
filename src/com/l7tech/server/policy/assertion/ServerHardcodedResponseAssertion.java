@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 public class ServerHardcodedResponseAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
+    private final StashManagerFactory stashManagerFactory;
 
     private final String message;
     private final byte[] messageBytesNoVar;
@@ -46,6 +47,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion im
     {
         super(ass);
         auditor = new Auditor(this, springContext, logger);
+        stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
 
         ContentTypeHeader ctype;
         try {
@@ -78,7 +80,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion im
     {
         // Create a real stash manager, rather than making a RAM-only one, in case later assertions replace the
         // response with one that is huge (and hence needs the real hybrid stashing strategy).
-        StashManager stashManager = StashManagerFactory.createStashManager(); // TODO use Spring for this instead
+        StashManager stashManager = stashManagerFactory.createStashManager();
 
         Message response = context.getResponse();
         // fla bugfix attach the status before closing otherwise, it's lost

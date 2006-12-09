@@ -46,6 +46,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         super(data, ctx);
         this.data = data;
         auditor = new Auditor(this, ctx, logger);
+        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     // TODO synchronized?
@@ -150,7 +151,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         context.getResponse().initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bmsg = (BytesMessage)jmsResponse;
-                        final StashManager stashManager = StashManagerFactory.createStashManager();
+                        final StashManager stashManager = stashManagerFactory.createStashManager();
                         context.getResponse().initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                     } else {
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, new String[]{jmsResponse.getClass().getName()});
@@ -377,6 +378,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private final JmsRoutingAssertion data;
     private final Auditor auditor;
+    private final StashManagerFactory stashManagerFactory;
 
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;

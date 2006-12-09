@@ -9,7 +9,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -80,7 +80,7 @@ public class XslTransformationTest extends TestCase {
 
         ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
 
-        Message req = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+        Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
         Message res = new Message();
         PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
 
@@ -100,7 +100,7 @@ public class XslTransformationTest extends TestCase {
         long before = System.currentTimeMillis();
         int num = 5000;
         for (int i = 0; i < num; i++) {
-            Message req = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+            Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
             Message res = new Message();
             PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
 
@@ -190,7 +190,7 @@ public class XslTransformationTest extends TestCase {
         xsl.setResourceInfo(new SingleUrlResourceInfo(xslUrl));
         xsl.setDirection(XslTransformation.APPLY_TO_REQUEST);
 
-        Message request = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
+        Message request = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
         PolicyEnforcementContext pec = new PolicyEnforcementContext(request, new Message());
 
         ServerXslTransformation sxsl = new ServerXslTransformation(xsl, ApplicationContexts.getTestApplicationContext());

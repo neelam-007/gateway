@@ -29,6 +29,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
 
     public ServerEchoRoutingAssertion(EchoRoutingAssertion ea, ApplicationContext applicationContext) {
         super(ea, applicationContext);
+        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     /**
@@ -54,7 +55,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
         }
 
         // Initialize request
-        StashManager stashManager = StashManagerFactory.createStashManager();
+        StashManager stashManager = stashManagerFactory.createStashManager();
         MimeKnob mk = request.getMimeKnob();
         try {
             response.initialize(
@@ -72,5 +73,5 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerEchoRoutingAssertion.class.getName());
-
+    private final StashManagerFactory stashManagerFactory;
 }

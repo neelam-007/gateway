@@ -30,12 +30,14 @@ import java.util.logging.Logger;
 public class ServerHttpFormPost extends AbstractServerAssertion implements ServerAssertion {
     private static Logger logger = Logger.getLogger(ServerHttpFormPost.class.getName());
     private final Auditor auditor;
+    private final StashManagerFactory stashManagerFactory;
     private final HttpFormPost assertion;
 
     public ServerHttpFormPost(HttpFormPost assertion, ApplicationContext springContext) {
         super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
+        this.stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -100,7 +102,7 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
         }
 
         try {
-            request.initialize(StashManagerFactory.createStashManager(), ContentTypeHeader.parseValue(outerContentType), new ByteArrayInputStream(newMessageBytes));
+            request.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.parseValue(outerContentType), new ByteArrayInputStream(newMessageBytes));
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.HTTPFORM_BAD_MIME, null, e);
             return AssertionStatus.FAILED;

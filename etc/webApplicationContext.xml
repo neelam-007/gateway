@@ -844,4 +844,6 @@
 
     <bean id="exceptionLogger" class="com.l7tech.server.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
 
+    <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"/>
+
 </beans>

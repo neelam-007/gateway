@@ -58,6 +58,7 @@ public class TokenServiceServlet extends HttpServlet {
     private TokenService tokenService;
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
+    private StashManagerFactory stashManagerFactory;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -66,9 +67,10 @@ public class TokenServiceServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
         try {
-            tokenService = (TokenService)applicationContext.getBean("tokenService");
-            auditContext = (AuditContext)applicationContext.getBean("auditContext");
-            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
+            tokenService = (TokenService)applicationContext.getBean("tokenService", TokenService.class);
+            auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
+            stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         }
         catch(BeansException be) {
             throw new ServletException("Configuration error; could not get required beans.", be);
@@ -102,7 +104,7 @@ public class TokenServiceServlet extends HttpServlet {
 
             AssertionStatus status;
             try {
-                final StashManager stashManager = StashManagerFactory.createStashManager();
+                final StashManager stashManager = stashManagerFactory.createStashManager();
                 request.initialize(stashManager, ctype, req.getInputStream());
                 status = tokenService.respondToSecurityTokenRequest(context, authenticator(), false, false);
                 context.setPolicyResult(status);

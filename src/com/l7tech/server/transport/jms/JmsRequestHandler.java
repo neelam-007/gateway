@@ -44,6 +44,7 @@ class JmsRequestHandler {
     final private AuditContext auditContext;
     final private SoapFaultManager soapFaultManager;
     final private ClusterPropertyManager clusterPropertyManager;
+    final private StashManagerFactory stashManagerFactory;
 
     public JmsRequestHandler(ApplicationContext ctx) {
         this.springContext = ctx;
@@ -54,6 +55,7 @@ class JmsRequestHandler {
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
         clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     /**
@@ -89,7 +91,7 @@ class JmsRequestHandler {
             }
 
             com.l7tech.common.message.Message request = new com.l7tech.common.message.Message();
-            request.initialize(StashManagerFactory.createStashManager(), ctype, requestStream );
+            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
             request.attachJmsKnob(new JmsKnob() {
                 public boolean isBytesMessage() {
                     return jmsRequest instanceof BytesMessage;

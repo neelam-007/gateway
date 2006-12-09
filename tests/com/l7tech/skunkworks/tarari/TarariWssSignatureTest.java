@@ -10,7 +10,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.skunkworks.BenchmarkRunner;
 
 import java.io.ByteArrayInputStream;
@@ -38,7 +38,7 @@ public class TarariWssSignatureTest {
             public void run() {
                 Message msg = null;
                 try {
-                    msg = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(bytes));
+                    msg = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(bytes));
                     new TarariWssProcessingContext(msg).process();
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);

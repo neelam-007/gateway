@@ -68,6 +68,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private SoapFaultManager soapFaultManager;
     private ClusterPropertyManager clusterPropertyManager;
     private LicenseManager licenseManager;
+    private StashManagerFactory stashManagerFactory;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -81,6 +82,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
+        stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
     }
 
     /**
@@ -124,7 +126,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         initCookies(hrequest.getCookies(), context);
 
-        final StashManager stashManager = StashManagerFactory.createStashManager();
+        final StashManager stashManager = stashManagerFactory.createStashManager();
 
         try {
             context.setAuditContext(auditContext);

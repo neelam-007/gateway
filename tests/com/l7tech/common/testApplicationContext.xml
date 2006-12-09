@@ -247,4 +247,6 @@
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.TestingHttpClientFactory"/>
 
+    <bean id="stashManagerFactory" class="com.l7tech.server.TestStashManagerFactory" factory-method="getInstance"/>
+
 </beans>

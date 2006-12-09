@@ -40,6 +40,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.PostRoutingEvent;
@@ -74,6 +75,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
     private final SignerInfo senderVouchesSignerInfo;
     private final GenericHttpClientFactory httpClientFactory;
+    private final StashManagerFactory stashManagerFactory;
     private final HostnameVerifier hostnameVerifier;
     private final FailoverStrategy failoverStrategy;
     private final String[] varNames;
@@ -127,6 +129,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             factory = new IdentityBindingHttpClientFactory();
         }
         httpClientFactory = factory;
+
+        StashManagerFactory smFactory;
+        try {
+            smFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Could not create stash manager factory.", e);
+            smFactory = DefaultStashManagerFactory.getInstance();
+        }
+        stashManagerFactory = smFactory;
 
         final String[] addrs = data.getCustomIpAddresses();
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
@@ -544,7 +555,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 responseOk = false;
             } else if (data.isPassthroughHttpAuthentication() &&
                        status == HttpConstants.STATUS_UNAUTHORIZED) {
-                context.getResponse().initialize(StashManagerFactory.createStashManager(), outerContentType, responseStream);
+                context.getResponse().initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
             } else if (status != HttpConstants.STATUS_OK && outerContentType!=null &&
                        (outerContentType.isText() || outerContentType.isHtml()) && !outerContentType.isXml()) {
@@ -554,7 +565,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // response OK
             else if(outerContentType!=null)
             {
-                StashManager stashManager = StashManagerFactory.createStashManager();
+                StashManager stashManager = stashManagerFactory.createStashManager();
                 context.getResponse().initialize(stashManager, outerContentType, responseStream);
             }
         } catch (Exception e) {

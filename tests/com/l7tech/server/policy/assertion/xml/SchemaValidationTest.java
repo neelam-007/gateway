@@ -14,7 +14,7 @@ import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
@@ -271,7 +271,7 @@ public class SchemaValidationTest extends TestCase {
 
     private PolicyEnforcementContext getResAsContext(String path) throws IOException, NoSuchPartException {
         return new PolicyEnforcementContext(
-                new Message(StashManagerFactory.createStashManager(),
+                new Message(TestStashManagerFactory.getInstance().createStashManager(),
                             ContentTypeHeader.XML_DEFAULT,
                             TestDocuments.getInputStream(path)),
                 new Message());

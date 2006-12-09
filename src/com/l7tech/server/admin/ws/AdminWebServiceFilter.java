@@ -74,6 +74,7 @@ public class AdminWebServiceFilter implements Filter {
     private X509Certificate serverCertificate;
     private PrivateKey serverPrivateKey;
     private SecurityTokenResolver securityTokenResolver;
+    private StashManagerFactory stashManagerFactory;
 
     private static final Logger log = Logger.getLogger(AdminWebServiceFilter.class.getName());
     private static final String ERR_PREFIX = "Configuration error; could not get ";
@@ -101,6 +102,7 @@ public class AdminWebServiceFilter implements Filter {
         serverPrivateKey = (PrivateKey)getBean(applicationContext, "sslKeystorePrivateKey", "server private key", PrivateKey.class);
         serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
         securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
+        stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
 
         final AllAssertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
                 // TODO support configurable IP range assertions
@@ -179,7 +181,7 @@ public class AdminWebServiceFilter implements Filter {
 
         AssertionStatus polStatus = null;
         try {
-            request.initialize(StashManagerFactory.createStashManager(), ctype, servletRequest.getInputStream());
+            request.initialize(stashManagerFactory.createStashManager(), ctype, servletRequest.getInputStream());
 
             trogdor(context, request);
 

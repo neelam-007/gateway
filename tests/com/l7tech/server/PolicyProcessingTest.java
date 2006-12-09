@@ -414,7 +414,7 @@ public class PolicyProcessingTest extends TestCase {
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply
 
-        final StashManager stashManager = StashManagerFactory.createStashManager();
+        final StashManager stashManager = TestStashManagerFactory.getInstance().createStashManager();
 
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
@@ -529,7 +529,7 @@ public class PolicyProcessingTest extends TestCase {
 
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
         try {
-            request.initialize(StashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
+            request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
             request.attachJmsKnob(new JmsKnob() {
                 public boolean isBytesMessage() {
                     return true;

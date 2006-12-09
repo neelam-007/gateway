@@ -33,12 +33,14 @@ import java.util.logging.Logger;
 public class ServerInverseHttpFormPost extends AbstractServerAssertion implements ServerAssertion {
     private static Logger logger = Logger.getLogger(ServerInverseHttpFormPost.class.getName());
     private final Auditor auditor;
+    private final StashManagerFactory stashManagerFactory;
     private final InverseHttpFormPost assertion;
     private static final String ENCODING = "UTF-8";
 
     public ServerInverseHttpFormPost(InverseHttpFormPost assertion, ApplicationContext springContext) {
         super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
+        this.stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
         this.assertion = assertion;
     }
 
@@ -71,7 +73,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion implement
             }
 
             try {
-                request.initialize(StashManagerFactory.createStashManager(),
+                request.initialize(stashManagerFactory.createStashManager(),
                         ContentTypeHeader.parseValue("application/" + HttpFormPost.X_WWW_FORM_URLENCODED),
                         new ByteArrayInputStream(baos.toByteArray()));
                 return AssertionStatus.NONE;
