@@ -66,14 +66,20 @@ public class ServerVariables {
         return hrk.getParameterValues(hname);
     }
 
-    private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) {
+    private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) throws NoSuchVariableException {
         // TODO what about response headers?
         HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
         if (hrk == null) return new String[0];
 
-        if (!name.startsWith(prefix)) throw new IllegalArgumentException("HTTP Header Getter can't handle variable named '" + name + "'!");
+        if (!name.startsWith(prefix)) {
+            logger.warning("HTTP Header Getter can't handle variable named '" + name + "'!");
+            throw new NoSuchVariableException("invalid http header name " + name);
+        }
         String suffix = name.substring(prefix.length());
-        if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the header name.");
+        if (!suffix.startsWith(".")) {
+            logger.warning("Variable '" + name + "' does not have a period before the header name.");
+            throw new NoSuchVariableException("invalid http header name " + name);
+        }
         String hname = name.substring(prefix.length()+1);
         return hrk.getHeaderValues(hname);
     }
@@ -204,7 +210,13 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                String[] vals = getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, name, context);
+                String[] vals = new String[0];
+                try {
+                    vals = getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, name, context);
+                } catch (NoSuchVariableException e) {
+                    logger.log(Level.WARNING, "invalid http header request", e);
+                    return null;
+                }
                 if (vals.length > 0) return vals[0];
                 return null;
             }
@@ -218,7 +230,12 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, name, context);
+                try {
+                    return getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, name, context);
+                } catch (NoSuchVariableException e) {
+                    logger.log(Level.WARNING, "invalid http header values request", e);
+                    return null;
+                }
             }
         }),
         new Variable(BuiltinVariables.PREFIX_SERVICE_URL, new Getter() {
