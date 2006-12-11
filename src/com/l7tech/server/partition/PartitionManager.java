@@ -95,16 +95,27 @@ public class PartitionManager {
         String serverXmlPath = osf.getTomcatServerConfig();
         InputStream is = null;
         try {
-            is = new FileInputStream(serverXmlPath);
-            Document dom = XmlUtil.parse(is);
+            Document dom = null;
+            try {
+                is = new FileInputStream(serverXmlPath);
+                dom = XmlUtil.parse(is);
+            } catch (FileNotFoundException e) {
+                logger.warning("Could not find a server.xml for partition \"" + partitionId + "\". This partition " +
+                        "will not be able to start until it is configured with the Configuration Wizard.");
+            }
+
             PartitionInformation pi;
-            pi = new PartitionInformation(partitionId, dom, false);
-            pi.setEnabled(new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).exists());
+            if (dom == null) {
+                pi = new PartitionInformation(partitionId);
+                pi.setNewPartition(false);
+                pi.setEnabled(false);
+                pi.shouldDisable(); //make sure that unless something changes, this stays disabled.
+                new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).delete();
+            } else {
+                pi = new PartitionInformation(partitionId, dom, false);
+                pi.setEnabled(new File(osf.getPartitionBase() + partitionId, PartitionInformation.ENABLED_FILE).exists());
+            }
             partitions.put(pi.getPartitionId(), pi);
-        } catch (FileNotFoundException e) {
-            logger.warning("Could not find a server.xml for partition \"" + partitionId + "\". This partition " +
-                    "will not be enumerated");
-            logger.warning(e.getMessage());
         } catch (XPathExpressionException e) {
             logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
             logger.warning(e.getMessage());
@@ -158,13 +169,14 @@ public class PartitionManager {
         OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions("");
         File oldSsgConfigDirectory = new File(osf.getSsgInstallRoot() + "etc/conf");
         File oldKeystoreDirectory = new File(osf.getSsgInstallRoot() + "etc/keys");
+        File tomcatServerConfig = new File(osf.getSsgInstallRoot() + "tomcat/conf/server.xml");
         File oldTomcatServerConfig = new File(osf.getSsgInstallRoot() + "tomcat/conf/server.xml.rpmsave");
         final File partitionsBaseDir = new File(osf.getPartitionBase());
         final File defaultPartitionDir = new File(partitionsBaseDir, PartitionInformation.DEFAULT_PARTITION_NAME);
         final File templatePartitionDir = new File(partitionsBaseDir, PartitionInformation.TEMPLATE_PARTITION_NAME);
 
         final Set<String> whitelist = new HashSet<String>(Arrays.asList(configFileWhitelist));
-        
+
         try {
             List<File> originalFiles = new ArrayList<File>();
 
@@ -175,13 +187,14 @@ public class PartitionManager {
                         }
                     });
             if (filesInOldConfigDirectory == null)
-                filesInOldConfigDirectory = new File[0];
+ 	 	        filesInOldConfigDirectory = new File[0];
 
             List<File> deletableOriginalFiles = new ArrayList<File>(Arrays.asList(filesInOldConfigDirectory));
 
             deletableOriginalFiles.add(oldKeystoreDirectory);
 
             originalFiles.addAll(deletableOriginalFiles);
+            originalFiles.add(tomcatServerConfig);
             originalFiles.add(oldTomcatServerConfig);
             if (osf.isWindows())
                 originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
@@ -193,17 +206,17 @@ public class PartitionManager {
                 }
             }
 
-            if (!defaultPartitionDir.exists()) {
-                System.out.println("Creating Default Partition Directory");
-                if (!defaultPartitionDir.mkdir()) {
-                    throw new PartitionException("COULD NOT CREATE THE DEFAULT PARTITION. The SSG will not run without a default partition. Please check file permissions and re-run this tool.");
-                }
-            }
-
             if (!templatePartitionDir.exists()) {
                 System.out.println("Creating Template Partition Directory");
                 if (!templatePartitionDir.mkdir()) {
                     throw new PartitionException("COULD NOT CREATE THE PARTITION TEMPLATE DIRECTORY. New partitions cannot be created without the partition template. Please check file permissions and re-run this tool.");
+                }
+            }
+
+            if (!defaultPartitionDir.exists()) {
+                System.out.println("Creating Default Partition Directory");
+                if (!defaultPartitionDir.mkdir()) {
+                    throw new PartitionException("COULD NOT CREATE THE DEFAULT PARTITION. The SSG will not run without a default partition. Please check file permissions and re-run this tool.");
                 }
             }
 
@@ -265,7 +278,7 @@ public class PartitionManager {
             } else {
                 System.out.println("the default partition does not need to be migrated");
             }
-            removeOriginalConfigurations(deletableOriginalFiles);
+            removeOriginalConfigurations(deletableOriginalFiles, osf);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());
@@ -293,7 +306,7 @@ public class PartitionManager {
                     String keystorePath = connectorNode.getAttribute("keystoreFile");
                     int keystoreFileIndex = keystorePath.indexOf("ssl.ks");
 
-                    String newKsFile = newKeystorePath.getAbsolutePath() + "/" + keystorePath.substring(keystoreFileIndex);
+                    String newKsFile = newKeystorePath.getAbsolutePath() + File.separator + keystorePath.substring(keystoreFileIndex);
                     connectorNode.setAttribute("keystoreFile", newKsFile);
                 }
             }
@@ -368,10 +381,10 @@ public class PartitionManager {
         }
     }
 
-    private static void removeOriginalConfigurations(List<File> filesToRemove) {
+    private static void removeOriginalConfigurations(List<File> filesToRemove, OSSpecificFunctions osf) {
         for (File file : filesToRemove) {
             if (file.exists())
-                FileUtils.deleteFileSafely(file.getAbsolutePath());
+                    FileUtils.deleteFileSafely(file.getAbsolutePath());
         }
     }
 
