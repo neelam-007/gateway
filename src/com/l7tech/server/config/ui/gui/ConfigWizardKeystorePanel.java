@@ -14,11 +14,9 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
- * Date: Aug 17, 2005
- * Time: 9:58:50 AM
- * To change this template use File | Settings | File Templates.
+ * The main panel for the Config Wizard (GUI) keystore step. At runtime, subsititutes a
+ * KeystorePanel for whatever keystore type we are configuring.
  */
 public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
@@ -204,8 +202,9 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                         "Warning: You are configuring a new partition without a keystore. \nThis partition will not be able to start without a keystore.",
                         "New Partition With No Keystore",
                         JOptionPane.WARNING_MESSAGE);
+
+                    pinfo.setShouldDisable(true);
                 }
-                pinfo.setShouldDisable(true);
             }
         }
         return true;
