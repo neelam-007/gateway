@@ -102,7 +102,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         initListeners();
 
         setLayout(new BorderLayout());
-        add(mainPanel, BorderLayout.NORTH);
+        add(mainPanel, BorderLayout.CENTER);
 
         setupPartitions();
         enableProperties(false);
@@ -258,15 +258,18 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     protected void updateModel() {
         PartitionInformation pi = getSelectedPartition();
 
-        pi.setPartitionId(partitionName.getText());
-        pi.setHttpEndpointsList(httpEndpointTableModel.getEndpoints());
-        pi.setOtherEndpointsList(otherEndpointTableModel.getEndpoints());
+        // don't NPE on back button
+        if (pi != null) {
+            pi.setPartitionId(partitionName.getText());
+            pi.setHttpEndpointsList(httpEndpointTableModel.getEndpoints());
+            pi.setOtherEndpointsList(otherEndpointTableModel.getEndpoints());
 
-        PartitionConfigBean partBean = (PartitionConfigBean) configBean;
-        partBean.setPartition(pi);
+            PartitionConfigBean partBean = (PartitionConfigBean) configBean;
+            partBean.setPartition(pi);
 
-        osFunctions = pi.getOSSpecificFunctions();
-        getParentWizard().setActivePartition(pi);
+            osFunctions = pi.getOSSpecificFunctions();
+            getParentWizard().setActivePartition(pi);
+        }
     }
 
     protected void updateView() {

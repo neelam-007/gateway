@@ -39,7 +39,7 @@ public class Wizard extends JDialog {
     private JPanel mainPanel;
     private JPanel stepLabelsPanel;
     private JPanel wizardStepPanel;
-    private JScrollPane descScrollPane;
+    private JPanel descriptionPanel;
     private JTextPane stepDescriptionTextPane;
     private JButton buttonFinish;
     private JButton cancelButton;
@@ -217,14 +217,14 @@ public class Wizard extends JDialog {
         wizardStepPanel.setLayout(new BorderLayout());
         wizardStepPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
 
-        descScrollPane = new JScrollPane();
+        JScrollPane descScrollPane = new JScrollPane();
         descScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         JEditorPane da = getStepDescriptionTextPane();
         da.setBackground(descScrollPane.getBackground());
         descScrollPane.setViewportView(da);
         descScrollPane.setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(10, 0, 0, 0)), new LineBorder(Color.GRAY)));
-        JPanel descriptionPanel = new JPanel();
+        descriptionPanel = new JPanel();
         descriptionPanel.setLayout(new BorderLayout());
         descriptionPanel.add(descScrollPane, BorderLayout.CENTER);
         descriptionPanel.add(Box.createVerticalStrut(100), BorderLayout.WEST);
@@ -466,7 +466,7 @@ public class Wizard extends JDialog {
         if (next == null) {
             throw new IllegalArgumentException("next == null");
         }
-        descScrollPane.setVisible(next.isShowDescriptionPanel());
+        descriptionPanel.setVisible(next.isShowDescriptionPanel());
         if (current != null) {
             wizardStepPanel.remove(current);
         }

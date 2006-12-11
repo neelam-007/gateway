@@ -14,7 +14,6 @@ import java.awt.*;
  */
 public class ConfigWizardStartPanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
-    private JLabel introLabel;
     boolean initialized = false;
 
     public ConfigWizardStartPanel(WizardStepPanel next) {

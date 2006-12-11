@@ -174,6 +174,8 @@ public class PartitionManager {
                             return whitelist.contains(pathname.getName());
                         }
                     });
+            if (filesInOldConfigDirectory == null)
+                filesInOldConfigDirectory = new File[0];
 
             List<File> deletableOriginalFiles = new ArrayList<File>(Arrays.asList(filesInOldConfigDirectory));
 
