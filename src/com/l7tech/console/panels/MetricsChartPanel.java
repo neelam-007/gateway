@@ -12,6 +12,7 @@ import com.l7tech.console.util.jfree.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -34,13 +35,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
-import java.io.InvalidObjectException;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.InvalidObjectException;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -143,13 +145,23 @@ public class MetricsChartPanel extends ChartPanel {
     /** Title prefix for our custom GatewayAuditWindow ({@link #_gatewayAuditWindow}). */
     private static final String GATEWAY_AUDIT_WINDOW_TITLE = _resources.getString("gatewayAuditWindowTitle");
 
+    /** A comparator to compare bins by period end. */
+    private static final Comparator<MetricsBin> BIN_END_COMPARATOR = new Comparator<MetricsBin>() {
+        public int compare(MetricsBin bin1, MetricsBin bin2) {
+            final long diff =  bin1.getPeriodEnd() - bin2.getPeriodEnd();
+            if (diff > 0L) return 1;
+            if (diff < 0L) return -1;
+            return 0;
+        }
+    };
+
     /** Metrics bin resolution. */
-    final int _resolution;
+    private int _resolution;
 
     /** Nominal bin interval (in milliseconds). */
-    private final long _binInterval;
+    private long _binInterval;
 
-    /** Maximum time range of data to keep around (in milliseconds). */
+    /** Maximum time range to display (in milliseconds). */
     private long _maxTimeRange;
 
     /** The Dashboard window containing this panel. */
@@ -157,6 +169,16 @@ public class MetricsChartPanel extends ChartPanel {
 
     /** Time zone for displaying time values. */
     private TimeZone _timeZone;
+
+    /** Bins currently displayed in the chart. Key is period start. */
+    private final HashMap<Long, MetricsSummaryBin> _binsInChart;
+
+    /** The bin in {@link #_binsInChart} with the latest period end. */
+    private MetricsSummaryBin _latestBinInChart;
+
+    /** Holding area for bins waiting to be added, i.e., when {@link #_updateSuspended}
+        is true. Ordered by period end. */
+    private final SortedSet<MetricsSummaryBin> _binsToAdd = new TreeSet<MetricsSummaryBin>(BIN_END_COMPARATOR);
 
     /**
      * Data structure containing frontend and backend response times.
@@ -219,43 +241,39 @@ public class MetricsChartPanel extends ChartPanel {
         Declared static for singleton; to prevent an explosion of such windows. */
     private static GatewayAuditWindow _gatewayAuditWindow;
 
-    /** Holding area for metrics bins waiting to be added; when {@link #_updateSuspended} is true. */
-    private final SortedSet<MetricsBin> _binsToAdd = new TreeSet<MetricsBin>();
-
     /** Indicates if chart data updating is currently suspended. */
     private boolean _updateSuspended = false;
 
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("responseTimeTooltipFormat"));
-        private final TimeTableXYDataset _messageRates;
+        private final Map<Long, MetricsSummaryBin> _binsInChart;
 
-        public ResponseTimeToolTipGenerator(TimeTableXYDataset messageRates) {
-            _messageRates = messageRates;
+        public ResponseTimeToolTipGenerator(final Map<Long, MetricsSummaryBin> binsInChart) {
+            _binsInChart = binsInChart;
         }
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
-            final double msgRateTotal = _messageRates.getY(0, item).doubleValue()
-                                      + _messageRates.getY(1, item).doubleValue()
-                                      + _messageRates.getY(2, item).doubleValue();
-            if (msgRateTotal == 0.) {
-                return null;    // No tooltip if no message.
-            }
-
             final TimePeriodValuesWithHighLowCollection responseTimes = (TimePeriodValuesWithHighLowCollection) dataset;
             final TimePeriod period = responseTimes.getSeries(series).getTimePeriod(item);
             final Date startTime = period.getStart();
             final Date endTime = period.getEnd();
 
+            final MetricsSummaryBin bin = _binsInChart.get(startTime.getTime());
+            if (bin == null)
+                return null;    // Should not get here.
+            if (bin.getNumTotal() == 0)
+                return null;    // No tooltip if no message.
+
             final String frontLabel = responseTimes.getSeriesKey(0).toString();
-            final int frontMax = responseTimes.getEndY(0, item).intValue();
-            final int frontAvg = responseTimes.getY(0, item).intValue();
-            final int frontMin = responseTimes.getStartY(0, item).intValue();
+            final int frontMax = bin.getMaxFrontendResponseTime();
+            final int frontAvg = (int)Math.round(bin.getAverageFrontendResponseTime());
+            final int frontMin = bin.getMinFrontendResponseTime();
 
             final String backLabel = responseTimes.getSeriesKey(1).toString();
-            final int backMax = responseTimes.getEndY(1, item).intValue();
-            final int backAvg = responseTimes.getY(1, item).intValue();
-            final int backMin = responseTimes.getStartY(1, item).intValue();
+            final int backMax = bin.getMaxBackendResponseTime();
+            final int backAvg = (int)Math.round(bin.getAverageBackendResponseTime());
+            final int backMin = bin.getMinBackendResponseTime();
 
             return FMT.format(new Object[]{
                     startTime, endTime,
@@ -285,6 +303,11 @@ public class MetricsChartPanel extends ChartPanel {
     /** A tool tip generator for the message rate plot. */
     private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("messageRateTooltipFormat"));
+        private final Map<Long, MetricsSummaryBin> _binsInChart;
+
+        public MessageRateToolTipGenerator(final Map<Long, MetricsSummaryBin> binsInChart) {
+            _binsInChart = binsInChart;
+        }
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
@@ -292,21 +315,23 @@ public class MetricsChartPanel extends ChartPanel {
             final Date startTime = period.getStart();
             final Date endTime = period.getEnd();
 
+            final MetricsSummaryBin bin = _binsInChart.get(startTime.getTime());
+            if (bin == null)
+                return null;    // Should not get here.
+            if (bin.getNumTotal() == 0)
+                return null;    // No tooltip if no message.
+
             final String successLabel = dataset.getSeriesKey(0).toString();
-            final double successRate = messageRates.getY(0, item).doubleValue();
-            final int numSuccess = (int)Math.round(successRate * (endTime.getTime() - startTime.getTime()) / 1000.);
+            final double successRate = bin.getNominalSuccessRate();
+            final int numSuccess = bin.getNumSuccess();
 
             final String violationLabel = dataset.getSeriesKey(1).toString();
-            final double violationRate = messageRates.getY(1, item).doubleValue();
-            final int numViolation = (int)Math.round(violationRate * (endTime.getTime() - startTime.getTime()) / 1000.);
+            final double violationRate = bin.getNominalPolicyViolationRate();
+            final int numViolation = bin.getNumPolicyViolation();
 
             final String failureLabel = dataset.getSeriesKey(2).toString();
-            final double failureRate = messageRates.getY(2, item).doubleValue();
-            final int numFailure = (int)Math.round(failureRate * (endTime.getTime() - startTime.getTime()) / 1000.);
-
-            if ((failureRate + violationRate + successRate) == 0.) {
-                return null;    // No tooltip if no message.
-            }
+            final double failureRate = bin.getNominalRoutingFailureRate();
+            final int numFailure = bin.getNumRoutingFailure();
 
             return FMT.format(new Object[]{startTime, endTime,
                     failureLabel, new Integer(numFailure), new Double(failureRate),
@@ -421,11 +446,14 @@ public class MetricsChartPanel extends ChartPanel {
     }
 
     /**
-     * @param resolution    the metric bin resolution ({@link com.l7tech.service.MetricsBin#RES_FINE},
-     *                      {@link com.l7tech.service.MetricsBin#RES_HOURLY} or
-     *                      {@link com.l7tech.service.MetricsBin#RES_DAILY})
-     * @param binInterval   nominal bin interval (in milliseconds)
-     * @param maxTimeRange  maximum time range of data to keep around
+     * @param resolution    the metric bin resolution ({@link MetricsBin#RES_FINE},
+     *                      {@link MetricsBin#RES_HOURLY} or
+     *                      {@link MetricsBin#RES_DAILY}); can be changed later
+     *                      using {@link #setResolution}.
+     * @param binInterval   nominal bin interval (in milliseconds); can be
+     *                      changed later using {@link #setBinInterval}.
+     * @param maxTimeRange  maximum time range to display; can be changed later
+     *                      using {@link #setMaxTimeRange}.
      * @param dashboardWindow   the Dashboard window containing this panel
      */
     public MetricsChartPanel(int resolution,
@@ -439,6 +467,7 @@ public class MetricsChartPanel extends ChartPanel {
         _dashboardWindow = dashboardWindow;
 
         // Creates the empty data structures.
+        _binsInChart = new HashMap<Long, MetricsSummaryBin>();
         _frontendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_FRONTEND_RESPONSE);
         _backendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_BACKEND_RESPONSE);
         _responseTimes = new TimePeriodValuesWithHighLowCollection();
@@ -462,7 +491,7 @@ public class MetricsChartPanel extends ChartPanel {
         responsesRenderer.setSeriesStroke(1, RESPONSE_AVG_STROKE);
         responsesRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
         responsesRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
-        responsesRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_messageRates));
+        responsesRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_binsInChart));
         final XYPlot responsesPlot = new XYPlot(_responseTimes, null, _responsesYAxis, responsesRenderer);
         responsesPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
@@ -515,7 +544,7 @@ public class MetricsChartPanel extends ChartPanel {
         ratesRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
         ratesRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
         ratesRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
-        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator();
+        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator(_binsInChart);
         ratesRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
         final XYPlot ratesPlot = new XYPlot(_messageRates, null, _ratesYAxis, ratesRenderer);
 
@@ -581,27 +610,61 @@ public class MetricsChartPanel extends ChartPanel {
         setPopupMenu(_popup);
 
         setXAxisRangeIfNoData();
+    } /* constructor */
+
+    /**
+     * @param resolution    bin resolution ({@link MetricsBin#RES_FINE},
+    *                       {@link MetricsBin#RES_HOURLY} or {@link MetricsBin#RES_DAILY})
+     */
+    public void setResolution(final int resolution) {
+        _resolution = resolution;
     }
 
     /**
-     * Stores away metrics bins waiting to be added (when chart data updating is suspended).
+     * @param binInterval   bin nominal time period interval in milliseconds
+     */
+    public void setBinInterval(final long binInterval) {
+        _binInterval = binInterval;
+    }
+
+    /**
+     * @param maxTimeRange  maximum time range to display (in milliseconds)
+     */
+    public void setMaxTimeRange(final long maxTimeRange) {
+        _maxTimeRange = maxTimeRange;
+        _xAxis.setFixedAutoRange(_maxTimeRange);
+        setXAxisRangeIfNoData();
+    }
+
+    /**
+     * Stores away bins waiting to be added (when chart data updating is suspended).
+     *
      * @param bins   metrics bins waiting to be added
      */
-    private void storeBinsToAdd(List<MetricsBin> bins) {
+    private void storeBinsToAdd(final Collection<MetricsSummaryBin> bins) {
         _binsToAdd.addAll(bins);
+        if (_logger.isLoggable(Level.FINER)) {
+            _logger.finer("Stored away " + bins.size() + " new bins while chart is suspended. (total=" + _binsToAdd.size() + ")");
+        }
 
         // Limits the memory used by bins waiting to be added; by removing bins
         // older than our maximum allowed time range.
         if (! _binsToAdd.isEmpty()) {
-            final MetricsBin oldestBin = (MetricsBin)_binsToAdd.last();
-            final long lowerBound = oldestBin.getPeriodEnd() - _maxTimeRange;
+            final long lowerBound = _binsToAdd.last().getPeriodEnd() - _maxTimeRange;
+            final int numBefore = _binsToAdd.size();
 
-            for (Iterator i = _binsToAdd.iterator(); i.hasNext();) {
-                final MetricsBin bin = (MetricsBin)i.next();
-                if (bin.getPeriodStart() < lowerBound) {
-                    i.remove();
-                } else {
+            for (Iterator<MetricsSummaryBin> i = _binsToAdd.iterator(); i.hasNext();) {
+                final MetricsSummaryBin bin = i.next();
+                if (bin.getPeriodStart() >= lowerBound) {
                     break;  // The rest are within maximum allowed time range.
+                }
+                i.remove();
+            }
+
+            if (_logger.isLoggable(Level.FINER)) {
+                final int numRemoved = numBefore - _binsToAdd.size();
+                if (numRemoved != 0) {
+                    _logger.finer("Purged " + numRemoved + " bins waiting to be added but too old.");
                 }
             }
         }
@@ -610,9 +673,11 @@ public class MetricsChartPanel extends ChartPanel {
     /**
      * Adds metric bins to the dataset and update the plots.
      *
-     * @param bins new data to be added
+     * @param bins  new data to be added
      */
-    public synchronized void addData(List<MetricsBin> bins) {
+    public synchronized void addData(final Collection<MetricsSummaryBin> bins) {
+        if (bins.size() == 0) return;
+
         if (_updateSuspended) {
             storeBinsToAdd(bins);
             return;
@@ -623,14 +688,16 @@ public class MetricsChartPanel extends ChartPanel {
         // the datasets from being accessed.
         _chart.setNotify(false);
 
-        // Adds new data from the MetricsBin's to our JFreeChart data structures.
-        Iterator itor = bins.iterator();
-        while (itor.hasNext()) {
-            final MetricsBin bin = (MetricsBin) itor.next();
+        // Adds new data from the bins to our JFreeChart data structures.
+        for (MetricsSummaryBin bin : bins) {
+            _binsInChart.put(bin.getPeriodStart(), bin);
+            if (_latestBinInChart == null || _latestBinInChart.getPeriodEnd() < bin.getPeriodEnd()) {
+                _latestBinInChart = bin;
+            }
 
             // We are using the bin's nominal start and end times instead of
             // actual times, in order to avoid unsightly gaps in the bar charts.
-            final SimpleTimePeriod period = new SimpleTimePeriod(bin.getPeriodStart(), bin.getPeriodStart() + bin.getInterval());
+            final SimpleTimePeriod period = new SimpleTimePeriod(bin.getPeriodStart(), bin.getPeriodEnd());
 
             _frontendResponseTimes.add(period,
                     bin.getAverageFrontendResponseTime(),
@@ -644,42 +711,56 @@ public class MetricsChartPanel extends ChartPanel {
             // Since we are using nominal start and end times, we have to use
             // message rates calculated with nominal time interval to avoid
             // display discrepancy.
-            final double successRate = bin.getNominalCompletedRate();
-            final double policyViolationRate = bin.getNominalAttemptedRate() - bin.getNominalAuthorizedRate();
-            final double routingFailureRate = bin.getNominalAuthorizedRate() - bin.getNominalCompletedRate();
-            _messageRates.add(period, new Double(successRate), SERIES_SUCCESS, false);
-            _messageRates.add(period, new Double(policyViolationRate), SERIES_POLICY_VIOLATION, false);
-            _messageRates.add(period, new Double(routingFailureRate), SERIES_ROUTING_FAILURE, false);
+            //
+            // Make sure the series are added in this order.
+            _messageRates.add(period, new Double(bin.getNominalCompletedRate()), SERIES_SUCCESS, false);
+            _messageRates.add(period, new Double(bin.getNominalPolicyViolationRate()), SERIES_POLICY_VIOLATION, false);
+            _messageRates.add(period, new Double(bin.getNominalRoutingFailureRate()), SERIES_ROUTING_FAILURE, false);
         }
 
         // Now that the overall time range has change, remove data older than
         // our maximum allowed time range.
-        final long newUpperBound = (long) _responseTimes.getDomainUpperBound(true);
+        final long newUpperBound = _latestBinInChart.getPeriodEnd();
         final long newLowerBound = newUpperBound - _maxTimeRange;
 
-        int deleteStart = -1;
-        int deleteEnd = -1;
-        for (int i = 0; i < _frontendResponseTimes.getItemCount(); ++ i) {
-            if (_frontendResponseTimes.getTimePeriod(i).getStart().getTime() >= newLowerBound)
-                break;
-            if (deleteStart == -1) deleteStart = i;
-            deleteEnd = i;
+        for (Iterator<MetricsSummaryBin> i = _binsInChart.values().iterator(); i.hasNext(); ) {
+            final MetricsSummaryBin bin = i.next();
+            if (bin.getPeriodEnd() <= newLowerBound) {
+                i.remove();
+            }
         }
-        if (deleteStart != -1) {
-            _frontendResponseTimes.delete(deleteStart, deleteEnd);
-            _backendResponseTimes.delete(deleteStart, deleteEnd);
+
+        for (int i = _frontendResponseTimes.getItemCount() - 1; i >= 0; -- i) {
+            if (_frontendResponseTimes.getTimePeriod(i).getEnd().getTime() <= newLowerBound) {
+                _frontendResponseTimes.delete(i, i);
+            }
+        }
+        for (int i = _backendResponseTimes.getItemCount() - 1; i >= 0; -- i) {
+            if (_backendResponseTimes.getTimePeriod(i).getEnd().getTime() <= newLowerBound) {
+                _backendResponseTimes.delete(i, i);
+            }
         }
 
         for (int item = _messageRates.getItemCount() - 1; item >= 0; -- item) {
             final TimePeriod period = _messageRates.getTimePeriod(item);
-            if (period.getStart().getTime() < newLowerBound) {
+            if (period.getEnd().getTime() <= newLowerBound) {
                 _messageRates.remove(period, SERIES_SUCCESS, false);
                 _messageRates.remove(period, SERIES_POLICY_VIOLATION, false);
                 _messageRates.remove(period, SERIES_ROUTING_FAILURE, false);
             }
         }
 
-        // Appends current effective time zone to time axis label, e.g., PST vs PDT.
+        if (_logger.isLoggable(Level.FINEST)) {
+            _logger.finest("Sizes of data structures: " +
+                           "_binsInChart=" + _binsInChart.size() +
+                           ", _frontendResponseTimes=" + _frontendResponseTimes.getItemCount() +
+                           ", _backendResponseTimes=" + _backendResponseTimes.getItemCount() +
+                           ", _messageRates[0]=" + _messageRates.getItemCount(0) +
+                           ", _messageRates[1]=" + _messageRates.getItemCount(1) +
+                           ", _messageRates[2]=" + _messageRates.getItemCount(2));
+        }
+
+        // Updates current effective time zone in time axis label, e.g., PST vs PDT.
         final boolean inDST = _timeZone.inDaylightTime(new Date(newUpperBound));
         _xAxis.setLabel(TIME_AXIS_LABEL + " (" + _timeZone.getDisplayName(inDST, TimeZone.SHORT) + ")");
 
@@ -704,6 +785,10 @@ public class MetricsChartPanel extends ChartPanel {
         // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
         _chart.setNotify(false);
+
+        _binsInChart.clear();
+        _latestBinInChart = null;
+        _binsToAdd.clear();
 
         _frontendResponseTimes.delete(0, _frontendResponseTimes.getItemCount() - 1);
         _backendResponseTimes.delete(0, _backendResponseTimes.getItemCount() - 1);
@@ -848,7 +933,7 @@ public class MetricsChartPanel extends ChartPanel {
 
         // Now adds bins waiting to be added.
         if (! _binsToAdd.isEmpty()) {
-            addData(Arrays.asList(_binsToAdd.toArray(new MetricsBin[0])));
+            addData(_binsToAdd);
             _binsToAdd.clear();
         }
     }

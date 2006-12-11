@@ -17,7 +17,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.ServiceMetricsManager;
-import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
 
 import java.rmi.RemoteException;
 import java.util.*;
@@ -207,24 +207,20 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return serviceMetricsManager.getFineInterval();
     }
 
-    public List<MetricsBin> findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
         checkLicense();
-        return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOid, resolution, minPeriodStart, maxPeriodStart);
     }
 
-    public List<MetricsBin> findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final long duration) throws RemoteException, FindException {
         checkLicense();
-        if (duration == null) {
-            return serviceMetricsManager.findBins(nodeId, null, null, resolution, serviceOid);
-        } else {
-            final long now = System.currentTimeMillis();
-            return serviceMetricsManager.findBins(nodeId, now - duration, now, resolution, serviceOid);
-        }
+        final long minPeriodStart = System.currentTimeMillis() - duration;
+        return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOid, resolution, minPeriodStart, null);
     }
 
-    public MetricsBin getLastestMetricsSummary(final String clusterNodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException, FindException {
         checkLicense();
-        return serviceMetricsManager.getLatestMetricsSummary(clusterNodeId, serviceOid, resolution, duration);
+        return serviceMetricsManager.summarizeLatest(nodeId, serviceOid, resolution, duration);
     }
 
     public String getHardwareCapability(String capability) {

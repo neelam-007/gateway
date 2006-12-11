@@ -10,15 +10,16 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.MetricsChartPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 
@@ -31,62 +32,14 @@ import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author alex
+ * @author rmak
  */
 public class DashboardWindow extends JFrame implements LogonListener, SheetHolder {
-    private static final Logger logger = Logger.getLogger(DashboardWindow.class.getName());
-
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
-
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(resources.getString("rightPanel.timeFormat"));
-
-    private ClusterStatusAdmin clusterStatusAdmin;
-    private ServiceAdmin serviceAdmin;
-
-    private static final int fineChartRange = 10 * 60 * 1000; // 10 minutes
-    private static final int hourlyChartRange = 60 * 60 * 60 * 1000; // 60 hours
-    private static final long dailyChartRange = 60 * 24 * 60 * 60 * 1000L; // 60 days
-
-    /** Fine resolution bin interval (in milliseconds). */
-    private final int fineInterval;
-    {
-        int tmp;
-        try {
-            tmp = getClusterStatusAdmin().getMetricsFineInterval();
-        } catch (RemoteException e) {
-            ExceptionDialog.createExceptionDialog(this, "Cannot get fine metrics bin interval from gateway. Defaulting to 5 seconds.", e, Level.WARNING);
-            tmp = 5 * 1000;
-        }
-        fineInterval = tmp;
-    }
-
-    private final Range FINE = new Range(MetricsBin.RES_FINE,
-                                         fineChartRange,
-                                         fineInterval,
-                                         MessageFormat.format(resources.getString("resolutionCombo.fineValue"), fineInterval / 1000.),
-                                         MessageFormat.format(resources.getString("rightPanel.fineTitle"), fineInterval / 1000.),
-                                         this);
-    private final Range HOURLY = new Range(MetricsBin.RES_HOURLY,
-                                           hourlyChartRange,
-                                           60 * 60 * 1000,
-                                           resources.getString("resolutionCombo.hourlyValue"),
-                                           resources.getString("rightPanel.hourlyTitle"),
-                                           this);
-    private final Range DAILY = new Range(MetricsBin.RES_DAILY,
-                                          dailyChartRange,
-                                          24 * 60 * 60 * 1000,
-                                          resources.getString("resolutionCombo.dailyValue"),
-                                          resources.getString("rightPanel.dailyTitle"),
-                                          this);
-
-    private final Range[] ALL_RANGES = {FINE, HOURLY, DAILY};
-
-    private Range currentRange = FINE;
 
     private JPanel mainPanel;
     private JPanel chartPanel;
@@ -94,14 +47,15 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private JButton closeButton;
     private JComboBox clusterNodeCombo;
     private JComboBox publishedServiceCombo;
+    private JComboBox resolutionCombo;
     private JTextField frontMinField;
     private JTextField frontAvgField;
     private JTextField frontMaxField;
     private JTextField backMinField;
     private JTextField backAvgField;
     private JTextField backMaxField;
-    private JTextField numRoutingFailField;
-    private JTextField numPolicyFailField;
+    private JTextField numRoutingFailureField;
+    private JTextField numPolicyViolationField;
     private JTextField numSuccessField;
     private JTextField numTotalField;
     private JTabbedPane rightTabbedPane;
@@ -117,109 +71,72 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private JLabel backMinImageLabel;
     private JLabel backAvgImageLabel;
     private JLabel backMaxImageLabel;
-    private JLabel numRoutingFailImageLabel;
-    private JLabel numPolicyFailImageLabel;
+    private JLabel numRoutingFailureImageLabel;
+    private JLabel numPolicyViolationImageLabel;
     private JLabel numSuccessImageLabel;
-    private JComboBox timeRangeCombo;
 
-    private ClusterNodeInfo[] currentClusterNodes = null;
-    private EntityHeader[] currentServiceHeaders = null;
+    private static final Logger _logger = Logger.getLogger(DashboardWindow.class.getName());
 
-    private final ActionListener refreshListener = new ActionListener() {
+    private static final ResourceBundle _resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
+
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(_resources.getString("rightPanel.timeFormat"));
+
+    private static final MessageFormat STATUS_UPDATED_FORMAT = new MessageFormat(_resources.getString("status.updated"));
+
+    private static final long FINE_CHART_TIME_RANGE = 10 * 60 * 1000; // 10 minutes
+    private static final long HOURLY_CHART_TIME_RANGE = 60 * 60 * 60 * 1000; // 60 hours
+    private static final long DAILY_CHART_TIME_RANGE = 60 * 24 * 60 * 60 * 1000L; // 60 days
+
+    private final Resolution _fineResolution;
+    private final Resolution _hourlyResolution;
+    private final Resolution _dailyResolution;
+    private Resolution _currentResolution;
+    private final MetricsChartPanel _metricsChartPanel;
+
+    private final DefaultComboBoxModel _clusterNodeComboModel;
+    private final DefaultComboBoxModel _publishedServiceComboModel;
+
+    /** List of cluster nodes last fetched from gateway; sorted. */
+    private ClusterNodeInfo[] _clusterNodes;
+
+    /** Stands for cluster nodes selected. */
+    private static final ClusterNodeInfo ALL_NODES = new ClusterNodeInfo() {
+        public String toString() {
+            return _resources.getString("clusterNodeCombo.allValue");
+        }
+    };
+
+    /** List of published services last fetched from gateway; sorted. */
+    private EntityHeader[] _publishedServices;
+
+    /** Stands for all services selected. */
+    private static final EntityHeader ALL_SERVICES = new EntityHeader() {
+        public String toString() {
+            return _resources.getString("publishedServiceCombo.allValue");
+        }
+    };
+
+    private ClusterStatusAdmin _clusterStatusAdmin;
+    private ServiceAdmin _serviceAdmin;
+
+    private final ActionListener _refreshListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
             refreshData();
         }
     };
 
-    private final DefaultComboBoxModel serviceComboModel;
-    private final DefaultComboBoxModel nodeComboModel;
+    private final Timer _refreshTimer = new Timer(1500, _refreshListener);
 
-    private final Timer refreshTimer = new Timer(900, refreshListener);
-
-    private static final EntityHeader ALL_SERVICES = new EntityHeader() {
-        public String toString() {
-            return resources.getString("publishedServiceCombo.allValue");
-        }
-    };
-
-    private static final ClusterNodeInfo ALL_NODES = new ClusterNodeInfo() {
-        public String toString() {
-            return resources.getString("clusterNodeCombo.allValue");
-        }
-    };
-
-    private final MessageFormat statusUpdatedFormat = new MessageFormat(resources.getString("status.updated"));
+    private long _latestDownloadedPeriodStart = -1;
 
     /** Whether previous attempt to connect to gateway was successful. */
-    private boolean connected = false;
+    private boolean _connected = false;
 
     public DashboardWindow() throws HeadlessException {
-        super(resources.getString("window.title"));
+        super(_resources.getString("window.title"));
 
         ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
-
-        Utilities.setEscKeyStrokeDisposes(this);
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
-        statusLabel.setText("");
-
-        chartPanel.setLayout(new BorderLayout());
-
-        timeRangeCombo.setModel(new DefaultComboBoxModel(ALL_RANGES));
-        timeRangeCombo.setSelectedItem(currentRange);
-        timeRangeCombo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Range range = (Range)timeRangeCombo.getSelectedItem();
-                if (range == null) throw new IllegalStateException();
-                rightTabbedPane.setTitleAt(0, range.getRightPanelTitle());
-                currentRange = range;
-                resetData();
-            }
-        });
-
-        closeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-
-        try {
-            currentServiceHeaders = getServiceAdmin().findAllPublishedServices();
-            appendUriToServiceName(currentServiceHeaders);
-            EntityHeader[] comboItems = new EntityHeader[currentServiceHeaders.length + 1];
-            System.arraycopy(currentServiceHeaders, 0, comboItems, 1, currentServiceHeaders.length);
-            comboItems[0] = ALL_SERVICES;
-            serviceComboModel = new DefaultComboBoxModel(comboItems);
-            publishedServiceCombo.setModel(serviceComboModel);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        try {
-            currentClusterNodes = getClusterStatusAdmin().getClusterStatus();
-            ClusterNodeInfo[] comboItems = new ClusterNodeInfo[currentClusterNodes.length + 1];
-            System.arraycopy(currentClusterNodes, 0, comboItems, 1, currentClusterNodes.length);
-            comboItems[0] = ALL_NODES;
-            nodeComboModel = new DefaultComboBoxModel(comboItems);
-            clusterNodeCombo.setModel(nodeComboModel);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        clusterNodeCombo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                resetData();
-            }
-        });
-
-        publishedServiceCombo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                resetData();
-            }
-        });
-
-        rightTabbedPane.setTitleAt(0, currentRange.getRightPanelTitle());
 
         separatorPanel1.setLayout(new BoxLayout(separatorPanel1, BoxLayout.Y_AXIS));
         separatorPanel1.add(new JSeparator(SwingConstants.HORIZONTAL));
@@ -233,17 +150,17 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setVGap(3);
 
         ImageCache cache = ImageCache.getInstance();
-        backMinImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("backMinImageLabel.icon"))));
-        backAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("backAvgImageLabel.icon"))));
-        backMaxImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("backMaxImageLabel.icon"))));
+        backMinImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("backMinImageLabel.icon"))));
+        backAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("backAvgImageLabel.icon"))));
+        backMaxImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("backMaxImageLabel.icon"))));
 
-        frontMinImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("frontMinImageLabel.icon"))));
-        frontAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("frontAvgImageLabel.icon"))));
-        frontMaxImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("frontMaxImageLabel.icon"))));
+        frontMinImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("frontMinImageLabel.icon"))));
+        frontAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("frontAvgImageLabel.icon"))));
+        frontMaxImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("frontMaxImageLabel.icon"))));
 
-        numPolicyFailImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("numPolicyFailImageLabel.icon"))));
-        numRoutingFailImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("numRoutingFailImageLabel.icon"))));
-        numSuccessImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("numSuccessImageLabel.icon"))));
+        numPolicyViolationImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("numPolicyViolationImageLabel.icon"))));
+        numRoutingFailureImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("numRoutingFailureImageLabel.icon"))));
+        numSuccessImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("numSuccessImageLabel.icon"))));
 
         backMinField.setBackground(Color.WHITE);
         backAvgField.setBackground(Color.WHITE);
@@ -252,45 +169,152 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         frontAvgField.setBackground(Color.WHITE);
         frontMaxField.setBackground(Color.WHITE);
 
-        numRoutingFailField.setBackground(Color.WHITE);
-        numPolicyFailField.setBackground(Color.WHITE);
+        numRoutingFailureField.setBackground(Color.WHITE);
+        numPolicyViolationField.setBackground(Color.WHITE);
         numSuccessField.setBackground(Color.WHITE);
         numTotalField.setBackground(Color.WHITE);
 
-        resetData();
+        statusLabel.setText("");
+
+        int fineInterval;
+        try {
+            fineInterval = getClusterStatusAdmin().getMetricsFineInterval();
+        } catch (RemoteException e) {
+            _logger.warning("Cannot get fine bin interval from gateway; defaults to 5 seconds: " + e);
+            fineInterval = 5 * 1000;
+        }
+
+        _fineResolution = new Resolution(MetricsBin.RES_FINE, fineInterval, FINE_CHART_TIME_RANGE);
+        _hourlyResolution = new Resolution(MetricsBin.RES_HOURLY, 60 * 60 * 1000, HOURLY_CHART_TIME_RANGE);
+        _dailyResolution = new Resolution(MetricsBin.RES_DAILY, 24 * 60 * 60 * 1000, DAILY_CHART_TIME_RANGE);
+        _currentResolution = _fineResolution;
+
+        _metricsChartPanel = new MetricsChartPanel(_currentResolution.getResolution(),
+                                                   _currentResolution.getBinInterval(),
+                                                   _currentResolution.getChartTimeRange(),
+                                                   this);
+        chartPanel.setLayout(new BorderLayout());
+        chartPanel.add(_metricsChartPanel, BorderLayout.CENTER);
+
+        rightTabbedPane.setTitleAt(0, _currentResolution.getLatestTabTitle());
+
+        resolutionCombo.setModel(new DefaultComboBoxModel(new Resolution[]{_fineResolution, _hourlyResolution, _dailyResolution}));
+        resolutionCombo.setSelectedItem(_currentResolution);
+        resolutionCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                _currentResolution = (Resolution)resolutionCombo.getSelectedItem();
+                rightTabbedPane.setTitleAt(0, _currentResolution.getLatestTabTitle());
+                resetData();
+            }
+        });
+
+        try {
+            _clusterNodes = getClusterStatusAdmin().getClusterStatus();
+            ClusterNodeInfo[] comboItems = new ClusterNodeInfo[_clusterNodes.length + 1];
+            System.arraycopy(_clusterNodes, 0, comboItems, 1, _clusterNodes.length);
+            comboItems[0] = ALL_NODES;
+            _clusterNodeComboModel = new DefaultComboBoxModel(comboItems);
+            clusterNodeCombo.setModel(_clusterNodeComboModel);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        publishedServiceCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                resetData();
+            }
+        });
+
+        try {
+            _publishedServices = findAllPublishedServices();
+            final EntityHeader[] comboItems = new EntityHeader[_publishedServices.length + 1];
+            System.arraycopy(_publishedServices, 0, comboItems, 1, _publishedServices.length);
+            comboItems[0] = ALL_SERVICES;
+            _publishedServiceComboModel = new DefaultComboBoxModel(comboItems);
+            publishedServiceCombo.setModel(_publishedServiceComboModel);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        clusterNodeCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                resetData();
+            }
+        });
+
+        Utilities.setEscKeyStrokeDisposes(this);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        closeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
 
         getContentPane().add(mainPanel);
         pack();
-        refreshTimer.start();
+
+        resetData();
+        _refreshTimer.setInitialDelay(0);   /** So that {@link #resetData} will be more snappy. */
+        _refreshTimer.start();
+    } /* constructor */
+
+    private ClusterNodeInfo[] findAllClusterNodes() throws RemoteException, FindException {
+        final ClusterNodeInfo[] result = getClusterStatusAdmin().getClusterStatus();
+        Arrays.sort(result);
+        return result;
+    }
+
+    private EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
+        final EntityHeader[] result = getServiceAdmin().findAllPublishedServices();
+        appendUriToServiceName(result);
+        Arrays.sort(result);
+        return result;
+    }
+
+    private void updateClusterNodesCombo() throws RemoteException, FindException {
+        final ClusterNodeInfo[] newNodes = findAllClusterNodes();
+        if (!Arrays.equals(_clusterNodes, newNodes)) {
+            updateComboModel(_clusterNodes, newNodes, _clusterNodeComboModel);
+        }
+        _clusterNodes = newNodes;
+    }
+
+    private void updatePublishedServicesCombo() throws RemoteException, FindException {
+            final EntityHeader[] newServices = findAllPublishedServices();
+            if (!Arrays.equals(_publishedServices, newServices)) {
+                updateComboModel(_publishedServices, newServices, _publishedServiceComboModel);
+            }
+            _publishedServices = newServices;
     }
 
     public ClusterNodeInfo getClusterNodeSelected() {
-        ClusterNodeInfo result = (ClusterNodeInfo)nodeComboModel.getSelectedItem();
+        ClusterNodeInfo result = (ClusterNodeInfo) _clusterNodeComboModel.getSelectedItem();
         if (result == ALL_NODES)
             result = null;
         return result;
     }
 
     public EntityHeader getPublishedServiceSelected() {
-        EntityHeader result = (EntityHeader)serviceComboModel.getSelectedItem();
+        EntityHeader result = (EntityHeader) _publishedServiceComboModel.getSelectedItem();
         if (result == ALL_SERVICES)
             result = null;
         return result;
     }
 
     public void onLogon(LogonEvent e) {
-        clusterStatusAdmin = null;
-        serviceAdmin = null;
-        refreshTimer.start();
+        _clusterStatusAdmin = null;
+        _serviceAdmin = null;
+        _refreshTimer.start();
         clusterNodeCombo.setEnabled(true);
         publishedServiceCombo.setEnabled(true);
-        timeRangeCombo.setEnabled(true);
-        connected = true;
+        resolutionCombo.setEnabled(true);
+        _connected = true;
     }
 
     public void onLogoff(LogonEvent e) {
-        refreshTimer.stop();
-        if (connected) {
+        _refreshTimer.stop();
+        if (_connected) {
             statusLabel.setText("[Disconnected] " + statusLabel.getText().trim());
         } else {
             // Was already disconnected due to some error. Clears out the exception message.
@@ -298,17 +322,17 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         }
         clusterNodeCombo.setEnabled(false);
         publishedServiceCombo.setEnabled(false);
-        timeRangeCombo.setEnabled(false);
-        connected = false;
+        resolutionCombo.setEnabled(false);
+        _connected = false;
     }
 
     public void setVisible(boolean vis) {
         if (vis) {
-            refreshTimer.start();
-            currentRange.getMetricsChartPanel().restoreAutoRange(); // In case chart was zoomed in when closed.
-            currentRange.getMetricsChartPanel().resumeUpdate();     // In case chart was suspended when closed.
+            _refreshTimer.start();
+            _metricsChartPanel.restoreAutoRange(); // In case chart was zoomed in when closed.
+            _metricsChartPanel.resumeUpdate();     // In case chart was suspended when closed.
         } else {
-            refreshTimer.stop();
+            _refreshTimer.stop();
 
             // Let inactivity timeout start counting after this window is closed.
             TopComponents.getInstance().updateLastActivityTime();
@@ -317,209 +341,137 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     }
 
     public void dispose() {
-        refreshTimer.stop();
+        _refreshTimer.stop();
         super.dispose();
     }
 
     private synchronized void resetData() {
-        if (connected) {
-            currentRange.clear();
-        } // else keep displayed data around when disconnected
-
-        chartPanel.removeAll();
-        chartPanel.add(currentRange.getMetricsChartPanel(), BorderLayout.CENTER);
-        chartPanel.repaint();
+        _latestDownloadedPeriodStart = -1;
+        _metricsChartPanel.clearData();
+        _metricsChartPanel.setResolution(_currentResolution.getResolution());
+        _metricsChartPanel.setBinInterval(_currentResolution.getBinInterval());
+        _metricsChartPanel.setMaxTimeRange(_currentResolution.getChartTimeRange());
+        _refreshTimer.stop();   // Don't wait for next time; restart right away.
+        _refreshTimer.start();
     }
 
     private synchronized void refreshData() {
-        final EntityHeader[] newServiceHeaders;
-        final ClusterNodeInfo[] newNodes;
         try {
-            ServiceAdmin serviceAdmin = getServiceAdmin();
-            ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
+            final ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
 
-            newServiceHeaders = serviceAdmin.findAllPublishedServices();
-            appendUriToServiceName(newServiceHeaders);
-            if (!Arrays.equals(currentServiceHeaders, newServiceHeaders)) {
-                updateComboModel(currentServiceHeaders, newServiceHeaders, serviceComboModel);
-            }
-            currentServiceHeaders = newServiceHeaders;
+            updateClusterNodesCombo();
+            updatePublishedServicesCombo();
 
-            newNodes = clusterStatusAdmin.getClusterStatus();
-            if (!Arrays.equals(currentClusterNodes, newNodes)) {
-                updateComboModel(currentClusterNodes, newNodes, nodeComboModel);
-            }
-            currentClusterNodes = newNodes;
-
-            // Find all new bins since we last looked
-            for (int i = 0; i < ALL_RANGES.length; i++) {
-                findNewBins(ALL_RANGES[i]);
+            String nodeId = null;
+            final ClusterNodeInfo node = (ClusterNodeInfo) _clusterNodeComboModel.getSelectedItem();
+            if (node != ALL_NODES) {
+                nodeId = node.getNodeIdentifier();
             }
 
-            EntityHeader currentService = (EntityHeader)serviceComboModel.getSelectedItem();
-
-            Long whichService;
-            if (currentService == null || currentService == ALL_SERVICES)
-                whichService = null;
-            else
-                whichService = new Long(currentService.getOid());
-
-            ClusterNodeInfo currentNode = (ClusterNodeInfo)nodeComboModel.getSelectedItem();
-            String whichNode;
-            if (currentNode == null || currentNode == ALL_NODES)
-                whichNode = null;
-            else
-                whichNode = currentNode.getNodeIdentifier();
-
-            // Find all current data that hasn't been charted yet, and add it to the chart
-            SortedMap<Long, PeriodData> periodMap = currentRange.getAllPeriods();
-            if (! periodMap.isEmpty()) {
-                List<MetricsBin> chartBins = new ArrayList<MetricsBin>();
-
-                Long lastestPeriodStart = (Long)periodMap.lastKey();
-                Map currentPeriods = periodMap.tailMap(new Long(lastestPeriodStart.longValue() - currentRange.getChartRange()));
-                final Set<Long> chartedPeriods = currentRange.getChartedPeriods();
-                for (Iterator i = currentPeriods.keySet().iterator(); i.hasNext();) {
-                    Long period = (Long)i.next();
-                    if (!chartedPeriods.contains(period)) {
-                        PeriodData data = (PeriodData)periodMap.get(period);
-                        MetricsBin bin = data.get(whichNode, whichService);
-                        if (bin != null) chartBins.add(bin);
-                        chartedPeriods.add(period);
-                    }
-                }
-                currentRange.getMetricsChartPanel().addData(chartBins);
+            Long serviceOid = null;
+            final EntityHeader service = (EntityHeader) _publishedServiceComboModel.getSelectedItem();
+            if (service != ALL_SERVICES) {
+                serviceOid = service.getOid();
             }
 
-            MetricsBin rightPanelBin = null;
-            if (currentRange == FINE) {
-                // RHS stuff is the latest FINE bin
-                if (!FINE.getAllPeriods().isEmpty()) {
-                    Long lastPeriod = FINE.getAllPeriods().lastKey();
-                    if (lastPeriod != null) {
-                        PeriodData data = (PeriodData)periodMap.get(lastPeriod);
-                        rightPanelBin = data.get(whichNode, whichService);
-                    }
-                }
+            final Integer resolution = _currentResolution.getResolution();
+
+            Collection<MetricsSummaryBin> newBins = null;
+            if (_latestDownloadedPeriodStart == -1) {
+                newBins = clusterStatusAdmin.summarizeLatestByPeriod(nodeId,
+                                                                     serviceOid,
+                                                                     resolution,
+                                                                     _currentResolution.getChartTimeRange() +
+                                                                     _currentResolution.getBinInterval());
             } else {
-                int resolution;
-                if (currentRange == HOURLY) {
-                    resolution = MetricsBin.RES_FINE;
-                } else if (currentRange == DAILY) {
-                    resolution = MetricsBin.RES_HOURLY;
-                } else
-                    throw new IllegalArgumentException("currentRange is neither FINE, HOURLY nor DAILY");
-
-                rightPanelBin = clusterStatusAdmin.getLastestMetricsSummary(whichNode, whichService, resolution, (int)currentRange.getRightPanelRange());
+                newBins = clusterStatusAdmin.summarizeByPeriod(nodeId,
+                                                               serviceOid,
+                                                               resolution,
+                                                               _latestDownloadedPeriodStart + 1,
+                                                               null);
             }
 
-            if (rightPanelBin != null) {
-                final int numPolicyFail = rightPanelBin.getNumAttemptedRequest() - rightPanelBin.getNumAuthorizedRequest();
-                final int numRoutingFail = rightPanelBin.getNumAuthorizedRequest() - rightPanelBin.getNumCompletedRequest();
-                final int numSuccess = rightPanelBin.getNumCompletedRequest();
-                final int numTotal = rightPanelBin.getNumAttemptedRequest();
+            MetricsSummaryBin latestBin = null;
+            if (newBins.size() > 0) {
+                for (MetricsSummaryBin bin : newBins) {
+                    if (_latestDownloadedPeriodStart < bin.getPeriodStart()) {
+                        _latestDownloadedPeriodStart = bin.getPeriodStart();
+                        latestBin = bin;
+                    }
+                }
 
-                final int frontMin = rightPanelBin.getMinFrontendResponseTime();
-                final double frontAvg = rightPanelBin.getAverageFrontendResponseTime();
-                final int frontMax = rightPanelBin.getMaxFrontendResponseTime();
+                if (_logger.isLoggable(Level.FINE)) {
+                    _logger.fine("Dowloaded " + newBins.size() + " " + MetricsBin.describeResolution(resolution) +
+                                 " summary bins. Latest bin = " + new Date(latestBin.getPeriodStart()) +
+                                 " - " + new Date(latestBin.getPeriodEnd()));
+                }
 
-                final int backMin = rightPanelBin.getMinBackendResponseTime();
-                final double backAvg = rightPanelBin.getAverageBackendResponseTime();
-                final int backMax = rightPanelBin.getMaxBackendResponseTime();
-
-                numPolicyFailField.setText(Integer.toString(numPolicyFail));
-                numSuccessField.setText(Integer.toString(numSuccess));
-                numRoutingFailField.setText(Integer.toString(numRoutingFail));
-                numTotalField.setText(Integer.toString(numTotal));
-
-                frontMinField.setText(Integer.toString(frontMin));
-                frontAvgField.setText(Long.toString(Math.round(frontAvg)));
-                frontMaxField.setText(Integer.toString(frontMax));
-
-                backMinField.setText(Integer.toString(backMin));
-                backAvgField.setText(Long.toString(Math.round(backAvg)));
-                backMaxField.setText(Integer.toString(backMax));
-
-                fromTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodStart())));
-                toTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodEnd())));
-
-                statusLabel.setText(statusUpdatedFormat.format(new Object[] { new Date() }));
+                _metricsChartPanel.addData(newBins);
             }
 
-            if (! connected) {
-                logger.log(Level.INFO, "Reconnected to SSG.");
+            // Gets a summary of the latest resolution period.
+            if (_currentResolution == _fineResolution) {
+                // The latest fine resolution summary bin was already downloaded,
+                // either during this call or the previous call.
+            } else if (_currentResolution == _hourlyResolution) {
+                // Gets a summary collated from an hour's worth of fine metrics bins.
+                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOid, MetricsBin.RES_FINE, 60 * 60 * 1000);
+            } else if (_currentResolution == _dailyResolution) {
+                // Gets a summary collated from a day's worth of hourly metrics bins.
+                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOid, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000);
             }
-            connected = true;
+
+            if (latestBin != null) {
+                fromTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodStart())));
+                toTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodEnd())));
+
+                frontMinField.setText(Integer.toString(latestBin.getMinFrontendResponseTime()));
+                frontAvgField.setText(Long.toString(Math.round(latestBin.getAverageFrontendResponseTime())));
+                frontMaxField.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()));
+
+                backMinField.setText(Integer.toString(latestBin.getMinBackendResponseTime()));
+                backAvgField.setText(Long.toString(Math.round(latestBin.getAverageBackendResponseTime())));
+                backMaxField.setText(Integer.toString(latestBin.getMaxBackendResponseTime()));
+
+                numPolicyViolationField.setText(Integer.toString(latestBin.getNumPolicyViolation()));
+                numRoutingFailureField.setText(Integer.toString(latestBin.getNumRoutingFailure()));
+                numSuccessField.setText(Integer.toString(latestBin.getNumSuccess()));
+                numTotalField.setText(Integer.toString(latestBin.getNumTotal()));
+
+                statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
+            }
+
+            if (!_connected) {  // Previously disconnected.
+                _logger.log(Level.INFO, "Reconnected to SSG.");
+            }
+            _connected = true;
         } catch (RemoteException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
-            refreshTimer.stop();
+            _refreshTimer.stop();
             dispose();
         } catch (RuntimeException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
-            refreshTimer.stop();
+            _refreshTimer.stop();
             dispose();
         } catch (FindException e) {
-            logger.log(Level.WARNING, "SSG can't get data", e);
+            _logger.log(Level.WARNING, "SSG can't get data", e);
             statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
-            refreshTimer.stop();
+            _refreshTimer.stop();
             dispose();
         }
     }
 
-    private void findNewBins(Range range) throws RemoteException, FindException {
-        List newBins = null;
-        long last = range.getLastPeriodDownloaded();
-        if (last == -1) {
-            newBins = getClusterStatusAdmin().findLatestMetricsBins(null,
-                                                                    new Long(range.getChartRange()),
-                                                                    new Integer(range.getResolution()),
-                                                                    null);
-        } else {
-            newBins = getClusterStatusAdmin().findMetricsBins(null,
-                                                              new Long(last + 1),
-                                                              null,
-                                                              new Integer(range.getResolution()),
-                                                              null);
-        }
-        if (newBins.size() > 0) {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("Found " + newBins.size() + " MetricsBins for range " + range.toString());
-        }
-
-        // Add new bins to allPeriods etc.
-        for (Iterator i = newBins.iterator(); i.hasNext();) {
-            MetricsBin newBin = (MetricsBin)i.next();
-            final long ps = newBin.getPeriodStart();
-            if (ps > last) last = ps;
-            addBin(range, newBin);
-        }
-        range.setLastPeriodDownloaded(last);
-    }
-
-    private void addBin(Range range, MetricsBin bin) {
-        Long ps = new Long(bin.getPeriodStart());
-        synchronized(range) {
-            TreeMap<Long, PeriodData> allPeriods = range.getAllPeriods();
-            PeriodData data = (PeriodData)allPeriods.get(ps);
-            if (data == null) {
-                data = new PeriodData(bin.getResolution(), bin.getPeriodStart(), bin.getInterval());
-                allPeriods.put(ps, data);
-            }
-            data.add(bin);
-        }
-    }
-
-    private <T> void updateComboModel(T[] oldObjs, T[] newObjs, DefaultComboBoxModel comboModel) {
-        Set<T> news = new HashSet<T>(Arrays.asList(newObjs));
-        Set<T> olds = new HashSet<T>(Arrays.asList(oldObjs));
-        Set<T> olds2 = new HashSet<T>(Arrays.asList(oldObjs));
+    private <T> void updateComboModel(T[] oldItems, T[] newItems, DefaultComboBoxModel comboModel) {
+        Set<T> news = new HashSet<T>(Arrays.asList(newItems));
+        Set<T> olds = new HashSet<T>(Arrays.asList(oldItems));
+        Set<T> olds2 = new HashSet<T>(Arrays.asList(oldItems));
 
         // Remove deleted stuff from model
         olds.removeAll(news);
         for (T o : olds) {
             comboModel.removeElement(o);
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Removed from ComboBox model:" + o);
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Removed from ComboBox model:" + o);
             }
         }
 
@@ -527,33 +479,33 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         news.removeAll(olds2);
         for (T o : news) {
             comboModel.addElement(o);
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Added to ComboBox model: " + o);
+            if (_logger.isLoggable(Level.FINE)) {
+                _logger.fine("Added to ComboBox model: " + o);
             }
         }
     }
 
     private ClusterStatusAdmin getClusterStatusAdmin() {
-        ClusterStatusAdmin csa = this.clusterStatusAdmin;
-        if (csa == null) {
-            csa = Registry.getDefault().getClusterStatusAdmin();
-            this.clusterStatusAdmin = csa;
+        if (_clusterStatusAdmin == null) {
+            _clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         }
-        return csa;
+        return _clusterStatusAdmin;
     }
 
     private ServiceAdmin getServiceAdmin() {
-        ServiceAdmin sa = this.serviceAdmin;
-        if (sa == null) {
-            sa = Registry.getDefault().getServiceManager();
-            this.serviceAdmin = sa;
+        if (_serviceAdmin == null) {
+            _serviceAdmin = Registry.getDefault().getServiceManager();
         }
-        return sa;
+        return _serviceAdmin;
     }
 
     /**
      * If a published service has a custom routing URI, append it to the name to
      * better distinguish from the first version published, when displayed.
+     *
+     * @param headers   published services
+     * @throws RemoteException if remote communication error
+     * @throws FindException if there was a problem accessing the requested information
      */
     private void appendUriToServiceName(EntityHeader[] headers)
             throws RemoteException, FindException {

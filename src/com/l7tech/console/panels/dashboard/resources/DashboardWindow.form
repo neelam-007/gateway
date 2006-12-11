@@ -127,7 +127,7 @@
             </constraints>
             <properties/>
           </component>
-          <component id="91c6e" class="javax.swing.JComboBox" binding="timeRangeCombo">
+          <component id="91c6e" class="javax.swing.JComboBox" binding="resolutionCombo">
             <constraints>
               <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -515,7 +515,7 @@
                       <text resource-bundle="com/l7tech/console/panels/dashboard/resources/DashboardWindow" key="numTotalField.label"/>
                     </properties>
                   </component>
-                  <component id="cc15d" class="javax.swing.JTextField" binding="numRoutingFailField">
+                  <component id="cc15d" class="javax.swing.JTextField" binding="numRoutingFailureField">
                     <constraints>
                       <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false">
                         <minimum-size width="70" height="-1"/>
@@ -529,7 +529,7 @@
                       <text value=""/>
                     </properties>
                   </component>
-                  <component id="f443c" class="javax.swing.JTextField" binding="numPolicyFailField">
+                  <component id="f443c" class="javax.swing.JTextField" binding="numPolicyViolationField">
                     <constraints>
                       <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false">
                         <minimum-size width="70" height="-1"/>
@@ -579,7 +579,7 @@
                       <text resource-bundle="com/l7tech/console/panels/dashboard/resources/DashboardWindow" key="messagesLabel.text"/>
                     </properties>
                   </component>
-                  <component id="b7d18" class="javax.swing.JLabel" binding="numRoutingFailImageLabel">
+                  <component id="b7d18" class="javax.swing.JLabel" binding="numRoutingFailureImageLabel">
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false">
                         <minimum-size width="10" height="24"/>
@@ -591,7 +591,7 @@
                       <text value=""/>
                     </properties>
                   </component>
-                  <component id="8d02a" class="javax.swing.JLabel" binding="numPolicyFailImageLabel">
+                  <component id="8d02a" class="javax.swing.JLabel" binding="numPolicyViolationImageLabel">
                     <constraints>
                       <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false">
                         <minimum-size width="10" height="24"/>

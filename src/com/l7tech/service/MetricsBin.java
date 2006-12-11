@@ -4,10 +4,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -208,10 +205,12 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     /**
      * Combines data from multiple bins into one.
      *
-     * @param bins      list of {@link MetricsBin} to combine; must contain at least one
+     * @param bins      collection of {@link MetricsBin} to combine; must contain at least one
      * @param result    bin to put result in (whose cluster node ID, service OID,
      *                  and resolution are left unmodified
      * @throws IllegalArgumentException if <code>bins</code> is empty
+     *
+     * @deprecated Use {@link MetricsSummaryBin} instead.
      */
     public static void combine(final List<MetricsBin> bins, final MetricsBin result) {
         if (bins.size() == 0) {
@@ -364,17 +363,17 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the nominal period interval (in milliseconds). */
+    /** @return the nominal period interval (in milliseconds) */
     public int getInterval() {
         return _interval;
     }
 
-    /** Returns the nominal period start time (as UTC milliseconds from epoch). */
+    /** @return the nominal period start time (as UTC milliseconds from epoch) */
     public long getPeriodStart() {
         return _periodStart;
     }
 
-    /** Returns the nominal period end time (as UTC milliseconds from epoch). */
+    /** @return the nominal period end time (as UTC milliseconds from epoch) */
     public long getPeriodEnd() {
         return _periodStart + _interval;
     }
@@ -417,7 +416,39 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the rate of attempted requests (in messages per second) based on actual time interval. */
+    /** @return number of successful requests in this bin */
+    public int getNumSuccess() {
+        synchronized(_completedLock) {
+            return _numCompletedRequest;
+        }
+    }
+
+    /** @return number of requests with policy violations in this bin */
+    public int getNumPolicyViolation() {
+        synchronized(_attemptedLock) {
+            synchronized(_authorizedLock) {
+                return _numAttemptedRequest - _numAuthorizedRequest;
+            }
+        }
+    }
+
+    /** @return number of requests with routing failures in this bin */
+    public int getNumRoutingFailure() {
+        synchronized(_authorizedLock) {
+            synchronized(_completedLock) {
+                return _numAuthorizedRequest - _numCompletedRequest;
+            }
+        }
+    }
+
+    /** @return number of all requests in this bin */
+    public int getNumTotal() {
+        synchronized(_attemptedLock) {
+            return _numAttemptedRequest;
+        }
+    }
+
+    /** @return the rate of attempted requests (in messages per second) based on actual time interval */
     public double getActualAttemptedRate() {
         long startTime = getStartTime();
         long endTime = getEndTime();
@@ -431,7 +462,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the rate of authorized requests (in messages per second) based on actual time interval. */
+    /** @return the rate of authorized requests (in messages per second) based on actual time interval */
     public double getActualAuthorizedRate() {
         long startTime = getStartTime();
         long endTime = getEndTime();
@@ -445,7 +476,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the rate of completed requests (in messages per second) based on actual time interval. */
+    /** @return the rate of completed requests (in messages per second) based on actual time interval */
     public double getActualCompletedRate() {
         long startTime = getStartTime();
         long endTime = getEndTime();
@@ -459,7 +490,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the rate of attempted requests (in messages per second) based on nominal period. */
+    /** @return the rate of attempted requests (in messages per second) based on nominal period */
     public double getNominalAttemptedRate() {
         int interval = _interval;
         synchronized(_attemptedLock){
@@ -467,7 +498,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the rate of authorized requests (in messages per second) based on nominal period. */
+    /** @return the rate of authorized requests (in messages per second) based on nominal period */
     public double getNominalAuthorizedRate() {
         int interval = _interval;
         synchronized(_authorizedLock){
@@ -475,7 +506,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the rate of completed requests (in messages per second) based on nominal period. */
+    /** @return the rate of completed requests (in messages per second) based on nominal period */
     public double getNominalCompletedRate() {
         int interval = _interval;
         synchronized(_completedLock){
@@ -483,14 +514,36 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the minimum frontend response time (in milliseconds) of all attempted requests. */
+    /** @return the rate of successful requests (in requests per second) based on nominal period */
+    public double getNominalSuccessRate() {
+        return 1000.0 * getNumSuccess() / _interval;
+    }
+
+    /** @return the rate of requests with policy violation (in requests per second) based on nominal period */
+    public double getNominalPolicyViolationRate() {
+        return 1000.0 * getNumPolicyViolation() / _interval;
+    }
+
+    /** @return the rate of requests with routing failure (in requests per second) based on nominal period */
+    public double getNominalRoutingFailureRate() {
+        return 1000.0 * getNumRoutingFailure() / _interval;
+    }
+
+    /** @return the rate of all requests (in requests per second) based on nominal period */
+    public double getNominalTotalRate() {
+        return 1000.0 * getNumTotal() / _interval;
+    }
+
+    /** @return the minimum frontend response time (in milliseconds) of all attempted requests;
+     *          this is meaningful only if {@link #getNumAttemptedRequest()} returns non-zero */
     public int getMinFrontendResponseTime() {
         synchronized(_attemptedLock) {
             return _minFrontendResponseTime;
         }
     }
 
-    /** Returns the maximum frontend response time (in milliseconds) of all attempted requests. */
+    /** @return the maximum frontend response time (in milliseconds) of all attempted requests;
+     *          this is meaningful only if {@link #getNumAttemptedRequest()} returns non-zero */
     public int getMaxFrontendResponseTime() {
         synchronized(_attemptedLock) {
             return _maxFrontendResponseTime;
@@ -503,7 +556,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the average frontend response time (in milliseconds) of all attempted requests. */
+    /** @return the average frontend response time (in milliseconds) of all attempted requests */
     public double getAverageFrontendResponseTime() {
         int numAttemptedRequest;
         long sumFrontendResponseTime;
@@ -518,14 +571,16 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the minimum backend response time (in milliseconds) of all completed requests. */
+    /** @return the minimum backend response time (in milliseconds) of all completed requests;
+     *          this is meaningful only if {@link #getNumCompletedRequest()} returns non-zero */
     public int getMinBackendResponseTime() {
         synchronized(_completedLock){
             return _minBackendResponseTime;
         }
     }
 
-    /** Returns the maximum backend response time (in milliseconds) of all completed requests. */
+    /** @return the maximum backend response time (in milliseconds) of all completed requests;
+     *          this is meaningful only if {@link #getNumCompletedRequest()} returns non-zero */
     public int getMaxBackendResponseTime() {
         synchronized(_completedLock){
             return _maxBackendResponseTime;
@@ -538,7 +593,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Returns the average backend response time (in milliseconds) of all completed requests. */
+    /** @return the average backend response time (in milliseconds) of all completed requests */
     public double getAverageBackendResponseTime() {
         int numCompletedRequest;
         long sumBackendResponseTime;
@@ -578,7 +633,10 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         _startTime = startTime;
     }
 
-    /** Remember to call this when closing off the bin to new message recording. */
+    /**
+     * Remember to call this when closing off the bin to new message recording.
+     * @param endTime   actual end time (as UTC milliseconds from epoch)
+     */
     public void setEndTime(final long endTime) {
         // Ensures duration is greater than zero.
         if (endTime > _startTime) {
@@ -642,7 +700,10 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Records an attempted request. */
+    /**
+     * Records an attempted request.
+     * @param frontendResponseTime  front end response time for the request being added
+     */
     public void addAttemptedRequest(int frontendResponseTime) {
         if (frontendResponseTime < 0) {
             // Don't really know what causes negative response time sometimes,
@@ -678,7 +739,10 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
-    /** Records a completed request. */
+    /**
+     * Records a completed request.
+     * @param backendResponseTime   back end response time for the request being added
+     */
     public void addCompletedRequest(int backendResponseTime) {
         if (backendResponseTime < 0) {
             // Don't really know what causes negative response time sometimes,
@@ -708,7 +772,8 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     /**
-     * Merge the given bin into this bin.
+     * Merge the given bin into this bin if they are equal (i.e., same cluster
+     * node ID, published service OID, resolution, period start and interval).
      *
      * <p>This assumes that the bins are NOT currently in use (or are locked).</p>
      *
@@ -718,10 +783,34 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     public void merge(MetricsBin other) {
         if (other != null) {
             if (this.equals(other)) {
-                List<MetricsBin> bins = new ArrayList<MetricsBin>();
-                bins.add(this);
-                bins.add(other);
-                combine(bins, this);
+                _startTime = Math.min(_startTime, other.getStartTime());
+                _endTime = Math.max(_endTime, other.getEndTime());
+
+                if (_numAttemptedRequest == 0) {
+                    _minFrontendResponseTime = other.getMinFrontendResponseTime();
+                    _maxFrontendResponseTime = other.getMaxFrontendResponseTime();
+                } else {
+                    if (other.getNumAttemptedRequest() != 0) {
+                        _minFrontendResponseTime = Math.min(_minFrontendResponseTime, other.getMinFrontendResponseTime());
+                        _maxFrontendResponseTime = Math.max(_maxFrontendResponseTime, other.getMaxFrontendResponseTime());
+                    }
+                }
+
+                if (_numCompletedRequest == 0) {
+                    _minBackendResponseTime = other.getMinBackendResponseTime();
+                    _maxBackendResponseTime = other.getMaxBackendResponseTime();
+                } else {
+                    if (other.getNumCompletedRequest() != 0) {
+                        _minBackendResponseTime = Math.min(_minBackendResponseTime, other.getMinBackendResponseTime());
+                        _maxBackendResponseTime = Math.max(_maxBackendResponseTime, other.getMaxBackendResponseTime());
+                    }
+                }
+
+                _sumFrontendResponseTime += other.getSumFrontendResponseTime();
+                _sumBackendResponseTime += other.getSumBackendResponseTime();
+                _numAttemptedRequest += other.getNumAttemptedRequest();
+                _numAuthorizedRequest += other.getNumAuthorizedRequest();
+                _numCompletedRequest += other.getNumCompletedRequest();
             }
         }
     }

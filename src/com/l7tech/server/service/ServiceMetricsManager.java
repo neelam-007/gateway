@@ -4,6 +4,7 @@ import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
@@ -91,45 +92,34 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         return _fineBinInterval;
     }
 
+    /**
+     * Searches for metrics bins with the given criteria and summarizes by
+     * combining bins with the same period start.
+     *
+     * @param nodeId            cluster node ID; null = all
+     * @param serviceOid        published service OID; null = all
+     * @param resolution        bin resolution ({@link MetricsBin#RES_FINE},
+     *                          {@link MetricsBin#RES_HOURLY} or
+     *                          {@link MetricsBin#RES_DAILY}); null = all
+     * @param minPeriodStart    minimum bin period start time; null = as far back as available
+     * @param maxPeriodStart    maximum bin period statt time; null = up to the latest available
+     *
+     * @return collection of summary bins; can be empty but never <code>null</code>
+     * @throws FindException if failure to query database
+     */
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
-    public List<MetricsBin> findBins(final String nodeId,
-                                     final Long minPeriodStart,
-                                     final Long maxPeriodStart,
-                                     final Integer resolution,
-                                     final Long serviceOid)
-            throws FindException
-    {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
+                                                           final Long serviceOid,
+                                                           final Integer resolution,
+                                                           final Long minPeriodStart,
+                                                           final Long maxPeriodStart)
+            throws FindException {
+        Collection<MetricsBin> bins = null;
         try {
             // noinspection unchecked
-            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     Criteria crit = session.createCriteria(MetricsBin.class);
-
-                    if (minPeriodStart != null)
-                        crit.add(Restrictions.ge("periodStart", minPeriodStart));
-
-                    if (maxPeriodStart == null) {
-                        // This means caller wants up to the latest completed period.
-                        //
-                        // To prevent the case where not all bins of the latest
-                        // period are fetched because the query was made before
-                        // all latest bins of all published services have been
-                        // saved to database, we relax by 1000 milliseconds for
-                        // all database writes to complete. Otherwise, this can
-                        // cause a gap to show up in the Dashboard chart if only
-                        // one service (the one that hasn't been written to
-                        // database when queried) is receiving requests.
-                        final long currentTime = System.currentTimeMillis() - 1000;
-                        final long currentPeriodStart = MetricsBin.periodStartFor(resolution,
-                                                                                  getFineInterval(),
-                                                                                  currentTime);
-                        final long lastestCompletedPeriodStart = MetricsBin.periodStartFor(resolution,
-                                                                                           getFineInterval(),
-                                                                                           currentPeriodStart - 1);
-                        crit.add(Restrictions.le("periodStart", lastestCompletedPeriodStart));
-                    } else {
-                        crit.add(Restrictions.le("periodStart", maxPeriodStart));
-                    }
 
                     if (nodeId != null)
                         crit.add(Restrictions.eq("clusterNodeId", nodeId));
@@ -140,31 +130,68 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     if (resolution != null)
                         crit.add(Restrictions.eq("resolution", resolution));
 
+                    if (minPeriodStart != null)
+                        crit.add(Restrictions.ge("periodStart", minPeriodStart));
+
+                    if (maxPeriodStart != null) {
+                        crit.add(Restrictions.le("periodStart", maxPeriodStart));
+                    } else {
+                        // To prevent the case where not all bins of the latest
+                        // period are fetched because the query was made before all
+                        // latest bins of all published services have been saved to
+                        // database, we relax by 1000 milliseconds for all database
+                        // writes to complete. Otherwise, this can cause an obvious
+                        // gap to show up in the Dashboard chart if only one service
+                        // is receiving requests and it is the one that hasn't been
+                        // written to database yet when queried.
+                        final long currentTime = System.currentTimeMillis();
+                        final long currentPeriodStart = MetricsBin.periodStartFor(resolution,
+                                                                                  getFineInterval(),
+                                                                                  currentTime - 1000);
+                        final long lastestCompletedPeriodStart = MetricsBin.periodStartFor(resolution,
+                                                                                           getFineInterval(),
+                                                                                           currentPeriodStart - 1);
+                        crit.add(Restrictions.le("periodStart", lastestCompletedPeriodStart));
+                    }
+
                     return crit.list();
                 }
             });
         } catch (DataAccessException e) {
-            throw new FindException("Couldn't find MetricsBins", e);
+            throw new FindException("Cannot find MetricsBins in database. " +
+                                    "(nodeId=" + nodeId +
+                                    ", serviceOid=" + serviceOid +
+                                    ", resolution=" + resolution +
+                                    ", minPeriodStart=" + new Date(minPeriodStart) +
+                                    ", maxPeriodStart=" + new Date(maxPeriodStart) + ")",
+                                    e);
         }
+
+        if (_logger.isLoggable(Level.FINEST)) {
+            _logger.finest("Found " + bins.size() + " metrics bins to summarize by period.");
+        }
+
+        return MetricsSummaryBin.createSummaryMetricsBinsByPeriodStart(bins);
     }
 
     /**
-     * Summarizes the latest metrics bins in the database for the given criteria.
+     * Searches for the latest metrics bins for the given criteria and
+     * summarizes by combining them into one summary bin.
      *
-     * @param clusterNodeId the MAC address of the cluster node to search for
-     * @param serviceOid    the OID of the {@link com.l7tech.service.PublishedService}
-     *                      to search for
-     * @param resolution    the bin resolution to search for
+     * @param nodeId        cluster node ID
+     * @param serviceOid    published service OID
+     * @param resolution    bin resolution
      * @param duration      time duration (from latest nominal period boundary
-     *                      time on gateway) to search for bins whose nominal
-     *                      periods fall within
-     * @return a {@link MetricsBin} summarizing the bins that fit the given
-     *         criteria
+     *                      time on gateway) to search backward for bins whose
+     *                      nominal periods fall within
+     * @return a summary bin
+     * @throws FindException if failure to query database
      */
-    public MetricsBin getLatestMetricsSummary(final String clusterNodeId,
-                                              final Long serviceOid,
-                                              final int resolution,
-                                              final int duration) {
+    public MetricsSummaryBin summarizeLatest(final String nodeId,
+                                             final Long serviceOid,
+                                             final int resolution,
+                                             final int duration)
+            throws FindException {
         // Computes the summary period by counting back from the latest nominal
         // period boundary time. This is to ensure that we will find a full
         // number of bins filling the given duration (e.g., a 24-hour duration
@@ -172,31 +199,39 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         final long summaryPeriodEnd = MetricsBin.periodStartFor(resolution, _fineBinInterval, System.currentTimeMillis());
         final long summaryPeriodStart = summaryPeriodEnd - duration;
 
-        final MetricsBin summaryBin = new MetricsBin(summaryPeriodStart,
-                duration, resolution, clusterNodeId,
-                serviceOid == null ? -1 : serviceOid.longValue());
-
-        // noinspection unchecked
-        List<MetricsBin> bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
-            public Object doInHibernateReadOnly(Session session) throws HibernateException {
-                final Criteria criteria = session.createCriteria(MetricsBin.class);
-                criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
-                if (clusterNodeId != null) {
-                    criteria.add(Restrictions.eq("clusterNodeId", clusterNodeId));
+        Collection<MetricsBin> bins = null;
+        try {
+            // noinspection unchecked
+            bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                public Object doInHibernateReadOnly(Session session) throws HibernateException {
+                    final Criteria criteria = session.createCriteria(MetricsBin.class);
+                    if (nodeId != null) {
+                        criteria.add(Restrictions.eq("nodeId", nodeId));
+                    }
+                    if (serviceOid != null) {
+                        criteria.add(Restrictions.eq("serviceOid", serviceOid));
+                    }
+                    criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
+                    criteria.add(Restrictions.ge("periodStart", new Long(summaryPeriodStart)));
+                    criteria.add(Restrictions.lt("periodStart", new Long(summaryPeriodEnd)));
+                    return criteria.list();
                 }
-                if (serviceOid != null) {
-                    criteria.add(Restrictions.eq("serviceOid", serviceOid));
-                }
-                criteria.add(Restrictions.ge("periodStart", new Long(summaryPeriodStart)));
-                criteria.add(Restrictions.lt("periodStart", new Long(summaryPeriodEnd)));
-                return criteria.list();
-            }
-        });
-
-        if (bins.size() != 0) {
-            MetricsBin.combine(bins, summaryBin);
+            });
+        } catch (DataAccessException e) {
+            throw new FindException("Cannot find MetricsBins in database. " +
+                                    "(nodeId=" + nodeId +
+                                    ", serviceOid=" + serviceOid +
+                                    ", resolution=" + resolution +
+                                    ", duration=" + duration + ")",
+                                    e);
         }
 
+
+        if (_logger.isLoggable(Level.FINEST)) {
+            _logger.finest("Found " + bins.size() + " metrics bins to summarize.");
+        }
+
+        final MetricsSummaryBin summaryBin = new MetricsSummaryBin(bins);
         summaryBin.setPeriodStart(summaryPeriodStart);
         summaryBin.setInterval(duration);
         summaryBin.setEndTime(summaryPeriodEnd);

@@ -9,13 +9,12 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -178,61 +177,76 @@ public interface ClusterStatusAdmin {
     int getMetricsFineInterval() throws RemoteException;
 
     /**
-     * Finds {@link com.l7tech.service.MetricsBin} instances from the database using the specified
-     * query parameters.  All parameters are optional--pass null in all parameters to find all
-     * MetricsBin instances in the database.
+     * Searches for metrics bins with the given criteria and summarizes by
+     * combining bins with the same period start.
      *
-     * @param nodeId the MAC address of the cluster node to query for; null = any
-     * @param minPeriodStart the minimum {@link com.l7tech.service.MetricsBin#getPeriodStart} value, inclusive; null = no minimum
-     * @param maxPeriodStart the maximum {@link com.l7tech.service.MetricsBin#getPeriodStart} value, inclusive; null = no maximum
-     * @param resolution the {@link com.l7tech.service.MetricsBin#getResolution()} value; null = any. Must be one of {@link com.l7tech.service.MetricsBin#RES_FINE}, {@link com.l7tech.service.MetricsBin#RES_HOURLY} or {@link com.l7tech.service.MetricsBin#RES_DAILY}
-     * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} to find metrics for; null = any.
-     * @return a List of {@link com.l7tech.service.MetricsBin} instances.
+     * @param nodeId            cluster node ID; null = all
+     * @param serviceOid        published service OID; null = all
+     * @param resolution        bin resolution; null = all
+     * @param minPeriodStart    minimum bin period start time; null = as far back as available
+     * @param maxPeriodStart    maximum bin period statt time; null = up to the latest available
+     *
+     * @return collection of summary bins; can be empty but never <code>null</code>
+     * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
-    List<MetricsBin> findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart,
-                         Integer resolution, Long serviceOid) throws RemoteException, FindException;
-
-    /**
-     * Finds the latest metrics bins in the database using the given criteria.
-     *
-     * @param nodeId        the MAC address of the cluster node to query for; <code>null</code> means all
-     * @param duration      time duration (in milliseconds) into the past; based on gateway clock; <code>null</code> means all
-     * @param resolution    the metric bin resolution ({@link com.l7tech.service.MetricsBin#RES_FINE},
-     *                      {@link com.l7tech.service.MetricsBin#RES_HOURLY} or
-     *                      {@link com.l7tech.service.MetricsBin#RES_DAILY}) value;
-     *                      <code>null</code> means all
-     * @param serviceOid    the OID of the {@link com.l7tech.service.PublishedService};
-     *                      <code>null</code> means all
-     * @return a {@link List} of {@link com.l7tech.service.MetricsBin} found
-     */
-    @Transactional(readOnly=true)
-    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
-    List<MetricsBin> findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid)
+    Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
+                                                    final Long serviceOid,
+                                                    final Integer resolution,
+                                                    final Long minPeriodStart,
+                                                    final Long maxPeriodStart)
             throws RemoteException, FindException;
 
     /**
-     * Summarizes the latest metrics bins in the database for the given criteria.
-     * <em>NOTE:</em> This is tagged {@link MethodStereotype#FIND_ENTITIES} so that the interceptor will require READ
-     * against all ServiceMetrics records.
-     * @param clusterNodeId the MAC address of the cluster node to search for
-     * @param serviceOid    the OID of the {@link com.l7tech.service.PublishedService}
-     *                      to search for
-     * @param resolution    the bin resolution to search for
-     * @param duration      time duration (from latest nominal period boundary
-     *                      time on gateway) to search for bins whose nominal
-     *                      periods fall within
-     * @return a {@link MetricsBin} summarizing the bins that fit the given
-     *         criteria
+     * Searches for metrics bins with the given criteria and summarizes by
+     * combining bins with the same period start.
+     *
+     * @param nodeId            cluster node ID; null = all
+     * @param serviceOid        published service OID; null = all
+     * @param resolution        bin resolution; null = all
+     * @param duration          time duration (from current clock time on
+     *                          gateway) to search backward for bins whose
+     *                          nominal periods fall within
+     *
+     * @return collection of summary bins; can be empty but never <code>null</code>
+     * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
-    MetricsBin getLastestMetricsSummary(final String clusterNodeId,
-                                        final Long serviceOid,
-                                        final int resolution,
-                                        final int duration)
-            throws RemoteException;
+    Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
+                                                          final Long serviceOid,
+                                                          final Integer resolution,
+                                                          final long duration)
+            throws RemoteException, FindException;
+
+    /**
+     * Searches for the latest metrics bins for the given criteria and
+     * summarizes by combining them into one summary bin.
+     *
+     * <em>NOTE:</em> This is tagged {@link MethodStereotype#FIND_ENTITIES} so
+     * that the interceptor will require OperationType.READ permission against
+     * all ServiceMetrics records.
+     *
+     * @param nodeId        cluster node ID
+     * @param serviceOid    published service OID
+     * @param resolution    bin resolution
+     * @param duration      time duration (from latest nominal period boundary
+     *                      time on gateway) to search backward for bins whose
+     *                      nominal periods fall within
+     * @return a summary bin
+     * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.METRICS_BIN, stereotype=MethodStereotype.FIND_ENTITIES)
+    MetricsSummaryBin summarizeLatest(final String nodeId,
+                                      final Long serviceOid,
+                                      final int resolution,
+                                      final int duration)
+            throws RemoteException, FindException;
 
     /**
      * Check hardware capabilities of the node that receives this admin request.

@@ -1322,6 +1322,7 @@
                 <include name="com/l7tech/service/SampleMessage.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/MetricsBin.class"/>
+                <include name="com/l7tech/service/MetricsSummaryBin.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
                 <include name="com/l7tech/spring/remoting/rmi/**/*"/>
                 <include name="com/l7tech/spring/remoting/http/**/*"/>

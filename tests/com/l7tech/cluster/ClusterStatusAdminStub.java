@@ -7,12 +7,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.service.MetricsBin;
+import com.l7tech.service.MetricsSummaryBin;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /*
@@ -152,15 +151,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         throw new UnsupportedOperationException();
     }
 
-    public List<MetricsBin> findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public List<MetricsBin> findLatestMetricsBins(String nodeId, Long duration, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+    public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final Long serviceOid, final Integer resolution, final long duration) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
-    public MetricsBin getLastestMetricsSummary(final String clusterNodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException {
+    public MetricsSummaryBin summarizeLatest(final String nodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 
