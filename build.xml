@@ -2712,30 +2712,39 @@
             </fileset>
         </copy>
 
-        <!-- Make scripts executable -->
-        <echo level="info">Setting execute permissions on scripts...</echo>
-        <chmod perm="0755">
-            <fileset dir="${install.src.bin}">
-                <include name="*.sh"/>
-                <include name="*.pl"/>
-                <include name="ssg-initd"/>
-            </fileset>
-            <fileset dir="${install.src.jdk}">
-                <include name="bin/*"/>
-                <include name="jre/bin/*"/>
-            </fileset>
-            <fileset dir="${install.src.tomcat}/bin">
-                <include name="*.sh"/>
-            </fileset>
-        </chmod>
-
         <!-- Create tarball -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating ${tarball}...</echo>
-        <exec executable="tar" dir="${build.dir}/install">
-            <arg line="-czf ${tarball}"/>
-            <arg line="."/>
-        </exec>
+        <tar destfile="${tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="644">
+                <include name="**/*"/>                
+                <exclude name="**/bin/*"/>
+                <exclude name="ssg/dist/*"/>
+            </tarfileset>            
+            <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="755">
+                <include name="**/bin/*"/>
+                <exclude name="**/bin/*.bat"/>
+                <exclude name="**/bin/*.cnf"/>
+                <exclude name="**/bin/*.conf"/>
+                <exclude name="**/bin/*.exe"/>
+                <exclude name="**/bin/*.gz"/>
+                <exclude name="**/bin/*.ini"/>
+                <exclude name="**/bin/*.jar"/>
+                <exclude name="**/bin/*.txt"/>
+                <exclude name="**/bin/*.xml"/>
+            </tarfileset>
+            <tarfileset dir="${build.dir}/install" username="gateway" group="gateway" mode="644">
+                <include name="**/bin/*.bat"/>
+                <include name="**/bin/*.cnf"/>
+                <include name="**/bin/*.conf"/>
+                <include name="**/bin/*.exe"/>
+                <include name="**/bin/*.gz"/>
+                <include name="**/bin/*.ini"/>
+                <include name="**/bin/*.jar"/>
+                <include name="**/bin/*.txt"/>
+                <include name="**/bin/*.xml"/>
+            </tarfileset>
+        </tar>		
         <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
     </target>
 
