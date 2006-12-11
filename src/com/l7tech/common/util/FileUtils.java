@@ -220,17 +220,19 @@ public class FileUtils {
                 deletes = true;
             return deletes;
         } finally {
-            lckFile.delete();
-            if (lock != null)
+            if (lock != null) {
                 try { lock.release(); }
                 catch (IOException e) {
                     logger.log(Level.SEVERE, "Unable to release lock: " + e.getMessage(), e);
                 }
-            if (lockRaf != null)
+            }
+            if (lockRaf != null) {
                 try { lockRaf.close(); }
                 catch (IOException e) {
                     logger.log(Level.SEVERE, "Unable to close lock file: " + e.getMessage(), e);
                 }
+            }
+            lckFile.delete();
         }
     }
 
