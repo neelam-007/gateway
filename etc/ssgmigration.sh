@@ -14,7 +14,7 @@ fi
 # set the current working directory to where this script lives
 cd `dirname $0`
 
-# assume we're running from SSG_ROOT/flasher and deduct SSG_ROOT from there
+# assume we're running from SSG_ROOT/migration and deduct SSG_ROOT from there
 pushd .. > /dev/null
 SSG_ROOT=`pwd`
 popd > /dev/null
@@ -24,6 +24,7 @@ JAVA_HOME=${SSG_ROOT}/jdk
 
 if [ "$1" == "cfgdeamon" ]; then
     ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
+    chown ${SSG_USER} ${SSG_ROOT}/migration/*
     exit
 fi
 
