@@ -81,11 +81,14 @@ public class FlashUtilityLauncher {
                     output.put(arg, "");
                 } else {
                     if ((argparseri+1) >= args.length) {
-                        throw new InvalidArgumentException("A value must be specified for option: " + arg);
+                        output.put(arg, "");
+                    } else if (isOption(args[argparseri+1])) {
+                        output.put(arg, "");
+                    } else {
+                        argparseri++;
+                        String val = getFullValue(args, isPath);
+                        output.put(arg, val);
                     }
-                    argparseri++;
-                    String val = getFullValue(args, isPath);
-                    output.put(arg, val);
                 }
             }
         }

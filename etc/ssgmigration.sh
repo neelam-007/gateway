@@ -25,6 +25,7 @@ JAVA_HOME=${SSG_ROOT}/jdk
 if [ "$1" == "cfgdeamon" ]; then
     ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
     chown ${SSG_USER} ${SSG_ROOT}/migration/*
+    chmod 666 *.log*
     exit
 fi
 
