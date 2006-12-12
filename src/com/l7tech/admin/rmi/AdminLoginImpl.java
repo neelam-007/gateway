@@ -9,13 +9,17 @@ import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -55,6 +59,7 @@ public class AdminLoginImpl
 
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
+    private final Object providerSync = new Object();
     private Set<IdentityProvider> adminProviders;
     private RoleManager roleManager;
     private X509Certificate serverCertificate;
@@ -71,20 +76,20 @@ public class AdminLoginImpl
             // Try internal first (internal accounts with the same credentials should hide externals)
             List<IdentityProvider> providers = new ArrayList<IdentityProvider>();
             Set<IdentityProvider> tempProviders;
-            synchronized(this) {
+            synchronized(providerSync) {
                 tempProviders = adminProviders;
             }
             providers.addAll(tempProviders);
-            Set<Permission> perms = null;
             User user = null;
 
             for (IdentityProvider provider : providers) {
                 try {
                     AuthenticationResult authResult = provider.authenticate(creds);
-                    user = authResult == null ? null : authResult.getUser();
-                    if (user != null) {
-                        perms = getPerms(user);
+                    User authdUser = authResult == null ? null : authResult.getUser();
+                    if (authdUser != null) {
+                        checkPerms(authdUser);
                         logger.info("Authenticated on " + provider.getConfig().getName());
+                        user = authdUser;
                         break;
                     }
                 } catch (AuthenticationException e) {
@@ -92,7 +97,7 @@ public class AdminLoginImpl
                 }
             }
 
-            if (perms == null)
+            if (user == null)
                 throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
             
             logger.info("User '" + user.getLogin() + "' logged in from IP '" +
@@ -104,7 +109,7 @@ public class AdminLoginImpl
 
             String cookie = sessionManager.createSession(user);
 
-            return new AdminLoginResult(user, perms, adminContext, cookie);
+            return new AdminLoginResult(user, adminContext, cookie);
         } catch (ServerNotActiveException snae) {
             logger.log(Level.FINE, "Authentication failed", snae);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(snae);
@@ -114,13 +119,11 @@ public class AdminLoginImpl
         }
     }
 
-    private Set<Permission> getPerms(User user) throws AuthenticationException, FindException {
+    private void checkPerms(User user) throws AuthenticationException, FindException {
         boolean ok = false;
         // TODO is holding any CRUD permission sufficient?
         Collection<Role> roles = roleManager.getAssignedRoles(user);
-        Set<Permission> perms = new HashSet<Permission>();
         roles: for (Role role : roles) {
-            perms.addAll(role.getPermissions());
             for (Permission perm : role.getPermissions()) {
                 if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
                     ok = true;
@@ -131,7 +134,6 @@ public class AdminLoginImpl
 
         if (!ok) throw new AuthenticationException(user.getName() +
                 " does not have privilege to access administrative services");
-        return perms;
     }
 
     private AdminContext makeAdminContext() {
@@ -139,6 +141,64 @@ public class AdminLoginImpl
                     null,null,null,null,null,null,null,null,null,null,
                     SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
                     BuildInfo.getProductVersion());
+    }
+
+    public void changePassword(final String currentPassword, final String newPassword) throws LoginException, RemoteException {
+        if (currentPassword == null || newPassword == null) {
+            throw new AccessControlException("currentPassword and newPassword are both required");
+        }
+
+        try {
+            User remoteUser = JaasUtils.getCurrentUser();
+            if (remoteUser == null)
+                throw new AccessControlException("Authentication error, no user.");
+
+            LoginCredentials creds = new LoginCredentials(remoteUser.getLogin(), currentPassword.toCharArray(), null);
+
+            // Try internal first (internal accounts with the same credentials should hide externals)
+            List<IdentityProvider> providers = new ArrayList<IdentityProvider>();
+            Set<IdentityProvider> tempProviders;
+            synchronized(providerSync) {
+                tempProviders = adminProviders;
+            }
+            providers.addAll(tempProviders);
+            User user = null;
+
+            for (IdentityProvider provider : providers) {
+                try {
+                    AuthenticationResult authResult = provider.authenticate(creds);
+                    User authdUser = authResult == null ? null : authResult.getUser();
+                    if (authdUser != null) {
+                        checkPerms(authdUser);
+                        user = authdUser;
+                        logger.info("Authenticated on " + provider.getConfig().getName() + " (changing password)");
+
+                        if (authdUser instanceof InternalUser) {
+                            ((InternalUser)user).setPassword(newPassword, true);
+                            provider.getUserManager().update(user);
+                        } else {
+                            throw new IllegalStateException("Cannot change password for user.");
+                        }
+
+                        break;
+                    }
+                } catch (AuthenticationException e) {
+                    logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
+                }
+            }
+
+            if (user == null)
+                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
+
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Authentication provider error", e);
+            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
+        } catch (UpdateException e) {
+            logger.log(Level.WARNING, "Authentication provider error", e);
+            throw (AccessControlException) new AccessControlException("Update failed").initCause(e);
+        } catch (InvalidPasswordException ipe) {
+            throw new IllegalArgumentException(ipe.getMessage());    
+        }
     }
 
     public AdminLoginResult resume(String sessionId) throws RemoteException, AuthenticationException {
@@ -150,9 +210,9 @@ public class AdminLoginImpl
 
         try {
             User user = (User) userObj;
-            Set<Permission> perms = getPerms(user);
+            checkPerms(user);
             AdminContext adminContext = makeAdminContext();
-            return new AdminLoginResult(user, perms, adminContext, sessionId);
+            return new AdminLoginResult(user, adminContext, sessionId);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw new AuthenticationException("Authentication failed", e);
@@ -162,8 +222,9 @@ public class AdminLoginImpl
         }
     }
 
-    public void logout(String sessionId) throws RemoteException {
-        sessionManager.destroySession(sessionId);
+    public void logout() throws RemoteException {
+        User user = JaasUtils.getCurrentUser();
+        sessionManager.destroySession(user);
     }
 
     public void setRoleManager(RoleManager roleManager) {
@@ -260,7 +321,7 @@ public class AdminLoginImpl
             }
         }
         
-        synchronized(this) {
+        synchronized(providerSync) {
             this.adminProviders = Collections.unmodifiableSet(adminProviders);
         }
     }

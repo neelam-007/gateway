@@ -89,6 +89,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
+    private JMenuItem changePasswordMenuItem = null;
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
     private JMenuItem auditMenuItem = null;
@@ -114,6 +115,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
+    private ChangePasswordAction changePasswordAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
@@ -305,6 +307,25 @@ public class MainWindow extends JFrame implements SheetHolder {
 
 
     /**
+     * Return the ChangePasswordMenuItem property value.
+     *
+     * @return JMenuItem
+     */
+    private JMenuItem getChangePasswordMenuItem() {
+        if (changePasswordMenuItem != null)
+            return changePasswordMenuItem;
+
+        changePasswordMenuItem = new JMenuItem(getChangePasswordAction());
+        int mnemonic = changePasswordMenuItem.getText().toCharArray()[2];
+        changePasswordMenuItem.setMnemonic(mnemonic);
+        changePasswordMenuItem.setAccelerator(
+                KeyStroke.getKeyStroke(Character.toUpperCase(mnemonic), ActionEvent.ALT_MASK));
+
+        return changePasswordMenuItem;
+    }
+
+
+    /**
      * Return the menuItemPref property value.
      *
      * @return JMenuItem
@@ -381,6 +402,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getConnectMenuItem());
             menu.add(getDisconnectMenuItem());
+            menu.add(getChangePasswordMenuItem());
             if (!isApplet()) {
                 menu.add(getMenuItemPreferences());
                 menu.add(getExitMenuItem());
@@ -708,6 +730,17 @@ public class MainWindow extends JFrame implements SheetHolder {
           };
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return disconnectAction;
+    }
+
+    private ChangePasswordAction getChangePasswordAction() {
+        if (changePasswordAction != null) {
+            return changePasswordAction;
+        }
+        changePasswordAction = new ChangePasswordAction();
+        changePasswordAction.setEnabled(false);
+        this.addLogonListener(changePasswordAction);
+        addPermissionRefreshListener(changePasswordAction);
+        return changePasswordAction;
     }
 
     /**

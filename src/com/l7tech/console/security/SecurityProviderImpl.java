@@ -13,7 +13,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
@@ -50,7 +49,6 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -121,8 +119,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
             User user = result.getUser();
             String sessionCookie = result.getSessionCookie();
-            Set<Permission> perms = result.getPermissions();
-            setAuthenticated(sessionCookie, user, perms, remoteSoftwareVersion, remoteVersion, host);
+            setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
         }
         catch(RemoteAccessException e) {
             Throwable cause = ExceptionUtils.unnestToRoot(e);
@@ -183,9 +180,8 @@ public class SecurityProviderImpl extends SecurityProvider
 
             User user = result.getUser();
             String sessionCookie = result.getSessionCookie(); // Server is allowed to assign a new one if it wishes
-            Set<Permission> perms = result.getPermissions();
 
-            setAuthenticated(sessionCookie, user, perms, remoteSoftwareVersion, remoteVersion, host);
+            setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
 
         } catch (MalformedURLException e) {
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(e);
@@ -203,7 +199,7 @@ public class SecurityProviderImpl extends SecurityProvider
     /**
      * Enable the authenticated state.
      */
-    private void setAuthenticated(String sessionCookie, User user, Set<Permission> perms, String remoteSoftwareVersion, String remoteVersion, String remoteHost)
+    private void setAuthenticated(String sessionCookie, User user, String remoteSoftwareVersion, String remoteVersion, String remoteHost)
     {
         resetCredentials();
 
@@ -234,6 +230,15 @@ public class SecurityProviderImpl extends SecurityProvider
     }
 
     /**
+     * Change admin password.
+     */
+    public void changePassword(final PasswordAuthentication auth, final PasswordAuthentication newAuth)
+            throws LoginException, RemoteException {
+        AdminLogin adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);
+        adminLogin.changePassword(new String(auth.getPassword()), new String(newAuth.getPassword()));
+    }
+
+    /**
      * Logoff the session, explicitely
      */
     public void logoff() {
@@ -246,7 +251,7 @@ public class SecurityProviderImpl extends SecurityProvider
                 new Thread(new Runnable() {
                     public void run() {
                         try {
-                            adminLogin.logout(cookie);
+                            adminLogin.logout();
                         } catch (RemoteException e) {
                             logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
                         } finally {
@@ -257,10 +262,6 @@ public class SecurityProviderImpl extends SecurityProvider
             }
         }
         sessionCookie = null;
-    }
-
-    public String getSessionCookie() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /**
@@ -290,9 +291,7 @@ public class SecurityProviderImpl extends SecurityProvider
         if (event instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)event;
             if (le.getType() == LogonEvent.LOGOFF) {
-                onLogoff(le);
-            } else {
-                onLogon(le);
+                onLogoff();
             }
         }
     }
@@ -410,12 +409,9 @@ public class SecurityProviderImpl extends SecurityProvider
         return (ConfigurableHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");        
     }
 
-    private void onLogoff(LogonEvent e) {
+    private void onLogoff() {
         logger.finer("Disconnect message received, invalidating service lookup reference");
         resetCredentials();
-    }
-
-    private void onLogon(LogonEvent le) {
     }
 
     private String getHost(String hostAndPossiblyPort) {

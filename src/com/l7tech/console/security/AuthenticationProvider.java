@@ -40,8 +40,20 @@ public interface AuthenticationProvider {
      *
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
-    public void login(String sessionId, String host)
+    void login(String sessionId, String host)
       throws LoginException, VersionException, RemoteException;
+
+    /**
+     * Change password.
+     *
+     * @param auth The crededentials to authenticate
+     * @param newAuth The credentials to use from now on.
+     * @throws LoginException On bad credentials
+     * @throws IllegalStateException If the users password cannot be changed.
+     * @throws IllegalArgumentException If the new credentials are not acceptable.
+     */
+    void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) 
+      throws LoginException, RemoteException;
 
     /**
      * Logoff the session

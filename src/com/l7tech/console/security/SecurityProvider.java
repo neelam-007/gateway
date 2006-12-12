@@ -46,12 +46,6 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
     }
 
     /**
-     * Logoff the session, default implementation, that does nothing
-     */
-    public void logoff() {
-    }
-
-    /**
      * Subclasses reset the credentials using this method.
      */
     protected void resetCredentials() {

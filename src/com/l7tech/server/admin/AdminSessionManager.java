@@ -116,4 +116,27 @@ public class AdminSessionManager {
     public synchronized void destroySession(String session) {
         sessionMap.remove(session);
     }
+
+    /**
+     * Attempt to destroy a session for a previously-authenticated user.  Takes no action if the
+     * specified session does not exist.
+     *
+     * @param principal the principal that was originally passed to {@link #createSession}.
+     */
+    public synchronized void destroySession(Principal principal) {
+        boolean destroyed = false;
+        for (Iterator<SessionHolder> iter = sessionMap.values().iterator(); iter.hasNext();) {
+            SessionHolder holder = iter.next();
+            // Object equality, not login name! (one user can have many sessions)
+            if (holder.getPrincipal() == principal) {
+                iter.remove();
+                destroyed = true;
+                break;
+            }
+        }
+
+        if (!destroyed) {
+            logger.warning("Admin session not found for principal '"+principal.getName()+"'.");    
+        }
+    }
 }

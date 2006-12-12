@@ -27,4 +27,17 @@ public class SecurityProviderStub extends SecurityProvider {
     {
         this.user = new UserBean("stubAdmin");
     }
+
+    /**
+     * Change password implementation that throws IllegalArgumentException
+     */
+    public void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) throws LoginException {
+        throw new IllegalArgumentException("Password changing not supported.");
+    }
+
+    /**
+     * Logoff the session, default implementation, that does nothing
+     */
+    public void logoff() {
+    }
 }

@@ -13,9 +13,13 @@ import java.rmi.RemoteException;
 import java.security.AccessControlException;
 
 /**
- * Interface used to establish an admin session.  The methods of this interface are explicitly excluded from admin
- * session security requirements.  If you add a new method, be sure to add its name to the if statement in
- * SecureRemoteInvocationExecutor.
+ * Interface used to establish and manage an admin session.
+ *
+ * <p>Some of the methods of this interface are explicitly excluded from admin
+ * session security requirements.</p>
+ *
+ * <p>If you add a new method, be sure to add its name to the if statement in
+ * SecureRemoteInvocationExecutor.</p>
  *
  * @author emil
  * @version Dec 2, 2004
@@ -34,8 +38,8 @@ public interface AdminLogin extends Remote {
      *         any admin role
      * @throws RemoteException on remote communication error
      */
-    public byte[] getServerCertificate(String username)
-      throws RemoteException, AccessControlException;
+    byte[] getServerCertificate(String username)
+            throws RemoteException, AccessControlException;
 
     /**
      * Method that allows admins to login, returning an interface to
@@ -48,7 +52,7 @@ public interface AdminLogin extends Remote {
      * @throws RemoteException on remote communication error
      * @param password The password of the user.
      */
-    public AdminLoginResult login(String username, String password)
+    AdminLoginResult login(String username, String password)
             throws RemoteException, AccessControlException, LoginException;
 
     /**
@@ -59,17 +63,29 @@ public interface AdminLogin extends Remote {
      * @throws AuthenticationException if the specified session ID is invalid or no longer valid
      * @throws RemoteException  on remote communication error
      */
-    public AdminLoginResult resume(String sessionId)
+    AdminLoginResult resume(String sessionId)
             throws RemoteException, AuthenticationException;
-
 
     /**
      * Method that allows admin to destroy an existing session.  After this method, the specified session ID
      * will not work for resume or for authentication of admin requests.
      *
-     * @param sessionId the session to resume.  If this is not a valid, current session ID this method will
-     *                  silently take no action.
      * @throws RemoteException  on remote communication error
      */
-    public void logout(String sessionId) throws RemoteException;
+    void logout() throws RemoteException;
+
+    /**
+     * Change administrator password.
+     *
+     * <p>This changes the password of the currently logged-in administrator.<p>
+     *
+     * @param currentPassword The users current password.
+     * @param newPassword The new password for the user.
+     * @throws LoginException if the current password is not valid
+     * @throws IllegalArgumentException if the newPassword is not acceptable
+     * @throws IllegalStateException if the password cannot be changed for the user
+     * @throws RemoteException  on remote communication error
+     */
+    void changePassword(String currentPassword, String newPassword)
+            throws LoginException, RemoteException;
 }
