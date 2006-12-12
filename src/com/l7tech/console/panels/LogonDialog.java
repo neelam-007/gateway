@@ -482,14 +482,18 @@ public class LogonDialog extends JDialog {
                                 authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
                           }
                       } catch (Throwable e) {
-                          if (!Thread.currentThread().isInterrupted()) {
+                          if (!progressDialog1.isCancelled()) {
                               memoException = e;
                           }
                       }
                       finally {
+                          if (progressDialog1.isCancelled()) {
+                              // if cancelled, clear the interrupted status so disposal runs cleanly
+                              Thread.interrupted();
+                          }
                           progressDialog1.dispose();
                       }
-                      if (!Thread.currentThread().isInterrupted() && memoException == null) {
+                      if (memoException == null && !progressDialog1.isCancelled()) {
                           return Boolean.TRUE;
                       }
                       return null;

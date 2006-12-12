@@ -2426,18 +2426,19 @@ public class MainWindow extends JFrame implements SheetHolder {
               statusMessage += connectionContext;
               statusMessage += getNodeNameMsg(nodeName);
 
-              getStatusMsgLeft().setText(statusMessage);
-              initalizeWorkspace();
+              final String message = statusMessage;
               final int timeout = preferences.getInactivityTimeout();
               SwingUtilities.invokeLater(new Runnable() {
                   public void run() {
+                      getStatusMsgLeft().setText(message);
+                      initalizeWorkspace();
+                      toggleConnectedMenus(true);
+                      homeAction.actionPerformed(null);
                       MainWindow.this.
                         setInactivitiyTimeout(timeout);
                       MainWindow.this.fireConnected();
                   }
               });
-              toggleConnectedMenus(true);
-              homeAction.actionPerformed(null);
 
               if (lic == null) showLicenseWarning(licInvalid);
           }
