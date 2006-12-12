@@ -135,6 +135,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if (Utilities.getDefaultSystemSelection() != null)
             getSelectionModel().addTreeSelectionListener(tsl);
 
+        // Disable cut (and ctrl-X)
+        putClientProperty(ClipboardActions.CUT_HINT, Boolean.FALSE);
+
         ClipboardActions.replaceClipboardActionMap(this);
 
         // To support "Copy All", need to register a "copyAll" action that does equivalent of Select All followed by Copy.
@@ -1283,7 +1286,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         public int getSourceActions(JComponent c) {
-            return COPY_OR_MOVE;
+            return COPY;
         }
     }
 

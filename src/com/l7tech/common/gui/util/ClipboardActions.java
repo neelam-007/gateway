@@ -375,12 +375,14 @@ public class ClipboardActions {
         map.put(copyName, copyAction);
         final Action cutAction = getCutAction();
         final Action pasteAction = getPasteAction();
-        map.put(cutAction.getValue(Action.NAME), cutAction);
+        if (!noCut(component))
+            map.put(cutAction.getValue(Action.NAME), cutAction);
         map.put(pasteAction.getValue(Action.NAME), pasteAction);
         if (!"copy".equals(copyName)) {
             // Make sure standard names are hooked up as well
             map.put("copy", copyAction);
-            map.put("cut", cutAction);
+            if (!noCut(component))
+                map.put("cut", cutAction);
             map.put("paste", pasteAction);
         }
 
@@ -393,6 +395,10 @@ public class ClipboardActions {
                 }
             });
         }
+    }
+
+    private static boolean noCut(JComponent component) {
+        return Boolean.FALSE.equals(checkProp(component, CUT_HINT));
     }
 
     /**
@@ -472,7 +478,8 @@ public class ClipboardActions {
                 logger.info("No access to system clipboard -- falling back to TransferHandler's actions");
                 // Have to fallback to the transferhandler's actions
                 if ("cut".equals(name) || "l7cut".equals(name)) {
-                    TransferHandler.getCutAction().actionPerformed(e);
+                    if (!noCut(component))
+                        TransferHandler.getCutAction().actionPerformed(e);
                 } else if ("copy".equals(name) || "l7copy".equals(name)) {
                     TransferHandler.getCopyAction().actionPerformed(e);
                 } else if ("paste".equals(name) || "l7paste".equals(name)) {
@@ -486,7 +493,8 @@ public class ClipboardActions {
 
             try {
                 if ("cut".equals(name) || "l7cut".equals(name)) {
-                    transferHandler.exportToClipboard(component, clipboard, TransferHandler.MOVE);
+                    if (!noCut(component))
+                        transferHandler.exportToClipboard(component, clipboard, TransferHandler.MOVE);
                 } else if ("copy".equals(name) || "l7copy".equals(name)) {
                     transferHandler.exportToClipboard(component, clipboard, TransferHandler.COPY);
                 } else if ("paste".equals(name) || "l7paste".equals(name)) {
