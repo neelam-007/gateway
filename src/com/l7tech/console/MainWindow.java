@@ -311,15 +311,18 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return JMenuItem
      */
-    private JMenuItem getChangePasswordMenuItem() {
+    private JMenuItem getChangePasswordMenuItem(final boolean accel) {
         if (changePasswordMenuItem != null)
             return changePasswordMenuItem;
 
         changePasswordMenuItem = new JMenuItem(getChangePasswordAction());
-        int mnemonic = changePasswordMenuItem.getText().toCharArray()[2];
-        changePasswordMenuItem.setMnemonic(mnemonic);
-        changePasswordMenuItem.setAccelerator(
-                KeyStroke.getKeyStroke(Character.toUpperCase(mnemonic), ActionEvent.ALT_MASK));
+
+        if (accel) {
+            int mnemonic = changePasswordMenuItem.getText().toCharArray()[2];
+            changePasswordMenuItem.setMnemonic(mnemonic);
+            changePasswordMenuItem.setAccelerator(
+                    KeyStroke.getKeyStroke(Character.toUpperCase(mnemonic), ActionEvent.ALT_MASK));
+        }
 
         return changePasswordMenuItem;
     }
@@ -402,7 +405,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getConnectMenuItem());
             menu.add(getDisconnectMenuItem());
-            menu.add(getChangePasswordMenuItem());
+            menu.add(getChangePasswordMenuItem(true));
             if (!isApplet()) {
                 menu.add(getMenuItemPreferences());
                 menu.add(getExitMenuItem());
@@ -1613,6 +1616,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageRolesMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageClusterLicensesMenuItem());
+            menu.add(getChangePasswordMenuItem(false));
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
