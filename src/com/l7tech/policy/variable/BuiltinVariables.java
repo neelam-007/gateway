@@ -26,6 +26,7 @@ public class BuiltinVariables {
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
 
     private static final Map metadataByName = new HashMap();
+    private static final Map metadataPresetByName = new HashMap();
 
     public static final String TIMESUFFIX_FORMAT_ISO8601 = "iso8601";
     public static final String TIMESUFFIX_ZONE_UTC = "utc";
@@ -41,6 +42,10 @@ public class BuiltinVariables {
 
     public static boolean isSupported(String name) {
         return getMetadata(name) != null;
+    }
+
+    public static boolean isPredefined(String name) {
+        return getMetadata(name, metadataPresetByName) != null;
     }
 
     public static boolean isSettable(String name) {
@@ -94,18 +99,26 @@ public class BuiltinVariables {
     static {
         for (int i = 0; i < VARS.length; i++) {
             metadataByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
+            // builtin variables that are not set at beginning of context
+            if (!VARS[i].getName().equals(PREFIX_SERVICE_URL)) { // bugzilla 3208, add other non-preset variables as needed
+                metadataPresetByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
+            }
         }
     }
 
     public static VariableMetadata getMetadata(String name) {
+        return getMetadata(name, metadataByName);
+    }
+
+    public static VariableMetadata getMetadata(String name, Map map) {
         final String lname = name.toLowerCase();
-        VariableMetadata var = (VariableMetadata)metadataByName.get(lname);
+        VariableMetadata var = (VariableMetadata)map.get(lname);
         if (var != null) return var;
 
         int pos = lname.length();
         do {
             String tryname = lname.substring(0, pos);
-            var = (VariableMetadata)metadataByName.get(tryname);
+            var = (VariableMetadata)map.get(tryname);
             if (var != null) return var;
             pos = lname.lastIndexOf(".", pos-1);
         } while (pos > 0);

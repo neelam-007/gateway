@@ -441,10 +441,10 @@ class PathValidator {
             final String[] vars = ua.getVariablesUsed();
             for (int i = 0; i < vars.length; i++) {
                 String var = vars[i];
-                if (!(BuiltinVariables.isSupported(var) || seenVariable(var.toLowerCase()))) {
+                if (!(BuiltinVariables.isPredefined(var) || seenVariable(var.toLowerCase()))) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                             "This assertion refers to the variable '" + var + "', which is neither predefined " +
-                            "nor set in the policy.", null));
+                            "nor set in the policy so far.", null));
                 }
             }
         }
