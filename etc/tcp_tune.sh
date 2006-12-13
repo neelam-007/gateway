@@ -42,9 +42,10 @@ start() {
 	echo "Setting higher tcp memory limits"
 	echo 16777216 > /proc/sys/net/core/wmem_max
 	echo 16777216 > /proc/sys/net/core/rmem_max
-	echo "8192 87380 16777216" > /proc/sys/net/ipv4/tcp_rmem
-	echo "8192 87380 16777216" > /proc/sys/net/ipv4/tcp_wmem
-	echo "8000000 9000000 10000000" > /proc/sys/net/ipv4/tcp_mem
+	echo "16777216 16777216 16777216" > /proc/sys/net/ipv4/tcp_mem
+	echo "Setting socket sizes for best cpu usage"
+	echo "4096 4096 16777216" > /proc/sys/net/ipv4/tcp_rmem
+	echo "4096 4096 16777216" > /proc/sys/net/ipv4/tcp_wmem
 	echo "Turning on TIME_WAIT recyle and reuse"
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse
@@ -53,14 +54,15 @@ start() {
 	echo "Turning on syncookie protection from Denial of Service (DOS) attacks"
 	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
 	echo "Don't cache thresholds from previous connections"
-    echo 1 > /proc/sys/net/ipv4/tcp_no_metrics_save
-    echo "Increase Network backlogs for Gigabit"
-    echo 2500> /proc/sys/net/core/netdev_max_backlog
-    echo "Increase maximum connections"
-    echo 1024 > /proc/sys/net/core/somaxconn
-
-    echo "Done"
-    return 0
+    	echo 1 > /proc/sys/net/ipv4/tcp_no_metrics_save
+    	echo "Increase Network backlogs for Gigabit"
+    	echo 2500 > /proc/sys/net/core/netdev_max_backlog
+    	echo "Increase maximum connections"
+    	echo 1024 > /proc/sys/net/core/somaxconn
+	echo "Memory limit for fragment assembly"
+        echo 4194304 > /proc/sys/net/ipv4/ipfrag_high_thresh
+	echo "Done"
+	return 0
 }
 stop() {
 	echo 
