@@ -17,10 +17,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import java.io.StringReader;
 import java.rmi.RemoteException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -120,26 +117,21 @@ public class ServiceNode extends EntityHeaderNode {
 
         }
 
-        if (!svc.isSoap()) {
-            return new Action[]{
-                new EditServicePolicyAction(this),
-                new EditServiceRoutingURIAction(this),
-                new EditServiceNameAction(this),
-                ea,
-                da,
-                new DeleteServiceAction(this)};
-        } else {
-            return new Action[]{
-                new EditServicePolicyAction(this),
-                new ViewServiceWsdlAction(this),
-                new FeedNewWSDLToPublishedServiceAction(this),
-                new EditServiceRoutingURIAction(this),
-                new EditServiceNameAction(this),
-                new PublishPolicyToSystinetRegistry(this),
-                ea,
-                da,
-                new DeleteServiceAction(this)};
-        }
+        boolean s = svc.isSoap();
+        boolean a = TopComponents.getInstance().isApplet();
+        Collection<Action> actions = new ArrayList<Action>();
+
+        actions.add(new EditServicePolicyAction(this));
+        if (s) actions.add(new ViewServiceWsdlAction(this));
+        if (s) actions.add(new FeedNewWSDLToPublishedServiceAction(this));
+        actions.add(new EditServiceRoutingURIAction(this));
+        actions.add(new EditServiceNameAction(this));
+        if (s && !a) actions.add(new PublishPolicyToSystinetRegistry(this));
+        actions.add(ea);
+        actions.add(da);
+        actions.add(new DeleteServiceAction(this));
+
+        return actions.toArray(new Action[0]);
     }
 
     /**
