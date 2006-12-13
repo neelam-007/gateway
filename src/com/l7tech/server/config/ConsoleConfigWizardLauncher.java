@@ -6,10 +6,7 @@ import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.io.*;
 
 /**
@@ -61,18 +58,18 @@ public class ConsoleConfigWizardLauncher {
 
         consoleWizard = new ConfigurationWizard(wizardInput, wizardOutput);
         consoleWizard.setSteps(getSteps(consoleWizard));
-        consoleWizard.addAdditionalCommands(getAdditionalCommands());
+        consoleWizard.setAdditionalCommands(getAdditionalCommands());
 
         consoleWizard.startWizard();
     }
 
     private static Set<ConfigurationCommand> getAdditionalCommands() {
-        Set<ConfigurationCommand> additionalCommands = new HashSet<ConfigurationCommand>();
+        Set<ConfigurationCommand> additionalCommands = new LinkedHashSet<ConfigurationCommand>();
 
         //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
-        additionalCommands.add(new AppServerConfigCommand());
         additionalCommands.add(new LoggingConfigCommand(null));
         additionalCommands.add(new RmiConfigCommand(null));
+        additionalCommands.add(new AppServerConfigCommand());
         return additionalCommands;
     }
 
