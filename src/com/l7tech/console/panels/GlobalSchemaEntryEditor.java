@@ -15,6 +15,7 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
@@ -325,7 +326,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
                 tns = XmlUtil.getSchemaTNS(contents);
             } catch (XmlUtil.BadSchemaException e) {
                 logger.log(Level.WARNING, "problem parsing schema", e);
-                JOptionPane.showMessageDialog(this, "This is not a legal xml schema. Consult log for more details",
+                JOptionPane.showMessageDialog(this, "This is not a legal xml schema: " + ExceptionUtils.getMessage(e),
                                                     "Illegal Schema",
                                                     JOptionPane.ERROR_MESSAGE);
                 return;

@@ -204,21 +204,20 @@ public class GlobalSchemaDialog extends JDialog {
         // get new selection
         int selectedRow = schemaTable.getSelectedRow();
         // decide whether or not the remove button should be enabled
-        boolean validSelection = false;
-        validSelection = selectedRow >= 0;
+        boolean validSelection = selectedRow >= 0;
+        boolean isSystem = validSelection && globalSchemas.get(selectedRow).isSystem();
 
         addbutton.setEnabled(flags.canCreateSome());
         removebutton.setEnabled(false);
         resetbutton.setEnabled(false);
         if (flags.canDeleteSome() && validSelection) {
-            SchemaEntry schemaEntry = globalSchemas.get(schemaTable.getSelectedRow());
-            if (schemaEntry.isSystem()) {
+            if (isSystem) {
                 resetbutton.setEnabled(true);
             } else {
                 removebutton.setEnabled(true);                
             }
         }
-        editbutton.setText(flags.canUpdateSome()?"Edit":"View");
+        editbutton.setText(flags.canUpdateSome() && !isSystem ? "Edit" : "View");
         editbutton.setEnabled(validSelection);
     }
 
@@ -229,6 +228,9 @@ public class GlobalSchemaDialog extends JDialog {
         }
         final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry, flags.canUpdateSome());
         dlg.pack();
+        Dimension dim = dlg.getSize();
+        dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
+        dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
@@ -370,9 +372,14 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void edit() {
-        final SchemaEntry toedit = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
-        final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome());
+        int selectedRow = schemaTable.getSelectedRow();
+        if (selectedRow < 0) return;
+        final SchemaEntry toedit = (SchemaEntry)globalSchemas.get(selectedRow);
+        final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome() && !toedit.isSystem());
         dlg.pack();
+        Dimension dim = dlg.getSize();
+        dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
+        dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {

@@ -19,16 +19,14 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,51 +76,15 @@ public class SchemaEntryManagerImpl
         Collection<SchemaEntry> output = super.findAll();
 
         // make sure the soapenv schema is always there
-        if (!containsSoapEnv(output)) {
-            output = addSoapEnv(output);
-        }
+        output = addSoapEnv(output);
 
         return output;
     }
 
-    private boolean containsSoapEnv(Collection<SchemaEntry> schemaEntries) {
-        return containsSchemaWithName(schemaEntries, SOAP_SCHEMA_NAME);
-    }
-
-    private boolean containsSchemaWithName(Collection<SchemaEntry> schemaEntries, String schemaName) {
-        boolean contains = false;
-
-        for (SchemaEntry schemaEntry : schemaEntries) {
-            if (schemaName.equals(schemaEntry.getName())) {
-                contains = true;
-                break;
-            }
-        }
-
-        return contains;
-    }
-
-
     private Collection<SchemaEntry> addSoapEnv(Collection<SchemaEntry> collection) {
-        SchemaEntry defaultEntry = newDefaultEntry();
-        try {
-            defaultEntry.setOid(save(defaultEntry));
-        } catch (SaveException e) {
-            logger.log(Level.WARNING, "cannot save default soap xsd", e);
-        }
         ArrayList<SchemaEntry> completeList = new ArrayList<SchemaEntry>(collection);
-        completeList.add(defaultEntry);
+        completeList.add(SOAP_SCHEMA_ENTRY);
         return completeList;
-    }
-
-    private void updateSystem(SchemaEntry schemaEntry) {
-        if (schemaEntry != null) {
-            if (SOAP_SCHEMA_NAME.equals(schemaEntry.getName())) {
-                schemaEntry.setSystem(true);
-            } else {
-                schemaEntry.setSystem(false);
-            }
-        }
     }
 
     /**
@@ -140,7 +102,7 @@ public class SchemaEntryManagerImpl
                 return q.list();
             }});
 
-        if (SOAP_SCHEMA_NAME.equals(schemaName) && !containsSoapEnv(output)) {
+        if (SOAP_SCHEMA_NAME.equals(schemaName)) {
             output = addSoapEnv(output);
         }
 
@@ -162,20 +124,48 @@ public class SchemaEntryManagerImpl
                 return q.list();
             }});
 
-        if (SOAP_SCHEMA_TNS.equals(tns) && !containsSoapEnv(output)) {
+        if (SOAP_SCHEMA_TNS.equals(tns)) {
             output = addSoapEnv(output);
         }
 
         return output;
     }
 
+    @Transactional(readOnly=true)
+    public SchemaEntry findByPrimaryKey(long oid) throws FindException {
+        if (SOAP_SCHEMA_OID == oid)
+            return SOAP_SCHEMA_ENTRY;
+        return super.findByPrimaryKey(oid);
+    }
+
+    protected boolean delete(Class entityClass, long oid) throws DeleteException {
+        if (SOAP_SCHEMA_OID == oid)
+            throw new DeleteException("The SOAP schema cannot be deleted");
+        return super.delete(entityClass, oid);
+    }
+
+    @Transactional(readOnly=true)
+    public Collection<EntityHeader> findAllHeaders() throws FindException {
+        ArrayList<EntityHeader> completeList = new ArrayList<EntityHeader>(super.findAllHeaders());
+        completeList.add(SOAP_SCHEMA_HEADER);
+        return completeList;
+    }
+
+    @Transactional(readOnly=true)
+    public SchemaEntry findEntity(long oid) throws FindException {
+        if (SOAP_SCHEMA_OID == oid)
+            return SOAP_SCHEMA_ENTRY;
+        return super.findEntity(oid);
+    }
+
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public long save(SchemaEntry newSchema) throws SaveException {
+        if (newSchema.getOid() == SOAP_SCHEMA_OID)
+            throw new SaveException("The SOAP schema cannot be saved");
+
         if (newSchema.getOid() != SchemaEntry.DEFAULT_OID) {
             invalidateCompiledSchema(newSchema.getOid());
         }
-
-        updateSystem(newSchema);
 
         long res = super.save(newSchema);
 
@@ -191,11 +181,12 @@ public class SchemaEntryManagerImpl
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void update(SchemaEntry schemaEntry) throws UpdateException {
+        if (schemaEntry.getOid() == SOAP_SCHEMA_OID)
+            throw new UpdateException("The SOAP schema cannot be updated");
+
         if (schemaEntry.getOid() != SchemaEntry.DEFAULT_OID) {
             invalidateCompiledSchema(schemaEntry.getOid());
         }
-
-        updateSystem(schemaEntry);
 
         super.update(schemaEntry);
 
@@ -210,6 +201,8 @@ public class SchemaEntryManagerImpl
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void delete(SchemaEntry existingSchema) throws DeleteException {
+        if (SOAP_SCHEMA_OID == existingSchema.getOid())
+            throw new DeleteException("The SOAP schema cannot be deleted");
         try {
             super.delete(existingSchema);
         } finally {
@@ -248,18 +241,9 @@ public class SchemaEntryManagerImpl
         }
     }
 
-    private SchemaEntry newDefaultEntry() {
-        SchemaEntry defaultEntry = new SchemaEntry();
-        defaultEntry.setSchema(SOAP_SCHEMA);
-        defaultEntry.setName(SOAP_SCHEMA_NAME);
-        defaultEntry.setTns(SOAP_SCHEMA_TNS);
-        defaultEntry.setSystem(true);
-        return defaultEntry;
-    }
-
     private void compileAndCache(long oid, SchemaEntry entry) throws SAXException, IOException {
         String systemId = entry.getName();
-        if (systemId == null) systemId = "policy:communityschema:" + oid;
+        if (systemId == null) systemId = "policy:SchemaEntry:" + oid;
         String schemaString = entry.getSchema();
         if (schemaString == null) schemaString = "";
         schemaManager.registerSchema(systemId, schemaString);
@@ -275,6 +259,7 @@ public class SchemaEntryManagerImpl
 
     /**
      * Ensure that no SchemaEntry with this oid has a corresponding cached CompiledSchema.
+     * @param oid the OID of the schema entry to invalidate
      * @return true if there was a matching cached CompiledSchema and it was removed.
      */
     private boolean invalidateCompiledSchema(long oid) {
@@ -299,12 +284,18 @@ public class SchemaEntryManagerImpl
         return TABLE_NAME;
     }
 
+    @Transactional(propagation=SUPPORTS)
+    public EntityType getEntityType() {
+        return EntityType.SCHEMA_ENTRY;
+    }
+
     @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }
 
-    private static final String TABLE_NAME = "community_schema";
+    private static final String TABLE_NAME = "community_schemas";
+    private static final long SOAP_SCHEMA_OID = -3L;
     private static final String SOAP_SCHEMA_NAME = "soapenv";
     private static final String SOAP_SCHEMA_TNS = "http://schemas.xmlsoap.org/soap/envelope/";
     private static final String SOAP_SCHEMA = "<?xml version='1.0' encoding='UTF-8' ?>\n" +
@@ -384,4 +375,17 @@ public class SchemaEntryManagerImpl
             "  </xs:complexType>\n" +
             "</xs:schema>";
 
+
+    public static final SchemaEntry SOAP_SCHEMA_ENTRY = new SchemaEntry();
+    static {
+        SOAP_SCHEMA_ENTRY.setSchema(SOAP_SCHEMA);
+        SOAP_SCHEMA_ENTRY.setName(SOAP_SCHEMA_NAME);
+        SOAP_SCHEMA_ENTRY.setTns(SOAP_SCHEMA_TNS);
+        SOAP_SCHEMA_ENTRY.setOid(SOAP_SCHEMA_OID);
+        SOAP_SCHEMA_ENTRY.setSystem(true);
+    }
+    public static final EntityHeader SOAP_SCHEMA_HEADER = new EntityHeader(Long.toString(SOAP_SCHEMA_OID),
+                                                                           EntityType.SCHEMA_ENTRY,
+                                                                           SOAP_SCHEMA_ENTRY.getName(),
+                                                                           "");
 }

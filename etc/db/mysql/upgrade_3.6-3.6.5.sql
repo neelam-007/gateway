@@ -42,3 +42,6 @@ alter table service_metrics modify column nodeid varchar(32) NOT NULL;
 update service_usage set nodeid = MD5(CONCAT(nodeid, '-default_'));
 update audit_main set nodeid = MD5(CONCAT(nodeid, '-default_'));
 update service_metrics set nodeid = MD5(CONCAT(nodeid, '-default_'));
+
+-- Remove SOAP schema, which has gone virtual
+delete from community_schemas where tns='http://schemas.xmlsoap.org/soap/envelope/';
