@@ -66,7 +66,7 @@ public class AssertionMessages extends Messages {
     public static final M IDPROV_MISMATCH                         = m(4210, Level.FINE, "Authentication failed because providers id did not match ({0} instead of {1}).");
     public static final M USERID_MISMATCH                         = m(4211, Level.FINE, "Authentication failed because the user id did not match.");
     public static final M LOGIN_MISMATCH                          = m(4212, Level.FINE, "Authentication failed because the login did not match.");
-    public static final M GROUP_NOTEXIST                          = m(4213, Level.SEVERE, "This assertion refers to a group that does not exist. Policy might be corrupted");
+    public static final M GROUP_NOTEXIST                          = m(4213, Level.WARNING, "This assertion refers to a group that does not exist. Policy might be corrupted");
     public static final M USER_NOT_IN_GROUP                       = m(4214, Level.FINE, "User not member of group");
     public static final M CACHED_GROUP_MEMBERSHIP_FAILURE         = m(4215, Level.FINE, "Reusing cached group membership failure");
 
