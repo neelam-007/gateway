@@ -29,7 +29,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     private static final String STEP_INFO = "This step lets you create or set up a connection to the SSG database";
     private static final String HEADER_SELECT_PARTITION = "-- Select The Partition To Configure --" + getEolChar();
     private static final String HEADER_ADD_PARTITION = "-- Add A New Partition --" + getEolChar();
-    private static final String HEADER_DELETE_PARTITION = "-- Select a Partition To Delete --" + getEolChar();
+    private static final String HEADER_DELETE_PARTITION = "-- Select a Partition To Delete (the default_ partition cannot be deleted)--" + getEolChar();
 
     private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Select an Endpoint to configure for the \"{0}\" Partition --" + getEolChar();
     private static final String SELECT_EXISTING_PARTITION = ") Select an Existing Partition" + getEolChar();
@@ -143,30 +143,37 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         prompts.add(HEADER_DELETE_PARTITION);
         int index = 1;
         List<String> nameList = new ArrayList<String>(partitionNames);
+        nameList.remove(PartitionInformation.DEFAULT_PARTITION_NAME);
+        if (nameList.isEmpty()) {
+            printText("\nThere are no partitions other than the default_ partition, which cannot be deleted.\n");
+            printText("Please select another option.\n\n");
 
-        for (String partitionName : nameList) {
-            prompts.add(String.valueOf(index++) + ") " + partitionName + getEolChar());
-        }
+        } else {
 
-        String defaultValue = "1";
-        prompts.add("Please make a selection: [" + defaultValue + "] ");
+            for (String partitionName : nameList) {
+                prompts.add(String.valueOf(index++) + ") " + partitionName + getEolChar());
+            }
 
-        String[] allowedEntries = new String[index -1];
-        for (int i = 0; i < allowedEntries.length; i++) {
-            allowedEntries[i]= String.valueOf(i + 1);
-        }
+            String defaultValue = "1";
+            prompts.add("Please make a selection: [" + defaultValue + "] ");
 
-        String whichPartition = getData(prompts, defaultValue, allowedEntries);
-        int whichIndex = Integer.parseInt(whichPartition) -1;
+            String[] allowedEntries = new String[index -1];
+            for (int i = 0; i < allowedEntries.length; i++) {
+                allowedEntries[i]= String.valueOf(i + 1);
+            }
 
-        String whichPartitionName = nameList.get(whichIndex);
+            String whichPartition = getData(prompts, defaultValue, allowedEntries);
+            int whichIndex = Integer.parseInt(whichPartition) -1;
 
-        boolean confirmed = getConfirmationFromUser("Are you sure you want to delete the \"" + whichPartitionName + "\" partition? This cannot be undone.");
-        if (confirmed) {
-            PartitionActions pa = new PartitionActions(osFunctions);
-            pa.removePartition(PartitionManager.getInstance().getPartition(whichPartitionName));
-            PartitionManager.getInstance().removePartition(whichPartitionName);
-            partitionNames = PartitionManager.getInstance().getPartitionNames();
+            String whichPartitionName = nameList.get(whichIndex);
+
+            boolean confirmed = getConfirmationFromUser("Are you sure you want to delete the \"" + whichPartitionName + "\" partition? This cannot be undone.");
+            if (confirmed) {
+                PartitionActions pa = new PartitionActions(osFunctions);
+                pa.removePartition(PartitionManager.getInstance().getPartition(whichPartitionName));
+                PartitionManager.getInstance().removePartition(whichPartitionName);
+                partitionNames = PartitionManager.getInstance().getPartitionNames();
+            }
         }
     }
 
@@ -273,7 +280,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             input = getData(prompts.toArray(new String[0]), httpHolder.port, portPattern, "The port you have entered is invalid. Please re-enter");
 
             httpHolder.port = input;
-            
+
         } else if (holder instanceof PartitionInformation.OtherEndpointHolder) {
             PartitionInformation.OtherEndpointHolder otherHolder = (PartitionInformation.OtherEndpointHolder) holder;
 

@@ -61,7 +61,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private List<PartitionInformation> partitionsAdded;
     private int newPartitionIndex = 0;
-    
+
     ActionListener managePartitionActionListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
             doManagePartition(e);
@@ -151,15 +151,17 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         Object[] deleteThem = partitionList.getSelectedValues();
         for (Object o : deleteThem) {
             final PartitionInformation pi = (PartitionInformation) o;
-            Utilities.doWithConfirmation(
-                ConfigWizardPartitioningPanel.this,
-                "Remove Partition", "Are you sure you want to remove the \"" + pi.getPartitionId() + "\" partition? This cannot be undone.",
-                new Runnable() {
-                    public void run() {
-                        partitionListModel.remove(pi);
+            if (!pi.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
+                Utilities.doWithConfirmation(
+                    ConfigWizardPartitioningPanel.this,
+                    "Remove Partition", "Are you sure you want to remove the \"" + pi.getPartitionId() + "\" partition? This cannot be undone.",
+                    new Runnable() {
+                        public void run() {
+                            partitionListModel.remove(pi);
+                        }
                     }
-                }
-            );
+                );
+            }
         }
         enableEditDeletePartitionButtons();
     }
@@ -204,7 +206,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                 enableNameField();
             }
         });
-        
+
         httpEndpointsTable.getModel().addTableModelListener(new TableModelListener() {
             public void tableChanged(TableModelEvent e) {
                 enableButtons();
@@ -290,7 +292,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
 
         int index = partitionList.getSelectedIndex();
-        
+
         //if nothing is selected yet, select the first element
         if (index < 0) {
             index = 0;
@@ -376,7 +378,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             else
                 return partitions.get(0);
         }
-        
+
         public void add(PartitionInformation newpartition) {
             if (!partitions.contains(newpartition)) {
                 try {
