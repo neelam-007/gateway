@@ -82,6 +82,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(_resources.getString("rightPanel.timeFormat"));
 
     private static final MessageFormat STATUS_UPDATED_FORMAT = new MessageFormat(_resources.getString("status.updated"));
+    private static final String METRICS_NOT_ENABLED = _resources.getString("status.notEnabled");
 
     private static final long FINE_CHART_TIME_RANGE = 10 * 60 * 1000; // 10 minutes
     private static final long HOURLY_CHART_TIME_RANGE = 60 * 60 * 60 * 1000; // 60 hours
@@ -437,8 +438,12 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
                 numRoutingFailureField.setText(Integer.toString(latestBin.getNumRoutingFailure()));
                 numSuccessField.setText(Integer.toString(latestBin.getNumSuccess()));
                 numTotalField.setText(Integer.toString(latestBin.getNumTotal()));
+            }
 
+            if (clusterStatusAdmin.isMetricsEnabled()) {
                 statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
+            } else {
+                statusLabel.setText(METRICS_NOT_ENABLED);
             }
 
             if (!_connected) {  // Previously disconnected.

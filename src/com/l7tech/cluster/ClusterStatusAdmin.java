@@ -169,6 +169,12 @@ public interface ClusterStatusAdmin {
     void installNewLicense(String newLicenseXml) throws RemoteException, UpdateException, InvalidLicenseException;
 
     /**
+     * @return whether collection of service metrics is currently enabled
+     * @throws RemoteException on remote communication error
+     */
+    boolean isMetricsEnabled() throws RemoteException;
+
+    /**
      * Gets the time interval (in milliseconds) of the service metrics fine resolution bin.
      *
      * @return the fine bin interval in milliseconds

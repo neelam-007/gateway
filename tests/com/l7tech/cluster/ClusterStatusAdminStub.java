@@ -17,8 +17,6 @@ import java.util.Map;
 /*
  * Test stub for ClusterStatusAdmin interface
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
@@ -145,6 +143,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         } catch (Exception e) {
             throw new InvalidLicenseException(e.getMessage(), e);
         }
+    }
+
+    public boolean isMetricsEnabled() throws RemoteException {
+        throw new UnsupportedOperationException();
     }
 
     public int getMetricsFineInterval() throws RemoteException {

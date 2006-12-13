@@ -64,6 +64,13 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     }
 
     /**
+     * @return whether collection of service metrics is currently enabled
+     */
+    public boolean isEnabled() {
+        return _enabled;
+    }
+
+    /**
      * Gets the service metrics for a given published service.
      *
      * @param serviceOid    OID of published service
