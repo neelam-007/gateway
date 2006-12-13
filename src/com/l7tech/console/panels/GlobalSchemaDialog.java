@@ -212,9 +212,6 @@ public class GlobalSchemaDialog extends JDialog {
         }
         final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry, flags.canUpdateSome());
         dlg.pack();
-        Dimension dim = dlg.getSize();
-        dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
-        dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
@@ -355,9 +352,6 @@ public class GlobalSchemaDialog extends JDialog {
         final SchemaEntry toedit = globalSchemas.get(selectedRow);
         final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome() && !toedit.isSystem());
         dlg.pack();
-        Dimension dim = dlg.getSize();
-        dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
-        dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
