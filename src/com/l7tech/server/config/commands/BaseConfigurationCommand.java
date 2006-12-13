@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.common.util.ResourceUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -73,7 +74,7 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
             } finally {
                 if (zos != null) {
                     try { zos.finish(); } catch (IOException e) {}
-                    try { zos.close(); } catch (IOException e) {}
+                    ResourceUtils.closeQuietly(zos);
                 }
             }
         }

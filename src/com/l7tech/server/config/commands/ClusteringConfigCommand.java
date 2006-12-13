@@ -4,6 +4,7 @@ import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.ClusteringType;
+import com.l7tech.common.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -103,12 +104,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                }
-            }
+            ResourceUtils.closeQuietly(fos);
         }
     }
 

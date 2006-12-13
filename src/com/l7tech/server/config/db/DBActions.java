@@ -3,6 +3,7 @@ package com.l7tech.server.config.db;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.common.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -505,10 +506,7 @@ public class DBActions {
                         "could not load the database configuration file. Tried: " +
                                 oldConfigLocation.getAbsolutePath() + " and " + templatePartitionDir.getAbsolutePath());
         } finally {
-            if (is != null)
-                try {
-                    is.close();
-                } catch (IOException e) {}
+            ResourceUtils.closeQuietly(is);
         }
     }
 

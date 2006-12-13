@@ -14,12 +14,12 @@ import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
-import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -61,7 +61,6 @@ public class ConfigurationWizard extends Wizard {
     private Set<ConfigurationCommand> additionalCommands;
     private ManualStepsManager manualSteps;
     private ClusteringType clusteringType;
-//    private String partitionName;
 
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
@@ -90,7 +89,7 @@ public class ConfigurationWizard extends Wizard {
         setTitle("SSG Configuration Wizard for " + OSDetector.getOSSpecificFunctions().getOSName() + " (Version " + getCurrentVersion() + ")");
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
-        wizardInput = new HashSet<ConfigurationCommand>();
+        wizardInput = new LinkedHashSet<ConfigurationCommand>();
         manualSteps = new ManualStepsManager();
 
         setupAdditionalCommands();
@@ -112,13 +111,14 @@ public class ConfigurationWizard extends Wizard {
     }
 
     private void setupAdditionalCommands() {
-        additionalCommands = new HashSet<ConfigurationCommand>();
+        additionalCommands = new LinkedHashSet<ConfigurationCommand>();
         //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
-        additionalCommands.add(new AppServerConfigCommand());
 
         //we need to add these to make sure that non clustering/db/etc. specific actions occur
         additionalCommands.add(new LoggingConfigCommand(null));
         additionalCommands.add(new RmiConfigCommand(null));
+        
+        additionalCommands.add(new AppServerConfigCommand());
     }
 
     /**
@@ -132,7 +132,7 @@ public class ConfigurationWizard extends Wizard {
      */
     public void applyConfiguration() {
         log.info("Applying the configuration changes");
-        Set<ConfigurationCommand>commands = (HashSet<ConfigurationCommand>) wizardInput;
+        Set<ConfigurationCommand>commands = (Set<ConfigurationCommand>) wizardInput;
 
         commands.addAll(additionalCommands);
 

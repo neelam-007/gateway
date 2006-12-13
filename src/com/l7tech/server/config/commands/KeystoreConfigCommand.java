@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.PropertyHelper;
@@ -549,17 +550,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } catch (FileNotFoundException e) {
         } catch (IOException e) {
         } finally {
-            if (emptyCaFileStream != null) {
-                try {
-                    emptyCaFileStream.close();
-                } catch (IOException e) {}
-            }
-
-            if (emptySslFileStream != null) {
-                try {
-                    emptySslFileStream.close();
-                } catch (IOException e) {}
-            }
+            ResourceUtils.closeQuietly(emptyCaFileStream);
+            ResourceUtils.closeQuietly(emptySslFileStream);
         }
 
 
@@ -614,16 +606,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         } catch (SAXException e) {
             e.printStackTrace();
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {}
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {}
-            }
+            ResourceUtils.closeQuietly(fis);
+            ResourceUtils.closeQuietly(fos);
         }
     }
 
@@ -668,11 +652,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.severe(ioex.getMessage());
             throw ioex;
         } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {}
-            }
+            ResourceUtils.closeQuietly(fos);
         }
     }
 

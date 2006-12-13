@@ -1,6 +1,6 @@
 package com.l7tech.server.config.commands;
 
-import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -28,7 +28,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
     PartitionConfigBean partitionBean;
 
-    //TODO add some useful patterns here
     private static final String SERVICE_NAME_KEY = "SERVICE_NAME";
     private static final String SERVICE_DISPLAY_NAME_KEY = "PR_DISPLAYNAME";
     private static final String SERVICE_LOGPREFIX_KEY = "PR_LOGPREFIX";
@@ -66,9 +65,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         try {
             updatePartitionEndpoints(pInfo);
             updateSystemProperties(pInfo);
-            if (pInfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
-                copyDefaultServerConfig(pInfo);
-            }
             updateStartupScripts(pInfo);
             updateFirewallRules(pInfo);
             enablePartitionForStartup(pInfo);
@@ -76,14 +72,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             success = false;
         }
         return success;
-    }
-
-    private void copyDefaultServerConfig(PartitionInformation pInfo) throws IOException {
-        if (pInfo.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
-            File source = new File(pInfo.getOSSpecificFunctions().getTomcatServerConfig());
-            File destination = new File(pInfo.getOSSpecificFunctions().getSsgInstallRoot() + "/tomcat/conf/server.xml");
-            FileUtils.copyFile(source, destination);
-        }
     }
 
     private void updateStartupScripts(PartitionInformation pInfo) throws IOException, InterruptedException {
@@ -149,8 +137,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             logger.warning("Error while modifying the windows service configuration for the \"" + partitionName + "\" partition. [" + e.getMessage() +"]");
             throw e;
         } finally {
-            if (os != null)
-                os.close();
+            ResourceUtils.closeQuietly(os);
         }
     }
 
@@ -201,13 +188,8 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
                 pInfo.setShouldDisable(true);
                 enablePartitionForStartup(pInfo);
             } finally {
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException e) {}
-                }
+                ResourceUtils.closeQuietly(fos);
             }
-
         }
     }
 
@@ -254,20 +236,12 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             if (StringUtils.isNotEmpty(rmiEndpoint.port))
                 prop.setProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT, rmiEndpoint.port);
 
-//            PartitionInformation.OtherEndpointHolder shutdownEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
-//            if (StringUtils.isNotEmpty(shutdownEndpoint.port))
-//                prop.setProperty(PartitionConfigBean.SYSTEM_PROP_TOMCATSHUTDOWNPORT, shutdownEndpoint.port);
-
             prop.setProperty(PartitionConfigBean.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
 
             fos = new FileOutputStream(systemPropertiesFile);
             prop.store(fos, "");
         } finally {
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (IOException e) {}
-            if (fos != null) fis.close();
+            ResourceUtils.closeQuietly (fis);
         }
     }
 
@@ -295,7 +269,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             fos = new FileOutputStream(foo.getTomcatServerConfig());
             XmlUtil.nodeToOutputStream(serverConfigDom, fos);
         }finally {
-            if (fos != null) fos.close();
+            ResourceUtils.closeQuietly(fos);
         }
     }
 
@@ -321,12 +295,12 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             fos = new FileOutputStream(foo.getTomcatServerConfig());
             XmlUtil.nodeToOutputStream(serverConfigDom, fos);
         }finally {
-            if (fos != null) fos.close();
+            ResourceUtils.closeQuietly(fos);
         }
     }
 
     private void doEndpointTypeAwareUpdates(List<PartitionInformation.HttpEndpointHolder> endpoints, Document serverConfig) {
-        
+
         NodeList connectors = serverConfig.getElementsByTagName("Connector");
         pruneConnectors(serverConfig, connectors, endpoints);
 
@@ -352,13 +326,13 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         for (int i = 0; i < connectors.getLength(); i++) {
             Element connector = (Element) connectors.item(i);
             if (!StringUtils.equals(connector.getAttribute("secure"), "true")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);        
+                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);
             } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
                        StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);                   
+                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);
             } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
                        !StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);   
+                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);
             }
         }
 
@@ -433,11 +407,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             logger.severe(errorMessage + e.getMessage());
             throw e;
         } finally {
-            if (fis != null)
-            try {
-                fis.close();
-            } catch (IOException e) {
-            }
+            ResourceUtils.closeQuietly(fis);
         }
         return doc;
     }

@@ -2,6 +2,7 @@ package com.l7tech.server.partition;
 
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
@@ -126,9 +127,7 @@ public class PartitionManager {
             logger.warning("There was an error while reading the configuration of partition \"" + partitionId + "\". This partition will not be enumerated");
             logger.warning(e.getMessage());
         } finally {
-            if (is != null) try {
-                is.close();
-            } catch (IOException e) {}
+            ResourceUtils.closeQuietly(is);
         }
     }
 
@@ -262,13 +261,13 @@ public class PartitionManager {
                         }
                         pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "755", defaultPartitionDir, osf);
                         renameUpgradeFiles(defaultPartitionDir, ".rpmsave");
-                        fixKeystorePaths(defaultPartitionDir);
                         if (osf.isLinux()) {
                             File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
                             if (!f.exists())
                                 f.createNewFile();
                         }
                     }
+                    fixKeystorePaths(defaultPartitionDir);
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);
@@ -325,29 +324,10 @@ public class PartitionManager {
         } catch (SAXException e) {
             e.printStackTrace();
         } finally {
-            if (serverConfigFis != null) {
-                try {
-                    serverConfigFis.close();
-                } catch (IOException e) {}
-            }
-
-            if (serverConfigFos != null) {
-                try {
-                    serverConfigFos.close();
-                } catch (IOException e) {}
-            }
-
-            if (keystoreConfigFis != null) {
-                try {
-                    keystoreConfigFis.close();
-                } catch (IOException e) {}
-            }
-
-            if (keystoreConfigFos != null) {
-                try {
-                    keystoreConfigFos.close();
-                } catch (IOException e) {}
-            }
+            ResourceUtils.closeQuietly(serverConfigFis);
+            ResourceUtils.closeQuietly(serverConfigFos);
+            ResourceUtils.closeQuietly(keystoreConfigFis);
+            ResourceUtils.closeQuietly(keystoreConfigFos);
         }
 
 

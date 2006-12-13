@@ -28,6 +28,7 @@ public class ConfigurationWizard {
 
     private List<ConfigWizardConsoleStep> steps = new ArrayList<ConfigWizardConsoleStep>();
     private Set<ConfigurationCommand> commands;
+    private Set<ConfigurationCommand> additionalCommands;
     private boolean hadFailures;
     String currentVersion = null;
     private String hostname;
@@ -60,7 +61,7 @@ public class ConfigurationWizard {
         initLogging();
         osFunctions = OSDetector.getOSSpecificFunctions();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
-        commands = new HashSet<ConfigurationCommand>();
+        commands = new LinkedHashSet<ConfigurationCommand>();
         manualStepsManager = new ManualStepsManager();
     }
 
@@ -77,11 +78,8 @@ public class ConfigurationWizard {
         }
     }
 
-    public void addAdditionalCommands(Set<ConfigurationCommand> moreCommands) {
-        if (moreCommands != null) {
-            if (commands == null) commands = new HashSet<ConfigurationCommand>();
-            commands.addAll(moreCommands);
-        }
+    public void setAdditionalCommands(Set<ConfigurationCommand> moreCommands) {
+        additionalCommands = moreCommands;
     }
 
     private void addStep(ConfigWizardConsoleStep step) {
@@ -121,6 +119,9 @@ public class ConfigurationWizard {
     }
 
     private void applyConfiguration() {
+        if (additionalCommands != null)
+            commands.addAll(additionalCommands);
+
         Iterator<ConfigurationCommand> iterator = commands.iterator();
         hadFailures = false;
 

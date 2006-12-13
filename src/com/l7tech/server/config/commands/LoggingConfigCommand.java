@@ -4,6 +4,7 @@ import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.common.util.ResourceUtils;
 
 import java.io.*;
 import java.util.Properties;
@@ -77,19 +78,8 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             success = false;
         } finally{
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                }
-            }
-
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                }
-            }
+            ResourceUtils.closeQuietly(fis);
+            ResourceUtils.closeQuietly(fos);
         }
         return success;
     }

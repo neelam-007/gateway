@@ -2,6 +2,7 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.common.util.ResourceUtils;
 
 import java.io.*;
 import java.util.Properties;
@@ -67,12 +68,7 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                }
-            }
+            ResourceUtils.closeQuietly (fos);
         }
     }
 }

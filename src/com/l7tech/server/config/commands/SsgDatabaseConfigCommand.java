@@ -5,6 +5,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -157,8 +158,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             throw e;
         }
         finally {
-            if (fos != null)
-                try { fos.close(); } catch (IOException e) {}
+            ResourceUtils.closeQuietly(fos);
         }
     }
 
