@@ -35,7 +35,7 @@ public class MappingUtil {
     private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     private static final String STAGINGMAPPINGNS = "http://www.layer7tech.com/migration/stagingmapping";
-    private static final String NS_PREFIX = "L7flash";
+    private static final String NS_PREFIX = "L7migrate";
     private static final String IMPORTMAPPINGELNAME = "ssgimportmapping";
     private static final String BACKENDIPMAPPINGELNAME = "backendipmapping";
     private static final String IPMAPELNAME = "ipmap";
@@ -102,7 +102,7 @@ public class MappingUtil {
             c.close();
         }
     }
-    
+
     public static CorrespondanceMap loadMapping(String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
         // load mapping file, validate it and build two maps (one for backends, and one for global variables)
         FileInputStream fis = new FileInputStream(mappingFilePath);
