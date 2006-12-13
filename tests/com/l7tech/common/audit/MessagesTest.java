@@ -2,16 +2,23 @@ package com.l7tech.common.audit;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.logging.Level;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
+import com.l7tech.policy.assertion.AssertionStatus;
 
 /**
  * @author $Author$
  * @version $Revision$
  */
 public class MessagesTest extends TestCase {
+
+    private static final int MESSAGE_MAX_ID = 20000;
 
     /**
       * create the <code>TestSuite</code> for the MessagesTest <code>TestCase</code>
@@ -25,7 +32,7 @@ public class MessagesTest extends TestCase {
      * test that all message formats are acceptable
      */
     public void testMessageText() {
-        for(int i=0; i<15000; i++) {
+        for(int i=0; i<MESSAGE_MAX_ID; i++) {
             String messageText = Messages.getMessageById(i);
             if(messageText!=null) {
                 // Check for odd numbers of single quotes, this is a an error since a single quote should be escaped
@@ -50,4 +57,37 @@ public class MessagesTest extends TestCase {
         }
     }
 
+    /**
+     * test that all message formats are acceptable
+     */
+    public void testMessageLevel() {
+        for(int i=0; i<MESSAGE_MAX_ID; i++) {
+            Level level = Messages.getSeverityLevelById(i);
+            if(level!=null) {
+                if (level.intValue() >= Level.SEVERE.intValue()) {
+                    fail("Message '"+i+"', level is too high (must be < SEVERE).");                    
+                }
+            }
+        }
+    }
+
+    /**
+     * Test for duplicated assertion status
+     */
+    public void assertionStatusTest() throws Exception {
+        Field[] fields = AssertionStatus.class.getFields();
+        for (int i=0; i<fields.length; i++) {
+            Field field = fields[i];
+            if (field.getType().isAssignableFrom(AssertionStatus.class) &&
+                (field.getModifiers()&Modifier.STATIC) > 0) {
+                AssertionStatus status = (AssertionStatus) field.get(null);
+                AssertionStatus byid = AssertionStatus.fromInt(status.getNumeric());
+
+                // 402 is a known dupe, ignore it
+                if (status != byid && status.getNumeric()!=402) {
+                    fail("Duplicate assertion status id : " + status.getNumeric());
+                }
+            }
+        }
+    }
 }
