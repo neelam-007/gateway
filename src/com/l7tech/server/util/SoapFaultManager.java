@@ -6,6 +6,7 @@ import com.l7tech.common.audit.Messages;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.TypeMappingUtils;
@@ -153,7 +154,15 @@ public class SoapFaultManager implements ApplicationContextAware {
             NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
             // populate @status element
             Element policyResultEl = (Element)res.item(0);
-            policyResultEl.setAttribute("status", e.getMessage());
+            String statusMessage = e.getMessage();
+            if (e instanceof PolicyAssertionException) {
+                PolicyAssertionException pae = (PolicyAssertionException) e;
+                if (pae.getMessageId() > 0) {
+                    String format = getMessageById(pae.getMessageId());
+                    statusMessage = MessageFormat.format(format, pae.getMessageArgs());
+                }
+            }
+            policyResultEl.setAttribute("status", statusMessage);
             // populate the faultactor value
             String actor;
             try {

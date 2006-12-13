@@ -167,8 +167,11 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
                 dmm.assertMessageIdIsUnique(messageId);
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{ messageIdStr});
             } catch (MessageIdManager.DuplicateMessageIdException e) {
-                // TODO we need a better exception for this than IOException
-                throw new IOException("Duplicated message ID detected; ID=" + messageIdStr);
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, new String[]{messageIdStr});
+                throw new PolicyAssertionException(assertion,
+                        "Duplicated message ID detected; ID=" + messageIdStr,
+                        AssertionMessages.REQUEST_WSS_REPLAY_REPLAY.getId(),
+                        new String[]{messageIdStr});
             }
         }
 

@@ -163,6 +163,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY   = m(4909, Level.FINER, "Timestamp was signed with a WS-SecureConversation derived key");
     public static final M REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED           = m(4910, Level.FINEST, "Message ID {0} has not been seen before unique; assertion does not fail");
     public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY  = m(4911, Level.FINER, "Timestamp was signed with an EncryptedKey");
+    public static final M REQUEST_WSS_REPLAY_REPLAY                         = m(4912, Level.WARNING, "Message ID {0} is a replay");
 
     // ServerCustomAssertionHolder
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");
