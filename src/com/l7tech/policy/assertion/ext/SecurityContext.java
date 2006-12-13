@@ -4,13 +4,16 @@ import javax.security.auth.Subject;
 import java.security.GeneralSecurityException;
 
 /**
+ * The security context is available to custom assertions through ServiceResponse.getSecurityContext()
+ * and ServiceRequest.getSecurityContext().
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public interface SecurityContext {
     /**
      * Returns a <code>javax.security.auth.Subject</code> object containing the name
-     * of the current requestor. Note that this does not imply that it has been
+     * of the current requestor. Note that this does not imply that it has been authenticated.
      * Use {@link SecurityContext#isAuthenticated()} to determine the authentication
      * status.
      * <p/>
@@ -21,17 +24,17 @@ public interface SecurityContext {
     Subject getSubject();
 
     /**
-     * Returns <code>true</code> if this request has been authenticated.
+     * Whether or not this request has been authenticated.
      *
-     * @return true if authenticated, fale otherwise
+     * @return true if authenticated, false otherwise
      */
     boolean isAuthenticated();
 
     /**
-     * set the security context as authenticated
+     * Set the security context as authenticated
      *
-     * @throws GeneralSecurityException thrown if the current state does not allow
-     *                                  method invoking
+     * @throws GeneralSecurityException thrown if the request context is already set as authenticated or
+     * if this is being invoked through ServiceResponse (only makes sense in ServiceRequest)
      */
     void setAuthenticated() throws GeneralSecurityException;
 }
