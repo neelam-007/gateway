@@ -6,9 +6,9 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import static com.l7tech.common.security.rbac.EntityType.SCHEMA_ENTRY;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
@@ -33,7 +33,6 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +44,6 @@ import java.util.logging.Logger;
 public class GlobalSchemaDialog extends JDialog {
     private final Logger logger = Logger.getLogger(GlobalSchemaDialog.class.getName());
     private JTable schemaTable;
-    private JButton resetbutton;
     private JButton removebutton;
     private JButton editbutton;
     private JButton addbutton;
@@ -79,7 +77,7 @@ public class GlobalSchemaDialog extends JDialog {
                 return globalSchemas.size();
             }
             public Object getValueAt(int rowIndex, int columnIndex) {
-                SchemaEntry entry = (SchemaEntry)globalSchemas.get(rowIndex);
+                SchemaEntry entry = globalSchemas.get(rowIndex);
                 switch (columnIndex) {
                     case 0: return entry.getName();
                     case 1: return entry.getTns();
@@ -154,12 +152,6 @@ public class GlobalSchemaDialog extends JDialog {
             }
         });
 
-        resetbutton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                remove();
-            }
-        });
-
         removebutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 remove();
@@ -208,15 +200,7 @@ public class GlobalSchemaDialog extends JDialog {
         boolean isSystem = validSelection && globalSchemas.get(selectedRow).isSystem();
 
         addbutton.setEnabled(flags.canCreateSome());
-        removebutton.setEnabled(false);
-        resetbutton.setEnabled(false);
-        if (flags.canDeleteSome() && validSelection) {
-            if (isSystem) {
-                resetbutton.setEnabled(true);
-            } else {
-                removebutton.setEnabled(true);                
-            }
-        }
+        removebutton.setEnabled(flags.canDeleteSome() && validSelection && !isSystem);
         editbutton.setText(flags.canUpdateSome() && !isSystem ? "Edit" : "View");
         editbutton.setEnabled(validSelection);
     }
@@ -287,9 +271,11 @@ public class GlobalSchemaDialog extends JDialog {
      * returns true if there was at least one unresolved import
      *
      * NOTE this code is reused (copy/paste) in SchemaValidationPropertiesDialog
+     * @param schemaTobeSaved the schema that is about to be saved
+     * @return true if there was at least one unresolved import
      */
     private boolean checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
-        Document schemaDoc = null;
+        final Document schemaDoc;
         try {
             String schemaString = schemaTobeSaved.getSchema();
             if (schemaString == null) schemaString = "";
@@ -300,41 +286,33 @@ public class GlobalSchemaDialog extends JDialog {
             throw new RuntimeException(msg);
         }
         Element schemael = schemaDoc.getDocumentElement();
-        java.util.List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-        if (listofimports.isEmpty()) return false;
+
+        //noinspection unchecked
+        java.util.List<Element> listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+        if (listofimports.isEmpty())
+            return false;
+
         ArrayList<String> unresolvedImportsList = new ArrayList<String>();
-        ArrayList<String> resolutionSuggestionList = new ArrayList<String>();
         Registry reg = Registry.getDefault();
         if (reg == null || reg.getSchemaAdmin() == null) {
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
         }
-        for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
-            Element importEl = (Element) iterator.next();
+        for (Element importEl : listofimports) {
             String importns = importEl.getAttribute("namespace");
             String importloc = importEl.getAttribute("schemaLocation");
             try {
                 if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
-                    //if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
-                        if (importloc != null) {
-                            unresolvedImportsList.add(importloc);
-
-                            // Check for the desired namespace with different location
-                            if (importns != null) {
-                                for (SchemaEntry entry : reg.getSchemaAdmin().findByTNS(importns)) {
-                                    if (entry.getName() != null && entry.getName().length() > 0)
-                                        resolutionSuggestionList.add(entry.getName());
-                                }
-                            }
-                        } else {
-                            unresolvedImportsList.add(importns);
-                        }
-                    //}
+                    if (importloc != null) {
+                        unresolvedImportsList.add(importloc);
+                    } else {
+                        unresolvedImportsList.add(importns);
+                    }
                 }
             } catch (ObjectModelException e) {
                 String msg = "Error trying to look for import schema in global schema";
                 logger.log(Level.SEVERE, msg, e);
                 throw new RuntimeException(msg);
-            }  catch (RemoteException e) {
+            } catch (RemoteException e) {
                 String msg = "Error trying to look for import schema in global schema";
                 logger.log(Level.SEVERE, msg, e);
                 throw new RuntimeException(msg);
@@ -374,7 +352,7 @@ public class GlobalSchemaDialog extends JDialog {
     private void edit() {
         int selectedRow = schemaTable.getSelectedRow();
         if (selectedRow < 0) return;
-        final SchemaEntry toedit = (SchemaEntry)globalSchemas.get(selectedRow);
+        final SchemaEntry toedit = globalSchemas.get(selectedRow);
         final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit, flags.canUpdateSome() && !toedit.isSystem());
         dlg.pack();
         Dimension dim = dlg.getSize();
@@ -419,7 +397,7 @@ public class GlobalSchemaDialog extends JDialog {
             logger.warning("No access to registry. Cannot remove entry.");
             return;
         }
-        SchemaEntry todelete = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
+        SchemaEntry todelete = globalSchemas.get(schemaTable.getSelectedRow());
         try {
             reg.getSchemaAdmin().deleteSchemaEntry(todelete);
         } catch (RemoteException e) {
@@ -436,9 +414,8 @@ public class GlobalSchemaDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getSchemaAdmin() != null) {
             try {
-                Collection allschemas = reg.getSchemaAdmin().findAllSchemas();
-                for (Iterator iterator = allschemas.iterator(); iterator.hasNext();) {
-                    SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
+                Collection<SchemaEntry> allschemas = reg.getSchemaAdmin().findAllSchemas();
+                for (SchemaEntry schemaEntry : allschemas) {
                     if (checkEntryForUnresolvedImports(schemaEntry)) {
                         okToClose = false;
                         break;
