@@ -185,7 +185,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * Searches for the latest metrics bins for the given criteria and
      * summarizes by combining them into one summary bin.
      *
-     * @param nodeId        cluster node ID
+     * @param clusterNodeId cluster node ID
      * @param serviceOid    published service OID
      * @param resolution    bin resolution
      * @param duration      time duration (from latest nominal period boundary
@@ -194,7 +194,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * @return a summary bin
      * @throws FindException if failure to query database
      */
-    public MetricsSummaryBin summarizeLatest(final String nodeId,
+    public MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                              final Long serviceOid,
                                              final int resolution,
                                              final int duration)
@@ -212,8 +212,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     final Criteria criteria = session.createCriteria(MetricsBin.class);
-                    if (nodeId != null) {
-                        criteria.add(Restrictions.eq("nodeId", nodeId));
+                    if (clusterNodeId != null) {
+                        criteria.add(Restrictions.eq("clusterNodeId", clusterNodeId));
                     }
                     if (serviceOid != null) {
                         criteria.add(Restrictions.eq("serviceOid", serviceOid));
@@ -226,7 +226,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             });
         } catch (DataAccessException e) {
             throw new FindException("Cannot find MetricsBins in database. " +
-                                    "(nodeId=" + nodeId +
+                                    "(clusterNodeId=" + clusterNodeId +
                                     ", serviceOid=" + serviceOid +
                                     ", resolution=" + resolution +
                                     ", duration=" + duration + ")",
