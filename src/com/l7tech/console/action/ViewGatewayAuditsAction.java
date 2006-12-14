@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.EnumSet;
+import java.util.Date;
 
 
 /**
@@ -20,13 +21,23 @@ import java.util.EnumSet;
  * @author mike
  */
 public class ViewGatewayAuditsAction extends SecureAction {
-    private GatewayAuditWindow gatewayAuditWindow;
+    private static GatewayAuditWindow gatewayAuditWindow;
+    private final long auditTime;
 
     /**
      * @see #isAuthorized()
      */
     public ViewGatewayAuditsAction() {
         super(null);
+        this.auditTime = 0;
+    }
+
+    /**
+     * @see #isAuthorized()
+     */
+    public ViewGatewayAuditsAction(final long auditTime) {
+        super(null);
+        this.auditTime = auditTime;
     }
 
     /**
@@ -58,6 +69,9 @@ public class ViewGatewayAuditsAction extends SecureAction {
      */
     protected void performAction() {
         GatewayAuditWindow gaw = getGatewayAuditWindow();
+        if (!gaw.isVisible() && auditTime!=0) {
+            gaw.displayAudits(new Date(auditTime));
+        }
         gaw.setVisible(true);
         gaw.setState(Frame.NORMAL);
         gaw.toFront();

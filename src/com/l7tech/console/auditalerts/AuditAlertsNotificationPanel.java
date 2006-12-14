@@ -24,6 +24,7 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     private JButton auditAlertsButton;
 
     private AuditAlertChecker checker;
+    private long alertTime;
     private boolean hasAuditPermissions = false;
 
     public AuditAlertsNotificationPanel(AuditAlertChecker auditChecker) {
@@ -57,21 +58,23 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
     private void showPopup() {
         checker.stop();
 
-        AuditAlertsDialog auditAlertDialog = getAlertsDialog();
+        AuditAlertsDialog auditAlertDialog = getAlertsDialog(alertTime);
         auditAlertDialog.pack();
         Utilities.centerOnScreen(auditAlertDialog);
         DialogDisplayer.display(auditAlertDialog);
     }
 
-    private AuditAlertsDialog getAlertsDialog() {
+    private AuditAlertsDialog getAlertsDialog(long time) {
+        AuditAlertsDialog auditAlertsDialog;
         Window ancestor = SwingUtilities.getWindowAncestor(this);
         if (ancestor instanceof Frame) {
-            return new AuditAlertsDialog((Frame)ancestor, this);
+            auditAlertsDialog = new AuditAlertsDialog((Frame)ancestor, this, time);
         } else if (ancestor instanceof Dialog) {
-            return new AuditAlertsDialog((Dialog)ancestor, this);
+            auditAlertsDialog = new AuditAlertsDialog((Dialog)ancestor, this, time);
         } else {
-            return new AuditAlertsDialog((Frame)null, this);
+            auditAlertsDialog = new AuditAlertsDialog((Frame)null, this, time);
         }
+        return auditAlertsDialog;
     }
 
     private void setAlertsReady(boolean areAlertsReady) {
@@ -87,8 +90,9 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
         checker.start();
     }
 
-    public void alertsAvailable(boolean alertsAreAvailable) {
-        setAlertsReady(alertsAreAvailable);
+    public void alertsAvailable(boolean alertsAreAvailable, long alertTime) {
+        this.alertTime = alertTime;
+        setAlertsReady(alertsAreAvailable);        
     }
 
     public void alertSettingsChanged(AuditAlertConfigBean bean) {

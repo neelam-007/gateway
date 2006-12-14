@@ -2,6 +2,7 @@ package com.l7tech.console.auditalerts;
 
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditSearchCriteria;
+import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.logging.ErrorManager;
 
@@ -54,12 +55,19 @@ public class AuditAlertChecker {
             }
 
             AuditSearchCriteria crit = getAuditSearchCriteria(lastAcknowledged);
-            Collection coll = admin.find(crit);
-            boolean hasAlerts = !coll.isEmpty();
-            for (AuditWatcher auditWatcher : auditWatchers) {
-                auditWatcher.alertsAvailable(hasAlerts);
+            Collection<AuditRecord> coll = admin.find(crit);
+            long alertTime = 0;
+            if (coll != null) {
+                Iterator<AuditRecord> arIter = coll.iterator();
+                if (arIter.hasNext()) {
+                    AuditRecord auditRecord = arIter.next();
+                    if (auditRecord != null) alertTime = auditRecord.getMillis();
+                }
             }
-            if (hasAlerts) {
+            for (AuditWatcher auditWatcher : auditWatchers) {
+                auditWatcher.alertsAvailable(alertTime!=0, alertTime);
+            }
+            if (alertTime!=0) {
                 stopTimer();
             } else {
                 startTimer();

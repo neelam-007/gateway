@@ -13,17 +13,20 @@ public class AuditAlertsDialog extends JDialog {
     private JButton ignoreAuditsButton;
     private JButton viewOptionsButton;
 
-    private AuditWatcher watcher;
+    private final AuditWatcher watcher;
+    private final long auditTime;
 
-    public AuditAlertsDialog(Frame owner, AuditWatcher watcher) throws HeadlessException {
+    public AuditAlertsDialog(Frame owner, AuditWatcher watcher, long time) throws HeadlessException {
         super(owner, "Audit Alerts");
         this.watcher = watcher;
+        this.auditTime = time;
         init();
     }
 
-    public AuditAlertsDialog(Dialog owner, AuditWatcher watcher) throws HeadlessException {
+    public AuditAlertsDialog(Dialog owner, AuditWatcher watcher, long time) throws HeadlessException {
         super(owner, "Audit Alerts");
         this.watcher = watcher;
+        this.auditTime = time;
         init();
     }
 
@@ -33,7 +36,7 @@ public class AuditAlertsDialog extends JDialog {
         getRootPane().setDefaultButton(viewAuditsButton);
 
         viewAuditsButton.setAction(
-                new ViewGatewayAuditsAction(){
+                new ViewGatewayAuditsAction(auditTime){
                     protected void performAction() {
                         dispose();
                         if (watcher != null) watcher.auditsViewed();

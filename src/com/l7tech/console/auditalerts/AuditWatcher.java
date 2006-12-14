@@ -7,6 +7,6 @@ package com.l7tech.console.auditalerts;
  */
 public interface AuditWatcher {
     void auditsViewed();
-    void alertsAvailable(boolean alertsAreAvailable);
+    void alertsAvailable(boolean alertsAreAvailable, long alertTime);
     void alertSettingsChanged(AuditAlertConfigBean bean);
 }

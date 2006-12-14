@@ -294,6 +294,7 @@ public class LogPanel extends JPanel {
                 Utilities.setEnabled(lpbc.autoRefresh, false);
                 Utilities.setEnabled(lpbc.viewHistoricPane, true);
                 updateLogAutoRefresh();
+                updateViewSelection();
             }
 
             setHint(isAutoRefresh() ? "Auto-Refresh" : null);
@@ -1676,6 +1677,29 @@ public class LogPanel extends JPanel {
                 DialogDisplayer.display(d);
             }
         });
+    }
+
+    /**
+     * Set the selected historic audit data.
+     *
+     * @param date The target date.
+     * @param range The range in hours around the date (negative for before)
+     */
+    public void setSelectionDetails(Date date, int range) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        int timeIndex = 1 + (calendar.get(Calendar.HOUR_OF_DAY)/3);
+
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+
+        startDateField.setValue(calendar.getTime());
+        lpbc.viewHistoricRadioButton.setSelected(true);
+        lpbc.startDateComboBox.setSelectedIndex(timeIndex);
+        lpbc.rangeSpinner.setValue(new Integer(range==0 ? 1 : range));
+        lpbc.limitUnitComboBox.setSelectedIndex(0);
     }
 
     public boolean importView(File file) throws IOException {
