@@ -1,21 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.action.Actions;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.Actions;
+import com.l7tech.policy.assertion.RemoteIpRange;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
-import javax.swing.text.NumberFormatter;
 import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
@@ -43,7 +37,6 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private ResourceBundle resources;
     private boolean oked;
     private RemoteIpRange subject;
-    private final EventListenerList listenerList = new EventListenerList();
     private JRadioButton tcpRadio;
     private JRadioButton contextVarRadio;
     private JTextField contextVarField;
@@ -53,10 +46,6 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         this.subject = subject;
         initialize();
         oked = false;
-    }
-
-    public void addPolicyListener(PolicyListener listener) {
-        listenerList.add(PolicyListener.class, listener);
     }
 
     /**
@@ -155,25 +144,9 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             subject.setStartIp(newaddress);
             subject.setNetworkMask(Integer.parseInt(suffixStr));
             subject.setIpSourceContextVariable(contextval);
-            fireEventAssertionChanged(subject);
             oked = true;
         }
         RemoteIpRangePropertiesDialog.this.dispose();
-    }
-
-    private void fireEventAssertionChanged(final Assertion a) {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
-                  PolicyEvent event = new
-                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
-                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (EventListener listener : listeners) {
-                      ((PolicyListener) listener).assertionsChanged(event);
-                  }
-              }
-          });
     }
 
     private void bark(String woof) {

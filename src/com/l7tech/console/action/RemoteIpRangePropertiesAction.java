@@ -1,10 +1,7 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.event.PolicyListenerAdapter;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.RemoteIpRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RemoteIpRangeTreeNode;
@@ -46,25 +43,24 @@ public class RemoteIpRangePropertiesAction extends SecureAction {
 
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.getAssertion());
-        dlg.addPolicyListener(listener);
+        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.getAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg);
-    }
-
-    private final PolicyListener listener = new PolicyListenerAdapter() {
-        public void assertionsChanged(PolicyEvent e) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(subject);
-                log.finest("model invalidated");
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.wasOked()) {
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged(subject);
+                        log.finest("model invalidated");
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
             }
-        }
-    };
+        });
+    }
 
     private final Logger log = Logger.getLogger(getClass().getName());
     private RemoteIpRangeTreeNode subject;
