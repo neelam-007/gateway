@@ -1,5 +1,7 @@
 package com.l7tech.server.config;
 
+import com.l7tech.server.partition.PartitionManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +13,6 @@ import java.util.List;
 public class ManualStepsManager {
 
     private final String eol = System.getProperty("line.separator");
-    private final OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(); ;
 
     private final String linuxLunaConfigCopy =
                 "<li>" +
@@ -78,15 +79,6 @@ public class ManualStepsManager {
             "<p>Please ensure time is synchronized among all SSG nodes within the cluster" + eol +
         "</li>" + eol;
 
-    private final String copykeysLine = "<li>COPY THE KEYS: copy the contents of the keystore directory on the first node<br> " + eol +
-            "of the cluster to the keystore directory on the other SSGs in the cluster" + eol +
-                "<dl>" + eol +
-                    "<dt>Note:</dt>" + eol +
-                        "<dd>The SSG keystore directory is: \"" + osFunctions.getKeystoreDir() + "\"</dd>" + eol +
-                "</dl>" + eol +
-            "</li>" + eol;
-
-
     private KeystoreType keystoreType = KeystoreType.UNDEFINED;
     private ClusteringType clusteringType = ClusteringType.UNDEFINED;
 
@@ -94,7 +86,20 @@ public class ManualStepsManager {
     public ManualStepsManager() {
     }
 
+    private OSSpecificFunctions getOsFunctions() {
+        return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
+    }
+
     public List<String> getManualSteps(){
+
+        String copykeysLine  = "<li>COPY THE KEYS: copy the contents of the keystore directory on the first node of the cluster to the keystore directory <br> " + eol +
+            " on the other SSGs in the cluster" + eol +
+                "<dl>" + eol +
+                    "<dt>Note:</dt>" + eol +
+                        "<dd>The keystore directory on this SSG is: \"" + getOsFunctions().getKeystoreDir() + "\"</dd>" + eol +
+                "</dl>" + eol +
+            "</li>" + eol;
+
         List<String> steps = new ArrayList<String>();
 
         if (getClusteringType() != ClusteringType.CLUSTER_NONE &&
@@ -123,11 +128,11 @@ public class ManualStepsManager {
             switch (getClusteringType()) {
                 case CLUSTER_NONE:
                 case CLUSTER_NEW:
-                    steps.add(osFunctions.isLinux()?linuxUpdateCrystokiLine:windowsUpdateCrystokiLine);
+                    steps.add(getOsFunctions().isLinux()?linuxUpdateCrystokiLine:windowsUpdateCrystokiLine);
                     break;
 
                 case CLUSTER_JOIN:
-                    steps.add(osFunctions.isLinux()?linuxLunaConfigCopy:windowsLunaConfigCopy);
+                    steps.add(getOsFunctions().isLinux()?linuxLunaConfigCopy:windowsLunaConfigCopy);
                     break;
                 case UNDEFINED:
                     break;
