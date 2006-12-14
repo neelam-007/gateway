@@ -48,12 +48,12 @@ import java.util.ResourceBundle;
             }
             case MetricsBin.RES_HOURLY: {
                 _comboItemText = _resources.getString("resolutionCombo.hourlyValue");
-                _latestTabTitle = _resources.getString("rightPanel.hourlyTitle");
+                _latestTabTitle = _resources.getString("latestTab.title.hourly");
                 break;
             }
             case MetricsBin.RES_DAILY: {
                 _comboItemText = _resources.getString("resolutionCombo.dailyValue");
-                _latestTabTitle = _resources.getString("rightPanel.dailyTitle");
+                _latestTabTitle = _resources.getString("latestTab.title.daily");
                 break;
             }
         }
@@ -78,7 +78,7 @@ import java.util.ResourceBundle;
     public void setBinInterval(final int binInterval) {
         _binInterval = binInterval;
         _comboItemText = MessageFormat.format(_resources.getString("resolutionCombo.fineValue"), _binInterval / 1000.);
-        _latestTabTitle = MessageFormat.format(_resources.getString("rightPanel.fineTitle"), _binInterval / 1000.);
+        _latestTabTitle = MessageFormat.format(_resources.getString("latestTab.title.fine"), _binInterval / 1000.);
     }
 
     /**

@@ -35,6 +35,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.io.InvalidObjectException;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -42,7 +43,6 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.InvalidObjectException;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -170,8 +170,8 @@ public class MetricsChartPanel extends ChartPanel {
     /** Time zone for displaying time values. */
     private TimeZone _timeZone;
 
-    /** Bins currently displayed in the chart. Key is period start. */
-    private final HashMap<Long, MetricsSummaryBin> _binsInChart;
+    /** Bins currently displayed in the chart. Keyed and sorted by period end. */
+    private final SortedMap<Long, MetricsSummaryBin> _binsInChart;
 
     /** The bin in {@link #_binsInChart} with the latest period end. */
     private MetricsSummaryBin _latestBinInChart;
@@ -225,17 +225,27 @@ public class MetricsChartPanel extends ChartPanel {
     /** Chart containing the combined plot. */
     private JFreeChart _chart;
 
+    /** Start time of the currently selected period.
+        Set to -1 when no period is selected. */
+    private long _selectedPeriodStart = -1;
+
+    /** End time of the currently selected period.
+        Set to -1 when no period is selected. */
+    private long _selectedPeriodEnd   = -1;
+
+    /** Start time of the selected period waiting to be restored when data is available again.
+        Set to -1 when no restoring is needed. */
+    private long _periodStartToReselect = -1;
+
+    /** End time of the selected period waiting to be restored when data is available again.
+        Set to -1 when no restoring is needed. */
+    private long _periodEndToReselect   = -1;
+
     /** Pop-up context menu. */
     private final JPopupMenu _popup;
 
     /** Pop-up context menu item to display audits for selected a metrics bin. */
     private final JMenuItem _showAuditsItem;
-
-    /** Start date of metrics bin selected to show audits. */
-    private Date _showAuditsStartDate;
-
-    /** End date of metrics bin selected to show audits. */
-    private Date _showAuditsEndDate;
 
     /** Our custom GatewayAuditWindow to display audits for a selected metrics bin.
         Declared static for singleton; to prevent an explosion of such windows. */
@@ -247,19 +257,21 @@ public class MetricsChartPanel extends ChartPanel {
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("responseTimeTooltipFormat"));
+        private final SimpleDateFormat _timeFormat = new SimpleDateFormat(_resources.getString("tooltipTimeFormat"));
         private final Map<Long, MetricsSummaryBin> _binsInChart;
 
-        public ResponseTimeToolTipGenerator(final Map<Long, MetricsSummaryBin> binsInChart) {
+        public ResponseTimeToolTipGenerator(final TimeZone timeZone, final Map<Long, MetricsSummaryBin> binsInChart) {
+            _timeFormat.setTimeZone(timeZone);
             _binsInChart = binsInChart;
         }
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimePeriodValuesWithHighLowCollection responseTimes = (TimePeriodValuesWithHighLowCollection) dataset;
             final TimePeriod period = responseTimes.getSeries(series).getTimePeriod(item);
-            final Date startTime = period.getStart();
-            final Date endTime = period.getEnd();
+            final Date periodStart = period.getStart();
+            final Date periodEnd = period.getEnd();
 
-            final MetricsSummaryBin bin = _binsInChart.get(startTime.getTime());
+            final MetricsSummaryBin bin = _binsInChart.get(periodEnd.getTime());
             if (bin == null)
                 return null;    // Should not get here.
             if (bin.getNumTotal() == 0)
@@ -276,7 +288,8 @@ public class MetricsChartPanel extends ChartPanel {
             final int backMin = bin.getMinBackendResponseTime();
 
             return FMT.format(new Object[]{
-                    startTime, endTime,
+                    _timeFormat.format(periodStart),
+                    _timeFormat.format(periodEnd),
                     frontLabel, new Integer(frontMax), new Integer(frontAvg), new Integer(frontMin),
                     backLabel, new Integer(backMax), new Integer(backAvg), new Integer(backMin)});
         }
@@ -285,37 +298,49 @@ public class MetricsChartPanel extends ChartPanel {
     /** A tool tip generator for the alert indicator plot. */
     private static class AlertIndicatorToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("alertIndicatorTooltipFormat"));
+        private final SimpleDateFormat _timeFormat = new SimpleDateFormat(_resources.getString("tooltipTimeFormat"));
+
+        public AlertIndicatorToolTipGenerator(final TimeZone timeZone) {
+            _timeFormat.setTimeZone(timeZone);
+        }
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
             final TimePeriod period = messageRates.getTimePeriod(item);
-            final Date startTime = period.getStart();
-            final Date endTime = period.getEnd();
+            final Date periodStart = period.getStart();
+            final Date periodEnd = period.getEnd();
 
             final String seriesLabel = dataset.getSeriesKey(series).toString();
             final double msgRate = messageRates.getY(series, item).doubleValue();
-            final int numMsg = (int)Math.round(msgRate * (endTime.getTime() - startTime.getTime()) / 1000.);
+            final int numMsg = (int)Math.round(msgRate * (periodEnd.getTime() - periodStart.getTime()) / 1000.);
 
-            return FMT.format(new Object[] {startTime, endTime, seriesLabel, new Integer(numMsg), new Double(msgRate)});
+            return FMT.format(new Object[] {
+                    _timeFormat.format(periodStart),
+                    _timeFormat.format(periodEnd),
+                    seriesLabel,
+                    new Integer(numMsg),
+                    new Double(msgRate)});
         }
     }
 
     /** A tool tip generator for the message rate plot. */
     private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("messageRateTooltipFormat"));
+        private final SimpleDateFormat _timeFormat = new SimpleDateFormat(_resources.getString("tooltipTimeFormat"));
         private final Map<Long, MetricsSummaryBin> _binsInChart;
 
-        public MessageRateToolTipGenerator(final Map<Long, MetricsSummaryBin> binsInChart) {
+        public MessageRateToolTipGenerator(final TimeZone timeZone, final Map<Long, MetricsSummaryBin> binsInChart) {
+            _timeFormat.setTimeZone(timeZone);
             _binsInChart = binsInChart;
         }
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
             final TimePeriod period = messageRates.getTimePeriod(item);
-            final Date startTime = period.getStart();
-            final Date endTime = period.getEnd();
+            final Date periodStart = period.getStart();
+            final Date periodEnd = period.getEnd();
 
-            final MetricsSummaryBin bin = _binsInChart.get(startTime.getTime());
+            final MetricsSummaryBin bin = _binsInChart.get(periodEnd.getTime());
             if (bin == null)
                 return null;    // Should not get here.
             if (bin.getNumTotal() == 0)
@@ -333,7 +358,9 @@ public class MetricsChartPanel extends ChartPanel {
             final double failureRate = bin.getNominalRoutingFailureRate();
             final int numFailure = bin.getNumRoutingFailure();
 
-            return FMT.format(new Object[]{startTime, endTime,
+            return FMT.format(new Object[]{
+                    _timeFormat.format(periodStart),
+                    _timeFormat.format(periodEnd),
                     failureLabel, new Integer(numFailure), new Double(failureRate),
                     violationLabel, new Integer(numViolation), new Double(violationRate),
                     successLabel, new Integer(numSuccess), new Double(successRate)});
@@ -399,8 +426,9 @@ public class MetricsChartPanel extends ChartPanel {
      */
     private void setXAxisRangeIfNoData() {
         if (_messageRates.getItemCount() == 0) {
-            final long now = System.currentTimeMillis();
-            _chart.getXYPlot().getDomainAxis().setRange(new Range(now - _maxTimeRange, now), false, true);
+            final long now = System.currentTimeMillis();    // Gateway clock time would be better but there is no accurate way to get that.
+            final long max = MetricsBin.periodStartFor(_resolution, (int)_binInterval, now);    // This equals end time of latest completed period.
+            _chart.getXYPlot().getDomainAxis().setRange(new Range(max - _maxTimeRange, max), false, true);
         }
     }
 
@@ -467,13 +495,27 @@ public class MetricsChartPanel extends ChartPanel {
         _dashboardWindow = dashboardWindow;
 
         // Creates the empty data structures.
-        _binsInChart = new HashMap<Long, MetricsSummaryBin>();
+        _binsInChart = new TreeMap<Long, MetricsSummaryBin>();
         _frontendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_FRONTEND_RESPONSE);
         _backendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_BACKEND_RESPONSE);
         _responseTimes = new TimePeriodValuesWithHighLowCollection();
         _responseTimes.addSeries(_frontendResponseTimes);
         _responseTimes.addSeries(_backendResponseTimes);
         _messageRates = new TimeTableXYDataset();
+
+        // Gets the time zone to use from gateway.
+        try {
+            final Registry registry = Registry.getDefault();
+            if (registry.isAdminContextPresent()) {
+                _timeZone = TimeZone.getTimeZone(registry.getClusterStatusAdmin().getCurrentClusterTimeZone());
+            }
+        } catch (RemoteException e) {
+            // Falls through to use local time zone.
+        }
+        if (_timeZone == null) {
+            _logger.warning("Failed to get time zone from gateway. Falling back to use local time zone for display.");
+            _timeZone = TimeZone.getDefault();
+        }
 
         //
         // Top plot for response times.
@@ -491,7 +533,7 @@ public class MetricsChartPanel extends ChartPanel {
         responsesRenderer.setSeriesStroke(1, RESPONSE_AVG_STROKE);
         responsesRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
         responsesRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
-        responsesRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_binsInChart));
+        responsesRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_timeZone, _binsInChart));
         final XYPlot responsesPlot = new XYPlot(_responseTimes, null, _responsesYAxis, responsesRenderer);
         responsesPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
@@ -524,7 +566,7 @@ public class MetricsChartPanel extends ChartPanel {
         alertsRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR);
         alertsRenderer.setSeriesShape(1, INDICATOR_SHAPE);
         alertsRenderer.setSeriesShape(2, INDICATOR_SHAPE);
-        final AlertIndicatorToolTipGenerator alertIndicatorToolTipGenerator = new AlertIndicatorToolTipGenerator();
+        final AlertIndicatorToolTipGenerator alertIndicatorToolTipGenerator = new AlertIndicatorToolTipGenerator(_timeZone);
         alertsRenderer.setBaseToolTipGenerator(alertIndicatorToolTipGenerator);
         final XYPlot alertsPlot = new XYPlot(_messageRates, null, alertsYAxis, alertsRenderer);
         alertsPlot.setBackgroundPaint(INDICATOR_PLOT_BACKCOLOR);
@@ -544,27 +586,13 @@ public class MetricsChartPanel extends ChartPanel {
         ratesRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
         ratesRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
         ratesRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
-        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator(_binsInChart);
+        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator(_timeZone, _binsInChart);
         ratesRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
         final XYPlot ratesPlot = new XYPlot(_messageRates, null, _ratesYAxis, ratesRenderer);
 
         //
         // Now combine all plots to share the same time (x-)axis.
         //
-
-        // Gets the time zone to use from gateway.
-        try {
-            final Registry registry = Registry.getDefault();
-            if (registry.isAdminContextPresent()) {
-                _timeZone = TimeZone.getTimeZone(registry.getClusterStatusAdmin().getCurrentClusterTimeZone());
-            }
-        } catch (RemoteException e) {
-            // Falls through to use local time zone.
-        }
-        if (_timeZone == null) {
-            _logger.warning("Failed to get time zone from gateway. Falling back to use local time zone for display.");
-            _timeZone = TimeZone.getDefault();
-        }
 
         _xAxis = new DateAxis(TIME_AXIS_LABEL /* effective time zone name to be appended later */, _timeZone) {
             public void setRange(Range range, boolean turnOffAutoRange, boolean notify) {
@@ -690,7 +718,7 @@ public class MetricsChartPanel extends ChartPanel {
 
         // Adds new data from the bins to our JFreeChart data structures.
         for (MetricsSummaryBin bin : bins) {
-            _binsInChart.put(bin.getPeriodStart(), bin);
+            _binsInChart.put(bin.getPeriodEnd(), bin);
             if (_latestBinInChart == null || _latestBinInChart.getPeriodEnd() < bin.getPeriodEnd()) {
                 _latestBinInChart = bin;
             }
@@ -723,10 +751,12 @@ public class MetricsChartPanel extends ChartPanel {
         final long newUpperBound = _latestBinInChart.getPeriodEnd();
         final long newLowerBound = newUpperBound - _maxTimeRange;
 
-        for (Iterator<MetricsSummaryBin> i = _binsInChart.values().iterator(); i.hasNext(); ) {
-            final MetricsSummaryBin bin = i.next();
-            if (bin.getPeriodEnd() <= newLowerBound) {
+        for (Iterator<Long> i = _binsInChart.keySet().iterator(); i.hasNext(); ) {
+            final Long periodEnd = i.next();
+            if (periodEnd <= newLowerBound) {
                 i.remove();
+            } else {
+                break;      // The rest is within limit; since this is sorted.
             }
         }
 
@@ -777,10 +807,30 @@ public class MetricsChartPanel extends ChartPanel {
 
         setXAxisRangeIfNoData();
         restoreAutoRange();
-    }
 
-    /** Clears all data and updates the plots. */
-    public synchronized void clearData() {
+        // Restores the selected period using the new bins.
+        if (_periodStartToReselect != -1 && _periodEndToReselect != -1) {
+            setSelectedPeriod(_periodStartToReselect, _periodEndToReselect);
+            _periodStartToReselect = -1;    // Unset to prevent unneccessary repeats.
+            _periodEndToReselect   = -1;
+        }
+    } // addData
+
+    /**
+     * Clears all data and updates the plots.
+     *
+     * @param saveSelectedPeriod    whether to keep selected period (if any)
+     *                              around when data is available again
+     */
+    public synchronized void clearData(final boolean saveSelectedPeriod) {
+        if (saveSelectedPeriod) {
+            // Saves the selected period to restore when chart data is
+            // repopulated. We don't know when that will happen because
+            // {@link #addData} is called on a different thread.
+            _periodStartToReselect = _selectedPeriodStart;
+            _periodEndToReselect   = _selectedPeriodEnd;
+        }
+
         // Temporarily disable notification so plots won't be redrawn needlessly
         // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
@@ -815,26 +865,66 @@ public class MetricsChartPanel extends ChartPanel {
         setXAxisRangeIfNoData();
         restoreAutoRange();
         resumeUpdate();
+        unhighlightPeriod();
+    } // clearData
+
+    /**
+     * Finds the bin (amongst the charted bins) bracketing the given time.
+     *
+     * @param t     the time to bracket (in milliseconds since epoch)
+     * @return <code>null</code> if none found
+     */
+    private MetricsSummaryBin findBin(final long t) {
+        // First try fast lookup among charted bins using a period end time
+        // estimated by resolution interval. This may not find the bin since
+        // since resolution interval might have changed.
+        long periodEnd = MetricsBin.periodEndFor(_resolution, (int)_binInterval, t);
+        MetricsSummaryBin bin = _binsInChart.get(periodEnd);
+        if (bin != null) {
+            // Verifies that the time is indeed bracketed by this bin period.
+            if (bin.getPeriodStart() > t) {
+                bin = null;     // Nope.
+            }
+        }
+
+        // If that didn't work. Try searching one-by-one. This is time consuming.
+        if (bin == null) {
+            for (MetricsSummaryBin b : _binsInChart.values()) {
+                if (t >= b.getPeriodStart() && t < b.getPeriodEnd()) {
+                    bin = b;
+                    break;
+                }
+            }
+        }
+
+        return bin;
     }
 
     /**
-     * Overrides superclass method to handle our custom pop-up context menu.
+     * Finds the bin (amongst the charted bins) with the exact period start and end time.
+     *
+     * @param periodStart   period start to find
+     * @param periodEnd     period end to find
+     * @return <code>null</code> if no bin found
      */
-    protected synchronized void displayPopupMenu(int x, int y) {
-        // Converts the pixel x-coordinate to time value.
-        final Rectangle2D rectangle2d = getChartRenderingInfo().getPlotInfo().getDataArea();
-        final long t = (long)_xAxis.java2DToValue(x, rectangle2d, _combinedPlot.getDomainAxisEdge());
+    private MetricsSummaryBin findBin(final long periodStart, final long periodEnd) {
+        final MetricsSummaryBin bin = _binsInChart.get(periodEnd);
+        if (bin == null || bin.getPeriodStart() != periodStart) {  // Verifies.
+            return null;
+        }
+        return bin;
+    }
 
-        // Determines the metrics bin period containing that time value.
-        _showAuditsStartDate = new Date(MetricsBin.periodStartFor(_resolution, (int)_binInterval, t));
-        _showAuditsEndDate = new Date(MetricsBin.periodEndFor(_resolution, (int)_binInterval, t));
-
-        // Customizes the name of the show audits menu item.
-        _showAuditsItem.setText(SHOW_AUDITS_ITEM_NAME + " (" + timeRangeAsString(_showAuditsStartDate, _showAuditsEndDate, _timeZone) + ")");
-
+    /**
+     * Highlights a period in the chart; replacing any previous highlight.
+     *
+     * @param periodStart   period start time
+     * @param periodEnd     period end time
+     */
+    private void highlightPeriod(final long periodStart, final long periodEnd) {
         // Paints vertical marker strip in selected time period.
-        IntervalMarker marker = new IntervalMarker(_showAuditsStartDate.getTime(),
-                                                   _showAuditsEndDate.getTime(),
+        IntervalMarker marker = new IntervalMarker(periodStart,
+                                                   periodEnd,
                                                    new Color(255, 0, 255, 64),
                                                    new BasicStroke(0.0f),
                                                    new Color(255, 0, 255, 0),
@@ -842,30 +932,117 @@ public class MetricsChartPanel extends ChartPanel {
                                                    0.0f);
         // noinspection unchecked
         for (XYPlot plot : (List<XYPlot>)_combinedPlot.getSubplots()) {
-            plot.clearDomainMarkers();  // Clears previous selection, if any.
+            plot.clearDomainMarkers();  // Clears previous highlight; if any.
             plot.addDomainMarker(marker, Layer.FOREGROUND);
-        }
-
-        _popup.show(this, x, y);
-    }
-
-    /** Overrides superclass method to handle our custom pop-up context menu items. */
-    public void actionPerformed(ActionEvent event) {
-        final String command = event.getActionCommand();
-        if (command.equals(SHOW_AUDITS_COMMAND)) {
-            showAudits(_showAuditsStartDate, _showAuditsEndDate);
-        } else {
-            throw new RuntimeException("Missing hanlder for context menu item: " + command);
         }
     }
 
     /**
-     * Brings up a window to show audits for the selected time period.
-     *
-     * @param startDate     start time of audit records
-     * @param endDate       end time of audit records
+     * Removes any previous highlight.
      */
-    private void showAudits(Date startDate, Date endDate) {
+    private void unhighlightPeriod() {
+        // noinspection unchecked
+        for (XYPlot plot : (List<XYPlot>)_combinedPlot.getSubplots()) {
+            plot.clearDomainMarkers();
+        }
+    }
+
+    /**
+     * Selects the bin (amongst the charted bins) bracketing the given time
+     * highlights it and updates the dashboard "Selection" tab.
+     *
+     * @param t     the time to bracket (in milliseconds since epoch)
+     */
+    private void setSelectedPeriod(final long t) {
+        if (t >= _xAxis.getMinimumDate().getTime() && t < _xAxis.getMaximumDate().getTime()) {
+            // Find the charted bin containing that period.
+            final MetricsSummaryBin bin = findBin(t);
+
+            long periodStart;
+            long periodEnd;
+            if (bin == null) {
+                // No charted bin contains that time, then estimate the period based on resolution.
+                periodStart = MetricsBin.periodStartFor(_resolution, (int)_binInterval, t);
+                periodEnd = MetricsBin.periodEndFor(_resolution, (int)_binInterval, t);
+            } else {
+                periodStart = bin.getPeriodStart();
+                periodEnd = bin.getPeriodEnd();
+            }
+
+            highlightPeriod(periodStart, periodEnd);
+            _dashboardWindow.setSelectedBin(bin, periodStart, periodEnd, true);
+            _selectedPeriodStart = periodStart;
+            _selectedPeriodEnd   = periodEnd;
+        } else {
+            // Out of time axis range. This means to deselect.
+            unhighlightPeriod();
+            _dashboardWindow.setSelectedBin(null, -1, -1, false);
+            _selectedPeriodStart = -1;
+            _selectedPeriodEnd   = -1;
+        }
+    }
+
+    /**
+     * Selects the bin (amongst the charted bins) with the exact period start and end time,
+     * highlights it and updates the dashboard "Selection" tab.
+     *
+     * @param periodStart   period start to find
+     * @param periodEnd     period end to find
+     */
+    private void setSelectedPeriod(final long periodStart, final long periodEnd) {
+        if (periodStart >= _xAxis.getMinimumDate().getTime() && periodEnd < _xAxis.getMaximumDate().getTime()) {
+            // Find the charted bin containing that period.
+            final MetricsSummaryBin bin = findBin(periodStart, periodEnd);
+            highlightPeriod(periodStart, periodEnd);
+            _dashboardWindow.setSelectedBin(bin, periodStart, periodEnd, true);
+            _selectedPeriodStart = periodStart;
+            _selectedPeriodEnd   = periodEnd;
+        } else {
+            // Out of time axis range. This means to deselect.
+            unhighlightPeriod();
+            _dashboardWindow.setSelectedBin(null, -1, -1, false);
+            _selectedPeriodStart = -1;
+            _selectedPeriodEnd   = -1;
+        }
+    }
+
+    /**
+     * Overrides to bring up our custom pop-up context menu.
+     */
+    protected synchronized void displayPopupMenu(int x, int y) {
+        // Converts the pixel x-coordinate to time value.
+        final Rectangle2D rectangle2d = getChartRenderingInfo().getPlotInfo().getDataArea();
+        final long t = (long)_xAxis.java2DToValue(x, rectangle2d, _combinedPlot.getDomainAxisEdge());
+
+        // Select the period as a side effect, i.e., like left-click.
+        setSelectedPeriod(t);
+
+        // Customizes the name of the show audits menu item.
+        _showAuditsItem.setText(SHOW_AUDITS_ITEM_NAME + " (" + timeRangeAsString(new Date(_selectedPeriodStart), new Date(_selectedPeriodEnd), _timeZone) + ")");
+
+        _popup.show(this, x, y);
+    }
+
+    /** Overrides to execute the selected item in our custom pop-up context menu. */
+    public void actionPerformed(ActionEvent event) {
+        final String command = event.getActionCommand();
+        if (command.equals(SHOW_AUDITS_COMMAND)) {
+            showAudits(_selectedPeriodStart, _selectedPeriodEnd);
+        } else {
+            throw new RuntimeException("Internal error: Missing handler for context menu item: " + command);
+        }
+    }
+
+    /**
+     * Brings up a window to show audits for the given time period.
+     *
+     * @param startTime     start time of audit records
+     * @param endTime       end time of audit records
+     */
+    private void showAudits(final long startTime, final long endTime) {
+        final Date startDate = new Date(startTime);
+        final Date endDate   = new Date(endTime);
+
         String errDialogMsg = null;
 
         final Registry registry = Registry.getDefault();
@@ -895,7 +1072,7 @@ public class MetricsChartPanel extends ChartPanel {
                 _gatewayAuditWindow.setExtendedState(Frame.NORMAL);
                 _gatewayAuditWindow.toFront();
                 _gatewayAuditWindow.setTitle(GATEWAY_AUDIT_WINDOW_TITLE + " (" +
-                        timeRangeAsString(_showAuditsStartDate, _showAuditsEndDate, _timeZone) + ")");
+                        timeRangeAsString(startDate, endDate, _timeZone) + ")");
 
                 final ClusterNodeInfo nodeSelected = _dashboardWindow.getClusterNodeSelected();
                 _gatewayAuditWindow.getLogPane().setMsgFilterNode(nodeSelected == null ? "" : nodeSelected.getName());
@@ -938,6 +1115,7 @@ public class MetricsChartPanel extends ChartPanel {
         }
     }
 
+    /** Overrides to handle zooming. */
     public void mousePressed(MouseEvent e) {
         // The user is starting to drag-draw the rubberband zoom box. Need to
         // temporarily suspend updating the chart data, otherwise the rubberband
@@ -947,6 +1125,7 @@ public class MetricsChartPanel extends ChartPanel {
         super.mousePressed(e);
     }
 
+    /** Overrides to handle zooming. */
     public void mouseReleased(MouseEvent e) {
         // The user has finished zooming.
         super.mouseReleased(e);
@@ -955,6 +1134,14 @@ public class MetricsChartPanel extends ChartPanel {
         if (_xAxis.isAutoRange()) {
             resumeUpdate();
         }
+    }
+
+    /** Overrides to highlight selected period being clicked. */
+    public void mouseClicked(MouseEvent event) {
+        // Converts the pixel x-coordinate to time value.
+        final Rectangle2D rectangle2d = getChartRenderingInfo().getPlotInfo().getDataArea();
+        final long t = (long)_xAxis.java2DToValue(event.getX(), rectangle2d, _combinedPlot.getDomainAxisEdge());
+        setSelectedPeriod(t);
     }
 
     public void restoreAutoRange() {

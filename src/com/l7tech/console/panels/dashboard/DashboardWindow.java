@@ -48,38 +48,39 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private JComboBox clusterNodeCombo;
     private JComboBox publishedServiceCombo;
     private JComboBox resolutionCombo;
-    private JTextField frontMinField;
-    private JTextField frontAvgField;
-    private JTextField frontMaxField;
-    private JTextField backMinField;
-    private JTextField backAvgField;
-    private JTextField backMaxField;
-    private JTextField numRoutingFailureField;
-    private JTextField numPolicyViolationField;
-    private JTextField numSuccessField;
-    private JTextField numTotalField;
     private JTabbedPane rightTabbedPane;
-    private JPanel rightUpperPanel;
-    private JPanel rightLowerPanel;
-    private JPanel separatorPanel1;
-    private JPanel separatorPanel2;
-    private JLabel fromTimeLabel;
-    private JLabel toTimeLabel;
-    private JLabel frontMinImageLabel;
-    private JLabel frontAvgImageLabel;
-    private JLabel frontMaxImageLabel;
-    private JLabel backMinImageLabel;
-    private JLabel backAvgImageLabel;
-    private JLabel backMaxImageLabel;
-    private JLabel numRoutingFailureImageLabel;
-    private JLabel numPolicyViolationImageLabel;
-    private JLabel numSuccessImageLabel;
+
+    private JLabel selectionFromTimeLabel;
+    private JLabel selectionToTimeLabel;
+    private JTextField selectionFrontMaxText;
+    private JTextField selectionFrontAvgText;
+    private JTextField selectionFrontMinText;
+    private JTextField selectionBackMaxText;
+    private JTextField selectionBackAvgText;
+    private JTextField selectionBackMinText;
+    private JTextField selectionNumRoutingFailureText;
+    private JTextField selectionNumPolicyViolationText;
+    private JTextField selectionNumSuccessText;
+    private JTextField selectionNumTotalText;
+
+    private JLabel latestFromTimeLabel;
+    private JLabel latestToTimeLabel;
+    private JTextField latestFrontMaxText;
+    private JTextField latestFrontAvgText;
+    private JTextField latestFrontMinText;
+    private JTextField latestBackMaxText;
+    private JTextField latestBackAvgText;
+    private JTextField latestBackMinText;
+    private JTextField latestNumRoutingFailureText;
+    private JTextField latestNumPolicyViolationText;
+    private JTextField latestNumSuccessText;
+    private JTextField latestNumTotalText;
 
     private static final Logger _logger = Logger.getLogger(DashboardWindow.class.getName());
 
     private static final ResourceBundle _resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
 
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(_resources.getString("rightPanel.timeFormat"));
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(_resources.getString("tabbedPane.timeFormat"));
 
     private static final MessageFormat STATUS_UPDATED_FORMAT = new MessageFormat(_resources.getString("status.updated"));
     private static final String METRICS_NOT_ENABLED = _resources.getString("status.notEnabled");
@@ -87,6 +88,12 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private static final long FINE_CHART_TIME_RANGE = 10 * 60 * 1000; // 10 minutes
     private static final long HOURLY_CHART_TIME_RANGE = 60 * 60 * 60 * 1000; // 60 hours
     private static final long DAILY_CHART_TIME_RANGE = 60 * 24 * 60 * 60 * 1000L; // 60 days
+
+    /** Index of tab panel for currently selected period. */
+    private static final int SELECTION_TAB_INDEX = 0;
+
+    /** Index of tab panel for latest period summary. */
+    private static final int LATEST_TAB_INDEX = 1;
 
     private final Resolution _fineResolution;
     private final Resolution _hourlyResolution;
@@ -139,49 +146,14 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
 
-        separatorPanel1.setLayout(new BoxLayout(separatorPanel1, BoxLayout.Y_AXIS));
-        separatorPanel1.add(new JSeparator(SwingConstants.HORIZONTAL));
-        separatorPanel2.setLayout(new BoxLayout(separatorPanel2, BoxLayout.Y_AXIS));
-        separatorPanel2.add(new JSeparator(SwingConstants.HORIZONTAL));
-
-        rightUpperPanel.setBorder(null);    // ? Can't disable border in GUI Designer.
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setHGap(6);
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setVGap(3);
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setHGap(6);
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setVGap(3);
-
-        ImageCache cache = ImageCache.getInstance();
-        backMinImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("backMinImageLabel.icon"))));
-        backAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("backAvgImageLabel.icon"))));
-        backMaxImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("backMaxImageLabel.icon"))));
-
-        frontMinImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("frontMinImageLabel.icon"))));
-        frontAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("frontAvgImageLabel.icon"))));
-        frontMaxImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("frontMaxImageLabel.icon"))));
-
-        numPolicyViolationImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("numPolicyViolationImageLabel.icon"))));
-        numRoutingFailureImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("numRoutingFailureImageLabel.icon"))));
-        numSuccessImageLabel.setIcon(new ImageIcon(cache.getIcon(_resources.getString("numSuccessImageLabel.icon"))));
-
-        backMinField.setBackground(Color.WHITE);
-        backAvgField.setBackground(Color.WHITE);
-        backMaxField.setBackground(Color.WHITE);
-        frontMinField.setBackground(Color.WHITE);
-        frontAvgField.setBackground(Color.WHITE);
-        frontMaxField.setBackground(Color.WHITE);
-
-        numRoutingFailureField.setBackground(Color.WHITE);
-        numPolicyViolationField.setBackground(Color.WHITE);
-        numSuccessField.setBackground(Color.WHITE);
-        numTotalField.setBackground(Color.WHITE);
-
+        rightTabbedPane.setSelectedIndex(LATEST_TAB_INDEX);
         statusLabel.setText("");
 
         int fineInterval;
         try {
             fineInterval = getClusterStatusAdmin().getMetricsFineInterval();
         } catch (RemoteException e) {
-            _logger.warning("Cannot get fine bin interval from gateway; defaults to 5 seconds: " + e);
+            _logger.warning("Cannot get fine bin interval from gateway; defaulting to 5 seconds: " + e);
             fineInterval = 5 * 1000;
         }
 
@@ -197,15 +169,15 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         chartPanel.setLayout(new BorderLayout());
         chartPanel.add(_metricsChartPanel, BorderLayout.CENTER);
 
-        rightTabbedPane.setTitleAt(0, _currentResolution.getLatestTabTitle());
+        rightTabbedPane.setTitleAt(LATEST_TAB_INDEX, _currentResolution.getLatestTabTitle());
 
         resolutionCombo.setModel(new DefaultComboBoxModel(new Resolution[]{_fineResolution, _hourlyResolution, _dailyResolution}));
         resolutionCombo.setSelectedItem(_currentResolution);
         resolutionCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 _currentResolution = (Resolution)resolutionCombo.getSelectedItem();
-                rightTabbedPane.setTitleAt(0, _currentResolution.getLatestTabTitle());
-                resetData();
+                rightTabbedPane.setTitleAt(LATEST_TAB_INDEX, _currentResolution.getLatestTabTitle());
+                resetData(false);   // Cannot keep selected period when changing resolution.
             }
         });
 
@@ -222,7 +194,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
 
         publishedServiceCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                resetData();
+                resetData(true);    // Keep selected period to aid user.
             }
         });
 
@@ -239,7 +211,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
 
         clusterNodeCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                resetData();
+                resetData(true);    // Keep selected period to aid user.
             }
         });
 
@@ -255,7 +227,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         getContentPane().add(mainPanel);
         pack();
 
-        resetData();
+        resetData(false);
         _refreshTimer.setInitialDelay(0);   /** So that {@link #resetData} will be more snappy. */
         _refreshTimer.start();
     } /* constructor */
@@ -303,6 +275,21 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         return result;
     }
 
+    public void updateTimeZone() {
+        // Gets time zone on gateway.
+        TimeZone tz = null;
+        try {
+            tz = TimeZone.getTimeZone(getClusterStatusAdmin().getCurrentClusterTimeZone());
+        } catch (RemoteException e) {
+            // Falls through to use local time zone.
+        }
+        if (tz == null) {
+            _logger.warning("Failed to get time zone from gateway. Falling back to use local time zone for display.");
+            tz = TimeZone.getDefault();
+        }
+        TIME_FORMAT.setTimeZone(tz);
+    }
+
     public void onLogon(LogonEvent e) {
         _clusterStatusAdmin = null;
         _serviceAdmin = null;
@@ -310,6 +297,8 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         clusterNodeCombo.setEnabled(true);
         publishedServiceCombo.setEnabled(true);
         resolutionCombo.setEnabled(true);
+        setSelectedBin(null, -1, -1, false);
+        updateTimeZone();
         _connected = true;
     }
 
@@ -346,13 +335,20 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         super.dispose();
     }
 
-    private synchronized void resetData() {
+    /**
+     * Clears all data and updates the chart.
+     *
+     * @param saveSelectedPeriod    whether to keep period selected (if any) in the chart
+     *                              around when data is available again when refreshed
+     */
+    private synchronized void resetData(final boolean saveSelectedPeriod) {
+        _refreshTimer.stop();
         _latestDownloadedPeriodStart = -1;
-        _metricsChartPanel.clearData();
+        _metricsChartPanel.clearData(saveSelectedPeriod);
         _metricsChartPanel.setResolution(_currentResolution.getResolution());
         _metricsChartPanel.setBinInterval(_currentResolution.getBinInterval());
         _metricsChartPanel.setMaxTimeRange(_currentResolution.getChartTimeRange());
-        _refreshTimer.stop();   // Don't wait for next time; restart right away.
+        setSelectedBin(null, -1, -1, false);
         _refreshTimer.start();
     }
 
@@ -423,21 +419,21 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             }
 
             if (latestBin != null) {
-                fromTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodStart())));
-                toTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodEnd())));
+                latestFromTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodStart())));
+                latestToTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodEnd())));
 
-                frontMinField.setText(Integer.toString(latestBin.getMinFrontendResponseTime()));
-                frontAvgField.setText(Long.toString(Math.round(latestBin.getAverageFrontendResponseTime())));
-                frontMaxField.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()));
+                latestFrontMaxText.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()));
+                latestFrontAvgText.setText(Long.toString(Math.round(latestBin.getAverageFrontendResponseTime())));
+                latestFrontMinText.setText(Integer.toString(latestBin.getMinFrontendResponseTime()));
 
-                backMinField.setText(Integer.toString(latestBin.getMinBackendResponseTime()));
-                backAvgField.setText(Long.toString(Math.round(latestBin.getAverageBackendResponseTime())));
-                backMaxField.setText(Integer.toString(latestBin.getMaxBackendResponseTime()));
+                latestBackMaxText.setText(Integer.toString(latestBin.getMaxBackendResponseTime()));
+                latestBackAvgText.setText(Long.toString(Math.round(latestBin.getAverageBackendResponseTime())));
+                latestBackMinText.setText(Integer.toString(latestBin.getMinBackendResponseTime()));
 
-                numPolicyViolationField.setText(Integer.toString(latestBin.getNumPolicyViolation()));
-                numRoutingFailureField.setText(Integer.toString(latestBin.getNumRoutingFailure()));
-                numSuccessField.setText(Integer.toString(latestBin.getNumSuccess()));
-                numTotalField.setText(Integer.toString(latestBin.getNumTotal()));
+                latestNumRoutingFailureText.setText(Integer.toString(latestBin.getNumRoutingFailure()));
+                latestNumPolicyViolationText.setText(Integer.toString(latestBin.getNumPolicyViolation()));
+                latestNumSuccessText.setText(Integer.toString(latestBin.getNumSuccess()));
+                latestNumTotalText.setText(Integer.toString(latestBin.getNumTotal()));
             }
 
             if (clusterStatusAdmin.isMetricsEnabled()) {
@@ -463,6 +459,57 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
             _refreshTimer.stop();
             dispose();
+        }
+    }
+
+    /**
+     * Populates the "Selection" tab with data in the given bin.
+     *
+     * @param bin               null for no bin, then fields will be cleared
+     * @param periodStart       -1 for not available, then time field will be cleared
+     * @param periodEnd         -1 for not available, then time field will be cleared
+     * @param bringTabToFront   whether to bring the selection tab to front
+     */
+    public void setSelectedBin(final MetricsSummaryBin bin, final long periodStart, final long periodEnd, final boolean bringTabToFront) {
+        if (bin == null) {
+            if (periodStart == -1) {
+                selectionFromTimeLabel.setText("");
+            } else {
+                selectionFromTimeLabel.setText(TIME_FORMAT.format(new Date(periodStart)));
+            }
+            if (periodEnd == -1) {
+                selectionToTimeLabel.setText("");
+            } else {
+                selectionToTimeLabel.setText(TIME_FORMAT.format(new Date(periodEnd)));
+            }
+
+            selectionFrontMaxText.setText("");
+            selectionFrontAvgText.setText("");
+            selectionFrontMinText.setText("");
+            selectionBackMaxText.setText("");
+            selectionBackAvgText.setText("");
+            selectionBackMinText.setText("");
+            selectionNumRoutingFailureText.setText("");
+            selectionNumPolicyViolationText.setText("");
+            selectionNumSuccessText.setText("");
+            selectionNumTotalText.setText("");
+        } else {
+            selectionFromTimeLabel.setText(TIME_FORMAT.format(new Date(bin.getPeriodStart())));
+            selectionToTimeLabel.setText(TIME_FORMAT.format(new Date(bin.getPeriodEnd())));
+            selectionFrontMaxText.setText(Integer.toString(bin.getMaxFrontendResponseTime()));
+            selectionFrontAvgText.setText(Long.toString(Math.round(bin.getAverageFrontendResponseTime())));
+            selectionFrontMinText.setText(Integer.toString(bin.getMinFrontendResponseTime()));
+            selectionBackMaxText.setText(Integer.toString(bin.getMaxBackendResponseTime()));
+            selectionBackAvgText.setText(Long.toString(Math.round(bin.getAverageBackendResponseTime())));
+            selectionBackMinText.setText(Integer.toString(bin.getMinBackendResponseTime()));
+            selectionNumRoutingFailureText.setText(Integer.toString(bin.getNumRoutingFailure()));
+            selectionNumPolicyViolationText.setText(Integer.toString(bin.getNumPolicyViolation()));
+            selectionNumSuccessText.setText(Integer.toString(bin.getNumSuccess()));
+            selectionNumTotalText.setText(Integer.toString(bin.getNumTotal()));
+        }
+
+        if (bringTabToFront) {
+            rightTabbedPane.setSelectedIndex(SELECTION_TAB_INDEX);
         }
     }
 
