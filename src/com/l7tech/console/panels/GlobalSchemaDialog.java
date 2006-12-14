@@ -213,39 +213,36 @@ public class GlobalSchemaDialog extends JDialog {
         final GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry, flags.canUpdateSome());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
-            public void run() {
-                if (dlg.success) {
-                    // save changes to gateway
-                    Registry reg = Registry.getDefault();
-                    if (reg == null || reg.getSchemaAdmin() == null) {
-                        logger.warning("No access to registry. Cannot save.");
-                        return;
-                    }
-                    checkEntryForUnresolvedImports(newEntry);
-                    Throwable err = null;
-                    try {
-                        reg.getSchemaAdmin().saveSchemaEntry(newEntry);
-                    } catch (RemoteException e) {
-                        err = e;
-                    } catch (SaveException e) {
-                        err = e;
-                    } catch (UpdateException e) {
-                        err = e;
-                    }
-
-                    if (err != null) {
-                        String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
-                        logger.log(Level.WARNING, text, err);
-                        showErrorMessage(text);
-                    }
-
-                    // pickup all changes from gateway
-                    populate();
-                    TableUtil.adjustColumnWidth(schemaTable, 1);
-                }
+        dlg.setVisible(true);
+        if (dlg.success) {
+            // save changes to gateway
+            Registry reg = Registry.getDefault();
+            if (reg == null || reg.getSchemaAdmin() == null) {
+                logger.warning("No access to registry. Cannot save.");
+                return;
             }
-        });
+            checkEntryForUnresolvedImports(newEntry);
+            Throwable err = null;
+            try {
+                reg.getSchemaAdmin().saveSchemaEntry(newEntry);
+            } catch (RemoteException e) {
+                err = e;
+            } catch (SaveException e) {
+                err = e;
+            } catch (UpdateException e) {
+                err = e;
+            }
+
+            if (err != null) {
+                String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
+                logger.log(Level.WARNING, text, err);
+                showErrorMessage(text);
+            }
+
+            // pickup all changes from gateway
+            populate();
+            TableUtil.adjustColumnWidth(schemaTable, 1);
+        }
     }
 
     private void showErrorMessage(String text) {
