@@ -1700,6 +1700,7 @@ public class LogPanel extends JPanel {
         lpbc.startDateComboBox.setSelectedIndex(timeIndex);
         lpbc.rangeSpinner.setValue(new Integer(range==0 ? 1 : range));
         lpbc.limitUnitComboBox.setSelectedIndex(0);
+        setControlsExpanded(true);
     }
 
     public boolean importView(File file) throws IOException {
