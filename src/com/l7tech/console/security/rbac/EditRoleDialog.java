@@ -120,11 +120,18 @@ public class EditRoleDialog extends JDialog {
         }
         setupButtonListeners();
         setupActionListeners();
-        updateButtonStates();
         applyFormSecurity();
+        updateButtonStates();
         pack();
     }
 
+    /**
+     * Apply form security to elements that are not dynamically enabled disabled.
+     *
+     * <p>Disables buttons that are dynamically set</p>
+     *
+     * @see #updateButtonStates
+     */
     private void applyFormSecurity() {
         boolean canEdit = flags.canUpdateSome();
 
@@ -135,10 +142,12 @@ public class EditRoleDialog extends JDialog {
         roleName.setEditable(canEdit && shouldAllowEdits);
         roleDescription.setEditable(canEdit && shouldAllowEdits);
         addPermission.setEnabled(canEdit && shouldAllowEdits);
-        editPermission.setEnabled(canEdit && shouldAllowEdits);
-        removePermission.setEnabled(canEdit &&shouldAllowEdits);
         addAssignment.setEnabled(flags.canUpdateSome());
-        removeAssignment.setEnabled(flags.canUpdateSome());
+
+        // these are enabled later if selections / permissions allow
+        editPermission.setEnabled(false);
+        removePermission.setEnabled(false);
+        removeAssignment.setEnabled(false);        
     }
 
     private void enablePermissionEditDeleteButtons() {
@@ -154,8 +163,10 @@ public class EditRoleDialog extends JDialog {
     }
 
     private void enableAssignmentDeleteButton() {
+        int index = userAssignmentList.getSelectedIndex();
         boolean validRowSelected = assignmentListModel.getSize() != 0 &&
-                userAssignmentList.getSelectedIndex() < userAssignmentList.getModel().getSize();
+                index < userAssignmentList.getModel().getSize() &&
+                index > -1;
 
         boolean hasEditPermission = flags.canUpdateSome();
 
@@ -286,7 +297,6 @@ public class EditRoleDialog extends JDialog {
         buttonOK.setEnabled(StringUtils.isNotEmpty(roleName.getText()));
         enablePermissionEditDeleteButtons();
         enableAssignmentDeleteButton();
-        applyFormSecurity();
     }
 
     private void setupActionListeners() {
@@ -313,12 +323,7 @@ public class EditRoleDialog extends JDialog {
         permissionsTable.getSelectionModel().addListSelectionListener(listListener);
 
         userAssignmentList.setModel(assignmentListModel);
-        userAssignmentList.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 1)
-                    updateButtonStates();
-            }
-        });
+        userAssignmentList.getSelectionModel().addListSelectionListener(listListener);
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
