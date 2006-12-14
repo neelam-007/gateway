@@ -267,10 +267,10 @@ public class Importer {
                                               "and connected to the database. Please shutdown " + connectedNode);
                     }
                 } catch (SQLException e) {
-                    logger.log(Level.WARNING, "Error looging for database use ", e);
-                    throw new IOException("cannot connect to database" + e.getMessage());
+                    logger.log(Level.WARNING, "Cannot connect to target database", e);
+                    throw new IOException("Cannot connect to database");
                 }  catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Error looging for database use ", e);
+                    logger.log(Level.WARNING, "Error looking for database use ", e);
                     throw new IOException("interrupted!" + e.getMessage());
                 }
             }
@@ -456,7 +456,12 @@ public class Importer {
 
     private Connection getConnection() throws SQLException {
         Connection c;
-        c = getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
+        try {
+            c = getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, "unexpected", e);
+            throw new SQLException(e.getMessage());
+        }
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
