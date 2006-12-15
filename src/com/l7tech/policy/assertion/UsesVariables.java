@@ -12,5 +12,9 @@ package com.l7tech.policy.assertion;
  * tries to access a variable at runtime, it may not be able to access it.
  */
 public interface UsesVariables {
+    /**
+     * @return an array of variable names used by the assertion at runtime. these variable names are not
+     * boxed in ${name} pattern (must return variable names only)
+     */
     String[] getVariablesUsed();
 }
