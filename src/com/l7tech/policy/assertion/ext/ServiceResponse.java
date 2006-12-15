@@ -41,13 +41,9 @@ public interface ServiceResponse {
     SecurityContext getSecurityContext();
 
     /**
-     * Context is a <code>Map</code> of key/value properties that is associated
-     * with the service invocation.
-     * When running within the servlet engine the contaxt will contain elements
-     * "httpRequest" and "httpResponse" that correspond to the HttpServletRequest
-     * and HttpServletResponse.
-     *
-     * @return the map of key/value pairs represnting the invocation context.
+     * @return A <code>Map</code> to store and retrieve data pertaining to the scope of the
+     * request at hand. Custom Assertions may use this map to share objects between themselves within
+     * a policy execution context.
      */
     Map getContext();
 
