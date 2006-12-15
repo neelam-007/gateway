@@ -177,6 +177,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
             public void actionPerformed(ActionEvent e) {
                 _currentResolution = (Resolution)resolutionCombo.getSelectedItem();
                 rightTabbedPane.setTitleAt(LATEST_TAB_INDEX, _currentResolution.getLatestTabTitle());
+                rightTabbedPane.setSelectedIndex(LATEST_TAB_INDEX);
                 resetData(false);   // Cannot keep selected period when changing resolution.
             }
         });
