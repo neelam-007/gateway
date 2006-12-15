@@ -30,8 +30,6 @@ if [ "${this_is_a_partition}" == "true" ] ; then
 	fi
 fi
 
-CATALINA_PID=/ssg/etc/conf/ssg.pid
-
 partition_opts="-Xmx${java_ram}k -Xss256k"
 
 export partition_opts

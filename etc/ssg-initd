@@ -5,26 +5,18 @@
 # chkconfig: - 99 01
 # description: Layer7's Secure Span Gateway Daemon \
 #	       secures and provides access for SOAP services
-# processname: tomcat
-# config: /ssg/tomcat
+# processname: ssg
 
 # Source function library.
 . /etc/rc.d/init.d/functions
 . /etc/profile.d/ssgruntimedefs.sh
 ORIGINAL_JAVA_OPTS="${JAVA_OPTS}"
 
-if [ -z "$TOMCAT_HOME" ]; then 
-	TOMCAT_HOME="/ssg/tomcat/"
-fi
-
-ssg="$TOMCAT_HOME/bin/catalina.sh"
-
-ssguser="gateway"
 prog="SSG"
 tries=3
 count=0
 
-USER=`whoami`
+USER=$(whoami)
 PARTITION_BASE="$SSG_HOME/etc/conf/partitions/"
 PARTITION_CONTROL="$SSG_HOME/bin/partitionControl.sh"
 SINGLE_PARTITION=""
@@ -43,19 +35,31 @@ fi
 start() {
     find_single_partition "$1"
     if [ -n "${SINGLE_PARTITION}" ] ; then
-	    start_ssg ${SINGLE_PARTITION}
-	else
-        find_tomcat
-        if [ -n "$pid" ] ; then
-            echo "At least one SSG Partition is already running. Please stop and restart."
-            exit
-        fi
-
+        start_ssg ${SINGLE_PARTITION}
+    else
+        RETVAL=1
+        PARTITION_RUNNING=1
         for partition_dir in ${ALL_PARTITIONS}
         do
-            start_ssg ${partition_dir}
+            status_ssg ${partition_dir} &>/dev/null
+            if [ ${?} -eq 0 ] ; then
+                PARTITION_RUNNING=0 
+            fi
         done
-        # [ $RETVAL = 0 ] && touch /var/lock/subsys/ssg
+
+        if [ ${PARTITION_RUNNING} -eq 0 ] ; then
+            echo "At least one SSG Partition is already running. Please stop and restart."
+        else
+            for partition_dir in ${ALL_PARTITIONS}
+            do
+                start_ssg ${partition_dir}
+            done
+        fi
+
+        echo -n $"$prog services started: "
+        [ $RETVAL -eq 0 ] && success || failure
+        echo
+
         return $RETVAL
     fi
 }
@@ -65,62 +69,83 @@ stop() {
     if [ -n "${SINGLE_PARTITION}" ] ; then
         stop_ssg ${SINGLE_PARTITION}
     else
+        RETVAL=1
         find_tomcat;
         if [ -z "$pid" ] ; then
             echo "No SSG Partitions are Currently Running"
-            return
+        else
+            for partition_dir in $ALL_PARTITIONS
+            do
+                stop_ssg ${partition_dir}
+            done
         fi
 
-        for partition_dir in $ALL_PARTITIONS
-        do
-            stop_ssg ${partition_dir}
-        done
-        #after shutting down all the partitions, make sure they are all fully stopped
-        if [ $RETVAL = 0 ]; then
-            sleep 7;
-            find_tomcat;
-            if [ -z "$pid" ] ; then
-                echo "Success"
-                return
-            fi
-            count=`expr $count + 1`
-            if [ "$count" -gt "$tries" ]; then
-                reallystop
-                return
-            fi
-            stop;
-	    else
-		    sleep 2;
-            count=`expr $count + 1`
-            if [ "$count" -gt "$tries" ]; then
-                reallystop
-                return
-            fi
-		    stop;
-	    fi
+        echo -n $"$prog services stopped: "
+        [ $RETVAL -eq 0 ] && success || failure
+        echo
     fi
-    echo
-	return $RETVAL
+    return $RETVAL
+}
+
+status() {
+    find_single_partition "$1"
+    if [ -n "${SINGLE_PARTITION}" ] ; then
+        status_ssg ${SINGLE_PARTITION}
+    else
+        for partition_dir in ${ALL_PARTITIONS}
+        do
+            status_ssg ${partition_dir}
+        done
+    fi
 }
 
 stop_ssg() {
-    which_partition=$1
-    echo -n $"Stopping $prog (`basename "${which_partition}"`): "
-	(sh $PARTITION_CONTROL stop ${which_partition} -force > /dev/null 2>&1)
+    which_partition="${1}"
+    if [ "${2}" != "silent" ] ; then
+        echo -n $"Stopping $prog $(basename "${which_partition}"): "
+    fi
+    (sh "${PARTITION_CONTROL}" "stop" "${which_partition}" &> /dev/null)
     RETVAL=$?
+
+    if [ ${RETVAL} -eq 0 ] ; then
+        sleep 5;
+        (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
+        if [ ${?} -eq 0 ] ; then
+            count=$((count + 1))
+            if [ "$count" -ge "$tries" ]; then
+                (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)    
+                RETVAL=$?
+            else
+                stop_ssg "${which_partition}" silent
+            fi            
+        fi
+    fi
+
+    if [ "${2}" != "silent" ] ; then
+        [ $RETVAL -eq 0 ] && success || failure
+        echo
+    fi
 }
 
 start_ssg() {
     which_partition=$1
-    echo -n $"Starting $prog (`basename "${which_partition}"`): "
+    echo -n $"Starting $prog $(basename "${which_partition}"): "
 
-    (sh $PARTITION_CONTROL start ${which_partition} &>/dev/null <&-)
+    (sh "${PARTITION_CONTROL}" "start" "${which_partition}" &> /dev/null)
     RETVAL=$?
+    [ $RETVAL -eq 0 ] && success || failure
     echo
 }
 
+status_ssg() {
+    which_partition="${1}"
+    (sh "${PARTITION_CONTROL}" "status" "${which_partition}")
+    return $?
+}
+
+
 find_tomcat() {
-	pid=`pidof ${JAVA_HOME}/bin/java`
+    pid=$(pidof "${JAVA_HOME}/bin/java")
 }
 
 find_single_partition() {
@@ -150,6 +175,9 @@ case "$1" in
         sleep 5
 	start "$2"
 	;;
+  status)
+        status "$2"
+        ;;
 esac
 
 exit $RETVAL
