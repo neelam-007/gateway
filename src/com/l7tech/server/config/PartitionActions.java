@@ -3,12 +3,12 @@ package com.l7tech.server.config;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -44,7 +44,7 @@ public class PartitionActions {
         String fullPath = osFunctions.getPartitionBase() + partitionDir;
         File newPartitionDir = new File(fullPath);
         if (!newPartitionDir.exists()) {
-            logger.info("Creating \"" + partitionDir + "\" Directory");;
+            logger.info("Creating \"" + partitionDir + "\" Directory");
             newPartitionDir.mkdir();
         }
         return newPartitionDir;
@@ -79,18 +79,22 @@ public class PartitionActions {
 
     public boolean removePartition(PartitionInformation partitionToRemove) {
         boolean success = false;
-        File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
-        success = FileUtils.deleteDir(deleteMe);
         if (partitionToRemove.getOSSpecificFunctions().isWindows()) {
             try {
                 uninstallService(partitionToRemove.getOSSpecificFunctions());
+                success = true;
             } catch (IOException e) {
-                logger.warning("Could not install the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                logger.warning("Could not uninstall the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
                 success = false;
             } catch (InterruptedException e) {
-                logger.warning("Could not install the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-                success = false;                                
+                logger.warning("Could not uninstall the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
+                success = false;
             }
+        }
+
+        if (success) {
+            File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
+            success = FileUtils.deleteDir(deleteMe);
         }
         return success;
     }
@@ -157,7 +161,6 @@ public class PartitionActions {
 
 
         Process changer = null;
-        InputStream is = null;
         try {
             String[] commandsArray = commandLine.toArray(new String[0]);
             changer = Runtime.getRuntime().exec(commandsArray, null, workingDir);
@@ -166,5 +169,65 @@ public class PartitionActions {
             if (changer != null)
                 changer.destroy();
         }
+    }
+
+    public static boolean validatePartitionEndpoints(PartitionInformation pinfo) {
+        boolean hadErrors = false;
+
+        Set<String> seenPorts = new HashSet<String>();
+
+        List<PartitionInformation.EndpointHolder> allHolders = new ArrayList<PartitionInformation.EndpointHolder>();
+        allHolders.addAll(pinfo.getHttpEndpoints());
+        allHolders.addAll(pinfo.getOtherEndpoints());
+
+        for (PartitionInformation.EndpointHolder holder : allHolders) {
+            int intPort;
+            try {
+                intPort = Integer.parseInt(holder.port);
+            } catch (NumberFormatException e) {
+                intPort = 0;
+                holder.port = "";
+            }
+
+            if ( intPort < 1024) {
+                holder.validationMessaqe = "The SecureSpan Gateway cannot use ports less than 1024";
+            } else {
+                if (seenPorts.add(holder.port)) {
+                    holder.validationMessaqe = "";
+                } else {
+                    holder.validationMessaqe = "Port " + holder.port + " is already in use in this partition.";
+                    hadErrors = true;
+                }
+            }
+        }
+
+        return !hadErrors;
+    }
+
+    public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition) {
+        boolean isOK = validatePartitionEndpoints(currentPartition);
+
+        List<PartitionInformation.EndpointHolder> currentEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
+        currentEndpoints.addAll(currentPartition.getHttpEndpoints());
+        currentEndpoints.addAll(currentPartition.getOtherEndpoints());
+
+        if (isOK) {
+            Map<String, List<String>> portMap = PartitionManager.getInstance().getAllPartitionPorts();
+            //don't compare against the current partition
+            portMap.remove(currentPartition.getPartitionId());
+
+            for (PartitionInformation.EndpointHolder currentEndpoint : currentEndpoints) {
+                for (Map.Entry<String,List<String>> partitionEntry : portMap.entrySet()) {
+                    if (partitionEntry.getValue().contains(currentEndpoint.port)) {
+                        currentEndpoint.validationMessaqe = "Port " + currentEndpoint.port + " is used by the \"" + partitionEntry.getKey() + "\" partition.";
+                        isOK = false;
+                    } else {
+                        currentEndpoint.validationMessaqe = "";
+                    }
+                }
+            }
+        }
+
+        return isOK;
     }
 }

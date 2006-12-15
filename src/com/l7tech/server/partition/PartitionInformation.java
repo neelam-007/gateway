@@ -3,6 +3,7 @@ package com.l7tech.server.partition;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.PartitionConfigBean;
+import com.l7tech.common.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -109,10 +110,7 @@ public class PartitionInformation{
             logger.warning("Error while reading the system properties file for partition: " + partitionId);
             logger.warning(e.getMessage());
         } finally {
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (IOException e) {}
+            ResourceUtils.closeQuietly(fis);
         }
 
     }
@@ -276,9 +274,21 @@ public class PartitionInformation{
         this.originalDom = originalDom;
     }
 
+    public static abstract class EndpointHolder {
+        public String ipAddress;
+        public String port;
+        public String validationMessaqe;
+
+        public String toString() {
+            return describe();
+        }
+
+        public abstract String describe();
+        public abstract void setValueAt(int columnIndex, Object aValue);
+    }
+    
     public static class OtherEndpointHolder extends EndpointHolder{
         public OtherEndpointType endpointType;
-        public String port; 
 
         public OtherEndpointHolder(OtherEndpointType endpointType) {
             this.endpointType = endpointType;
@@ -322,8 +332,8 @@ public class PartitionInformation{
                 case 0:
                     break;
                 case 1:
-                    port = String.valueOf(aValue);
-                    break;
+                    this.port = String.valueOf(aValue);
+                    break;                    
             }
         }
 
@@ -339,14 +349,6 @@ public class PartitionInformation{
         }
     }
     
-    public static abstract class EndpointHolder {
-        public String toString() {
-            return describe();
-        }
-
-        public abstract String describe();
-    }
-    
     public static class HttpEndpointHolder extends EndpointHolder {
         private static String[] headings = new String[] {
             "Endpoint Type",
@@ -355,11 +357,10 @@ public class PartitionInformation{
         };
 
         public HttpEndpointType endpointType;
-        public String ipAddress;
-        public String port;
 
         public HttpEndpointHolder(HttpEndpointType type) {
             this.endpointType = type;
+            ipAddress = "*";
         }
 
         public boolean equals(Object o) {

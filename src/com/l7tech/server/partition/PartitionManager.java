@@ -277,7 +277,7 @@ public class PartitionManager {
             } else {
                 System.out.println("the default partition does not need to be migrated");
             }
-            removeOriginalConfigurations(deletableOriginalFiles, osf);
+            removeOriginalConfigurations(deletableOriginalFiles);
 
         } catch (PartitionException pe) {
             System.out.println(pe.getMessage());
@@ -361,11 +361,27 @@ public class PartitionManager {
         }
     }
 
-    private static void removeOriginalConfigurations(List<File> filesToRemove, OSSpecificFunctions osf) {
+    private static void removeOriginalConfigurations(List<File> filesToRemove) {
         for (File file : filesToRemove) {
             if (file.exists())
                     FileUtils.deleteFileSafely(file.getAbsolutePath());
         }
+    }
+
+    public Map<String, List<String>> getAllPartitionPorts() {
+        Map<String, List<String>> portMap = new HashMap<String, List<String>>();
+        for (Map.Entry<String,PartitionInformation> which : partitions.entrySet()) {
+            List<String> theseEndpoints = new ArrayList<String>();
+            for (PartitionInformation.HttpEndpointHolder httpEndpointHolder : which.getValue().getHttpEndpoints()) {
+                theseEndpoints.add(httpEndpointHolder.port);
+            }
+            for (PartitionInformation.OtherEndpointHolder otherEndpointHolder : which.getValue().getOtherEndpoints()) {
+                theseEndpoints.add(otherEndpointHolder.port);
+            }
+
+            portMap.put(which.getKey(), theseEndpoints);
+        }
+        return portMap;
     }
 
     public static class PartitionException extends Exception {
