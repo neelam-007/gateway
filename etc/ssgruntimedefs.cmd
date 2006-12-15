@@ -34,7 +34,6 @@ pushd "%SSG_HOME%"
 for /F "tokens=1" %%i in ('bin\sysmem.exe "--unit=M" --roundoff TotalPhys') do set system_ram=%%i
 popd
 set /a java_ram=%system_ram%*2/3
-set /a maxnewsize=%java_ram%/2
 
 :: REMINDER: Changes to %JAVA_OPTS% will not propagate automatically to
 ::           %JVMOPTIONS% in service.cmd. You must edit the same changes there
@@ -46,24 +45,15 @@ set JAVA_OPTS=^
 -Djava.library.path="%SSG_HOME%\lib" ^
 -Djava.net.preferIPv4Stack=true ^
 -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl ^
--Dnetworkaddress.cache.ttl=30 ^
+-Dsun.net.inetaddr.ttl=30 ^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger ^
+-Dsun.rmi.dgc.server.gcInterval=3600000 ^
+-Dsun.rmi.dgc.client.gcInterval=3600000 ^
 -server ^
--Xms%java_ram%M ^
 -Xmx%java_ram%M ^
 -Xrs ^
 -Xss256k ^
--XX:CompileThreshold=1500 ^
--XX:NewSize=%maxnewsize%M ^
--XX:MaxNewSize=%maxnewsize%M ^
--XX:+DisableExplicitGC
-
-:: Tune for single or multi processor machine.
-if %NUMBER_OF_PROCESSORS%==1 (
-    set JAVA_OPTS=%JAVA_OPTS% -XX:+DisableExplicitGC
-) else (
-    set JAVA_OPTS=%JAVA_OPTS% -XX:+DisableExplicitGC -XX:+UseParallelGC
-)
+-XX:CompileThreshold=1500
 
 :: If a JNI DLL is dependent on another DLL, that second DLL must be in a folder
 :: on the Windows PATH environment variable.

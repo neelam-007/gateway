@@ -72,13 +72,12 @@ set JVMOPTIONS=^
 -Djava.library.path=%SSG_HOME%\lib;^
 -Djava.net.preferIPv4Stack=true;^
 -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl;^
--Dnetworkaddress.cache.ttl=30;^
+-Dsun.net.inetaddr.ttl=30;^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger;^
+-Dsun.rmi.dgc.server.gcInterval=3600000;^
+-Dsun.rmi.dgc.client.gcInterval=3600000;^
 -Xrs;^
--XX:CompileThreshold=1500;^
--XX:MaxNewSize=%maxnewsize%M;^
--XX:NewSize=%maxnewsize%M;^
--XX:+DisableExplicitGC
+-XX:CompileThreshold=1500
 
 if not "%PARTITIONNAMEPROPERTY%"=="" set JVMOPTIONS=%JVMOPTIONS%;-Dcom.l7tech.server.partitionName=%PARTITIONNAMEPROPERTY%
 
