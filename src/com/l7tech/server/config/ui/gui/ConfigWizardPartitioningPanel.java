@@ -169,6 +169,8 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                 );
             }
         }
+        String message = "All Selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.";
+        JOptionPane.showMessageDialog(this, message, "Deletion Complete", JOptionPane.INFORMATION_MESSAGE);
         enableEditDeletePartitionButtons();
     }
 
@@ -466,7 +468,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             PartitionInformation.HttpEndpointHolder holder = getEndpointAt(rowIndex);
             return holder.getValue(columnIndex);
         }
-
+        
         public Class<?> getColumnClass(int columnIndex) {
              return PartitionInformation.HttpEndpointHolder.getClassAt(columnIndex);
         }

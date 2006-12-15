@@ -70,7 +70,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     }
 
     private PartitionInformation doPartitionActionPrompts() throws IOException, WizardNavigationException {
-        boolean showAgain = false;
+        boolean showAgain;
 
         do {
             int index = 1;
@@ -115,7 +115,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             
         Pattern allowedEntries = Pattern.compile("[^" + pathSeparator +"]{1,128}");
 
-        String newPartitionName = "";
+        String newPartitionName;
         do {
             newPartitionName = getData(prompts.toArray(new String[0]), "New Partition", allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
             if (partitionNames.contains(newPartitionName))
@@ -173,6 +173,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
                 pa.removePartition(PartitionManager.getInstance().getPartition(whichPartitionName));
                 PartitionManager.getInstance().removePartition(whichPartitionName);
                 partitionNames = PartitionManager.getInstance().getPartitionNames();
+                printText(getEolChar() + "The selected partition has been deleted. You may continue to use the wizard to configure other partitions or exit now." + getEolChar());
             }
         }
     }
@@ -215,7 +216,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         holders.addAll(pinfo.getOtherEndpoints());
 
         List<String> promptList = new ArrayList<String>();
-        boolean finishedEndpointConfig = true;
+        boolean finishedEndpointConfig;
         do {
             promptList.clear();
             promptList.add(MessageFormat.format(HEADER_CONFIGURE_ENDPOINTS, pinfo.getPartitionId()));
@@ -249,8 +250,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     }
 
     private void doCollectEndpointInfo(PartitionInformation.EndpointHolder holder) throws IOException, WizardNavigationException {
-        String input = null;
-        List<String> prompts = null;
+        String input;
+        List<String> prompts;
         Pattern portPattern = Pattern.compile("\\d{1,5}+");
         if (holder instanceof PartitionInformation.HttpEndpointHolder) {
             PartitionInformation.HttpEndpointHolder httpHolder = (PartitionInformation.HttpEndpointHolder) holder;
