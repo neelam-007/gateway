@@ -125,7 +125,7 @@ public class OSConfigManager {
             logger.info("Restoring " + osfiletorestore + " into " + tmptarget);
             File fromFile = new File(osfiletorestore);
             File toFile = new File(tmptarget);
-            System.out.println("Flagging " + toFile.getName() + " for deamon overwrite");
+            System.out.println("Flagging " + toFile.getName() + " for daemon overwrite");
             if (toFile.exists()) {
                 toFile.delete();
             }

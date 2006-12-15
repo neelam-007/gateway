@@ -128,9 +128,12 @@ public class Importer {
             partitionName = arguments.get(PARTITION.name);
             // check if the system has more than one partition on it
             PartitionManager partitionManager = PartitionManager.getInstance();
-            boolean multiplePartitionSystem = partitionManager.isPartitioned();
-            if (multiplePartitionSystem) {
+            boolean multiplepartitions = false;
+            if (partitionManager.isPartitioned()) {
                 Set<String> partitions = partitionManager.getPartitionNames();
+                if (partitions.size() > 1) {
+                    multiplepartitions = true;
+                }
                 // option PARTITION now mandatory (unless there is only one)
                 if (StringUtils.isEmpty(partitionName)) {
                     if (partitions.size() == 1) {
@@ -315,8 +318,12 @@ public class Importer {
                 copySystemConfigFiles();
 
                 if (arguments.get(OS_OVERWRITE.name) != null) {
-                    // overwrite os level system files
-                    OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                    if (multiplepartitions) {
+                        System.out.println("Ignoring option " + OS_OVERWRITE.name + " because this system is partitioned");
+                    } else {
+                        // overwrite os level system files
+                        OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                    }
                 }
             } else if (arguments.get(OS_OVERWRITE.name) != null) {
                 String issue = "Ignoring option " + OS_OVERWRITE.name + " because it is only supported in restore mode";
