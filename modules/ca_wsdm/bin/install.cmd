@@ -42,20 +42,8 @@ if not exist "%SSG_HOME%" (
     goto end
 )
 
-:: Edit ssglog.properties.
-set SSG_LOG_PROPS_FILE=%SSG_HOME%\etc\conf\ssglog.properties
-if not exist "%SSG_LOG_PROPS_FILE%" (
-    echo !! File not found: %SSG_LOG_PROPS_FILE%
-    goto end
-)
-set LOG_LEVEL_FOUND=0
-for /F "tokens=* usebackq" %%i in ("%SSG_LOG_PROPS_FILE%") do if "%%i"=="LOCAL_REQUEST_LOG.level=OFF" set LOG_LEVEL_FOUND=1
-if %LOG_LEVEL_FOUND%==0 (
-    echo.>> "%SSG_LOG_PROPS_FILE%"
-    echo # Suppresses harmless empty SEVERE logs from CA Unicenter WSDM ODK.>> "%SSG_LOG_PROPS_FILE%"
-    echo LOCAL_REQUEST_LOG.level=OFF>> "%SSG_LOG_PROPS_FILE%"
-    echo.>> "%SSG_LOG_PROPS_FILE%"
-)
+:: Edit ssglog.properties in each partition.
+for /D %%i in ("%SSG_HOME%\etc\conf\partitions\*") do if not "%%~ni"=="partitiontemplate_" call EditSsgLog.cmd "%%i\ssglog.properties"
 
 :: Edit WsdmSOMMA_Basic.properties.
 set SSG_HOME_ESC=%SSG_HOME:\=\\%

@@ -29,21 +29,25 @@ if [ ! -d "${SSG_HOME}" ]; then
     exit 1
 fi
 
-# Edit ssglog.properties.
-SSG_LOG_PROPS_FILE="${SSG_HOME}/etc/conf/ssglog.properties"
-if [ ! -f "${SSG_LOG_PROPS_FILE}" ]; then
-    echo '!! File not found: '"${SSG_LOG_PROPS_FILE}"
-    exit 1
-fi
-grep -q '[[:space:]]*LOCAL_REQUEST_LOG.level[[:space:]]*=[[:space:]]*OFF[[:space:]]*' "${SSG_LOG_PROPS_FILE}"
-if [ $? -eq 1 ]; then
-    cat << EOF >> "${SSG_LOG_PROPS_FILE}"
+# Edit ssglog.properties in each partition.
+for partition in "${SSG_HOME}/etc/conf/partitions/"*; do
+    if [[ -d "$partition" &&  "${partition##*/}" != "partitiontemplate_" ]]; then
+        f="${partition}/ssglog.properties"
+        if [ ! -f "${f}" ]; then
+            echo '!! File not found: '"${f}"
+            exit 1
+        fi
+        grep -q '[[:space:]]*LOCAL_REQUEST_LOG.level[[:space:]]*=[[:space:]]*OFF[[:space:]]*' "${f}"
+        if [ $? -eq 1 ]; then
+            cat << EOF >> "${f}"
 
 # Suppresses harmless empty SEVERE logs from CA Unicenter WSDM ODK.
 LOCAL_REQUEST_LOG.level=OFF
 
 EOF
-fi
+        fi
+    fi
+done
 
 # Edit WsdmSOMMA_Basic.properties.
 if [ -e WsdmSOMMA_Basic.properties.EDIT ]; then rm WsdmSOMMA_Basic.properties.EDIT; fi
