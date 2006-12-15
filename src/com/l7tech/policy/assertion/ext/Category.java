@@ -20,10 +20,19 @@ import java.io.Serializable;
  */
 public class Category implements Serializable {
     private static int index = 0;
+    // 3.6 categories
     public static final Category ACCESS_CONTROL = new Category(index++, "AccessControl");
     public static final Category MESSAGE = new Category(index++, "Message");
     public static final Category UNFILLED = new Category(index++, "Unfilled");
     public static final Category THREAT_PROT = new Category(index++, "ThreatProtection");
+    // new categories introduced for 3.6.5
+    public static final Category AUDIT_ALERT = new Category(index++, "LoggingAuditingAlerts");
+    public static final Category TRANSPORT_SEC = new Category(index++, "TransportLayerSecurity");
+    public static final Category XML_SEC = new Category(index++, "XMLSecurity");
+    public static final Category MSG_VAL_XSLT = new Category(index++, "MessageValidationTransformation"); // same as MESSAGE
+    public static final Category ROUTING = new Category(index++, "MessageRouting");
+    public static final Category AVAILABILITY = new Category(index++, "ServiceAvailability");
+    public static final Category LOGIC = new Category(index++, "PolicyLogic");
 
     private final int myKey;
     private final String myName;
@@ -50,9 +59,11 @@ public class Category implements Serializable {
      */
     public static Category asCategory(String name) {
         if (name == null) return null;
+        name = name.toLowerCase();
         for (int i = 0; i < VALUES.length; i++) {
             Category value = VALUES[i];
-            if (value.myName.equals(name)) {
+            String tmp = value.myName.toLowerCase();
+            if (tmp.equals(name)) {
                 return value;
             }
         }
@@ -74,5 +85,6 @@ public class Category implements Serializable {
         return VALUES[myKey];
     }
 
-    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED, THREAT_PROT};
+    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED, THREAT_PROT, TRANSPORT_SEC,
+                                              XML_SEC, MSG_VAL_XSLT, ROUTING, AVAILABILITY, AUDIT_ALERT, LOGIC};
 }

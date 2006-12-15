@@ -51,6 +51,11 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
                 CustomAssertionHolder a = (CustomAssertionHolder)it.next();
                 insert(new CustomAccessControlNode(a), index++);
             }
+            it = cr.getAssertions(Category.MSG_VAL_XSLT).iterator();
+            while (it.hasNext()) {
+                CustomAssertionHolder a = (CustomAssertionHolder)it.next();
+                insert(new CustomAccessControlNode(a), index++);
+            }
         } catch (RemoteException e1) {
             if (ExceptionUtils.causedBy(e1, LicenseException.class)) {
                 logger.log(Level.INFO, "Custom assertions unavailable or unlicensed");
