@@ -38,6 +38,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     private Set<String> partitionNames;
     private String pathSeparator = File.separator;
 
+    private int newPartitionIndex = 0;
+
 
     public ConfigWizardConsolePartitioningStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -110,14 +112,14 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     private PartitionInformation doAddPartitionPrompts() throws IOException, WizardNavigationException {
         List<String> prompts = new ArrayList<String>();
         prompts.add(HEADER_ADD_PARTITION);
-        String defaultValue = "New Partition";
+        String defaultValue = getNextNewName();
         prompts.add("Enter the name of the new partition: ["+ defaultValue + "]");
-            
-        Pattern allowedEntries = Pattern.compile("[^" + pathSeparator +"]{1,128}");
+
+        Pattern allowedEntries = Pattern.compile("[^" + pathSeparator + "\\s]{1,128}");
 
         String newPartitionName;
         do {
-            newPartitionName = getData(prompts.toArray(new String[0]), "New Partition", allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
+            newPartitionName = getData(prompts.toArray(new String[0]), defaultValue, allowedEntries, "*** Invalid Partition Name. Please re-enter ***");
             if (partitionNames.contains(newPartitionName))
                 printText(new String[] {
                     "*** " + newPartitionName + " already exists. Please choose another name ***" + getEolChar(),
@@ -128,14 +130,22 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         PartitionInformation pi = null;
         if (StringUtils.isNotEmpty(newPartitionName)) {
             PartitionActions pa = new PartitionActions(osFunctions);
-            File newPartDir = pa.createNewPartition(newPartitionName);
-            pa.copyTemplateFiles(newPartDir);
+            pa.createNewPartition(newPartitionName);
             PartitionManager.getInstance().addPartition(newPartitionName);
             partitionNames = PartitionManager.getInstance().getPartitionNames();
             pi = PartitionManager.getInstance().getPartition(newPartitionName);
         }
 
         return pi;
+    }
+
+    private String getNextNewName() {
+        String newName;
+        do {
+            newName = "NewPartition" + (newPartitionIndex == 0?"":String.valueOf(newPartitionIndex));
+            newPartitionIndex++;
+        } while (partitionNames.contains(newName));
+        return newName;
     }
 
     private void doDeletePartitionPrompts() throws IOException, WizardNavigationException {
@@ -222,7 +232,8 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             promptList.add(MessageFormat.format(HEADER_CONFIGURE_ENDPOINTS, pinfo.getPartitionId()));
             int index = 1;
             for (PartitionInformation.EndpointHolder holder : holders) {
-                promptList.add(String.valueOf(index++) + ") " + holder.toString() + getEolChar());
+                promptList.add(String.valueOf(index++) + ") " + holder.toString() + getEolChar() +
+                        (StringUtils.isEmpty(holder.validationMessaqe)?"":"   [ *** " + holder.validationMessaqe + " *** ]" + getEolChar()) );
             }
             promptList.add(String.valueOf(index) + ") Finished Configuring Endpoints" + getEolChar());
 
@@ -238,11 +249,17 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             String whichEndpointSelection = getData(promptList, defaultValue, allowedEntries);
             int whichEndpointIndex = Integer.parseInt(whichEndpointSelection);
 
-            if (whichEndpointIndex == index) {
-                finishedEndpointConfig = true;
+            if (whichEndpointIndex == index) { //if the select was the last in the list then it's the "done" option
+                if (!PartitionActions.validateAllPartitionEndpoints(pinfo, false)) {
+                    printText(getEolChar() + "*** Some of the partition endpoints have errors. Please correct the indicated errors ***" + getEolChar() + getEolChar());
+                    finishedEndpointConfig = false;
+                } else {
+                    finishedEndpointConfig = true;
+                }
             } else {
                 PartitionInformation.EndpointHolder holder = holders.get(whichEndpointIndex -1);
                 doCollectEndpointInfo(holder);
+                PartitionActions.validatePartitionEndpoints(pinfo, false);
                 finishedEndpointConfig = false;
             }
 
@@ -281,6 +298,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             input = getData(prompts.toArray(new String[0]), httpHolder.port, portPattern, "The port you have entered is invalid. Please re-enter");
 
             httpHolder.port = input;
+            holder.validationMessaqe = "";
 
         } else if (holder instanceof PartitionInformation.OtherEndpointHolder) {
             PartitionInformation.OtherEndpointHolder otherHolder = (PartitionInformation.OtherEndpointHolder) holder;

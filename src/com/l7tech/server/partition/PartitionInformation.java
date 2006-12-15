@@ -1,9 +1,10 @@
 package com.l7tech.server.partition;
 
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.PartitionConfigBean;
-import com.l7tech.common.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -13,14 +14,14 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.logging.Logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -47,6 +48,14 @@ public class PartitionInformation{
     List<OtherEndpointHolder> otherEndpointsList;
     OSSpecificFunctions osf;
     Document originalDom;
+    public static final int MIN_PORT = 1024;
+    public static final int MAX_PORT = 65535;
+
+    private static String DEFAULT_HTTP_PORT = "8080";
+    private static String DEFAULT_SSL_PORT = "8443";
+    private static String DEFAULT_NOAUTH_PORT = "9443";
+    private static String DEFAULT_RMI_PORT = "2124";
+    private static String DEFAULT_SHUTDOWN_PORT = "8005";
 
     public enum OtherEndpointType {
         RMI_ENDPOINT("Inter-Node Communication Port"),
@@ -79,6 +88,8 @@ public class PartitionInformation{
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
         makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
+        //since this is a new partitionm, try to make sure the ports don't conflict
+        PartitionActions.validateAllPartitionEndpoints(this, true);
     }
 
     public PartitionInformation(String partitionId, Document doc, boolean isNew) throws XPathExpressionException {
@@ -101,9 +112,7 @@ public class PartitionInformation{
             fis = new FileInputStream(sysProps);
             props.load(fis);
             String rmiPort = props.getProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT);
-            if (StringUtils.isNotEmpty(rmiPort)) {
-                getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).port = rmiPort;
-            }
+            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).port = StringUtils.isNotEmpty(rmiPort)?rmiPort:"2124";
         } catch (FileNotFoundException e) {
             logger.warning("no system properties file found for partition: " + partitionId);
         } catch (IOException e) {
@@ -323,8 +332,13 @@ public class PartitionInformation{
         }
 
         public static void populateDefaultEndpoints(List<OtherEndpointHolder> endpoints) {
-            endpoints.add(new OtherEndpointHolder(PartitionInformation.OtherEndpointType.RMI_ENDPOINT));
-            endpoints.add(new OtherEndpointHolder(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT));
+            OtherEndpointHolder holder = new OtherEndpointHolder(OtherEndpointType.RMI_ENDPOINT);
+            holder.port = DEFAULT_RMI_PORT;
+            endpoints.add(holder);
+
+            holder = new OtherEndpointHolder(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT);
+            holder.port = DEFAULT_SHUTDOWN_PORT;
+            endpoints.add(holder);
         }
 
         public void setValueAt(int columnIndex, Object aValue) {
@@ -440,9 +454,17 @@ public class PartitionInformation{
         }
 
         public static void populateDefaultEndpoints(List<HttpEndpointHolder> endpoints) {
-            endpoints.add(new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.BASIC_HTTP));
-            endpoints.add(new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP));
-            endpoints.add(new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT));
+            HttpEndpointHolder holder = new HttpEndpointHolder(HttpEndpointType.BASIC_HTTP);
+            holder.port = DEFAULT_HTTP_PORT;
+            endpoints.add(holder);
+
+            holder = new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP);
+            holder.port = DEFAULT_SSL_PORT;
+            endpoints.add(holder);
+
+            holder = new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT);
+            holder.port = DEFAULT_NOAUTH_PORT;
+            endpoints.add(holder);
         }
     }
 }

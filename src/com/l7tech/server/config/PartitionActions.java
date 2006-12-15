@@ -47,10 +47,11 @@ public class PartitionActions {
             logger.info("Creating \"" + partitionDir + "\" Directory");
             newPartitionDir.mkdir();
         }
+        copyTemplateFiles(newPartitionDir);
         return newPartitionDir;
     }
 
-    public void copyTemplateFiles(File partitionPath) throws IOException {
+    private void copyTemplateFiles(File partitionPath) throws IOException {
         if (!partitionPath.isDirectory()) {
             throw new IllegalArgumentException("Partition destination must be a directory");
         }
@@ -78,25 +79,24 @@ public class PartitionActions {
     }
 
     public boolean removePartition(PartitionInformation partitionToRemove) {
-        boolean success = false;
+        boolean uninstallSuccess = true;
         if (partitionToRemove.getOSSpecificFunctions().isWindows()) {
             try {
                 uninstallService(partitionToRemove.getOSSpecificFunctions());
-                success = true;
             } catch (IOException e) {
                 logger.warning("Could not uninstall the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-                success = false;
+                uninstallSuccess = false;
             } catch (InterruptedException e) {
                 logger.warning("Could not uninstall the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-                success = false;
+                uninstallSuccess = false;
             }
         }
 
-        if (success) {
+        if (uninstallSuccess) {
             File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
-            success = FileUtils.deleteDir(deleteMe);
+            uninstallSuccess = FileUtils.deleteDir(deleteMe);
         }
-        return success;
+        return uninstallSuccess;
     }
 
     private void uninstallService(OSSpecificFunctions osSpecificFunctions) throws IOException, InterruptedException {
@@ -171,7 +171,7 @@ public class PartitionActions {
         }
     }
 
-    public static boolean validatePartitionEndpoints(PartitionInformation pinfo) {
+    public static boolean validatePartitionEndpoints(PartitionInformation pinfo, boolean incrementEndpoints) {
         boolean hadErrors = false;
 
         Set<String> seenPorts = new HashSet<String>();
@@ -191,6 +191,8 @@ public class PartitionActions {
 
             if ( intPort < 1024) {
                 holder.validationMessaqe = "The SecureSpan Gateway cannot use ports less than 1024";
+            } else if (intPort > 65535) {
+                holder.validationMessaqe = "The maximum port allowed is 65535";
             } else {
                 if (seenPorts.add(holder.port)) {
                     holder.validationMessaqe = "";
@@ -204,30 +206,55 @@ public class PartitionActions {
         return !hadErrors;
     }
 
-    public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition) {
-        boolean isOK = validatePartitionEndpoints(currentPartition);
-
-        List<PartitionInformation.EndpointHolder> currentEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
-        currentEndpoints.addAll(currentPartition.getHttpEndpoints());
-        currentEndpoints.addAll(currentPartition.getOtherEndpoints());
+    public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition, boolean incrementEndpoints) {
+        boolean isOK = validatePartitionEndpoints(currentPartition, incrementEndpoints);
 
         if (isOK) {
+            List<PartitionInformation.EndpointHolder> currentEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
+            currentEndpoints.addAll(currentPartition.getHttpEndpoints());
+            currentEndpoints.addAll(currentPartition.getOtherEndpoints());
+
             Map<String, List<String>> portMap = PartitionManager.getInstance().getAllPartitionPorts();
             //don't compare against the current partition
             portMap.remove(currentPartition.getPartitionId());
 
             for (PartitionInformation.EndpointHolder currentEndpoint : currentEndpoints) {
-                for (Map.Entry<String,List<String>> partitionEntry : portMap.entrySet()) {
-                    if (partitionEntry.getValue().contains(currentEndpoint.port)) {
-                        currentEndpoint.validationMessaqe = "Port " + currentEndpoint.port + " is used by the \"" + partitionEntry.getKey() + "\" partition.";
-                        isOK = false;
-                    } else {
-                        currentEndpoint.validationMessaqe = "";
-                    }
-                }
+                if (findMatchingEndpoints(currentEndpoint, portMap, incrementEndpoints))
+                    isOK = false;
             }
         }
 
         return isOK;
+    }
+
+    private static boolean findMatchingEndpoints(PartitionInformation.EndpointHolder currentEndpoint, Map<String, List<String>> portMap, boolean incrementEndpoint) {
+        boolean hadMatches= false;
+        List<String> matches = new ArrayList<String>();
+        for (Map.Entry<String,List<String>> partitionEntry : portMap.entrySet()) {
+            List<String> ports = partitionEntry.getValue();
+            if (ports.contains(currentEndpoint.port)) {
+                if (incrementEndpoint) {
+                    int x = Integer.parseInt(currentEndpoint.port);
+                    do {
+                        currentEndpoint.port = String.valueOf(++x);
+                    } while(x <= PartitionInformation.MAX_PORT && ports.contains(currentEndpoint.port));
+                } else {
+                    matches.add(partitionEntry.getKey());
+                }
+            }
+        }
+
+        if (!matches.isEmpty()) {
+            hadMatches = true;
+
+            String message = "Port " + currentEndpoint.port + " is used by partitions: ";
+            boolean first = true;
+            for (String match : matches) {
+                message += (first?"":", ") + match;
+                first = false;
+            }
+            currentEndpoint.validationMessaqe = message;
+        }
+        return hadMatches;
     }
 }

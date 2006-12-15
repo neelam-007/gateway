@@ -1,11 +1,12 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.NumberField;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
 import com.l7tech.server.partition.PartitionInformation;
@@ -15,15 +16,12 @@ import org.apache.commons.lang.StringUtils;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableColumn;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private static final Logger logger = Logger.getLogger(ConfigWizardPartitioningPanel.class.getName());
-        
+
     private JPanel mainPanel;
     private JList partitionList;
     private JButton addPartition;
@@ -48,6 +46,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private JTextField partitionName;
     private JTable httpEndpointsTable;
     private JTable otherEndpointsTable;
+    private JLabel errorMessageLabel;
     private PartitionListModel partitionListModel;
 
     PartitionConfigBean partitionBean;
@@ -71,9 +70,10 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         super(next);
         partitionNameFilter = new FilterDocument.Filter() {
             public boolean accept(String s) {
-                return !s.contains(pathSeparator);
+                return s.matches("[^" + pathSeparator + "\\s]{1,128}");
             }
         };
+
         stepLabel = "Configure Partitions";
         setShowDescriptionPanel(false);
         partitionList.setCellRenderer(new PartitionListRenderer());
@@ -97,19 +97,21 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         httpEndpointsIpColumn.setCellEditor(new DefaultCellEditor(new JComboBox(new DefaultComboBoxModel(PartitionActions.getAvailableIpAddresses()))));
 
         TableColumn httpEndpointsPortColumn = httpEndpointsTable.getColumnModel().getColumn(2);
+        httpEndpointsPortColumn.setCellEditor(new DefaultCellEditor(new JTextField(new NumberField(5), null, 0)));
         httpEndpointsPortColumn.setCellRenderer(new PortNumberRenderer(httpEndpointTableModel));
 
         otherEndpointTableModel = new OtherEndpointTableModel();
         otherEndpointsTable.setModel(otherEndpointTableModel);
 
         TableColumn otherEndpointsPortColumn = otherEndpointsTable.getColumnModel().getColumn(1);
+        otherEndpointsPortColumn.setCellEditor(new DefaultCellEditor(new JTextField(new NumberField(5), null, 0)));
         otherEndpointsPortColumn.setCellRenderer(new PortNumberRenderer(otherEndpointTableModel));
 
         initListeners();
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
-
+        errorMessageLabel.setVisible(false);
         setupPartitions();
         enableProperties(false);
     }
@@ -140,7 +142,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private void doAddPartition() {
         String newName;
         do {
-            newName = "New Partition" + (newPartitionIndex == 0?"":" " + String.valueOf(newPartitionIndex));
+            newName = "NewPartition" + (newPartitionIndex == 0?"":String.valueOf(newPartitionIndex));
             newPartitionIndex++;
         } while (partitionListModel.contains(newName));
 
@@ -189,9 +191,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     }
 
     private void initListeners() {
-        partitionName.addFocusListener(new FocusAdapter() {
-            public void focusLost(FocusEvent e) {
-                String newname = partitionName.getText();
+        partitionName.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                String newname = partitionName.getText() + e.getKeyChar();
                 int index = partitionList.getSelectedIndex();
                 if (index > 0 && index < partitionListModel.getSize()) {
                     if (!partitionListModel.contains(newname))
@@ -212,6 +214,14 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
                 updateProperties();
                 enableNameField();
+            }
+        });
+
+        partitionList.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+                    doRemovePartition();
+                }
             }
         });
 
@@ -304,7 +314,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
         PartitionInformation pInfo = getSelectedPartition();
 
-        if (PartitionActions.validateAllPartitionEndpoints(pInfo)) {
+        if (PartitionActions.validateAllPartitionEndpoints(pInfo, false)) {
             OSSpecificFunctions partitionFunctions = pInfo.getOSSpecificFunctions();
             PartitionActions partActions = new PartitionActions(partitionFunctions);
             createNewPartitions(partActions);
@@ -323,7 +333,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                     }
                 }
             }
+            errorMessageLabel.setVisible(false);
         } else {
+            errorMessageLabel.setVisible(true);
             isValid = false;
             updateProperties();
         }
@@ -334,8 +346,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         boolean hadErrors = false;
         for (PartitionInformation newPartition : partitionsAdded) {
             try {
-                File newPartDir = partActions.createNewPartition(newPartition.getPartitionId());
-                partActions.copyTemplateFiles(newPartDir);
+                partActions.createNewPartition(newPartition.getPartitionId());
             } catch (IOException e) {
                 logger.severe("Error while creating the new partition \"" + newPartition + "\": " + e.getMessage());
                 hadErrors = true;
@@ -468,7 +479,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             PartitionInformation.HttpEndpointHolder holder = getEndpointAt(rowIndex);
             return holder.getValue(columnIndex);
         }
-        
+
         public Class<?> getColumnClass(int columnIndex) {
              return PartitionInformation.HttpEndpointHolder.getClassAt(columnIndex);
         }
@@ -482,7 +493,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         protected void doAfterSetValue(Object aValue, int rowIndex, int columnIndex) {
-            PartitionActions.validatePartitionEndpoints(getSelectedPartition());
+            PartitionActions.validatePartitionEndpoints(getSelectedPartition(), false);
         }
 
         public int getSize() {
@@ -561,7 +572,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         protected void doAfterSetValue(Object aValue, int rowIndex, int columnIndex) {
-            PartitionActions.validatePartitionEndpoints(getSelectedPartition());
+            PartitionActions.validatePartitionEndpoints(getSelectedPartition(), false);
         }
 
         public PartitionInformation.OtherEndpointHolder getEndpointAt(int selectedRow) {
@@ -589,19 +600,22 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+
+            TableCellRenderer renderer = table.getDefaultRenderer(table.getModel().getColumnClass(column));
+            Component x = renderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (table != null) {
                 if (endpointModel != null) {
                     PartitionInformation.EndpointHolder holder = endpointModel.getEndpointAtRow(row);
                     if (StringUtils.isNotEmpty(holder.validationMessaqe)) {
-                        setForeground(Color.RED);
-                        setToolTipText(holder.validationMessaqe);
+                        ((JLabel)x).setForeground(Color.RED);
+                        ((JLabel)x).setToolTipText(holder.validationMessaqe);
                     } else {
-                        setForeground(Color.BLACK);
-                        setToolTipText(null);
+                        ((JLabel)x).setForeground(Color.BLACK);
+                        ((JLabel)x).setToolTipText(null);
                     }
                 }
             }
-            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            return x;
         }
     }
 
