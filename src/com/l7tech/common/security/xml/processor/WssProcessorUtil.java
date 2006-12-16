@@ -13,36 +13,32 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import javax.crypto.SecretKey;
 import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * Holds utility methods of interest to users of WssProcessor.
  */
 public class WssProcessorUtil {
+    private static Random random = new SecureRandom();
+
     /**
      * Creates a virtual EncryptedKey security token that uses the specified SecretKey identified
      * by the specified EncryptedKeySHA1 identifier.
      *
+     * @param factory    DOM factory to use to create the DOM for the token, if it is eventually requested
      * @param key             The SecretKey that was encoded into the original EncryptedKey
      * @param encryptedKeySha1 the EncryptedKeySHA1 identifier that refers to the original EncryptedKey
+     * @return a virtual EncryptedKey instance containing the specified key and sha1.
      */
-    public static EncryptedKey makeEncryptedKey(final SecretKey key, final String encryptedKeySha1) {
+    public static EncryptedKey makeEncryptedKey(final Document factory, final SecretKey key, final String encryptedKeySha1) {
         byte[] rand = new byte[16];
-        new Random().nextBytes(rand);
+        random.nextBytes(rand);
         String id = "VirtualEncryptedKey-1-" + HexUtils.hexDump(rand);
-        Element element;
-        try {
-            // TODO no need to make fake xml here -- just pass null as the element, it should work fine
-            element = XmlUtil.stringToDocument("<xenc:EncryptedKey wsu:Id=\"" + id +
-                    "\" xmlns:xenc=\""+ SoapUtil.XMLENC_NS + "\" xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE +
-                    "\"/>").getDocumentElement();
-        } catch (SAXException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-        return new MyEncryptedKey(id, element, encryptedKeySha1, key);
+        return new VirtualEncryptedKey(id, factory, encryptedKeySha1, key);
     }
 
     /**
@@ -61,16 +57,30 @@ public class WssProcessorUtil {
     /**
      * Private implementation of EncryptedKey that can be used internally by Trogdor.
      */
-    private static class MyEncryptedKey extends SigningSecurityTokenImpl implements EncryptedKey {
+    private static class VirtualEncryptedKey extends SigningSecurityTokenImpl implements EncryptedKey {
         private final String encryptedKeySha1;
         private final SecretKey key;
         private final String id;
+        private final Document factory;
 
-        public MyEncryptedKey(String id, Element element, String encryptedKeySha1, SecretKey key) {
-            super(element);
+        public VirtualEncryptedKey(String id, Document factory, String encryptedKeySha1, SecretKey key) {
+            super();
             this.encryptedKeySha1 = encryptedKeySha1;
             this.key = key;
             this.id = id;
+            this.factory = factory;
+        }
+
+        protected Element makeElement() {
+            Element element = factory.createElementNS(SoapUtil.XMLENC_NS, "xenc:EncryptedKey");
+            element.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:xenc", SoapUtil.XMLENC_NS);
+            element.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsu", SoapUtil.WSU_NAMESPACE);
+            // TODO populate the ciphervalue and other crap, should it someday turn out to be needed
+            return element;
+        }
+
+        public boolean isUnwrapped() {
+            return true;
         }
 
         public String getEncryptedKeySHA1() {

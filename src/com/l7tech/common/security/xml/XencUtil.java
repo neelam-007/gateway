@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.xml;
@@ -31,7 +30,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.MessageDigest;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.interfaces.RSAPublicKey;
@@ -212,23 +210,24 @@ public class XencUtil {
                 (digestAlgo == null ? "" : (" with DigestMethod Algorithm " + digestAlgo)));
     }
 
-    public static class EncryptedKeyValue {
-        private final byte[] encryptedKeyBytes;
-        private final byte[] decryptedKeyBytes;
-
-        public EncryptedKeyValue(byte[] encryptedKeyBytes, byte[] decryptedKeyBytes) {
-            this.encryptedKeyBytes = encryptedKeyBytes;
-            this.decryptedKeyBytes = decryptedKeyBytes;
-        }
-
-        public byte[] getEncryptedKeyBytes() {
-            return encryptedKeyBytes;
-        }
-
-        public byte[] getDecryptedKeyBytes() {
-            return decryptedKeyBytes;
-        }
+    /**
+     * Extract the encrypted key from the specified EncryptedKey element.  Caller is responsible for ensuring that
+     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
+     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
+     *
+     * @param encryptedKeyElement  the EncryptedKey element to decrypt
+     * @param recipientKey         the private key to use to decrypt the element
+     * @return the decrypted key bytes.  Will never be null.
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws java.security.GeneralSecurityException if there was a crypto problem
+     */
+    public static byte[] decryptKey(Element encryptedKeyElement, PrivateKey recipientKey)
+            throws InvalidDocumentFormatException, GeneralSecurityException
+    {
+        String value = getEncryptedKeyCipherValue(encryptedKeyElement);
+        return decryptKey(encryptedKeyElement, recipientKey, value);
     }
+
 
     /**
      * Extract the encrypted key from the specified EncryptedKey element.  Caller is responsible for ensuring that
@@ -237,28 +236,32 @@ public class XencUtil {
      *
      * @param encryptedKeyElement  the EncryptedKey element to decrypt
      * @param recipientKey         the private key to use to decrypt the element
-     * @return the decrypted key.  Will never be null.
+     * @param cipherValueB64       the already-extracted base 64'ed cipher value.  Must not be null.
+     * @return the decrypted key bytes.  Will never be null.
      * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static EncryptedKeyValue decryptKey(Element encryptedKeyElement, PrivateKey recipientKey)
+    public static byte[] decryptKey(Element encryptedKeyElement, PrivateKey recipientKey, String cipherValueB64)
             throws InvalidDocumentFormatException, GeneralSecurityException
-    {   // get the Algorithm / Params
+    {
+        // get the Algorithm / Params
         Element encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
                                                                            SoapUtil.XMLENC_NS,
                                                                            "EncryptionMethod");
 
-        String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
-        Element oaepParamsEle = XmlUtil.findOnlyOneChildElementByName(encryptionMethodEl,
-                                                                      SoapUtil.XMLENC_NS,
-                                                                      "OAEPparams"); // not OAEPParams
-        String oaepParams = oaepParamsEle!=null ? XmlUtil.getTextValue(oaepParamsEle) : null;
-        byte[] oaepBytes = null;
-        try { oaepBytes = oaepParams!=null ? HexUtils.decodeBase64(oaepParams) : null; }
-        catch(IOException ioe) {
-            throw new InvalidDocumentFormatException(encryptedKeyElement.getLocalName() + " has invalid OAEPparams value");
-        }
+        // we got the value, decrypt it
+        return decryptKey(cipherValueB64, getOaepBytes(encryptionMethodEl), recipientKey);
+    }
 
+
+    /**
+     * Extract the base 64'ed CipherValue from the specified EncryptedKey element.
+     *
+     * @param encryptedKeyElement the EncryptedKey element to examine.  Must not be null.
+     * @return the base 64'ed CipherValue string.  Never null.
+     * @throws InvalidDocumentFormatException if the CipherValue element is missing.
+     */
+    public static String getEncryptedKeyCipherValue(Element encryptedKeyElement) throws InvalidDocumentFormatException {
         // get the xenc:CipherValue
         Element cipherValue = null;
         Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
@@ -268,52 +271,91 @@ public class XencUtil {
             cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
         if (cipherValue == null)
             throw new InvalidDocumentFormatException(encryptedKeyElement.getLocalName() + " is missing CipherValue element");
-        String value = XmlUtil.getTextValue(cipherValue);
-
-        // we got the value, decrypt it
-        return decryptKey(value, SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(encMethodValue), oaepBytes, recipientKey);
+        return XmlUtil.getTextValue(cipherValue);
     }
 
-    /**
-     * Caller is responsible for ensuring that
-     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
-     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
-     * @param b64edEncryptedKey    the base64ed EncryptedKey value
-     * @param recipientKey         the private key to use to decrypt the element
-     * @return the decrypted key.  Will never be null.
-     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
-     * @throws java.security.GeneralSecurityException if there was a crypto problem
-     */
-    public static EncryptedKeyValue decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
-            throws InvalidDocumentFormatException, GeneralSecurityException
-    {
-        return decryptKey(b64edEncryptedKey, false, null, recipientKey);
-    }
 
     /**
-     * Caller is responsible for ensuring that
-     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
-     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
-     * @param b64edEncryptedKey    the base64ed EncryptedKey value
-     * @param useOaep true to use oaep false for rsa1.5
-     * @param oaepParams optional param when using oaep (may be null)
-     * @param recipientKey         the private key to use to decrypt the element
-     * @return the decrypted key.  Will never be null.
-     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
-     * @throws java.security.GeneralSecurityException if there was a crypto problem
+     * Get the RSA OAEP bytes for the specified EncryptedKey EncryptionMethod, if applicable.
+     *
+     * @param encryptionMethodEl   the EncryptionMethod element.  Must not be null.
+     * @return If this encryption method calls for RSA-OAEP, this method returns a byte array containing the OAEP
+     *         bytes.  This byte array may be empty.
+     *         If this encryption method does not call for RSA-OAEP, this method returns null.
+     * @throws InvalidDocumentFormatException if an OAEPparams value is specified but it is invalid
      */
-    public static EncryptedKeyValue decryptKey(String b64edEncryptedKey, boolean useOaep, byte[] oaepParams, PrivateKey recipientKey)
-            throws InvalidDocumentFormatException, GeneralSecurityException
-    {
-        byte[] encryptedKeyBytes = new byte[0];
+    public static byte[] getOaepBytes(Element encryptionMethodEl) throws InvalidDocumentFormatException {
+        String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
+        if (!SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(encMethodValue))
+            return null;
+
+        Element oaepParamsEle = XmlUtil.findOnlyOneChildElementByName(encryptionMethodEl,
+                                                                      SoapUtil.XMLENC_NS,
+                                                                      "OAEPparams"); // not OAEPParams
         try {
-            encryptedKeyBytes = HexUtils.decodeBase64(b64edEncryptedKey, true);
+            String oaepParams = oaepParamsEle == null ? null : XmlUtil.getTextValue(oaepParamsEle);
+            return oaepParams == null ? new byte[0] : HexUtils.decodeBase64(oaepParams);
+        } catch(IOException ioe) {
+            throw new InvalidDocumentFormatException("Wrapped key has invalid OAEPparams value");
+        }
+    }
+
+
+    /**
+     * Caller is responsible for ensuring that
+     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
+     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
+     *
+     * @param b64edEncryptedKey    the base64ed EncryptedKey value
+     * @param recipientKey         the private key to use to decrypt the element
+     * @return the decrypted key bytes.  Will never be null.
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws java.security.GeneralSecurityException if there was a crypto problem
+     */
+    public static byte[] decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
+            throws InvalidDocumentFormatException, GeneralSecurityException
+    {
+        return decryptKey(b64edEncryptedKey, null, recipientKey);
+    }
+
+    /**
+     * Caller is responsible for ensuring that
+     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
+     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
+     *
+     * @param b64edEncryptedKey    the base64ed EncryptedKey value
+     * @param oaepParams     optional param when using oaep (may be empty), or null to use RSA1.5 instead of OAEP
+     * @param recipientKey         the private key to use to decrypt the element
+     * @return the decrypted key bytes.  Will never be null.
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws java.security.GeneralSecurityException if there was a crypto problem
+     */
+    public static byte[] decryptKey(String b64edEncryptedKey, byte[] oaepParams, PrivateKey recipientKey)
+            throws InvalidDocumentFormatException, GeneralSecurityException
+    {
+        try {
+            return decryptKey(HexUtils.decodeBase64(b64edEncryptedKey, true), oaepParams, recipientKey);
         } catch (IOException e) {
             throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
         }
+    }
 
-        byte[] unencryptedKey = null;
-        if(useOaep) {
+
+    /**
+     * Caller is responsible for ensuring that
+     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
+     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
+     *
+     * @param encryptedKeyBytes    the already un-base64ed EncryptedKey value
+     * @param oaepParams     optional param when using oaep (may be empty), or null to use RSA1.5 instead of OAEP
+     * @param recipientKey         the private key to use to decrypt the element
+     * @return the decrypted key bytes.  Will never be null or empty.
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws java.security.GeneralSecurityException if there was a crypto problem
+     */
+    public static byte[] decryptKey(byte[] encryptedKeyBytes, byte[] oaepParams, PrivateKey recipientKey) throws GeneralSecurityException, InvalidDocumentFormatException {
+        final byte[] unencryptedKey;
+        if(oaepParams != null) {
             // decrypt
             try {
                 Cipher rsa = JceProvider.getRsaOaepPaddingCipher();
@@ -339,7 +381,7 @@ public class XencUtil {
                 throw new InvalidDocumentFormatException("The key could not be unpadded", e);
             }
         }
-        return new EncryptedKeyValue(encryptedKeyBytes, unencryptedKey);
+        return unencryptedKey;
     }
 
     /**
@@ -411,7 +453,8 @@ public class XencUtil {
      * @param publicKey the public key of the recipient of the key
      * @param oaepParams the OAEP mask generation arg (may be null)
      * @return the padded and encrypted keyBytes for the passed publicKey recipient, ready to be base64 encoded
-     * @throws GeneralSecurityException
+     * @throws GeneralSecurityException if the key is not a valid RSA public key, a needed cipher is unavailable,
+     *                                  or no support for OAEP is available.
      */
     public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, PublicKey publicKey, byte[] oaepParams) throws GeneralSecurityException {
         if (!(publicKey instanceof RSAPublicKey))

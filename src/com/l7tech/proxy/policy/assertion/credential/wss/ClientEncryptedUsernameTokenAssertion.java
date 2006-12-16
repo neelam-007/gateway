@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
@@ -67,6 +66,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
                 wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
                 wssReqs.setRecipientCertificate(serverCert);
                 wssReqs.setEncryptUsernameToken(true);
+                // TODO reuse existing encrypted key?
                 wssReqs.setUseDerivedKeys(true);
 
                 return AssertionStatus.NONE;

@@ -8,31 +8,33 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.EncryptedKey;
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.logging.Logger;
 
 /**
  * @author alex
+ * @noinspection unchecked
  */
 abstract class ServerResponseWssSignature extends AbstractServerAssertion implements ServerAssertion {
     protected final SignerInfo signerInfo;
@@ -120,14 +122,21 @@ abstract class ServerResponseWssSignature extends AbstractServerAssertion implem
                     if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
                         // No EncryptedKeySHA1 reference on response yet; create one
                         XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
-                        for (int i = 0; i < tokens.length; i++) {
-                            SecurityToken token = tokens[i];
+                        for (XmlSecurityToken token : tokens) {
                             if (token instanceof EncryptedKey) {
-                                // We'll just use the first one we see
+                                // We'll just use the first one we see that's unwrapped
                                 EncryptedKey ek = (EncryptedKey)token;
-                                wssReq.setEncryptedKey(ek.getSecretKey());
-                                wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
-                                break;
+                                if (ek.isUnwrapped()) {
+                                    try {
+                                        wssReq.setEncryptedKey(ek.getSecretKey());
+                                        wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
+                                    } catch (InvalidDocumentFormatException e) {
+                                        throw new IllegalStateException(e); // Can't happen - it's unwrapped already
+                                    } catch (GeneralSecurityException e) {
+                                        throw new IllegalStateException(e); // Can't happen - it's unwrapped already
+                                    }
+                                    break;
+                                }
                             }
                         }
                     }

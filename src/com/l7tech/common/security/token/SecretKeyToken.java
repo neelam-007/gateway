@@ -5,11 +5,21 @@
 
 package com.l7tech.common.security.token;
 
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+
 import javax.crypto.SecretKey;
+import java.security.GeneralSecurityException;
 
 /**
  * @author mike
  */
 public interface SecretKeyToken extends XmlSecurityToken {
-    SecretKey getSecretKey();
+    /**
+     * Get the secret key from this token.
+     *
+     * @return  the secret key from this token.  Never null.
+     * @throws InvalidDocumentFormatException   if there was a problem lazily unwrapping this key
+     * @throws GeneralSecurityException   if there was a problem lazily unwrapping this key
+     */
+    SecretKey getSecretKey() throws InvalidDocumentFormatException, GeneralSecurityException;
 }

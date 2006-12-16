@@ -550,7 +550,7 @@ public class TokenServiceClient {
             // Extract the encrypted key
             if (clientPrivateKey == null)
                 throw new InvalidDocumentFormatException("Was not expecting to receive an encrypted token: client private key not available");
-            sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey).getDecryptedKeyBytes();
+            sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey);
         } else if (binarySecretEl != null && clientPrivateKey == null) {
             String base64edsecret = XmlUtil.getTextValue(binarySecretEl);
             try {

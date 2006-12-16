@@ -11,6 +11,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -26,6 +27,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -171,6 +173,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
     /**
      *
      * @param clientCert client cert to encrypt to, or null to use alternate means
+     * @param kerberosServiceTicket   kerberos ticked to use for encrypting response, or null to use alternate means
      * @param secConvTok WS-SecureConversation session to encrypt to, or null to use alternate means
      *                   for when the policy uses a secure conversation so that the response
      *                   can be encrypted using that context instead of a client cert.
@@ -178,13 +181,14 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
      * @param encryptedKey encrypted key already known to recipient, to use with #EncryptedKeySHA1 reference,
      *                     or null.  This will only be used if no other encryption source is available.
      * @param recipient the intended recipient for the Security header to create
+     * @return a ServerAssertion that will set up the proper decoration when invoked.
      */
     private ServerAssertion deferredDecoration(final X509Certificate clientCert,
                                                final KerberosServiceTicket kerberosServiceTicket,
                                                final SecurityContextToken secConvTok,
                                                final EncryptedKey encryptedKey,
                                                final XmlSecurityRecipientContext recipient) {
-        return new AbstractServerAssertion(data) {
+        return new AbstractServerAssertion<ResponseWssConfidentiality>(data) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
@@ -231,10 +235,17 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                     } else if (secConvTok != null) {
                         // We'll rely on the ServerSecureConversation assertion to (have) configure(d) the WS-SC session.
                         wssReq.setSignTimestamp();
-                    } else if (encryptedKey != null) {
-                        // As a last resort, we'll use an EncryptedKeySHA1 reference if we have nothing else to go on.
-                        wssReq.setEncryptedKey(encryptedKey.getSecretKey());
-                        wssReq.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+                    } else if (encryptedKey != null && encryptedKey.isUnwrapped()) {
+                        // As a last resort, we'll use an EncryptedKeySHA1 reference if we have nothing else to go on,
+                        // but only if it was already unwrapped.
+                        try {
+                            wssReq.setEncryptedKey(encryptedKey.getSecretKey());
+                            wssReq.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+                        } catch (InvalidDocumentFormatException e) {
+                            throw new IllegalStateException(); // can't happen, it's unwrapped already
+                        } catch (GeneralSecurityException e) {
+                            throw new IllegalStateException(); // can't happen, it's unwrapped already
+                        }
                         wssReq.setSignTimestamp();
                     } else if (kerberosServiceTicket != null ) {
                         wssReq.setKerberosTicket(kerberosServiceTicket);

@@ -225,12 +225,15 @@ public class WssDecoratorImpl implements WssDecorator {
             } else if (dreq.getEncryptedKey() != null &&
                        dreq.getEncryptedKeySha1() != null)
             {
+                // Use a reference to an implicit EncryptedKey that the recipient is assumed to already possess
+                // (possibly because we got it from them originally)
                 if (dreq.isUseDerivedKeys()) {
+                    // Derive a key from the implicit ephemeral key
                     DerivedKeyToken derivedKeyToken =
                             addDerivedKeyToken(c,
                                                securityHeader,
                                                null,
-                                               KeyInfoDetails.makeKeyId(dreq.getEncryptedKeySha1(), true, SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1),
+                                               KeyInfoDetails.makeEncryptedKeySha1Ref(dreq.getEncryptedKeySha1()),
                                                getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
                                                dreq.getEncryptedKey().getEncoded(),
                                                "DerivedKey");
@@ -242,10 +245,9 @@ public class WssDecoratorImpl implements WssDecorator {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
                     }
                 } else {
-                    // Use a reference to an implicit EncryptedKey that the recipient is assumed to already possess
-                    // (possibly because we got it from them originally)
+                    // Use the implicit ephermeral key directly
                     senderSigningKey = dreq.getEncryptedKey();
-                    signatureKeyInfo = KeyInfoDetails.makeKeyId(dreq.getEncryptedKeySha1(), true, SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1);
+                    signatureKeyInfo = KeyInfoDetails.makeEncryptedKeySha1Ref(dreq.getEncryptedKeySha1());
                 }
             } else if (addedKerberosBst != null) {
                 // Derive key from kerberos session key using direct URI reference
@@ -425,6 +427,9 @@ public class WssDecoratorImpl implements WssDecorator {
             } else if (dreq.getEncryptedKeySha1() != null &&
                        dreq.getEncryptedKey() != null)
             {
+                final String eksha = dreq.getEncryptedKeySha1();
+                final SecretKey ekkey = dreq.getEncryptedKey();
+
                 // Encrypt using a reference to an implicit EncryptedKey that the recipient is assumed
                 // already to possess (perhaps because we got it from them originally)
                 if (dreq.isUseDerivedKeys()) {
@@ -432,9 +437,9 @@ public class WssDecoratorImpl implements WssDecorator {
                     DerivedKeyToken dkt = addDerivedKeyToken(c,
                                                              securityHeader,
                                                              xencDesiredNextSibling,
-                                                             KeyInfoDetails.makeKeyId(dreq.getEncryptedKeySha1(), true, SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1),
+                                                             KeyInfoDetails.makeEncryptedKeySha1Ref(eksha),
                                                              getKeyLengthInBytesForAlgorithm(dreq.getEncryptionAlgorithm()),
-                                                             dreq.getEncryptedKey().getEncoded(),
+                                                             ekkey.getEncoded(),
                                                              "DerivedKey");
                     String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
                     XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), dkt.derivedKey);
@@ -455,14 +460,11 @@ public class WssDecoratorImpl implements WssDecorator {
                     }
                 } else {
                     // Reference the EncryptedKey directly
-                    final String eksha1 = dreq.getEncryptedKeySha1();
-                    final KeyInfoDetails keyInfoDetails =
-                            KeyInfoDetails.makeKeyId(eksha1, true, SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1);
-                    final SecretKey key = dreq.getEncryptedKey();
+                    final KeyInfoDetails keyInfoDetails = KeyInfoDetails.makeEncryptedKeySha1Ref(eksha);
 
                     final String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
                     XencUtil.XmlEncKey encKey = generateXmlEncKey(encryptionAlgorithm, c);
-                    encKey = new XencUtil.XmlEncKey(encKey.getAlgorithm(), key);
+                    encKey = new XencUtil.XmlEncKey(encKey.getAlgorithm(), ekkey);
                     addEncryptedReferenceList(c,
                                               securityHeader,
                                               xencDesiredNextSibling,

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion.credential.wss;
@@ -17,6 +16,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.message.SecurityKnob;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.security.GeneralSecurityException;
 import javax.crypto.SecretKey;
 
 /**
@@ -108,8 +109,15 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
                 context.setCredentials(creds);
 
                 // Configure the eventual response to reuse this EncryptedKey
-                String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
-                addDeferredAssertion(context, encryptedKeySha1, signingToken.getSecretKey());
+                try {
+                    // Since it's a signing token it must already have been unwrapped
+                    final String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
+                    addDeferredAssertion(context, encryptedKeySha1, signingToken.getSecretKey());
+                } catch (InvalidDocumentFormatException e) {
+                    throw new IllegalStateException(e); // can't happen -- it's a signing token
+                } catch (GeneralSecurityException e) {
+                    throw new IllegalStateException(e); // can't happen -- it's a signing token
+                }
                 return AssertionStatus.NONE;
             }
         }

@@ -25,6 +25,12 @@ abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements Sig
         super(element);
     }
 
+    /**
+     * Use this contructor, and override makeElement(), to support lazy construction of the Element.
+     */
+    protected SigningSecurityTokenImpl() {
+    }
+
     public SignedElement[] getSignedElements() {
         return (SignedElement[])signedElements.toArray(PROTO);
     }

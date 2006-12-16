@@ -5,9 +5,9 @@
 
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 
+import javax.crypto.SecretKey;
 import java.security.cert.X509Certificate;
 
 /**
@@ -43,17 +43,19 @@ public interface SecurityTokenResolver {
      * Look up an EncryptedKey by its EncryptedKeySHA1.
      *
      * @param encryptedKeySha1 the identifier to look up.  Never null or empty.
-     * @return the matching EncryptedKey token, or null if no match was found.
-     * @see com.l7tech.common.security.xml.processor.WssProcessorUtil#makeEncryptedKey(javax.crypto.SecretKey,String)
+     * @return the matching EncryptedKey token, or null if no match was found.  The returned token is unmodifiable.
+     * @see com.l7tech.common.security.xml.processor.WssProcessorUtil#makeEncryptedKey
      */
-    EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1);
+    SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1);
 
     /**
      * Report that an EncryptedKey was decrypted, so it can be saved for later reuse by its EncryptedKeySHA1.
      *
-     * @param encryptedKey      the encrypted key to cache for later reuse.  Must not be null.
+     * @param encryptedKeySha1 the identifier to store, in the form of an EncryptedKeySHA1 string, which is the base64
+     *                         encoded ciphertext of the secret key.  Must not be null or empty.
+     * @param secretKey  the unwrapped SecretKey that came from the EncryptedKey with the specified EncryptedKeySha1.
      */
-    void cacheEncryptedKey(EncryptedKey encryptedKey);
+    void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey);
 
     /**
      * Look up a Kerberos token using a Kerberosv5APREQSHA1 reference.

@@ -15,7 +15,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
-import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.SecurityActor;
@@ -844,12 +843,12 @@ public class MessageProcessor {
                         new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
                                 ssg.getServerCertificate() })
                         {
-                            public EncryptedKey getEncryptedKeyBySha1(String value) {
+                            public SecretKey getSecretKeyByEncryptedKeySha1(String value) {
                                 final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
                                 final String encryptedKeySha1 = context.getEncryptedKeySha1();
                                 if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
                                 if (!(encryptedKeySha1.equals(value))) return null;
-                                return WssProcessorUtil.makeEncryptedKey(encryptedKeySecretKey, encryptedKeySha1);
+                                return encryptedKeySecretKey;
                             }
 
                             public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {

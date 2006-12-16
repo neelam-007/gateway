@@ -5,19 +5,20 @@
 
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.KerberosSecurityToken;
+import com.l7tech.common.util.CertUtils;
 
+import javax.crypto.SecretKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * A SecurityTokenResolver that is given a small list of certs that it is to recognize.
+ * Single threaded only.
  */
 public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private static final Logger logger = Logger.getLogger(SimpleSecurityTokenResolver.class.getName());
@@ -128,12 +129,12 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         this.kerberosTokens = kerberosTokens;
     }
 
-    public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
-        return (EncryptedKey)encryptedKeys.get(encryptedKeySha1);
+    public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+        return (SecretKey)encryptedKeys.get(encryptedKeySha1);
     }
 
-    public void cacheEncryptedKey(EncryptedKey encryptedKey) {
-        encryptedKeys.put(encryptedKey.getEncryptedKeySHA1(), encryptedKey);
+    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey) {
+        encryptedKeys.put(encryptedKeySha1, secretKey);
     }
 
     public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {

@@ -93,6 +93,17 @@ public class KeyInfoDetails {
         return new KeyInfoDetails(null, identifier, valueType, isBase64);
     }
 
+
+    /**
+     * Prepare to create a new KeyInfo element using an EncryptedKeySHA1.
+     *
+     * @param encryptedKeySha1  the EncryptedKeySHA1 to use.
+     * @return a new KeyInfoDetails instance, ready to create the requested KeyInfo element.  Never null.
+     */
+    public static KeyInfoDetails makeEncryptedKeySha1Ref(String encryptedKeySha1) {
+        return new KeyInfoDetails(null, encryptedKeySha1, SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1, false);
+    }
+
     /**
      * Add a new KeyInfo element to the specified parent element.  The new KeyInfo will be appended to the end
      * of the parent element unless it already contains a CipherData element, in which case the KeyInfo
@@ -129,6 +140,11 @@ public class KeyInfoDetails {
                                                        SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
                                                        nsf.getWsseNs(), "wsse");
 
+        populateExistingSecurityTokenReferenceElement(nsf, str);
+        return keyInfo;
+    }
+
+    public Element populateExistingSecurityTokenReferenceElement(NamespaceFactory nsf, Element str) {
         if (value != null) {
             // Using a KeyIdentifier value
             // Create <KeyInfo><SecurityTokenReference><KeyIdentifier ValueType="ValueTypeURI">b64blah==</></></>
@@ -137,9 +153,9 @@ public class KeyInfoDetails {
             keyId.setAttribute("ValueType", valueType);
             if (isBase64)
                 keyId.setAttribute("EncodingType", nsf.getEncodingType(SoapUtil.ENCODINGTYPE_BASE64BINARY, str));
-            keyId.appendChild(XmlUtil.createTextNode(keyInfo, value));
+            keyId.appendChild(XmlUtil.createTextNode(str, value));
 
-            return keyInfo;
+            return str;
         }
 
         // Using a URI reference
@@ -147,6 +163,6 @@ public class KeyInfoDetails {
         Element refEl = XmlUtil.createAndAppendElementNS(str, "Reference", nsf.getWsseNs(), "wsse");
         refEl.setAttribute("URI", uri);
         refEl.setAttribute("ValueType", valueType);
-        return keyInfo;
+        return str;
     }
 }

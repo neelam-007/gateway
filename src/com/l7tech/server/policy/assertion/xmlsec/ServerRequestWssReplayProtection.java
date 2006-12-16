@@ -3,7 +3,10 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.token.*;
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.SecurityContextToken;
+import com.l7tech.common.security.token.X509SigningSecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.security.xml.processor.WssTimestampDate;
@@ -14,8 +17,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import org.springframework.context.ApplicationContext;
@@ -24,8 +27,8 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
@@ -42,6 +45,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
     private final Auditor auditor;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
+        //noinspection unchecked
         super(subject);
         this.applicationContext = ctx;
         this.auditor = new Auditor(this, applicationContext, logger);
@@ -112,10 +116,8 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
 
         XmlSecurityToken[] signingTokens = wssResults.getSigningTokens(timestamp.asElement());
 
-        for (int i = 0; i < signingTokens.length; i++) {
-            XmlSecurityToken signingToken = signingTokens[i];
-
-            String messageIdStr = null;
+        for (XmlSecurityToken signingToken : signingTokens) {
+            final String messageIdStr;
             if (signingToken instanceof X509SigningSecurityToken) {
                 X509Certificate signingCert = ((X509SigningSecurityToken)signingToken).getMessageSigningCertificate();
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
@@ -149,14 +151,16 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
             } else if (signingToken instanceof EncryptedKey) {
                 // It was signed by an EncryptedKey
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY);
-                String encryptedKeySha1 = ((EncryptedKey)signingToken).getEncryptedKeySHA1();
+                final String encryptedKeySha1;
+                // Since it's a signing token, we can assume it must already have been unwrapped
+                encryptedKeySha1 = ((EncryptedKey)signingToken).getEncryptedKeySHA1();
 
                 StringBuffer sb = new StringBuffer();
                 sb.append(createdIsoString);
                 sb.append(";");
                 sb.append("EncryptedKeySHA1=");
                 sb.append(encryptedKeySha1);
-                messageIdStr = sb.toString();                                
+                messageIdStr = sb.toString();
             } else
                 throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
                                       "it was signed, but with the unsupported token type " + signingToken.getClass().getName());
@@ -165,11 +169,11 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion im
             try {
                 DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
                 dmm.assertMessageIdIsUnique(messageId);
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{ messageIdStr});
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{messageIdStr});
             } catch (MessageIdManager.DuplicateMessageIdException e) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, new String[]{messageIdStr});
                 throw new PolicyAssertionException(assertion,
-                        "Duplicated message ID detected; ID=" + messageIdStr);
+                                                   "Duplicated message ID detected; ID=" + messageIdStr);
             }
         }
 

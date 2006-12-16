@@ -20,7 +20,6 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
-import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -257,8 +256,8 @@ public class WssInteropTestMessage extends TestCase {
 
 
         SecurityTokenResolver resolver = new SimpleSecurityTokenResolver() {
-            public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
-                return WssProcessorUtil.makeEncryptedKey(aesKey, msgInfo.encryptedKeySha1);
+            public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+                return aesKey;
             }
         };
         ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, resolver);

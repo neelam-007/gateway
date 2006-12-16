@@ -128,6 +128,7 @@ public class WssDecoratorTest extends TestCase {
         public UsernameToken usernameToken = null;
         public boolean useDerivedKeys = false;
         public boolean signUsernameToken = false;
+        public SecurityTokenResolver securityTokenResolver = null;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,

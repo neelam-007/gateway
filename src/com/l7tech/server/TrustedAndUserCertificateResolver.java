@@ -6,7 +6,6 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.X509Entity;
-import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.CertUtils;
@@ -16,6 +15,7 @@ import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.whirlycott.cache.Cache;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -45,11 +45,11 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
     /**
      * Construct the Gateway's security token resolver.
      *
-     * @param clientCertManager
-     * @param trustedCertManager
-     * @param sslKeystoreCertificate
-     * @param rootCertificate
-     * @param serverConfig
+     * @param clientCertManager      required
+     * @param trustedCertManager     required
+     * @param sslKeystoreCertificate     the Gateway's SSL cert. required
+     * @param rootCertificate           the Gateway's CA cert. required
+     * @param serverConfig           required
      */
     public TrustedAndUserCertificateResolver(ClientCertManager clientCertManager,
                                              TrustedCertManager trustedCertManager,
@@ -149,12 +149,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
         return null;
     }
 
-    public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
-        return (EncryptedKey)encryptedKeyCache.retrieve(encryptedKeySha1);
+    public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+        return (SecretKey)encryptedKeyCache.retrieve(encryptedKeySha1);
     }
 
-    public void cacheEncryptedKey(EncryptedKey encryptedKey) {
-        encryptedKeyCache.store(encryptedKey.getEncryptedKeySHA1(), encryptedKey);
+    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey) {
+        encryptedKeyCache.store(encryptedKeySha1, secretKey);
     }
 
     /**

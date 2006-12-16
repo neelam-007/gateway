@@ -15,6 +15,7 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.skunkworks.wsibsp.WsiBSPValidator;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -22,6 +23,7 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.security.GeneralSecurityException;
 
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
@@ -72,9 +75,71 @@ public class WssRoundTripTest extends TestCase {
     }
 
     public void testSignedAndEncryptedUsernameToken() throws Exception {
-        runRoundTripTest(new NamedTestDocument("Signed and Encrypted UsernameToken",
-                                               wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument()),
-                         false);
+        doTestSignedAndEncryptedUsernameToken(null);
+    }
+
+    public void testSignedAndEncryptedUsernameToken_withKeyCache() throws Exception {
+        doTestSignedAndEncryptedUsernameToken(new SimpleSecurityTokenResolver());
+    }
+
+    public void doTestSignedAndEncryptedUsernameToken(SecurityTokenResolver securityTokenResolver) throws Exception {
+        NamedTestDocument ntd = new NamedTestDocument("Signed and Encrypted UsernameToken",
+                                                      wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());
+        ntd.td.securityTokenResolver = securityTokenResolver;
+        String undecoratedRequest = XmlUtil.nodeToString(ntd.td.c.message);
+        EncryptedKey[] ekh = new EncryptedKey[1];
+        runRoundTripTest(ntd, false, ekh);
+        EncryptedKey encryptedKey = ekh[0];
+        assertNotNull(encryptedKey);
+
+        NamedTestDocument ntd2 = new NamedTestDocument("Signed and Encrypted UsernameToken (2)",
+                                                      wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());
+
+        // Make a second request using the same encrypted key and token resolver
+        ntd2.td.securityTokenResolver = ntd.td.securityTokenResolver;
+        ntd2.td.encryptedKeySha1 = encryptedKey.getEncryptedKeySHA1();
+
+        DecorationRequirements reqs = makeDecorationRequirements(ntd2.td);
+        reqs.setEncryptedKey(encryptedKey.getSecretKey());
+        reqs.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+
+        Document doc = ntd2.td.c.message;
+        new WssDecoratorImpl().decorateMessage(doc, reqs);
+
+        // Now try processing it
+        Document doc1 = XmlUtil.stringToDocument(XmlUtil.nodeToString(doc));
+        Message req = new Message(doc1);
+
+        log.info("SECOND decorated request *Pretty-Printed*: " + XmlUtil.nodeToFormattedString(doc));
+
+        ProcessorResult r = new WssProcessorImpl().undecorateMessage(req,
+                                                                      ntd2.td.senderCert,
+                                                                      ntd2.td.recipientCert,
+                                                                      ntd2.td.recipientKey,
+                                                                      null,
+                                                                      ntd2.td.securityTokenResolver);
+
+        UsernameToken usernameToken = findUsernameToken(r);
+        WssDecoratorTest.TestDocument td = ntd2.td;
+        if (td.signUsernameToken) {
+            Map ns = new HashMap();
+            ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
+            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1, "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
+            assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
+        }
+
+        if (securityTokenResolver == null) {
+            // Second request should have included no EncryptedKey, and hence no signed timestamp
+            for (XmlSecurityToken toke : r.getXmlSecurityTokens())
+                if (toke instanceof EncryptedKey)
+                    fail("Second request included an EncryptedKey");
+            assertFalse(r.getTimestamp().isSigned());
+        } else {
+            // If timestamp was supposed to be signed, make sure it actually was
+            EncryptedKey[] ekOut2 = new EncryptedKey[1];
+            SigningSecurityToken timestampSigner = checkTimestampSignature(td, r, ekOut2);
+            checkEncryptedUsernameToken(td, usernameToken, r, timestampSigner);
+        }
     }
 
     public void testEncryptedBodySignedEnvelope() throws Exception {
@@ -199,7 +264,13 @@ public class WssRoundTripTest extends TestCase {
         runRoundTripTest(ntd, true);
     }
 
-    private void runRoundTripTest(NamedTestDocument ntd, boolean checkBSP1Compliance) throws Exception {
+    // @return  the decorated request, in case you want to test replaying it
+    private String runRoundTripTest(NamedTestDocument ntd, boolean checkBSP1Compliance) throws Exception {
+        return runRoundTripTest(ntd, checkBSP1Compliance, null);
+    }
+
+    // @return  the decorated request, in case you want to test replaying it
+    private String runRoundTripTest(NamedTestDocument ntd, boolean checkBSP1Compliance, EncryptedKey[] ekOut) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;
         WssDecoratorTest.Context c = td.c;
@@ -219,39 +290,7 @@ public class WssRoundTripTest extends TestCase {
         }
 
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
-        DecorationRequirements reqs = new DecorationRequirements();
-        reqs.setSenderSamlToken(td.senderSamlAssertion, td.signSamlToken);
-        reqs.setSenderMessageSigningCertificate(td.senderCert);
-        reqs.setRecipientCertificate(td.recipientCert);
-        reqs.setSenderMessageSigningPrivateKey(td.senderKey);
-        reqs.setSignTimestamp();
-        reqs.setUsernameTokenCredentials(td.usernameToken);
-        reqs.setEncryptUsernameToken(td.encryptUsernameToken);
-        reqs.setSignUsernameToken(td.signUsernameToken);
-        reqs.setSuppressBst(td.suppressBst);
-        reqs.setUseDerivedKeys(td.useDerivedKeys);
-        if (td.secureConversationKey != null) {
-            reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                public String getId() { return SESSION_ID; }
-                public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
-                public String getSCNamespace() {
-                        return SoapUtil.WSSC_NAMESPACE;
-                    }
-            });
-        }
-        if (td.elementsToEncrypt != null) {
-            for (int i = 0; i < td.elementsToEncrypt.length; i++) {
-                reqs.getElementsToEncrypt().add(td.elementsToEncrypt[i]);
-            }
-        }
-        if (td.encryptionAlgorithm !=null) {
-            reqs.setEncryptionAlgorithm(td.encryptionAlgorithm);
-        }
-        if (td.elementsToSign != null) {
-            for (int i = 0; i < td.elementsToSign.length; i++) {
-                reqs.getElementsToSign().add(td.elementsToSign[i]);
-            }
-        }
+        DecorationRequirements reqs = makeDecorationRequirements(td);
 
         martha.decorateMessage(message, reqs);
 
@@ -261,9 +300,10 @@ public class WssRoundTripTest extends TestCase {
         byte[] decoratedMessage = XmlUtil.nodeToString(message).getBytes();
 
         // ... pretend HTTP goes here ...
+        final String networkRequestString = new String(decoratedMessage);
 
         // Ooh, an incoming message has just arrived!
-        Document incomingMessage = XmlUtil.stringToDocument(new String(decoratedMessage));
+        Document incomingMessage = XmlUtil.stringToDocument(networkRequestString);
 
         boolean isValid = !checkBSP1Compliance || validator.isValid(incomingMessage);
 
@@ -275,7 +315,7 @@ public class WssRoundTripTest extends TestCase {
                                                       td.recipientCert,
                                                       td.recipientKey,
                                                       makeSecurityContextFinder(td.secureConversationKey),
-                                                      null);
+                                                      td.securityTokenResolver);
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
 
@@ -285,26 +325,7 @@ public class WssRoundTripTest extends TestCase {
         assertNotNull(signed);
 
         // Output security tokens
-        XmlSecurityToken[] tokens = r.getXmlSecurityTokens();
-        UsernameToken usernameToken = null;
-        for (int i = 0; i < tokens.length; i++) {
-            XmlSecurityToken token = tokens[i];
-            log.info("Got security token: " + token.getClass() + " type=" + token.getType());
-            if (token instanceof UsernameToken) {
-                if (usernameToken != null)
-                    fail("More than one UsernameToken found in processor result");
-                usernameToken = (UsernameToken)token;
-            }
-            if (token instanceof SigningSecurityToken) {
-                SigningSecurityToken signingSecurityToken = (SigningSecurityToken)token;
-                log.info("It's a signing security token.  possessionProved=" + signingSecurityToken.isPossessionProved());
-                SignedElement[] signedElements = signingSecurityToken.getSignedElements();
-                for (int j = 0; j < signedElements.length; j++) {
-                    SignedElement signedElement = signedElements[j];
-                    log.info("It was used to sign: " + signedElement.asElement().getLocalName());
-                }
-            }
-        }
+        UsernameToken usernameToken = findUsernameToken(r);
 
         if (td.signUsernameToken) {
             Map ns = new HashMap();
@@ -314,53 +335,8 @@ public class WssRoundTripTest extends TestCase {
         }
 
         // If timestamp was supposed to be signed, make sure it actually was
-        if (td.signTimestamp) {
-            WssTimestamp rts = r.getTimestamp();
-            assertNotNull(rts);
-            assertTrue("Timestamp was supposed to have been signed", rts.isSigned());
-            SigningSecurityToken[] signers = r.getSigningTokens(rts.asElement());
-            assertNotNull(signers);
-            // Martha can currently only produce messages with a single timestamp-covering signature in the default sec header
-            assertTrue(signers.length == 1);
-            SigningSecurityToken signer = signers[0];
-            if (signer instanceof X509SecurityToken) {
-                assertTrue("Timestamp signing security token must match sender cert",
-                           ((X509SecurityToken)signer).getCertificate().equals(td.senderCert));
-            } else if (signer instanceof SamlSecurityToken) {
-                assertTrue("Timestamp signing security token must match sender cert",
-                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(SamlAssertion.newInstance(td.senderSamlAssertion).getSubjectCertificate()));
-            } else if (signer instanceof SecurityContextToken) {
-                SecurityContextToken sct = (SecurityContextToken)signer;
-                assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
-                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), SESSION_ID);
-                assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret().getEncoded(),
-                                         td.secureConversationKey.getEncoded()));
-            } else if (signer instanceof EncryptedKey) {
-                EncryptedKey ek = (EncryptedKey)signer;
-                assertTrue("EncryptedKey signature source should always (trivially) have proven possession", ek.isPossessionProved());
-                String eksha1 = ek.getEncryptedKeySHA1();
-                log.info("EncryptedKey sha-1: " + eksha1);
-                assertNotNull(eksha1);
-                assertTrue(eksha1.trim().length() > 0);
-                assertNotNull(ek.getSecretKey());
-                assertEquals(SecurityTokenType.WSS_ENCRYPTEDKEY, ek.getType());
-                assertTrue(Arrays.equals(ek.getSignedElements(), r.getElementsThatWereSigned()));
-            } else
-                fail("Timestamp was signed with unrecognized security token of type " + signer.getClass() + ": " + signer);
-
-            if (td.encryptUsernameToken) {
-                assertNotNull(usernameToken);
-                assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereSigned()));
-                assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereEncrypted()));
-                SigningSecurityToken[] utSigners = r.getSigningTokens(usernameToken.asElement());
-                assertNotNull(utSigners);
-                assertTrue(utSigners.length == 1);
-                assertTrue("Timestamp must have been signed by same token as signed the UsernameToken", utSigners[0] == signer);
-
-                log.info("UsernameToken was verified as having been encrypted, and signed by the same token as was used to sign the timestamp");
-            }
-
-        }
+        SigningSecurityToken timestampSigner = checkTimestampSignature(td, r, ekOut);
+        checkEncryptedUsernameToken(td, usernameToken, r, timestampSigner);
 
         // Make sure all requested elements were signed
         for (int i = 0; i < td.elementsToSign.length; ++i) {
@@ -404,7 +380,128 @@ public class WssRoundTripTest extends TestCase {
             log.info("Element " + elementToEncrypt.getLocalName() + " succesfully verified as either empty or encrypted.");
         }
 
-        assertTrue("WS-I BSP check.", isValid);        
+        assertTrue("WS-I BSP check.", isValid);
+
+        return networkRequestString;
+    }
+
+    private UsernameToken findUsernameToken(ProcessorResult r) {
+        XmlSecurityToken[] tokens = r.getXmlSecurityTokens();
+        UsernameToken usernameToken = null;
+        for (int i = 0; i < tokens.length; i++) {
+            XmlSecurityToken token = tokens[i];
+            log.info("Got security token: " + token.getClass() + " type=" + token.getType());
+            if (token instanceof UsernameToken) {
+                if (usernameToken != null)
+                    fail("More than one UsernameToken found in processor result");
+                usernameToken = (UsernameToken)token;
+            }
+            if (token instanceof SigningSecurityToken) {
+                SigningSecurityToken signingSecurityToken = (SigningSecurityToken)token;
+                log.info("It's a signing security token.  possessionProved=" + signingSecurityToken.isPossessionProved());
+                SignedElement[] signedElements = signingSecurityToken.getSignedElements();
+                for (int j = 0; j < signedElements.length; j++) {
+                    SignedElement signedElement = signedElements[j];
+                    log.info("It was used to sign: " + signedElement.asElement().getLocalName());
+                }
+            }
+        }
+        return usernameToken;
+    }
+
+    private void checkEncryptedUsernameToken(WssDecoratorTest.TestDocument td, UsernameToken usernameToken, ProcessorResult r, SigningSecurityToken timestampSigner) {
+        if (td.encryptUsernameToken) {
+            assertNotNull(usernameToken);
+            assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereSigned()));
+            assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereEncrypted()));
+            SigningSecurityToken[] utSigners = r.getSigningTokens(usernameToken.asElement());
+            assertNotNull(utSigners);
+            assertTrue(utSigners.length == 1);
+            if (timestampSigner != null)
+                assertTrue("Timestamp must have been signed by same token as signed the UsernameToken", utSigners[0] == timestampSigner);
+
+            log.info("UsernameToken was verified as having been encrypted, and signed by the same token as was used to sign the timestamp");
+        }
+    }
+
+    private SigningSecurityToken checkTimestampSignature(WssDecoratorTest.TestDocument td, ProcessorResult r, EncryptedKey[] ekOut) throws SAXException, InvalidDocumentFormatException, GeneralSecurityException {
+        SigningSecurityToken timestampSigner = null;
+        if (td.signTimestamp) {
+            WssTimestamp rts = r.getTimestamp();
+            assertNotNull(rts);
+            assertTrue("Timestamp was supposed to have been signed", rts.isSigned());
+            SigningSecurityToken[] signers = r.getSigningTokens(rts.asElement());
+            assertNotNull(signers);
+            // Martha can currently only produce messages with a single timestamp-covering signature in the default sec header
+            assertTrue(signers.length == 1);
+            SigningSecurityToken signer = timestampSigner = signers[0];
+            assertTrue(signer.asElement().getOwnerDocument() == rts.asElement().getOwnerDocument());
+            assertTrue(signer.isPossessionProved());
+
+            if (signer instanceof X509SecurityToken) {
+                assertTrue("Timestamp signing security token must match sender cert",
+                           ((X509SecurityToken)signer).getCertificate().equals(td.senderCert));
+            } else if (signer instanceof SamlSecurityToken) {
+                assertTrue("Timestamp signing security token must match sender cert",
+                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(SamlAssertion.newInstance(td.senderSamlAssertion).getSubjectCertificate()));
+            } else if (signer instanceof SecurityContextToken) {
+                SecurityContextToken sct = (SecurityContextToken)signer;
+                assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
+                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), SESSION_ID);
+                assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret().getEncoded(),
+                                         td.secureConversationKey.getEncoded()));
+            } else if (signer instanceof EncryptedKey) {
+                EncryptedKey ek = (EncryptedKey)signer;
+                if (ekOut != null && ekOut.length > 0) ekOut[0] = ek;
+                assertTrue("EncryptedKey signature source should always (trivially) have proven possession", ek.isPossessionProved());
+                String eksha1 = ek.getEncryptedKeySHA1();
+                log.info("EncryptedKey sha-1: " + eksha1);
+                assertNotNull(eksha1);
+                assertTrue(eksha1.trim().length() > 0);
+                assertNotNull(ek.getSecretKey());
+                assertEquals(SecurityTokenType.WSS_ENCRYPTEDKEY, ek.getType());
+                assertTrue(Arrays.equals(ek.getSignedElements(), r.getElementsThatWereSigned()));
+            } else
+                fail("Timestamp was signed with unrecognized security token of type " + signer.getClass() + ": " + signer);
+        }
+        return timestampSigner;
+    }
+
+    private DecorationRequirements makeDecorationRequirements(final WssDecoratorTest.TestDocument td) {
+        DecorationRequirements reqs = new DecorationRequirements();
+        reqs.setSenderSamlToken(td.senderSamlAssertion, td.signSamlToken);
+        reqs.setSenderMessageSigningCertificate(td.senderCert);
+        reqs.setRecipientCertificate(td.recipientCert);
+        reqs.setSenderMessageSigningPrivateKey(td.senderKey);
+        reqs.setSignTimestamp();
+        reqs.setUsernameTokenCredentials(td.usernameToken);
+        reqs.setEncryptUsernameToken(td.encryptUsernameToken);
+        reqs.setSignUsernameToken(td.signUsernameToken);
+        reqs.setSuppressBst(td.suppressBst);
+        reqs.setUseDerivedKeys(td.useDerivedKeys);
+        if (td.secureConversationKey != null) {
+            reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
+                public String getId() { return SESSION_ID; }
+                public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
+                public String getSCNamespace() {
+                        return SoapUtil.WSSC_NAMESPACE;
+                    }
+            });
+        }
+        if (td.elementsToEncrypt != null) {
+            for (int i = 0; i < td.elementsToEncrypt.length; i++) {
+                reqs.getElementsToEncrypt().add(td.elementsToEncrypt[i]);
+            }
+        }
+        if (td.encryptionAlgorithm !=null) {
+            reqs.setEncryptionAlgorithm(td.encryptionAlgorithm);
+        }
+        if (td.elementsToSign != null) {
+            for (int i = 0; i < td.elementsToSign.length; i++) {
+                reqs.getElementsToSign().add(td.elementsToSign[i]);
+            }
+        }
+        return reqs;
     }
 
     private SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
