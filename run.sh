@@ -98,16 +98,19 @@ case "$foo" in
 		target="com.l7tech.proxy.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
-        bridge)
-                exec installer/Bridge-*/Bridge.sh $*
-                #target="com.l7tech.proxy.gui.Main";
-                #exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
-                ;;
-
+	bridge)
+		exec installer/Bridge-*/Bridge.sh $*
+		#target="com.l7tech.proxy.gui.Main";
+		#exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
+		;;
 	testagent)
 		target="com.l7tech.proxy.AgentPerfClient";
-                exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $*
-                ;;
+		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $*
+		;;
+	configwizard)
+		target="com.l7tech.server.config.ConfigurationWizardLauncher";
+		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $*
+		;;
 	*)
 		exec $JAVA_HOME/bin/java $JAVA_OPTS $foo $*
 		;;
