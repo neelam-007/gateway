@@ -11,6 +11,7 @@ import com.l7tech.common.xml.Wsdl;
 import org.w3c.dom.Document;
 
 import javax.wsdl.Operation;
+import javax.wsdl.BindingOperation;
 import java.net.URL;
 import java.text.ParseException;
 import java.io.IOException;
@@ -84,6 +85,23 @@ public class SoapUtilTest extends TestCase {
         op = SoapUtil.getOperation(wsdl, msg);
         assertTrue(op == null);
     }
+
+    public void testBug3250_QA_Wsdl() throws Exception {
+        Wsdl w = Wsdl.newInstance(TestDocuments.DIR, TestDocuments.getTestDocument(TestDocuments.DIR + "bug3250.wsdl"));
+        for (Object o : w.getBindingOperations()) {
+            BindingOperation bop = (BindingOperation) o;
+            System.out.println("Got target namespace for " + bop.getName() + ": " + SoapUtil.findTargetNamespace(w.getDefinition(), bop));
+        }
+    }
+
+    public void testBug3250_BofA_Wsdl() throws Exception {
+        Wsdl w = Wsdl.newInstance(TestDocuments.DIR, TestDocuments.getTestDocument(TestDocuments.DIR + "AuthenticateServiceV001.wsdl"));
+        for (Object o : w.getBindingOperations()) {
+            BindingOperation bop = (BindingOperation) o;
+            System.out.println("Got target namespace for " + bop.getName() + ": " + SoapUtil.findTargetNamespace(w.getDefinition(), bop));
+        }
+    }
+
 
     private Message makeMessage(final Document doc, final String saction) {
         // produce fake message with arguments

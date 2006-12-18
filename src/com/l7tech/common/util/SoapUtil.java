@@ -1456,8 +1456,9 @@ public class SoapUtil {
         }
 
         Input input = bindingOperation.getOperation().getInput();
-        if (input != null) {
-            List parts = input.getMessage().getOrderedParts(null);
+        javax.wsdl.Message inputMessage = input == null ? null : input.getMessage();
+        if (inputMessage != null) {
+            List parts = inputMessage.getOrderedParts(null);
             if (parts.size() > 0) {
                 Part firstPart = (Part)parts.get(0);
                 QName elementName = firstPart.getElementName();
