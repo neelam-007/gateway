@@ -158,6 +158,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
     private String connectionContext = "";
+    private String connectionID = "";
     private ServicesTree servicesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
@@ -2326,14 +2327,14 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public void updateNodeNameInStatusMessage(String oldName, String newName) {
         // extract the node name from the status message
-
         int startIndex = getStatusMsgLeft().getText().indexOf(CONNECTION_PREFIX);
         if (startIndex > 0) {
             String nodeName = getStatusMsgLeft().getText().substring(startIndex + CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length() - 1);
 
             if (nodeName.equals(oldName)) {
                 // update the node name only when the nodeName mataches with the oldName
-                getStatusMsgLeft().setText(connectionContext + getNodeNameMsg(newName));
+                String newStatus = connectionID + connectionContext + getNodeNameMsg(newName);
+                getStatusMsgLeft().setText(newStatus);
             }
         } else {
             // this should never happen
@@ -2376,7 +2377,8 @@ public class MainWindow extends JFrame implements SheetHolder {
           /* invoked on authentication success */
           public void onAuthSuccess(String id, String serverURL) {
               ssgURL = serverURL;
-              String statusMessage = id;
+              connectionID = id;
+              String statusMessage = connectionID;
               connectionContext = "";
 
               /* init rmi cl */
