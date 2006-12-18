@@ -45,6 +45,7 @@ alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
 
 
+JAVA_OPTS=$default_java_opts;
 
 if [ -e  /usr/local/Tarari ]; then
 	export TARARIROOT=/usr/local/Tarari
@@ -61,7 +62,6 @@ if [ -e "/opt/oracle" ] ; then
 	export NLS_LANG=AMERICAN_AMERICA.US7ASCII
 fi
 
-JAVA_OPTS=$default_java_opts;
 ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
 PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -w`
 
