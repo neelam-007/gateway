@@ -5,6 +5,9 @@
 ##################################################################################
 
 . /etc/profile.d/ssgruntimedefs.sh
+
+ORIGINAL_JAVA_OPTS=${JAVA_OPTS}
+
 USER=$(whoami)
 SSGUSER="gateway"
 
