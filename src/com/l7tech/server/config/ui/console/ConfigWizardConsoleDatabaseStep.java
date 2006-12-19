@@ -211,7 +211,15 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 StringUtils.isEmpty(databaseBean.getDbName()) ||
                 StringUtils.isEmpty(databaseBean.getDbUsername());
 
-        return !invalidFields && doDbTest();
+        boolean testPassed = false;
+        if (!invalidFields) {
+            testPassed = doDbTest();
+            if (!testPassed) {
+                databaseBean.setPrivUserName("");
+                databaseBean.setPrivPassword("");
+            }
+        }
+        return !invalidFields && testPassed;
     }
 
 //DBActionsListener Implementations
