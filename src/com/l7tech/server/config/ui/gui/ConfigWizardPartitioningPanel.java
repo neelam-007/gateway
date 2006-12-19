@@ -18,10 +18,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -165,15 +162,26 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                     "Remove Partition", "Are you sure you want to remove the \"" + pi.getPartitionId() + "\" partition? This cannot be undone.",
                     new Runnable() {
                         public void run() {
-                            partitionListModel.remove(pi);
+                            String message = "";
+                            String title = "";
+                            int type;
+                            if (partitionListModel.remove(pi)) {
+                                message = "All Selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.";
+                                title = "Deletion Complete";
+                                type = JOptionPane.INFORMATION_MESSAGE;
+                            } else {
+                                message = "Could not delete the selected partitions. Check that you have permission to delete directories in " + pi.getOSSpecificFunctions().getPartitionBase() + ".";
+                                title = "Could Not Delete";
+                                type = JOptionPane.ERROR_MESSAGE;
+
+                            }
+                            JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this, message, title, type);
+                            enableEditDeletePartitionButtons();
                         }
                     }
                 );
             }
         }
-        String message = "All Selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.";
-        JOptionPane.showMessageDialog(this, message, "Deletion Complete", JOptionPane.INFORMATION_MESSAGE);
-        enableEditDeletePartitionButtons();
     }
 
     private void enableNextButton() {
@@ -411,9 +419,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             }
         }
 
-        public void remove(PartitionInformation partitionToRemove) {
+        public boolean remove(PartitionInformation partitionToRemove) {
+            boolean removed = false;
             try {
-                boolean removed = false;
                 if (partitions.size() != 0 && partitions.contains(partitionToRemove)) {
                     int index = partitions.indexOf(partitionToRemove);
 
@@ -431,11 +439,13 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                             removed = true;
                         }
                     }
-                    if (removed) partitionList.setSelectedIndex(index == 0?0:index-1);
+                    if (removed)
+                        partitionList.setSelectedIndex(index == 0?0:index-1);
                 }
             } finally {
                 fireContentsChanged(partitionList, 0, partitions.size());
             }
+            return removed;
         }
 
         public void clear() {
