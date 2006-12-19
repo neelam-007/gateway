@@ -42,8 +42,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_MYSQL_URL_START = "jdbc:mysql://";
     public static final String HIBERNATE_DEFAULT_CONNECTION_URL = HIBERNATE_MYSQL_URL_START + "localhost/ssg";
 
-    private static Map<String, String> paramDefaults;
-
     private static final String HIBERNATE_URL_AUTORECONNECTPOOLS_PARAM="autoReconnectForPools=true";
 
     //the package names change for these in 3.6/4.0
@@ -61,6 +59,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
     private Pattern urlPattern = Pattern.compile("^" + HIBERNATE_MYSQL_URL_START + "(.*)(/)(.*)\\?.*$");
 
+    private static Map<String, String> paramDefaults;
     static {
         paramDefaults = new TreeMap<String, String>();
         paramDefaults.put(new String("failOverReadOnly"), new String("false"));
@@ -69,6 +68,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         paramDefaults.put(new String("useNewIO"), new String("true"));
         paramDefaults.put(new String("characterEncoding"), new String("UTF8"));
         paramDefaults.put(new String("characterSetResults"), new String("UTF8"));
+        paramDefaults.put(new String("secondsBeforeRetryMaster"), new String("10"));
     }
 
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {

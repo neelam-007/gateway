@@ -268,6 +268,7 @@ public class PartitionManager {
                         }
                     }
                     fixKeystorePaths(defaultPartitionDir);
+                    PartitionActions.doFirewallConfig(new PartitionInformation(PartitionInformation.DEFAULT_PARTITION_NAME));
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);

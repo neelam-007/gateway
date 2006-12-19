@@ -78,7 +78,7 @@
              classpathref="uidesigner.classpath"/>
 
     <!--
-      Task definition for Pack 200 
+      Task definition for Pack 200
     -->
     <taskdef name="pack200"
              classname="org.jdesktop.deployment.ant.pack200.Pack200Task"
@@ -1698,10 +1698,12 @@
                 <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
                 <include name="com/l7tech/common/BuildInfo.class"/>
 
+                <include name="com/l7tech/common/gui/NumberField*.class"/>
                 <include name="com/l7tech/common/util/ConfigurableLogFormatter*.class"/>
                 <include name="com/l7tech/common/util/FileUtils.class"/>
                 <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/util/XmlUtil*.class"/>
+                <include name="com/l7tech/common/util/PaddingCharSequence*.class"/>
                 <include name="com/l7tech/common/util/HexUtils*.class"/>
                 <include name="com/l7tech/common/util/EnumTranslator*.class"/>
                 <include name="com/l7tech/common/util/CausedIOException*.class"/>
@@ -1782,6 +1784,7 @@
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/common/util/XmlUtil*.class"/>
                 <include name="com/l7tech/common/xml/*.class"/>
+                <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
                 <include name="com/l7tech/server/partition/PartitionInformation*.class"/>
                 <include name="com/l7tech/server/partition/PartitionManager*.class"/>
@@ -1918,11 +1921,11 @@
         <checkfail/>
     </target>
 
-    <target name="testpackage.report" 
-            depends="testpackage.report.bridge, 
-                     testpackage.report.manager, 
-                     testpackage.report.configwizard, 
-                     testpackage.report.sysconfigwizard, 
+    <target name="testpackage.report"
+            depends="testpackage.report.bridge,
+                     testpackage.report.manager,
+                     testpackage.report.configwizard,
+                     testpackage.report.sysconfigwizard,
                      testpackage.report.flasher"/>
 
     <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
@@ -2559,8 +2562,8 @@
 
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
         <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
-        <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>        
-        <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>        
+        <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>
+        <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>

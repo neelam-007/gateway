@@ -1,14 +1,20 @@
 package com.l7tech.server.config;
 
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Document;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -22,6 +28,41 @@ import java.util.logging.Logger;
 public class PartitionActions {
     private static final Logger logger = Logger.getLogger(PartitionActions.class.getName());
     private OSSpecificFunctions osFunctions;
+
+    private static String[][] secureConnectorEndpointAttributes = new String[][] {
+            {"port", "9443"},
+            {"maxThreads", "150"},
+            {"minSpareThreads", "25"},
+            {"maxSpareThreads", "75"},
+            {"enableLookups", "false"},
+            {"disableUploadTimeout", "true"},
+            {"acceptCount", "100"},
+            {"scheme", "https"},
+            {"secure", "true"},
+            {"clientAuth", "false"},
+            {"sslProtocol", "TLS"},
+            {"keystoreFile", "/ssg/etc/keys/ssl.ks"},
+            {"keystorePass", "blahblah"},
+            {"keystoreType", "PKCS12"},
+            {"SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation"},
+    };
+
+    private static String[][] basicConnectorEndpointAttributes = new String[][] {
+            {"port", "8080"},
+            {"maxThreads", "150"},
+            {"minSpareThreads", "25"},
+            {"maxSpareThreads", "75"},
+            {"enableLookups", "false"},
+            {"redirectPort", "8443"},
+            {"acceptCount", "100"},
+            {"connectionTimeout","20000"},
+            {"disableUploadTimeout", "true"},
+            {"socketFactory", "com.l7tech.server.tomcat.SsgServerSocketFactory"},
+    };
+
+    private interface ConnectorMatcher {
+        boolean matchesCriteria(Element connector);
+    }
 
     public PartitionActions(OSSpecificFunctions osf) {
         osFunctions = osf;
@@ -147,7 +188,6 @@ public class PartitionActions {
         }
         return new Vector<String>(allIpAddresses);
     }
-
     public void setLinuxFilePermissions(String[] files, String permissions, File workingDir, OSSpecificFunctions osf) throws IOException, InterruptedException {
         if (!osf.isLinux())
             return;
@@ -256,5 +296,143 @@ public class PartitionActions {
             currentEndpoint.validationMessaqe = message;
         }
         return hadMatches;
+    }
+
+    public static void doFirewallConfig(PartitionInformation pInfo) {
+        List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
+        List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
+
+        PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
+        PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
+        PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
+        PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
+
+        String rules = PartitionInformation.firewallRules;
+        if (basicEndpoint.ipAddress.equals("*"))
+            rules = rules.replaceAll("-d " + PartitionInformation.BASIC_IP_MARKER, "");
+        else
+            rules = rules.replaceAll(PartitionInformation.BASIC_IP_MARKER, basicEndpoint.ipAddress);
+        rules = rules.replaceAll(PartitionInformation.BASIC_PORT_MARKER, basicEndpoint.port);
+
+        if (sslEndpoint.ipAddress.equals("*"))
+            rules = rules.replaceAll("-d " + PartitionInformation.SSL_IP_MARKER, "");
+        else
+            rules = rules.replaceAll(PartitionInformation.SSL_IP_MARKER, sslEndpoint.ipAddress);
+        rules = rules.replaceAll(PartitionInformation.SSL_PORT_MARKER, sslEndpoint.port);
+
+        if (noAuthSslEndpoint.ipAddress.equals("*"))
+            rules = rules.replaceAll("-d " + PartitionInformation.NOAUTH_SSL_IP_MARKER, "");
+        else
+            rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.ipAddress);
+
+        rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.port);
+
+        rules = rules.replaceAll(PartitionInformation.RMI_PORT_MARKER, rmiEndpoint.port);
+
+        FileOutputStream fos = null;
+        String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
+        try {
+            fos = new FileOutputStream(fileName);
+            fos.write(rules.getBytes());
+        } catch (FileNotFoundException e) {
+            logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+            logger.severe("The partition will be disabled");
+            pInfo.setShouldDisable(true);
+            enablePartitionForStartup(pInfo);
+        } catch (IOException e) {
+            logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+            logger.severe("The partition will be disabled");
+            pInfo.setShouldDisable(true);
+            enablePartitionForStartup(pInfo);
+        } finally {
+            ResourceUtils.closeQuietly(fos);
+        }
+    }
+
+    public static PartitionInformation.HttpEndpointHolder getHttpEndpointByType(PartitionInformation.HttpEndpointType type,
+                                                                    List<PartitionInformation.HttpEndpointHolder> endpoints) {
+        for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
+            if (endpoint.endpointType == type) return endpoint;
+        }
+        return null;
+    }
+
+    public static PartitionInformation.OtherEndpointHolder getOtherEndpointByType(PartitionInformation.OtherEndpointType type,
+                                                                    List<PartitionInformation.OtherEndpointHolder> endpoints) {
+        for (PartitionInformation.OtherEndpointHolder endpoint : endpoints) {
+            if (endpoint.endpointType == type) return endpoint;
+        }
+        return null;
+    }
+
+    public static  Map<PartitionInformation.HttpEndpointType, Element> getHttpConnectorsByType(NodeList connectors) {
+        ConnectorMatcher matcher = null;
+        Map<PartitionInformation.HttpEndpointType,Element> elementMap = new HashMap<PartitionInformation.HttpEndpointType, Element>();
+        for (int i = 0; i < connectors.getLength(); i++) {
+            Element connector = (Element) connectors.item(i);
+            if (!StringUtils.equals(connector.getAttribute("secure"), "true")) {
+                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);
+            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
+                       StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
+                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);
+            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
+                       !StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
+                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);
+            }
+        }
+
+        return elementMap;
+    }
+
+
+    public static void enablePartitionForStartup(PartitionInformation pInfo){
+        OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
+        if (osf.isLinux()) {
+            File enableStartupFile = new File(osf.getPartitionBase() + pInfo.getPartitionId(), PartitionInformation.ENABLED_FILE);
+            if (pInfo.shouldDisable()) {
+                logger.warning("Disabling the \"" + pInfo.getPartitionId() + "\" partition.");
+                enableStartupFile.delete();
+            } else {
+                try {
+                    logger.info("Enabling the \"" + pInfo.getPartitionId() + "\" partition.");
+                    enableStartupFile.createNewFile();
+                } catch (IOException e) {
+                    logger.warning("Error while enabling the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
+                }
+            }
+        }
+    }
+
+    public static Element addNewConnector(PartitionInformation pInfo, Document serverConfig, PartitionInformation.HttpEndpointHolder newEndpoint) {
+        PartitionInformation.HttpEndpointType httpType = newEndpoint.endpointType;
+        Element newNode = serverConfig.createElement("Connector");
+        switch(httpType) {
+            case BASIC_HTTP:
+                for (String[] basicConnectorEndpointAttribute : basicConnectorEndpointAttributes) {
+                    newNode.setAttribute(basicConnectorEndpointAttribute[0], basicConnectorEndpointAttribute[1]);
+                }
+                break;
+            case SSL_HTTP:
+                for (String[] secureConnectorEndpointAttribute : secureConnectorEndpointAttributes) {
+                    newNode.setAttribute(secureConnectorEndpointAttribute[0], secureConnectorEndpointAttribute[1]);
+                }
+                newNode.setAttribute("secure", "true");
+                newNode.setAttribute("clientAuth", "want");
+                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ File.separator + "ssl.ks");
+                break;
+            case SSL_HTTP_NOCLIENTCERT:
+                for (String[] secureConnectorEndpointAttribute : secureConnectorEndpointAttributes) {
+                    newNode.setAttribute(secureConnectorEndpointAttribute[0], secureConnectorEndpointAttribute[1]);
+                }
+                newNode.setAttribute("secure", "true");
+                newNode.setAttribute("clientAuth", "false");
+                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ File.separator + "ssl.ks");
+                break;
+        }
+        Element serviceElement = XmlUtil.findFirstChildElementByName(serverConfig.getDocumentElement(), (String) null, "Service");
+        Element engineElement = XmlUtil.findFirstChildElementByName(serviceElement, (String) null, "Engine");
+
+        serviceElement.insertBefore(newNode, engineElement);
+        return newNode;
     }
 }

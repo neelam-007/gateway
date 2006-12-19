@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
@@ -13,7 +14,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.*;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -35,25 +35,6 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     private static final String SERVICE_ERRLOG_KEY = "PR_STDERROR";
     private static final String PARTITION_NAME_KEY = "PARTITIONNAMEPROPERTY";
 
-    private static final String BASIC_IP_MARKER = "<HTTP_BASIC_IP>";
-    private static final String BASIC_PORT_MARKER = "<HTTP_BASIC_PORT>";
-    private static final String SSL_IP_MARKER = "<SSL_IP>";
-    private static final String SSL_PORT_MARKER = "<SSL_PORT>";
-    private static final String NOAUTH_SSL_IP_MARKER = "<SSL_NOAUTH_IP>";
-    private static final String NOAUTH_SSL_PORT_MARKER = "<SSL_NOAUTH_PORT>";
-    private static final String RMI_PORT_MARKER = "<RMI_PORT>";
-
-    private static String firewallRules = new String(
-        "[0:0] -I INPUT $Rule_Insert_Point -d "+ BASIC_IP_MARKER +" -p tcp -m tcp --dport " + BASIC_PORT_MARKER +" -j ACCEPT\n" +
-        "[0:0] -I INPUT $Rule_Insert_Point -d " + SSL_IP_MARKER +" -p tcp -m tcp --dport " + SSL_PORT_MARKER + " -j ACCEPT\n" +
-        "[0:0] -I INPUT $Rule_Insert_Point -d " + NOAUTH_SSL_IP_MARKER + " -p tcp -m tcp --dport " + NOAUTH_SSL_PORT_MARKER + " -j ACCEPT\n" +
-        "[0:0] -I INPUT $Rule_Insert_Point -p tcp -m tcp --dport " + RMI_PORT_MARKER + " -j ACCEPT\n"
-    );
-
-    private interface ConnectorMatcher {
-        boolean matchesCriteria(Element connector);
-    }
-
     public PartitionConfigCommand(ConfigurationBean bean) {
         super(bean);
         partitionBean = (PartitionConfigBean) configBean;
@@ -72,6 +53,10 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             success = false;
         }
         return success;
+    }
+
+    private void enablePartitionForStartup(PartitionInformation pInfo) {
+        PartitionActions.enablePartitionForStartup(pInfo);
     }
 
     private void updateStartupScripts(PartitionInformation pInfo) throws IOException, InterruptedException {
@@ -142,74 +127,11 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
     }
 
     private void updateFirewallRules(PartitionInformation pInfo) {
-        if (pInfo.getOSSpecificFunctions().isLinux()) {
-            List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
-            List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
-
-            PartitionInformation.HttpEndpointHolder basicEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-            PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-            PartitionInformation.HttpEndpointHolder noAuthSslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, httpEndpoints);
-            PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
-
-            String rules = firewallRules;
-            if (basicEndpoint.ipAddress.equals("*"))
-                rules = rules.replaceAll("-d " +BASIC_IP_MARKER, "");
-            else
-                rules = rules.replaceAll(BASIC_IP_MARKER, basicEndpoint.ipAddress);
-            rules = rules.replaceAll(BASIC_PORT_MARKER, basicEndpoint.port);
-
-            if (sslEndpoint.ipAddress.equals("*"))
-                rules = rules.replaceAll("-d " +SSL_IP_MARKER, "");
-            else
-                rules = rules.replaceAll(SSL_IP_MARKER, sslEndpoint.ipAddress);
-            rules = rules.replaceAll(SSL_PORT_MARKER, sslEndpoint.port);
-
-            if (noAuthSslEndpoint.ipAddress.equals("*"))
-                rules = rules.replaceAll("-d " +NOAUTH_SSL_IP_MARKER, "");
-            else
-                rules = rules.replaceAll(NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.ipAddress);
-            rules = rules.replaceAll(NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.port);
-
-            rules = rules.replaceAll(RMI_PORT_MARKER, rmiEndpoint.port);
-
-            FileOutputStream fos = null;
-            String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";
-            try {
-                fos = new FileOutputStream(fileName);
-                fos.write(rules.getBytes());
-            } catch (FileNotFoundException e) {
-                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-                logger.severe("The partition will be disabled");
-                pInfo.setShouldDisable(true);
-                enablePartitionForStartup(pInfo);
-            } catch (IOException e) {
-                logger.severe("Could not create the firewall rules for the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-                logger.severe("The partition will be disabled");
-                pInfo.setShouldDisable(true);
-                enablePartitionForStartup(pInfo);
-            } finally {
-                ResourceUtils.closeQuietly(fos);
-            }
-        }
+        if (pInfo.getOSSpecificFunctions().isLinux())
+            PartitionActions.doFirewallConfig(pInfo);
     }
 
-    private void enablePartitionForStartup(PartitionInformation pInfo){
-        OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
-        if (osf.isLinux()) {
-            File enableStartupFile = new File(osf.getPartitionBase() + pInfo.getPartitionId(), PartitionInformation.ENABLED_FILE);
-            if (pInfo.shouldDisable()) {
-                logger.warning("Disabling the \"" + pInfo.getPartitionId() + "\" partition.");
-                enableStartupFile.delete();
-            } else {
-                try {
-                    logger.info("Enabling the \"" + pInfo.getPartitionId() + "\" partition.");
-                    enableStartupFile.createNewFile();
-                } catch (IOException e) {
-                    logger.warning("Error while enabling the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
-                }
-            }
-        }
-    }
+
 
     private void updateSystemProperties(PartitionInformation pInfo) throws IOException {
         File systemPropertiesFile = new File(pInfo.getOSSpecificFunctions().getSsgSystemPropertiesFile());
@@ -226,13 +148,13 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             List<PartitionInformation.HttpEndpointHolder> httpEndpoints = pInfo.getHttpEndpoints();
             List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
-            PartitionInformation.HttpEndpointHolder httpEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
+            PartitionInformation.HttpEndpointHolder httpEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
             prop.setProperty(PartitionConfigBean.SYSTEM_PROP_HTTPPORT, httpEndpoint.port);
 
-            PartitionInformation.HttpEndpointHolder sslEndpoint = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
+            PartitionInformation.HttpEndpointHolder sslEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
             prop.setProperty(PartitionConfigBean.SYSTEM_PROP_SSLPORT, sslEndpoint.port);
 
-            PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
+            PartitionInformation.OtherEndpointHolder rmiEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
             if (StringUtils.isNotEmpty(rmiEndpoint.port))
                 prop.setProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT, rmiEndpoint.port);
 
@@ -252,7 +174,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
 
     private void updateOtherEndpoints(PartitionInformation pInfo) throws IOException, SAXException {
         List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
-        PartitionInformation.OtherEndpointHolder shutdownEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
+        PartitionInformation.OtherEndpointHolder shutdownEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT, otherEndpoints);
 
         Document serverConfigDom = pInfo.getOriginalDom();
         if (serverConfigDom == null) {
@@ -273,89 +195,49 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         }
     }
 
-    private PartitionInformation.OtherEndpointHolder getOtherEndpointByType(PartitionInformation.OtherEndpointType type,
-                                                                    List<PartitionInformation.OtherEndpointHolder> endpoints) {
-        for (PartitionInformation.OtherEndpointHolder endpoint : endpoints) {
-            if (endpoint.endpointType == type) return endpoint;
-        }
-        return null;
-    }
-
     private void updateHttpEndpoints(PartitionInformation pInfo) throws IOException, SAXException {
         List<PartitionInformation.HttpEndpointHolder> newHttpEndpoints = pInfo.getHttpEndpoints();
         Document serverConfigDom = pInfo.getOriginalDom();
         if (serverConfigDom == null) {
             serverConfigDom = getDomFromServerConfig(pInfo);
         }
-        doEndpointTypeAwareUpdates(newHttpEndpoints, serverConfigDom);
+        doEndpointTypeAwareUpdates(pInfo, newHttpEndpoints, serverConfigDom);
 
         FileOutputStream fos = null;
         try {
             OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
             fos = new FileOutputStream(foo.getTomcatServerConfig());
+            XmlUtil.format(serverConfigDom, true);
             XmlUtil.nodeToOutputStream(serverConfigDom, fos);
         }finally {
             ResourceUtils.closeQuietly(fos);
         }
     }
 
-    private void doEndpointTypeAwareUpdates(List<PartitionInformation.HttpEndpointHolder> endpoints, Document serverConfig) {
+    private void doEndpointTypeAwareUpdates(PartitionInformation pInfo, List<PartitionInformation.HttpEndpointHolder> endpoints, Document serverConfig) {
 
         NodeList connectors = serverConfig.getElementsByTagName("Connector");
         pruneConnectors(serverConfig, connectors, endpoints);
 
-        Map<PartitionInformation.HttpEndpointType,Element> connectorMap = getHttpConnectorsByType(connectors);
+        Map<PartitionInformation.HttpEndpointType,Element> existingConnectors = PartitionActions.getHttpConnectorsByType(connectors);
         String redirectPort = "";
         for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
             PartitionInformation.HttpEndpointType type = endpoint.endpointType;
-            if (type == PartitionInformation.HttpEndpointType.SSL_HTTP) redirectPort = endpoint.port;
-            if (!connectorMap.containsKey(type)) {
-                addNewConnector(serverConfig, endpoint);
+            if (type == PartitionInformation.HttpEndpointType.SSL_HTTP)
+                redirectPort = endpoint.port;
+
+            Element connector;
+            if (!existingConnectors.containsKey(type)) {
+                connector = PartitionActions.addNewConnector(pInfo, serverConfig, endpoint);
             } else {
-                Element connector = connectorMap.get(type);
-                connector.setAttribute("address", endpoint.ipAddress);
-                connector.setAttribute("port", endpoint.port);
+                connector = existingConnectors.get(type);
             }
+            connector.setAttribute("address", endpoint.ipAddress);
+            connector.setAttribute("port", endpoint.port);
         }
-        connectorMap.get(PartitionInformation.HttpEndpointType.BASIC_HTTP).setAttribute("redirectPort", redirectPort);
+        existingConnectors.get(PartitionInformation.HttpEndpointType.BASIC_HTTP).setAttribute("redirectPort", redirectPort);
     }
 
-    private Map<PartitionInformation.HttpEndpointType,Element> getHttpConnectorsByType(NodeList connectors) {
-        ConnectorMatcher matcher = null;
-        Map<PartitionInformation.HttpEndpointType,Element> elementMap = new HashMap<PartitionInformation.HttpEndpointType, Element>();
-        for (int i = 0; i < connectors.getLength(); i++) {
-            Element connector = (Element) connectors.item(i);
-            if (!StringUtils.equals(connector.getAttribute("secure"), "true")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);
-            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
-                       StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);
-            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
-                       !StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);
-            }
-        }
-
-        return elementMap;
-    }
-
-    private void addNewConnector(Document serverConfig, PartitionInformation.HttpEndpointHolder newEndpoint) {
-        PartitionInformation.HttpEndpointType httpType = newEndpoint.endpointType;
-        Element newNode = serverConfig.createElement("Connector");
-        switch(httpType) {
-            case BASIC_HTTP:
-                newNode.setAttribute("secure", "true");
-                break;
-            case SSL_HTTP:
-                newNode.setAttribute("secure", "true");
-                newNode.setAttribute("clientAuth", "want");
-                break;
-            case SSL_HTTP_NOCLIENTCERT:
-                newNode.setAttribute("secure", "true");
-                newNode.setAttribute("clientAuth", "false");
-                break;
-        }
-    }
 
     private void pruneConnectors(Document dom, NodeList connectors, List<PartitionInformation.HttpEndpointHolder> newEndpoints) {
         for (int index = 0; index < connectors.getLength(); index++) {
@@ -371,20 +253,12 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
 
         PartitionInformation.HttpEndpointHolder holder= null;
         if (isSecure) {
-            if (needsClientCert) holder = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP,endpoints);
-            else holder = getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, endpoints);
+            if (needsClientCert) holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP,endpoints);
+            else holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, endpoints);
         } else {
-            holder = getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, endpoints);
+            holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, endpoints);
         }
         return StringUtils.isNotEmpty(holder.ipAddress) && StringUtils.isNotEmpty(holder.port);
-    }
-
-    private PartitionInformation.HttpEndpointHolder getHttpEndpointByType(PartitionInformation.HttpEndpointType type,
-                                                                    List<PartitionInformation.HttpEndpointHolder> endpoints) {
-        for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
-            if (endpoint.endpointType == type) return endpoint;
-        }
-        return null;
     }
 
     private Document getDomFromServerConfig(PartitionInformation pInfo) throws IOException, SAXException {

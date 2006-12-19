@@ -47,6 +47,15 @@ do_control() {
         TOMCAT_HOME="${SSG_HOME}/tomcat/"
     fi
 
+    if [ "${PARTITION_NAME}"  == "default_" ]; then
+        if [ -e  /usr/local/Tarari ]; then
+            export TARARIROOT=/usr/local/Tarari
+            export PATH=$TARARIROOT/bin:$PATH
+            export LD_LIBRARY_PATH=$TARARIROOT/lib:$LD_LIBRARY_PATH
+            ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
+        fi
+    fi
+
     export JAVA_OPTS="${ORIGINAL_JAVA_OPTS} ${partition_opts}"
     export TOMCAT_HOME
     export CATALINA_OPTS=-Dcom.l7tech.server.partitionName=${PARTITION_NAME}
@@ -55,7 +64,7 @@ do_control() {
     if [ "${COMMAND}" == "start" ] ; then
         if [ -f "${CATALINA_PID}" ]  && [ -d "/proc/$(< ${CATALINA_PID})" ] ; then
             return 1
-        fi        
+        fi
         (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE} 2>&1 | logger -t SSG") <&- &>/dev/null &
     else
         (su $SSGUSER -c "${TOMCAT_HOME}/bin/catalina.sh ${COMMAND} -config ${CONFIG_FILE}") &>/dev/null

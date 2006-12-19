@@ -2,7 +2,7 @@
 
 use strict;
 
-my $DEBUG=1;
+my $DEBUG=0;
 
 # Runs from the partition startup "ssg-init"
 #
