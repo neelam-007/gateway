@@ -21,10 +21,7 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.EventListener;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -243,7 +240,7 @@ public class CertSearchPanel extends JDialog {
                     certList = getTrustedCertAdmin().findAllCerts();
 
                     // clear the table
-                    trustedCertTable.getTableSorter().setData(new Vector());
+                    trustedCertTable.getTableSorter().setData(new ArrayList<TrustedCert>());
                     resultCounter.setText("[ " + trustedCertTable.getTableSorter().getRealModel().getRowCount() + " objects found]");
                     
                     //Vector certs = new Vector();

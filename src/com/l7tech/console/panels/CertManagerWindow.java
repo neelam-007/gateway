@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
@@ -25,9 +25,9 @@ import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -236,7 +236,7 @@ public class CertManagerWindow extends JDialog {
         try {
             certList = getTrustedCertAdmin().findAllCerts();
 
-            Vector<TrustedCert> certs = new Vector<TrustedCert>();
+            java.util.List<TrustedCert> certs = new ArrayList<TrustedCert>();
             for (Object o : certList) {
                 TrustedCert cert = (TrustedCert) o;
                 certs.add(cert);
@@ -259,7 +259,7 @@ public class CertManagerWindow extends JDialog {
      */
     private void loadCerts() throws RemoteException {
 
-        Vector<TrustedCert> certList = new Vector<TrustedCert>();
+        java.util.List<TrustedCert> certList = new ArrayList<TrustedCert>();
         try {
             TrustedCert rootCertHolder = new TrustedCert();
             rootCertHolder.setName("CA");

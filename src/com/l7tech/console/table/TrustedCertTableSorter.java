@@ -8,10 +8,7 @@ import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -30,8 +27,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(TrustedCertTableSorter.class.getName());
     private boolean ascending = true;
     private int columnToSort = 1;
-    private Vector rawdata = new Vector();
-    private Object[] sortedData = new Object[0];
+    private List<TrustedCert> rawdata = new ArrayList<TrustedCert>();
+    private TrustedCert[] sortedData = new TrustedCert[0];
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -46,7 +43,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      * Return all data in the model
      * @return  The data in the model
      */
-    public Vector getAllData() {
+    public List<TrustedCert> getAllData() {
         return rawdata;
     }
 
@@ -55,7 +52,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
-    public void setData(Vector data) {
+    public void setData(List<TrustedCert> data) {
         this.rawdata = data;
         sortData(columnToSort, false);
     }
@@ -65,7 +62,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      *
      * @param rowData The new row to be stored.
      */
-    public void addRow(Object rowData) {
+    public void addRow(TrustedCert rowData) {
         this.rawdata.add(rowData);
         sortData(columnToSort, false);
     }
@@ -77,10 +74,10 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     public void deleteRow(int rowIndex) {
 
         if(rowIndex < sortedData.length) {
-            TrustedCert tc = (TrustedCert) sortedData[rowIndex];
+            TrustedCert tc = sortedData[rowIndex];
 
             for (int i = 0; i < rawdata.size(); i++) {
-                TrustedCert cert = (TrustedCert) rawdata.elementAt(i);
+                TrustedCert cert = rawdata.get(i);
                 if(cert.equals(tc)) {
                     rawdata.remove(cert);
                     sortData(columnToSort, false);
@@ -97,13 +94,13 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      */
     public void updateData(int row, Object data) {
 
-        TrustedCert tc = null;
+        TrustedCert tc;
 
         if (data instanceof TrustedCert) {
             TrustedCert newtc = (TrustedCert) data;
 
             for (int i = 0; i < rawdata.size(); i++) {
-                tc = (TrustedCert) rawdata.elementAt(i);
+                tc = rawdata.get(i);
                 if (tc != null && tc.getOid() == newtc.getOid()) {
                     // replace the old one
                     rawdata.set(i, newtc);
@@ -137,14 +134,14 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      */
     public boolean contains(TrustedCert tc) {
 
-        X509Certificate cert2 = null;
+        X509Certificate cert2;
         try {
             X509Certificate cert1 = tc.getCertificate();
-            for (int i = 0; i < sortedData.length; i++) {
-                cert2 = ((TrustedCert) sortedData[i]).getCertificate();
-                if(cert1.getIssuerDN().equals(cert2.getIssuerDN()) &&
+            for (TrustedCert cert : sortedData) {
+                cert2 = cert.getCertificate();
+                if (cert1.getIssuerDN().equals(cert2.getIssuerDN()) &&
                         cert1.getSubjectDN().equals(cert2.getSubjectDN())) {
-                     return true;
+                    return true;
                 }
             }
         } catch (CertificateException e) {
@@ -175,7 +172,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     public void sortData(int column, boolean orderToggle) {
 
         if(orderToggle){
-            ascending = ascending ? false : true;
+            ascending = !ascending;
         }
 
         // always sort in ascending order if the user select a new column
@@ -185,7 +182,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
         // save the column index
         columnToSort = column;
 
-        Object[] sorted = rawdata.toArray();
+        TrustedCert[] sorted = rawdata.toArray(new TrustedCert[0]);
         Arrays.sort(sorted, new TrustedCertTableSorter.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
         getRealModel().setRowCount(sortedData.length);
@@ -203,7 +200,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
 
         X509Certificate cert = null;
         try {
-            cert = ((TrustedCert) sortedData[row]).getCertificate();
+            cert = sortedData[row].getCertificate();
         } catch (CertificateException e) {
             logger.warning("Invalid certificate: " + e.getMessage());
 
@@ -213,7 +210,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
 
         switch (col) {
             case CERT_TABLE_CERT_NAME_COLUMN_INDEX:
-                return ((TrustedCert) sortedData[row]).getName();
+                return sortedData[row].getName();
 
             case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
                 return CertUtils.extractIssuerNameFromClientCertificate(cert);
@@ -225,7 +222,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 return sdf.format(cal.getTime());
 
             case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
-                return ((TrustedCert) sortedData[row]).getUsageDescription();
+                return sortedData[row].getUsageDescription();
 
             default:
                 throw new IllegalArgumentException("Bad Column");
@@ -235,7 +232,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     /**
      * A class for determining the order of two objects by comparing their values.
      */
-    public class ColumnSorter implements Comparator {
+    public class ColumnSorter implements Comparator<TrustedCert> {
         private boolean ascending;
         private int column;
 
@@ -259,42 +256,42 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
          * @param b  The other one of the two objects to be compared.
          * @return   -1 if a > b, 0 if a = b, and 1 if a < b.
          */
-        public int compare(Object a, Object b) {
+        public int compare(TrustedCert a, TrustedCert b) {
 
             Object elementA = new Object();
             Object elementB = new Object();
 
             switch (column) {
                 case CERT_TABLE_CERT_NAME_COLUMN_INDEX:
-                    elementA = ((TrustedCert) a).getName();
-                    elementB = ((TrustedCert) b).getName();
+                    elementA = a.getName();
+                    elementB = b.getName();
                     break;
 
                 case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
                     try {
-                        elementA = ((TrustedCert) a).getCertificate().getIssuerDN().getName();
-                        elementB = ((TrustedCert) b).getCertificate().getIssuerDN().getName();
+                        elementA = a.getCertificate().getIssuerDN().getName();
+                        elementB = b.getCertificate().getIssuerDN().getName();
                     } catch (IOException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        e.printStackTrace();
                     } catch (CertificateException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        e.printStackTrace();
                     }
                     break;
 
                 case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
                     try {
-                        elementA = new Long(((TrustedCert) a).getCertificate().getNotAfter().getTime());
-                        elementB = new Long(((TrustedCert) b).getCertificate().getNotAfter().getTime());
+                        elementA = new Long(a.getCertificate().getNotAfter().getTime());
+                        elementB = new Long(b.getCertificate().getNotAfter().getTime());
                     } catch (IOException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        e.printStackTrace();
                     } catch (CertificateException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        e.printStackTrace();
                     }
                     break;
 
                 case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
-                    elementA = ((TrustedCert) a).getUsageDescription();
-                    elementB = ((TrustedCert) b).getUsageDescription();
+                    elementA = a.getUsageDescription();
+                    elementB = b.getUsageDescription();
                     break;
 
                 default:
@@ -320,18 +317,18 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    if (elementA instanceof Long) {
+                    if (elementA instanceof Long && elementB instanceof Long) {
                         return ((Long) elementA).longValue() > ((Long) elementB).longValue()?1:0;
-                    } else if(elementA instanceof String) {
+                    } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
                         // add code here to support other types
                         return 0;
                     }
                 } else {
-                     if (elementA instanceof Long) {
+                     if (elementA instanceof Long && elementB instanceof Long) {
                         return ((Long) elementB).longValue() > ((Long) elementA).longValue()?1:0;
-                    } else if(elementA instanceof String) {
+                    } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
                         // add code here to support other types

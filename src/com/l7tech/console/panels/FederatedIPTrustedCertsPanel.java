@@ -1,12 +1,19 @@
+/*
+ * Copyright (C) 2004-2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.*;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
@@ -15,8 +22,6 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -27,37 +32,35 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
- *
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
  */
 public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
+    private static final Logger logger = Logger.getLogger(FederatedIPTrustedCertsPanel.class.getName());
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog");
+
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
+    private JButton createCertButton;
     private boolean x509CertSelected = false;
     private boolean limitationsAccepted = true;
 
     private TrustedCertsTable trustedCertTable = null;
     private X509Certificate ssgcert = null;
-    private Collection fedIdProvConfigs = new ArrayList();
+    private Collection<FederatedIdentityProviderConfig> fedIdProvConfigs = new ArrayList<FederatedIdentityProviderConfig>();
 
-    public static final String RESOURCE_PATH = "com/l7tech/console/resources";
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
-    private static Logger logger = Logger.getLogger(FederatedIPTrustedCertsPanel.class.getName());
-    private JButton createCertButton;
+    private final SecureAction createCertAction = new CreateCertAction();
 
     /**
      * Construstor
@@ -79,15 +82,14 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @return String The description of the step
      */
     public String getDescription() {
-        return "Select the certificates that will be trusted by this Identity Provider " +
-               "from the SecureSpan Gateway's trusted certificate store.";
+        return resources.getString("certPanelDescription");
     }
 
     /**
      * @return the wizard step label
      */
     public String getStepLabel() {
-        return "Select the Trusted Certificates";
+        return resources.getString("certPanelStepLabel");
     }
 
     /**
@@ -105,18 +107,13 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         x509CertSelected = iProviderConfig.isX509Supported();
 
         long[] oids = iProviderConfig.getTrustedCertOids();
-        Vector certs = new Vector();
-        TrustedCert cert = null;
+        List<TrustedCert> certs = new ArrayList<TrustedCert>();
+        TrustedCert cert;
 
-        for (int i = 0; i < oids.length; i++) {
-
+        for (long oid : oids) {
             try {
-                cert = getTrustedCertAdmin().findCertByPrimaryKey(oids[i]);
-
-                if (cert != null) {
-                    certs.add(cert);
-                }
-
+                cert = getTrustedCertAdmin().findCertByPrimaryKey(oid);
+                if (cert != null) certs.add(cert);
             } catch (RemoteException re) {
                 JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
                         resources.getString("load.error.title"),
@@ -143,8 +140,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
-        return tca;
+        return Registry.getDefault().getTrustedCertManager();
     }
 
     /**
@@ -160,11 +156,11 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-        Vector data = trustedCertTable.getTableSorter().getAllData();
+        List<TrustedCert> data = trustedCertTable.getTableSorter().getAllData();
         long[] oids = new long[data.size()];
 
         for (int i = 0; i < data.size(); i++) {
-            TrustedCert tc = (TrustedCert) data.elementAt(i);
+            TrustedCert tc = data.get(i);
             oids[i] = tc.getOid();
         }
 
@@ -206,21 +202,22 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @return  JPanel  The Message Panel
      */
     private JPanel createMsgPanel() {
-        Icon icon = new ImageIcon(FederatedIPTrustedCertsPanel.class.getClassLoader().getResource(RESOURCE_PATH + "/check16.gif"));
+        Icon icon = new ImageIcon(FederatedIPTrustedCertsPanel.class.getClassLoader().getResource("com/l7tech/console/resources" + "/check16.gif"));
 
         int position = 0;
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(5, 1, new Insets(5, 0, 0, 0), -1, -1));
 
         final JLabel virtualGroupMsg = new JLabel();
-        virtualGroupMsg.setText(" Virtual Group not supported");
+        virtualGroupMsg.setText(resources.getString("messagePanel.noVirtualGroupMessage"));
         virtualGroupMsg.setIcon(icon);
         panel1.add(virtualGroupMsg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
 
         if(x509CertSelected) {
             final JLabel x509Msg = new JLabel();
-            x509Msg.setText(" Every identity that you wish to authorize using X.509 credentials will need to have their certificate imported manually");
+            x509Msg.setText(resources.getString("messagePanel.manualCertRequiredMessage"));
             x509Msg.setIcon(icon);
+            //noinspection UnusedAssignment
             panel1.add(x509Msg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         }
         return panel1;
@@ -291,95 +288,13 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             }
         });
 
-        createCertButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-
-                Dialog thisDlg = null;
-                Container tmp = FederatedIPTrustedCertsPanel.this;
-                do {
-                    if (tmp instanceof Dialog) {
-                        thisDlg = (Dialog)tmp;
-                        break;
-                    } else {
-                        tmp = tmp.getParent();
-                    }
-                } while (tmp != null);
-                final Dialog thisdlg2 = thisDlg;
-
-                CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(null)), true);
-                Wizard w = new AddCertificateWizard(thisdlg2, sp);
-                w.addWizardListener(new WizardListener() {
-                    public void wizardFinished(WizardEvent e) {
-                        Wizard w = (Wizard)e.getSource();
-                        Object o = w.getWizardInput();
-                        if (o instanceof TrustedCert) {
-                            final TrustedCert tc = (TrustedCert)o;
-                            if (tc != null) {
-                                long newid = 0;
-                                try {
-                                    newid = getTrustedCertAdmin().saveCert(tc);
-                                    tc.setOid(newid);
-                                    certListener.certSelected(new CertEvent(this, tc));
-                                } catch (SaveException e1) {
-                                    logger.log(Level.WARNING, "error saving cert", e);
-                                    if (ExceptionUtils.causedBy(e1, CertificateExpiredException.class)) {
-                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "The cert is expired",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                    } else if (ExceptionUtils.causedBy(e1, DuplicateObjectException.class)) {
-                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "This cert has already been imported",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                    } else if (ExceptionUtils.causedBy(e1, CertificateNotYetValidException.class)) {
-                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "This cert is not yet valid",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                    } else {
-                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "Could not save cert",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                    }
-                                } catch (UpdateException e1) {
-                                    logger.log(Level.WARNING, "error saving cert", e);
-                                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "Could not save cert",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                } catch (VersionException e1) {
-                                    logger.log(Level.WARNING, "error saving cert", e);
-                                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "Could not save cert",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                } catch (RemoteException e1) {
-                                    logger.log(Level.WARNING, "error saving cert", e);
-                                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                                      "Could not save cert",
-                                                                      "Error saving cert",
-                                                                      JOptionPane.ERROR_MESSAGE);
-                                }
-                            }
-                        }
-                    }
-                    public void wizardSelectionChanged(WizardEvent e) {}
-                    public void wizardCanceled(WizardEvent e) {}
-                });
-                w.pack();
-                Utilities.centerOnScreen(w);
-                DialogDisplayer.display(w);
-            }
-        });
+        createCertButton.setAction(createCertAction);
 
         applyFormSecurity();
     }
 
     private void applyFormSecurity() {
         boolean canEdit = !isReadOnly();
-        createCertButton.setEnabled(canEdit);
         addButton.setEnabled(canEdit);
     }
 
@@ -442,19 +357,17 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         if (fedIdProvConfigs.isEmpty()) {
             IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
             EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
-            for (int i = 0; i < providerHeaders.length; i++) {
-                EntityHeader providerHeader = providerHeaders[i];
+            for (EntityHeader providerHeader : providerHeaders) {
                 IdentityProviderConfig config = idadmin.findIdentityProviderConfigByID(providerHeader.getOid());
                 if (config instanceof FederatedIdentityProviderConfig) {
-                    fedIdProvConfigs.add(config);
+                    fedIdProvConfigs.add((FederatedIdentityProviderConfig) config);
                 }
             }
         }
-        for (Iterator iterator = fedIdProvConfigs.iterator(); iterator.hasNext();) {
-            FederatedIdentityProviderConfig cfg = (FederatedIdentityProviderConfig) iterator.next();
+        for (FederatedIdentityProviderConfig cfg : fedIdProvConfigs) {
             long[] trustedCertOIDs = cfg.getTrustedCertOids();
-            for (int i = 0; i < trustedCertOIDs.length; i++) {
-                if (trustedCertOIDs[i] == trustedCert.getOid()) {
+            for (long trustedCertOID : trustedCertOIDs) {
+                if (trustedCertOID == trustedCert.getOid()) {
                     return true;
                 }
 
@@ -505,4 +418,100 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
+    private void createNewTrustedCert() {
+        Dialog thisDlg = null;
+        Container tmp = FederatedIPTrustedCertsPanel.this;
+        do {
+            if (tmp instanceof Dialog) {
+                thisDlg = (Dialog)tmp;
+                break;
+            } else {
+                tmp = tmp.getParent();
+            }
+        } while (tmp != null);
+        final Dialog thisdlg2 = thisDlg;
+
+        CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(null)), true);
+        Wizard w = new AddCertificateWizard(thisdlg2, sp);
+        w.addWizardListener(new WizardListener() {
+            public void wizardFinished(WizardEvent e) {
+                Wizard w = (Wizard)e.getSource();
+                Object o = w.getWizardInput();
+                if (o instanceof TrustedCert) {
+                    final TrustedCert tc = (TrustedCert)o;
+                    long newid;
+                    try {
+                        newid = getTrustedCertAdmin().saveCert(tc);
+                        tc.setOid(newid);
+                        certListener.certSelected(new CertEvent(this, tc));
+                    } catch (SaveException e1) {
+                        logger.log(Level.WARNING, "error saving cert", e);
+                        if (ExceptionUtils.causedBy(e1, CertificateExpiredException.class)) {
+                            JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "The cert is expired",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } else if (ExceptionUtils.causedBy(e1, DuplicateObjectException.class)) {
+                            JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "This cert has already been imported",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } else if (ExceptionUtils.causedBy(e1, CertificateNotYetValidException.class)) {
+                            JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "This cert is not yet valid",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "Could not save cert",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (UpdateException e1) {
+                        logger.log(Level.WARNING, "error saving cert", e);
+                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "Could not save cert",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                    } catch (VersionException e1) {
+                        logger.log(Level.WARNING, "error saving cert", e);
+                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "Could not save cert",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                    } catch (RemoteException e1) {
+                        logger.log(Level.WARNING, "error saving cert", e);
+                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                          "Could not save cert",
+                                                          "Error saving cert",
+                                                          JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+            public void wizardSelectionChanged(WizardEvent e) {}
+            public void wizardCanceled(WizardEvent e) {}
+        });
+        w.pack();
+        Utilities.centerOnScreen(w);
+        DialogDisplayer.display(w);
+    }
+
+    private class CreateCertAction extends SecureAction {
+        public CreateCertAction() {
+            super(new AttemptedCreate(com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT));
+        }
+
+        public String getName() {
+            return resources.getString("createCertButton.text");
+        }
+
+        protected String iconResource() {
+            return null;
+        }
+
+        protected void performAction() {
+            createNewTrustedCert();
+        }
+
+    }
 }
