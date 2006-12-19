@@ -4,8 +4,11 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.security.rbac.AttemptedUpdate;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -26,15 +29,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.Iterator;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * <code>HttpRoutingAssertionDialog</code> is the protected service
  * policy edit dialog.
- * 
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
  */
 public class HttpRoutingAssertionDialog extends JDialog {
     private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
@@ -71,16 +73,35 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
 
+    private final SecureAction okButtonAction;
+
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.HttpRoutingAssertionDialog");
+
     /**
      * Creates new form ServicePanel
      */
     public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, PublishedService service) {
         super(owner, true);
-        setTitle("HTTP(S) Routing Properties");
+        setTitle(resources.getString("dialog.title"));
         this.assertion = assertion;
         this.service = service;
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
         this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion);
+
+        okButtonAction = new SecureAction(new AttemptedUpdate(EntityType.SERVICE, service)) {
+            public String getName() {
+                return resources.getString("okButton.text");
+            }
+
+            protected String iconResource() {
+                return null;
+            }
+
+            protected void performAction() {
+                ok();
+            }
+        };
+
         initComponents();
         initFormData();
     }
@@ -118,8 +139,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
                   PolicyEvent event = new
                     PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  for (EventListener listener : listeners) {
+                      ((PolicyListener) listener).assertionsChanged(event);
                   }
               }
           });
@@ -214,11 +235,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         });
 
-        okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ok();
-            }
-        });
+        okButton.setAction(okButtonAction);
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -251,7 +268,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         }
         if (bad) {
-            JOptionPane.showMessageDialog(okButton, "URL value " + url + " is not valid.");
+            JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidUrlMessage"), url));
         } else {
             if (authPasswordRadio.isSelected())
                 httpAuthPanel.updateModel();
@@ -296,7 +313,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                     assertion.setXmlSecurityActorToPromote(currentVal);
                     assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER);
                 } else {
-                    JOptionPane.showMessageDialog(okButton, "The security actor to promote must be set.");
+                    JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
                     return;
                 }
             } else if (wssRemoveRadio.isSelected()) {
@@ -359,10 +376,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
         readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
 
         // read actor promotion information
-        java.util.List existingActors = listExistingXmlSecurityRecipientContextFromPolicy();
-        for (Iterator iterator = existingActors.iterator(); iterator.hasNext();) {
-            String s = (String) iterator.next();
-            ((DefaultComboBoxModel)wssPromoteActorCombo.getModel()).addElement(s);
+        java.util.List<String> existingActors = listExistingXmlSecurityRecipientContextFromPolicy();
+        for (String existingActor : existingActors) {
+            ((DefaultComboBoxModel) wssPromoteActorCombo.getModel()).addElement(existingActor);
         }
 
         if (assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
@@ -389,8 +405,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     /**
      * @return a list of string objects; one for each different actor referenced from this policy
      */
-    private java.util.List listExistingXmlSecurityRecipientContextFromPolicy() {
-        ArrayList output = new ArrayList();
+    private java.util.List<String> listExistingXmlSecurityRecipientContextFromPolicy() {
+        ArrayList<String> output = new ArrayList<String>();
         // get to root of policy
         Assertion root = assertion;
         while (root.getParent() != null) {
@@ -401,7 +417,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         return output;
     }
 
-    private void populateXmlSecurityRecipientContext(Assertion toInspect, java.util.List receptacle) {
+    private void populateXmlSecurityRecipientContext(Assertion toInspect, java.util.List<String> receptacle) {
         if (toInspect instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)toInspect;
             for (Iterator i = ca.children(); i.hasNext();) {
