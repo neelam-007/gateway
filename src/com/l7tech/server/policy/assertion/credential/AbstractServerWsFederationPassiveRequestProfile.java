@@ -11,22 +11,22 @@ import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
-import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,9 +39,6 @@ import java.util.logging.Logger;
 
 /**
  * Base class for WsFederation server assertions.
- *
- * @author $Author$
- * @version $Revision$
  */
 public abstract class AbstractServerWsFederationPassiveRequestProfile extends AbstractServerCachedSecurityTokenAssertion {
 
@@ -58,8 +55,8 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            final SslClientTrustManager trustManager = (SslClientTrustManager) springContext.getBean("gatewaySslClientTrustManager");
-            hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
+            final X509TrustManager trustManager = (X509TrustManager) springContext.getBean("trustManager");
+            hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);

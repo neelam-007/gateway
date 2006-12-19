@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2006 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.util;
@@ -9,18 +8,14 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.transport.http.SslClientTrustManager;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.*;
 import java.security.GeneralSecurityException;
 
 /**
@@ -28,7 +23,7 @@ import java.security.GeneralSecurityException;
  * configure requests to use the appropriate SSL context factory for requests to SSL URLs.
  */
 public class HttpClientFactory implements GenericHttpClientFactory, ApplicationContextAware {
-    private Object initLock = new Object();
+    private final Object initLock = new Object();
     private SSLContext sslContext;
     private HostnameVerifier hostnameVerifier;
     private ApplicationContext spring;
@@ -102,7 +97,7 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
             if (sslContext != null) return sslContext;
             SSLContext sc = SSLContext.getInstance("SSL");
             KeystoreUtils keystore = (KeystoreUtils)applicationContext.getBean("keystore");
-            SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("gatewaySslClientTrustManager");
+            X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
             KeyManager[] keyman = keystore.getSSLKeyManagerFactory().getKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
@@ -121,7 +116,7 @@ public class HttpClientFactory implements GenericHttpClientFactory, ApplicationC
         ApplicationContext applicationContext = spring;
         synchronized(initLock) {
             if (hostnameVerifier != null) return hostnameVerifier;
-            HostnameVerifier verifier = (HostnameVerifier)applicationContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
+            HostnameVerifier verifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             return hostnameVerifier = verifier;
         }
     }

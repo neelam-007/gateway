@@ -27,12 +27,12 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.*;
 import javax.naming.directory.*;
+import javax.net.ssl.X509TrustManager;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
         this.certificateAuthenticator = certificateAuthenticator;
     }
 
-    public void setTrustManager(SslClientTrustManager trustManager) {
+    public void setTrustManager(X509TrustManager trustManager) {
         this.trustManager = trustManager;
         LdapClientSslSocketFactory.setTrustManager(trustManager);
     }
@@ -910,7 +910,7 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
 
     private static final Logger logger = Logger.getLogger(LdapIdentityProviderImpl.class.getName());
 
-    private SslClientTrustManager trustManager;
+    private X509TrustManager trustManager;
     private ServerConfig serverConfig;
     private LdapIdentityProviderConfig config;
     private LdapAttributeMapping kerberosLdapAttributeMapping;

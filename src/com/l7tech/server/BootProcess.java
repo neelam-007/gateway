@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 

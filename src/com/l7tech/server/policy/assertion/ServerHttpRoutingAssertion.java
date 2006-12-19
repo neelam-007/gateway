@@ -1,28 +1,18 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  *
  */
 
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.GenericHttpClientFactory;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.NtlmAuthentication;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.CookieUtils;
-import com.l7tech.common.http.RerunnableHttpRequest;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -30,29 +20,29 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.DefaultStashManagerFactory;
-import com.l7tech.server.util.IdentityBindingHttpClientFactory;
-import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.PostRoutingEvent;
+import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.X509TrustManager;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,8 +50,8 @@ import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -109,8 +99,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("gatewaySslClientTrustManager");
-            hostnameVerifier = (HostnameVerifier)applicationContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
+            final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
+            hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
             sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();

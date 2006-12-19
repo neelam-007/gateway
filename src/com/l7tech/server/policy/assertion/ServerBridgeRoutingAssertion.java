@@ -6,34 +6,25 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.AuditDetailMessage;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.FailoverHttpClient;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.RerunnableHttpRequest;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.CausedIllegalStateException;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.mime.StashManager;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
@@ -46,23 +37,29 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.transport.http.SslClientTrustManager;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.DefaultStashManagerFactory;
+import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 
-import javax.wsdl.WSDLException;
 import javax.net.ssl.HostnameVerifier;
-import java.io.*;
-import java.net.*;
+import javax.net.ssl.X509TrustManager;
+import javax.wsdl.WSDLException;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Collections;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,12 +69,12 @@ import java.util.logging.Logger;
 public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutingAssertion<BridgeRoutingAssertion> {
 
     private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
-            new Managers.BridgeStashManagerFactory() {
-                public StashManager createStashManager() {
-                    return DefaultStashManagerFactory.getInstance().createStashManager();
-                }
-            };
-    
+        new Managers.BridgeStashManagerFactory() {
+            public StashManager createStashManager() {
+                return DefaultStashManagerFactory.getInstance().createStashManager();
+            }
+        };
+
     static {
         Managers.setBridgeStashManagerFactory(BRIDGE_STASH_MANAGER_FACTORY);
     }
@@ -87,7 +84,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
 
-        hostnameVerifier = (HostnameVerifier)applicationContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
+        hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         try {
             signerInfo = ku.getSslSignerInfo();
@@ -121,7 +118,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         useClientCert = initCredentials();
 
-        final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("gatewaySslClientTrustManager");
+        final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
         ssg.getRuntime().setTrustManager(trustManager);
         ssg.getRuntime().setCredentialManager(newCredentialManager(trustManager));
         ssg.getRuntime().setSsgKeyStoreManager(new BridgeRoutingKeyStoreManager());
@@ -182,7 +179,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     // TODO support non-SOAP messaging with SSB api
                     String soapAction = "\"\"";
                     String[] uris = context.getRequest().getSoapKnob().getPayloadNamespaceUris();
-                    // TODO decide what to do if there are multiple payload namespace URIs 
+                    // TODO decide what to do if there are multiple payload namespace URIs
                     String nsUri = uris == null || uris.length < 1 ? null : uris[0];
 
                     // TODO support SOAP-with-attachments with SSB api
@@ -217,7 +214,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
                     HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
-                    if (httpResponseKnob != null)                    
+                    if (httpResponseKnob != null)
                         httpResponseKnob.setStatus(status);
 
                     context.setRoutingStatus(RoutingStatus.ROUTED);
@@ -383,7 +380,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     }
 
-    private CredentialManager newCredentialManager(final SslClientTrustManager trustManager) {
+    private CredentialManager newCredentialManager(final X509TrustManager trustManager) {
         return new CredentialManagerImpl() {
             public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
                 if (!(sslPeer instanceof Ssg))
@@ -403,7 +400,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             }
 
             public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
-                throw new OperationCanceledException(((AuditDetailMessage)AssertionMessages.HTTPROUTE_ACCESS_DENIED).getMessage());
+                throw new OperationCanceledException(AssertionMessages.HTTPROUTE_ACCESS_DENIED.getMessage());
             }
         };
     }

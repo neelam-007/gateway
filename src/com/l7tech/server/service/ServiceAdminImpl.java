@@ -20,28 +20,23 @@ import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.systinet.RegistryPublicationManager;
-import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -70,7 +65,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     private PolicyValidator policyValidator;
     private SampleMessageManager sampleMessageManager;
     private CounterIDManager counterIDManager;
-    private SslClientTrustManager trustManager;
+    private X509TrustManager trustManager;
     private RoleManager roleManager;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
@@ -80,7 +75,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
                             PolicyValidator policyValidator,
                             SampleMessageManager sampleMessageManager,
                             CounterIDManager counterIDManager,
-                            SslClientTrustManager trustManager,
+                            X509TrustManager trustManager,
                             RoleManager roleManager) {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;

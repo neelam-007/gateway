@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2004 Layer 7 Technologies Inc.
+* Copyright (C) 2004-2006 Layer 7 Technologies Inc.
 */
 package com.l7tech.server.policy.assertion.credential;
 
@@ -7,14 +7,14 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.SecurityKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.wstrust.WsTrustConfig;
 import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
@@ -29,22 +29,22 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -83,8 +83,9 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("gatewaySslClientTrustManager");
-            hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
+            final X509TrustManager trustManager = (X509TrustManager)springContext.getBean("trustManager");
+            hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);            
+            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);

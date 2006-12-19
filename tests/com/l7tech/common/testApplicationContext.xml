@@ -83,13 +83,13 @@
     </bean>
 
     <!-- server side HTTP routing client trust manager -->
-    <bean id="gatewaySslClientTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+    <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
         <property name="trustedCertManager">
             <ref bean="trustedCertManager"/>
         </property>
     </bean>
     <!-- server side HTTP routing hostname verifier -->
-    <bean id="httpRoutingAssertionHostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
+    <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
         <constructor-arg>
             <ref local="serverConfig"/>
         </constructor-arg>

@@ -9,16 +9,15 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpState;
 import org.cyberneko.html.parsers.DOMParser;
@@ -28,9 +27,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,10 +46,9 @@ import java.util.logging.Logger;
 /**
  * Retrieves a SAML assertion from an identity provider website according to the Browser/Artifact profile.
  *
- * @author alex, $Author$
- * @version $Revision$
+ * @author alex
  */
-public class ServerSamlBrowserArtifact extends AbstractServerAssertion implements ServerAssertion {
+public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrowserArtifact> implements ServerAssertion {
 
     //- PUBLIC
 
@@ -70,8 +69,8 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion implement
 
         try {
            sslContext = SSLContext.getInstance("SSL");
-           final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("gatewaySslClientTrustManager");
-           hostnameVerifier = (HostnameVerifier)springContext.getBean("httpRoutingAssertionHostnameVerifier", HostnameVerifier.class);
+           final X509TrustManager trustManager = (X509TrustManager)springContext.getBean("trustManager");
+           hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);
            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
            sslContext.getClientSessionContext().setSessionTimeout(timeout);
