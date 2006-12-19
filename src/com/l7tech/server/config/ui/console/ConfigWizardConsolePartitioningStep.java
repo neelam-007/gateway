@@ -180,10 +180,11 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             boolean confirmed = getConfirmationFromUser("Are you sure you want to delete the \"" + whichPartitionName + "\" partition? This cannot be undone.");
             if (confirmed) {
                 PartitionActions pa = new PartitionActions(osFunctions);
-                pa.removePartition(PartitionManager.getInstance().getPartition(whichPartitionName));
-                PartitionManager.getInstance().removePartition(whichPartitionName);
-                partitionNames = PartitionManager.getInstance().getPartitionNames();
-                printText(getEolChar() + "The selected partition has been deleted. You may continue to use the wizard to configure other partitions or exit now." + getEolChar());
+                if (pa.removePartition(PartitionManager.getInstance().getPartition(whichPartitionName))) {
+                    PartitionManager.getInstance().removePartition(whichPartitionName);
+                    partitionNames = PartitionManager.getInstance().getPartitionNames();
+                    printText(getEolChar() + "The selected partition has been deleted. You may continue to use the wizard to configure other partitions or exit now." + getEolChar());
+                }
             }
         }
     }
