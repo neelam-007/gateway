@@ -189,12 +189,15 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     public boolean isValidated() {
-        if (!dontDoKsConfig.isSelected()) {
-            KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-            return ksPanel.validateInput();
-        } else {
-            PartitionInformation pinfo = getParentWizard().getActivePartition();
+        PartitionInformation pinfo = getParentWizard().getActivePartition();
 
+        boolean isValid = true;
+        boolean shouldDisable = true;
+        if (!dontDoKsConfig.isSelected()) {
+            shouldDisable = false;
+            KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
+            isValid = ksPanel.validateInput();
+        } else {
             if (pinfo != null) {
                 if (PartitionManager.getInstance().getActivePartition().isNewPartition()) {
                     JOptionPane.showMessageDialog(
@@ -202,12 +205,14 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                         "Warning: You are configuring a new partition without a keystore. \nThis partition will not be able to start without a keystore.",
                         "New Partition With No Keystore",
                         JOptionPane.WARNING_MESSAGE);
-
-                    pinfo.setShouldDisable(true);
+                    shouldDisable = true;
+                } else {
+                    shouldDisable = false;
                 }
             }
         }
-        return true;
+        pinfo.setShouldDisable(shouldDisable);
+        return isValid;
     }
 
 

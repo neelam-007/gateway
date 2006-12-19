@@ -6,6 +6,8 @@ import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -179,6 +181,27 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         shouldConfigure = input != null && input.trim().equals("2");
         keystoreBean.doKeystoreConfig(shouldConfigure);
         getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
+
+        PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+        boolean shouldDisable = true;
+        if (shouldConfigure) {
+            shouldDisable = false;
+        } else {
+            if (pinfo != null) {
+                if (pinfo.isNewPartition()) {
+                    getData(new String[] {
+                            getEolChar(),
+                            "Warning: You are configuring a new partition without a keystore. \nThis partition will not be able to start without a keystore." + getEolChar(),
+                            "Press Enter To Continue" + getEolChar(),
+                            getEolChar(),
+                    }, "");
+                    shouldDisable = true;
+                } else {
+                    shouldDisable = false;
+                }
+            }
+        }
+        pinfo.setShouldDisable(shouldDisable);
         return shouldConfigure;
     }
 
