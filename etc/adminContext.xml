@@ -247,7 +247,7 @@
         <constructor-arg ref="policyValidator"/>
         <constructor-arg ref="sampleMessageManager"/>
         <constructor-arg ref="counterIDManager"/>
-        <constructor-arg ref="gatewaySslClientTrustManager"/>
+        <constructor-arg ref="trustManager"/>
         <constructor-arg ref="roleManager"/>
     </bean>
 
