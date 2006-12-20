@@ -163,6 +163,8 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\..\native\win32\sysmem\Release\sysmem.exe"
   File "${BUILD_DIR}\..\etc\ssg.cmd"
   File "${BUILD_DIR}\..\etc\service.cmd"
+  File "${BUILD_DIR}\..\etc\cleanup_services.cmd"
+  File "${BUILD_DIR}\..\etc\remove_service.cmd"
   File "${BUILD_DIR}\..\etc\SSG.exe"
   File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
   File "${BUILD_DIR}\..\etc\GetShortName.cmd"
@@ -290,6 +292,10 @@ Section "Uninstall"
 
   ExecWait '"$INSTDIR\etc\conf\partitions\default_\service.cmd" uninstall' $0
   DetailPrint "service.cmd uninstall returned with code $0"
+
+  ;clean up the services created since partitioning may have created many
+  ExecWait '"$INSTDIR\bin\cleanup_services.cmd"' $0
+  DetailPrint "SSG Services removal returned with code $0"
 
   RMDir /r "$INSTDIR"
 
