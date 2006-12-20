@@ -1,7 +1,7 @@
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.6.5
-Release: 5
+Release: 6
 Group: Applications/Internet
 License: Copyright Layer7 Technologies 2003-2006
 URL: http://www.layer7tech.com
@@ -37,6 +37,7 @@ mkdir -p %{buildroot}/home/ssgconfig/
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg
 mv %{buildroot}/ssg/bin/sysconfigscript-initd %{buildroot}/etc/init.d/ssgsysconfig
+mv %{buildroot}/ssg/bin/ssg-dbstatus-initd %{buildroot}/etc/init.d/ssg-dbstatus
 mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
@@ -60,6 +61,7 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %defattr(-,root,root)
 /etc/init.d/ssg
 /etc/init.d/ssgsysconfig
+/etc/init.d/ssg-dbstatus
 /etc/init.d/tcp_tune
 /etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh
@@ -172,20 +174,22 @@ fi
 echo "Layer 7 SecureSpan(tm) Gateway v3.6.5" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
-SSGEXISTS=`/sbin/chkconfig --list | grep "ssg\b"`
-if [ "${SSGEXISTS}" ]; then
-    echo -n ""
-    #if we find a ssg entry in chkconfig, leave it alone
-else
+/sbin/chkconfig --list ssg &>/dev/null
+if [ ${?} -ne 0 ]; then
+    # add service if not found
     /sbin/chkconfig --add ssg
 fi
 
-SSGCONFIGEXISTS=`/sbin/chkconfig --list | grep "ssgsysconfig\b"`
-if [ "${SSGCONFIGEXISTS}" ]; then
-    echo -n ""
-    #if we find a ssgsysconfig entry in chkconfig, leave it alone
-else
+/sbin/chkconfig --list ssgsysconfig &>/dev/null
+if [ ${?} -ne 0 ]; then
+    # add service if not found
     /sbin/chkconfig --add ssgsysconfig
+fi
+
+/sbin/chkconfig --list ssg-dbstatus &>/dev/null
+if [ ${?} -ne 0 ]; then
+    # add service if not found
+    /sbin/chkconfig --add ssg-dbstatus
 fi
 
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
@@ -235,11 +239,14 @@ if [ "$1" = "0" ] ; then
 		perl -pi.bak -e 's/ttyS0//' /etc/securetty
 	fi
 
+    chkconfig --del ssg-dbstatus
     chkconfig --del ssgsysconfig
     chkconfig --del ssg
 fi
 
 %changelog
+* Wed Dec 20 2006 SMJ
+- add ssb-dbstatus service
 * Tue Nov 28 2006 MJE
 - added partition migration step to %post
 * Tue Nov 14 2006 MJE

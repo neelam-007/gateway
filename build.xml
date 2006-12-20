@@ -2707,6 +2707,7 @@
                 <include name="tarari-initd"/>
                 <include name="rotate-binlogs.pl"/>
                 <include name="ssg-initd"/>
+                <include name="ssg-dbstatus-initd"/>
                 <include name="tcp_tune.sh"/>
                 <include name="snmpd.conf"/>
                 <include name="configuser_bashrc"/>

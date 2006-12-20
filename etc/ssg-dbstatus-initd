@@ -20,13 +20,22 @@
 # /root/.my.cnf
 # [client]
 # password=XXX
+PROG=ssg-dbstatus
 MYSQL="/usr/bin/mysql"
+MYSQL_OPTS=""
+MYSQL_DEFAULT_OPTIONS="/root/.my.cnf"
 TIME_DESIRED=15
-export MYSQL TIME_DESIRED
+PID_FILE="/var/run/${PROG}.pid"
+
+if [ ! -f "${HOME}/.my.cnf" ] && [ -f "${MYSQL_DEFAULT_OPTIONS}" ] ; then
+    MYSQL_OPTS="--defaults-extra-file=${MYSQL_DEFAULT_OPTIONS} ${MYSQL_OPTS}"
+fi
+
+export MYSQL MYSQL_OPTS TIME_DESIRED
 
 # Check if replication is enabled
 checkRequired() {
-    SERVER_ID=$(${MYSQL} -N -B -e "select @@server_id;" 2>/dev/null)
+    SERVER_ID=$("${MYSQL}" ${MYSQL_OPTS} -N -B -e "select @@server_id;" 2>/dev/null)
     if [ ! -z "${SERVER_ID}" ] && [ 0 -eq ${SERVER_ID} ] ; then
         # not configured for replication
         return 1
@@ -37,17 +46,21 @@ checkRequired() {
 # Configuration checks, ensure process list output is usable and we can
 # see the 'system user'
 checkConfigured() {
-    ${MYSQL} -B -e "show processlist;" &>/dev/null
+    if [ ! -f "${MYSQL}" ] ; then
+        echo "MySQL client [${MYSQL}] not found."
+        return 1
+    fi
+    "${MYSQL}" ${MYSQL_OPTS} -B -e "show processlist;" &>/dev/null
     if [ ${?} -ne 0 ] ; then
         echo "Could not access MySQL server."
         return 1
     fi
-    TIME_COLUMN_HEADER=$(${MYSQL} -B -e "show processlist;" 2>/dev/null | head -n 1 | awk '{print $6}')
+    TIME_COLUMN_HEADER=$("${MYSQL}" ${MYSQL_OPTS} -B -e "show processlist;" 2>/dev/null | head -n 1 | awk '{print $6}')
     if [ "${TIME_COLUMN_HEADER}" != "Time" ] ; then
         echo "Could not parse 'show processlist' output."
         return 1
     fi
-    SYSTEM_DATA=$(${MYSQL} -B -N -e "show processlist;" 2>/dev/null | grep 'system user')
+    SYSTEM_DATA=$("${MYSQL}" ${MYSQL_OPTS} -B -N -e "show processlist;" 2>/dev/null | grep 'system user')
     if [ -z "${SYSTEM_DATA}" ] ; then
         echo "Process information for 'system user' is not available."
         return 1
@@ -59,24 +72,36 @@ checkConfigured() {
 start () {
     checkRequired
     if [ ${?} -eq 1 ] ; then
-        echo -n $"SSG DB Status check starting: "
+        echo -n $"${PROG} starting: "
         success
+        echo
         exit 0    
     fi
 
     checkConfigured
     if [ ${?} -eq 1 ] ; then
-        echo -n $"SSG DB Status check starting: "
+        echo -n $"${PROG} starting: "
         failure
+        echo
         exit 1
     fi
 
-    MAX_CONNECTIONS=$(${MYSQL} -N -B -e "select @@max_connections;" 2>/dev/null)
+    if [ -f "${PID_FILE}" ] && [ -d "/proc/$(<${PID_FILE})" ] ; then
+        echo -n $"${PROG} starting: "
+        failure
+        echo
+        exit 1
+    fi
+
+    MAX_CONNECTIONS=$("${MYSQL}" ${MYSQL_OPTS} -N -B -e "select @@max_connections;" 2>/dev/null)
     export MAX_CONNECTIONS
 
     CONTINUE_FILE=$(mktemp -t myreplflag.XXXXXXXXXXXX)
     # Wait for replication to complete
     (  
+        # record pid
+        /bin/bash -c 'echo $PPID' > "${PID_FILE}"
+
         # -5 since we sleep for 5 in the loop
         sleep $((TIME_DESIRED-5))
         COUNT=1
@@ -87,9 +112,9 @@ start () {
             COUNT=$((COUNT+1))
         done;
         echo "set global max_connections=${MAX_CONNECTIONS};"
-    ) | ${MYSQL} -B -N -t -n 2>/dev/null | (
+    ) | "${MYSQL}" ${MYSQL_OPTS} -B -N -t -n 2>/dev/null | (
         # Add trap to ensure max connections reset on (subshell) exit
-        trap "{ ${MYSQL} -N -B -e \"set global max_connections=${MAX_CONNECTIONS};\" &>/dev/null; }" EXIT
+        trap "{ \"${MYSQL}\" ${MYSQL_OPTS} -N -B -e \"set global max_connections=${MAX_CONNECTIONS};\" &>/dev/null; }" EXIT
         TIME_A=-1
         TIME_B=-1
 
@@ -132,25 +157,35 @@ start () {
             # Read should block, but just in case
             sleep 1
         done
-
-        # TODO What do we do on replication failure?
     ) &
 
-    echo -n $"SSG DB Status check starting: "
+    echo -n $"${PROG} starting: "
     # sleep to allow DB connections to be enabled if everything is OK
     sleep ${TIME_DESIRED}
     success
+    echo
 }
 
 # Service stop
 stop () {
-    echo -n $"SSG DB Status check stopping: "
+    echo -n $"${PROG} stopping: "
+    if [ -f "${PID_FILE}" ] && [ -d "/proc/$(<${PID_FILE})" ] ; then
+        kill $(<${PID_FILE})
+        sleep 1
+        if [ -d "/proc/$(<${PID_FILE})" ] ; then
+            failure
+            echo
+            exit
+        fi
+        rm -f "${PID_FILE}"
+    fi
     success
+    echo
 }
 
 # Service status
 status () {
-    ${MYSQL} -B -N -t -n -e "show processlist;" 2>/dev/null | (
+    "${MYSQL}" ${MYSQL_OPTS} -B -N -t -n -e "show processlist;" 2>/dev/null | (
     TIME_A=-1
     TIME_B=-1
     TIME=Unknown
