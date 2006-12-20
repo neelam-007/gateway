@@ -115,7 +115,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         String defaultValue = getNextNewName();
         prompts.add("Enter the name of the new partition: ["+ defaultValue + "]");
 
-        Pattern allowedEntries = Pattern.compile("[^" + pathSeparator + "\\s]{1,128}");
+        Pattern allowedEntries = Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN);
 
         String newPartitionName;
         do {
@@ -129,9 +129,11 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
 
         PartitionInformation pi = null;
         if (StringUtils.isNotEmpty(newPartitionName)) {
+            pi = new PartitionInformation(newPartitionName);
             PartitionActions pa = new PartitionActions(osFunctions);
-            pa.createNewPartition(newPartitionName);
-            PartitionManager.getInstance().addPartition(newPartitionName);
+            pa.createNewPartition(pi.getPartitionId());
+
+            PartitionManager.getInstance().addPartition(pi);
             partitionNames = PartitionManager.getInstance().getPartitionNames();
             pi = PartitionManager.getInstance().getPartition(newPartitionName);
         }

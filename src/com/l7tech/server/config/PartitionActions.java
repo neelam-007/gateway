@@ -188,6 +188,7 @@ public class PartitionActions {
         }
         return new Vector<String>(allIpAddresses);
     }
+
     public void setLinuxFilePermissions(String[] files, String permissions, File workingDir, OSSpecificFunctions osf) throws IOException, InterruptedException {
         if (!osf.isLinux())
             return;
@@ -214,7 +215,7 @@ public class PartitionActions {
     public static boolean validatePartitionEndpoints(PartitionInformation pinfo, boolean incrementEndpoints) {
         boolean hadErrors = false;
 
-        Set<String> seenPorts = new HashSet<String>();
+        Set<PartitionInformation.IpPortPair> seenPairs = new HashSet<PartitionInformation.IpPortPair>();
 
         List<PartitionInformation.EndpointHolder> allHolders = new ArrayList<PartitionInformation.EndpointHolder>();
         allHolders.addAll(pinfo.getHttpEndpoints());
@@ -234,10 +235,11 @@ public class PartitionActions {
             } else if (intPort > 65535) {
                 holder.validationMessaqe = "The maximum port allowed is 65535";
             } else {
-                if (seenPorts.add(holder.port)) {
+                PartitionInformation.IpPortPair pair = new PartitionInformation.IpPortPair(holder);
+                if (seenPairs.add(pair)) {
                     holder.validationMessaqe = "";
                 } else {
-                    holder.validationMessaqe = "Port " + holder.port + " is already in use in this partition.";
+                    holder.validationMessaqe = pair.toString() + " is already in use in this partition.";
                     hadErrors = true;
                 }
             }
@@ -254,7 +256,7 @@ public class PartitionActions {
             currentEndpoints.addAll(currentPartition.getHttpEndpoints());
             currentEndpoints.addAll(currentPartition.getOtherEndpoints());
 
-            Map<String, List<String>> portMap = PartitionManager.getInstance().getAllPartitionPorts();
+            Map<String, List<PartitionInformation.IpPortPair>> portMap = PartitionManager.getInstance().getAllPartitionPorts();
             //don't compare against the current partition
             portMap.remove(currentPartition.getPartitionId());
 
@@ -267,17 +269,19 @@ public class PartitionActions {
         return isOK;
     }
 
-    private static boolean findMatchingEndpoints(PartitionInformation.EndpointHolder currentEndpoint, Map<String, List<String>> portMap, boolean incrementEndpoint) {
+    private static boolean findMatchingEndpoints(PartitionInformation.EndpointHolder currentEndpoint,
+                                                 Map<String, List<PartitionInformation.IpPortPair>> portMap, boolean incrementEndpoint) {
         boolean hadMatches= false;
         List<String> matches = new ArrayList<String>();
-        for (Map.Entry<String,List<String>> partitionEntry : portMap.entrySet()) {
-            List<String> ports = partitionEntry.getValue();
-            if (ports.contains(currentEndpoint.port)) {
+        for (Map.Entry<String, List<PartitionInformation.IpPortPair>> partitionEntry : portMap.entrySet()) {
+            List<PartitionInformation.IpPortPair> pairs = partitionEntry.getValue();
+            PartitionInformation.IpPortPair currentPair = new PartitionInformation.IpPortPair(currentEndpoint);
+            if (pairs.contains(currentPair)) {
                 if (incrementEndpoint) {
-                    int x = Integer.parseInt(currentEndpoint.port);
+                    int x = Integer.parseInt(currentPair.getPort());
                     do {
-                        currentEndpoint.port = String.valueOf(++x);
-                    } while(x <= PartitionInformation.MAX_PORT && ports.contains(currentEndpoint.port));
+                        currentPair.setPort(String.valueOf(++x));
+                    } while(x <= PartitionInformation.MAX_PORT && pairs.contains(currentPair));
                 } else {
                     matches.add(partitionEntry.getKey());
                 }
@@ -287,7 +291,7 @@ public class PartitionActions {
         if (!matches.isEmpty()) {
             hadMatches = true;
 
-            String message = "Port " + currentEndpoint.port + " is used by partitions: ";
+            String message = new PartitionInformation.IpPortPair(currentEndpoint).toString() + " is used by partitions: ";
             boolean first = true;
             for (String match : matches) {
                 message += (first?"":", ") + match;

@@ -109,7 +109,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             //write out a config file that will set some variables needed by the service installer.
             os = new PrintStream(new FileOutputStream(configFile));
             os.println("set " + PARTITION_NAME_KEY + "=" + partitionName);
-            os.println("set " + SERVICE_NAME_KEY + "=" + "SSG"+partitionName);
+            os.println("set " + SERVICE_NAME_KEY + "=" + partitionName.replaceAll("_", " ") + "SSG");
             os.println("set " + SERVICE_DISPLAY_NAME_KEY + "=" + "SecureSpan Gateway - " + partitionName + " Partition");
             os.println("set " + SERVICE_LOGPREFIX_KEY + "=" + partitionName + "_ssg_service.log");
             os.println("set " + SERVICE_LOG_KEY + "=" + "%TOMCAT_HOME%\\logs\\catalina.out." + partitionName);

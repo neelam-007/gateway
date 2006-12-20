@@ -66,6 +66,7 @@ public class PartitionInformation{
     public static final String NOAUTH_SSL_PORT_MARKER = "<SSL_NOAUTH_PORT>";
     public static final String RMI_PORT_MARKER = "<RMI_PORT>";
 
+    public static final String ALLOWED_PARTITION_NAME_PATTERN = "[^\\p{Punct}\\s]{1,128}";
     public static String firewallRules = new String(
         "[0:0] -I INPUT $Rule_Insert_Point -d "+ BASIC_IP_MARKER +" -p tcp -m tcp --dport " + BASIC_PORT_MARKER +" -j ACCEPT\n" +
         "[0:0] -I INPUT $Rule_Insert_Point -d " + SSL_IP_MARKER +" -p tcp -m tcp --dport " + SSL_PORT_MARKER + " -j ACCEPT\n" +
@@ -300,13 +301,26 @@ public class PartitionInformation{
     }
 
     public static abstract class EndpointHolder {
-        public String ipAddress;
+        public String ipAddress = "";
         public String port;
         public String validationMessaqe;
 
         public String toString() {
             return describe();
         }
+
+
+        public boolean equals(Object o) {
+            return isEquals(o);
+        }
+
+        abstract boolean isEquals(Object o);
+
+        public int hashCode() {
+            return getHashCode();
+        }
+
+        abstract int getHashCode();
 
         public abstract String describe();
         public abstract void setValueAt(int columnIndex, Object aValue);
@@ -324,22 +338,22 @@ public class PartitionInformation{
             this.endpointType = endpointType;
         }
 
-        public boolean equals(Object o) {
+        public boolean isEquals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
             OtherEndpointHolder that = (OtherEndpointHolder) o;
 
-            if (endpointType != that.endpointType) return false;
+//            if (endpointType != that.endpointType) return false;
             if (port != null ? !port.equals(that.port) : that.port != null) return false;
 
             return true;
         }
 
-        public int hashCode() {
+        public int getHashCode() {
             int result;
-            result = (endpointType != null ? endpointType.hashCode() : 0);
-            result = 31 * result + (port != null ? port.hashCode() : 0);
+//            result = (endpointType != null ? endpointType.hashCode() : 0);
+            result = 31 * (port != null ? port.hashCode() : 0);
             return result;
         }
 
@@ -393,24 +407,23 @@ public class PartitionInformation{
             ipAddress = "*";
         }
 
-        public boolean equals(Object o) {
+        public boolean isEquals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
             HttpEndpointHolder that = (HttpEndpointHolder) o;
 
-            if (endpointType != that.endpointType) return false;
             if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
             if (port != null ? !port.equals(that.port) : that.port != null) return false;
 
             return true;
         }
 
-        public int hashCode() {
+        public int getHashCode() {
             int result;
             result = (ipAddress != null ? ipAddress.hashCode() : 0);
             result = 31 * result + (port != null ? port.hashCode() : 0);
-            result = 31 * result + endpointType.getName().hashCode();
+//            result = 31 * result + endpointType.getName().hashCode();
             return result;
         }
 
@@ -481,6 +494,67 @@ public class PartitionInformation{
             holder = new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT);
             holder.port = DEFAULT_NOAUTH_PORT;
             endpoints.add(holder);
+        }
+    }
+
+    public static class IpPortPair {
+        private EndpointHolder endpointHolder;
+
+        public IpPortPair(PartitionInformation.EndpointHolder holder) {
+            this.endpointHolder = holder;
+        }
+
+        public String getIpAddress() {
+            return StringUtils.isEmpty(endpointHolder.ipAddress)?"":endpointHolder.ipAddress;
+        }
+
+        public void setIpAddress(String ipAddress) {
+            endpointHolder.ipAddress = ipAddress;
+        }
+
+        public String getPort() {
+            return StringUtils.isEmpty(endpointHolder.port)?"":endpointHolder.port;
+        }
+
+        public void setPort(String port) {
+            endpointHolder.port = port;
+        }
+
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            IpPortPair that = (IpPortPair) o;
+
+            if (endpointHolder != null) {
+                if (StringUtils.equals(endpointHolder.ipAddress, "*")) {
+                    if (endpointHolder.port.equals(that.getPort()))
+                        return true;
+                } else if (StringUtils.equals(that.getIpAddress(), "*")) {
+                    if (StringUtils.equals(endpointHolder.port, that.getPort())) {
+                        return true;
+                    }
+                }
+            }
+
+            if (endpointHolder != null ? !endpointHolder.equals(that.endpointHolder) : that.endpointHolder != null)
+                return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return (endpointHolder != null ? endpointHolder.hashCode() : 0);
+        }
+
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (StringUtils.isNotEmpty(getIpAddress())) {
+                sb.append(getIpAddress()).append(":");
+            }
+            sb.append(getPort());
+            return sb.toString();
         }
     }
 }

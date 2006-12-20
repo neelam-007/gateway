@@ -90,6 +90,14 @@ public class PartitionManager {
         }
     }
 
+    public void addPartition(PartitionInformation pi) {
+        if (pi.isNewPartition()) {
+            partitions.put(pi.getPartitionId(), pi);
+        } else {
+            addPartition(pi.getPartitionId());
+        }
+    }
+
     public void addPartition(String partitionId) {
         //inside partitionDir is a server.xml that we need to parse
         OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(partitionId);
@@ -106,6 +114,7 @@ public class PartitionManager {
             }
 
             PartitionInformation pi;
+
             if (dom == null) {
                 pi = new PartitionInformation(partitionId);
                 pi.setNewPartition(false);
@@ -369,15 +378,15 @@ public class PartitionManager {
         }
     }
 
-    public Map<String, List<String>> getAllPartitionPorts() {
-        Map<String, List<String>> portMap = new HashMap<String, List<String>>();
+    public Map<String, List<PartitionInformation.IpPortPair>> getAllPartitionPorts() {
+        Map<String, List<PartitionInformation.IpPortPair>> portMap = new HashMap<String, List<PartitionInformation.IpPortPair>>();
         for (Map.Entry<String,PartitionInformation> which : partitions.entrySet()) {
-            List<String> theseEndpoints = new ArrayList<String>();
+            List<PartitionInformation.IpPortPair> theseEndpoints = new ArrayList<PartitionInformation.IpPortPair>();
             for (PartitionInformation.HttpEndpointHolder httpEndpointHolder : which.getValue().getHttpEndpoints()) {
-                theseEndpoints.add(httpEndpointHolder.port);
+                theseEndpoints.add(new PartitionInformation.IpPortPair(httpEndpointHolder));
             }
             for (PartitionInformation.OtherEndpointHolder otherEndpointHolder : which.getValue().getOtherEndpoints()) {
-                theseEndpoints.add(otherEndpointHolder.port);
+                theseEndpoints.add(new PartitionInformation.IpPortPair(otherEndpointHolder));
             }
 
             portMap.put(which.getKey(), theseEndpoints);

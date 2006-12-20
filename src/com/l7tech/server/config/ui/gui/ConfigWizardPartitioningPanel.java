@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.text.FilterDocument;
@@ -67,7 +68,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         super(next);
         partitionNameFilter = new FilterDocument.Filter() {
             public boolean accept(String s) {
-                return s.matches("[^" + pathSeparator + "\\s]{1,128}");
+                return s.matches(PartitionInformation.DEFAULT_PARTITION_NAME) || s.matches(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN);
             }
         };
 
@@ -141,7 +142,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         do {
             newName = "NewPartition" + (newPartitionIndex == 0?"":String.valueOf(newPartitionIndex));
             newPartitionIndex++;
-        } while (partitionListModel.contains(newName));
+        } while (partitionListModel.contains(newName) != null);
 
         PartitionInformation pi = new PartitionInformation(newName);
         partitionListModel.add(pi);
@@ -154,34 +155,45 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private void doRemovePartition() {
         Object[] deleteThem = partitionList.getSelectedValues();
-        for (Object o : deleteThem) {
+        final boolean[] allRemoved = new boolean[deleteThem.length];
+        for (int i = 0; i < deleteThem.length; i++) {
+            Object o = deleteThem[i];
             final PartitionInformation pi = (PartitionInformation) o;
             if (!pi.getPartitionId().equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
+                final int index = i;
                 Utilities.doWithConfirmation(
                     ConfigWizardPartitioningPanel.this,
                     "Remove Partition", "Are you sure you want to remove the \"" + pi.getPartitionId() + "\" partition? This cannot be undone.",
                     new Runnable() {
                         public void run() {
-                            String message = "";
-                            String title = "";
-                            int type;
-                            if (partitionListModel.remove(pi)) {
-                                message = "All Selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.";
-                                title = "Deletion Complete";
-                                type = JOptionPane.INFORMATION_MESSAGE;
-                            } else {
-                                message = "Could not delete the selected partitions. Check that you have permission to delete directories in " + pi.getOSSpecificFunctions().getPartitionBase() + ".";
-                                title = "Could Not Delete";
-                                type = JOptionPane.ERROR_MESSAGE;
-
-                            }
-                            JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this, message, title, type);
-                            enableEditDeletePartitionButtons();
+                            allRemoved[index] = partitionListModel.remove(pi);
                         }
                     }
                 );
             }
         }
+        boolean allOk = true;
+        for (boolean b : allRemoved) {
+            if (b == false) {
+                allOk = false;
+                break;
+            }
+        }
+
+        String message = "";
+        String title = "";
+        int type;
+        if (allOk) {
+            message = "All Selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.";
+            title = "Deletion Complete";
+            type = JOptionPane.INFORMATION_MESSAGE;
+        } else {
+            message = "At least one of the selected partitions could not be deleted. Check that you have permission to delete directories in " + osFunctions.getPartitionBase() + ".";
+            title = "Could Not Delete";
+            type = JOptionPane.ERROR_MESSAGE;
+        }
+        JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this, message, title, type);
+        enableEditDeletePartitionButtons();
     }
 
     private void enableNextButton() {
@@ -199,24 +211,14 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     }
 
     private void initListeners() {
-        partitionName.addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                String newname = partitionName.getText() + e.getKeyChar();
-                int index = partitionList.getSelectedIndex();
-                if (index > 0 && index < partitionListModel.getSize()) {
-                    if (!partitionListModel.contains(newname))
-                        partitionListModel.update(index, newname, null, null);
-                    else
-                        JOptionPane.showMessageDialog(
-                                ConfigWizardPartitioningPanel.this,
-                                "There is already a \"" + newname + "\" partition",
-                                "Duplicate Partition Name",
-                                JOptionPane.ERROR_MESSAGE);
-                }
+        partitionName.setDocument(new FilterDocument(128, partitionNameFilter));
+
+        RunOnChangeListener rocl = new RunOnChangeListener(new Runnable() {
+            public void run() {
+                updatePartitionName();
             }
         });
-
-        partitionName.setDocument(new FilterDocument(128, partitionNameFilter));
+        partitionName.getDocument().addDocumentListener(rocl);
 
         partitionList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
@@ -235,6 +237,24 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
         addPartition.addActionListener(managePartitionActionListener);
         removePartition.addActionListener(managePartitionActionListener);
+    }
+
+    private void updatePartitionName() {
+        String newname = partitionName.getText();
+        int index = partitionList.getSelectedIndex();
+
+        if (index > 0 && index < partitionListModel.getSize()) {
+            PartitionInformation matchingPi = partitionListModel.contains(newname);
+            if (matchingPi == null || matchingPi == getSelectedPartition())
+                partitionListModel.update(index, newname, null, null);
+            else
+                JOptionPane.showMessageDialog(
+                        ConfigWizardPartitioningPanel.this,
+                        "There is already a \"" + newname + "\" partition",
+                        "Duplicate Partition Name",
+                        JOptionPane.ERROR_MESSAGE);
+        }
+        getParentWizard().getNextButton().setEnabled(StringUtils.isNotEmpty(newname));
     }
 
     private void enableNameField() {
@@ -384,8 +404,12 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             return partitions.size();
         }
 
-        public boolean contains(String partitionName) {
-            return partitions.contains(new PartitionInformation(partitionName));
+        public PartitionInformation contains(String partitionName) {
+            for (PartitionInformation partition : partitions) {
+                if (partition.getPartitionId().equals(partitionName))
+                    return partition;
+            }
+            return null;
         }
 
         public Object getElementAt(int index) {
