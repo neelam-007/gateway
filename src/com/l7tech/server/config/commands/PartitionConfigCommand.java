@@ -163,7 +163,8 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             fos = new FileOutputStream(systemPropertiesFile);
             prop.store(fos, "");
         } finally {
-            ResourceUtils.closeQuietly (fis);
+            ResourceUtils.closeQuietly(fis);
+            ResourceUtils.closeQuietly(fos);
         }
     }
 
@@ -251,7 +252,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         boolean isSecure = StringUtils.equals(connector.getAttribute("secure"), "true");
         boolean needsClientCert = StringUtils.equals(connector.getAttribute("clientAuth"),"want");
 
-        PartitionInformation.HttpEndpointHolder holder= null;
+        PartitionInformation.HttpEndpointHolder holder;
         if (isSecure) {
             if (needsClientCert) holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP,endpoints);
             else holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, endpoints);

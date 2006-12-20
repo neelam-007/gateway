@@ -60,15 +60,12 @@ public class PartitionActions {
             {"socketFactory", "com.l7tech.server.tomcat.SsgServerSocketFactory"},
     };
 
-    private interface ConnectorMatcher {
-        boolean matchesCriteria(Element connector);
-    }
-
     public PartitionActions(OSSpecificFunctions osf) {
         osFunctions = osf;
     }
 
-    public void changeDirName(String oldPartitionId, String newPartitionId) throws IOException {
+    public static void changeDirName(String oldPartitionId, String newPartitionId) throws IOException {
+        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions("");
         String oldDirPath = osFunctions.getPartitionBase() + oldPartitionId;
         File oldDir = new File(oldDirPath);
         if (!oldDir.exists()) throw new FileNotFoundException("Could not find the directory: " + oldDirPath);
@@ -78,7 +75,8 @@ public class PartitionActions {
         if (newDir.exists()) throw new IOException(
                 "Cannot rename \"" + oldPartitionId + "\" to \"" + newPartitionId + "\". " + newDir.getPath() + " already exists");
 
-        oldDir.renameTo(newDir);
+        if (!oldDir.renameTo(newDir))
+            throw new IOException("Cannot rename \"" + oldPartitionId + "\" to \"" + newPartitionId + "\".");
     }
 
     public File createNewPartition(String partitionDir) throws IOException {
@@ -140,25 +138,29 @@ public class PartitionActions {
         return uninstallSuccess;
     }
 
-    private void uninstallService(OSSpecificFunctions osSpecificFunctions) throws IOException, InterruptedException {
+    public void uninstallService(OSSpecificFunctions osSpecificFunctions) throws IOException, InterruptedException {
         String commandFile = osSpecificFunctions.getSpecificPartitionControlScriptName();
         String partitionName = osSpecificFunctions.getPartitionName();
-        String[] cmdArray = new String[] {
-            commandFile,
-            "uninstall",
-        };
 
-        //install the service
+        File partitionServiceConfigFile = new File(osSpecificFunctions.getPartitionBase() + partitionName, "partition_config.cmd");
+        if (new File(commandFile).exists() && partitionServiceConfigFile.exists()) {
+            String[] cmdArray = new String[] {
+                commandFile,
+                "uninstall",
+            };
 
-        Process p = null;
-        try {
-            logger.info("Uninstalling windows service for \"" + partitionName + "\" partition.");
-            File parentDir = new File(commandFile).getParentFile();
-            p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
-            p.waitFor();
-        } finally {
-            if (p != null)
-                p.destroy();
+            //install the service
+
+            Process p = null;
+            try {
+                logger.info("Uninstalling windows service for \"" + partitionName + "\" partition.");
+                File parentDir = new File(commandFile).getParentFile();
+                p = Runtime.getRuntime().exec(cmdArray, null, parentDir);
+                p.waitFor();
+            } finally {
+                if (p != null)
+                    p.destroy();
+            }
         }
     }
 
@@ -212,7 +214,7 @@ public class PartitionActions {
         }
     }
 
-    public static boolean validatePartitionEndpoints(PartitionInformation pinfo, boolean incrementEndpoints) {
+    public static boolean validatePartitionEndpoints(PartitionInformation pinfo) {
         boolean hadErrors = false;
 
         Set<PartitionInformation.IpPortPair> seenPairs = new HashSet<PartitionInformation.IpPortPair>();
@@ -249,7 +251,7 @@ public class PartitionActions {
     }
 
     public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition, boolean incrementEndpoints) {
-        boolean isOK = validatePartitionEndpoints(currentPartition, incrementEndpoints);
+        boolean isOK = validatePartitionEndpoints(currentPartition);
 
         if (isOK) {
             List<PartitionInformation.EndpointHolder> currentEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
@@ -370,7 +372,6 @@ public class PartitionActions {
     }
 
     public static  Map<PartitionInformation.HttpEndpointType, Element> getHttpConnectorsByType(NodeList connectors) {
-        ConnectorMatcher matcher = null;
         Map<PartitionInformation.HttpEndpointType,Element> elementMap = new HashMap<PartitionInformation.HttpEndpointType, Element>();
         for (int i = 0; i < connectors.getLength(); i++) {
             Element connector = (Element) connectors.item(i);

@@ -262,7 +262,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             } else {
                 PartitionInformation.EndpointHolder holder = holders.get(whichEndpointIndex -1);
                 doCollectEndpointInfo(holder);
-                PartitionActions.validatePartitionEndpoints(pinfo, false);
+                PartitionActions.validatePartitionEndpoints(pinfo);
                 finishedEndpointConfig = false;
             }
 
