@@ -2,115 +2,199 @@
 #
 # Startup script for the Secure Span Gateway Server db status support
 #
+# Disallow DB connections while database replication catches up to the
+# other node.
+#
+# We sleep before any checking to ensure that replication logs are being
+# copied (else the timestamp could be up to date even though the DB is
+# still not fully replicated)
+#
 # chkconfig: - 98 02
 # description: Layer7's Secure Span Gateway Db Status Daemon
-# processname: replication-statusd
+# processname: ssg-dbstatus
 
 # Source function library.
 . /etc/rc.d/init.d/functions
-. /etc/profile.d/ssgruntimedefs.sh
-pid=$$;
-local_mysql="/usr/bin/mysql"
-mysql_pass="/root/.my.cnf"
 
-slave_status() {
-     echo "show slave status \G" | ${local_mysql} -h localhost -u root -p${mysql_pass} > /tmp/$pid.outfile
-     return $?
+# If credentials are required to access MySQL then add them as a user config file.
+# /root/.my.cnf
+# [client]
+# password=XXX
+MYSQL="/usr/bin/mysql"
+TIME_DESIRED=15
+export MYSQL TIME_DESIRED
+
+# Check if replication is enabled
+checkRequired() {
+    SERVER_ID=$(${MYSQL} -N -B -e "select @@server_id;" 2>/dev/null)
+    if [ ! -z "${SERVER_ID}" ] && [ 0 -eq ${SERVER_ID} ] ; then
+        # not configured for replication
+        return 1
+    fi
+    return 0
 }
 
-# Returns:
-#
-#*************************** 1. row ***************************
-#             Slave_IO_State: Waiting for master to send event
-#                Master_Host: 192.168.1.95
-#                Master_User: repl
-#                Master_Port: 3306
-#              Connect_Retry: 60
-#            Master_Log_File: spinach2-bin.000002
-#        Read_Master_Log_Pos: 30677258
-#             Relay_Log_File: spinach1-relay-bin.000002
-#              Relay_Log_Pos: 6009568
-#      Relay_Master_Log_File: spinach2-bin.000002
-#           Slave_IO_Running: Yes
-#          Slave_SQL_Running: Yes
-#            Replicate_Do_DB:
-#        Replicate_Ignore_DB:
-#         Replicate_Do_Table:
-#     Replicate_Ignore_Table:
-#    Replicate_Wild_Do_Table:
-#Replicate_Wild_Ignore_Table:
-#                 Last_Errno: 0
-#                 Last_Error:
-#               Skip_Counter: 0
-#        Exec_Master_Log_Pos: 30676636
-#            Relay_Log_Space: 6009568
-#            Until_Condition: None
-#             Until_Log_File:
-#              Until_Log_Pos: 0
-#         Master_SSL_Allowed: No
-#         Master_SSL_CA_File:
-#         Master_SSL_CA_Path:
-#            Master_SSL_Cert:
-#          Master_SSL_Cipher:
-#             Master_SSL_Key:
-#      Seconds_Behind_Master: 0
-
-
-replication_delay() {
-	rep_delay=`grep "Seconds_Behind_Master" /tmp/$pid.outfile | cut -c 30-33`
-	return rep_delay
+# Configuration checks, ensure process list output is usable and we can
+# see the 'system user'
+checkConfigured() {
+    ${MYSQL} -B -e "show processlist;" &>/dev/null
+    if [ ${?} -ne 0 ] ; then
+        echo "Could not access MySQL server."
+        return 1
+    fi
+    TIME_COLUMN_HEADER=$(${MYSQL} -B -e "show processlist;" 2>/dev/null | head -n 1 | awk '{print $6}')
+    if [ "${TIME_COLUMN_HEADER}" != "Time" ] ; then
+        echo "Could not parse 'show processlist' output."
+        return 1
+    fi
+    SYSTEM_DATA=$(${MYSQL} -B -N -e "show processlist;" 2>/dev/null | grep 'system user')
+    if [ -z "${SYSTEM_DATA}" ] ; then
+        echo "Process information for 'system user' is not available."
+        return 1
+    fi
+    return 0
 }
 
-slave_running() {
-        io=`grep "Slave_IO_Running"  /tmp/$pid.outfile | cut -c 30-33`
-        sql=`grep "Slave_SQL_Running"  /tmp/$pid.outfile | cut -c 30-33`
-        if [ "${io}${sql}" -eq "YesYes" ]; then
-		return 0
-	else
-		return 1
-	fi
-}
-start() {
-	# Will exit success on one of several conditions:
-	# 1. local system's mysqld is not configured to run
-	if [ `chkconfig mysqld | grep "3:off"` ]; then
-		# oops, we're not supposed to be here
-		return 0;
-	fi
-	
-	# 2. mysqld is up but not configured to replicate
-	# slave status shows nothing
-	# 3. mysqld is up and replication is up to date, 
-	#    possibly after several retries
+# Service start
+start () {
+    checkRequired
+    if [ ${?} -eq 1 ] ; then
+        echo -n $"SSG DB Status check starting: "
+        success
+        exit 0    
+    fi
 
-	# Will exit failure on one of several conditions:
-	# 4. mysqld is configured to run but is not running 
-	#    after some number of retries
-	# 5. mysqld is up but replication has failed after 
-	#    some number of retries
-	# Optional behaviour:
-	# Exit failure will attempt to alert the user:
-	# SNMP trap
-	# Email message
-	if [ slave_status ne 1 ]; then
-		echo "mysql failure"
-		exit 1;
-	fi
-	while [ replication_delay -gt 0 ]; do 
-		echo "Waiting for replication to catch up"
-		sleep $delay
-	done
-	
+    checkConfigured
+    if [ ${?} -eq 1 ] ; then
+        echo -n $"SSG DB Status check starting: "
+        failure
+        exit 1
+    fi
 
+    MAX_CONNECTIONS=$(${MYSQL} -N -B -e "select @@max_connections;" 2>/dev/null)
+    export MAX_CONNECTIONS
+
+    CONTINUE_FILE=$(mktemp -t myreplflag.XXXXXXXXXXXX)
+    # Wait for replication to complete
+    (  
+        # -5 since we sleep for 5 in the loop
+        sleep $((TIME_DESIRED-5))
+        COUNT=1
+        echo "set global max_connections=1;"
+        while [ $COUNT -le 48 ] && [ -f "${CONTINUE_FILE}" ] ; do 
+            sleep 5
+            echo "show processlist;"
+            COUNT=$((COUNT+1))
+        done;
+        echo "set global max_connections=${MAX_CONNECTIONS};"
+    ) | ${MYSQL} -B -N -t -n 2>/dev/null | (
+        # Add trap to ensure max connections reset on (subshell) exit
+        trap "{ ${MYSQL} -N -B -e \"set global max_connections=${MAX_CONNECTIONS};\" &>/dev/null; }" EXIT
+        TIME_A=-1
+        TIME_B=-1
+
+        while [ 1 -eq 1 ] ; do
+            read L
+            if [ ${?} -ne 0 ] ; then
+                break
+            fi
+
+            # Process line of input
+            if [ ! -z "${L}" ] ; then
+                # Ignore info for non-system processes
+                echo "${L}" | grep -q 'system user' &>/dev/null
+                if [ $? -eq 0  ] ; then
+                    # There are 2 slave processes, use the MAX time
+                    L=$(echo "${L}" | awk -F'|' '{print $7}' | sed 's/ //g')
+                    if [ ${TIME_A} -eq -1 ] ; then
+                        TIME_A=${L}
+                    else
+                        TIME_B=${L}
+          
+                        if [ ${TIME_A} -ge ${TIME_B} ] ; then
+                            TIME=${TIME_A}
+                        else
+                            TIME=${TIME_B}
+                        fi
+
+                        if [ ${TIME} -le ${TIME_DESIRED} ] ; then
+                            # Done, so exit
+                            rm -f "${CONTINUE_FILE}"
+                        fi
+
+                        # Reset times
+                        TIME_A=-1
+                        TIME_B=-1
+                    fi
+                fi 
+            fi
+
+            # Read should block, but just in case
+            sleep 1
+        done
+
+        # TODO What do we do on replication failure?
+    ) &
+
+    echo -n $"SSG DB Status check starting: "
+    # sleep to allow DB connections to be enabled if everything is OK
+    sleep ${TIME_DESIRED}
+    success
 }
-	
+
+# Service stop
+stop () {
+    echo -n $"SSG DB Status check stopping: "
+    success
+}
+
+# Service status
+status () {
+    ${MYSQL} -B -N -t -n -e "show processlist;" 2>/dev/null | (
+    TIME_A=-1
+    TIME_B=-1
+    TIME=Unknown
+    
+    while [ 1 -eq 1 ] ; do
+        read L
+        if [ ${?} -ne 0 ] ; then
+            break 
+        fi
+
+        # Process line of input
+        if [ ! -z "${L}" ] ; then
+            # Ignore info for non-system processes
+            echo "${L}" | grep -q 'system user' &>/dev/null
+            if [ $? -eq 0  ] ; then
+                # There are 2 slave processes, use the MAX time
+                L=$(echo "${L}" | awk -F'|' '{print $7}' | sed 's/ //g')
+                if [ ${TIME_A} -eq -1 ] ; then
+                    TIME_A=${L}
+                else
+                    TIME_B=${L}
+
+                    if [ ${TIME_A} -ge ${TIME_B} ] ; then
+                        TIME=${TIME_A} 
+                    else
+                        TIME=${TIME_B}
+                    fi
+                fi
+            fi
+        fi
+    done
+
+    echo "Replication delay is ${TIME} seconds.")
+}
+
+# Commands
 case "$1" in
-  start)
-	start "$2"
-	;;
-  stop)
-	stop  "$2"
-	;;
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
 esac
-
-exit $RETVAL
