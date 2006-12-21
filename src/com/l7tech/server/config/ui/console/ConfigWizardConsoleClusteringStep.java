@@ -30,7 +30,6 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         configBean = new ClusteringConfigBean();
         clusterBean = (ClusteringConfigBean) configBean;
         configCommand = new ClusteringConfigCommand(configBean);
-        showNavigation = false;
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
