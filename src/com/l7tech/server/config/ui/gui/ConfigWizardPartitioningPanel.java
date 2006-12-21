@@ -69,7 +69,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             doManagePartition(e);
         }
     };
-    private boolean partitionButtonsPrepared = false;
 
     public ConfigWizardPartitioningPanel(WizardStepPanel next) {
         super(next);
@@ -283,7 +282,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private void updatePartitionName() {
 
-        boolean wasRenamed = false;
         PartitionNameDialog dlg = new PartitionNameDialog(getParentWizard());
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
@@ -299,7 +297,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                     PartitionManager.getInstance().renamePartition(oldPi.getPartitionId(), newName);
                     partitionListModel.update(index, newName, null, null);
                 } catch (IOException e) {
-                    wasRenamed = false;
                 }
                 updateProperties();
             }
@@ -324,13 +321,6 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         enableRemoveButton();
         enableNextButton();
     }
-
-//    private void enablePartitionButtons() {
-//        if (!partitionButtonsPrepared) {
-//            enableEditDeletePartitionButtons();
-//            partitionButtonsPrepared = true;
-//        }
-//    }
 
     private void updateProperties() {
         Object o = partitionList.getSelectedValue();
@@ -431,7 +421,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     }
 
     private PartitionInformation getSelectedPartition() {
-        return (PartitionInformation) partitionList.getSelectedValue();
+        return (PartitionInformation) partitionListModel.getElementAt(partitionList.getSelectedIndex());
     }
 
     //Models for the lists on this form
@@ -522,10 +512,10 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
             PartitionInformation.EndpointHolder holder = getEndpointAt(rowIndex);
             holder.setValueAt(columnIndex, aValue);
-            doAfterSetValue(aValue, rowIndex, columnIndex);
+            doAfterSetValue();
         }
 
-        protected abstract void doAfterSetValue(Object aValue, int rowIndex, int columnIndex);
+        protected abstract void doAfterSetValue();
 
         public abstract PartitionInformation.EndpointHolder getEndpointAt(int row);
     }
@@ -563,8 +553,8 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             return true;
         }
 
-        protected void doAfterSetValue(Object aValue, int rowIndex, int columnIndex) {
-            PartitionActions.validatePartitionEndpoints(getSelectedPartition());
+        protected void doAfterSetValue() {
+            PartitionActions.validateSinglePartitionEndpoints(getSelectedPartition());
         }
 
         public int getSize() {
@@ -625,7 +615,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                 case 0:
                     return holder.endpointType.getName();
                 case 1:
-                    return holder.port;
+                    return holder.getPort();
             }
             return null;
         }
@@ -642,8 +632,8 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             return otherEndpoints.size();
         }
 
-        protected void doAfterSetValue(Object aValue, int rowIndex, int columnIndex) {
-            PartitionActions.validatePartitionEndpoints(getSelectedPartition());
+        protected void doAfterSetValue() {
+            PartitionActions.validateSinglePartitionEndpoints(getSelectedPartition());
         }
 
         public PartitionInformation.OtherEndpointHolder getEndpointAt(int selectedRow) {
@@ -678,9 +668,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                 x = renderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if (endpointModel != null) {
                     PartitionInformation.EndpointHolder holder = endpointModel.getEndpointAtRow(row);
-                    if (StringUtils.isNotEmpty(holder.validationMessaqe)) {
+                    if (StringUtils.isNotEmpty(holder.getValidationMessaqe())) {
                         x.setForeground(Color.RED);
-                        ((JLabel)x).setToolTipText(holder.validationMessaqe);
+                        ((JLabel)x).setToolTipText(holder.getValidationMessaqe());
                     } else {
                         x.setForeground(Color.BLACK);
                         ((JLabel)x).setToolTipText(null);

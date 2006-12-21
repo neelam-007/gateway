@@ -129,7 +129,7 @@ public class PartitionInformation{
             fis = new FileInputStream(sysProps);
             props.load(fis);
             String rmiPort = props.getProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT);
-            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).port = StringUtils.isNotEmpty(rmiPort)?rmiPort:"2124";
+            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(StringUtils.isNotEmpty(rmiPort)?rmiPort:"2124");
         } catch (FileNotFoundException e) {
             logger.warning("no system properties file found for partition: " + partitionId);
         } catch (IOException e) {
@@ -145,8 +145,8 @@ public class PartitionInformation{
         HttpEndpointHolder.populateDefaultEndpoints(httpEndpointsList);
         OtherEndpointHolder.populateDefaultEndpoints(otherEndpointsList);
         if (partitionId.equals(PartitionInformation.DEFAULT_PARTITION_NAME)) {
-            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).port = "2124";
-            getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).port = "8005";
+            getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort("2124");
+            getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort("8005");
         }
     }
 
@@ -171,7 +171,7 @@ public class PartitionInformation{
         if ((nodes != null && nodes.getLength() == 1)) {
             Element serverElement = (Element) nodes.item(0);
             if (serverElement != null && serverElement.hasAttribute("port"))
-                getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).port = serverElement.getAttribute("port");
+                getOtherEndPointByType(OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT).setPort(serverElement.getAttribute("port"));
         }
     }
 
@@ -185,8 +185,8 @@ public class PartitionInformation{
         }
 
         if (holder != null) {
-            holder.ipAddress = ip;
-            holder.port = portNumber;
+            holder.setIpAddress(ip);
+            holder.setPort(portNumber);
         }
     }
 
@@ -301,14 +301,37 @@ public class PartitionInformation{
     }
 
     public static abstract class EndpointHolder {
-        public String ipAddress = "";
-        public String port;
-        public String validationMessaqe;
+        private String ipAddress = "";
+        private String port;
+        private String validationMessaqe;
 
         public String toString() {
             return describe();
         }
 
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        public void setIpAddress(String ipAddress) {
+            this.ipAddress = ipAddress;
+        }
+
+        public String getPort() {
+            return port;
+        }
+
+        public void setPort(String port) {
+            this.port = port;
+        }
+
+        public String getValidationMessaqe() {
+            return validationMessaqe;
+        }
+
+        public void setValidationMessaqe(String validationMessaqe) {
+            this.validationMessaqe = validationMessaqe;
+        }
 
         public boolean equals(Object o) {
             return isEquals(o);
@@ -334,7 +357,7 @@ public class PartitionInformation{
         }
 
         public OtherEndpointHolder(String port, OtherEndpointType endpointType) {
-            this.port = port;
+            this.setPort(port);
             this.endpointType = endpointType;
         }
 
@@ -344,30 +367,28 @@ public class PartitionInformation{
 
             OtherEndpointHolder that = (OtherEndpointHolder) o;
 
-//            if (endpointType != that.endpointType) return false;
-            if (port != null ? !port.equals(that.port) : that.port != null) return false;
+            if (getPort() != null ? !getPort().equals(that.getPort()) : that.getPort()!= null) return false;
 
             return true;
         }
 
         public int getHashCode() {
             int result;
-//            result = (endpointType != null ? endpointType.hashCode() : 0);
-            result = 31 * (port != null ? port.hashCode() : 0);
+            result = 31 * (getPort() != null ? getPort().hashCode() : 0);
             return result;
         }
 
         public String describe() {
-            return endpointType.getName() + " = " + port;
+            return endpointType.getName() + " = " + getPort();
         }
 
         public static void populateDefaultEndpoints(List<OtherEndpointHolder> endpoints) {
             OtherEndpointHolder holder = new OtherEndpointHolder(OtherEndpointType.RMI_ENDPOINT);
-            holder.port = DEFAULT_RMI_PORT;
+            holder.setPort(DEFAULT_RMI_PORT);
             endpoints.add(holder);
 
             holder = new OtherEndpointHolder(PartitionInformation.OtherEndpointType.TOMCAT_MANAGEMENT_ENDPOINT);
-            holder.port = DEFAULT_SHUTDOWN_PORT;
+            holder.setPort(DEFAULT_SHUTDOWN_PORT);
             endpoints.add(holder);
         }
 
@@ -376,7 +397,7 @@ public class PartitionInformation{
                 case 0:
                     break;
                 case 1:
-                    this.port = String.valueOf(aValue);
+                    this.setPort(String.valueOf(aValue));
                     break;
             }
         }
@@ -404,7 +425,7 @@ public class PartitionInformation{
 
         public HttpEndpointHolder(HttpEndpointType type) {
             this.endpointType = type;
-            ipAddress = "*";
+            setIpAddress("*");
         }
 
         public boolean isEquals(Object o) {
@@ -413,29 +434,28 @@ public class PartitionInformation{
 
             HttpEndpointHolder that = (HttpEndpointHolder) o;
 
-            if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
-            if (port != null ? !port.equals(that.port) : that.port != null) return false;
+            if (getIpAddress() != null ? !getIpAddress().equals(that.getIpAddress()) : that.getIpAddress() != null) return false;
+            if (getPort() != null ? !getPort().equals(that.getPort()) : that.getPort() != null) return false;
 
             return true;
         }
 
         public int getHashCode() {
             int result;
-            result = (ipAddress != null ? ipAddress.hashCode() : 0);
-            result = 31 * result + (port != null ? port.hashCode() : 0);
-//            result = 31 * result + endpointType.getName().hashCode();
+            result = (getIpAddress() != null ? getIpAddress().hashCode() : 0);
+            result = 31 * result + (getPort() != null ? getPort().hashCode() : 0);
             return result;
         }
 
 
         public String describe() {
-            if (StringUtils.isEmpty(ipAddress) || StringUtils.isEmpty(port)) {
+            if (StringUtils.isEmpty(getIpAddress()) || StringUtils.isEmpty(getPort())) {
                 return "";
             }
             StringBuilder sb = new StringBuilder();
             sb.append(endpointType.getName()).append(" = ");
-            sb.append(ipAddress.equals("*")?"* (all interfaces)":ipAddress).append(", ");
-            sb.append(port);
+            sb.append(getIpAddress().equals("*")?"* (all interfaces)":getIpAddress()).append(", ");
+            sb.append(getPort());
             return sb.toString();
         }
 
@@ -448,9 +468,9 @@ public class PartitionInformation{
                 case 0:
                     return endpointType.getName();
                 case 1:
-                    return ipAddress;
+                    return getIpAddress();
                 case 2:
-                    return port;
+                    return getPort();
                 default:
                     return null;
             }
@@ -461,10 +481,10 @@ public class PartitionInformation{
                 case 0:
                     break;
                 case 1:
-                    ipAddress = String.valueOf(aValue);
+                    this.setIpAddress(String.valueOf(aValue));
                     break;
                 case 2:
-                    port = String.valueOf(aValue);
+                    this.setPort(String.valueOf(aValue));
                     break;
             }
         }
@@ -484,15 +504,15 @@ public class PartitionInformation{
 
         public static void populateDefaultEndpoints(List<HttpEndpointHolder> endpoints) {
             HttpEndpointHolder holder = new HttpEndpointHolder(HttpEndpointType.BASIC_HTTP);
-            holder.port = DEFAULT_HTTP_PORT;
+            holder.setPort(DEFAULT_HTTP_PORT);
             endpoints.add(holder);
 
             holder = new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP);
-            holder.port = DEFAULT_SSL_PORT;
+            holder.setPort(DEFAULT_SSL_PORT);
             endpoints.add(holder);
 
             holder = new PartitionInformation.HttpEndpointHolder(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT);
-            holder.port = DEFAULT_NOAUTH_PORT;
+            holder.setPort(DEFAULT_NOAUTH_PORT);
             endpoints.add(holder);
         }
     }
@@ -528,11 +548,12 @@ public class PartitionInformation{
             IpPortPair that = (IpPortPair) o;
 
             if (endpointHolder != null) {
-                if (StringUtils.equals(endpointHolder.ipAddress, "*")) {
-                    if (endpointHolder.port.equals(that.getPort()))
+                if (StringUtils.equals(getIpAddress(), "*")) {
+                    if (getPort().equals(that.getPort())) {
                         return true;
+                    }
                 } else if (StringUtils.equals(that.getIpAddress(), "*")) {
-                    if (StringUtils.equals(endpointHolder.port, that.getPort())) {
+                    if (StringUtils.equals(getPort(), that.getPort())) {
                         return true;
                     }
                 }

@@ -8,7 +8,6 @@ import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     public static final String ADD_NEW_PARTITION = ") Add a new Partition: " + getEolChar();
     public static final String DELETE_PARTITION = ") Delete a Partition: " + getEolChar();
     private Set<String> partitionNames;
-    private String pathSeparator = File.separator;
 
     private int newPartitionIndex = 0;
 
@@ -236,7 +234,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             int index = 1;
             for (PartitionInformation.EndpointHolder holder : holders) {
                 promptList.add(String.valueOf(index++) + ") " + holder.toString() + getEolChar() +
-                        (StringUtils.isEmpty(holder.validationMessaqe)?"":"   [ *** " + holder.validationMessaqe + " *** ]" + getEolChar()) );
+                        (StringUtils.isEmpty(holder.getValidationMessaqe())?"":"   [ *** " + holder.getValidationMessaqe() + " *** ]" + getEolChar()) );
             }
             promptList.add(String.valueOf(index) + ") Finished Configuring Endpoints" + getEolChar());
 
@@ -262,7 +260,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             } else {
                 PartitionInformation.EndpointHolder holder = holders.get(whichEndpointIndex -1);
                 doCollectEndpointInfo(holder);
-                PartitionActions.validatePartitionEndpoints(pinfo);
+                PartitionActions.validateSinglePartitionEndpoints(pinfo);
                 finishedEndpointConfig = false;
             }
 
@@ -294,22 +292,22 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             prompts.add("Please make a selection: [1]");
             input = getData(prompts, "1", allowedEntries);
             int ipIndex = Integer.parseInt(input) - 1;
-            httpHolder.ipAddress = availableIpAddress[ipIndex];
+            httpHolder.setIpAddress(availableIpAddress[ipIndex]);
 
             prompts = new ArrayList<String>();
-            prompts.add("Please enter the port for the \"" + httpHolder.endpointType + "\" endpoint: [" + httpHolder.port + "]");
-            input = getData(prompts.toArray(new String[0]), httpHolder.port, portPattern, "The port you have entered is invalid. Please re-enter");
+            prompts.add("Please enter the port for the \"" + httpHolder.endpointType + "\" endpoint: [" + httpHolder.getPort() + "]");
+            input = getData(prompts.toArray(new String[0]), httpHolder.getPort(), portPattern, "The port you have entered is invalid. Please re-enter");
 
-            httpHolder.port = input;
-            holder.validationMessaqe = "";
+            httpHolder.setPort(input);
+            holder.setValidationMessaqe("");
 
         } else if (holder instanceof PartitionInformation.OtherEndpointHolder) {
             PartitionInformation.OtherEndpointHolder otherHolder = (PartitionInformation.OtherEndpointHolder) holder;
 
             input = getData(new String[] {
-                "Please enter the port for the \"" + otherHolder.endpointType + "\" endpoint: [" + otherHolder.port + "] ",
-            }, otherHolder.port, portPattern);
-            otherHolder.port = input;
+                "Please enter the port for the \"" + otherHolder.endpointType + "\" endpoint: [" + otherHolder.getPort() + "] ",
+            }, otherHolder.getPort(), portPattern);
+            otherHolder.setPort(input);
         }
     }
 

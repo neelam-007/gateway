@@ -214,10 +214,10 @@ public class PartitionActions {
         }
     }
 
-    public static boolean validatePartitionEndpoints(PartitionInformation pinfo) {
+    public static boolean validateSinglePartitionEndpoints(PartitionInformation pinfo) {
         boolean hadErrors = false;
 
-        Set<PartitionInformation.IpPortPair> seenPairs = new HashSet<PartitionInformation.IpPortPair>();
+        List<PartitionInformation.IpPortPair> seenPairs = new ArrayList<PartitionInformation.IpPortPair>();
 
         List<PartitionInformation.EndpointHolder> allHolders = new ArrayList<PartitionInformation.EndpointHolder>();
         allHolders.addAll(pinfo.getHttpEndpoints());
@@ -226,22 +226,31 @@ public class PartitionActions {
         for (PartitionInformation.EndpointHolder holder : allHolders) {
             int intPort;
             try {
-                intPort = Integer.parseInt(holder.port);
+                intPort = Integer.parseInt(holder.getPort());
             } catch (NumberFormatException e) {
                 intPort = 0;
-                holder.port = "";
+                holder.setPort("");
             }
 
             if ( intPort < 1024) {
-                holder.validationMessaqe = "The SecureSpan Gateway cannot use ports less than 1024";
+                holder.setValidationMessaqe("The SecureSpan Gateway cannot use ports less than 1024");
             } else if (intPort > 65535) {
-                holder.validationMessaqe = "The maximum port allowed is 65535";
+                holder.setValidationMessaqe("The maximum port allowed is 65535");
             } else {
                 PartitionInformation.IpPortPair pair = new PartitionInformation.IpPortPair(holder);
-                if (seenPairs.add(pair)) {
-                    holder.validationMessaqe = "";
+                boolean foundMatch = false;
+                for (PartitionInformation.IpPortPair seenPair : seenPairs) {
+                    if (seenPair.equals(pair)) {
+                        foundMatch = true;
+                        break;
+                    }
+                }
+
+                if (!foundMatch) {
+                    holder.setValidationMessaqe("");
+                    seenPairs.add(pair);
                 } else {
-                    holder.validationMessaqe = pair.toString() + " is already in use in this partition.";
+                    holder.setValidationMessaqe(pair.toString() + " is already in use in this partition.");
                     hadErrors = true;
                 }
             }
@@ -251,7 +260,7 @@ public class PartitionActions {
     }
 
     public static boolean validateAllPartitionEndpoints(PartitionInformation currentPartition, boolean incrementEndpoints) {
-        boolean isOK = validatePartitionEndpoints(currentPartition);
+        boolean isOK = validateSinglePartitionEndpoints(currentPartition);
 
         if (isOK) {
             List<PartitionInformation.EndpointHolder> currentEndpoints = new ArrayList<PartitionInformation.EndpointHolder>();
@@ -299,7 +308,7 @@ public class PartitionActions {
                 message += (first?"":", ") + match;
                 first = false;
             }
-            currentEndpoint.validationMessaqe = message;
+            currentEndpoint.setValidationMessaqe(message);
         }
         return hadMatches;
     }
@@ -314,26 +323,26 @@ public class PartitionActions {
         PartitionInformation.OtherEndpointHolder rmiEndpoint = getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
 
         String rules = PartitionInformation.firewallRules;
-        if (basicEndpoint.ipAddress.equals("*"))
+        if (basicEndpoint.getIpAddress().equals("*"))
             rules = rules.replaceAll("-d " + PartitionInformation.BASIC_IP_MARKER, "");
         else
-            rules = rules.replaceAll(PartitionInformation.BASIC_IP_MARKER, basicEndpoint.ipAddress);
-        rules = rules.replaceAll(PartitionInformation.BASIC_PORT_MARKER, basicEndpoint.port);
+            rules = rules.replaceAll(PartitionInformation.BASIC_IP_MARKER, basicEndpoint.getIpAddress());
+        rules = rules.replaceAll(PartitionInformation.BASIC_PORT_MARKER, basicEndpoint.getPort());
 
-        if (sslEndpoint.ipAddress.equals("*"))
+        if (sslEndpoint.getIpAddress().equals("*"))
             rules = rules.replaceAll("-d " + PartitionInformation.SSL_IP_MARKER, "");
         else
-            rules = rules.replaceAll(PartitionInformation.SSL_IP_MARKER, sslEndpoint.ipAddress);
-        rules = rules.replaceAll(PartitionInformation.SSL_PORT_MARKER, sslEndpoint.port);
+            rules = rules.replaceAll(PartitionInformation.SSL_IP_MARKER, sslEndpoint.getIpAddress());
+        rules = rules.replaceAll(PartitionInformation.SSL_PORT_MARKER, sslEndpoint.getPort());
 
-        if (noAuthSslEndpoint.ipAddress.equals("*"))
+        if (noAuthSslEndpoint.getIpAddress().equals("*"))
             rules = rules.replaceAll("-d " + PartitionInformation.NOAUTH_SSL_IP_MARKER, "");
         else
-            rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.ipAddress);
+            rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_IP_MARKER, noAuthSslEndpoint.getIpAddress());
 
-        rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.port);
+        rules = rules.replaceAll(PartitionInformation.NOAUTH_SSL_PORT_MARKER, noAuthSslEndpoint.getPort());
 
-        rules = rules.replaceAll(PartitionInformation.RMI_PORT_MARKER, rmiEndpoint.port);
+        rules = rules.replaceAll(PartitionInformation.RMI_PORT_MARKER, rmiEndpoint.getPort());
 
         FileOutputStream fos = null;
         String fileName = pInfo.getOSSpecificFunctions().getPartitionBase() + pInfo.getPartitionId() + "/" + "firewall_rules";

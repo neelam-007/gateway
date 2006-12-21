@@ -295,30 +295,6 @@ public class PartitionManager {
         }
     }
 
-    /** If run on windows, uninstalls a partition service by invoking the appropriate
-     * <code>"service.cmd uninstall"</code> command for that partition.
-     *
-     * @param partitionName the partition to uninstall. Can be null, in which case, all partitions
-     * on the system will be uninstlled.
-     */
-    public static void uninstallPartitionServices(String partitionName) {
-        boolean doingAllPartitions = (partitionName == null);
-        if (doingAllPartitions) {
-            Set<String> partitionNames = getInstance().getPartitionNames();
-            for (String name : partitionNames) {
-                OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(name);
-                PartitionActions pa = new PartitionActions(osf);
-                try {
-                    pa.uninstallService(osf);
-                } catch (IOException e) {
-                    logger.warning("Error while uninstalling the windows service for partition \"" + name + "\" [" + e.getMessage() + "]");
-                } catch (InterruptedException e) {
-                    logger.warning("Error while uninstalling the windows service for partition \"" + name + "\" [" + e.getMessage() + "]");
-                }
-            }
-        }
-    }
-
     private static void fixKeystorePaths(File partitionDir) throws FileNotFoundException {
         File serverConfig = new File(partitionDir, "server.xml");
         File keystoreProperties = new File(partitionDir, "keystore.properties");

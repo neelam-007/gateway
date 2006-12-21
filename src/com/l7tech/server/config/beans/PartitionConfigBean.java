@@ -43,7 +43,7 @@ public class PartitionConfigBean extends BaseConfigurationBean{
         }
 
         for (PartitionInformation.OtherEndpointHolder otherEndpoint : otherEndpoints) {
-            explanations.add(insertTab + "    " + otherEndpoint.endpointType.getName() + "=" + otherEndpoint.port);
+            explanations.add(insertTab + "    " + otherEndpoint.endpointType.getName() + "=" + otherEndpoint.getPort());
         }
     }
 

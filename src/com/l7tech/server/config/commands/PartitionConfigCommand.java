@@ -149,14 +149,14 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             List<PartitionInformation.OtherEndpointHolder> otherEndpoints = pInfo.getOtherEndpoints();
 
             PartitionInformation.HttpEndpointHolder httpEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, httpEndpoints);
-            prop.setProperty(PartitionConfigBean.SYSTEM_PROP_HTTPPORT, httpEndpoint.port);
+            prop.setProperty(PartitionConfigBean.SYSTEM_PROP_HTTPPORT, httpEndpoint.getPort());
 
             PartitionInformation.HttpEndpointHolder sslEndpoint = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.SSL_HTTP, httpEndpoints);
-            prop.setProperty(PartitionConfigBean.SYSTEM_PROP_SSLPORT, sslEndpoint.port);
+            prop.setProperty(PartitionConfigBean.SYSTEM_PROP_SSLPORT, sslEndpoint.getPort());
 
             PartitionInformation.OtherEndpointHolder rmiEndpoint = PartitionActions.getOtherEndpointByType(PartitionInformation.OtherEndpointType.RMI_ENDPOINT, otherEndpoints);
-            if (StringUtils.isNotEmpty(rmiEndpoint.port))
-                prop.setProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT, rmiEndpoint.port);
+            if (StringUtils.isNotEmpty(rmiEndpoint.getPort()))
+                prop.setProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT, rmiEndpoint.getPort());
 
             prop.setProperty(PartitionConfigBean.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
 
@@ -184,7 +184,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         NodeList serverNodes = serverConfigDom.getElementsByTagName("Server");
         for (int i = 0; i < serverNodes.getLength(); i++) {
             Element serverNode = (Element) serverNodes.item(i);
-            serverNode.setAttribute("port", shutdownEndpoint.port);
+            serverNode.setAttribute("port", shutdownEndpoint.getPort());
         }
         FileOutputStream fos = null;
         try {
@@ -225,7 +225,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
             PartitionInformation.HttpEndpointType type = endpoint.endpointType;
             if (type == PartitionInformation.HttpEndpointType.SSL_HTTP)
-                redirectPort = endpoint.port;
+                redirectPort = endpoint.getPort();
 
             Element connector;
             if (!existingConnectors.containsKey(type)) {
@@ -233,8 +233,8 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             } else {
                 connector = existingConnectors.get(type);
             }
-            connector.setAttribute("address", endpoint.ipAddress);
-            connector.setAttribute("port", endpoint.port);
+            connector.setAttribute("address", endpoint.getIpAddress());
+            connector.setAttribute("port", endpoint.getPort());
         }
         existingConnectors.get(PartitionInformation.HttpEndpointType.BASIC_HTTP).setAttribute("redirectPort", redirectPort);
     }
@@ -259,7 +259,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
         } else {
             holder = PartitionActions.getHttpEndpointByType(PartitionInformation.HttpEndpointType.BASIC_HTTP, endpoints);
         }
-        return StringUtils.isNotEmpty(holder.ipAddress) && StringUtils.isNotEmpty(holder.port);
+        return StringUtils.isNotEmpty(holder.getIpAddress()) && StringUtils.isNotEmpty(holder.getPort());
     }
 
     private Document getDomFromServerConfig(PartitionInformation pInfo) throws IOException, SAXException {
