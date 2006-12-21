@@ -58,7 +58,7 @@ COMMIT
 
 # Allow in the cluster protocol, only for multicast destinations
 
-[0:0] -A INPUT -d ! 224.0.0.0/8 -p udp -m udp --dport 8777 -j ACCEPT
+[0:0] -A INPUT -d ! 224.0.0.0/16 -p udp -m udp --dport 8777 -j ACCEPT
 
 # Allow in the other two ports, for all destinations and sources
 
