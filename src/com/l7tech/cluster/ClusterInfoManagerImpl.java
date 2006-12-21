@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
     private static final String PROP_OLD_MULTICAST_GEN = "com.l7tech.cluster.macAddressOldGen"; // true for old
     private static final String PROP_MAC_ADDRESS = "com.l7tech.cluster.macAddress";
+    private static final String PROP_IP_ADDRESS = "com.l7tech.cluster.ipAddress";
 
     private ServerConfig serverConfig;
     private KeystoreUtils keystore;
@@ -231,7 +232,10 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                             logger.log(Level.WARNING, msg, e);
                         }
                     }
-                    logger.config("Using server " + output.getName() + " (" + output.getNodeIdentifier() + ")");
+                    logger.config("Using server " + output.getName() +
+                            " (Id:" + output.getNodeIdentifier() +
+                            ", Ip:" + output.getAddress() +
+                            ", Port:" + output.getClusterPort() + ")");
                     selfId = output.getNodeIdentifier();
 
                     return output;
@@ -544,8 +548,13 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * If none of these methods work (is that possible?) then the output is null.
      */
     private synchronized String getIPAddress() {
-        if (thisNodeIPAddress == null) {
-            thisNodeIPAddress = getIfConfigIpAddress();
+        if (thisNodeIPAddress == null) {            
+            thisNodeIPAddress = getConfiguredIPAddress();
+
+            if (thisNodeIPAddress == null) {
+                thisNodeIPAddress = getIfConfigIpAddress();
+            }
+
             if (thisNodeIPAddress == null) {
                 try {
                     thisNodeIPAddress = InetAddress.getLocalHost().getHostAddress();
@@ -555,6 +564,27 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             }
         }
         return thisNodeIPAddress;
+    }
+
+    /**
+     * Get the IP address from the system property (if any)
+     *
+     * @return The property or null if not set
+     */
+    private String getConfiguredIPAddress() {
+        String configuredIp = System.getProperty(PROP_IP_ADDRESS);
+
+        try {
+            if (configuredIp!=null && !isValidIPAddress(InetAddress.getByName(configuredIp))) {
+                logger.log(Level.WARNING, "IP address '"+configuredIp+"', is not present.");
+            }
+        }
+        catch(UnknownHostException uhe) {
+            logger.log(Level.WARNING, "Invalid IP address configured '"+configuredIp+"', ignoring.", uhe);
+            configuredIp = null;
+        }
+
+        return configuredIp;
     }
 
     /**
@@ -573,6 +603,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
     /**
      * Check if the given IP address is a valid IP address for this system.
+     *
+     * Also check that if a system property is set it matches the given IP.
      */
     private boolean isValidIPAddressAndClusterPort(final String address, final int clusterPort) {
         boolean valid = true;
@@ -589,23 +621,18 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             }
 
             if (hostAddress != null) {
-                try {
-                    boolean found = false;
-                    done:
-                    for(NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-                        for(InetAddress inetAddress : Collections.list(networkInterface.getInetAddresses())) {
-                            if (inetAddress.equals(hostAddress)) {
-                                found = true;
-                                break done;
-                            }
-                        }
-                    }
-                    if (!found) {
-                        valid = false;
-                        logger.log(Level.WARNING, "Address does not resolve to any local address '"+address+"'.");
-                    }
-                } catch(SocketException se) {
-                    logger.log(Level.WARNING, "Cannot get network interfaces to address.", se);
+                boolean found = isValidIPAddress(hostAddress);
+                String configuredIp = getConfiguredIPAddress();
+                boolean configured = configuredIp != null;
+                boolean matchesConfig = configured && configuredIp.equals(address);
+
+                if (!found) {
+                    valid = matchesConfig; // if it matches the config then treat as valid, you get what you ask for
+                    logger.log(Level.WARNING, "Address does not resolve to any local address '"+address+"'.");
+                }
+                else if (!matchesConfig) {
+                    valid = false;    
+                    logger.log(Level.CONFIG, "Updating cluster IP address to match configuration '"+configuredIp+"' (was '"+address+"')");
                 }
             }
 
@@ -615,6 +642,31 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             }
         }
         return valid;
+    }
+
+    /**
+     * Check if the given IP address is one of the IPs on the system.
+     *
+     * @param address The address to check
+     * @return true if valid
+     */
+    private boolean isValidIPAddress(final InetAddress address) {
+        boolean found = false;
+        try {
+            done:
+            for(NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                for(InetAddress inetAddress : Collections.list(networkInterface.getInetAddresses())) {
+                    if (inetAddress.equals(address)) {
+                        found = true;
+                        break done;
+                    }
+                }
+            }
+        } catch(SocketException se) {
+            logger.log(Level.WARNING, "Cannot get network interfaces to address.", se);
+        }
+
+        return found;
     }
 
     public static String generateMulticastAddress() {
