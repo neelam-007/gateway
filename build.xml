@@ -1759,6 +1759,7 @@
     <target name="package.systemconfigwiz" unless="ssg.only" depends="compile">
         <mkdir dir="${build.dir}/sysconfigwizard"/>
         <mkdir dir="${build.dir}/sysconfigwizard/lib"/>
+        <mkdir dir="${build.dir}/sysconfigwizard/configfiles"/>
 
         <copy todir="${build.dir}/sysconfigwizard/lib">
             <fileset dir="${build.lib}">

@@ -11,10 +11,10 @@ launchtype=${1}
 
 launch_wizard(){
 	#check if we're root
-	if [ $UID -eq 0 ]; then
+	if [ "$USER" != "ssgconfig" ]; then
         	su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
     	else
-        	su ssgconfig -c "${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*"
+        	${JAVA_HOME}/bin/java -Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -jar ConfigWizard.jar $*
     	fi
 }
 

@@ -68,24 +68,42 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 # Config components, owned by root
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
+
 # Main tree, owned by gateway
 # Group writable config files
 %defattr(0775,gateway,gateway)
 %config(noreplace) /ssg/etc/conf/
+%config(noreplace) /ssg/tomcat/conf/
+%config(noreplace) /ssg/jdk/jre/lib/ext/
+%config(noreplace) /ssg/jdk/jre/lib/security/
+
+%defattr(0664,gateway,gateway)
 %config(noreplace) /ssg/etc/conf/*
 %config(noreplace) /ssg/tomcat/conf/*
 %config(noreplace) /ssg/jdk/jre/lib/ext/*
-%config(noreplace) /ssg/jdk/jre/lib/security/
 %config(noreplace) /ssg/jdk/jre/lib/security/java.security
 
 %attr(0775,gateway,gateway) /ssg/bin/partition*.sh
 
 # Group writeable directories and files
+
+#Config Wizard
 %attr(0775,gateway,gateway) /ssg/configwizard
-%attr(0775,gateway,gateway) /ssg/configwizard/*
+%attr(0664,gateway,gateway) /ssg/configwizard/*
+
+%attr(0775,gateway,gateway) /ssg/configwizard/*.sh
+%attr(0775,gateway,gateway) /ssg/configwizard/lib
+
+#System Config Wizard
 %attr(0775,gateway,gateway) /ssg/sysconfigwizard
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard/*
+%attr(0664,gateway,gateway) /ssg/sysconfigwizard/*
+
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard/*.sh
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard/lib
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard/configfiles
+
 %attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
+
 # Group writable for migration stuff
 %defattr(0775,gateway,gateway) 
 /ssg/migration
@@ -194,8 +212,17 @@ fi
 
 #chown some files that may have been written as root in a previous install so that this, and future rpms can write them
 /bin/chown -Rf gateway.gateway /ssg
-chmod -Rf 775 /ssg/configwizard
-chmod -Rf 775 /ssg/sysconfigwizard
+chmod -f 775 /ssg/configwizard
+chmod -f 664 /ssg/configwizard/*
+chmod -f 775 /ssg/configwizard/*.sh
+chmod -f 775 /ssg/configwizard/lib
+
+chmod -f 775 /ssg/sysconfigwizard
+chmod -f 664 /ssg/sysconfigwizard/*
+chmod -f 775 /ssg/sysconfigwizard/lib
+chmod -f 775 /ssg/sysconfigwizard/configfiles
+chmod -f 775 /ssg/sysconfigwizard/*.sh
+
 chmod -Rf 775 /ssg/etc/conf
 chmod -Rf 775 /ssg/tomcat/conf
 chmod -Rf 775 /ssg/jdk/jre/lib/security/
