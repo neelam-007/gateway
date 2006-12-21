@@ -34,6 +34,9 @@ pushd "%SSG_HOME%"
 for /F "tokens=1" %%i in ('bin\sysmem.exe "--unit=M" --roundoff TotalPhys') do set system_ram=%%i
 popd
 set /a java_ram=%system_ram%*2/3
+if %java_ram% GTR 1024 (
+  set java_ram=1024
+)
 
 :: REMINDER: Changes to %JAVA_OPTS% will not propagate automatically to
 ::           %JVMOPTIONS% in service.cmd. You must edit the same changes there
