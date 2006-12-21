@@ -4,6 +4,7 @@
 cd `dirname $0`
 pushd .. > /dev/null
 SSG_ROOT=`pwd`
+USER=$(whoami)
 popd > /dev/null
 
 JAVA_HOME=${SSG_ROOT}/jdk
