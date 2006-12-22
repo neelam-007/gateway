@@ -298,10 +298,6 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         } while (!finishedEndpointConfig);
     }
 
-    private void doRenamePartition() {
-        printText("*** TODO: Rename partition ***");
-    }
-
     private void doCollectEndpointInfo(PartitionInformation.EndpointHolder holder) throws IOException, WizardNavigationException {
         String input;
         List<String> prompts;
