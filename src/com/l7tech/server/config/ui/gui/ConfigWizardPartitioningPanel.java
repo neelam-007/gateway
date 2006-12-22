@@ -189,13 +189,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             }
         }
 
-        String message;
-        String title;
-        int type;
-        if (!oneNotNull) {
-
-        }
-        else {
+        if (oneNotNull) {
             if (allSelectedItemsDeleted) {
                 JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this,
                         "The selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.",
