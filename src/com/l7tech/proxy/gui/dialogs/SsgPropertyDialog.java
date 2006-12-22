@@ -845,6 +845,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             ssg.setSsgPort(referenceSsg.getSsgPort());
             ssg.setSslPort(referenceSsg.getSslPort());
         }
+
+        if (!ssg.isGeneric()) {
+            try {
+                ssg.setServerUrl(null);
+            } catch(MalformedURLException mue) {
+                log.log(Level.WARNING, "Error resetting serverUrl.", mue);
+            }
+        }
     }
 
     /**
