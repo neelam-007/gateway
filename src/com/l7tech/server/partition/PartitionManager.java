@@ -398,9 +398,11 @@ public class PartitionManager {
         PartitionInformation originalPi = getPartition(partitionToRename);
         //if this partition exists
         if (originalPi != null) {
-            PartitionActions.changeDirName(partitionToRename,  newName);
+            String oldDirPath = OSDetector.getOSSpecificFunctions("").getPartitionBase() + partitionToRename;
+            if (new File(oldDirPath).exists()) {
+                PartitionActions.changeDirName(partitionToRename,  newName);
+            }
             originalPi.setPartitionId(newName);
-
             partitions.remove(partitionToRename);
             partitions.put(newName, originalPi);
         }

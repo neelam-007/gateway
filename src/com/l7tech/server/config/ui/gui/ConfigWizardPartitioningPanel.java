@@ -248,7 +248,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     private void initListeners() {
         renameAction = new AbstractAction("Rename") {
             public void actionPerformed(ActionEvent e) {
-                updatePartitionName();
+                doRenamePartition();
             }
         };
 
@@ -311,7 +311,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
         }        
     }
 
-    private void updatePartitionName() {
+    private void doRenamePartition() {
         String existingName = partitionName.getText();
         PartitionNameDialog dlg = new PartitionNameDialog(getParentWizard(), partitionName.getText());
         Utilities.centerOnScreen(dlg);
@@ -332,6 +332,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                     PartitionManager.getInstance().renamePartition(oldPi.getPartitionId(), newName);
                     partitionListModel.update(index, newName, null, null);
                 } catch (IOException e) {
+                    JOptionPane.showMessageDialog(this,
+                            "Partition could not be renamed: \n" + e.getMessage(),
+                            "Rename Failed", JOptionPane.ERROR_MESSAGE);
                 }
                 updateProperties();
             }
