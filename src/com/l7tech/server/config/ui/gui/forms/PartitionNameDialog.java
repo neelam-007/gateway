@@ -3,6 +3,7 @@ package com.l7tech.server.config.ui.gui.forms;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -14,23 +15,30 @@ public class PartitionNameDialog extends JDialog {
     private JTextField partitionName;
     private boolean wasCancelled;
 
-    public PartitionNameDialog(JDialog parent) {
+    public PartitionNameDialog(JDialog parent, String oldName) {
         super(parent, "Rename Partition", true);
-        initialize();
+        initialize(oldName);
     }
 
-    public PartitionNameDialog(JFrame parent) {
+    public PartitionNameDialog(JFrame parent, String oldName) {
         super(parent, "Rename Partition", true);
-        initialize();
+        initialize(oldName);
     }
 
-    private void initialize() {
+    private void initialize(String oldName) {
         FilterDocument.Filter partitionNameFilter = new FilterDocument.Filter() {
             public boolean accept(String s) {
                 return s.matches(PartitionInformation.DEFAULT_PARTITION_NAME) || s.matches(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN);
             }
         };
         partitionName.setDocument(new FilterDocument(128, partitionNameFilter));
+        partitionName.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            public void run() {
+                buttonOK.setEnabled(partitionName.getDocument().getLength() != 0);
+            }
+        }));
+
+        partitionName.setText((oldName == null?"":oldName));
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -79,7 +87,11 @@ public class PartitionNameDialog extends JDialog {
     }
 
     private void onCancel() {
-        wasCancelled = false;
+        wasCancelled = true;
         dispose();
+    }
+
+    public boolean wasCancelled() {
+        return wasCancelled;
     }
 }

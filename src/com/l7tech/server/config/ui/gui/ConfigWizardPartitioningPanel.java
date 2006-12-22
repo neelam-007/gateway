@@ -311,12 +311,16 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
     }
 
     private void updatePartitionName() {
-
-        PartitionNameDialog dlg = new PartitionNameDialog(getParentWizard());
+        String existingName = partitionName.getText();
+        PartitionNameDialog dlg = new PartitionNameDialog(getParentWizard(), partitionName.getText());
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
+
         String newName = dlg.getPartitionName();
 
+        if (dlg.wasCancelled() || StringUtils.equals(newName, existingName))
+            return;
+        
         int index = partitionList.getSelectedIndex();
 
         if (index >= 0 && index < partitionListModel.getSize()) {
