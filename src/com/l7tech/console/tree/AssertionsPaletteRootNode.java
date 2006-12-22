@@ -38,14 +38,15 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         nodeList.add(new AuditFolderNode());
         nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new ThreatProtectionFolderNode());
-        if (!TopComponents.getInstance().isApplet())
-            nodeList.add(new PoliciesFolderNode());
 
         for (Iterator i = nodeList.iterator(); i.hasNext();) {
             AbstractPaletteFolderNode node = (AbstractPaletteFolderNode)i.next();
             if (!node.isEnabledByLicense() || node.getChildCount() < 1) i.remove();
         }
 
+        // include the policy templates even if empty
+        if (!TopComponents.getInstance().isApplet())
+            nodeList.add(new PoliciesFolderNode());
 
         AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
 
