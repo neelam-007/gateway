@@ -285,6 +285,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
             index = 0;
             partitionList.setSelectedIndex(index);
         }
+        updateProperties();
     }
 
     private void enableRemoveButton() {
