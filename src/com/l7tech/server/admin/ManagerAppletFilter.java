@@ -14,6 +14,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -21,19 +22,18 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
-import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.spring.remoting.RemoteUtils;
+import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
+
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.beans.BeansException;
@@ -43,6 +43,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Cookie;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,7 +66,7 @@ public class ManagerAppletFilter implements Filter {
     private WebApplicationContext applicationContext;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AdminSessionManager adminSessionManager;
-    private RoleManager roleManager;
+    private AdminLogin adminLogin;
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
 
@@ -92,13 +93,13 @@ public class ManagerAppletFilter implements Filter {
         customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionsAdmin", CustomAssertionsRegistrar.class);
         ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory", ServerPolicyFactory.class);
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
-        roleManager = (RoleManager)getBean("roleManager", RoleManager.class);
+        adminLogin = (AdminLogin)getBean("adminLogin", AdminLogin.class);
         auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)getBean("soapFaultManager", SoapFaultManager.class);
 
         CompositeAssertion dogfood = new AllAssertion();
+        dogfood.addChild(new SslAssertion(false));
         dogfood.addChild(new HttpBasic());
-        dogfood.addChild(new AuthenticationAssertion(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID));
         fakeDoc = XmlUtil.createEmptyDocument("placeholder", "l7", "http://www.l7tech.com/ns/placeholder");
 
         try {
@@ -226,6 +227,12 @@ public class ManagerAppletFilter implements Filter {
 
     // If this method returns, an audit detail message has been added.
     private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp, PolicyEnforcementContext context, Auditor auditor) throws IOException {
+        // Check if already auth'd
+        if (hreq.getAttribute(ManagerAppletFilter.PROP_USER) != null) {
+            // we've already seen this request (dispatched)
+            return AuthResult.OK;
+        }
+
         // Check for provided session ID and, if its valid and arrived over SSL, bypass authentication
         Cookie[] cookies = hreq.getCookies();
         if (cookies != null) for (Cookie cookie : cookies) {
@@ -252,22 +259,23 @@ public class ManagerAppletFilter implements Filter {
         try {
             result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE && context.getCredentials() != null) {
-                final User user = context.getAuthenticatedUser();
-                if (roleManager.getAssignedRoles(user).isEmpty()) {
-                    auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_ROLES, new String[] { getName(user) });
-                    return AuthResult.FAIL;
-                }
+                final LoginCredentials credentials = context.getCredentials();
+            
+                AdminLoginResult loginResult =
+                        adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
+
+                final User user = loginResult.getUser();
                 hreq.setAttribute(PROP_CREDS, context.getCredentials());
                 hreq.setAttribute(PROP_USER, user);
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, new String[] { getName(user) });
                 return AuthResult.OK;
             }
 
-        } catch (PolicyAssertionException e) {
+        } catch (LoginException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
             return AuthResult.FAIL;
-        } catch (FindException e) {
-            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_DB_ERROR, new String[] {ExceptionUtils.getMessage(e)}, e);
+        } catch (PolicyAssertionException e) {
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
             return AuthResult.FAIL;
         }
 

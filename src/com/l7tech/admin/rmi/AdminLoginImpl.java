@@ -99,20 +99,25 @@ public class AdminLoginImpl
 
             if (user == null)
                 throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
-            
-            logger.info("User '" + user.getLogin() + "' logged in from IP '" +
-                    RemoteUtils.getClientHost() + "'.");
+
+            boolean remoteLogin = true;
+            try {
+                String remoteIp = RemoteUtils.getClientHost();
+                logger.info("User '" + user.getLogin() + "' logged in from IP '" + remoteIp + "'.");
+            } catch (ServerNotActiveException snae) {
+                logger.finer("User '" + user.getLogin() + "' logged in locally.");
+                remoteLogin = false;
+            }
 
             AdminContext adminContext = makeAdminContext();
-
-            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
-
-            String cookie = sessionManager.createSession(user);
+            String cookie = "-";
+            if (remoteLogin) {
+                // If local, caller is responsible for generating event/session if required
+                getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
+                cookie = sessionManager.createSession(user);
+            }
 
             return new AdminLoginResult(user, adminContext, cookie);
-        } catch (ServerNotActiveException snae) {
-            logger.log(Level.FINE, "Authentication failed", snae);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(snae);
         } catch (FindException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
