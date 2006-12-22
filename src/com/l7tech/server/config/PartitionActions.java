@@ -234,8 +234,10 @@ public class PartitionActions {
 
             if ( intPort < 1024) {
                 holder.setValidationMessaqe("The SecureSpan Gateway cannot use ports less than 1024");
+                hadErrors = true;
             } else if (intPort > 65535) {
                 holder.setValidationMessaqe("The maximum port allowed is 65535");
+                hadErrors = true;
             } else {
                 PartitionInformation.IpPortPair pair = new PartitionInformation.IpPortPair(holder);
                 boolean foundMatch = false;
