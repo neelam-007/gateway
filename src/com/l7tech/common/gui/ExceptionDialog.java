@@ -272,7 +272,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         if (t == null || (t.getMessage() == null || "".equals(t.getMessage())))
             return new JLabel();
         Throwable cause = ExceptionUtils.unnestToRoot(t);
-        label = new HyperlinkLabel(cause.getMessage(), null, "file://", SwingConstants.CENTER);
+        label = new HyperlinkLabel(restrictLength(cause.getMessage(), 400), null, "file://", SwingConstants.CENTER);
         label.addHyperlinkListener(new HyperlinkListener() {
             /**
              * Called when a hypertext link is updated.
@@ -288,6 +288,16 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
         });
         return label;
+    }
+
+    private String restrictLength(String message, int length) {
+        String trimmed = message;
+
+        if (trimmed != null && trimmed.length() > length) {
+            trimmed = trimmed.substring(0, length - 3) + "...";    
+        }
+
+        return trimmed;
     }
 
     private String createMessage(String message) {

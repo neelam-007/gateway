@@ -89,7 +89,8 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
         InvocationTargetException exception = ite;
         Throwable cause = ite.getCause();
         Throwable replacement = ExceptionUtils.filter(cause,
-                new Class[]{BadSqlGrammarException.class,
+                new Class[]{// spring jdbc errors
+                            BadSqlGrammarException.class,
                             CannotGetJdbcConnectionException.class,
                             InvalidResultSetAccessException.class,
                             JdbcUpdateAffectedIncorrectNumberOfRowsException.class,
@@ -97,6 +98,12 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
                             SQLWarningException.class,
                             UncategorizedSQLException.class,
                             ObjectOptimisticLockingFailureException.class,
+                            // connection pooling exceptions
+                            com.mchange.lang.PotentiallySecondaryException.class,
+                            com.mchange.util.AssertException.class,
+                            com.mchange.v2.ser.UnsupportedVersionException.class,
+                            com.mchange.v2.util.ResourceClosedException.class,
+                            //
                 },
                 sendStackToClient);
 
