@@ -50,6 +50,8 @@ public class PartitionManager {
         "cluster_hostname",
         "cluster_hostname-dist.rpmsave",
         "cluster_hostname-dist",
+        "kerberos.keytab",
+        "kerberos.keytab.rpmsave"
     };
 
     private static PartitionManager instance;
