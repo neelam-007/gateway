@@ -31,12 +31,14 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     private static final String HEADER_DELETE_PARTITION = "-- Select a Partition To Delete (the default_ partition cannot be deleted)--" + getEolChar();
 
     private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Select an Endpoint to configure for the \"{0}\" Partition --" + getEolChar();
+    private static final String HEADER_CONFIGURE_PARTITION= "-- Select an option to configure the \"{0}\" Partition --" + getEolChar();
     private static final String SELECT_EXISTING_PARTITION = ") Select an Existing Partition" + getEolChar();
-    public static final String ADD_NEW_PARTITION = ") Add a new Partition: " + getEolChar();
-    public static final String DELETE_PARTITION = ") Delete a Partition: " + getEolChar();
+    private static final String ADD_NEW_PARTITION = ") Add a new Partition: " + getEolChar();
+    private  static final String DELETE_PARTITION = ") Delete a Partition: " + getEolChar();
     private Set<String> partitionNames;
 
     private int newPartitionIndex = 0;
+
 
 
     public ConfigWizardConsolePartitioningStep(ConfigurationWizard parentWiz) {
@@ -60,13 +62,42 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
 
         try {
             PartitionInformation pinfo = doPartitionActionPrompts();
-            doConfigureEndpointsPrompts(pinfo);
+            doEditPartitionPrompts(pinfo);
             getParentWizard().setPartitionName(pinfo);
             ((PartitionConfigBean)configBean).setPartition(pinfo);
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }
         storeInput();
+    }
+
+    private void doEditPartitionPrompts(PartitionInformation pinfo) throws IOException, WizardNavigationException {
+        String existingName = pinfo.getPartitionId();
+        String newPartitionName = getData(
+                new String[] {"Enter the name of the partition: [" + existingName + "]"},
+                existingName,
+                Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN));
+
+        if (!StringUtils.equals(existingName, newPartitionName)) {
+            try {
+                PartitionManager.getInstance().renamePartition(existingName, newPartitionName);
+                partitionNames = PartitionManager.getInstance().getPartitionNames();
+                pinfo = PartitionManager.getInstance().getPartition(newPartitionName);
+                getData(new String[]{
+                        getEolChar(),
+                        "The partition has been renamed." + getEolChar(),
+                        "Please ensure that you complete the configuration of this partition using this wizard or the partition will not start correctly." + getEolChar(),
+                        "Press Enter to continue" + getEolChar(),
+                        getEolChar(),
+                        },"");
+            } catch (IOException e) {
+                printText("*** Could not rename the \"" + existingName  + "\" partition to \"" + newPartitionName + "\" ***" + getEolChar());
+                printText("*** " + e.getMessage() + " ***" + getEolChar());
+                logger.warning("Could not rename the \"" + existingName  + "\" partition to \"" + newPartitionName + "\" [" + e.getMessage() + "]");
+            }
+        }
+
+        doConfigureEndpointsPrompts(pinfo);
     }
 
     private PartitionInformation doPartitionActionPrompts() throws IOException, WizardNavigationException {
@@ -265,6 +296,10 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             }
 
         } while (!finishedEndpointConfig);
+    }
+
+    private void doRenamePartition() {
+        printText("*** TODO: Rename partition ***");
     }
 
     private void doCollectEndpointInfo(PartitionInformation.EndpointHolder holder) throws IOException, WizardNavigationException {
