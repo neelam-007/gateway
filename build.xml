@@ -1468,6 +1468,12 @@
               granularity="2000"/>
         <chmod file="${build.installer}/Bridge-${build.version}/Bridge.sh" perm="755"/>
 
+        <!-- Config files -->
+        <copy file="${src.root}/src/com/l7tech/proxy/resources/logging.properties"
+              todir="${build.installer}/Bridge-${build.version}"
+              preservelastmodified="true"
+              granularity="2000"/>
+
         <!-- Help files -->
         <unzip src="${src.root}/webhelp/ssb/help.zip"
                dest="${build.installer}/Bridge-${build.version}"/>
