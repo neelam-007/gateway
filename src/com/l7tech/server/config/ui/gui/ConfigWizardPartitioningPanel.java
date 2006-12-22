@@ -154,7 +154,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
 
     private void doRemovePartition() {
         Object[] deleteThem = partitionList.getSelectedValues();
-        final boolean[] allRemoved = new boolean[deleteThem.length];
+        final Boolean[] removedStatus = new Boolean[deleteThem.length];
         for (int i = 0; i < deleteThem.length; i++) {
             Object o = deleteThem[i];
             final PartitionInformation pi = (PartitionInformation) o;
@@ -165,37 +165,73 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel{
                     "Remove Partition", "Are you sure you want to remove the \"" + pi.getPartitionId() + "\" partition? This cannot be undone.",
                     new Runnable() {
                         public void run() {
+                            //only get here if the user confirmed the "delete"
                             boolean removed = partitionListModel.remove(pi);
                             if (removed && StringUtils.equals(pi.getPartitionId(), addedNewPartition))
                                 addedNewPartition = "";
                             
-                            allRemoved[index] = removed;
+                            removedStatus[index] = new Boolean(removed);
                         }
                     }
                 );
             }
         }
-        boolean allOk = true;
-        for (boolean b : allRemoved) {
-            if (!b) {
-                allOk = false;
-                break;
+
+        boolean allSelectedItemsDeleted = true;
+        boolean oneNotNull = false;
+        for (Boolean b : removedStatus) {
+            if (b != null) {
+                oneNotNull = true;
+                if (!b.booleanValue()) {
+                    allSelectedItemsDeleted = false;
+                    break;
+                }
             }
         }
 
         String message;
         String title;
         int type;
-        if (allOk) {
-            message = "All Selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.";
-            title = "Deletion Complete";
-            type = JOptionPane.INFORMATION_MESSAGE;
-        } else {
-            message = "At least one of the selected partitions could not be deleted. Check that you have permission to delete directories in " + osFunctions.getPartitionBase() + ".";
-            title = "Could Not Delete";
-            type = JOptionPane.ERROR_MESSAGE;
+        if (!oneNotNull) {
+
         }
-        JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this, message, title, type);
+        else {
+            if (allSelectedItemsDeleted) {
+                JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this,
+                        "The selected Partitions have now been deleted. You may continue to use the wizard to configure other partitions or exit now.",
+                        "Deletion Complete",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } else {
+                List<String> notDeleted = new ArrayList<String>();
+                for (int i = 0; i < removedStatus.length; i++) {
+                    Boolean status = removedStatus[i];
+                    if (status != null && !status) {
+                        if (i >= 0 && i < deleteThem.length) {
+                            notDeleted.add(((PartitionInformation)deleteThem[i]).getPartitionId());
+                        }
+                    }
+                }
+
+                String notDeletedMessage = new String();
+                boolean first = true;
+                for (String s : notDeleted) {
+                    notDeletedMessage += (first?"   ":",") + s;
+                    if (first)
+                        first = false;
+                }
+
+                if (StringUtils.isNotEmpty(notDeletedMessage)) {;
+                    JOptionPane.showMessageDialog(ConfigWizardPartitioningPanel.this,
+                        "The following partition(s) could not be deleted\n" +
+                            notDeletedMessage + "\n" +
+                            "Check that you have permission to delete directories in " + osFunctions.getPartitionBase() + ".",
+                        "Could Not Delete",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        }
         enableAddButton();
         enableRemoveButton();
         ensureSelected();
