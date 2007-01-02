@@ -49,9 +49,6 @@ do_control() {
 
     if [ "${PARTITION_NAME}"  == "default_" ]; then
         if [ -e  /usr/local/Tarari ]; then
-            export TARARIROOT=/usr/local/Tarari
-            export PATH=$TARARIROOT/bin:$PATH
-            export LD_LIBRARY_PATH=$TARARIROOT/lib:$LD_LIBRARY_PATH
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
         fi
     fi

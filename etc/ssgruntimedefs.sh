@@ -47,6 +47,12 @@ alias stopssg='/etc/rc.d/init.d/ssg stop'
 
 JAVA_OPTS=$default_java_opts;
 
+if [ -e  /usr/local/Tarari ]; then
+	export TARARIROOT=/usr/local/Tarari
+	export PATH=$TARARIROOT/bin:$PATH
+	export LD_LIBRARY_PATH=$TARARIROOT/lib:$LD_LIBRARY_PATH
+fi
+
 if [ -e "/opt/oracle" ] ; then
 	export ORACLE_HOME=/opt/oracle/product/9.2
 	export PATH=$PATH:$ORACLE_HOME/bin
