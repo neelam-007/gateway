@@ -114,6 +114,7 @@ class SsgPoliciesPanel extends JPanel {
                 updatePolicyPanel();
             }
         });
+        buttonFlushPolicies.setVisible(!isConfigOnly());
         pane.add(Box.createGlue(),
                  new GridBagConstraints(1, y, 1, 1, 0.0, 0.0,
                                         GridBagConstraints.EAST,
