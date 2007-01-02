@@ -22,6 +22,7 @@
 
     <target name="package" description="Creates the distributables.">
         <subant genericantfile="build.xml" target="package" inheritAll="false" verbose="true">
+            <property name="build.version" value="${build.version}"/>
             <fileset dir="." includes="*/build.xml"/>
         </subant>
     </target>

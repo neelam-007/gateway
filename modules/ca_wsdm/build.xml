@@ -64,7 +64,13 @@
         <!-- Declare props to keep idea happy -->
         <property name="build.version.major" value=""/>
         <property name="build.version.minor" value=""/>
-        <property name="build.version" value="${build.version.major}.${build.version.minor}"/>
+        <property name="build.version.subminor" value=""/>
+        <condition property="build.version"
+                   value="${build.version.major}.${build.version.minor}"
+                   else="${build.version.major}.${build.version.minor}.${build.version.subminor}">
+            <!-- Append dot subminor only if not empty. -->
+            <equals arg1="${build.version.subminor}" arg2=""/>
+        </condition>
 
         <zip destfile="build/ca_wsdm_observer-${build.version}.zip">
             <fileset dir="." includes="ssg/**/*"/>
