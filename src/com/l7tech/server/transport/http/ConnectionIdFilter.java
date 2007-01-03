@@ -44,9 +44,12 @@ public class ConnectionIdFilter implements Filter {
             }
 
             ConnectionId.setConnectionId(connectionId);
+            srequest.setAttribute(ATTRIBUTE_CONNECTION_ID_OBJ, connectionId);
         }
         else {
             logger.warning("Missing or invalid connectionId '"+id+"'.");
+            ConnectionId.setConnectionId(null);
+            srequest.removeAttribute(ATTRIBUTE_CONNECTION_ID_OBJ);
         }
 
         chain.doFilter(srequest, sresponse);
@@ -55,6 +58,7 @@ public class ConnectionIdFilter implements Filter {
     //- PRIVATE
 
     private static final String ATTRIBUTE_CONNECTION_ID = "com.l7tech.server.connectionId";
+    private static final String ATTRIBUTE_CONNECTION_ID_OBJ = "com.l7tech.server.connectionIdentifierObject";
     private static final Logger logger = Logger.getLogger(ConnectionIdFilter.class.getName());
     private final long generation;
 }

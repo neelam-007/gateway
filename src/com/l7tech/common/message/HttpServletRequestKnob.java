@@ -7,7 +7,6 @@ package com.l7tech.common.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.util.IteratorEnumeration;
-import com.l7tech.server.transport.http.ConnectionId;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -27,6 +26,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     private final Map paramMap; // Necessary because you can't get parameters after reading the request's InputStream
     private final URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
+    private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
 
     public HttpServletRequestKnob(HttpServletRequest request) {
         if (request == null) throw new NullPointerException();
@@ -154,7 +154,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     }
 
     public Object getConnectionIdentifier() {
-        return ConnectionId.getConnectionId();
+        return request.getAttribute(SERVLET_REQUEST_ATTR_CONNECTION_ID);
     }
 
     public boolean isSecure() {
