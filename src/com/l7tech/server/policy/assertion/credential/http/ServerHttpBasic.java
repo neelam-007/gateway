@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -88,6 +89,16 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             logger.warning(err);
             return null;
         }
+    }
+
+    /**
+     * Configures the response to send an HTTP Basic challenge.
+     *
+     * @param context  context containing the request being challenged and
+     *                 the response that will be used to send back the challenge.  May not be null.
+     */
+    public void challenge(PolicyEnforcementContext context) {
+        super.challenge(context, Collections.EMPTY_MAP);
     }
 
     protected String realm() {

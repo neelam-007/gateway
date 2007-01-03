@@ -5,50 +5,52 @@
 
 package com.l7tech.server.admin;
 
+import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.ServiceMessages;
-import com.l7tech.common.message.*;
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.HttpServletResponseKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.event.system.AdminAppletEvent;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 import com.l7tech.spring.remoting.RemoteUtils;
-import com.l7tech.admin.AdminLogin;
-import com.l7tech.admin.AdminLoginResult;
-
+import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.beans.BeansException;
 import org.w3c.dom.Document;
 
+import javax.security.auth.login.LoginException;
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Cookie;
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.security.Principal;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
-import java.security.Principal;
 
 /**
  * Authentication filter for the Manager applet servlet (and serving the manager applet jarfiles).
@@ -71,6 +73,7 @@ public class ManagerAppletFilter implements Filter {
     private SoapFaultManager soapFaultManager;
 
     private ServerAssertion dogfoodPolicy;
+    private ServerHttpBasic dogfoodHttpBasic;
     private Document fakeDoc;
     private String codebasePrefix;
 
@@ -104,10 +107,11 @@ public class ManagerAppletFilter implements Filter {
 
         try {
             dogfoodPolicy = serverPolicyFactory.compilePolicy(dogfood, false);
+            dogfoodHttpBasic = (ServerHttpBasic)serverPolicyFactory.compilePolicy(new HttpBasic(), false);
         } catch (ServerPolicyException e) {
-            throw new ServletException("Configuration error; could not compile dogfood policy");
+            throw new ServletException("Configuration error; could not compile dogfood policy", e);
         } catch (LicenseException e) {
-            throw new RuntimeException(e); // can't happen, license enforcement is disabled
+            throw new RuntimeException(e); // can't happen: passed false for licenseEnforcement
         }
 
         String codebasePrefix = filterConfig.getInitParameter("codebaseprefix");
@@ -153,8 +157,8 @@ public class ManagerAppletFilter implements Filter {
 
             if (authResult != AuthResult.OK) {
                 // Already audited a detail message
-                hresp.setStatus(status = 401);
-                hresp.sendError(401, "Not authorized");
+                hresp.setStatus(status = 403);
+                hresp.sendError(403, "Not authorized");
                 return;
             }
 
@@ -255,9 +259,9 @@ public class ManagerAppletFilter implements Filter {
             }
         }
 
-        final AssertionStatus result;
+        String resultMessage = null;
         try {
-            result = dogfoodPolicy.checkRequest(context);
+            final AssertionStatus result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE && context.getCredentials() != null) {
                 final LoginCredentials credentials = context.getCredentials();
             
@@ -270,28 +274,25 @@ public class ManagerAppletFilter implements Filter {
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, new String[] { getName(user) });
                 return AuthResult.OK;
             }
-
+            resultMessage = result.getMessage();
         } catch (LoginException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
-            return AuthResult.FAIL;
+            // Fall through and either challenge or send error message
         } catch (PolicyAssertionException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
-            return AuthResult.FAIL;
+            // Fall through and either challenge or send error message
         }
 
-        // See if a challenge is indicated
+        // Ensure that we send back a challenge withour 401
         HttpServletResponseKnob hsrespKnob =
                 (HttpServletResponseKnob)context.getResponse().getKnob(HttpServletResponseKnob.class);
-        if (hsrespKnob != null && hsrespKnob.hasChallenge()) {
-            hsrespKnob.beginChallenge();
-            sendChallenge(hresp);
-            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CHALLENGE);
-            return AuthResult.CHALLENGED;
-        }
+        if (!hsrespKnob.hasChallenge())
+            dogfoodHttpBasic.challenge(context);
 
-        // Nope, it just done did failed
-        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FAILED, new String[] { result.getMessage() });        
-        return AuthResult.FAIL;
+        hsrespKnob.beginChallenge();
+        sendChallenge(hresp);
+        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_CHALLENGE);
+        return AuthResult.CHALLENGED;
     }
 
     private void sendChallenge(HttpServletResponse hresp) throws IOException

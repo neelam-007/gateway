@@ -15,7 +15,7 @@ public class ServiceMessages extends Messages {
     public static final M APPLET_AUTH_NO_SSL            = m(3505, Level.WARNING, "Admin applet request rejected: request did not arrive over SSL");
     public static final M APPLET_AUTH_POLICY_SUCCESS    = m(3506, Level.FINE,    "Admin applet request authorized for user {0}");
     public static final M APPLET_AUTH_COOKIE_SUCCESS    = m(3507, Level.FINE,    "Admin applet request authorized for user {0} (using session cookie)");
-    public static final M APPLET_AUTH_CHALLENGE         = m(3508, Level.INFO,    "Admin applet request: replying with authentication challenge");
+    public static final M APPLET_AUTH_CHALLENGE         = m(3508, Level.FINE,    "Admin applet request: replying with authentication challenge");
     public static final M APPLET_AUTH_FILTER_PASSED     = m(3509, Level.FINE,    "Admin applet authentication filter passed");
     public static final M APPLET_SESSION_CREATED        = m(3510, Level.INFO,    "Admin applet session created for user {0}");
     // MAX -                                              m(3999
