@@ -395,6 +395,7 @@ public class PolicyProcessingTest extends TestCase {
         hrequest.setRequestURI(uri);
         hrequest.setContent(message.getBytes());
         ConnectionId.setConnectionId(new ConnectionId(0,0));
+        hrequest.setAttribute("com.l7tech.server.connectionIdentifierObject", ConnectionId.getConnectionId());
 
         // Initialize processing context
         final Message response = new Message();
