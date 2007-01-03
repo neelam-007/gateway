@@ -13,11 +13,6 @@ public class PartitionConfigBean extends BaseConfigurationBean{
     private final static String NAME = "Partitioning Configuration";
     private final static String DESCRIPTION = "Configures Gateway Partitions";
 
-    public static final String SYSTEM_PROP_HTTPPORT = "com.l7tech.server.httpPort";
-    public static final String SYSTEM_PROP_SSLPORT = "com.l7tech.server.httpsPort";
-    public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
-    public static final String SYSTEM_PROP_RMIPORT = "com.l7tech.server.clusterPort";
-
     private boolean isNewPartition;
     PartitionInformation partitionInfo;
 

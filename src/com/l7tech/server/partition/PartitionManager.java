@@ -1,14 +1,12 @@
 package com.l7tech.server.partition;
 
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -57,15 +55,16 @@ public class PartitionManager {
     private PartitionInformation activePartition;
 
     public static PartitionManager getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new PartitionManager();
+            instance.enumeratePartitions();
+        }
         return instance;
     }
 
     //private constructor - must access this class through getInstance()
     private PartitionManager() {
         partitions = new HashMap<String, PartitionInformation>();
-        enumeratePartitions();
     }
 
     private void enumeratePartitions() {
@@ -274,7 +273,7 @@ public class PartitionManager {
                                 f.createNewFile();
                         }
                     }
-                    fixKeystorePaths(defaultPartitionDir);
+                    PartitionActions.fixKeystorePaths(defaultPartitionDir);
                     PartitionActions.doFirewallConfig(new PartitionInformation(PartitionInformation.DEFAULT_PARTITION_NAME));
                 } catch (IOException e) {
                     System.out.println("Error while creating the default partition: " + e.getMessage());
@@ -291,54 +290,6 @@ public class PartitionManager {
             System.out.println(pe.getMessage());
             System.exit(1);
         }
-    }
-
-    private static void fixKeystorePaths(File partitionDir) throws FileNotFoundException {
-        File serverConfig = new File(partitionDir, "server.xml");
-        File keystoreProperties = new File(partitionDir, "keystore.properties");
-        FileInputStream serverConfigFis = null;
-        FileInputStream keystoreConfigFis = null;
-
-        FileOutputStream serverConfigFos = null;
-        FileOutputStream keystoreConfigFos = null;
-        try {
-            File newKeystorePath = new File(partitionDir, "keys");
-
-            serverConfigFis = new FileInputStream(serverConfig);
-            Document serverConfigDom = XmlUtil.parse(serverConfigFis);
-            NodeList nodes = serverConfigDom.getElementsByTagName("Connector");
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Element connectorNode = (Element) nodes.item(i);
-                if (connectorNode.hasAttribute("keystoreFile")) {
-                    String keystorePath = connectorNode.getAttribute("keystoreFile");
-                    int keystoreFileIndex = keystorePath.indexOf("ssl.ks");
-
-                    String newKsFile = newKeystorePath.getAbsolutePath() + File.separator + keystorePath.substring(keystoreFileIndex);
-                    connectorNode.setAttribute("keystoreFile", newKsFile);
-                }
-            }
-            serverConfigFos = new FileOutputStream(serverConfig);
-            XmlUtil.nodeToOutputStream(serverConfigDom, serverConfigFos);
-
-            keystoreConfigFis = new FileInputStream(keystoreProperties);
-            Properties props = new Properties();
-            props.load(keystoreConfigFis);
-            props.setProperty("keystoredir", newKeystorePath.getAbsolutePath());
-            keystoreConfigFos = new FileOutputStream(keystoreProperties);
-            props.store(keystoreConfigFos, "");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } finally {
-            ResourceUtils.closeQuietly(serverConfigFis);
-            ResourceUtils.closeQuietly(serverConfigFos);
-            ResourceUtils.closeQuietly(keystoreConfigFis);
-            ResourceUtils.closeQuietly(keystoreConfigFos);
-        }
-
-
     }
 
     private static void renameUpgradeFiles(File directory, final String pattern) {
@@ -396,10 +347,6 @@ public class PartitionManager {
         PartitionInformation originalPi = getPartition(partitionToRename);
         //if this partition exists
         if (originalPi != null) {
-            String oldDirPath = OSDetector.getOSSpecificFunctions("").getPartitionBase() + partitionToRename;
-            if (new File(oldDirPath).exists()) {
-                PartitionActions.changeDirName(partitionToRename,  newName);
-            }
             originalPi.setPartitionId(newName);
             partitions.remove(partitionToRename);
             partitions.put(newName, originalPi);

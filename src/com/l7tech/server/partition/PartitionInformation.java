@@ -4,7 +4,6 @@ import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PartitionActions;
-import com.l7tech.server.config.beans.PartitionConfigBean;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,7 +36,12 @@ public class PartitionInformation{
     public static final String TEMPLATE_PARTITION_NAME = "partitiontemplate_";
     public static final String DEFAULT_PARTITION_NAME = "default_";
     public static final String ENABLED_FILE = "enabled";
-    
+
+    public static final String SYSTEM_PROP_HTTPPORT = "com.l7tech.server.httpPort";
+    public static final String SYSTEM_PROP_SSLPORT = "com.l7tech.server.httpsPort";
+    public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
+    public static final String SYSTEM_PROP_RMIPORT = "com.l7tech.server.clusterPort";
+
     String partitionId;
     String oldPartitionId;
     boolean isNewPartition = false;
@@ -105,6 +109,7 @@ public class PartitionInformation{
         httpEndpointsList = new ArrayList<HttpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
         makeDefaultEndpoints(httpEndpointsList, otherEndpointsList);
+
         //since this is a new partitionm, try to make sure the ports don't conflict
         PartitionActions.validateAllPartitionEndpoints(this, true);
     }
@@ -121,6 +126,17 @@ public class PartitionInformation{
         parseOtherEndpoints();
     }
 
+    public PartitionInformation copy() {
+        PartitionInformation theCopy = new PartitionInformation(this.getPartitionId());
+        theCopy.setEnabled(this.isEnabled());
+        theCopy.setNewPartition(this.isNewPartition());
+        theCopy.setOriginalDom(this.getOriginalDom());
+        theCopy.setShouldDisable(this.shouldDisable());
+        theCopy.setHttpEndpointsList(this.getHttpEndpoints());
+        theCopy.setOtherEndpointsList(this.getOtherEndpoints());
+        return theCopy;
+    }
+
     private void parseOtherEndpoints() {
         File sysProps = new File(OSDetector.getOSSpecificFunctions(partitionId).getSsgSystemPropertiesFile());
         FileInputStream fis = null;
@@ -128,7 +144,7 @@ public class PartitionInformation{
             Properties props = new Properties();
             fis = new FileInputStream(sysProps);
             props.load(fis);
-            String rmiPort = props.getProperty(PartitionConfigBean.SYSTEM_PROP_RMIPORT);
+            String rmiPort = props.getProperty(PartitionInformation.SYSTEM_PROP_RMIPORT);
             getOtherEndPointByType(OtherEndpointType.RMI_ENDPOINT).setPort(StringUtils.isNotEmpty(rmiPort)?rmiPort:"2124");
         } catch (FileNotFoundException e) {
             logger.warning("no system properties file found for partition: " + partitionId);

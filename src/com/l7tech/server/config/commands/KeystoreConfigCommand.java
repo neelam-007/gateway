@@ -7,6 +7,7 @@ import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.util.MakeLunaCerts;
@@ -33,11 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
- * Date: Aug 17, 2005
- * Time: 3:43:04 PM
- * To change this template use File | Settings | File Templates.
  */
 public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
@@ -51,13 +48,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final String SSL_CERT_FILE = "ssl.cer";
 
     private static final String PROPERTY_COMMENT = "this file was updated by the SSG configuration utility";
-
-
-    private static final String PROP_KEYSTORE_DIR = "keystoredir";
-    private static final String PROP_SSL_KS_PASS = "sslkspasswd";
-    private static final String PROP_CA_KS_PASS = "rootcakspasswd";
-    private static final String PROP_KS_TYPE = "keystoretype";
-
 
     private static final String XML_KSFILE = "keystoreFile";
     private static final String XML_KSPASS = "keystorePass";
@@ -120,8 +110,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void prepareJvm(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException {
         Provider[] currentProviders = Security.getProviders();
-        for (int i = 0; i < currentProviders.length; i++) {
-            Provider provider = currentProviders[i];
+        for (Provider provider : currentProviders) {
             Security.removeProvider(provider.getName());
         }
 
@@ -160,14 +149,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 Class[] parameters = new Class[]{URL.class};
                 Method method = sysclass.getDeclaredMethod("addURL", parameters);
                 method.setAccessible(true);
-                for (int i = 0; i < lunaJars.length; i++) {
-                    File lunaJar = lunaJars[i];
+                for (File lunaJar : lunaJars) {
                     URL url = lunaJar.toURI().toURL();
                     method.invoke(sysloader, new Object[]{url});
                 }
-                Class lunaJCAClass = null;
+                Class lunaJCAClass;
                 String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
-                Class lunaJCEClass = null;
+                Class lunaJCEClass;
                 String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
 
                 try {
@@ -248,7 +236,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private void doLunaKeyConfig(KeystoreConfigBean ksBean) throws Exception {
         char[] ksPassword = ksBean.getKsPassword();
         //we don't actually care what the password is for Luna, so make it obvious.
-        ksPassword = new String("ignoredbyluna").toCharArray();
+        ksPassword = "ignoredbyluna".toCharArray();
 
         String ksDir = getOsFunctions().getKeystoreDir();
 
@@ -423,7 +411,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
                     //now write out the new ones
                     while (secProviderIndex < providersList.length) {
-                        line = new String(PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex]);
+                        line = PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex];
                         writer.println(line);
                         secProviderIndex++;
                     }
@@ -510,16 +498,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         try {
             //copy jars
-            for (int i = 0; i < fileList.length; i++) {
-                File file = fileList[i];
+            for (File file : fileList) {
                 File destFile = new File(destJarDir, file.getName());
                 logger.info("Copying " + file.getAbsolutePath() + " to " + destFile.getAbsolutePath());
                 FileUtils.copyFile(file, destFile);
             }
 
             //copy luna shared libs (dll or so)
-            for (int i = 0; i < dllFileList.length; i++) {
-                File file = dllFileList[i];
+            for (File file : dllFileList) {
                 File destFile = new File(destLibDir, file.getName());
                 logger.info("Copying " + file.getAbsolutePath() + " to " + destFile.getAbsolutePath());
                 FileUtils.copyFile(file, destFile);
@@ -558,7 +544,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private boolean makeDefaultKeys(boolean doBothKeys, KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) throws Exception {
-        boolean keysDone = false;
+        boolean keysDone;
         String args[] = new String[]
         {
                 ksBean.getHostname(),
@@ -632,10 +618,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     new File(keystorePropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedFileExtension()),
                     true, true);
 
-            keystoreProps.setProperty(PROP_KS_TYPE, getKsType());
-            keystoreProps.setProperty(PROP_KEYSTORE_DIR, getOsFunctions().getKeystoreDir());
-            keystoreProps.setProperty(PROP_CA_KS_PASS, new String(ksPassword));
-            keystoreProps.setProperty(PROP_SSL_KS_PASS, new String(ksPassword));
+            keystoreProps.setProperty(KeyStoreConstants.PROP_KS_TYPE, getKsType());
+            keystoreProps.setProperty(KeyStoreConstants.PROP_KEYSTORE_DIR, getOsFunctions().getKeystoreDir());
+            keystoreProps.setProperty(KeyStoreConstants.PROP_CA_KS_PASS, new String(ksPassword));
+            keystoreProps.setProperty(KeyStoreConstants.PROP_SSL_KS_PASS, new String(ksPassword));
 
             fos = new FileOutputStream(keystorePropertiesFile);
             keystoreProps.store(fos, PROPERTY_COMMENT);

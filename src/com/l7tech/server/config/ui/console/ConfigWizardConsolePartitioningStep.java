@@ -1,12 +1,14 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.PartitionActions;
+import com.l7tech.server.config.PartitionActionListener;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -21,7 +23,7 @@ import java.util.regex.Pattern;
  * Date: Nov 25, 2006
  * Time: 11:07:41 PM
  */
-public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
+public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implements PartitionActionListener {
     private static final Logger logger = Logger.getLogger(ConfigWizardConsolePartitioningStep.class.getName());
 
     private static final String TITLE = "Configure Partitions";
@@ -31,7 +33,6 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
     private static final String HEADER_DELETE_PARTITION = "-- Select a Partition To Delete (the default_ partition cannot be deleted)--" + getEolChar();
 
     private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Select an Endpoint to configure for the \"{0}\" Partition --" + getEolChar();
-    private static final String HEADER_CONFIGURE_PARTITION= "-- Select an option to configure the \"{0}\" Partition --" + getEolChar();
     private static final String SELECT_EXISTING_PARTITION = ") Select an Existing Partition" + getEolChar();
     private static final String ADD_NEW_PARTITION = ") Add a new Partition: " + getEolChar();
     private  static final String DELETE_PARTITION = ") Delete a Partition: " + getEolChar();
@@ -62,7 +63,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
 
         try {
             PartitionInformation pinfo = doPartitionActionPrompts();
-            doEditPartitionPrompts(pinfo);
+            doEditPartitionPrompts(pinfo, !pinfo.isNewPartition());
             getParentWizard().setPartitionName(pinfo);
             ((PartitionConfigBean)configBean).setPartition(pinfo);
         } catch (IOException e) {
@@ -71,29 +72,38 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
         storeInput();
     }
 
-    private void doEditPartitionPrompts(PartitionInformation pinfo) throws IOException, WizardNavigationException {
-        String existingName = pinfo.getPartitionId();
-        String newPartitionName = getData(
+    private void doEditPartitionPrompts(PartitionInformation pinfo,  boolean doNamePrompts) throws IOException, WizardNavigationException {
+
+        String existingName;
+        String newPartitionName;
+
+        if (doNamePrompts) {
+            existingName = pinfo.getPartitionId();
+            newPartitionName = getData(
                 new String[] {"Enter the name of the partition: [" + existingName + "]"},
                 existingName,
                 Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN));
 
-        if (!StringUtils.equals(existingName, newPartitionName)) {
-            try {
-                PartitionManager.getInstance().renamePartition(existingName, newPartitionName);
-                partitionNames = PartitionManager.getInstance().getPartitionNames();
-                pinfo = PartitionManager.getInstance().getPartition(newPartitionName);
-                getData(new String[]{
-                        getEolChar(),
-                        "The partition has been renamed." + getEolChar(),
-                        "Please ensure that you complete the configuration of this partition using this wizard or the partition will not start correctly." + getEolChar(),
-                        "Press Enter to continue" + getEolChar(),
-                        getEolChar(),
-                        },"");
-            } catch (IOException e) {
-                printText("*** Could not rename the \"" + existingName  + "\" partition to \"" + newPartitionName + "\" ***" + getEolChar());
-                printText("*** " + e.getMessage() + " ***" + getEolChar());
-                logger.warning("Could not rename the \"" + existingName  + "\" partition to \"" + newPartitionName + "\" [" + e.getMessage() + "]");
+            if (!StringUtils.equals(existingName, newPartitionName)) {
+                try {
+                    if (PartitionActions.renamePartition(pinfo, newPartitionName, this)) {
+                        partitionNames = PartitionManager.getInstance().getPartitionNames();
+                        pinfo = PartitionManager.getInstance().getPartition(newPartitionName);
+                        getData(new String[]{
+                            getEolChar(),
+                            "The partition has been renamed." + getEolChar(),
+                            "Please ensure that you complete the configuration of this partition using this wizard or the partition will not start correctly." + getEolChar(),
+                            "Press Enter to continue" + getEolChar(),
+                            getEolChar(),
+                            },"");
+                    } else {
+                        printText("The partition was not renamed" + getEolChar());
+                    }
+                } catch (IOException e) {
+                    printText("*** Could not rename the \"" + existingName  + "\" partition to \"" + newPartitionName + "\" ***" + getEolChar());
+                    printText("*** " + e.getMessage() + " ***" + getEolChar());
+                    logger.warning("Could not rename the \"" + existingName  + "\" partition to \"" + newPartitionName + "\" [" + e.getMessage() + "]");
+                }
             }
         }
 
@@ -161,7 +171,11 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
             pi = new PartitionInformation(newPartitionName);
             PartitionActions pa = new PartitionActions(osFunctions);
             pa.createNewPartition(pi.getPartitionId());
-
+            try {
+                PartitionActions.prepareNewpartition(pi);
+            } catch (SAXException e) {
+                logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
+            }
             PartitionManager.getInstance().addPartition(pi);
             partitionNames = PartitionManager.getInstance().getPartitionNames();
             pi = PartitionManager.getInstance().getPartition(newPartitionName);
@@ -208,10 +222,21 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
 
             String whichPartitionName = nameList.get(whichIndex);
 
-            boolean confirmed = getConfirmationFromUser("Are you sure you want to delete the \"" + whichPartitionName + "\" partition? This cannot be undone.");
+            PartitionInformation partitionToRemove = PartitionManager.getInstance().getPartition(whichPartitionName);
+            boolean isLinux = partitionToRemove.getOSSpecificFunctions().isLinux();
+            String warningMessage;
+            if (isLinux) {
+                warningMessage = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will remove all the associated configuration.\n\n" +
+                    "This cannot be undone.\n" +
+                    "Do you wish to proceed?";
+            } else {
+                warningMessage = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will stop the service and remove all the associated configuration.\n\n" +
+                    "This cannot be undone.\n" +
+                    "Do you wish to proceed?";
+            }
+            boolean confirmed = getConfirmationFromUser(warningMessage);
             if (confirmed) {
-                PartitionActions pa = new PartitionActions(osFunctions);
-                if (pa.removePartition(PartitionManager.getInstance().getPartition(whichPartitionName))) {
+                if (PartitionActions.removePartition(partitionToRemove, this)) {
                     PartitionManager.getInstance().removePartition(whichPartitionName);
                     partitionNames = PartitionManager.getInstance().getPartitionNames();
                     printText(getEolChar() + "The selected partition has been deleted. You may continue to use the wizard to configure other partitions or exit now." + getEolChar());
@@ -344,5 +369,10 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep{
 
     public String getTitle() {
         return TITLE;
+    }
+
+    public boolean getConfirmation(String message) throws IOException, WizardNavigationException {
+        return getConfirmationFromUser(message);
+
     }
 }
