@@ -300,7 +300,11 @@ public class SoapFaultManager implements ApplicationContextAware {
         final SoapFaultManager tasker = this;
         TimerTask task = new TimerTask() {
             public void run() {
-                tasker.updateOverrides();
+                try {
+                    tasker.updateOverrides();
+                } catch(Exception e) {
+                    logger.log(Level.WARNING, "Error updating message overrides.", e);
+                }
             }
         };
         checker.schedule(task, 10000, 30000);

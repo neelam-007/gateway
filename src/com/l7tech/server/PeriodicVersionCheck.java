@@ -38,72 +38,76 @@ public abstract class PeriodicVersionCheck extends TimerTask {
      * todo: review whether to make into transactional checker
      */
     public synchronized void run() {
-
-        Map<Long, Integer> dbversions;
-
-        // get db versions
         try {
-            dbversions = manager.findVersionMap();
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "error getting versions. " +
-              "this version check is stopping prematurely", e);
-            return;
-        }
+            Map<Long, Integer> dbversions;
 
-        // actual check logic
-        List<Long> updatesAndAdditions = new ArrayList<Long>();
-        List<Long> deletions = new ArrayList<Long>();
+            // get db versions
+            try {
+                dbversions = manager.findVersionMap();
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "error getting versions. " +
+                  "this version check is stopping prematurely", e);
+                return;
+            }
 
-        // 1. check that all that is in db is present in cache and that version is same
-        for (Long oid : dbversions.keySet()) {
-            // is it already in cache?
-            Integer cachedVersion = cachedVersionMap.get(oid);
+            // actual check logic
+            List<Long> updatesAndAdditions = new ArrayList<Long>();
+            List<Long> deletions = new ArrayList<Long>();
 
-            if (cachedVersion == null) {
-                logger.fine("Entity " + oid + " is new.");
-                updatesAndAdditions.add(oid);
-            } else {
-                // check actual version
-                Integer dbversion = dbversions.get(oid);
+            // 1. check that all that is in db is present in cache and that version is same
+            for (Long oid : dbversions.keySet()) {
+                // is it already in cache?
+                Integer cachedVersion = cachedVersionMap.get(oid);
 
-                if (!dbversion.equals(cachedVersion)) {
+                if (cachedVersion == null) {
+                    logger.fine("Entity " + oid + " is new.");
                     updatesAndAdditions.add(oid);
-                    logger.fine("Entity " + oid + " has been updated.");
-                }
-            }
-        }
+                } else {
+                    // check actual version
+                    Integer dbversion = dbversions.get(oid);
 
-        // 2. check for things in cache not in db (deletions)
-        for (Long oid : cachedVersionMap.keySet()) {
-            if (dbversions.get(oid) == null) {
-                deletions.add(oid);
-                logger.fine("Entity " + oid + " has been deleted.");
-            }
-        }
-
-        // 3. make the updates
-        if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
-            // nothing to do. we're done
-        } else {
-            for (Long updatedOid : updatesAndAdditions) {
-                Integer newVersion = dbversions.get(updatedOid);
-                if (checkAddOrUpdate(updatedOid, newVersion)) {
-                    PersistentEntity updatedEntity;
-                    try {
-                        updatedEntity = manager.findEntity(updatedOid.longValue());
-                    } catch (FindException e) {
-                        updatedEntity = null;
-                        logger.log(Level.WARNING, "Entity that was updated or created " +
-                                "cannot be retrieved", e);
+                    if (!dbversion.equals(cachedVersion)) {
+                        updatesAndAdditions.add(oid);
+                        logger.fine("Entity " + oid + " has been updated.");
                     }
-                    if (updatedEntity != null) {
-                        addOrUpdate(updatedEntity);
-                    } // otherwise, next version check shall delete this service from cache
                 }
             }
-            for (Long key : deletions) {
-                remove(key);
+
+            // 2. check for things in cache not in db (deletions)
+            for (Long oid : cachedVersionMap.keySet()) {
+                if (dbversions.get(oid) == null) {
+                    deletions.add(oid);
+                    logger.fine("Entity " + oid + " has been deleted.");
+                }
             }
+
+            // 3. make the updates
+            if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
+                // nothing to do. we're done
+            } else {
+                for (Long updatedOid : updatesAndAdditions) {
+                    Integer newVersion = dbversions.get(updatedOid);
+                    if (checkAddOrUpdate(updatedOid, newVersion)) {
+                        PersistentEntity updatedEntity;
+                        try {
+                            updatedEntity = manager.findEntity(updatedOid.longValue());
+                        } catch (FindException e) {
+                            updatedEntity = null;
+                            logger.log(Level.WARNING, "Entity that was updated or created " +
+                                    "cannot be retrieved", e);
+                        }
+                        if (updatedEntity != null) {
+                            addOrUpdate(updatedEntity);
+                        } // otherwise, next version check shall delete this service from cache
+                    }
+                }
+                for (Long key : deletions) {
+                    remove(key);
+                }
+            }
+        } catch(Exception e) {
+            //e.g. DataAccessResourceFailureException, CannotCreateTransactionException
+            logger.log(Level.WARNING, "Error checking version information.", e);
         }
     }
 

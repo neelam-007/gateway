@@ -179,7 +179,12 @@ public class TrafficLogger implements ApplicationContextAware {
         // initialize the timer which checks for config changes
         TimerTask task = new TimerTask() {
             public void run() {
-                TrafficLogger.this.updateSettings();
+                try {
+                    TrafficLogger.this.updateSettings();
+                } catch(Exception e) {
+                    logger.log(Level.WARNING, "Error updating settings.", e);
+                }
+
             }
         };
         checker.schedule(task, 5000, SETTINGS_UPDATE_PERIOD);

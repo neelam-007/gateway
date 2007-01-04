@@ -75,7 +75,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             final ServiceCache tasker = this;
             TimerTask task = new TimerTask() {
                 public void run() {
-                    tasker.checkIntegrity();
+                    try {
+                        tasker.checkIntegrity();
+                    } catch(Exception e) {
+                        logger.log(Level.WARNING, "Error checking service cache integrity.", e);
+                    }
                 }
             };
             checker.schedule(task, INTEGRITY_CHECK_FREQUENCY, INTEGRITY_CHECK_FREQUENCY);
