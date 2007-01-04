@@ -63,7 +63,7 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
 
         try {
             PartitionInformation pinfo = doPartitionActionPrompts();
-            doEditPartitionPrompts(pinfo, !pinfo.isNewPartition() && !StringUtils.equals(pinfo.getPartitionId(), PartitionInformation.DEFAULT_PARTITION_NAME));
+            pinfo = doEditPartitionPrompts(pinfo, !pinfo.isNewPartition() && !StringUtils.equals(pinfo.getPartitionId(), PartitionInformation.DEFAULT_PARTITION_NAME));
             getParentWizard().setPartitionName(pinfo);
             ((PartitionConfigBean)configBean).setPartition(pinfo);
         } catch (IOException e) {
@@ -72,13 +72,14 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
         storeInput();
     }
 
-    private void doEditPartitionPrompts(PartitionInformation pinfo,  boolean doNamePrompts) throws IOException, WizardNavigationException {
+    private PartitionInformation doEditPartitionPrompts(final PartitionInformation pinfo,  boolean doNamePrompts) throws IOException, WizardNavigationException {
 
         String existingName;
         String newPartitionName;
 
+        PartitionInformation newPartitionInfo = pinfo;
         if (doNamePrompts) {
-            existingName = pinfo.getPartitionId();
+            existingName = newPartitionInfo.getPartitionId();
             newPartitionName = getData(
                 new String[] {"Enter the name of the partition: [" + existingName + "]"},
                 existingName,
@@ -86,9 +87,9 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
 
             if (!StringUtils.equals(existingName, newPartitionName)) {
                 try {
-                    if (PartitionActions.renamePartition(pinfo, newPartitionName, this)) {
+                    if (PartitionActions.renamePartition(newPartitionInfo, newPartitionName, this)) {
                         partitionNames = PartitionManager.getInstance().getPartitionNames();
-                        pinfo = PartitionManager.getInstance().getPartition(newPartitionName);
+                        newPartitionInfo = PartitionManager.getInstance().getPartition(newPartitionName);
                         getData(new String[]{
                             getEolChar(),
                             "The partition has been renamed." + getEolChar(),
@@ -107,7 +108,8 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
             }
         }
 
-        doConfigureEndpointsPrompts(pinfo);
+        doConfigureEndpointsPrompts(newPartitionInfo);
+        return newPartitionInfo;
     }
 
     private PartitionInformation doPartitionActionPrompts() throws IOException, WizardNavigationException {
