@@ -45,8 +45,6 @@ mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
-mv %{buildroot}/ssg/etc/conf/*.conf %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
-mv %{buildroot}/ssg/etc/conf/*.config %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 mv %{buildroot}/ssg/tomcat/conf/server.xml %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
 

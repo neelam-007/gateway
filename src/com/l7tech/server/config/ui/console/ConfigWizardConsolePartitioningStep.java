@@ -63,7 +63,7 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
 
         try {
             PartitionInformation pinfo = doPartitionActionPrompts();
-            doEditPartitionPrompts(pinfo, !pinfo.isNewPartition());
+            doEditPartitionPrompts(pinfo, !pinfo.isNewPartition() && !StringUtils.equals(pinfo.getPartitionId(), PartitionInformation.DEFAULT_PARTITION_NAME));
             getParentWizard().setPartitionName(pinfo);
             ((PartitionConfigBean)configBean).setPartition(pinfo);
         } catch (IOException e) {

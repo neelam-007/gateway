@@ -104,7 +104,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
                isShowNavigation(),
                 new WizardInputValidator() {
                     public String[] validate(Map inputs) {
-                        List errorMessages = new ArrayList();
+                        List<String> errorMessages = new ArrayList<String>();
                         String installPath = (String) inputs.get(installPathPrompt);
                         String jspPath = (String) inputs.get(jspPathPrompt);
 
