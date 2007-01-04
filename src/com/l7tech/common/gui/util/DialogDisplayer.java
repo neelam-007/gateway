@@ -744,6 +744,8 @@ public class DialogDisplayer {
             super.setVisible(false);
             setOpaque(false);
             this.blockEvents = blockEvents;
+            setFocusable(false);
+            setEnabled(false);
         }
 
         protected void paintComponent(Graphics g) {
