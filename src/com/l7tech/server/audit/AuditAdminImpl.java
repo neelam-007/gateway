@@ -27,6 +27,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.InterruptedIOException;
 import java.rmi.RemoteException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
@@ -46,7 +47,8 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
     private static Map<OpaqueId, DownloadContext> downloadContexts = Collections.synchronizedMap(new HashMap<OpaqueId, DownloadContext>());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
-
+    private static final long MAX_CHUNK_WAIT = 10000; // Spend no more than ten seconds reading the next chunk
+    private static final long CHUNK_SPIN_WAIT = 250;  // Check four times a second to see if we have anything to return yet
 
     private AuditRecordManager auditRecordManager;
     private LogRecordManager logRecordManager;
@@ -127,6 +129,8 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         private final PrivateKey sslPrivateKey;
         private final PipedOutputStream pos = new PipedOutputStream();
         private final PipedInputStream pis = new PipedInputStream(pos);
+        private final Timer timer = new Timer("DownloadContextTimer", false);
+        private final int chunkLength;
         private final Thread producerThread = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -144,13 +148,12 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         });
 
         private final AuditExporter auditExporter;
-        private final byte[] chunk;
         private volatile Throwable producerException = null;
         private long lastUsed = System.currentTimeMillis();
 
         private DownloadContext(int chunkLength, AuditExporter exporter, X509Certificate sslCert, PrivateKey sslPrivateKey) throws IOException {
             if (chunkLength < 1) chunkLength = DEFAULT_DOWNLOAD_CHUNK_LENGTH;
-            chunk = new byte[chunkLength];
+            this.chunkLength = chunkLength;
             this.sslCert = sslCert;
             this.sslPrivateKey = sslPrivateKey;
             this.auditExporter = exporter;
@@ -166,35 +169,112 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
             return lastUsed;
         }
 
-        public synchronized DownloadChunk nextChunk() throws RemoteException {
+        private synchronized void setLastUsed() {
             lastUsed = System.currentTimeMillis();
-            checkForException();
-            try {
-                logger.log(Level.FINER, "Returning next audit download chunk for context " + this);
-                int i = pis.read(chunk, 0, chunk.length);
-                if (i < 1) {
-                    // End of file
-                    try {
-                        producerThread.interrupt();
-                        producerThread.join(5000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+        }
+
+        private class TimeoutReadResult {
+            final int bytesRead; // always nonnegative
+            final boolean eof;
+            private TimeoutReadResult(int bytesRead, boolean eof) { this.bytesRead = bytesRead; this.eof = eof; }
+        }
+
+        // Spend no more than timeoutMillis attempting to read up to a full buffer from the specified PipedInputStream.
+        // It must be a PipedInputStream to guarantee that its read method will throw InterruptedIOException.
+        private TimeoutReadResult readWithTimeout(PipedInputStream pis, byte[] buff, long timeoutMillis) throws IOException {
+            int amountRead = 0;
+            int roomLeft = buff.length;
+
+            // Schedule an interrupt before we read, and safely cancel it afterward
+            final Thread readerThread = Thread.currentThread();
+            final boolean[] wantInterrupt = { true };
+            synchronized (DownloadContext.this) { wantInterrupt[0] = true; }
+            TimerTask interruptMe = new TimerTask() {
+                public void run() {
+                    synchronized (DownloadContext.this) {
+                        if (!wantInterrupt[0]) {
+                            cancel();
+                            return;
+                        }
+                        wantInterrupt[0] = false;
+                        readerThread.interrupt();
+                        cancel();
                     }
-                    checkForException();
-                    return null;
                 }
-                byte[] got = new byte[i];
-                System.arraycopy(chunk, 0, got, 0, i);
+            };
+
+            try {
+                timer.schedule(interruptMe, timeoutMillis);
+
+                while (roomLeft > 0) {
+                    try {
+                        int got = pis.read(buff, amountRead, roomLeft);
+                        if (got < 0)
+                            return new TimeoutReadResult(amountRead, true);
+                        if (got == 0) Thread.sleep(CHUNK_SPIN_WAIT); // (can't happen as of JDK 1.5 PipedInputStream)
+                        amountRead += got;
+                        roomLeft -= got;
+                    } catch (InterruptedIOException e) {
+                        // Read timed out.  Return whatever we've got so far (possibly nothing)
+                        return new TimeoutReadResult(amountRead, false);
+                    } catch (InterruptedException e) {
+                        // Read timed out.  Return whatever we've got so far (possibly nothing)
+                        return new TimeoutReadResult(amountRead, false);
+                    }
+                }
+
+                return new TimeoutReadResult(amountRead, false);
+            } finally {
+                // Ensure the interrupt is safely canceled and cleared
+                synchronized (DownloadContext.this) {
+                    wantInterrupt[0] = false;
+                    interruptMe.cancel();
+                    Thread.interrupted();
+                }
+            }
+        }
+
+        private final Object chunkSerializer = new Object();
+        public DownloadChunk nextChunk() throws RemoteException {
+            synchronized (chunkSerializer) {
+                return doNextChunk();
+            }
+        }
+
+        private DownloadChunk doNextChunk() throws RemoteException {
+            setLastUsed();
+            checkForException();
+            byte[] chunk = new byte[chunkLength];
+            try {
+                TimeoutReadResult n = readWithTimeout(pis, chunk, MAX_CHUNK_WAIT);
+                logger.log(Level.FINER, "Returning next audit download chunk for context " + this);
+
+                final int num = n.bytesRead;
+                if (n.eof) {
+                    producerThread.interrupt();
+                    producerThread.join(5000);
+                    checkForException();
+                    if (num == 0) return null;
+                }
+
                 long approxTotalAudits = 1;
                 long auditsDownloaded = 0;
-                if (auditExporter != null) {
-                    approxTotalAudits = auditExporter.getApproxNumToExport();
-                    auditsDownloaded = auditExporter.getNumExportedSoFar();
+                synchronized (this) {
+                    if (auditExporter != null) {
+                        approxTotalAudits = auditExporter.getApproxNumToExport();
+                        auditsDownloaded = auditExporter.getNumExportedSoFar();
+                    }
                 }
-                lastUsed = System.currentTimeMillis();
+
+                byte[] got = new byte[num];
+                if (num > 0) System.arraycopy(chunk, 0, got, 0, num);
+                setLastUsed();
                 checkForException();
                 return new DownloadChunk(auditsDownloaded, approxTotalAudits, got);
             } catch (IOException e) {
+                close();
+                throw new RemoteException("Unable to read exported audit stream", e);
+            } catch (InterruptedException e) {
                 close();
                 throw new RemoteException("Unable to read exported audit stream", e);
             }
@@ -267,7 +347,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
             throw new RemoteException("No such download context is pending");
         downloadContext.checkForException();
         DownloadChunk chunk = downloadContext.nextChunk();
-        if (chunk == null || chunk.chunk == null || chunk.chunk.length < 1)
+        if (chunk == null || chunk.chunk == null)
             downloadContext.close();
         downloadContext.checkForException();
         return chunk;
@@ -410,7 +490,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         String sAge = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         int age = 168;
         try {
-            return Integer.valueOf(sAge).intValue();
+            return Integer.valueOf(sAge);
         } catch (NumberFormatException nfe) {
             throw new RemoteException("Configured minimum age value '" + sAge +
                                       "' is not a valid number. Using " + age + " (one week) by default" );

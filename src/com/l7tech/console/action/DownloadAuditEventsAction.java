@@ -113,11 +113,12 @@ public class DownloadAuditEventsAction extends SecureAction {
                         final AuditAdmin aa = Registry.getDefault().getAuditAdmin();
                         OpaqueId contextId = aa.downloadAllAudits(0); // default chunk size
                         AuditAdmin.DownloadChunk chunk;
-                        while ((chunk = aa.downloadNextChunk(contextId)) != null) {
+                        final Thread currentThread = Thread.currentThread();
+                        while (isAlive() && !currentThread.isInterrupted() && (chunk = aa.downloadNextChunk(contextId)) != null) {
                             if (chunk.chunk != null && chunk.chunk.length > 0) {
                                 fout.write(chunk.chunk);
 
-                                logger.log(Level.FINEST, "Downloading chunk of audit records: " + chunk.auditsDownloaded + "/" + chunk.approxTotalAudits);
+                                logger.log(Level.INFO, "Downloaded chunk of audit records: " + chunk.auditsDownloaded + "/" + chunk.approxTotalAudits + "  chunkSize=" + chunk.chunk.length + " bytes");
                                 final int max = (int)chunk.approxTotalAudits;
                                 final int min = (int)chunk.auditsDownloaded;
                                 SwingUtilities.invokeLater(new Runnable() {
@@ -128,10 +129,16 @@ public class DownloadAuditEventsAction extends SecureAction {
                                         progressBar.setValue(min);
                                     }
                                 });
+                            } else if (chunk.chunk != null) {
+                                logger.log(Level.INFO, "Audit download still being prepared on server side; will try again");
                             }
                         }
 
                         fout.close();
+
+                        if (currentThread.isInterrupted() || !isAlive())
+                            return null;
+
                         return "Success";
                     } catch (RemoteException e) {
                         return e;

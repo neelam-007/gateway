@@ -150,6 +150,10 @@ public abstract class SwingWorker {
     }
   }
 
+    protected boolean isAlive() {
+        return threadVar.get() != null;
+    }
+
     private void handleException(String handerClassName, RuntimeException exception) {
         Object handler = null;
         Method method = null;

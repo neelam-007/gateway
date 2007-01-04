@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.BufferedOutputStream;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -42,7 +43,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
             "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
             "d";
-    private static final String COUNT_SQL = "select count(*) from audit_main";
+    private static final String COUNT_SQL = "select count(*) from audit_main"; // TODO replace with faster query that counts index instead
     private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
     private static final char DELIM = ':';
     private static final Pattern badCharPattern = Pattern.compile("([^\\040-\\0176]|\\\\|\\" + DELIM + ")");
@@ -120,6 +121,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             }
             out.print("\n");
 
+            boolean needInitialFlush = true;
             long lowestId = Long.MAX_VALUE;
             long highestId = Long.MIN_VALUE;
             long lowestTime = Long.MAX_VALUE;
@@ -150,6 +152,11 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     if (i < columns) out.print(DELIM);
                 }
                 out.print("\n");
+
+                if (needInitialFlush) {
+                    out.flush();
+                    needInitialFlush = false;
+                }
             }
 
             out.flush();
@@ -237,9 +244,10 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
     {
         final long startTime = System.currentTimeMillis();
+        BufferedOutputStream buffOut = new BufferedOutputStream(fileOut, 4096);
         ZipOutputStream zipOut = null;
         try {
-            zipOut = new ZipOutputStream(fileOut);
+            zipOut = new ZipOutputStream(buffOut);
             final String dateString = ISO8601Date.format(new Date(startTime));
             zipOut.setComment(BuildInfo.getBuildString() + " - Exported Audit Records - Created " + dateString);
             ZipEntry ze = new ZipEntry("audit.dat");
@@ -247,6 +255,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             ExportedInfo exportedInfo = exportAllAudits(zipOut);
             long highestTime = exportedInfo.getLatestTime();
             zipOut.flush();
+            buffOut.flush();
             final long endTime = System.currentTimeMillis();
             final String endTimeString = ISO8601Date.format(new Date(endTime));
 
@@ -291,9 +300,12 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             auditMetadata.appendChild(signature);
 
             zipOut.putNextEntry(new ZipEntry("sig.xml"));
-            XmlUtil.nodeToOutputStream(d, zipOut);
+            byte[] xmlBytes = XmlUtil.nodeToString(d).getBytes("UTF-8");
+            zipOut.write(xmlBytes);
             zipOut.close();
             zipOut = null;
+            buffOut.close();
+            buffOut = null;
             synchronized (this) { this.highestTime = highestTime; }
             return;
             
@@ -305,6 +317,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             throw new CausedSignatureException(e);
         } finally {
             if (zipOut != null) zipOut.close();
+            if (buffOut != null) buffOut.close();
         }
     }
 }
