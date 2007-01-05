@@ -17,12 +17,14 @@ import com.l7tech.common.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.MockServletApi;
 
 /**
  * Test for OversizedTextAssertion bean.
  */
 public class OversizedTextAssertionTest extends TestCase {
     private static Logger log = Logger.getLogger(OversizedTextAssertionTest.class.getName());
+    private ServerPolicyFactory serverPolicyFactory;
 
     public OversizedTextAssertionTest(String name) {
         super(name);
@@ -55,8 +57,16 @@ public class OversizedTextAssertionTest extends TestCase {
 
     // Passes the specified request to the specified asseriton and returns the result.
     private AssertionStatus checkRequest(Assertion assertion, String document) throws Exception {
-        ServerAssertion ass = new ServerPolicyFactory(new TestLicenseManager()).compilePolicy(assertion, false);
+        ServerAssertion ass = getServerPolicyFactory().compilePolicy(assertion, false);
         return ass.checkRequest(makeContext(document));
+    }
+
+    private ServerPolicyFactory getServerPolicyFactory() {
+        if (serverPolicyFactory == null) {
+            MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
+            serverPolicyFactory = (ServerPolicyFactory)servletApi.getApplicationContext().getBean("policyFactory");
+        }
+        return serverPolicyFactory;
     }
 
     public void testOtaDefaults() throws Exception {

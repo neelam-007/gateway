@@ -11,7 +11,6 @@ import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.TestLicenseManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -47,6 +46,7 @@ import java.util.regex.Matcher;
  */
 public class RegexAssertionTest extends TestCase {
     private static MockServletApi servletApi;
+    private static ServerPolicyFactory serverPolicyFactory;
     private SoapMessageProcessingServlet messageProcessingServlet;
     private static ServicesHelper servicesHelper;
     private int tokenCount = 0;
@@ -73,6 +73,7 @@ public class RegexAssertionTest extends TestCase {
             servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
             servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
             messageProcessor = (TestMessageProcessor)servletApi.getApplicationContext().getBean("messageProcessor");
+            serverPolicyFactory = (ServerPolicyFactory)servletApi.getApplicationContext().getBean("policyFactory");
         }
         return servicesHelper;
     }
@@ -245,7 +246,7 @@ public class RegexAssertionTest extends TestCase {
         Message request = new Message(XmlUtil.stringToDocument(message));
         Message response = new Message();
         PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        ServerAssertion sass = new ServerPolicyFactory(new TestLicenseManager()).compilePolicy(regex, false);
+        ServerAssertion sass =  serverPolicyFactory.compilePolicy(regex, false);
         AssertionStatus result = sass.checkRequest(context);
         Document doc = request.getXmlKnob().getDocumentReadOnly();
         assertEquals(AssertionStatus.NONE, result);
