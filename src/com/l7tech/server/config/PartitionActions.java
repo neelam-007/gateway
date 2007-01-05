@@ -85,7 +85,7 @@ public class PartitionActions {
             throw new IOException("Cannot rename \"" + oldPartitionId + "\" to \"" + newPartitionId + "\".");
     }
 
-    public File createNewPartition(String partitionDir) throws IOException {
+    public File createNewPartition(String partitionDir) throws IOException, InterruptedException {
         String fullPath = osFunctions.getPartitionBase() + partitionDir;
         File newPartitionDir = new File(fullPath);
         if (!newPartitionDir.exists()) {
@@ -93,6 +93,7 @@ public class PartitionActions {
             newPartitionDir.mkdir();
         }
         copyTemplateFiles(newPartitionDir);
+        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath()}, "775", newPartitionDir, osFunctions);
         return newPartitionDir;
     }
 
@@ -654,6 +655,10 @@ public class PartitionActions {
             String[] commandsArray = commandLine.toArray(new String[0]);
             changer = Runtime.getRuntime().exec(commandsArray, null, workingDir);
             changer.waitFor();
+            BufferedInputStream is = new BufferedInputStream(changer.getInputStream());
+            
+            //make sure the command executes if it's waiting for someone to read it's output
+            HexUtils.slurpStreamLocalBuffer(is);
         } finally {
             if (changer != null)
                 changer.destroy();

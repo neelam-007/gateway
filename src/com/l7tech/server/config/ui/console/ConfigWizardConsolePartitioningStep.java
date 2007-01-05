@@ -172,10 +172,12 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
         if (StringUtils.isNotEmpty(newPartitionName)) {
             pi = new PartitionInformation(newPartitionName);
             PartitionActions pa = new PartitionActions(osFunctions);
-            pa.createNewPartition(pi.getPartitionId());
             try {
+                pa.createNewPartition(pi.getPartitionId());
                 PartitionActions.prepareNewpartition(pi);
             } catch (SAXException e) {
+                logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
+            } catch (InterruptedException e) {
                 logger.warning("Error while trying to prepare the newly added partition. Please finish the configuration for this partition to ensure that it works properly. [" + e.getMessage() + "]");
             }
             PartitionManager.getInstance().addPartition(pi);

@@ -468,6 +468,9 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
             } catch (IOException e) {
                 logger.severe("Error while creating the new partition \"" + newPartition + "\": " + e.getMessage());
                 hadErrors = true;
+            } catch (InterruptedException e) {
+                logger.severe("Error while creating the new partition \"" + newPartition + "\": " + e.getMessage());
+                hadErrors = true;
             }
         }
         return hadErrors;
