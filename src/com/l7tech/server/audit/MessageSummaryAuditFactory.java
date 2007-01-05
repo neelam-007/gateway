@@ -61,7 +61,7 @@ public class MessageSummaryAuditFactory {
         PublishedService service = context.getService();
         if (service != null) {
             serviceOid = service.getOid();
-            serviceName = service.getName() + (service.getRoutingUri() == null ? "" : " [" + service.getRoutingUri() + "]");
+            serviceName = service.displayName();
         }
 
         // User info

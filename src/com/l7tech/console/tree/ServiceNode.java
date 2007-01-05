@@ -184,8 +184,8 @@ public class ServiceNode extends EntityHeaderNode {
         String nodeName = getServiceName();
         try {
             PublishedService ps = getPublishedService();
-            if (ps != null && ps.getRoutingUri() != null) {
-                nodeName = nodeName + " [ " + ps.getRoutingUri()+ " ]";
+            if (ps != null) {
+                nodeName = ps.displayName();
             }
         } catch (Exception e) {
             ErrorManager.getDefault().

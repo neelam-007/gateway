@@ -191,8 +191,8 @@ public class ClusterStatusWorker extends SwingWorker {
                     ServiceUsage su = new ServiceUsage();
                     su.setServiceid(header.getOid());
                     final PublishedService ps = serviceManager.findServiceByID(Long.toString(header.getOid()));
-                    if (ps != null && ps.getRoutingUri() != null) {
-                        su.setName(header.getName() + " [" + ps.getRoutingUri() + "]");
+                    if (ps != null) {
+                        su.setName(ps.displayName());
                     } else {
                         su.setName(header.getName());
                     }

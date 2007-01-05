@@ -241,7 +241,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
 
     private EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         final EntityHeader[] result = getServiceAdmin().findAllPublishedServices();
-        appendUriToServiceName(result);
+        updateServiceNames(result);
         Arrays.sort(result);
         return result;
     }
@@ -553,19 +553,18 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     }
 
     /**
-     * If a published service has a custom routing URI, append it to the name to
-     * better distinguish from the first version published, when displayed.
+     * Use service display name (includes distinguishing information).
      *
      * @param headers   published services
      * @throws RemoteException if remote communication error
      * @throws FindException if there was a problem accessing the requested information
      */
-    private void appendUriToServiceName(EntityHeader[] headers)
+    private void updateServiceNames(EntityHeader[] headers)
             throws RemoteException, FindException {
         for (EntityHeader header : headers) {
             final PublishedService ps = getServiceAdmin().findServiceByID(header.getStrId());
-            if (ps != null && ps.getRoutingUri() != null) {
-                header.setName(ps.getName() + " [" + ps.getRoutingUri() + "]");
+            if (ps != null) {
+                header.setName(ps.displayName());
             }
         }
     }
