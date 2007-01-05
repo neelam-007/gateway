@@ -33,9 +33,10 @@ public class SystemAuditRecord extends AuditRecord {
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      * @param ip the IP address of the entity that caused this AuditRecord to be created. It could be that of a cluster node, an administrative workstation or a web service requestor.
      */
-    public SystemAuditRecord(Level level, String nodeId, Component component, String message, long identityProviderOid, String userName, String userId, String action, String ip) {
+    public SystemAuditRecord(Level level, String nodeId, Component component, String message, boolean alwaysAudit, long identityProviderOid, String userName, String userId, String action, String ip) {
         super(level, nodeId, ip, identityProviderOid, userName, userId, component.getName(), message);
         this.componentId = component.getId();
+        this.alwaysAudit = alwaysAudit;
         this.action = action;
     }
 
@@ -45,6 +46,10 @@ public class SystemAuditRecord extends AuditRecord {
      */
     public int getComponentId() {
         return componentId;
+    }
+
+    public boolean alwaysAudit() {
+        return alwaysAudit;
     }
 
     /**
@@ -67,4 +72,5 @@ public class SystemAuditRecord extends AuditRecord {
 
     private String action;
     private int componentId;
+    private boolean alwaysAudit;
 }

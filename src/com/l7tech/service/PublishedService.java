@@ -287,6 +287,25 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
+     * Get the descriptive name for this service.
+     *
+     * <p>This will include sufficient information to identify a service whilst
+     * still being brief enough for use in a UI.</p>
+     *
+     * @return The services display name.
+     */
+    public String displayName() {
+        String displayName = getName();
+
+        String routingUri = getRoutingUri();
+        if (routingUri != null) {
+            displayName += " [" + routingUri + "]";
+        }
+
+        return displayName;
+    }
+
+    /**
      * URI portion of the requests that determine whether or not requests are meant for this service.
      *
      * @return the HTTP URI (the part of a URL after the hostname) for this service.

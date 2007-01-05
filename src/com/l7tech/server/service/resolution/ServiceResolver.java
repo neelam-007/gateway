@@ -9,7 +9,6 @@ package com.l7tech.server.service.resolution;
 import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -21,13 +20,27 @@ public abstract class ServiceResolver implements Comparable {
     public static final int SLOW = 100;
 
     /**
-     * Sets the <code>Set</code> of services in the system.  Concrete implementations should implement doSetServices and invalidate any caches based on this Set whenever it is called.
-     * @param services A Set of all the services in the system.
+     * Notify resolver of a new service.
+     *
+     * @param service The published service that is now available for resolution.
+     * @throws ServiceResolutionException Can be thrown if resolution cannot be performed and this should be audited.
      */
-    public abstract void setServices(Set<PublishedService> services);
-    public abstract void serviceCreated(PublishedService service);
+    public abstract void serviceCreated(PublishedService service) throws ServiceResolutionException;
+
+    /**
+     * Notify resolver of an updated service.
+     *
+     * @param service The published service whose resolution parameters may have changed.
+     * @throws ServiceResolutionException Can be thrown if resolution cannot be performed and this should be audited.
+     */
+    public abstract void serviceUpdated(PublishedService service) throws ServiceResolutionException;
+
+    /**
+     * Notify resolver of a deleted service.
+     *
+     * @param service The published service that is no longer available for resolution.
+     */
     public abstract void serviceDeleted(PublishedService service);
-    public abstract void serviceUpdated(PublishedService service);
 
     public abstract Set<PublishedService> resolve( Message request, Set<PublishedService> serviceSubset ) throws ServiceResolutionException;
 
@@ -36,10 +49,11 @@ public abstract class ServiceResolver implements Comparable {
      * @param candidateService the service to compare against the services this ServiceResolver's already knows about.
      * @param subset the Map<Long,PublishedService> to search for matches.
      * @return a Map<Long,PublishedService> of matching services, which could be empty but not null.
+     * @throws ServiceResolutionException May be thrown if resolution cannot be performed one of the given services
      */
     public Map<Long, PublishedService> matchingServices(
             PublishedService candidateService,
-            Map<Long, PublishedService> subset )
+            Map<Long, PublishedService> subset )  throws ServiceResolutionException
     {
         if ( subset == null || subset.isEmpty() ) return Collections.emptyMap();
 
@@ -65,7 +79,7 @@ public abstract class ServiceResolver implements Comparable {
     }
 
     public abstract int getSpeed();
-    abstract boolean matches( PublishedService candidateService, PublishedService matchService );
+    abstract boolean matches( PublishedService candidateService, PublishedService matchService ) throws ServiceResolutionException;
 
     /**
      * Could throw a ClassCastException.
@@ -87,5 +101,5 @@ public abstract class ServiceResolver implements Comparable {
      * @param candidateService object from which to extract parameters from
      * @return a Set containing distinct strings
      */
-    public abstract Set getDistinctParameters(PublishedService candidateService);
+    public abstract Set getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException ;
 }

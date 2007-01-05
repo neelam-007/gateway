@@ -162,18 +162,6 @@ public class HttpUriResolver extends ServiceResolver {
         }
     }
 
-    public void setServices(Set<PublishedService> services) {
-        rwlock.writeLock().lock();
-        try {
-            for (PublishedService svc : services) {
-                createnolock(svc);
-            }
-            knownToFail.clear();
-        } finally {
-            rwlock.writeLock().unlock();
-        }
-    }
-
     protected boolean matches(PublishedService candidateService, PublishedService matchService) {
         return getTargetValue(candidateService).equals(getTargetValue(matchService));
     }

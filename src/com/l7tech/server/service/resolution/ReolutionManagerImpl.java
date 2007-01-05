@@ -53,7 +53,12 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      * @throws UpdateException          something went wrong, should rollback at that point
      */
     public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException {
-        Collection distinctItemsToSave = getDistinct(service);
+        Collection distinctItemsToSave;
+        try {
+            distinctItemsToSave = getDistinct(service);
+        } catch (ServiceResolutionException sre) {
+            throw new UpdateException("Cannot get service resolution data for service.", sre);
+        }
         Collection existingParameters = existingResolutionParameters(service.getOid());
 
         if (isSameParameters(distinctItemsToSave, existingParameters)) {
@@ -142,7 +147,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         return paramcol2.containsAll(paramcol1);
     }
 
-    private Collection getDistinct(PublishedService service) {
+    private Collection getDistinct(PublishedService service) throws ServiceResolutionException {
         ArrayList listOfParameters = new ArrayList();
 
         SoapActionResolver soapresolver = new SoapActionResolver();

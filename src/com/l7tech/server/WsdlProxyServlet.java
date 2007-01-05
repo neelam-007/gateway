@@ -23,6 +23,7 @@ import com.l7tech.server.policy.filter.IdentityRule;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.service.resolution.SoapActionResolver;
 import com.l7tech.server.service.resolution.UrnResolver;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -201,8 +202,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (sactionparam != null) {
             for (Iterator iterator = services.iterator(); iterator.hasNext();) {
                 PublishedService publishedService = (PublishedService) iterator.next();
-                Set sactionparams = sactionResolver.getDistinctParameters(publishedService);
-                if (!sactionparams.contains(sactionparam)) iterator.remove();
+                try {
+                    Set sactionparams = sactionResolver.getDistinctParameters(publishedService);
+                    if (!sactionparams.contains(sactionparam)) iterator.remove();
+                } catch (ServiceResolutionException sre) { // ignore this service
+                    logger.log(Level.WARNING, "Could not process service with oid '"+publishedService.getOid()+"'.", sre);                    
+                }
             }
             if (services.size() == 1) {
                 return (PublishedService)services.iterator().next();
@@ -215,8 +220,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (nsparam != null) {
             for (Iterator iterator = services.iterator(); iterator.hasNext();) {
                 PublishedService publishedService = (PublishedService) iterator.next();
-                Set nsparams = nsResolver.getDistinctParameters(publishedService);
-                if (!nsparams.contains(nsparam)) iterator.remove();
+                try {
+                    Set nsparams = nsResolver.getDistinctParameters(publishedService);
+                    if (!nsparams.contains(nsparam)) iterator.remove();
+                } catch (ServiceResolutionException sre) { // ignore this service
+                    logger.log(Level.WARNING, "Could not process service with oid '"+publishedService.getOid()+"'.", sre);
+                }
             }
             if (services.size() == 1) {
                 return (PublishedService)services.iterator().next();
@@ -584,7 +593,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return false;
     }
 
-    private String resModeQueryString(PublishedService service) {
+    private String resModeQueryString(PublishedService service) throws ServiceResolutionException {
         String urival = service.getRoutingUri();
         if (urival == null) urival = "";
         String nsval = "";
@@ -635,19 +644,23 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         for (Iterator i = services.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
             if (svc.isSoap()) {
-                outDoc.append("\t<service>\n");
-                outDoc.append("\t\t<abstract>").append(svc.getName()).append("</abstract>\n");
-                outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
-                outDoc.append("location=\"");
-                String query;
-                if (isResModeRequested) {
-                    query = resModeQueryString(svc);
-                } else {
-                    query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+                try {
+                    String query;
+                    if (isResModeRequested) {
+                        query = resModeQueryString(svc);
+                    } else {
+                        query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+                    }
+                    outDoc.append("\t<service>\n");
+                    outDoc.append("\t\t<abstract>").append(svc.getName()).append("</abstract>\n");
+                    outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
+                    outDoc.append("location=\"");
+                    outDoc.append(protocol).append("://").append(host).append(":").append(port).append(uri).append("?").append(query);
+                    outDoc.append("\"/>\n");
+                    outDoc.append("\t</service>\n");
+                } catch (ServiceResolutionException sre) {
+                    logger.log(Level.WARNING, "Could not process service with oid '"+svc.getOid()+"'.", sre);                
                 }
-                outDoc.append(protocol).append("://").append(host).append(":").append(port).append(uri).append("?").append(query);
-                outDoc.append("\"/>\n");
-                outDoc.append("\t</service>\n");
             }
         }
         outDoc.append("</inspection>");

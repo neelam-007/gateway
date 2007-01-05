@@ -11,14 +11,12 @@ import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
 import javax.wsdl.WSDLException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author alex
  */
 public abstract class WsdlOperationServiceResolver extends NameValueServiceResolver {
-    protected Object[] doGetTargetValues( PublishedService service ) {
+    protected Object[] doGetTargetValues( PublishedService service ) throws ServiceResolutionException {
         // non soap services do not have those parameters
         if (!service.isSoap()) {
             return new Object[0];
@@ -41,7 +39,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
                 }
             }
         } catch ( WSDLException we ) {
-            logger.log(Level.SEVERE, null, we);
+            throw new ServiceResolutionException("Error accessing service WSDL '"+we.getMessage()+"'.", we);
         }
 
         return values.toArray();
@@ -52,7 +50,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
      * @param candidateService object from which to extract parameters from
      * @return a Set containing distinct strings
      */
-    public Set getDistinctParameters(PublishedService candidateService) {
+    public Set getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {
         Set<String> out = new HashSet<String>();
         // non soap services do not have those parameters
         if (!candidateService.isSoap()) {
@@ -71,11 +69,11 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
                 out.add(value); // Bug 1741: Ensure we don't return an empty set, it confuses ResolutionManager.
             }
         } catch ( WSDLException we ) {
-            logger.log(Level.SEVERE, null, we);
+            throw new ServiceResolutionException("Error accessing service WSDL '"+we.getMessage()+"'.", we);
         }
+        
         return out;
     }
 
     protected abstract String getTargetValue( Definition def, BindingOperation operation );
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -5,6 +5,8 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
@@ -22,9 +24,11 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.ServiceReloadEvent;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
@@ -51,10 +55,11 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Nov 26, 2003<br/>
  */
-public class ServiceCache extends ApplicationObjectSupport implements DisposableBean, ApplicationListener {
+public class ServiceCache extends ApplicationObjectSupport implements InitializingBean, DisposableBean, ApplicationListener {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     private ServerPolicyFactory policyFactory;
+    private Auditor auditor;
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
     /**
@@ -91,7 +96,11 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         if (applicationEvent instanceof LicenseEvent) {
             Background.scheduleOneShot(new TimerTask() {
                 public void run() {
-                    resetUnlicensed();
+                    try {
+                        resetUnlicensed();
+                    } finally {
+                        getApplicationContext().publishEvent(new ServiceReloadEvent(this));                        
+                    }
                 }
             }, 0);
         }
@@ -249,14 +258,24 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         if (services.get(key) != null) update = true;
         if (update) {
             for (ServiceResolver resolver : resolvers) {
-                resolver.serviceUpdated(service);
+                try {
+                    resolver.serviceUpdated(service);
+                } catch (ServiceResolutionException sre) {
+                    auditor.logAndAudit(SystemMessages.SERVICE_WSDL_ERROR,
+                            new String[]{service.displayName(), sre.getMessage()}, sre);
+                }
             }
             logger.finest("updated service " + service.getName() + " in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
             for (ServiceResolver resolver : resolvers) {
-                resolver.serviceCreated(service);
+                try {
+                    resolver.serviceCreated(service);
+                } catch (ServiceResolutionException sre) {
+                    auditor.logAndAudit(SystemMessages.SERVICE_WSDL_ERROR,
+                            new String[]{service.displayName(), sre.getMessage()}, sre);
+                }
             }
             logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
         }
@@ -392,6 +411,14 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     }
 
     /**
+     * {@see InitializingBean}
+     * @throws Exception
+     */
+    public void afterPropertiesSet() throws Exception {
+        this.auditor = new Auditor(this, getApplicationContext(), logger);
+    }
+
+    /**
      * {@see DisaposableBean}
      * @throws Exception
      */
@@ -498,6 +525,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
         } finally {
             if (ciReadLock != null) ciReadLock.unlock();
+            getApplicationContext().publishEvent(new ServiceReloadEvent(this));
         }
     }
 

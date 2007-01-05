@@ -134,9 +134,10 @@ public class AuditContextImpl implements AuditContext {
                     return;
                 }
             } else if (currentRecord instanceof SystemAuditRecord) {
-                Component component = Component.fromId(((SystemAuditRecord)currentRecord).getComponentId());
+                SystemAuditRecord systemRecord = (SystemAuditRecord)currentRecord;
+                Component component = Component.fromId(systemRecord.getComponentId());
                 if (component!=null && component.isClientComponent()) {
-                    if (currentRecord.getLevel().intValue() < getSystemSystemClientThreshold().intValue()) {
+                    if (highestLevelYetSeen.intValue() < getSystemSystemClientThreshold().intValue()) {
                         if(logger.isLoggable(Level.FINE)) {
                             logger.fine("SystemAuditRecord for client component generated with level " +
                                     currentRecord.getLevel() +
@@ -145,6 +146,16 @@ public class AuditContextImpl implements AuditContext {
                         }
                         return;
                     }
+                } else if(!systemRecord.alwaysAudit()) {
+                    if (highestLevelYetSeen.intValue() < Level.WARNING.intValue()) {
+                        if(logger.isLoggable(Level.FINE)) {
+                            logger.fine("SystemAuditRecord for optional audit generated with level " +
+                                    currentRecord.getLevel() +
+                                    " will not be saved; threshold for optional system audits is WARNING");
+                        }
+                        return;
+                    }
+
                 } else {
                     // Non client system audit records are always saved
                 }

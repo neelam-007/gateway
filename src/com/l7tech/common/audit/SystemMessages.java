@@ -22,5 +22,7 @@ public class SystemMessages extends Messages {
     public static final M LICENSE_INVALID               = m(2014, Level.WARNING, "License file is not valid");
     public static final M LICENSE_UPDATED               = m(2015, Level.INFO, "License updated");
 
+    public static final M SERVICE_WSDL_ERROR            = m(2016, Level.WARNING, "Service ''{0}'' WSDL error ''{1}''");
+
     // MAX -                                               m(2999
 }
