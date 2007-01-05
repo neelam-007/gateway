@@ -72,6 +72,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JCheckBox connectTimeoutDefaultCheckBox;
     private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
+    private JTabbedPane tabbedPane1;
 
     private final SecureAction okButtonAction;
 
