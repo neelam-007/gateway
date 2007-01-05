@@ -18,8 +18,8 @@ public class Auditor {
     private final Logger logger;
 
     public Auditor(Object source, ApplicationContext context, Logger logger) {
-        if(source  == null) throw new RuntimeException("Event source is NULL. Cannot add AuditDetail to the audit record.");
-        if(logger == null) throw new RuntimeException("ApplicationContext is NULL. Cannot add AuditDetail to the audit record.");
+        if(source  == null) throw new IllegalArgumentException("Event source is NULL. Cannot add AuditDetail to the audit record.");
+        if(context == null) throw new IllegalArgumentException("ApplicationContext is NULL. Cannot add AuditDetail to the audit record.");
 
         this.source = source;
         this.context = context;
@@ -27,8 +27,7 @@ public class Auditor {
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
-        if (context != null)
-            context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e)));
+        context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e)));
 
         if (logger == null) return;
 
