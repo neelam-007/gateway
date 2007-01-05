@@ -209,9 +209,16 @@ public class GatewayFeatureSets {
             ass(SchemaValidation.class),
             ass(XslTransformation.class));
 
+        GatewayFeatureSet validationDs =
+        fsr("set:Validation:Datascreen", "SecureSpan Datascreen message validation and transformation",
+            "Adds regex and attachments",
+            fs(validationAccel),
+            ass(RequestSwAAssertion.class),
+            ass(Regex.class));
+
         GatewayFeatureSet validationFw =
         fsr("set:Validation:Firewall", "SecureSpan Firewall message validation and transformation",
-            "Adds regex and attachments",
+            "Adds regex, attachments, WSDL operation, and WS-I BSP and SAML validation",
             fs(validationAccel),
             ass(Operation.class),
             ass(RequestSwAAssertion.class),
@@ -328,15 +335,14 @@ public class GatewayFeatureSets {
             ass(RequestWssKerberos.class),
             ass(CookieCredentialSourceAssertion.class));
 
+        GatewayFeatureSet customDs =
+        fsr("set:Custom:Datascreen", "SecureSpan Datascreen custom assertions",
+            "Symantec only",
+            ass(CustomAssertionHolder.class));
 
-        //
-        // Declare "product profile" feature sets
-        // (feature sets built out of "building block" feature sets, and which each constitutes a useable,
-        //  complete product in its own right.)
-        // Naming convention:   set:Profile:ProfileName
-        //
-        fsp("set:Profile:IPS", "SecureSpan XML IPS",
-            "Threat protection features only.  (No routing assertions?  Not even hardcoded response?)",
+        // Formerly a profile set, now present only for backward compatibility
+        fsr("set:Profile:IPS", "SecureSpan XML IPS",
+            "DEPRECATED -- present for license compat only",
             fs(core),
             fs(admin),
             fs(routingIps),
@@ -345,6 +351,25 @@ public class GatewayFeatureSets {
             fs(validationAccel),
             fs(auditAccel),
             fs(policyAccel));
+
+
+        //
+        // Declare "product profile" feature sets
+        // (feature sets built out of "building block" feature sets, and which each constitutes a useable,
+        //  complete product in its own right.)
+        // Naming convention:   set:Profile:ProfileName
+        //
+        fsp("set:Profile:Datascreen", "SecureSpan Data Screen",
+            "HTTP/HTML/AJAX/JSON/XML gateway",
+            fs(core),
+            fs(admin),
+            fs(routingAccel),
+            fs(threatIps),
+            fs(availabilityFw),
+            fs(validationDs),
+            fs(auditAccel),
+            fs(policyAccel),
+            fs(customDs));
 
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
             "XML acceleration features",
