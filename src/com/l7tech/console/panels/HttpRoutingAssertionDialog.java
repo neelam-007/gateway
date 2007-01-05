@@ -3,12 +3,13 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.UrlPanel;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.action.SecureAction;
+import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -26,13 +27,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * <code>HttpRoutingAssertionDialog</code> is the protected service
@@ -40,6 +41,7 @@ import java.text.MessageFormat;
  */
 public class HttpRoutingAssertionDialog extends JDialog {
     private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
+    private HttpRuleTableHandler responseHttpRulesTableHandler;
 
     private final EventListenerList listenerList = new EventListenerList();
     private final PublishedService service;
@@ -73,6 +75,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
     private JTabbedPane tabbedPane1;
+    private JRadioButton resHeadersAll;
+    private JRadioButton resHeadersCustomize;
+    private JTable resHeadersTable;
+    private JButton resHeadersAdd;
+    private JButton resHeadersDelete;
 
     private final SecureAction okButtonAction;
 
@@ -236,6 +243,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         });
 
+        initializeHttpRulesTabs();
+
         okButton.setAction(okButtonAction);
 
         cancelButton.addActionListener(new ActionListener() {
@@ -247,6 +256,35 @@ public class HttpRoutingAssertionDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private void initializeHttpRulesTabs() {
+
+        // init req rules stuff
+        //todo
+
+        // init the response stuff
+        ButtonGroup tmpbtgroup = new ButtonGroup();
+        tmpbtgroup.add(resHeadersAll);
+        tmpbtgroup.add(resHeadersCustomize);
+        ActionListener tablestate = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (resHeadersCustomize.isSelected()) {
+                    resHeadersTable.setEnabled(true);
+                    resHeadersAdd.setEnabled(true);
+                    resHeadersDelete.setEnabled(true);
+                } else {
+                    resHeadersTable.setEnabled(false);
+                    resHeadersAdd.setEnabled(false);
+                    resHeadersDelete.setEnabled(false);
+                }
+            }
+        };
+        resHeadersAll.addActionListener(tablestate);
+        resHeadersCustomize.addActionListener(tablestate);
+        responseHttpRulesTableHandler = new HttpRuleTableHandler("Header", resHeadersTable, resHeadersAdd, resHeadersDelete);
+        // todo, pass initial data
+        responseHttpRulesTableHandler.populateDate();
     }
 
     private void ok() {
