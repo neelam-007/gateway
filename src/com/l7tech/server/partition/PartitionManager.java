@@ -265,7 +265,7 @@ public class PartitionManager {
                         for (File originalFile : originalFiles) {
                             fileNames.add(originalFile.getName());
                         }
-                        pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "755", defaultPartitionDir, osf);
+                        pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
                         renameUpgradeFiles(defaultPartitionDir, ".rpmsave");
                         if (osf.isLinux()) {
                             File f = new File(osf.getPartitionBase() + "default_/" + "enabled");
@@ -322,8 +322,17 @@ public class PartitionManager {
 
     private static void removeOriginalConfigurations(List<File> filesToRemove) {
         for (File file : filesToRemove) {
-            if (file.exists())
+            if (file.exists()) {
+                if (file.isDirectory()) {
+                    File[] filesInDir = file.listFiles();
+                    if (filesInDir != null)
+                        removeOriginalConfigurations(Arrays.asList(filesInDir));
+                    else
+                        FileUtils.deleteDir(file);
+                } else {
                     FileUtils.deleteFileSafely(file.getAbsolutePath());
+                }
+            }
         }
     }
 

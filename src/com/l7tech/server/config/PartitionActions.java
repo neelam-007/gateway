@@ -295,7 +295,6 @@ public class PartitionActions {
             serverConfigDom = getDomFromServerConfig(pInfo);
         }
         doEndpointTypeAwareUpdates(pInfo, newHttpEndpoints, serverConfigDom);
-
         FileOutputStream fos = null;
         try {
             OSSpecificFunctions foo = pInfo.getOSSpecificFunctions();
@@ -314,14 +313,23 @@ public class PartitionActions {
 
         Map<PartitionInformation.HttpEndpointType,Element> existingConnectors = PartitionActions.getHttpConnectorsByType(connectors);
         String redirectPort = "";
+        String seenKeystorePass = null;
         for (PartitionInformation.HttpEndpointHolder endpoint : endpoints) {
             PartitionInformation.HttpEndpointType type = endpoint.endpointType;
-            if (type == PartitionInformation.HttpEndpointType.SSL_HTTP)
+            if (type == PartitionInformation.HttpEndpointType.SSL_HTTP) {
                 redirectPort = endpoint.getPort();
+                Element secureConnector = existingConnectors.get(PartitionInformation.HttpEndpointType.SSL_HTTP);
+                if (secureConnector != null) {
+                    if (secureConnector.hasAttribute("keystorePass")) {
+                            seenKeystorePass = secureConnector.getAttribute("keystorePass");
+                    }
+                }
+            }
 
             Element connector;
             if (!existingConnectors.containsKey(type)) {
                 connector = PartitionActions.addNewConnector(pInfo, serverConfig, endpoint);
+                existingConnectors.put(endpoint.endpointType, connector);
             } else {
                 connector = existingConnectors.get(type);
             }
@@ -329,7 +337,10 @@ public class PartitionActions {
             connector.setAttribute("port", endpoint.getPort());
         }
         existingConnectors.get(PartitionInformation.HttpEndpointType.BASIC_HTTP).setAttribute("redirectPort", redirectPort);
+        if (StringUtils.isNotEmpty(seenKeystorePass))
+            existingConnectors.get(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT).setAttribute("keystorePass", seenKeystorePass);
     }
+
 
     private static void pruneConnectors(Document dom, NodeList connectors, List<PartitionInformation.HttpEndpointHolder> newEndpoints) {
         for (int index = 0; index < connectors.getLength(); index++) {
@@ -880,7 +891,7 @@ public class PartitionActions {
                 }
                 newNode.setAttribute("secure", "true");
                 newNode.setAttribute("clientAuth", "want");
-                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ File.separator + "ssl.ks");
+                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ "ssl.ks");
                 break;
             case SSL_HTTP_NOCLIENTCERT:
                 for (String[] secureConnectorEndpointAttribute : secureConnectorEndpointAttributes) {
@@ -888,7 +899,7 @@ public class PartitionActions {
                 }
                 newNode.setAttribute("secure", "true");
                 newNode.setAttribute("clientAuth", "false");
-                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ File.separator + "ssl.ks");
+                newNode.setAttribute("keystoreFile", pInfo.getOSSpecificFunctions().getKeystoreDir()+ "ssl.ks");
                 break;
         }
         Element serviceElement = XmlUtil.findFirstChildElementByName(serverConfig.getDocumentElement(), (String) null, "Service");
