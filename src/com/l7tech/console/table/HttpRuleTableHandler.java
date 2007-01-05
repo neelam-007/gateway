@@ -1,8 +1,13 @@
 package com.l7tech.console.table;
 
+import com.l7tech.console.panels.HttpRuleDialog;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.HttpPassthroughRule;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
+import java.awt.*;
 
 /**
  * Common code for tables that contain customized http header/parameter rules for routing dialogs
@@ -14,16 +19,18 @@ import java.awt.event.*;
  * Date: Jan 5, 2007<br/>
  */
 public class HttpRuleTableHandler {
+    private static final String MAGIC_DEF_VALUE = "<original value>";
     private String subject;
     final private JTable table;
-    private JButton adButton;
+    private JButton addButton;
     private JButton removeButton;
     final DefaultTableModel model;
+    private JDialog parentDlg;
 
-    public HttpRuleTableHandler(String subject, final JTable table, final JButton addButton, final JButton removeButton) {
+    public HttpRuleTableHandler(final String subject, final JTable table, final JButton addButton, final JButton removeButton) {
         this.subject = subject;
         this.table = table;
-        this.adButton = addButton;
+        this.addButton = addButton;
         this.removeButton = removeButton;
 
         table.setColumnSelectionAllowed(false);
@@ -62,8 +69,13 @@ public class HttpRuleTableHandler {
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                model.addRow(new String[]{"blah", "foo"});
-                // todo, a dialog to add/edit those lines
+                HttpRuleDialog editor = new HttpRuleDialog(subject, parentDlg, null);
+                editor.pack();
+                Utilities.centerOnScreen(editor);
+                editor.setVisible(true);
+                if (editor.wasOKed()) {
+                    model.addRow(dataToRow(editor.getData()));
+                }
             }
         });
 
@@ -72,7 +84,38 @@ public class HttpRuleTableHandler {
                 removeLines();
             }
         });
+
+        Container c = table.getParent();
+        while (c != null) {
+            if (c instanceof JDialog) {
+                parentDlg = (JDialog)c;
+                break;
+            }
+            c = c.getParent();
+        }
     }
+
+    private String[] dataToRow(HttpPassthroughRule data) {
+        String val = data.getCustomizeValue();
+        if (!data.usesCustomizedValue()) {
+            val = MAGIC_DEF_VALUE;
+        }
+        return new String[] {data.getName(), val};
+    }
+
+    private HttpPassthroughRule rowToData(int row) {
+        HttpPassthroughRule output = new HttpPassthroughRule();
+        output.setName((String)model.getValueAt(row, 0));
+        String val = (String)model.getValueAt(row, 1);
+        if (MAGIC_DEF_VALUE.equals(val)) {
+            output.setUsesCustomizedValue(false);
+        } else {
+            output.setUsesCustomizedValue(true);
+            output.setCustomizeValue(val);
+        }
+        return output;
+    }
+
 
     public void populateDate() {
         // todo, receive data in a yet to be determined format
@@ -90,8 +133,17 @@ public class HttpRuleTableHandler {
     private void editRuleRow() {
         int[] selectedrows = table.getSelectedRows();
         if (selectedrows != null && selectedrows.length > 0) {
-            JOptionPane.showInputDialog("todo editing column " + selectedrows[0]);
-            // todo invoke the dialog responsible for editing this annoyance
+            HttpPassthroughRule toedit = rowToData(selectedrows[0]);
+
+            HttpRuleDialog editor = new HttpRuleDialog(subject, parentDlg, toedit);
+            Utilities.centerOnScreen(editor);
+            editor.pack();
+            editor.setVisible(true);
+            if (editor.wasOKed()) {
+                String[] res = dataToRow(editor.getData());
+                model.setValueAt(res[0], selectedrows[0], 0);
+                model.setValueAt(res[1], selectedrows[0], 1);
+            }
         }
     }
 }
