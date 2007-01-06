@@ -3,6 +3,7 @@ package com.l7tech.service;
 import static com.l7tech.common.security.rbac.EntityType.SAMPLE_MESSAGE;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -21,6 +22,9 @@ import java.rmi.RemoteException;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public interface ServiceAdmin extends ServiceAdminPublic {
+    String ROLE_NAME_TYPE_SUFFIX = "Service";
+    String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+
     /**
      * Retrieve a chunk of the available {@link PublishedService} headers  This is a version of
      * {@link #findAllPublishedServices} that allows fetching the result in chunks, perhaps to reduce

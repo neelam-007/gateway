@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import static com.l7tech.common.security.rbac.EntityType.*;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
@@ -23,6 +24,9 @@ import java.util.Set;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured
 public interface IdentityAdmin {
+    String ROLE_NAME_TYPE_SUFFIX = "Identity Provider";
+    String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} "+ ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+
     /**
      * Retrieve the server admin protocol version string.
      *

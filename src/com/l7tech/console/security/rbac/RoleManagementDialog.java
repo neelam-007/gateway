@@ -1,11 +1,11 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.util.Functions;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.panels.PermissionFlags;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import org.apache.commons.lang.StringUtils;
 
@@ -21,6 +21,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 
 public class RoleManagementDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
@@ -138,9 +139,9 @@ public class RoleManagementDialog extends JDialog {
     private void updatePropertiesSummary() throws RemoteException {
         String message = null;
 
-        Role role = getSelectedRole();
-        if (role != null) {
-            String roleName = role.getName();
+        RoleModel model = ((RoleModel) roleList.getSelectedValue());
+        if (model != null) {
+            Role role = model.role;
             String roleDescription = role.getDescription();
 
             StringBuilder sb = new StringBuilder();
@@ -310,7 +311,7 @@ public class RoleManagementDialog extends JDialog {
     }
 
     private Role getSelectedRole() {
-        return (Role)roleList.getSelectedValue();
+        return ((RoleModel)roleList.getSelectedValue()).role;
     }
 
     private void showEditDialog(Role selectedRole, final Functions.UnaryVoid<Role> result) {
@@ -326,7 +327,7 @@ public class RoleManagementDialog extends JDialog {
             public void run() {
                 Role updated = dlg.getRole();
                 if (updated != null) {
-                    Role sel = (Role) roleList.getSelectedValue();
+                    RoleModel sel = (RoleModel) roleList.getSelectedValue();
                     populateList();
                     roleList.setSelectedValue(sel, true);
                 }
@@ -339,9 +340,34 @@ public class RoleManagementDialog extends JDialog {
         try {
             Role[] roles = rbacAdmin.findAllRoles().toArray(new Role[0]);
             Arrays.sort(roles);
-            roleList.setModel(new DefaultComboBoxModel(roles));
+            RoleModel[] models = new RoleModel[roles.length];
+            for (int i = 0; i < roles.length; i++) {
+                Role role = roles[i];
+                models[i] = new RoleModel(role);
+            }
+            roleList.setModel(new DefaultComboBoxModel(models));
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get initial list of Roles", e);
+        }
+    }
+
+    private static class RoleModel {
+        private final Role role;
+        private final String name;
+
+        private RoleModel(Role role) {
+            this.role = role;
+            Matcher matcher = RbacUtilities.removeOidPattern.matcher(role.getName());
+            if (matcher.matches()) {
+                this.name = matcher.group(1);
+            } else {
+                this.name = role.getName();
+            }
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 

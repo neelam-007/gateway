@@ -1,27 +1,27 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.service;
 
+import com.l7tech.cluster.ServiceUsage;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import static com.l7tech.common.security.rbac.EntityType.*;
+import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.security.rbac.*;
-import static com.l7tech.common.security.rbac.EntityType.*;
-import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.service.PublishedService;
+import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.service.MetricsBin;
-import com.l7tech.identity.User;
-import com.l7tech.cluster.ServiceUsage;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 import org.springframework.transaction.TransactionStatus;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Manages PublishedService instances.
@@ -45,6 +46,9 @@ public class ServiceManagerImp
 {
     private ServiceCache serviceCache;
     private RoleManager roleManager;
+
+    private static final Pattern replaceRoleName =
+            Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX));
 
     @Transactional(propagation=SUPPORTS)
     public void setVisitorClassnames(String visitorClassnames) {
@@ -120,6 +124,12 @@ public class ServiceManagerImp
         }
 
         super.update(service);
+
+        try {
+            roleManager.renameEntitySpecificRole(SERVICE, service, replaceRoleName);
+        } catch (FindException e) {
+            throw new UpdateException("Couldn't find Role to rename", e);
+        }
 
         // update cache after commit
         final long passedServiceId = service.getOid();
@@ -285,7 +295,7 @@ public class ServiceManagerImp
     public void addManageServiceRole(PublishedService service) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
-        String name = "Manage " + service.getName() + " Service (#" + service.getOid() + ")";
+        String name = MessageFormat.format(ServiceAdmin.ROLE_NAME_PATTERN, service.getName(), service.getOid());
 
         logger.info("Creating new Role: " + name);
 
@@ -313,8 +323,7 @@ public class ServiceManagerImp
 
         newRole.setEntityType(SERVICE);
         newRole.setEntityOid(service.getOid());
-        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the " + 
-                service.getName() + " service.");
+        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} service.");
 
         if (currentUser != null) {
             // See if we should give the current user admin permission for this service

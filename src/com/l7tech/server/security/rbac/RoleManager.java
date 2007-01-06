@@ -8,9 +8,11 @@ import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 /**
  * Manages persistent {@link Role} instances.  Primarily used by {@link RbacAdminImpl}.
@@ -61,4 +63,13 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * @param entity the Entity that is being deleted @throws com.l7tech.objectmodel.DeleteException
      */
     void deleteEntitySpecificRole(EntityType etype, PersistentEntity entity) throws DeleteException;
+
+    /**
+     * Updates the Role corresponding to the provided Entity to match a new name, if it's different
+     * @param entityType the RBAC type of the Entity being updated
+     * @param entity the entity being updated
+     * @param replacePattern a Pattern that finds the name component in the entity name
+     * @throws com.l7tech.objectmodel.UpdateException
+     */
+    void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
 }

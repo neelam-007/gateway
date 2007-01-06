@@ -1,5 +1,8 @@
 package com.l7tech.server.identity;
 
+import static com.l7tech.common.security.rbac.EntityType.*;
+import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
@@ -7,14 +10,13 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.common.util.JaasUtils;
-import com.l7tech.common.security.rbac.*;
-import static com.l7tech.common.security.rbac.EntityType.*;
 import org.springframework.dao.DataAccessException;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
@@ -31,6 +33,9 @@ public class IdProvConfManagerServer
 {
     private static final Logger logger = Logger.getLogger(IdProvConfManagerServer.class.getName());
     private RoleManager roleManager;
+
+    private static final Pattern replaceRoleName =
+        Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, IdentityAdmin.ROLE_NAME_TYPE_SUFFIX));
 
     public void setRoleManager(RoleManager roleManager) {
         this.roleManager = roleManager;
@@ -74,6 +79,13 @@ public class IdProvConfManagerServer
             logger.warning("Attempt to update internal id provider");
             throw new UpdateException("this type of config cannot be updated");
         }
+
+        try {
+            roleManager.renameEntitySpecificRole(ID_PROVIDER_CONFIG, identityProviderConfig, replaceRoleName);
+        } catch (FindException e) {
+            throw new UpdateException("Couldn't find Role to rename", e);
+        }
+
         try {
             identityProviderFactory.dropProvider(identityProviderConfig);
             super.update(identityProviderConfig);
@@ -173,7 +185,7 @@ public class IdProvConfManagerServer
     public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
-        String name = "Manage " + config.getName() + " Identity Provider (#" + config.getOid() + ")";
+        String name = MessageFormat.format(IdentityAdmin.ROLE_NAME_PATTERN, config.getName(), config.getOid());
 
         logger.info("Creating new Role: " + name);
 
@@ -197,8 +209,7 @@ public class IdProvConfManagerServer
         newRole.addPermission(OperationType.DELETE, GROUP, "providerId", config.getId());
         newRole.setEntityType(ID_PROVIDER_CONFIG);
         newRole.setEntityOid(config.getOid());
-        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the " +
-                config.getName() + " provider, and create, search, update and delete its users and groups.");
+        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} provider, and create, search, update and delete its users and groups.");
 
         // Assignees will need to search TrustedCerts if this is a FIP
         boolean fip = config.type() == IdentityProviderType.FEDERATED;

@@ -18,6 +18,9 @@ import java.util.Collection;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=EntityType.RBAC_ROLE)
 public interface RbacAdmin {
+    String ROLE_NAME_PREFIX = "Manage";
+    String ROLE_NAME_OID_SUFFIX = " (#{1})";
+    String RENAME_REGEX_PATTERN = "(?<=^" + ROLE_NAME_PREFIX + " ).*?(?= {0} \\(#\\d+\\)$)";
 
     /**
      * Finds a collection of EntityHeaders for all {@link Role}s known to the SSG.

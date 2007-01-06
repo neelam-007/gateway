@@ -8,6 +8,7 @@ import static com.l7tech.common.security.rbac.EntityType.ANY;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -17,9 +18,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author alex
@@ -146,7 +150,6 @@ public class RoleManagerImpl
         }
     }
 
-
     public void deleteEntitySpecificRole(EntityType etype, final PersistentEntity entity) throws DeleteException {
         try {
             Role role = findEntitySpecificRole(etype, entity);
@@ -155,6 +158,18 @@ public class RoleManagerImpl
             delete(role);
         } catch (FindException e) {
             throw new DeleteException("Couldn't find Roles for this Entity", e);
+        }
+    }
+
+    public void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+        Role role = findEntitySpecificRole(entityType, entity);
+        String name = role.getName();
+        Matcher matcher = replacePattern.matcher(name);
+        String newName = matcher.replaceAll(entity.getName());
+        if (!newName.equals(name)) {
+            logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: {1}", role.getName(), newName));
+            role.setName(newName);
+            update(role);
         }
     }
 }
