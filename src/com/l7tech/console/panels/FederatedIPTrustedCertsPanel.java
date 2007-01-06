@@ -492,6 +492,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             public void wizardCanceled(WizardEvent e) {}
         });
         w.pack();
+        w.setSize(820, 560);
         Utilities.centerOnScreen(w);
         DialogDisplayer.display(w);
     }

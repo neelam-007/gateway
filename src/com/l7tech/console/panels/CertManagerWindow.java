@@ -138,6 +138,7 @@ public class CertManagerWindow extends JDialog {
                         //addEntityListener(listener);
 
                         w.pack();
+                        w.setSize(820, 560);
                         Utilities.centerOnScreen(w);
                         DialogDisplayer.display(w);
 
