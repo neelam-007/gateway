@@ -226,6 +226,7 @@ public class HttpRoutingAssertion
         this.setNtlmHost(source.getNtlmHost());
         this.setConnectionTimeout(source.getConnectionTimeout());
         this.setTimeout(source.getTimeout());
+        this.setResponseHeaderRules(source.getResponseHeaderRules());
     }
 
     public String[] getVariablesUsed() {
