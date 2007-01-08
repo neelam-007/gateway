@@ -343,9 +343,7 @@ public class ConfigWizardPartitioningPanel extends ConfigWizardStepPanel impleme
                     boolean currentPartitionExists = new File(oldPi.getOSSpecificFunctions().getPartitionBase() + oldPi.getPartitionId()).exists();
 
                     boolean wasRenamed = true;
-                    if (currentPartitionExists) {
-                        wasRenamed = PartitionActions.renamePartition(oldPi, newName, this);
-                    }
+                    wasRenamed = PartitionActions.renamePartition(oldPi, newName, this);
                     if (wasRenamed) {
                         partitionListModel.update(index, newName, null, null);
                         addedNewPartition = newName;

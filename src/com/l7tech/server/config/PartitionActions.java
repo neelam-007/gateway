@@ -137,6 +137,14 @@ public class PartitionActions {
         if (newPartitionDir.exists())
             return false;
 
+        //if we are renaming a partition that doesn't exist on disk yet then just rename it, don't bother trying all the disk related stuff
+        File existingPartitionDir = new File(partitionToRename.getOSSpecificFunctions().getPartitionBase() + partitionToRename.getPartitionId());
+        if (!existingPartitionDir.exists()) {
+            PartitionManager.getInstance().renamePartition(partitionToRename.getPartitionId(), newName);
+            return true;
+        }
+
+        //else
         boolean renamed;
         try {
             boolean confirmationGoAhead = true;

@@ -261,11 +261,10 @@ public class ConfigurationWizard extends Wizard {
         ImageIcon imageIcon = new ImageIcon(icon);
         mainFrame.setIconImage(imageIcon.getImage());
         try {
-//            osFunctions = OSDetector.getOSSpecificFunctions();
             ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
             wizard.setSize(780, 560);
             Utilities.centerOnScreen(wizard);
-            wizard.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            wizard.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             wizard.setVisible(true);
         }
         catch(OSSpecificFunctions.MissingPropertyException mpe) {
