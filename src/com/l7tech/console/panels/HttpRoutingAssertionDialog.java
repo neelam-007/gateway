@@ -282,9 +282,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
         };
         resHeadersAll.addActionListener(tablestate);
         resHeadersCustomize.addActionListener(tablestate);
-        responseHttpRulesTableHandler = new HttpRuleTableHandler("Header", resHeadersTable, resHeadersAdd, resHeadersDelete);
-        // todo, pass initial data
-        responseHttpRulesTableHandler.populateDate();
+        responseHttpRulesTableHandler = new HttpRuleTableHandler("Header", resHeadersTable,
+                                                                 resHeadersAdd, resHeadersDelete,
+                                                                 assertion.getResponseHeaderRules());
+        if (assertion.getResponseHeaderRules().isForwardAll()) {
+            resHeadersAll.setSelected(true);
+            resHeadersAdd.setEnabled(false);
+            resHeadersDelete.setEnabled(false);
+        } else {
+            resHeadersCustomize.setSelected(true);
+        }
     }
 
     private void ok() {
@@ -364,6 +371,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
 
             assertion.setCopyCookies(cookiePropagationCheckBox.isSelected());
+
+            assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
+            assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());
 
             fireEventAssertionChanged(assertion);
 

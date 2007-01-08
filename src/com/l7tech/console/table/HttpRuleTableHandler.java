@@ -3,6 +3,7 @@ package com.l7tech.console.table;
 import com.l7tech.console.panels.HttpRuleDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
+import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -26,15 +27,19 @@ public class HttpRuleTableHandler {
     private JButton removeButton;
     final DefaultTableModel model;
     private JDialog parentDlg;
+    private HttpPassthroughRuleSet data;
 
-    public HttpRuleTableHandler(final String subject, final JTable table, final JButton addButton, final JButton removeButton) {
+    public HttpRuleTableHandler(final String subject, final JTable table,
+                                final JButton addButton, final JButton removeButton,
+                                HttpPassthroughRuleSet data) {
         this.subject = subject;
         this.table = table;
         this.addButton = addButton;
         this.removeButton = removeButton;
+        this.data = data;
 
         table.setColumnSelectionAllowed(false);
-        Object[][] rows = new Object[][]{};
+        Object[][] rows = dataToRows(data);
         String[] columns = new String[]{subject + " name", subject + " value"};
         model = new DefaultTableModel(rows, columns) {
             public boolean isCellEditable(int a, int b) {return false;}
@@ -95,9 +100,27 @@ public class HttpRuleTableHandler {
         }
     }
 
+    private Object[][] dataToRows(HttpPassthroughRuleSet data) {
+        if (data.getRules() == null || data.getRules().length < 1) {
+            return null;
+        } else {
+            Object[][] output = new Object[data.getRules().length][2];
+            for (int i = 0; i < data.getRules().length; i++) {
+                HttpPassthroughRule httpPassthroughRule = data.getRules()[i];
+                output[i][0] = httpPassthroughRule.getName();
+                if (httpPassthroughRule.isUsesCustomizedValue()) {
+                    output[i][1] = httpPassthroughRule.getCustomizeValue();
+                } else {
+                    output[i][1] = MAGIC_DEF_VALUE;
+                }
+            }
+            return output;
+        }
+    }
+
     private String[] dataToRow(HttpPassthroughRule data) {
         String val = data.getCustomizeValue();
-        if (!data.usesCustomizedValue()) {
+        if (!data.isUsesCustomizedValue()) {
             val = MAGIC_DEF_VALUE;
         }
         return new String[] {data.getName(), val};
@@ -116,9 +139,12 @@ public class HttpRuleTableHandler {
         return output;
     }
 
-
-    public void populateDate() {
-        // todo, receive data in a yet to be determined format
+    public HttpPassthroughRule[] getData() {
+        HttpPassthroughRule[] output = new HttpPassthroughRule[model.getRowCount()];
+        for (int i = 0; i < output.length; i++) {
+            output[i] = rowToData(i);
+        }
+        return output;
     }
 
     private void removeLines() {

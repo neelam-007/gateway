@@ -314,6 +314,10 @@ public class WspConstants {
         new BeanTypeMapping(StaticResourceInfo.class, "staticResourceInfo"),
         new BeanTypeMapping(SingleUrlResourceInfo.class, "singleUrlResourceInfo"),
         new BeanTypeMapping(MessageUrlResourceInfo.class, "messageUrlResourceInfo"),
+        new BeanTypeMapping(HttpPassthroughRule.class, "httpPassthroughRule"),
+        new ArrayTypeMapping(new HttpPassthroughRule[0], "httpPassthroughRules"),
+        new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
+
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,

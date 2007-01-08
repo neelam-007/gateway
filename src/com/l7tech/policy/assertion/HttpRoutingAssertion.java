@@ -38,6 +38,7 @@ public class HttpRoutingAssertion
     private boolean taiCredentialChaining = false;
     protected Integer connectionTimeout;
     protected Integer timeout;
+    protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{});
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -105,6 +106,15 @@ public class HttpRoutingAssertion
 
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
+    }
+
+
+    public HttpPassthroughRuleSet getResponseHeaderRules() {
+        return responseHeaderRules;
+    }
+
+    public void setResponseHeaderRules(HttpPassthroughRuleSet responseHeaderRules) {
+        this.responseHeaderRules = responseHeaderRules;
     }
 
     public boolean isCopyCookies() {

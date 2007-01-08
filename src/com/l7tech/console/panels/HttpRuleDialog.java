@@ -66,7 +66,7 @@ public class HttpRuleDialog extends JDialog {
 
         nameField.setText(data.getName());
         valueField.setText(data.getCustomizeValue());
-        if (data.usesCustomizedValue()) {
+        if (data.isUsesCustomizedValue()) {
             customRadio.setSelected(true);
         } else {
             originalRadio.setSelected(true);

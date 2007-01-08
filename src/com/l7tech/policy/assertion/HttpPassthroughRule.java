@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import java.io.Serializable;
+
 /**
  * A rule that determines if an http header or parameter should be forwarded, and if so,
  * which value should it have.
@@ -10,7 +12,7 @@ package com.l7tech.policy.assertion;
  * User: flascell<br/>
  * Date: Jan 5, 2007<br/>
  */
-public class HttpPassthroughRule {
+public class HttpPassthroughRule implements Serializable {
     public String getName() {
         return name;
     }
@@ -19,12 +21,12 @@ public class HttpPassthroughRule {
         this.name = name;
     }
 
-    public boolean usesCustomizedValue() {
-        return useCustomizedValue;
+    public boolean isUsesCustomizedValue() {
+        return usesCustomizedValue;
     }
 
-    public void setUsesCustomizedValue(boolean useCustomizedValue) {
-        this.useCustomizedValue = useCustomizedValue;
+    public void setUsesCustomizedValue(boolean usesCustomizedValue) {
+        this.usesCustomizedValue = usesCustomizedValue;
     }
 
     public String getCustomizeValue() {
@@ -36,6 +38,6 @@ public class HttpPassthroughRule {
     }
 
     private String name;
-    private boolean useCustomizedValue;
+    private boolean usesCustomizedValue;
     private String customizeValue;
 }
