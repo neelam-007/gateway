@@ -460,12 +460,26 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
     private boolean isValid(HttpConnectionInfo httpConnectionInfo, long atTime) {
         boolean valid = true;
 
-        if ((httpConnectionInfo.getAllocationTime()+bindingMaxAge<atTime) ||
+        if (!hasConnection(httpConnectionInfo.getHttpConnection()) ||
+            (httpConnectionInfo.getAllocationTime()+bindingMaxAge<atTime) ||
             (httpConnectionInfo.getLastUsageTime()+bindingTimeout<atTime)) {
             valid = false;
         }
 
         return valid;
+    }
+
+    private boolean hasConnection(HttpConnection httpConnection) {
+        boolean hasConnection = false;
+
+        if (httpConnection instanceof HttpConnectionWrapper) {
+            HttpConnectionWrapper httpConnectionWrapper = (HttpConnectionWrapper) httpConnection;
+            hasConnection = httpConnectionWrapper.hasConnection();
+        } else {
+            hasConnection = true;
+        }
+
+        return hasConnection;
     }
 
     private HttpConnection unwrapit(HttpConnection httpConnection) {

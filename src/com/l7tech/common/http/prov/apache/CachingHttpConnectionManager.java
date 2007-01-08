@@ -105,7 +105,7 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
                 connectionInfoFromCache.httpConnection.releaseConnection();
                 if (logger.isLoggable(Level.FINER))
                     logger.log(Level.FINER, "Releasing cached HttpConnection");
-            } else {
+            } else if (hasConnection(connectionInfoFromCache.httpConnection)) {
                 // create new connection info if usable
                 cachedConnectionInfo = new CachedConnectionInfo(connectionInfoFromCache);
                 if (logger.isLoggable(Level.FINER))
@@ -116,6 +116,25 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
         localConnection.set(cachedConnectionInfo);
 
         return cachedConnectionInfo;
+    }
+
+    /**
+     * Check if a wrapped connections underlying connection is still available.
+     *
+     * @param httpConnection The connection to check.
+     * @return true if available or not wrapped
+     */
+    private boolean hasConnection(HttpConnection httpConnection) {
+        boolean hasConnection = false;
+
+        if (httpConnection instanceof HttpConnectionWrapper) {
+            HttpConnectionWrapper httpConnectionWrapper = (HttpConnectionWrapper) httpConnection;
+            hasConnection = httpConnectionWrapper.hasConnection();
+        } else {
+            hasConnection = httpConnection.getHost()!=null;
+        }
+
+        return hasConnection;
     }
 
     /**
