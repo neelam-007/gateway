@@ -186,7 +186,6 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                     public void wizardCanceled(WizardEvent e) {}
                 });
                 w.pack();
-                w.setSize(820, 560);
                 Utilities.centerOnScreen(w);
                 DialogDisplayer.display(w, new Runnable() {
                     public void run() {
