@@ -22,8 +22,16 @@
                 </wsp:OneOrMore>
                 <L7p:FalseAssertion/>
                 <L7p:SslAssertion/>
-                <L7p:HttpRoutingAssertion/>
-                <L7p:BridgeRoutingAssertion/>
+                <L7p:HttpRoutingAssertion>
+                    <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                        <L7p:Rules httpPassthroughRules="included"/>
+                    </L7p:ResponseHeaderRules>
+                </L7p:HttpRoutingAssertion>
+                <L7p:BridgeRoutingAssertion>
+                    <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                        <L7p:Rules httpPassthroughRules="included"/>
+                    </L7p:ResponseHeaderRules>
+                </L7p:BridgeRoutingAssertion>
                 <L7p:JmsRoutingAssertion/>
                 <L7p:TrueAssertion/>
                 <L7p:MemberOfGroup/>
@@ -124,6 +132,9 @@
             <L7p:HttpRoutingAssertion>
                 <L7p:ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
                 <L7p:Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included"/>
+                </L7p:ResponseHeaderRules>
                 <L7p:Login stringValue="bob&amp;joe"/>
                 <L7p:Realm stringValue=""/>
                 <L7p:MaxConnections intValue="-5"/>

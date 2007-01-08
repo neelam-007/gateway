@@ -23,20 +23,14 @@ public class HttpRuleTableHandler {
     private static final String MAGIC_DEF_VALUE = "<original value>";
     private String subject;
     final private JTable table;
-    private JButton addButton;
-    private JButton removeButton;
     final DefaultTableModel model;
     private JDialog parentDlg;
-    private HttpPassthroughRuleSet data;
 
     public HttpRuleTableHandler(final String subject, final JTable table,
                                 final JButton addButton, final JButton removeButton,
                                 HttpPassthroughRuleSet data) {
         this.subject = subject;
         this.table = table;
-        this.addButton = addButton;
-        this.removeButton = removeButton;
-        this.data = data;
 
         table.setColumnSelectionAllowed(false);
         Object[][] rows = dataToRows(data);
