@@ -38,7 +38,13 @@ public class HttpRoutingAssertion
     private boolean taiCredentialChaining = false;
     protected Integer connectionTimeout;
     protected Integer timeout;
-    protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false, new HttpPassthroughRule[]{});
+    protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false,
+                                                            new HttpPassthroughRule[]{
+                                                             new HttpPassthroughRule("Set-Cookie", false, null)});
+    protected HttpPassthroughRuleSet requestHeaderRules = new HttpPassthroughRuleSet(false,
+                                                            new HttpPassthroughRule[]{
+                                                             new HttpPassthroughRule("Cookie", false, null)});
+    protected HttpPassthroughRuleSet requestParamRules = new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{});
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -115,6 +121,22 @@ public class HttpRoutingAssertion
 
     public void setResponseHeaderRules(HttpPassthroughRuleSet responseHeaderRules) {
         this.responseHeaderRules = responseHeaderRules;
+    }
+
+    public HttpPassthroughRuleSet getRequestHeaderRules() {
+        return requestHeaderRules;
+    }
+
+    public void setRequestHeaderRules(HttpPassthroughRuleSet requestHeaderRules) {
+        this.requestHeaderRules = requestHeaderRules;
+    }
+
+    public HttpPassthroughRuleSet getRequestParamRules() {
+        return requestParamRules;
+    }
+
+    public void setRequestParamRules(HttpPassthroughRuleSet requestParamRules) {
+        this.requestParamRules = requestParamRules;
     }
 
     public boolean isCopyCookies() {

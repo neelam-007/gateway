@@ -13,6 +13,17 @@ import java.io.Serializable;
  * Date: Jan 5, 2007<br/>
  */
 public class HttpPassthroughRule implements Serializable {
+
+
+    public HttpPassthroughRule() {
+    }
+
+    public HttpPassthroughRule(String name, boolean usesCustomizedValue, String customizeValue) {
+        this.name = name;
+        this.usesCustomizedValue = usesCustomizedValue;
+        this.customizeValue = customizeValue;
+    }
+
     public String getName() {
         return name;
     }

@@ -42,6 +42,8 @@ import java.util.logging.Logger;
 public class HttpRoutingAssertionDialog extends JDialog {
     private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
     private HttpRuleTableHandler responseHttpRulesTableHandler;
+    private HttpRuleTableHandler requestHttpRulesTableHandler;
+    private HttpRuleTableHandler requestParamsRulesTableHandler;
 
     private final EventListenerList listenerList = new EventListenerList();
     private final PublishedService service;
@@ -54,7 +56,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private UrlPanel urlPanel;
     private JButton defaultUrlButton;
     private IpListPanel ipListPanel;
-    private JCheckBox cookiePropagationCheckBox;
+    //private JCheckBox cookiePropagationCheckBox;
 
     private JRadioButton authNoneRadio;
     private JRadioButton authPasswordRadio;
@@ -80,6 +82,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JTable resHeadersTable;
     private JButton resHeadersAdd;
     private JButton resHeadersDelete;
+    private JRadioButton reqHeadersAll;
+    private JRadioButton reqHeadersCustomize;
+    private JTable reqHeadersTable;
+    private JRadioButton reqParamsAll;
+    private JRadioButton reqParamsCustomize;
+    private JTable reqParamsTable;
+    private JButton reqHeadersAdd;
+    private JButton reqHeadersRemove;
+    private JButton reqParamsAdd;
+    private JButton reqParamsRemove;
 
     private final SecureAction okButtonAction;
 
@@ -261,13 +273,60 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private void initializeHttpRulesTabs() {
 
         // init req rules stuff
-        //todo
+        ActionListener tablestate = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (reqHeadersCustomize.isSelected()) {
+                    reqHeadersTable.setEnabled(true);
+                    reqHeadersAdd.setEnabled(true);
+                    reqHeadersRemove.setEnabled(true);
+                } else {
+                    reqHeadersTable.setEnabled(false);
+                    reqHeadersAdd.setEnabled(false);
+                    reqHeadersRemove.setEnabled(false);
+                }
+            }
+        };
+        reqHeadersAll.addActionListener(tablestate);
+        reqHeadersCustomize.addActionListener(tablestate);
+        requestHttpRulesTableHandler = new HttpRuleTableHandler("Header", reqHeadersTable,
+                                                                 reqHeadersAdd, reqHeadersRemove,
+                                                                 assertion.getRequestHeaderRules());
+        if (assertion.getRequestHeaderRules().isForwardAll()) {
+            reqHeadersAll.setSelected(true);
+            reqHeadersAdd.setEnabled(false);
+            reqHeadersRemove.setEnabled(false);
+        } else {
+            reqHeadersCustomize.setSelected(true);
+        }
+
+        tablestate = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (reqParamsCustomize.isSelected()) {
+                    reqParamsTable.setEnabled(true);
+                    reqParamsAdd.setEnabled(true);
+                    reqParamsRemove.setEnabled(true);
+                } else {
+                    reqParamsTable.setEnabled(false);
+                    reqParamsAdd.setEnabled(false);
+                    reqParamsRemove.setEnabled(false);
+                }
+            }
+        };
+        reqParamsAll.addActionListener(tablestate);
+        reqParamsCustomize.addActionListener(tablestate);
+        requestParamsRulesTableHandler = new HttpRuleTableHandler("Parameter", reqParamsTable,
+                                                                 reqParamsAdd, reqParamsRemove,
+                                                                 assertion.getRequestParamRules());
+        if (assertion.getRequestParamRules().isForwardAll()) {
+            reqParamsAll.setSelected(true);
+            reqParamsAdd.setEnabled(false);
+            reqParamsRemove.setEnabled(false);
+        } else {
+            reqParamsCustomize.setSelected(true);
+        }
 
         // init the response stuff
-        ButtonGroup tmpbtgroup = new ButtonGroup();
-        tmpbtgroup.add(resHeadersAll);
-        tmpbtgroup.add(resHeadersCustomize);
-        ActionListener tablestate = new ActionListener() {
+        tablestate = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (resHeadersCustomize.isSelected()) {
                     resHeadersTable.setEnabled(true);
@@ -370,10 +429,17 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 assertion.setXmlSecurityActorToPromote(null);
             }
 
-            assertion.setCopyCookies(cookiePropagationCheckBox.isSelected());
+            // todo, address the fact that this is no longer controlled by this checkbox
+            // assertion.setCopyCookies(cookiePropagationCheckBox.isSelected());
 
             assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
             assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());
+
+            assertion.getRequestHeaderRules().setRules(requestHttpRulesTableHandler.getData());
+            assertion.getRequestHeaderRules().setForwardAll(reqHeadersAll.isSelected());
+
+            assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
+            assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
 
             fireEventAssertionChanged(assertion);
 
@@ -448,7 +514,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             wssPromoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
         }
 
-        cookiePropagationCheckBox.setSelected(assertion.isCopyCookies());
+        // address the fact that this is no longer controlled by this assertion
+        // cookiePropagationCheckBox.setSelected(assertion.isCopyCookies());
     }
 
     /**

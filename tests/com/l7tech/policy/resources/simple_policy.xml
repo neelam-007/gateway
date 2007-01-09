@@ -23,13 +23,43 @@
                 <L7p:FalseAssertion/>
                 <L7p:SslAssertion/>
                 <L7p:HttpRoutingAssertion>
-                    <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                        <L7p:Rules httpPassthroughRules="included">
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="Cookie"/>
+                            </L7p:item>
+                        </L7p:Rules>
+                    </L7p:RequestHeaderRules>
+                    <L7p:RequestParamRules httpPassthroughRuleSet="included">
                         <L7p:Rules httpPassthroughRules="included"/>
+                        <L7p:ForwardAll booleanValue="true"/>
+                    </L7p:RequestParamRules>
+                    <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                        <L7p:Rules httpPassthroughRules="included">
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="Set-Cookie"/>
+                            </L7p:item>
+                        </L7p:Rules>
                     </L7p:ResponseHeaderRules>
                 </L7p:HttpRoutingAssertion>
                 <L7p:BridgeRoutingAssertion>
-                    <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                        <L7p:Rules httpPassthroughRules="included">
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="Cookie"/>
+                            </L7p:item>
+                        </L7p:Rules>
+                    </L7p:RequestHeaderRules>
+                    <L7p:RequestParamRules httpPassthroughRuleSet="included">
                         <L7p:Rules httpPassthroughRules="included"/>
+                        <L7p:ForwardAll booleanValue="true"/>
+                    </L7p:RequestParamRules>
+                    <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                        <L7p:Rules httpPassthroughRules="included">
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="Set-Cookie"/>
+                            </L7p:item>
+                        </L7p:Rules>
                     </L7p:ResponseHeaderRules>
                 </L7p:BridgeRoutingAssertion>
                 <L7p:JmsRoutingAssertion/>
@@ -132,8 +162,23 @@
             <L7p:HttpRoutingAssertion>
                 <L7p:ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
                 <L7p:Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
-                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Cookie"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:RequestHeaderRules>
+                <L7p:RequestParamRules httpPassthroughRuleSet="included">
                     <L7p:Rules httpPassthroughRules="included"/>
+                    <L7p:ForwardAll booleanValue="true"/>
+                </L7p:RequestParamRules>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Set-Cookie"/>
+                        </L7p:item>
+                    </L7p:Rules>
                 </L7p:ResponseHeaderRules>
                 <L7p:Login stringValue="bob&amp;joe"/>
                 <L7p:Realm stringValue=""/>
