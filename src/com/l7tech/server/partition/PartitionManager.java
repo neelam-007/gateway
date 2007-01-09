@@ -273,6 +273,8 @@ public class PartitionManager {
                                 f.createNewFile();
                         }
                     }
+                    String s = defaultPartitionDir.getAbsolutePath() + "/var/attachments";
+                    pa.setLinuxFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
                     PartitionActions.fixKeystorePaths(defaultPartitionDir);
                     PartitionActions.doFirewallConfig(new PartitionInformation(PartitionInformation.DEFAULT_PARTITION_NAME));
                 } catch (IOException e) {

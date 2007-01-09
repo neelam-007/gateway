@@ -4,13 +4,15 @@
 
 package com.l7tech.server;
 
+import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterPropertyCache;
+import com.l7tech.cluster.ClusterPropertyListener;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -22,12 +24,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
-import com.l7tech.cluster.ClusterProperty;
-import com.l7tech.cluster.ClusterPropertyCache;
-import com.l7tech.cluster.ClusterPropertyListener;
 
 /**
  * @author alex
@@ -541,7 +537,7 @@ public class ServerConfig implements ClusterPropertyListener {
 
         File attachmentsDir = new File(attachmentsPath);
         if (!attachmentsDir.exists())
-            attachmentsDir.mkdir();
+            attachmentsDir.mkdirs();
 
         if (!attachmentsDir.exists()) {
             String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + attachmentsPath +

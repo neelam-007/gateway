@@ -94,6 +94,7 @@ public class PartitionActions {
         }
         copyTemplateFiles(newPartitionDir);
         setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath()}, "775", newPartitionDir, osFunctions);
+        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/attachments"}, "775", newPartitionDir, osFunctions);
         return newPartitionDir;
     }
 
@@ -112,7 +113,7 @@ public class PartitionActions {
 
     public static void copyFilesInDirectory(File sourceDirectory, File destination) throws IOException {
         File[] templateFiles = sourceDirectory.listFiles();
-        if (templateFiles != null) {
+        if (templateFiles != null && templateFiles.length > 0) {
             for (File currentFile : templateFiles) {
                 if (currentFile.isDirectory()) {
                     File destinationDir = new File(destination, currentFile.getName());
