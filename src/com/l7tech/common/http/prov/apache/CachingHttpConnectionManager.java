@@ -105,12 +105,13 @@ public class CachingHttpConnectionManager extends StaleCheckingHttpConnectionMan
                 connectionInfoFromCache.httpConnection.releaseConnection();
                 if (logger.isLoggable(Level.FINER))
                     logger.log(Level.FINER, "Releasing cached HttpConnection");
-            } else {
+            } else if (connectionInfoFromCache.httpConnection.isOpen()) {
                 // create new connection info if usable
                 cachedConnectionInfo = new CachedConnectionInfo(connectionInfoFromCache);
                 if (logger.isLoggable(Level.FINER))
                     logger.log(Level.FINER, "Using cached HttpConnection");
             }
+            // else already closed by another thread
         }
 
         localConnection.set(cachedConnectionInfo);

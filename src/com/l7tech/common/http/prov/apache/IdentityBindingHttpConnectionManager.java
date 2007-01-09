@@ -226,7 +226,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
                 if (!isValid(httpConnectionInfo, timeNow)) {
                     if (httpConnectionInfo.isInUse()) {
                         if(logger.isLoggable(Level.FINE)) {
-                            logger.fine("Not releasing in use connection.");
+                            logger.fine("Not releasing in use connection identity '"+identifier+"'.");
                         }
                     }
                     else {
