@@ -43,7 +43,9 @@ public class HttpRoutingAssertion
                                                              new HttpPassthroughRule("Set-Cookie", false, null)});
     protected HttpPassthroughRuleSet requestHeaderRules = new HttpPassthroughRuleSet(false,
                                                             new HttpPassthroughRule[]{
-                                                             new HttpPassthroughRule("Cookie", false, null)});
+                                                             new HttpPassthroughRule("Cookie", false, null),
+                                                             new HttpPassthroughRule("SOAPAction", false, null),
+                                                             new HttpPassthroughRule("Content-Type", false, null)});
     protected HttpPassthroughRuleSet requestParamRules = new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{});
 
     public HttpRoutingAssertion() {

@@ -28,6 +28,12 @@
                             <L7p:item httpPassthroughRule="included">
                                 <L7p:Name stringValue="Cookie"/>
                             </L7p:item>
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="SOAPAction"/>
+                            </L7p:item>
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="Content-Type"/>
+                            </L7p:item>
                         </L7p:Rules>
                     </L7p:RequestHeaderRules>
                     <L7p:RequestParamRules httpPassthroughRuleSet="included">
@@ -47,6 +53,12 @@
                         <L7p:Rules httpPassthroughRules="included">
                             <L7p:item httpPassthroughRule="included">
                                 <L7p:Name stringValue="Cookie"/>
+                            </L7p:item>
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="SOAPAction"/>
+                            </L7p:item>
+                            <L7p:item httpPassthroughRule="included">
+                                <L7p:Name stringValue="Content-Type"/>
                             </L7p:item>
                         </L7p:Rules>
                     </L7p:RequestHeaderRules>
@@ -166,6 +178,12 @@
                     <L7p:Rules httpPassthroughRules="included">
                         <L7p:item httpPassthroughRule="included">
                             <L7p:Name stringValue="Cookie"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="SOAPAction"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Content-Type"/>
                         </L7p:item>
                     </L7p:Rules>
                 </L7p:RequestHeaderRules>
