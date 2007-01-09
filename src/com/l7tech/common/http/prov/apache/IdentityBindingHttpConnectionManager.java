@@ -308,6 +308,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
      */
     private HttpConnection getBoundHttpConnection(Object identity, HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
         HttpConnection httpConnection = null;
+        HttpConnectionInfo hci = null;
 
         boolean gotLock = false;
         while (!gotLock) {
@@ -317,7 +318,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
                     throw new ConnectionPoolTimeoutException("Timeout acquiring lock.");
                 }
                 gotLock = true;
-                HttpConnectionInfo hci = (HttpConnectionInfo) connectionsById.get(identity);
+                hci = (HttpConnectionInfo) connectionsById.get(identity);
                 if (hci != null) {
                     if(isValid(hci)) {
                         httpConnection = hci.getHttpConnection();
@@ -351,7 +352,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
 
         if (httpConnection != null) {
             HostConfiguration connectionHostConfiguration = buildHostConfiguration(httpConnection);
-            if (!connectionHostConfiguration.equals(hostConfiguration)) {
+            if (hostConfiguration==null || !connectionHostConfiguration.equals(hostConfiguration)) {
                 // Then release the connection and fall back to getting a new one from the pool
                 HttpConnection connectionForClosing = httpConnection;
                 httpConnection = null;
@@ -362,6 +363,9 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
 
                 connectionForClosing.close(); // Close it since the connection must not be reused
                 releaseConnection(connectionForClosing);
+                 if (hci != null) {
+                     hci.dispose();
+                 }
             }
             else {
                 if (logger.isLoggable(Level.FINE)) {
@@ -447,6 +451,9 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
             newInfo = null;
         }
         else if (newInfo == null || !newInfo.getId().equals(identity)) {
+            if (newInfo != null) {
+                getBoundHttpConnection(newInfo.getId(), null); // ensure any currently bound connection is closed.
+            }
             newInfo = new ThreadLocalInfo(identity);
         }
         info.set(newInfo);
@@ -460,26 +467,12 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
     private boolean isValid(HttpConnectionInfo httpConnectionInfo, long atTime) {
         boolean valid = true;
 
-        if (!hasConnection(httpConnectionInfo.getHttpConnection()) ||
-            (httpConnectionInfo.getAllocationTime()+bindingMaxAge<atTime) ||
+        if ((httpConnectionInfo.getAllocationTime()+bindingMaxAge<atTime) ||
             (httpConnectionInfo.getLastUsageTime()+bindingTimeout<atTime)) {
             valid = false;
         }
 
         return valid;
-    }
-
-    private boolean hasConnection(HttpConnection httpConnection) {
-        boolean hasConnection = false;
-
-        if (httpConnection instanceof HttpConnectionWrapper) {
-            HttpConnectionWrapper httpConnectionWrapper = (HttpConnectionWrapper) httpConnection;
-            hasConnection = httpConnectionWrapper.hasConnection();
-        } else {
-            hasConnection = true;
-        }
-
-        return hasConnection;
     }
 
     private HttpConnection unwrapit(HttpConnection httpConnection) {
@@ -571,6 +564,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
                 disposeMe.close();
                 disposeMe.releaseConnection();
             }
+            this.inUse = false;
         }
     }
 
