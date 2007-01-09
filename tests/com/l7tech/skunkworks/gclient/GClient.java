@@ -67,7 +67,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        final JFrame frame = new JFrame("GClient v0.3");
+        final JFrame frame = new JFrame("GClient v0.4");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -667,7 +667,7 @@ public class GClient {
         client = new CommonsHttpClient(mhcm);
     }*/
     ThreadLocal clientLocal = new ThreadLocal();
-    private String[] doMessage(String soapAction, String targetUrl, String cookies, byte[] requestBytes) {
+    private String[] doMessage(String soapAction, String targetUrl, String cookies, final byte[] requestBytes) {
 
         GenericHttpClient client = (GenericHttpClient) clientLocal.get();
         if(client==null) {
@@ -714,10 +714,17 @@ public class GClient {
             }
 
             request = client.createRequest(GenericHttpClient.POST, params);
-            request.setInputStream(new ByteArrayInputStream(requestBytes));
-            if (params.getNtlmAuthentication() == null && params.getPasswordAuthentication() == null) {
-                params.setContentLength(new Long(requestBytes.length));
+            if (request instanceof RerunnableHttpRequest) {
+                RerunnableHttpRequest reRequest = (RerunnableHttpRequest) request;
+                reRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory(){
+                    public InputStream getInputStream() {
+                        return new ByteArrayInputStream(requestBytes);
+                    }
+                });
+            } else {
+                request.setInputStream(new ByteArrayInputStream(requestBytes));
             }
+            params.setContentLength(new Long(requestBytes.length));
             response = request.getResponse();
             statusLabel.setText(Integer.toString(response.getStatus()));
             final Long clen = response.getContentLength();
