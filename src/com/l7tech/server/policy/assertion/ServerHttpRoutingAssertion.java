@@ -36,10 +36,7 @@ import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +64,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final FailoverStrategy failoverStrategy;
     private final String[] varNames;
     private final int maxFailoverAttempts;
-    private final SSLContext sslContext;
+    private final SSLSocketFactory socketFactory;
     private final boolean urlUsesVariables;
     private final URL protectedServiceUrl;
 
@@ -95,13 +92,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         try {
-            sslContext = SSLContext.getInstance("SSL");
+            SSLContext sslContext = SSLContext.getInstance("SSL");
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("trustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
             sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
+            socketFactory = sslContext.getSocketFactory();
             senderVouchesSignerInfo = ku.getSslSignerInfo();
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
@@ -210,7 +208,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         Throwable thrown = null;
         try {
             GenericHttpRequestParams routedRequestParams = new GenericHttpRequestParams(url);
-            routedRequestParams.setSslSocketFactory(sslContext.getSocketFactory());
+            routedRequestParams.setSslSocketFactory(socketFactory);
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             handleProcessedSecurityHeader(context,
