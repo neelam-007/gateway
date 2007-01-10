@@ -4,6 +4,9 @@ import java.io.Serializable;
 
 /**
  * Set of rules for forwarding or backwarding http headers or parameters.
+ * There can be multiple rules for the same name. Because you can have multiple
+ * headers with the same name, you could forward all originals and a custom value
+ * for the same name for example.
  * <p/>
  * <p/>
  * <br/><br/>
@@ -12,6 +15,12 @@ import java.io.Serializable;
  * Date: Jan 8, 2007<br/>
  */
 public class HttpPassthroughRuleSet implements Serializable  {
+
+    public static final int ORIGINAL_PASSTHROUGH = 0;
+    public static final int CUSTOM_PASSTHROUGH = 1;
+    public static final int CUSTOM_AND_ORIGINAL_PASSTHROUGH = 2;
+    public static final int BLOCK = 3;
+
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;
 
@@ -67,5 +76,37 @@ public class HttpPassthroughRuleSet implements Serializable  {
                 rules = tmp;
             }
         }
+    }
+
+    /**
+     * Query the rule of a header/parameter based on its name.
+     *
+     * @param name the name of the header/parameter
+     * @return one of ORIGINAL_PASSTHROUGH, CUSTOM_PASSTHROUGH, CUSTOM_AND_ORIGINAL_PASSTHROUGH or BLOCK
+     */
+    public int ruleForName(String name) {
+        if (forwardAll) {
+            return ORIGINAL_PASSTHROUGH;
+        }
+        if (rules != null) {
+            boolean custom = false;
+            boolean original = false;
+            for (int i = 0; i < rules.length; i++) {
+                if (rules[i].getName().compareToIgnoreCase(name) == 0) {
+                    if (rules[i].isUsesCustomizedValue()) custom = true;
+                    else original = true;
+                }
+            }
+            if (custom && original) {
+                return CUSTOM_AND_ORIGINAL_PASSTHROUGH;
+            } else if (custom) {
+                return CUSTOM_PASSTHROUGH;
+            } else if (original) {
+                return ORIGINAL_PASSTHROUGH;
+            } else {
+                return BLOCK;
+            }
+        }
+        return BLOCK;
     }
 }

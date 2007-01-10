@@ -299,9 +299,8 @@ public class PolicyProcessingTest extends TestCase {
 
         Result result2 = processMessage("/httproutenocookie", requestMessage1, 0);
 
-        // todo fla, re-enable this once fixed
-        // assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-        // assertFalse("Outbound response cookie present", cookieExists(result2.context.getCookies(),"cookie", "outvalue"));
+        assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
+        assertFalse("Outbound response cookie present", cookieExists(result2.context.getCookies(),"cookie", "outvalue"));
     }
 
     /**

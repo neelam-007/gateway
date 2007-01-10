@@ -23,10 +23,7 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
@@ -408,8 +405,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
 
-            // if (data.isCopyCookies()) important fla todo, replace this check with the proper http rules check
+            // todo fla, enforce ALL headers and parameter rules
+            int cookieRule = data.getRequestHeaderRules().ruleForName("cookie");
+            if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
+                cookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                 copyCookiesOutbound(routedRequestParams, context, url.getHost());
+            }
 
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
                                                                  getMaxConnectionsPerHost(),
@@ -469,8 +470,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (httpResponseKnob != null)
                 httpResponseKnob.setStatus(status);
 
-            // if (data.isCopyCookies()) important fla todo, replace this check with the proper http rules check
+            // todo fla, all header and parameter rules should be enforced
+            int setcookieRule = data.getRequestHeaderRules().ruleForName("set-cookie");
+            if (setcookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
+                setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                 copyCookiesInbound(routedRequestParams, routedResponse, context);
+            }
 
             if (data.isPassthroughHttpAuthentication()) {
                 boolean passed = false;
