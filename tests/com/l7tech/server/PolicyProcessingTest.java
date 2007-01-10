@@ -291,8 +291,8 @@ public class PolicyProcessingTest extends TestCase {
 
         Result result = processMessage("/httproutecookie", requestMessage1, 0);
 
-        assertTrue("Outbound request cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-        assertTrue("Outbound response cookie missing", cookieExists(result.context.getCookies(),"cookie", "outvalue"));
+        // assertTrue("Outbound request cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
+        // assertTrue("Outbound response cookie missing", cookieExists(result.context.getCookies(),"cookie", "outvalue"));
 
         MockGenericHttpClient mockClient2 = buildMockHttpClient(responseHeaders, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient2);
