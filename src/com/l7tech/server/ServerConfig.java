@@ -79,6 +79,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
     public static final String PARAM_IO_BACK_HTTPS_HOST_CHECK = "ioHttpsHostVerify";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
+    public static final String PARAM_IO_STALE_MAX_HOSTS = "ioStaleCheckHosts";
 
     public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";
     public static final String PARAM_XSLT_CACHE_MAX_AGE = "xsltMaxCacheAge";

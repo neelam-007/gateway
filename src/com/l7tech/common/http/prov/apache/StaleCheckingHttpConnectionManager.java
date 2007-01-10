@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +36,7 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
      */
     public StaleCheckingHttpConnectionManager() {
         staleCleanupCountPerHost = DEFAULT_STALE_CLEANUP_COUNT;
+        staleCleanupMaxHosts = DEFAULT_MAX_HOSTS;
         seenHostConfigurations = new CopyOnWriteArraySet();
         cleanupTimer.schedule(new CleanupTimerTask(this), 5000, 5000);
     }
@@ -77,15 +80,57 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
     }
 
     /**
+     * Get the host count for stale checks.
+     *
+     * <p>This is the maximum number of host pools that are stale
+     * checked each period (every 5 seconds).</p>
+     *
+     * <p>If the number of hosts exceeds this number the oldest hosts are
+     * removed (FIFO).</p>
+     *
+     * <p>This can be used to ensure that sockets do not get left in a
+     * CLOSE_WAIT state when a pool is idle.</p>
+     *
+     * @return The count.
+     */
+    public int getMaxStaleCheckHosts() {
+        return staleCleanupMaxHosts;
+    }
+
+    /**
+     * Set the host count for stale checks.
+     *
+     * <p>The minimum permitted value is 0 the maximum is 1000.</p>
+     *
+     * <p>If the value given is out of range it is set to the nearest limit (and
+     * a warning is logged).</p>
+     *
+     * @param maxStaleCheckHosts The count to use.
+     */
+    public void setMaxStaleCheckHosts(int maxStaleCheckHosts) {
+        if(maxStaleCheckHosts < MIN_MAX_HOSTS) {
+            logger.warning("Invalid stale cleanup count '"+maxStaleCheckHosts+"' using '"+MIN_MAX_HOSTS+"'.");
+            maxStaleCheckHosts = MIN_MAX_HOSTS;
+        }
+        else if(maxStaleCheckHosts > MAX_MAX_HOSTS) {
+            logger.warning("Invalid stale cleanup count '"+maxStaleCheckHosts+"' using '"+MAX_MAX_HOSTS+"'.");
+            maxStaleCheckHosts = MAX_MAX_HOSTS;
+        }
+
+        this.staleCleanupMaxHosts = maxStaleCheckHosts;
+    }
+
+
+    /**
      *
      */
     public HttpConnection getConnection(HostConfiguration hostConfiguration) {
-        seenHostConfigurations.add(new HostConfiguration(hostConfiguration));
+        seenHostConfiguration(hostConfiguration);
         return super.getConnection(hostConfiguration);
     }
 
     public HttpConnection getConnectionWithTimeout(HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
-        seenHostConfigurations.add(new HostConfiguration(hostConfiguration));
+        seenHostConfiguration(hostConfiguration);
         return super.getConnectionWithTimeout(hostConfiguration, timeout);
     }
 
@@ -128,14 +173,41 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
     private static final int DEFAULT_STALE_CLEANUP_COUNT = 1;
     private static final int MIN_STALE_CLEANUP_COUNT = 0;
     private static final int MAX_STALE_CLEANUP_COUNT = 1000;
+    private static final int DEFAULT_MAX_HOSTS = 10;
+    private static final int MIN_MAX_HOSTS = 0;
+    private static final int MAX_MAX_HOSTS = 1000;
     private static final Timer cleanupTimer = new Timer("HttpConnectionManagerCleanupTimer", true);
 
     static {
         ShutdownExceptionHandler.addShutdownHandler(cleanupTimer);
     }
 
-    private Set seenHostConfigurations;
+    private Set seenHostConfigurations; // this set must have an insertion order iterator
     private int staleCleanupCountPerHost;
+    private int staleCleanupMaxHosts;
+
+    private void seenHostConfiguration(final HostConfiguration hostConfiguration) {
+        seenHostConfigurations.add(new HostConfiguration(hostConfiguration));
+
+        int seenHostsSize = seenHostConfigurations.size();
+        int maxHosts = staleCleanupMaxHosts;
+
+        if (seenHostsSize > maxHosts) {
+            // loggit
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, "Pruning host set, maximum is {0}.", Integer.valueOf(maxHosts));
+            }
+
+            // seenHostConfigurations must have insertion order iterator
+            List hostList = new ArrayList(seenHostConfigurations);
+
+            // recheck size with non-shared copy
+            if (hostList.size() > maxHosts) {
+                int removeCount = hostList.size() - maxHosts;
+                seenHostConfigurations.removeAll(hostList.subList(0, removeCount));
+            }
+        }
+    }
 
     /**
      *

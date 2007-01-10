@@ -123,6 +123,7 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
 
             connectionManager.setParams(params);
             connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
+            connectionManager.setMaxStaleCheckHosts(getStaleCheckHosts());
             this.connectionManager = connectionManager;
             httpConnectionManager = connectionManager;
         }
@@ -135,6 +136,13 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
      */
     private int getStaleCheckCount() {
         return getIntProperty(ServerConfig.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);
+    }
+
+    /**
+     * Get the stale check max host count (set using a cluster/system property)
+     */
+    private int getStaleCheckHosts() {
+        return getIntProperty(ServerConfig.PARAM_IO_STALE_MAX_HOSTS,0,1000,10);
     }
 
     /**
