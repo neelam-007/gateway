@@ -31,7 +31,6 @@ public class HttpRoutingAssertion
     protected String ntlmHost;
     protected String userAgent;
     protected int maxConnections;
-    protected boolean copyCookies;
     protected boolean passthroughHttpAuthentication;
     protected String[] customIpAddresses = null;
     protected String failoverStrategyName = "ordered";
@@ -89,7 +88,6 @@ public class HttpRoutingAssertion
         this.realm = realm;
         this.passthroughHttpAuthentication = false;
         this.maxConnections = maxConnections;
-        this.copyCookies = copyCookies;
     }
 
     public int getMaxConnections() {
@@ -139,14 +137,6 @@ public class HttpRoutingAssertion
 
     public void setRequestParamRules(HttpPassthroughRuleSet requestParamRules) {
         this.requestParamRules = requestParamRules;
-    }
-
-    public boolean isCopyCookies() {
-        return copyCookies;
-    }
-
-    public void setCopyCookies(boolean copyCookies) {
-        this.copyCookies = copyCookies;
     }
 
     public boolean isPassthroughHttpAuthentication() {
@@ -240,7 +230,6 @@ public class HttpRoutingAssertion
         this.setFailoverStrategyName(source.getFailoverStrategyName());
         this.setLogin(source.getLogin());
         this.setMaxConnections(source.getMaxConnections());
-        this.setCopyCookies(source.isCopyCookies());
         this.setPassword(source.getPassword());
         this.setProtectedServiceUrl(source.getProtectedServiceUrl());
         this.setPassthroughHttpAuthentication(source.isPassthroughHttpAuthentication());

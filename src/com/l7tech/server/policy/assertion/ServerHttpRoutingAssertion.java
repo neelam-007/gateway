@@ -408,7 +408,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
 
-            if (data.isCopyCookies())
+            // if (data.isCopyCookies()) important fla todo, replace this check with the proper http rules check
                 copyCookiesOutbound(routedRequestParams, context, url.getHost());
 
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
@@ -469,7 +469,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (httpResponseKnob != null)
                 httpResponseKnob.setStatus(status);
 
-            if (data.isCopyCookies())
+            // if (data.isCopyCookies()) important fla todo, replace this check with the proper http rules check
                 copyCookiesInbound(routedRequestParams, routedResponse, context);
 
             if (data.isPassthroughHttpAuthentication()) {

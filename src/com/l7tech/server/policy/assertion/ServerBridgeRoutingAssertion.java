@@ -61,7 +61,6 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -483,18 +482,20 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
             public HttpCookie[] getSessionCookies() {
-                Set cookies = data.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
+                // todo, fla important, dont forward cookies based on new http rules settings
+                Set cookies = /*data.isCopyCookies() ?*/ context.getCookies()/* : Collections.EMPTY_SET*/;
                 //noinspection unchecked
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
             }
 
             public void setSessionCookies(HttpCookie[] cookies) {
-                if(data.isCopyCookies()) {
+                // todo, fla important, dont forward cookies based on new http rules settings
+                // if(data.isCopyCookies()) {
                     //add or replace cookies
                     for (HttpCookie cookie : cookies) {
                         context.addCookie(cookie);
                     }
-                }
+                // }
             }
 
             public SimpleHttpClient getHttpClient() {

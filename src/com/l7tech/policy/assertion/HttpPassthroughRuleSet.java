@@ -42,4 +42,30 @@ public class HttpPassthroughRuleSet implements Serializable  {
     public void setRules(HttpPassthroughRule[] rules) {
         this.rules = rules;
     }
+
+    /**
+     * remove a customized header/parameter
+     * @param name the name of the header/parameter to remove
+     */
+    public void remove(String name) {
+        if (rules != null) {
+            int deleted = 0;
+            for (int i = 0; i < rules.length; i++) {
+                if (rules[i].getName().compareToIgnoreCase(name) == 0) {
+                    rules[i] = null;
+                    ++deleted;
+                }
+            }
+            if (deleted > 0) {
+                HttpPassthroughRule[] tmp = new HttpPassthroughRule[rules.length-deleted];
+                int j = 0;
+                for (int i = 0; i < tmp.length; i++) {
+                    while (rules[j] == null) j++;
+                    tmp[i] = rules[j];
+                    j++;
+                }
+                rules = tmp;
+            }
+        }
+    }
 }

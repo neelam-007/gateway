@@ -189,7 +189,11 @@ public class WspConstants {
         new AssertionMapping(new FalseAssertion(), "FalseAssertion"),
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
         new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
-        new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion"),
+        new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion") {
+            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                super.populateObject(object, source, new WspUpgradeUtilFrom365.HttpRoutingPropertyVisitor(visitor));
+            }
+        },
         new AssertionMapping(new HttpRoutingAssertion(), "RoutingAssertion"), // backwards compatibility with pre-3.0
         new AssertionMapping(new BridgeRoutingAssertion(), "BridgeRoutingAssertion"),
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
