@@ -6,7 +6,24 @@
             <L7p:HttpRoutingAssertion>
                 <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
                 <L7p:SamlAssertionVersion intValue="2"/>
-                <L7p:CopyCookies booleanValue="false"/>
+                <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="SOAPAction"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Content-Type"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:RequestHeaderRules>
+                <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included"/>
+                    <L7p:ForwardAll booleanValue="true"/>
+                </L7p:RequestParamRules>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                    </L7p:Rules>
+                </L7p:ResponseHeaderRules>
             </L7p:HttpRoutingAssertion>
         </wsp:All>
     </wsp:Policy>
