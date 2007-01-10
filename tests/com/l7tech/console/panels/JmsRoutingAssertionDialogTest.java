@@ -7,8 +7,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.common.ApplicationContexts;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.registry.RegistryStub;
 
 import javax.swing.*;
+
+import org.springframework.context.ApplicationContext;
 
 /**
  * Standalone GUI test harness for the JmsRoutingAssertionDialog.  Runs in stub mode.
@@ -27,6 +32,10 @@ public class JmsRoutingAssertionDialogTest {
     private static void realMain() throws Exception {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+        Registry.setDefault(new RegistryStub());
+
         final JFrame owner = new JFrame("main");
         owner.setVisible(true);
 

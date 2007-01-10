@@ -5,11 +5,13 @@ import com.l7tech.cluster.ClusterStatusAdminStub;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.rbac.RbacAdmin;
+import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.common.TestLicenseManager;
+import com.l7tech.common.VersionException;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ConsoleLicenseManager;
@@ -21,6 +23,16 @@ import com.l7tech.service.JmsAdminStub;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;
 import com.l7tech.service.ServiceManagerStub;
+import com.l7tech.objectmodel.*;
+
+import javax.security.auth.login.LoginException;
+import java.net.PasswordAuthentication;
+import java.rmi.RemoteException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Arrays;
+
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -30,6 +42,8 @@ import com.l7tech.service.ServiceManagerStub;
  * @version 1.0
  */
 public class RegistryStub extends Registry {
+    private Role role;
+
     /**
      * default constructor
      */
@@ -92,11 +106,65 @@ public class RegistryStub extends Registry {
     }
 
     public RbacAdmin getRbacAdmin() {
-        return null;
+        return new RbacAdmin() {
+            private final Role role = new Role();
+            {
+                role.setName("Stub role");
+                role.setOid(-777);
+                role.setDescription("Fake role for testing");
+            }
+
+            public Collection<Role> findAllRoles() throws FindException, RemoteException {
+                return Arrays.asList(role);
+            }
+
+            public Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException {
+                if (role.getOid() == oid) return role;
+                return null;
+            }
+
+            public Collection<Permission> findCurrentUserPermissions() throws FindException, RemoteException {
+                return Arrays.asList(
+                        new Permission(role, OperationType.CREATE, EntityType.ANY),
+                        new Permission(role, OperationType.READ, EntityType.ANY),
+                        new Permission(role, OperationType.UPDATE, EntityType.ANY),
+                        new Permission(role, OperationType.DELETE, EntityType.ANY),
+                        new Permission(role, OperationType.OTHER, EntityType.ANY)
+                );
+            }
+
+            public Collection<Role> findRolesForUser(User user) throws FindException, RemoteException {
+                return findAllRoles();
+            }
+
+            public long saveRole(Role role) throws SaveException, RemoteException {
+                throw new SaveException("Can't save roles in stub mode");
+            }
+
+            public void deleteRole(Role selectedRole) throws DeleteException, RemoteException {
+                throw new DeleteException("Can't delete roles in stub mode");
+            }
+
+            public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException, RemoteException {
+                return new EntityHeader[] {new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription())};
+            }
+        };
     }
 
     public SecurityProvider getSecurityProvider() {
-        return null; //todo: stub implementation!
+        return new SecurityProvider() {
+            public void login(PasswordAuthentication creds, String host, boolean validateHost) throws LoginException, VersionException, RemoteException {
+            }
+
+            public void login(String sessionId, String host) throws LoginException, VersionException, RemoteException {
+            }
+
+            public void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) throws LoginException, RemoteException {
+            }
+
+            public void logoff() {                
+            }
+        };
     }
 
     public SchemaAdmin getSchemaAdmin() {

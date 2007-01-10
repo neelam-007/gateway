@@ -217,11 +217,6 @@ public class CertPropertiesWindow extends JDialog {
                             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                                           resources.getString("save.error.title"),
                                                           JOptionPane.ERROR_MESSAGE);
-                        } catch (IOException e) {
-                            logger.warning(resources.getString("cert.decode.error"));
-                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                                          resources.getString("save.error.title"),
-                                                          JOptionPane.ERROR_MESSAGE);
                         } catch (AccessControlException ace) {
                             TopComponents.getInstance().showNoPrivilegesErrorMessage();
                         }
@@ -276,11 +271,6 @@ public class CertPropertiesWindow extends JDialog {
         try {
             cert = trustedCert.getCertificate();
         } catch (CertificateException e) {
-            logger.warning(resources.getString("cert.decode.error"));
-            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                          resources.getString("save.error.title"),
-                                          JOptionPane.ERROR_MESSAGE);
-        } catch (IOException e) {
             logger.warning(resources.getString("cert.decode.error"));
             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                           resources.getString("save.error.title"),

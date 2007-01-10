@@ -6,7 +6,13 @@
 
 package com.l7tech.console.panels;
 
+import org.springframework.context.ApplicationContext;
+
 import javax.swing.*;
+
+import com.l7tech.common.ApplicationContexts;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.registry.RegistryStub;
 
 /**
  * Standalone GUI test harness for the JmsEndpointsWindow.  Runs in stub mode.
@@ -25,6 +31,8 @@ public class JmsQueuesWindowTest {
     private static void realMain() throws Exception {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+        Registry.setDefault(new RegistryStub());
         final JFrame owner = new JFrame("main");
         owner.setVisible(true);
         JmsQueuesWindow w = JmsQueuesWindow.createInstance(owner);

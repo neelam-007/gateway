@@ -280,10 +280,6 @@ public class CertSearchPanel extends JDialog {
         } catch (CertificateException e) {
             logger.warning(resources.getString("cert.decode.error"));
             return false;
-
-        } catch (IOException e) {
-            logger.warning(resources.getString("cert.decode.error"));
-            return false;
         }
 
         String subjectName = CertUtils.extractCommonNameFromClientCertificate(cert);

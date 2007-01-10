@@ -28,16 +28,6 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
         this.policyXml = policyXml;
     }
 
-    /** @return the Base64-encoded hardcoded server certificate for this Bridge instance, or null if the server cert will be discovered automatically (only works with SSGs). */
-    public String getServerCertBase64() {
-        return serverCertBase64;
-    }
-
-    /** @param serverCertBase64 the Base64-encoded hardcoded server certificate for this Bridge instance, or null to attempt to use server cert discovery (only works with SSGs). */
-    public void setServerCertBase64(String serverCertBase64) {
-        this.serverCertBase64 = serverCertBase64;
-    }
-
     /** Configure this BRA using the settings from the specified BRA. */
     public void copyFrom(BridgeRoutingAssertion source) {
         super.copyFrom(source);
@@ -45,6 +35,24 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
 
     }
 
+    /**
+     * @return the OID of a certificate in the Trusted Certificates table that will be used as the server certificate for
+     *          both SSL and message-level crypto, or null if the BRA should attempt to discover the server cert
+     *          automatically (by sniffing from an SSL connection, after ensuring server cert is in the Trusted Certs table).
+     */
+    public Long getServerCertificateOid() {
+        return serverCertificateOid;
+    }
+
+    /**
+     * @param serverCertificateOid the OID of a certificate in the Trusted Certificates table that will be used as
+     *                             the server certificate for both SSL and message-level crypto, or null
+     *                             to attempt to discover the server cert automatically.
+     */
+    public void setServerCertificateOid(Long serverCertificateOid) {
+        this.serverCertificateOid = serverCertificateOid;
+    }
+
     protected String policyXml = null;
-    protected String serverCertBase64 = null;
+    protected Long serverCertificateOid = null;
 }

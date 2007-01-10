@@ -37,11 +37,12 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private JButton buttonHttpProperties;
     private JRadioButton rbServerCertAuto;
     private JRadioButton rbServerCertManual;
-    private JTextArea serverCertText;
 
     private final HttpRoutingAssertionDialog httpDialog;
     private final BridgeRoutingAssertion assertion;
     private JLabel xmlMessages;
+    private JButton serverCertChangeButton;
+    private JLabel serverCertLabel;
 
     public BridgeRoutingAssertionPropertiesDialog(Frame owner, BridgeRoutingAssertion a, PublishedService service) {
         super(owner, true);
@@ -97,8 +98,12 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         rbServerCertAuto.addActionListener(updateEnableStates);
         rbServerCertManual.addActionListener(updateEnableStates);
 
+        // TODO reenable when it is ready
+        rbServerCertManual.setEnabled(false);
+        serverCertChangeButton.setEnabled(false);
+        serverCertLabel.setText(" ");
+
         Utilities.enableGrayOnDisabled(policyXmlText);
-        Utilities.enableGrayOnDisabled(serverCertText);
 
         final Utilities.DefaultContextMenuFactory cmf =
                 new Utilities.DefaultContextMenuFactory() {
@@ -127,7 +132,6 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                     }
                 };
         policyXmlText.addMouseListener(Utilities.createContextMenuMouseListener(policyXmlText, cmf));
-        serverCertText.addMouseListener(Utilities.createContextMenuMouseListener(serverCertText));
 
         copyModelToView();
         updateEnableStates();
@@ -141,10 +145,10 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         rbPolicyManual.setSelected(policyXml != null);
         policyXmlText.setText(policyXml != null ? policyXml : "");
 
-        String serverCert = assertion.getServerCertBase64();
-        rbServerCertAuto.setSelected(serverCert == null);
-        rbServerCertManual.setSelected(serverCert != null);
-        serverCertText.setText(serverCert != null ? serverCert : "");
+        // TODO String serverCert = assertion.getServerCertBase64();
+        // TODO rbServerCertAuto.setSelected(serverCert == null);
+        // TODO rbServerCertManual.setSelected(serverCert != null);
+        // TODO serverCertText.setText(serverCert != null ? serverCert : "");
     }
 
     /** Update the policy assertion settings to reflect the GUI state. */
@@ -155,15 +159,14 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         else
             assertion.setPolicyXml(null);
 
-        if (rbServerCertManual.isSelected())
-            assertion.setServerCertBase64(serverCertText.getText());
-        else
-            assertion.setServerCertBase64(null);
+        // TODO if (rbServerCertManual.isSelected())
+// TODO             assertion.setServerCertBase64(serverCertText.getText());
+// TODO         else
+// TODO             assertion.setServerCertBase64(null);
     }
 
     private void updateEnableStates() {
         policyXmlText.setEnabled(rbPolicyManual.isSelected());
-        serverCertText.setEnabled(rbServerCertManual.isSelected());
     }
 
     public void addPolicyListener(PolicyListener listener) {

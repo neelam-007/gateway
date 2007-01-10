@@ -10,6 +10,7 @@ import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -146,9 +147,6 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
             }
         } catch (CertificateException e) {
             logger.warning("Invalid certificate: " + e.getMessage());
-
-        } catch (IOException e) {
-            logger.warning("IO Exception caught when decoding the certificate:" + e.getMessage());
         }
 
         return false;
@@ -203,9 +201,6 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
             cert = sortedData[row].getCertificate();
         } catch (CertificateException e) {
             logger.warning("Invalid certificate: " + e.getMessage());
-
-        } catch (IOException e) {
-            logger.warning("IO Exception caught when decoding the certificate:" + e.getMessage());
         }
 
         switch (col) {
@@ -271,10 +266,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                     try {
                         elementA = a.getCertificate().getIssuerDN().getName();
                         elementB = b.getCertificate().getIssuerDN().getName();
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     } catch (CertificateException e) {
-                        e.printStackTrace();
+                        logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
                     }
                     break;
 
@@ -282,10 +275,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                     try {
                         elementA = new Long(a.getCertificate().getNotAfter().getTime());
                         elementB = new Long(b.getCertificate().getNotAfter().getTime());
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     } catch (CertificateException e) {
-                        e.printStackTrace();
+                        logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
                     }
                     break;
 

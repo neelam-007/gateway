@@ -268,9 +268,7 @@ public class TrustedCertManagerImp
         try {
             exp = CertUtils.checkValidity(cert.getCertificate());
         } catch (CertificateException e) {
-            throw new CacheVeto("Certificate not valid", e);
-        } catch (IOException e) {
-            throw new CacheVeto("Certificate could not be decoded", e);
+            throw new CacheVeto("Certificate not valid or could not be decoded", e);
         }
         if (exp.getDays() <= CertificateExpiry.FINE_DAYS) logWillExpire(cert, exp);
     }

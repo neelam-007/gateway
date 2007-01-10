@@ -145,8 +145,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                             CertUtils.cachedVerify(subjectCertificate, certIssuerCert.getPublicKey());
                         } catch (CertificateException e) {
                             throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-                        } catch (IOException e) {
-                            throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
                         } catch (GeneralSecurityException e) {
                             throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
                         }

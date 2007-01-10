@@ -5,12 +5,13 @@ import com.l7tech.common.util.CertUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.security.cert.*;
 import java.security.NoSuchAlgorithmException;
-import java.io.*;
-import java.util.logging.Logger;
-import java.util.ResourceBundle;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /**
  * This class displays the details of the trusted certificates. Users can change
@@ -84,11 +85,6 @@ public class CertDetailsPanel extends WizardStepPanel {
                     } catch (CertificateException e) {
                         logger.warning(resources.getString("cert.decode.error"));
                         JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
-                    } catch (IOException e) {
-                       logger.warning(e.getMessage());
-                        JOptionPane.showMessageDialog(mainPanel, e.getMessage(),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
                     }

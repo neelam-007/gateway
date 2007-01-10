@@ -105,9 +105,6 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
-            return null;
         } catch (CertificateException e) {
             logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
             return null;
@@ -135,9 +132,6 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
-            return null;
         } catch (CertificateException e) {
             logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
             return null;

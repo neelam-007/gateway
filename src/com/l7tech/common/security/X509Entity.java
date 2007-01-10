@@ -9,7 +9,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 
 /**
  * Abstract superclass of entities that have certs, like {@link com.l7tech.server.identity.cert.CertEntryRow}
@@ -17,7 +16,6 @@ import java.util.logging.Logger;
  */
 public abstract class X509Entity extends NamedEntityImp {
     protected transient X509Certificate cachedCert;
-    private static final Logger logger = Logger.getLogger(X509Entity.class.getName());
     protected String certBase64;
     protected String thumbprintSha1;
     protected String ski;
@@ -26,9 +24,8 @@ public abstract class X509Entity extends NamedEntityImp {
      * Gets the {@link java.security.cert.X509Certificate} based on the saved {@link #certBase64}
      * @return an {@link java.security.cert.X509Certificate}
      * @throws java.security.cert.CertificateException if the certificate cannot be deserialized
-     * @throws java.io.IOException
      */
-    public synchronized X509Certificate getCertificate() throws CertificateException, IOException {
+    public synchronized X509Certificate getCertificate() throws CertificateException {
         if ( cachedCert == null ) {
             if (certBase64 == null) return null;
             // note fla: this class is called by hibernate which does not know how to handle the thrown exceptions
@@ -38,8 +35,9 @@ public abstract class X509Entity extends NamedEntityImp {
             try {
                 cachedCert = CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
             } catch (CertificateException e) {
-                logger.warning("Following cert cannot be decoded and may be corrupted: " + certBase64);
-                throw e;
+                throw new CertificateException("Following cert cannot be decoded and may be corrupted (bad ASN.1): " + certBase64, e);
+            } catch (IOException e) {
+                throw new CertificateException("Following cert cannot be decoded and may be corrupted (bad Base64): " + certBase64, e);
             }
         }
         return cachedCert;
@@ -63,10 +61,9 @@ public abstract class X509Entity extends NamedEntityImp {
      * @return the SHA-1 thumbprint of the certificate (base64-encoded), or null if there is no cert.
      * @see #getCertificate()
      * @see #getCertBase64()
-     * @throws java.io.IOException
-     * @throws java.security.cert.CertificateException
+     * @throws CertificateException if the certificate cannot be deserialized
      */
-    public String getThumbprintSha1() throws IOException, CertificateException {
+    public String getThumbprintSha1() throws CertificateException {
         if (thumbprintSha1 == null) {
             X509Certificate cert = getCertificate();
             if (cert == null) return null;
@@ -82,10 +79,9 @@ public abstract class X509Entity extends NamedEntityImp {
     /**
      * @return the SKI of the certificate (base64-encoded), or null either if there is no cert,
      * or the cert has no SKI
-     * @throws IOException
-     * @throws CertificateException
+     * @throws CertificateException if the certificate cannot be deserialized
      */
-    public String getSki() throws IOException, CertificateException {
+    public String getSki() throws CertificateException {
         if (ski == null) {
             X509Certificate cert = getCertificate();
             if (cert == null) return null;
@@ -95,7 +91,7 @@ public abstract class X509Entity extends NamedEntityImp {
     }
 
     /**
-     * @param ski
+     * @param ski  the Subject Key Identifier to set.
      * @deprecated for use only by serialization & persistence layers
      */
     public void setSki(String ski) {
@@ -127,6 +123,7 @@ public abstract class X509Entity extends NamedEntityImp {
         this.cachedCert = null;
     }
 
+    /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

@@ -62,11 +62,6 @@ public class JmsQueuesWindow extends JDialog {
         else
             throw new IllegalArgumentException("Owner must be derived from either Frame or Window");
 
-        final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
-        if (provider == null) {
-            throw new IllegalStateException("Could not instantiate security provider");
-        }
-
         Container p = that.getContentPane();
         p.setLayout(new GridBagLayout());
 

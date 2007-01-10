@@ -20,6 +20,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
+import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CausedIllegalStateException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -41,6 +42,8 @@ import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
+import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.objectmodel.FindException;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -85,6 +88,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         super(assertion, ctx, logger);
 
         hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
+        trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
         final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         try {
             signerInfo = ku.getSslSignerInfo();
@@ -98,13 +102,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             url = getUrl();
             hardcodedPolicy = getHardCodedPolicy();
 
-            String serverCertBase64 = assertion.getServerCertBase64();
-            if (serverCertBase64 != null) {
-                serverCertBase64 = serverCertBase64.replaceAll("----+\\s*BEGIN (TRUSTED )?CERTIFICATE----+\\s*", "");
-                serverCertBase64 = serverCertBase64.replaceAll("----+\\s*END (TRUSTED )?CERTIFICATE----+\\s*", "");
-                byte[] serverCertBytes = HexUtils.decodeBase64(serverCertBase64, true);
-                serverCert = CertUtils.decodeCert(serverCertBytes);
-            }
         } catch(Exception ise) {
             logger.log(Level.WARNING, ise.getMessage(), ise.getCause());
             ssg = null;
@@ -141,6 +138,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         ssg.setUseSslByDefault(true); // TODO make this fully configurable
 
         messageProcessor = new MessageProcessor();
+    }
+
+    private X509Certificate findCert(long oid) throws FindException, IOException, CertificateException {
+        TrustedCert tc = trustedCertManager.findByPrimaryKey(oid);
+        if (tc == null)
+            return null;
+        return tc.getCertificate();
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException {
@@ -304,6 +308,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private final Ssg ssg;
     private final MessageProcessor messageProcessor;
     private final HostnameVerifier hostnameVerifier;
+    private final TrustedCertManager trustedCertManager;
     private X509Certificate serverCert;
     private final boolean useClientCert;
 
@@ -468,8 +473,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         URL url;
         String psurl = data.getProtectedServiceUrl();
         if (psurl == null) {
-            URL wsdlUrl = service.serviceUrl();
-            url = wsdlUrl;
+            url = service.serviceUrl();
         } else {
             url = new URL(psurl);
         }
@@ -480,14 +484,14 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
             public HttpCookie[] getSessionCookies() {
                 Set cookies = data.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
+                //noinspection unchecked
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
             }
 
             public void setSessionCookies(HttpCookie[] cookies) {
                 if(data.isCopyCookies()) {
                     //add or replace cookies
-                    for (int i = 0; i < cookies.length; i++) {
-                        HttpCookie cookie = cookies[i];
+                    for (HttpCookie cookie : cookies) {
                         context.addCookie(cookie);
                     }
                 }
@@ -499,7 +503,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         };
     }
 
-    /**
+    /*
      * Create an extended SimpleHttpClient that supports re-routing
      *
      * NOTE: this is NOT compatible with a non-sticky failover client.
@@ -522,11 +526,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     public void close() {
                     }
 
-                    /**
+                    /*
                      * Get the response, re-routing if directed to do so by a listener.
-                     *
-                     * @return
-                     * @throws GenericHttpException
                      */
                     public GenericHttpResponse getResponse() throws GenericHttpException {
                         getInputStreamFactory(); // init isf
@@ -683,15 +684,22 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         }
 
         public void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException {
-            if (data.getServerCertBase64() == null) {
+            Long loid = data.getServerCertificateOid();
+            if (loid == null) {
+                // Attempt normal cert discovery
                 super.installSsgServerCertificate(ssg, credentials);
                 return;
             }
 
-            if (serverCert == null)
-                throw new CertificateException("Hardcoded server cert was not trusted by the Bridge Routing Assertion"); // shouldn't be possible
-
-            saveSsgCertificate(serverCert);
+            // Attempt database lookup of OID
+            try {
+                X509Certificate cert = findCert(loid);
+                if (cert == null)
+                    throw new OperationCanceledException("The configured server certificate OID was not found in the trusted certificates table: " + loid);
+                saveSsgCertificate(cert);
+            } catch (FindException e) {
+                throw new KeyStoreException("Unable to access trusted certificates table", e);
+            }
         }
     }
 }

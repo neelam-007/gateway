@@ -83,11 +83,6 @@ public class CertUsagePanel extends WizardStepPanel {
             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
-        } catch (IOException e) {
-            logger.warning(resources.getString("cert.decode.error"));
-            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
         }
     }
 
