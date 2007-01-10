@@ -493,10 +493,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 //noinspection unchecked
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
             }
-
             public void setSessionCookies(HttpCookie[] cookies) {
                 // todo, fla, we need to handle all response http header rules, not just cookies
-                int setcookieRule = data.getRequestHeaderRules().ruleForName("set-cookie");
+                int setcookieRule = data.getResponseHeaderRules().ruleForName("set-cookie");
                 if (setcookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                     setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                     //add or replace cookies

@@ -469,7 +469,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 httpResponseKnob.setStatus(status);
 
             // todo fla, all header and parameter rules should be enforced
-            int setcookieRule = data.getRequestHeaderRules().ruleForName("set-cookie");
+            int setcookieRule = data.getResponseHeaderRules().ruleForName("set-cookie");
             if (setcookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                 setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                 copyCookiesInbound(routedRequestParams, routedResponse, context);
