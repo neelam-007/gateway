@@ -167,21 +167,21 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         float currentVersionFloat = 0.0f;
         try {
             currentVersionFloat = Float.parseFloat(currentVersion);
-            if (currentVersionFloat >= 3.6f) {
-                dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
-                dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
-                dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
-            }
         } catch (NumberFormatException ex) {
             //version string is something other than a normal number ... try just the major and minor instead
             String s = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
-
             try {
                 currentVersionFloat = Float.parseFloat(s);
             } catch (NumberFormatException e) {
                 logger.warning("Couldn't determine build version so database configuration package upgrade could not proceed.");
                 throw e;
             }
+        }
+
+        if (currentVersionFloat >= 3.6f) {
+            dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
+            dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
+            dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
         }
     }
 
