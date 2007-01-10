@@ -267,7 +267,7 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
 
         List<String> allowedEntries = new ArrayList<String>();
 
-        for (int i = 0; i < index; i++) {
+        for (int i = 1; i < index; i++) {
             allowedEntries.add(String.valueOf(i));
         }
 
