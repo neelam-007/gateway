@@ -15,6 +15,9 @@ import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -32,6 +35,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -151,7 +155,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
                 XMLEditor editor = uiAccessibility.getEditor();
                 try {
-                    editor.setText(XmlUtil.nodeToFormattedString(XmlUtil.parse(new StringReader(xsl), false)));
+                    editor.setText(XmlUtil.nodeToString(XmlUtil.parse(new StringReader(xsl), false)));
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Couldn't parse initial XSLT", e);
                     editor.setText(xsl);
@@ -201,15 +205,27 @@ public class XslTransformationSpecifyPanel extends JPanel {
             return;
         }
 
-        FileInputStream fis = null;
+        ByteOrderMarkInputStream bomis = null;
         String filename = dlg.getSelectedFile().getAbsolutePath();
         try {
-            fis = new FileInputStream(dlg.getSelectedFile());
+            String encoding;
+            try {
+                bomis = new ByteOrderMarkInputStream(new FileInputStream(dlg.getSelectedFile()));
+                encoding = bomis.getEncoding();
+            } catch (FileNotFoundException e) {
+                log.log(Level.FINE, "cannot open file" + filename, e);
+                return;
+            } catch (IOException e) {
+                log.log(Level.FINE, "cannot parse" + filename, e);
+                return;
+            }
 
             // try to get document
             Document doc;
+            byte[] bytes;
             try {
-                doc = XmlUtil.parse(fis);
+                bytes = HexUtils.slurpStreamLocalBuffer(bomis);
+                doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
             } catch (SAXException e) {
                 xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
                 log.log(Level.FINE, "cannot parse " + filename, e);
@@ -226,7 +242,12 @@ public class XslTransformationSpecifyPanel extends JPanel {
                 // set the new xslt
                 String printedxml;
                 try {
-                    printedxml = XmlUtil.nodeToFormattedString(doc);
+                    if (encoding == null) {
+                        log.log(Level.FINE, "Unable to detect character encoding for " + filename + "; will use platform default encoding");
+                        printedxml = new String(bytes);
+                    } else {
+                        printedxml = new String(bytes, encoding);
+                    }
                 } catch (IOException e) {
                     String msg = "error serializing document";
                     xslDialog.displayError(msg, null);
@@ -238,28 +259,39 @@ public class XslTransformationSpecifyPanel extends JPanel {
             } catch (SAXException e) {
                 xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + filename + ": " + ExceptionUtils.getMessage(e), null);
             }
-        } catch (FileNotFoundException e) {
-            log.log(Level.FINE, "cannot open file" + filename, e);
         } finally {
-            ResourceUtils.closeQuietly(fis);
+            ResourceUtils.closeQuietly(bomis);
         }
     }
 
     private void readFromUrl(String urlstr) {
         // try to get document
-        InputStream is;
+        byte[] bytes;
+        String encoding;
+        ByteOrderMarkInputStream bomis = null;
+        InputStream httpStream = null;
         try {
-            is = new URL(urlstr).openStream();
+            URLConnection conn = new URL(urlstr).openConnection();
+            String ctype = conn.getContentType();
+            encoding = ctype == null ? null : ContentTypeHeader.parseValue(ctype).getEncoding();
+            httpStream = conn.getInputStream();
+            bytes = HexUtils.slurpStreamLocalBuffer(httpStream);
+            bomis = new ByteOrderMarkInputStream(new ByteArrayInputStream(bytes));
+            if (encoding == null) encoding = bomis.getEncoding();
         } catch (AccessControlException ace) {
             TopComponents.getInstance().showNoPrivilegesErrorMessage();
             return;
         } catch (IOException e) {
             xslDialog.displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
             return;
+        } finally {
+            ResourceUtils.closeQuietly(httpStream);
+            ResourceUtils.closeQuietly(bomis);
         }
+
         Document doc;
         try {
-            doc = XmlUtil.parse(is);
+            doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
         } catch (SAXException e) {
             xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
@@ -269,15 +301,22 @@ public class XslTransformationSpecifyPanel extends JPanel {
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         }
+        
         // check if it's a xslt
         try {
             docIsXsl(doc);
             // set the new xslt
             String printedxml;
+
             try {
-                printedxml = XmlUtil.nodeToFormattedString(doc);
+                if (encoding == null) {
+                    log.log(Level.FINE, "Unable to determine character encoding for " + urlstr + "; using platform default");
+                    printedxml = new String(bytes);
+                } else {
+                    printedxml = new String(bytes, encoding);
+                }
             } catch (IOException e) {
-                String msg = "error serializing document";
+                String msg = "error reading document";
                 xslDialog.displayError(msg, null);
                 log.log(Level.FINE, msg, e);
                 return;
