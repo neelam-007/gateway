@@ -19,20 +19,19 @@ import java.io.Serializable;
  * @version 1.0
  */
 public class Category implements Serializable {
-    private static int index = 0;
     // 3.6 categories
-    public static final Category ACCESS_CONTROL = new Category(index++, "AccessControl");
-    public static final Category MESSAGE = new Category(index++, "Message");
-    public static final Category UNFILLED = new Category(index++, "Unfilled");
-    public static final Category THREAT_PROT = new Category(index++, "ThreatProtection");
+    public static final Category ACCESS_CONTROL = new Category(0, "AccessControl");
+    public static final Category MESSAGE = new Category(1, "Message");
+    public static final Category UNFILLED = new Category(2, "Unfilled");
+    public static final Category THREAT_PROT = new Category(3, "ThreatProtection");
     // new categories introduced for 3.6.5
-    public static final Category AUDIT_ALERT = new Category(index++, "LoggingAuditingAlerts");
-    public static final Category TRANSPORT_SEC = new Category(index++, "TransportLayerSecurity");
-    public static final Category XML_SEC = new Category(index++, "XMLSecurity");
-    public static final Category MSG_VAL_XSLT = new Category(index++, "MessageValidationTransformation"); // same as MESSAGE
-    public static final Category ROUTING = new Category(index++, "MessageRouting");
-    public static final Category AVAILABILITY = new Category(index++, "ServiceAvailability");
-    public static final Category LOGIC = new Category(index++, "PolicyLogic");
+    public static final Category AUDIT_ALERT = new Category(4, "LoggingAuditingAlerts");
+    public static final Category TRANSPORT_SEC = new Category(5, "TransportLayerSecurity");
+    public static final Category XML_SEC = new Category(6, "XMLSecurity");
+    public static final Category MSG_VAL_XSLT = new Category(7, "MessageValidationTransformation"); // same as MESSAGE
+    public static final Category ROUTING = new Category(8, "MessageRouting");
+    public static final Category AVAILABILITY = new Category(9, "ServiceAvailability");
+    public static final Category LOGIC = new Category(10, "PolicyLogic");
 
     private final int myKey;
     private final String myName;
@@ -85,6 +84,22 @@ public class Category implements Serializable {
         return VALUES[myKey];
     }
 
-    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED, THREAT_PROT, TRANSPORT_SEC,
-                                              XML_SEC, MSG_VAL_XSLT, ROUTING, AVAILABILITY, AUDIT_ALERT, LOGIC};
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Category category = (Category) o;
+
+        if (myKey != category.myKey) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        return myKey;
+    }
+
+    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED, THREAT_PROT, AUDIT_ALERT, TRANSPORT_SEC,
+                                              XML_SEC, MSG_VAL_XSLT, ROUTING, AVAILABILITY, LOGIC};
 }
