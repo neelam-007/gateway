@@ -123,8 +123,8 @@ public class CustomAssertionDescriptor {
     public String toString() {
         return new StringBuffer("[")
           .append("; name='").append(name).append("'")
-          .append("category=").append(category)
-          .append("assertion=").append(safeName(assertion))
+          .append("; category=").append(category)
+          .append("; assertion=").append(safeName(assertion))
           .append("; serverAssertion=").append(safeName(serverAssertion))
           .append("; clientAssertion=").append(safeName(clientAssertion))
           .append("; editorClass=").append(safeName(uiClass))
