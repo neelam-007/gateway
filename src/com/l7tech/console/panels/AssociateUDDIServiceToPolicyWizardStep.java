@@ -104,28 +104,34 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             filter = filter.toLowerCase();
         }
         try {
-            KeyedReference category = new KeyedReference("uddi:uddi.org:wsdl:types", "service", "");
-            findService.setCategoryBag(new CategoryBag(new KeyedReferenceArrayList(category)));
+            if (filter != null && filter.length() > 0) {
+                NameArrayList businessKey = new NameArrayList(new Name(filter));
+                findService.setNameArrayList(businessKey);
+            }
+            StringArrayList qualifierList = new StringArrayList();
+            qualifierList.add("approximateMatch");
+            qualifierList.add("caseInsensitiveMatch");
+            findService.setFindQualifierArrayList(qualifierList);
+            findService.setMaxRows(new Integer(100));
+
             UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(data.getUddiurl() + "inquiry");
             ServiceList uddiServiceListRes = inquiry.find_service(findService);
 
             // display those services in the list instead
             listData.clear();
             ServiceInfoArrayList serviceInfoArrayList = uddiServiceListRes.getServiceInfoArrayList();
-            if (serviceInfoArrayList==null) {
+            if (serviceInfoArrayList == null) {
                 showError("No services found with this filter.");
                 return;
             }
             for (Iterator iterator = serviceInfoArrayList.iterator(); iterator.hasNext();) {
                 ServiceInfo serviceInfo = (ServiceInfo) iterator.next();
                 String businessKey = serviceInfo.getBusinessKey();
-                if (businessKey != null && !businessKey.startsWith("uddi:systinet")) {
+                //if (businessKey != null && !businessKey.startsWith("uddi:systinet")) {
                     String name = serviceInfo.getNameArrayList().get(0).getValue();
                     name = name.toLowerCase();
-                    if (name.indexOf(filter) >= 0) {
-                        listData.add(new ListMember(name, serviceInfo.getServiceKey()));
-                    }
-                }
+                    listData.add(new ListMember(name, serviceInfo.getServiceKey()));
+                //}
             }
             serviceList.setListData(listData.toArray());
         } catch (Throwable e) {
