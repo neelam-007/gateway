@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.security.rbac;
 
@@ -20,7 +20,7 @@ import java.util.Collection;
 public interface RbacAdmin {
     String ROLE_NAME_PREFIX = "Manage";
     String ROLE_NAME_OID_SUFFIX = " (#{1})";
-    String RENAME_REGEX_PATTERN = "(?<=^" + ROLE_NAME_PREFIX + " ).*?(?= {0} \\(#\\d+\\)$)";
+    String RENAME_REGEX_PATTERN = "(?<=^" + ROLE_NAME_PREFIX + " ).*?(?= {0} \\(#\\d[\\d, ]*\\)$)";
 
     /**
      * Finds a collection of EntityHeaders for all {@link Role}s known to the SSG.
