@@ -163,11 +163,15 @@ public class RoleManagerImpl
 
     public void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         Role role = findEntitySpecificRole(entityType, entity);
+        if (role == null) {
+            logger.warning(MessageFormat.format("No entity-specific role was found for {0} ''{1}'' (#{2})", entity.getName(), entityType.getName(), entity.getOid()));
+            return;
+        }
         String name = role.getName();
         Matcher matcher = replacePattern.matcher(name);
         String newName = matcher.replaceAll(entity.getName());
         if (!newName.equals(name)) {
-            logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: {1}", role.getName(), newName));
+            logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: ''{1}''", role.getName(), newName));
             role.setName(newName);
             update(role);
         }
