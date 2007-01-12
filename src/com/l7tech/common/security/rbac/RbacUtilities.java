@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 public class RbacUtilities {
     public static final String SYSTEM_PROP_ENABLEROLEEDIT = "com.l7tech.rbac.allowEditRoles";
-    public static final Pattern removeOidPattern = Pattern.compile("^(" + RbacAdmin.ROLE_NAME_PREFIX + " .*?) \\(#\\d+\\)$");
+    public static final Pattern removeOidPattern = Pattern.compile("^(" + RbacAdmin.ROLE_NAME_PREFIX + " .*?) \\(#\\d[\\d, ]*\\)$");
     public static final String REGEX_PATTERN = "^" + RbacAdmin.ROLE_NAME_PREFIX + " (.*?) {0}$";
 
     /**
