@@ -344,12 +344,28 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
      */
     private synchronized void resetData(final boolean saveSelectedPeriod) {
         _refreshTimer.stop();
+
         _latestDownloadedPeriodStart = -1;
         _metricsChartPanel.clearData(saveSelectedPeriod);
         _metricsChartPanel.setResolution(_currentResolution.getResolution());
         _metricsChartPanel.setBinInterval(_currentResolution.getBinInterval());
         _metricsChartPanel.setMaxTimeRange(_currentResolution.getChartTimeRange());
+
         setSelectedBin(null, -1, -1, false);
+
+        latestFromTimeLabel.setText("");
+        latestToTimeLabel.setText("");
+        latestFrontMinText.setText("");
+        latestFrontAvgText.setText("");
+        latestFrontMaxText.setText("");
+        latestBackMinText.setText("");
+        latestBackAvgText.setText("");
+        latestBackMaxText.setText("");
+        latestNumPolicyViolationText.setText("");
+        latestNumRoutingFailureText.setText("");
+        latestNumSuccessText.setText("");
+        latestNumTotalText.setText("");
+
         _refreshTimer.start();
     }
 

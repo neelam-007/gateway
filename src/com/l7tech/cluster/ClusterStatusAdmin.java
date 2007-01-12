@@ -242,7 +242,7 @@ public interface ClusterStatusAdmin {
      * @param duration      time duration (from latest nominal period boundary
      *                      time on gateway) to search backward for bins whose
      *                      nominal periods fall within
-     * @return a summary bin
+     * @return a summary bin; null if no metrics bins are found
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
      */

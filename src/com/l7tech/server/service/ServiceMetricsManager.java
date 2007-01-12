@@ -238,6 +238,9 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             _logger.finest("Found " + bins.size() + " metrics bins to summarize.");
         }
 
+        if (bins == null || bins.size() == 0)
+            return null;
+
         final MetricsSummaryBin summaryBin = new MetricsSummaryBin(bins);
         summaryBin.setPeriodStart(summaryPeriodStart);
         summaryBin.setInterval(duration);

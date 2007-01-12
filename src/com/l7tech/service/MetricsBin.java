@@ -330,7 +330,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         _endTime = _startTime;  // Signifies end time has not been set.
     }
 
-    /** @deprecated to be used only for serialization and persistence */
+    /** To be used only for serialization and persistence */
     public MetricsBin() {
     }
 
@@ -833,7 +833,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         b.append("\" periodStart=\"").append(DATE_FORMAT.format(new Date(_periodStart)));
         b.append("\" startTime=\"").append(DATE_FORMAT.format(new Date(_startTime)));
         b.append("\" endTime=\"").append(DATE_FORMAT.format(new Date(_endTime)));
-        if (_resolution == RES_FINE) b.append("\" _interval=\"").append(_interval);
+        if (_resolution == RES_FINE) b.append("\" interval=\"").append(_interval);
         b.append("\" attempted=\"").append(numAttemptedRequest);
         b.append("\" authorized=\"").append(numAuthorizedRequest);
         b.append("\" completed=\"").append(numCompletedRequest);
