@@ -94,7 +94,7 @@ public class PartitionActions {
         }
         copyTemplateFiles(newPartitionDir);
         setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath()}, "775", newPartitionDir, osFunctions);
-        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/attachments"}, "775", newPartitionDir, osFunctions);
+        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/*"}, "775", newPartitionDir, osFunctions);
         return newPartitionDir;
     }
 

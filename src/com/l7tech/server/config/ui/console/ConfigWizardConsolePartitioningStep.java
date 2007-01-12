@@ -81,12 +81,13 @@ public class  ConfigWizardConsolePartitioningStep extends BaseConsoleStep implem
         if (doNamePrompts) {
             existingName = newPartitionInfo.getPartitionId();
             newPartitionName = getData(
-                new String[] {"Enter the name of the partition: [" + existingName + "]"},
+                new String[] {"To rename this partition, type a new name here or press Enter to keep the existing name: [" + existingName + "]"},
                 existingName,
                 Pattern.compile(PartitionInformation.ALLOWED_PARTITION_NAME_PATTERN));
 
             if (!StringUtils.equals(existingName, newPartitionName)) {
                 try {
+
                     if (PartitionActions.renamePartition(newPartitionInfo, newPartitionName, this)) {
                         partitionNames = PartitionManager.getInstance().getPartitionNames();
                         newPartitionInfo = PartitionManager.getInstance().getPartition(newPartitionName);

@@ -2622,6 +2622,7 @@
         <mkdir dir="${install.src.partitions}"/>
         <mkdir dir="${install.src.partitionTemplate}"/>
         <mkdir dir="${install.src.partitionTemplate}/var/attachments"/>
+        <mkdir dir="${install.src.partitionTemplate}/var/modules"/>
         <mkdir dir="${install.src.defaultPartition}"/>
         <mkdir dir="${install.src.logs}"/>
         <mkdir dir="${install.src.var}"/>
