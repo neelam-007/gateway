@@ -8,6 +8,8 @@ package com.l7tech.common.security.rbac;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.Entity;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.MessageFormat;
@@ -57,6 +59,11 @@ public class RbacUtilities {
                 mat = pat.matcher(name);
                 if (mat.matches()) {
                     entityName = mat.group(1);
+                    Entity entity = role.getCachedSpecificEntity();
+                    if (entity instanceof PublishedService) {
+                        String uri = ((PublishedService) entity).getRoutingUri();
+                        if (uri != null) entityName += " [" + uri + "]";
+                    }
                 }
             }
         }

@@ -6,6 +6,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.rbac.*;
+import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
@@ -18,6 +19,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * @author alex
@@ -48,14 +50,14 @@ public class RbacAdminImpl implements RbacAdmin {
         checkLicense();
         final Collection<Role> roles = roleManager.findAll();
         for (Role role : roles) {
-            attachHeaders(role);
+            attachEntities(role);
         }
         return roles;
     }
 
     public Role findRoleByPrimaryKey(long oid) throws FindException, RemoteException {
         checkLicense();
-        return attachHeaders(roleManager.findByPrimaryKey(oid));
+        return attachEntities(roleManager.findByPrimaryKey(oid));
     }
 
 
@@ -79,7 +81,7 @@ public class RbacAdminImpl implements RbacAdmin {
         return roleManager.getAssignedRoles(user);
     }
 
-    private Role attachHeaders(Role theRole) {
+    private Role attachEntities(Role theRole) {
         for (Permission permission : theRole.getPermissions()) {
             for (ScopePredicate scopePredicate : permission.getScope()) {
                 if (scopePredicate instanceof ObjectIdentityPredicate) {
@@ -93,6 +95,16 @@ public class RbacAdminImpl implements RbacAdmin {
                                 " #" + id);
                     }
                 }
+            }
+        }
+
+        Long entityOid = theRole.getEntityOid();
+        EntityType entityType = theRole.getEntityType();
+        if (entityOid != null && entityType != null) {
+            try {
+                theRole.setCachedSpecificEntity(entityFinder.find(entityType.getEntityClass(), entityOid));
+            } catch (FindException e) {
+                logger.warning(MessageFormat.format("Couldn''t find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName()));
             }
         }
         return theRole;

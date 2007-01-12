@@ -3,11 +3,18 @@
  */
 package com.l7tech.common.security.rbac;
 
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 /**
  * A Role groups zero or more {@link Permission}s so they can be assigned as a whole
@@ -25,8 +32,10 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<UserRoleAssignment> userAssignments = new HashSet<UserRoleAssignment>();
     private String description;
+
     private EntityType entityType;
     private Long entityOid;
+    private Entity cachedSpecificEntity;
 
     public Set<Permission> getPermissions() {
         return permissions;
@@ -133,5 +142,43 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     public void setEntityOid(Long entityOid) {
         this.entityOid = entityOid;
+    }
+
+    /**
+     * If this Role is scoped to a particular entity, this property will contain a recent copy of that Entity.
+     */
+    public Entity getCachedSpecificEntity() {
+        return cachedSpecificEntity;
+    }
+
+    public void setCachedSpecificEntity(Entity cachedSpecificEntity) {
+        this.cachedSpecificEntity = cachedSpecificEntity;
+    }
+
+    public String getDescriptiveName() {
+        StringBuilder sb = new StringBuilder();
+
+        Matcher matcher = RbacUtilities.removeOidPattern.matcher(_name);
+        if (matcher.matches()) {
+            if (cachedSpecificEntity instanceof PublishedService) {
+                sb.append(RbacAdmin.ROLE_NAME_PREFIX).append(" ");
+                sb.append(((NamedEntity)cachedSpecificEntity).getName());
+                String uri = ((PublishedService)cachedSpecificEntity).getRoutingUri();
+                if (uri != null) sb.append(" [").append(uri).append("]");
+                sb.append(" ").append(ServiceAdmin.ROLE_NAME_TYPE_SUFFIX);
+                return sb.toString();
+            } else if (cachedSpecificEntity instanceof IdentityProviderConfig) {
+                sb.append(RbacAdmin.ROLE_NAME_PREFIX).append(" ");
+                sb.append(((NamedEntity)cachedSpecificEntity).getName());
+                sb.append(" ").append(IdentityAdmin.ROLE_NAME_TYPE_SUFFIX);
+                return sb.toString();
+            } else {
+                sb.append(matcher.group(1));
+            }
+        } else {
+            sb.append(_name);
+        }
+
+        return sb.toString();
     }
 }

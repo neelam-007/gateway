@@ -21,7 +21,6 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 
 public class RoleManagementDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(RoleManagementDialog.class.getName());
@@ -357,12 +356,7 @@ public class RoleManagementDialog extends JDialog {
 
         private RoleModel(Role role) {
             this.role = role;
-            Matcher matcher = RbacUtilities.removeOidPattern.matcher(role.getName());
-            if (matcher.matches()) {
-                this.name = matcher.group(1);
-            } else {
-                this.name = role.getName();
-            }
+            this.name = role.getDescriptiveName();
         }
 
         @Override
