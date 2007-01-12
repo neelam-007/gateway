@@ -1,7 +1,10 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -17,17 +20,17 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EventListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
- * $Id$
+ * @author fpang
  */
 public class CertSearchPanel extends JDialog {
 
@@ -133,7 +136,6 @@ public class CertSearchPanel extends JDialog {
         selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int row[] = trustedCertTable.getSelectedRows();
-                TrustedCert tc;
                 if (row.length > 0) {
                     TrustedCert[] certs = new TrustedCert[row.length];
                     for (int i = 0; i < row.length; i++) {
@@ -149,8 +151,7 @@ public class CertSearchPanel extends JDialog {
 
         viewButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-
-                CertPropertiesWindow cpw = null;
+                CertPropertiesWindow cpw;
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
                     cpw = new CertPropertiesWindow(CertSearchPanel.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
@@ -213,14 +214,11 @@ public class CertSearchPanel extends JDialog {
     private void fireEventCertSelected(final TrustedCert[] certs) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-
-                for (int i = 0; i < certs.length; i++) {
-                    TrustedCert tc = certs[i];
-
+                for (TrustedCert tc : certs) {
                     CertEvent event = new CertEvent(this, tc);
                     EventListener[] listeners = listenerList.getListeners(CertListener.class);
-                    for (int j = 0; j < listeners.length; j++) {
-                        ((CertListener) listeners[j]).certSelected(event);
+                    for (EventListener listener : listeners) {
+                        ((CertListener) listener).certSelected(event);
                     }
                 }
             }
@@ -235,7 +233,7 @@ public class CertSearchPanel extends JDialog {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
-                java.util.List certList = null;
+                java.util.List<TrustedCert> certList;
                 try {
                     certList = getTrustedCertAdmin().findAllCerts();
 
@@ -245,7 +243,7 @@ public class CertSearchPanel extends JDialog {
                     
                     //Vector certs = new Vector();
                     for (int i = 0; i < certList.size() && !cancelled ; i++) {
-                        TrustedCert tc = (TrustedCert) certList.get(i);
+                        TrustedCert tc = certList.get(i);
                         if (isShown(tc)) {
                             trustedCertTable.getTableSorter().addRow(tc);
                         }
@@ -274,7 +272,7 @@ public class CertSearchPanel extends JDialog {
      */
     private boolean isShown(TrustedCert tc) {
 
-        X509Certificate cert = null;
+        X509Certificate cert;
         try {
             cert = tc.getCertificate();
         } catch (CertificateException e) {
@@ -321,8 +319,7 @@ public class CertSearchPanel extends JDialog {
      * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
-        return tca;
+        return Registry.getDefault().getTrustedCertManager();
     }
 
 }

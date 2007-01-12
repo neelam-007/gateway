@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -31,13 +34,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
  * This class is the main window of the trusted certificate manager
- * <p/>
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p/>
- * $Id$
  */
 public class CertManagerWindow extends JDialog {
 
@@ -231,8 +229,7 @@ public class CertManagerWindow extends JDialog {
      * Load the certs from the database
      */
     private void loadTrustedCerts() throws RemoteException {
-
-        java.util.List certList;
+        java.util.List<TrustedCert> certList;
         try {
             certList = getTrustedCertAdmin().findAllCerts();
 

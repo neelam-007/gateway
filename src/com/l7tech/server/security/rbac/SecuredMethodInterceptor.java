@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.security.rbac;
 
@@ -28,6 +28,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Runtime RBAC enforcement kernel
+ * 
  * @author alex
  */
 public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationListener {
@@ -54,7 +56,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     // This one can get by without a permission check
                     testEntity = null;
                 } else {
-                    testEntity = (Entity)entityFinder.find(header);
+                    testEntity = entityFinder.find(header);
                 }
             } else {
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
@@ -288,7 +290,26 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
         switch(check.after) {
             case COLLECTION:
-                if (rv instanceof EntityHeader[]) {
+                boolean skip = true;
+                for (EntityType type : check.types) {
+                    // Avoid needlessly querying permissions on every member of the collection if this user has
+                    // blanket permissions
+                    if (!roleManager.isPermittedForAllEntities(user, type, check.operation)) {
+                        skip = false;
+                        continue;
+                    }
+
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST,
+                                "User is permitted to {0} any {1}; may be able to skip individual permission checks",
+                                new Object[] { check.operation.name(), type.name() }
+                                );
+                    }
+                }
+
+                if (skip) {
+                    return rv;
+                } else if (rv instanceof EntityHeader[]) {
                     EntityHeader[] array = (EntityHeader[]) rv;
                     List<Object> headers = filter(new ArrayIterator(array), user, check);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
@@ -339,7 +360,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     private void checkIdentityFromId(Object[] args, CheckInfo check, OperationType operation) throws FindException {
         if (args[0] instanceof Long && args[1] instanceof String) {
             IdentityHeader header = new IdentityHeader((Long)args[0], (String)args[1], check.types[0].getOldEntityType(), null, null);
-            Entity ent = (Entity) entityFinder.find(header);
+            Entity ent = entityFinder.find(header);
             check.before = CheckBefore.ENTITY;
             check.operation = operation;
             check.entity = ent;

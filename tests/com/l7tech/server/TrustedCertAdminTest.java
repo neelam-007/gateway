@@ -1,20 +1,19 @@
 package com.l7tech.server;
 
+import com.l7tech.admin.AdminContext;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.admin.AdminContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.PrivilegedAction;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -25,12 +24,8 @@ import java.util.Set;
  * being up and using a self-signed cert with an incorrect hostname
  * <li>Other tests rely on the last SSG used by the Console on the machine being up and running
  * </ul>
- *
- * @author alex
- * @version $Revision$
  */
 public class TrustedCertAdminTest extends TestCase {
-    private static SsgAdminSession ssgAdminSession;
     private static AdminContext adminContext;
 
     /**
@@ -45,7 +40,7 @@ public class TrustedCertAdminTest extends TestCase {
      */
     public static Test suite() {
         try {
-            ssgAdminSession = new SsgAdminSession();
+            SsgAdminSession ssgAdminSession = new SsgAdminSession();
             adminContext = ssgAdminSession.getAdminContext();
             return new TestSuite(TrustedCertAdminTest.class);
         } catch (Exception e) {
@@ -56,8 +51,7 @@ public class TrustedCertAdminTest extends TestCase {
     public void testRetrieveCertIgnoreHostname() throws Exception {
         X509Certificate[] chain = adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", true);
         assertNotNull(chain);
-        for (int i = 0; i < chain.length; i++) {
-            X509Certificate cert = chain[i];
+        for (X509Certificate cert : chain) {
             System.out.println("Found cert with dn " + cert.getSubjectDN().getName());
         }
     }
@@ -122,17 +116,16 @@ public class TrustedCertAdminTest extends TestCase {
     public void testFindAllCerts() throws Exception {
         final TrustedCert tc = getTrustedCert();
 
-        Set oids = new HashSet();
+        Set<Long> oids = new HashSet<Long>();
         oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
         oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
 
         System.out.println("Saved " + oids);
 
-        List all = adminContext.getTrustedCertAdmin().findAllCerts();
+        List<TrustedCert> all = adminContext.getTrustedCertAdmin().findAllCerts();
 
-        Set foundOids = new HashSet();
-        for (Iterator iterator = all.iterator(); iterator.hasNext();) {
-            TrustedCert tc2 = (TrustedCert)iterator.next();
+        Set<Long> foundOids = new HashSet<Long>();
+        for (TrustedCert tc2 : all) {
             foundOids.add(new Long(tc2.getOid()));
         }
 
@@ -140,9 +133,8 @@ public class TrustedCertAdminTest extends TestCase {
 
         assertTrue(foundOids.containsAll(oids));
 
-        final Set deletedOids = new HashSet();
-        for (Iterator i = oids.iterator(); i.hasNext();) {
-            Long oid = (Long)i.next();
+        final Set<Long> deletedOids = new HashSet<Long>();
+        for (Long oid : oids) {
             adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
             deletedOids.add(oid);
         }

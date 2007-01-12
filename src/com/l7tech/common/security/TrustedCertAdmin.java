@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.security;
 
 import static com.l7tech.common.security.rbac.EntityType.TRUSTED_CERT;
@@ -33,7 +30,7 @@ public interface TrustedCertAdmin  {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
-    public List findAllCerts() throws FindException, RemoteException;
+    public List<TrustedCert> findAllCerts() throws FindException, RemoteException;
 
     /**
      * Retrieves the {@link TrustedCert} with the specified oid.

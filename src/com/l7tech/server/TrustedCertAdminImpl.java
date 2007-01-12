@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
@@ -28,10 +25,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
 public class TrustedCertAdminImpl implements TrustedCertAdmin {
     private final X509Certificate rootCertificate;
     private final X509Certificate sslCertificate;
@@ -78,9 +71,9 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         }
     }
 
-    public List findAllCerts() throws FindException, RemoteException {
+    public List<TrustedCert> findAllCerts() throws FindException, RemoteException {
         checkLicense();
-        return new ArrayList(getManager().findAll());
+        return new ArrayList<TrustedCert>(getManager().findAll());
     }
 
     public TrustedCert findCertByPrimaryKey(final long oid) throws FindException, RemoteException {
