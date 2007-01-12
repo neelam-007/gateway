@@ -227,7 +227,7 @@ public class PartitionManager {
 
             PartitionActions pa = new PartitionActions(osf);
             List<String> fileNames = new ArrayList<String>();
-            if (templatePartitionDir.listFiles().length == 0) {
+            if (templatePartitionDir.listFiles().length <= 1) {
                 System.out.println("Copying original configuration files to the template partition.");
                 try {
                     copyConfigurations(originalFiles, templatePartitionDir);
@@ -326,11 +326,7 @@ public class PartitionManager {
         for (File file : filesToRemove) {
             if (file.exists()) {
                 if (file.isDirectory()) {
-                    File[] filesInDir = file.listFiles();
-                    if (filesInDir != null)
-                        removeOriginalConfigurations(Arrays.asList(filesInDir));
-                    else
-                        FileUtils.deleteDir(file);
+                    FileUtils.deleteDir(file);
                 } else {
                     FileUtils.deleteFileSafely(file.getAbsolutePath());
                 }

@@ -142,8 +142,6 @@ Section "SecureSpan Gateway" SecCopyUI
   CreateDirectory "$INSTDIR\logs"
   CreateDirectory "$INSTDIR\bin"
   CreateDirectory "$INSTDIR\etc\conf"
-  CreateDirectory "$INSTDIR\etc\keys"
-  CreateDirectory "$INSTDIR\var\attachments"
   CreateDirectory "$INSTDIR\modules\lib"
 
   SetOutPath "$INSTDIR"

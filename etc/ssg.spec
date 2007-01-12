@@ -214,6 +214,7 @@ chmod -f 775 /ssg/configwizard
 chmod -f 664 /ssg/configwizard/*
 chmod -f 775 /ssg/configwizard/*.sh
 chmod -f 775 /ssg/configwizard/lib
+chmod -Rf 775 /ssg/etc/keys
 
 chmod -f 775 /ssg/sysconfigwizard
 chmod -f 664 /ssg/sysconfigwizard/*
