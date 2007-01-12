@@ -10,6 +10,7 @@ import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.util.Background;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
@@ -20,6 +21,8 @@ import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +43,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
     private final String rootCertificateSki;
 
     private final Cache encryptedKeyCache;
+    private final AtomicBoolean encryptedKeyCacheEnabled = new AtomicBoolean();
 
 
     /**
@@ -55,16 +59,31 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
                                              TrustedCertManager trustedCertManager,
                                              X509Certificate sslKeystoreCertificate,
                                              X509Certificate rootCertificate,
-                                             ServerConfig serverConfig)
+                                             final ServerConfig serverConfig)
     {
         this.trustedCertManager = trustedCertManager;
         this.clientCertManager = clientCertManager;
         this.sslKeystoreCertificate = sslKeystoreCertificate;
         this.rootCertificate = rootCertificate;
 
-        int maxEphemeralKeys = serverConfig.getIntProperty(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, 1000);
-        encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache", maxEphemeralKeys, 127,
-                                                                     WhirlycacheFactory.POLICY_LFU);
+        final int checkPeriod = 10181;
+        final int defaultSize = 1000; // Size to use if not configured, or if not enabled at first (since we can't change the size if it's later enabled)
+        int csize = serverConfig.getIntPropertyCached(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod);
+        encryptedKeyCacheEnabled.set(csize > 0);
+        encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache",
+                                                           encryptedKeyCacheEnabled.get() ? csize : defaultSize,
+                                                           127,
+                                                           WhirlycacheFactory.POLICY_LFU);
+
+        Background.scheduleRepeated(new TimerTask() {
+            public void run() {
+                int csize = serverConfig.getIntPropertyCached(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod - 1);
+                boolean newval = csize > 0;
+                boolean oldval = encryptedKeyCacheEnabled.getAndSet(newval);
+                if (newval != oldval && logger.isLoggable(Level.INFO))
+                    logger.info("Ephemeral key cache is now " + (newval ? "enabled" : "disabled"));
+            }
+        }, checkPeriod, checkPeriod);
 
         try {
             if (sslKeystoreCertificate != null) {
@@ -127,8 +146,6 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
             if (got != null && got.size() >= 1)
                 return ((X509Entity)got.get(0)).getCertificate();
 
-
-
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
@@ -144,11 +161,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
     }
 
     public SecretKey getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
+        if (!encryptedKeyCacheEnabled.get()) return null;
         return (SecretKey)encryptedKeyCache.retrieve(encryptedKeySha1);
     }
 
     public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, SecretKey secretKey) {
-        encryptedKeyCache.store(encryptedKeySha1, secretKey);
+        if (encryptedKeyCacheEnabled.get()) encryptedKeyCache.store(encryptedKeySha1, secretKey);
     }
 
     /**

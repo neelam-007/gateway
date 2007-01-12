@@ -26,8 +26,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Provides cached access to Gateway global configuration items, including (once the
+ * database and cluster property manager have initialized) cluster properties.
+ *
  * @author alex
- * @version $Revision$
  */
 public class ServerConfig implements ClusterPropertyListener {
 
@@ -79,7 +81,6 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
     public static final String PARAM_IO_BACK_HTTPS_HOST_CHECK = "ioHttpsHostVerify";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
-    public static final String PARAM_IO_STALE_MAX_HOSTS = "ioStaleCheckHosts";
 
     public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";
     public static final String PARAM_XSLT_CACHE_MAX_AGE = "xsltMaxCacheAge";
@@ -137,7 +138,7 @@ public class ServerConfig implements ClusterPropertyListener {
             if (this.clusterPropertyCache != null) throw new IllegalStateException("clusterPropertyCache already set!");
             this.clusterPropertyCache = clusterPropertyCache;
         } finally {
-            propLock.writeLock().unlock();            
+            propLock.writeLock().unlock();
         }
     }
 
@@ -252,7 +253,7 @@ public class ServerConfig implements ClusterPropertyListener {
                     try {
                         _icontext = icontext;
                     } finally {
-                        propLock.writeLock().unlock();                        
+                        propLock.writeLock().unlock();
                     }
                 }
                 value = (String)icontext.lookup(jndiName);
@@ -357,10 +358,10 @@ public class ServerConfig implements ClusterPropertyListener {
             try {
                 _serverId = serverId;
             } finally {
-                propLock.writeLock().unlock();                
+                propLock.writeLock().unlock();
             }
         }
-        
+
         return serverId;
     }
 
@@ -471,7 +472,7 @@ public class ServerConfig implements ClusterPropertyListener {
         try {
             hostname = _hostname;
         } finally {
-            propLock.readLock().unlock();            
+            propLock.readLock().unlock();
         }
 
         if (hostname == null) {
@@ -561,6 +562,18 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public int getIntProperty(String propName, int emergencyDefault) {
         String strval = getProperty(propName);
+        int val;
+        try {
+            val = Integer.parseInt(strval);
+        } catch (NumberFormatException e) {
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid number; using " + emergencyDefault + " instead");
+            val = emergencyDefault;
+        }
+        return val;
+    }
+
+    public int getIntPropertyCached(String propName, int emergencyDefault, long maxAge) {
+        String strval = getPropertyCached(propName, maxAge);
         int val;
         try {
             val = Integer.parseInt(strval);
