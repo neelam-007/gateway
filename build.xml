@@ -178,7 +178,8 @@
         <include name="**/xss4j.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
         <include name="**/bcprov-jdk15-134.jar"/>
-        <include name="**/xalan-2.5.2.jar"/>
+        <include name="**/xalan-2.7.0.jar"/>
+        <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/saaj.jar"/>
     </patternset>
 
@@ -243,7 +244,8 @@
         <include name="**/mailapi-1.4.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/spring-context.jar"/>
-        <include name="**/xalan-2.5.2.jar"/>
+        <include name="**/xalan-2.7.0.jar"/>
+        <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/nekohtml.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/commons-collections-2.1.1.jar"/>
@@ -293,7 +295,8 @@
         <include name="**/antlr-2.7.7-l7p1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
         <include name="**/jsr173_1.0_api.jar"/>
-        <include name="**/xalan-2.5.2.jar"/>
+        <include name="**/xalan-2.7.0.jar"/>
+        <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/jcommon-1.0.5.jar"/>
         <include name="**/jfreechart-1.0.2.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
@@ -927,7 +930,8 @@
         <pack-mac jarfile="${build.dir}/managerlibs/spring-dao.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/spring-remoting.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/whirlycache-1.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xalan-2.5.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/xalan-2.7.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/serializer-xalan-2.7.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/xercesImpl.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/xmlpad.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/xmlpad-res.jar"/>
@@ -1012,7 +1016,8 @@
                 <include name="saaj.jar" unless="include.systinet"/>
 
                 <include name="saxpath.jar"/>
-                <include name="xalan-2.5.2.jar"/>
+                <include name="xalan-2.7.0.jar"/>
+                <include name="serializer-xalan-2.7.0.jar"/>
                 <include name="jsr173_1.0_api.jar"/> <!-- StAX -->
                 <include name="xbean.jar"/>
                 <include name="xbean-xenc-xmldsig.jar"/>

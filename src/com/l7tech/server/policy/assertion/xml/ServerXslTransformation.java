@@ -50,9 +50,11 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.ErrorListener;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPathExpressionException;
+import javax.xml.XMLConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -171,6 +173,7 @@ public class ServerXslTransformation
         // Prepare a software template
         try {
             TransformerFactory transfoctory = TransformerFactory.newInstance();
+            transfoctory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             transfoctory.setURIResolver(XmlUtil.getSafeURIResolver());
             StreamSource xsltsource = new StreamSource(new StringReader(thing));
             return transfoctory.newTemplates(xsltsource);
@@ -436,6 +439,17 @@ public class ServerXslTransformation
             try {
                 Transformer transformer = softwareStylesheet.newTransformer();
                 transformer.setURIResolver(XmlUtil.getSafeURIResolver());
+                transformer.setErrorListener(new ErrorListener() {
+                    public void error(TransformerException exception) throws TransformerException {
+                        throw exception;
+                    }
+                    public void fatalError(TransformerException exception) throws TransformerException {
+                        throw exception;
+                    }
+                    public void warning(TransformerException exception) throws TransformerException {
+                        throw exception;
+                    }
+                });
                 XmlUtil.softXSLTransform(doctotransform, sr, transformer, t.vars);
                 output.setBytes(os.toByteArray());
                 logger.finest("software xsl transformation completed");
