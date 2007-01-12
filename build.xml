@@ -2200,6 +2200,7 @@
         <copy todir="${build.etc}">
             <fileset dir="${src.root}/etc">
                 <include name="web.xml"/>
+                <include name="testweb.xml"/>
             </fileset>
         </copy>
 
@@ -2452,6 +2453,17 @@
                 <include name="**/resources/*"/>
             </fileset>
         </copy>
+    </target>
+
+    <!--
+      Build testservlets.war containing useful stuff like the echo servlet
+    -->
+    <target name="package.testservlets" depends="dev">
+        <war warfile="${build.dir}/testservlets.war" webxml="${build.etc}/testweb.xml">
+            <classes dir="${build.test.classes}" defaultexcludes="true">
+                <include name="com/l7tech/test/servlets/**"/>
+            </classes>
+        </war>
     </target>
 
     <!--

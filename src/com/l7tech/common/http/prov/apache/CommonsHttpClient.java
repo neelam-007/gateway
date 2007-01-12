@@ -68,6 +68,10 @@ public class CommonsHttpClient implements GenericHttpClient {
     private final Object identity;
     private final boolean isBindingManager;
 
+    public CommonsHttpClient() {
+        this(newConnectionManager(), -1, -1, null);
+    }
+
     public CommonsHttpClient(HttpConnectionManager cman) {
         this(cman, -1, -1, null); // default timeouts
     }

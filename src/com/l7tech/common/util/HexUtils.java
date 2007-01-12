@@ -6,10 +6,7 @@
 
 package com.l7tech.common.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -376,11 +373,8 @@ public class HexUtils {
      * at the same time.  If so requested, each stream can be closed after reading.  Otherwise, if the comparison
      * succeeds, both streams are left positioned at EOF; if the comparison fails due to a mismatched byte,
      * both streams will be positioned somewhere after the mismatch; and, if the comparison fails due to one of the
-     * streams reaching EOF early, the other stream will be left positioned somewhere after the its counterpart
+     * streams reaching EOF early, the other stream will be left positioned somewhere after its counterpart
      * reached EOF.  The states of both streams is undefined if IOException is thrown.
-     * <p>
-     * <b>Caveat</b>: the comparison may produce a false negative if either stream returns short reads before
-     * the final block.
      *
      * @param left          one of the InputStreams to compare
      * @param closeLeft     if true, left will be closed when the comparison finishes
@@ -394,28 +388,56 @@ public class HexUtils {
     public static boolean compareInputStreams(InputStream left, boolean closeLeft,
                                               InputStream right, boolean closeRight) throws IOException
     {
-        byte[] lb = new byte[2048];
-        byte[] rb = new byte[2048];
-        boolean match = true;
+        byte[] lb = BufferPool.getBuffer(4096);
+        byte[] rb = BufferPool.getBuffer(4096);        
+        try {
+            boolean match = true;
 
-        for (;;) {
-            int gotleft = left.read(lb);
-            int gotright = right.read(rb);
-            if (gotleft != gotright) {
-                match = false;
-                break;
-            } else if (gotleft == -1)
-                break;
-            else if (!ArrayUtils.compareArrays(lb, 0, rb, 0, gotleft)) {
-                match = false;
-                break;
+            for (;;) {
+                int gotleft = readFullBlock(left, lb);
+                int gotright = readFullBlock(right, rb);
+                if (gotleft != gotright) {
+                    match = false;
+                    break;
+                } else if (gotleft < 1)
+                    break;
+                else if (!ArrayUtils.compareArrays(lb, 0, rb, 0, gotleft)) {
+                    match = false;
+                    break;
+                }
             }
+
+            if (closeLeft) left.close();
+            if (closeRight) right.close();
+
+            return match;
+        } finally {
+            BufferPool.returnBuffer(lb);
+            BufferPool.returnBuffer(rb);
         }
+    }
 
-        if (closeLeft) left.close();
-        if (closeRight) right.close();
+    /**
+     * Read an entire block from the specified InputStream, if possible,
+     * blocking until a full block has been read or EOF is reached.
+     *
+     * @return the number of bytes read, possibly zero.  If this number is less than the
+     *         size of the buffer, EOF has been reached.
+     * @param is   the InputStream to read.  Must be non-null.
+     * @param buf  the buffer to read into.  Must be non-null and of nonzero length.
+     * @throws java.io.IOException  if the underlying read throws IOException
+     */
+    public static int readFullBlock(InputStream is, byte[] buf) throws IOException {
+        int size = 0;
+        int remaining = buf.length;
 
-        return match;
+        while (remaining > 0) {
+            int got = is.read(buf, size, remaining);
+            if (got < 1) break;
+            size += got;
+            remaining -= got;
+        }
+        return size;
     }
 
     private static ThreadLocal md5s = new ThreadLocal();

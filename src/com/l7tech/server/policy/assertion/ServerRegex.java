@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 /**
  * The Server side Regex Assertion
  */
-public class ServerRegex extends AbstractServerAssertion implements ServerAssertion {
+public class ServerRegex extends AbstractServerAssertion<Regex> implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
@@ -69,6 +69,7 @@ public class ServerRegex extends AbstractServerAssertion implements ServerAssert
         }
 
         int whichPart = regexAssertion.getMimePart();
+        InputStream is = null;
         try {
 
             PartInfo messagePart = isPostRouting(context) ?
@@ -84,7 +85,7 @@ public class ServerRegex extends AbstractServerAssertion implements ServerAssert
                 throw new PolicyAssertionException(regexAssertion, AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
             }
 
-            InputStream is = messagePart.getInputStream(false);
+            is = messagePart.getInputStream(false);
             byte[] messageBytes = HexUtils.getLocalBuffer();
             int messageBytesLen = HexUtils.slurpStream(is, messageBytes);
             if (messageBytesLen >= HexUtils.LOCAL_BUFFER_SIZE) {
@@ -132,10 +133,17 @@ public class ServerRegex extends AbstractServerAssertion implements ServerAssert
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, new String[] { Integer.toString(whichPart) });
             return AssertionStatus.FAILED;
+        } finally {
+            if (is != null) try { is.close(); } catch (IOException e) { /* IGNORE */ }
         }
     }
 
-    /** @return true iff. this ServerRegex would consider the specified context to be post-routing. */
+    /**
+     * Check if this regex would consider the specified policy enforcment context to be post-routing.
+     *
+     * @param context  the context to check.  Must not be null.
+     * @return true iff. this ServerRegex would consider the specified context to be post-routing.
+     */
     public static boolean isPostRouting(PolicyEnforcementContext context) {
         return RoutingStatus.ROUTED.equals(context.getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(context.getRoutingStatus());
     }

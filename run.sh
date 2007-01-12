@@ -51,6 +51,7 @@ fi
 PATH=$JAVA_HOME/bin:$PATH; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
 BUILD_CLASSES="$SRC_ROOT/build/classes"
+BUILD_TESTCLASSES="$SRC_ROOT/build/test-classes"
 
 for i in "$SRC_ROOT/lib"/*.jar
     do
@@ -64,13 +65,13 @@ for i in "$SRC_ROOT/lib"/*.jar
     	fi
       fi
     done 
-CLASSPATH=".:${JDK_CLASSES}:${BUILD_CLASSES}:${LOCALCLASSPATH}:${CLASSPATH}"
+CLASSPATH=".:${JDK_CLASSES}:${BUILD_CLASSES}:${BUILD_TESTCLASSES}:${LOCALCLASSPATH}:${CLASSPATH}"
 # Cygwin - switch paths to Windows format before running java
 if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
 fi
 export CLASSPATH
-echo $CLASSPATH
+#echo $CLASSPATH
 
 foo=$1
 shift
