@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  * should be taken when providing a custom InputStream implementation not to
  * call MimeBody methods from inside it, when it is itself being called from
  * MimeBody.</p>
+ * @noinspection ForLoopReplaceableByForEach,unchecked
  */
 public class MimeBody {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
@@ -47,9 +48,9 @@ public class MimeBody {
     private final StashManager stashManager;
     private final ContentTypeHeader outerContentType;
 
-    private final List<PartInfoImpl> partInfos = new ArrayList<PartInfoImpl>(); // our PartInfo instances.  current part is (partInfos.size() - 1)
+    private final List partInfos = new ArrayList(); // our PartInfo instances.  current part is (partInfos.size() - 1)
     private final PartInfoImpl firstPart; // equivalent to (PartInfo)partInfos.get(0)
-    private final Map<String, PartInfoImpl> partInfosByCid = new HashMap<String, PartInfoImpl>(); // our PartInfo-by-cid lookup.
+    private final Map partInfosByCid = new HashMap(); // our PartInfo-by-cid lookup.
 
     private final String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
     private final byte[] boundary; // multipart crlfBoundary bytes including initial dashes but not including trailing CRLF; or null if singlepart.
@@ -104,7 +105,7 @@ public class MimeBody {
             this.mainInputStream = new ByteLimitInputStream(mainInputStream, pushbackSize);
             readInitialBoundary();
             readNextPartHeaders();
-            firstPart = partInfos.get(0);
+            firstPart = (PartInfoImpl)partInfos.get(0);
             if (start != null && !(start.equals(firstPart.getContentId(false))))
                 throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
         } else {
@@ -169,7 +170,7 @@ public class MimeBody {
      * beyond the boundary, at the first byte of the next part's headers.
      *
      * @throws IOException if the headers could not be read
-     * @throws NoSuchPartException if there are no more parts
+     * @throws NoSuchPartException  if all parts have already been read
      */
     private void readNextPartHeaders() throws IOException, NoSuchPartException {
         if (boundary == null) throw new IllegalStateException("Not supported in single-part mode");
@@ -223,7 +224,7 @@ public class MimeBody {
         // Have we already prepared this part?
         if (ordinal >= partInfos.size())
             readUpToPart(ordinal);
-        return partInfos.get(ordinal);
+        return (PartInfo)partInfos.get(ordinal);
     }
 
     /**
@@ -268,13 +269,13 @@ public class MimeBody {
      * @throws IOException if there was a problem reading the message stream
      */
     public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {
-        PartInfo partInfo = partInfosByCid.get(contentId);
+        PartInfo partInfo = (PartInfo)partInfosByCid.get(contentId);
         while (partInfo == null) {
             if (!moreParts)
                 throw new NoSuchPartException("No part was found with the Content-ID: " + contentId, contentId);
             stashCurrentPartBody();
             readNextPartHeaders();
-            partInfo = partInfosByCid.get(contentId);
+            partInfo = (PartInfo)partInfosByCid.get(contentId);
         }
         return partInfo;
     }
@@ -342,7 +343,7 @@ public class MimeBody {
             return firstPart.getInputStream(destroyAsRead);
         }
 
-        Enumeration<InputStream> enumeration = new Enumeration<InputStream>() {
+        Enumeration enumeration = new Enumeration() {
             private int nextPart = 0; // the part which is being sent
             private boolean sentNextPartOpeningBoundary = false;
             private boolean sentNextPartHeaders = false;
@@ -357,7 +358,7 @@ public class MimeBody {
                 return !done;
             }
 
-            public InputStream nextElement() {
+            public Object nextElement() {
                 if (errorCondition != null)
                     return new IOExceptionThrowingInputStream(new CausedIOException(errorCondition));
 
@@ -376,7 +377,7 @@ public class MimeBody {
                     if (!sentNextPartHeaders) {
                         sentNextPartHeaders = true;
                         try {
-                            return new ByteArrayInputStream((partInfos.get(nextPart)).getHeaders().toByteArray());
+                            return new ByteArrayInputStream(((PartInfo)partInfos.get(nextPart)).getHeaders().toByteArray());
                         } catch (IOException e) {
                             done = true;
                             return new IOExceptionThrowingInputStream(e);
@@ -404,7 +405,7 @@ public class MimeBody {
                                             return ret;
                                     }
                                     else if (streamValidatedOnly) {
-                                        PartInfo followingPartInfo = partInfos.get(nextPart);
+                                        PartInfo followingPartInfo = (PartInfo) partInfos.get(nextPart);
                                         if (!followingPartInfo.isValidated()) {
                                             nextPart++; // skip
                                         }
@@ -427,7 +428,7 @@ public class MimeBody {
                                 sentNextPartBody = false;
 
                                 sentAllStashedParts = true;
-                                (partInfos.get(nextPart)).onBodyRead(); // tell this part that it's body is gone
+                                ((PartInfoImpl)partInfos.get(nextPart)).onBodyRead(); // tell this part that it's body is gone
 
                                 // FALLTHROUGH and return main input stream
                             }
@@ -482,7 +483,8 @@ public class MimeBody {
     private void assertNoPartBodiesDestroyed() throws NoSuchPartException, IOException {
         checkErrorNoPart();
 
-        for (PartInfoImpl partInfo : partInfos) {
+        for (Iterator i = partInfos.iterator(); i.hasNext();) {
+            PartInfoImpl partInfo = (PartInfoImpl)i.next();
             if (!partInfo.bodyAvailable())
                 throw new NoSuchPartException("Part #" + partInfo.getPosition() + " has already been destructively read", partInfo.getPosition());
         }
@@ -514,9 +516,11 @@ public class MimeBody {
         }
 
         long len = 0;
-        for (PartInfoImpl partInfo : partInfos) {
+        for (Iterator i = partInfos.iterator(); i.hasNext();) {
+            PartInfo partInfo = (PartInfo) i.next();
+
             // if only streaming validated parts then count only those lengths (and the first part)
-            if (len == 0 || !streamValidatedOnly || partInfo.isValidated()) {
+            if (len==0 || !streamValidatedOnly || partInfo.isValidated()) {
                 // Opening delimiter: CRLF + boundary (which includes initial 2 dashes) + CRLF
                 len += 2 + boundary.length + 2;
                 len += partInfo.getHeaders().getSerializedLength();
@@ -541,7 +545,7 @@ public class MimeBody {
     private void stashCurrentPartBody() throws IOException {
         checkErrorIO();
 
-        PartInfoImpl currentPart = partInfos.get(partInfos.size() - 1);
+        PartInfoImpl currentPart = (PartInfoImpl)partInfos.get(partInfos.size() - 1);
         final MimeBoundaryTerminatedInputStream in = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
         currentPart.stashAndCheckContentLength(in);
         currentPart.onBodyRead();
@@ -712,7 +716,7 @@ public class MimeBody {
      */
     public void close() {
         stashManager.close();
-        if(mainInputStream!=null) mainInputStream.dispose();        
+        if(mainInputStream!=null) mainInputStream.dispose();
     }
 
     /**
@@ -842,12 +846,12 @@ public class MimeBody {
          * @return A previously-stashed InputStream, if there was one; or,
          *         null if and only if the main input stream is positioned to read this Part's body.
          * @throws IOException if there is a pending IOException from a previous operation on this
-         *                     MimeBody or one of its parts, or
+         *                        MimeBody or one of its parts, or
          *                     if there is a problem stashing or recalling from the StashManager
          * @throws NoSuchPartException if this Part's body has already been destructively read, or
          *                             if there is a pending NoSuchPartException from a previous operation on this
-         *                             MimeBody or one of its parts
-         * @throws IllegalStateException if the part was not stashed or consumed, but the main inputstream does not
+         *                               MimeBody or one of its parts, or
+         *                             if the part was not stashed or consumed, but the main inputstream does not
          *                               appear to be positioned to read this part's body.
          *
          */
@@ -950,8 +954,9 @@ public class MimeBody {
          *
          * @param is an InputStream that will return this part's body when read to EOF.
          * @throws IOException if the content-length header contains anything other than a decimal number, or
-         *                     if the part had a content-length header that disagreed with what it's actual length turned out to be, or
-         *                     if the stashmanager throws IOException
+         *                     if the part had a content-length header that disagreed with what it's actual length
+         *                        turned out to be, or
+         *                     if the stashmanager throws IOExceptiona
          */
         void stashAndCheckContentLength(InputStream is) throws IOException {
             if (is == null) throw new NullPointerException();
@@ -979,7 +984,8 @@ public class MimeBody {
          * @param is an InputStream that will return this part's body when read to EOF.
          * @return the stashed and recalled InputStream for this part body, ready to read.  Never null.
          * @throws IOException if the content-length header contains anything other than a decimal number, or
-         *                     if the part had a content-length header that disagreed with what it's actual length turned out to be, or
+         *                     if the part had a content-length header that disagreed with what it's actual length
+         *                        turned out to be, or
          *                     if the stashmanager throws IOExceptiona
          */
         protected InputStream stashAndRecall(InputStream is) throws IOException {
