@@ -49,6 +49,7 @@ import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.Transformer;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPathExpressionException;
@@ -170,6 +171,7 @@ public class ServerXslTransformation
         // Prepare a software template
         try {
             TransformerFactory transfoctory = TransformerFactory.newInstance();
+            transfoctory.setURIResolver(XmlUtil.getSafeURIResolver());
             StreamSource xsltsource = new StreamSource(new StringReader(thing));
             return transfoctory.newTemplates(xsltsource);
         } catch (TransformerConfigurationException e) {
@@ -432,7 +434,9 @@ public class ServerXslTransformation
             final StreamResult sr = new StreamResult(os);
 
             try {
-                XmlUtil.softXSLTransform(doctotransform, sr, softwareStylesheet.newTransformer(), t.vars);
+                Transformer transformer = softwareStylesheet.newTransformer();
+                transformer.setURIResolver(XmlUtil.getSafeURIResolver());
+                XmlUtil.softXSLTransform(doctotransform, sr, transformer, t.vars);
                 output.setBytes(os.toByteArray());
                 logger.finest("software xsl transformation completed");
             } catch (TransformerException e) {

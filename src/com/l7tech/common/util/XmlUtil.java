@@ -26,6 +26,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.SchemaFactory;
@@ -60,6 +62,12 @@ public class XmlUtil {
             String msg = "Document referred to an external entity with system id '" + systemId + "' of type '" + type + "'";
             logger.warning( msg );
             return new LSInputImpl(); // resolve to nothing, causes error
+        }
+    };
+
+    private static final URIResolver SAFE_URI_RESOLVER = new URIResolver(){
+        public Source resolve(final String href, final String base) throws TransformerException {
+            throw new TransformerException("External entities are not supported '"+href+"'.");
         }
     };
 
@@ -103,6 +111,20 @@ public class XmlUtil {
      */
     public static LSResourceResolver getSafeLSResourceResolver() {
         return SAFE_LS_RESOURCE_RESOLVER;
+    }
+
+    /**
+     * Returns a stateless, thread-safe {@link URIResolver} that throws a TransformerException on
+     * encountering any uri.
+     *
+     * This URIResolver should be used in ALL TrAX processing for security.
+     *
+     * @return a safe {@link URIResolver} instance.
+     * @see javax.xml.transform.TransformerFactory#setURIResolver TransformerFactory.setURIResolver
+     * @see javax.xml.transform.Transformer#setURIResolver Transformer.setURIResolver
+     */
+    public static URIResolver getSafeURIResolver() {
+        return SAFE_URI_RESOLVER;
     }
 
     private static ThreadLocal documentBuilder = new ThreadLocal() {
