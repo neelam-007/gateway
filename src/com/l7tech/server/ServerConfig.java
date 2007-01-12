@@ -82,6 +82,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_IO_BACK_HTTPS_HOST_CHECK = "ioHttpsHostVerify";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
     public static final String PARAM_IO_STALE_MAX_HOSTS = "ioStaleCheckHosts";
+    public static final String PARAM_IO_XML_PART_MAX_BYTES = "ioXmlPartMaxBytes";
 
     public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";
     public static final String PARAM_XSLT_CACHE_MAX_AGE = "xsltMaxCacheAge";
@@ -567,7 +568,7 @@ public class ServerConfig implements ClusterPropertyListener {
         try {
             val = Integer.parseInt(strval);
         } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid number; using " + emergencyDefault + " instead");
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid integer; using " + emergencyDefault + " instead");
             val = emergencyDefault;
         }
         return val;
@@ -579,7 +580,31 @@ public class ServerConfig implements ClusterPropertyListener {
         try {
             val = Integer.parseInt(strval);
         } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid number; using " + emergencyDefault + " instead");
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid integer; using " + emergencyDefault + " instead");
+            val = emergencyDefault;
+        }
+        return val;
+    }
+
+    public long getLongProperty(String propName, long emergencyDefault) {
+        String strval = getProperty(propName);
+        long val;
+        try {
+            val = Long.parseLong(strval);
+        } catch (NumberFormatException e) {
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid long integer; using " + emergencyDefault + " instead");
+            val = emergencyDefault;
+        }
+        return val;
+    }
+
+    public long getLongPropertyCached(String propName, long emergencyDefault, long maxAge) {
+        String strval = getPropertyCached(propName, maxAge);
+        long val;
+        try {
+            val = Long.parseLong(strval);
+        } catch (NumberFormatException e) {
+            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid long integer; using " + emergencyDefault + " instead");
             val = emergencyDefault;
         }
         return val;

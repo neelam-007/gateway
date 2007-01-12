@@ -6,6 +6,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
@@ -19,6 +20,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -50,6 +52,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Set;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +62,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
+    private static final int SETTINGS_RECHECK_MILLIS = 7937;
     private final ServiceCache serviceCache;
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
@@ -113,6 +117,21 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.auditContext = auditContext;
         this.serverConfig = serverConfig;
         this.trafficLogger = trafficLogger;
+        initSettings(SETTINGS_RECHECK_MILLIS);
+    }
+
+    private void initSettings(final int period) {
+        updateSettings(period);
+        Background.scheduleRepeated(new TimerTask() {
+            public void run() {
+                updateSettings(period);
+            }
+        }, period, period);
+    }
+
+    private void updateSettings(int period) {
+        long maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_XML_PART_MAX_BYTES, 0, period - 1);
+        MimeBody.setFirstPartXmlMaxBytes(maxBytes);
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

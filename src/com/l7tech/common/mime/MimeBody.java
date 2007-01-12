@@ -16,6 +16,7 @@ import com.l7tech.common.util.HexUtils;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,7 +44,9 @@ public class MimeBody {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
-    private final ByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
+    private static final AtomicLong firstPartXmlMaxBytes = new AtomicLong(0);
+
+    private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
     private final StashManager stashManager;
     private final ContentTypeHeader outerContentType;
@@ -93,6 +96,7 @@ public class MimeBody {
         this.stashManager = stashManager;
         String start = outerContentType.getParam("start");
         if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
+        long firstPartXmlMaxBytes = MimeBody.firstPartXmlMaxBytes.get();
 
         if (outerContentType.isMultipart()) {
             // Multipart message.  Prepare the first part for reading.
@@ -102,18 +106,25 @@ public class MimeBody {
                 throw new IOException("This multipart message cannot be processed because it uses a multipart crlfBoundary which is more than 4kb in length");
             byte[] boundaryScanbuf = new byte[boundary.length];
             pushbackSize = BLOCKSIZE + boundaryScanbuf.length;
-            this.mainInputStream = new ByteLimitInputStream(mainInputStream, pushbackSize);
+            this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream);
             readInitialBoundary();
             readNextPartHeaders();
             firstPart = (PartInfoImpl)partInfos.get(0);
             if (start != null && !(start.equals(firstPart.getContentId(false))))
                 throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
+            if (firstPartXmlMaxBytes > 0) {
+                ContentTypeHeader firstCt = firstPart.getContentType();
+                if (firstCt != null && firstCt.isXml()) {
+                    this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
+                }
+            }
         } else {
             // Single-part message.  Configure first and only part accordingly.
             boundaryStr = null;
             boundary = null;
             pushbackSize = BLOCKSIZE;
-            this.mainInputStream = new ByteLimitInputStream(mainInputStream, pushbackSize);
+            this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream, pushbackSize);
+            if (firstPartXmlMaxBytes > 0) this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
             final MimeHeaders outerHeaders = new MimeHeaders();
             outerHeaders.add(outerContentType);
             final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
@@ -166,6 +177,15 @@ public class MimeBody {
     }
 
     /**
+    * @param firstPartXmlMaxBytes  size limit to enforce for the first part if its type is text/xml, or zero for no limit
+    */
+    public static void setFirstPartXmlMaxBytes(long firstPartXmlMaxBytes) {
+        MimeBody.firstPartXmlMaxBytes.set(firstPartXmlMaxBytes);
+    }
+
+
+
+    /**
      * Consume the headers of the next part, and store a PartInfo.  The main InputStream must be positioned just
      * beyond the boundary, at the first byte of the next part's headers.
      *
@@ -176,6 +196,10 @@ public class MimeBody {
         if (boundary == null) throw new IllegalStateException("Not supported in single-part mode");
         if (!moreParts)
             throw new NoSuchPartException("Out of parts");
+
+        // Turn off limit
+        this.mainInputStream.clearLimitNonFlagging();
+
         // Consume the headers of the first part.
         MimeHeaders headers = MimeUtil.parseHeaders(mainInputStream);
         final PartInfoImpl partInfo = new PartInfoImpl(partInfos.size(), headers);
@@ -999,6 +1023,37 @@ public class MimeBody {
             }
             if (got == null) throw new IllegalStateException(); // can't happen
             return got;
+        }
+    }
+
+    private class FlaggingByteLimitInputStream extends ByteLimitInputStream {
+        private boolean limitCustomized = false;
+
+        private FlaggingByteLimitInputStream(InputStream mainInputStream) {
+            super(mainInputStream, MimeBody.this.pushbackSize);
+        }
+
+        private FlaggingByteLimitInputStream(InputStream mainInputStream, int pushbackSize) {
+            super(mainInputStream, pushbackSize);
+        }
+
+        public void setSizeLimit(long newLimit) throws IOException {
+            limitCustomized = true;
+            super.setSizeLimit(newLimit);
+        }
+
+        private void setSizeLimitNonFlagging(long newLimit) throws IOException {
+            if (!limitCustomized)
+                super.setSizeLimit(newLimit);
+        }
+
+        private void clearLimitNonFlagging() throws IOException {
+            if (!limitCustomized)
+                super.setSizeLimit(0);
+        }
+
+        private boolean isLimitCustomized() {
+            return limitCustomized;
         }
     }
 }

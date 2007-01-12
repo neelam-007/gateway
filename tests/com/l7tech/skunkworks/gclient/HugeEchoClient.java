@@ -163,6 +163,9 @@ public class HugeEchoClient {
                 System.exit(1);
             }
             System.out.println("The posted stream matched the response stream.");
+        } catch (IOException ioe) {
+            System.err.println(ExceptionUtils.getMessage(ioe));
+            System.exit(2);
         } catch (Throwable t) {
             final String mess = "Failed to run echo test: " + ExceptionUtils.getMessage(t);
             System.err.println(mess);
@@ -202,10 +205,15 @@ public class HugeEchoClient {
 
         GenericHttpResponse resp = request.getResponse();
 
-        if (!ctype.getFullValue().equalsIgnoreCase(resp.getContentType().getFullValue()))
-            throw new IOException("Response content type was not " + ctype);
+        boolean equal = HexUtils.compareInputStreams(createGenerator(size), true, new TeeInputStream(resp.getInputStream(), logres), true);
 
-        return HexUtils.compareInputStreams(createGenerator(size), true, new TeeInputStream(resp.getInputStream(), logres), true);
+        int status = resp.getStatus();
+        if (status != 200)
+            System.err.println("WARNING: Response status was " + status);
+        if (!ctype.getFullValue().equalsIgnoreCase(resp.getContentType().getFullValue()))
+            System.err.println("WARNING: Response content type was not " + ctype.getFullValue() + " (got " + resp.getContentType().getFullValue() + ")");
+
+        return equal;
     }
 
     private static InputStream createGenerator(long size) {
