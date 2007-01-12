@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
+ * @noinspection UnnecessaryUnboxing,ForLoopReplaceableByForEach,unchecked
  */
 public class HexUtils {
     private static final int DEFAULT_LOCAL_BUFFER_SIZE = 256 * 1024;
@@ -84,6 +85,15 @@ public class HexUtils {
         return Base64.decodeBase64(encodeUtf8(s));
     }
 
+    /**
+     * Decode a string of Base-64.
+     *
+     * @param s  the Base64 string to decode
+     * @param stripWhitespaceFirst  if true, strip whitespace that might confuse the decoder.  Currently ignored.
+     * @return the decoded bytes
+     * @noinspection UnusedDeclaration
+     * @throws java.io.IOException  if the base64 is not well formed
+     */
     public static byte[] decodeBase64(String s, boolean stripWhitespaceFirst) throws IOException {
         // The 'stripWhitespaceFirst' param used to remove whitespace before
         // passing to suns BASE64Decoder.
@@ -115,7 +125,12 @@ public class HexUtils {
         return UTF8_CHARSET.decode(ByteBuffer.wrap(encodedText)).toString();
     }
 
-    /** @return a hex string with exactly 8 nybbles, ie 000F0238 */
+    /**
+     * Convert an int to an 8-digit hex string, with leading zeroes as needed.
+     *
+     * @param i  the integer to convert to hex
+     * @return a hex string with exactly 8 nybbles, ie 000F0238
+     */
     public static String to8NybbleHexString(int i) {
         String hs = Integer.toHexString(i).toUpperCase();
         final int hsl = hs.length();
@@ -141,7 +156,8 @@ public class HexUtils {
     /**
      * Convert the specified binary data into a string containing hexadecimal digits.
      * Example:  hexDump(new byte[] { (byte)0xAB, (byte)0xCD }).equals("abcd")
-     * @param binaryData
+     * @param binaryData  the data to dump
+     * @return the hex dump of the data
      */
     public static String hexDump(byte[] binaryData) {
         return hexDump(binaryData, 0, binaryData.length);
@@ -210,6 +226,7 @@ public class HexUtils {
      * @param maxLength  the maximum number of bytes you are willing to recieve
      * @return the newly read array, sized to the amount read or maxLength if the data may have been truncated.
      *         never null.
+     * @throws java.io.IOException on IOException
      */
     public static byte[] slurpStream(InputStream stream, int maxLength) throws IOException {
         byte[] buffer = new byte[maxLength];
@@ -257,6 +274,7 @@ public class HexUtils {
      * @param bb the array of bytes in which to read it
      * @return the number of bytes read from the stream, up to bb.length.  If this returns bb.length, the InputStream
      *         may contain additional unread data.
+     * @throws java.io.IOException on IOException
      */
     public static int slurpStream(InputStream stream, byte[] bb) throws IOException {
         int remaining = bb.length;
@@ -445,6 +463,7 @@ public class HexUtils {
 
     /**
      * Get a thread-local MD5 MessageDigest instance.
+     * @return a thread-local digestor
      */
     private static MessageDigest getMd5() {
         MessageDigest md5 = (MessageDigest)md5s.get();
@@ -462,6 +481,7 @@ public class HexUtils {
 
     /**
      * Get a thread-local SHA-1 MessageDigest instance.
+     * @return a thread-local digestor
      */
     private static MessageDigest getSha1() {
         MessageDigest sha1 = (MessageDigest)sha1s.get();
