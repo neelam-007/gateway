@@ -1392,6 +1392,24 @@ public class WssProcessorImpl implements WssProcessor {
             }
         });
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+            public MessageDigest getDigestMethod(String string) throws NoSuchAlgorithmException, NoSuchProviderException {
+                if ("http://www.w3.org/2000/09/xmldsig#sha1".equals(string) && localSha1Digest.get()!=null) {
+                    MessageDigest sha1Digest = (MessageDigest) localSha1Digest.get();
+                    sha1Digest.reset();
+                    return sha1Digest;
+                } else {
+                    return super.getDigestMethod(string);
+                }
+            }
+
+            public void releaseDigestMethod(MessageDigest messageDigest, String string) {
+                if ("http://www.w3.org/2000/09/xmldsig#sha1".equals(string)) {
+                    localSha1Digest.set(messageDigest);    
+                } else {
+                    super.releaseDigestMethod(messageDigest, string);
+                }
+            }
+
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s)) {
                     return new Transform() {
@@ -1416,8 +1434,11 @@ public class WssProcessorImpl implements WssProcessor {
                             }
                         }
                     };
-                } else
+                } else if (SoapUtil.TRANSFORM_XSLT.equals(s)) {
+                    throw new NoSuchAlgorithmException(s);
+                } else {
                     return super.getTransform(s);
+                }
             }
 
             public SignatureMethod getSignatureMethod(String alg, Object param) throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -1768,6 +1789,7 @@ public class WssProcessorImpl implements WssProcessor {
     private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new EncryptedElement[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final XmlSecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new XmlSecurityToken[0];
+    private static final ThreadLocal localSha1Digest = new ThreadLocal();
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
         private final SecretKey finalKey;
