@@ -484,6 +484,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
             public HttpCookie[] getSessionCookies() {
                 // todo fla, enforce ALL headers and parameter rules
+                // replace these overrides by something that will hookup into
+                // proxy message processor line 592
                 int cookieRule = data.getRequestHeaderRules().ruleForName("cookie");
                 Set cookies = Collections.EMPTY_SET;
                 if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
