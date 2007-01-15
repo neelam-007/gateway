@@ -17,7 +17,6 @@ public class BufferPool {
 
     // Don't accumulate an infinite number of buffers in the pool
     private static int[] MAX_BUFFERS_PER_LIST = { 20, 20, 10, 4, 20, 15, 10, 5 };
-    private static int MAX_HUGE_BUFFERS = 4;
 
     private int[] sizes = { 1024, 4096, 16384, 65536, 128 * 1024, 256 * 1024, 512 * 1024, 1024 * 1024 };
 
@@ -33,7 +32,6 @@ public class BufferPool {
     private static final LinkedList p256k = new LinkedList();
     private static final LinkedList p512k = new LinkedList();
     private static final LinkedList p1024k = new LinkedList();
-    private static final LinkedList pHuge = new LinkedList();
 
     private final LinkedList[] buffers = new LinkedList[] {
             p1k,  // list of buffers that are 1k
@@ -154,15 +152,6 @@ public class BufferPool {
      */
     private static byte[] getHugeBuffer(int size) {
         if (size < 1024 * 1024) throw new IllegalArgumentException("size must be greater than 1mb");
-        synchronized (pHuge) {
-            for (ListIterator i = pHuge.listIterator(); i.hasNext();) {
-                byte[] buff = (byte[])i.next();
-                if (buff.length >= size) {
-                    i.remove();
-                    return buff;
-                }
-            }
-        }
         return new byte[size];
     }
 
@@ -174,10 +163,5 @@ public class BufferPool {
     private static void returnHugeBuffer(byte[] buffer) {
         final int size = buffer.length;
         if (size < 1024 * 1024) throw new IllegalArgumentException("size must be greater than 1mb");
-        synchronized (pHuge) {
-            while (pHuge.size() >= MAX_HUGE_BUFFERS)
-                pHuge.removeFirst();
-            pHuge.add(buffer);
-        }
     }
 }
