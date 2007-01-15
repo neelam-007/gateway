@@ -1,8 +1,10 @@
+
 package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -39,8 +41,39 @@ public class HttpForwardingRuleEnforcer {
                                             String targetDomain, HttpPassthroughRuleSet rules, Auditor auditor) {
         if (rules.isForwardAll()) {
             // forward everything
-            // todo (see above)
+            HttpRequestKnob knob;
+            try {
+                knob = context.getRequest().getHttpRequestKnob();
+            } catch (IllegalStateException e) {
+                logger.log(Level.FINE, "no header to forward cause this is not an incoming http request");
+                return;
+            }
+            String[] headerNames = knob.getHeaderNames();
+            boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
+            for (String headername : headerNames) {
+                // special cookie handling
+                if (headername.equals(HttpConstants.HEADER_COOKIE) && !cookieAlreadyHandled) {
+                    List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
+                    if (!res.isEmpty()) {
+                        routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
+                                                                                 HttpCookie.getCookieHeader(res)));
+                    }
+                    cookieAlreadyHandled = true;
+                } else {
+                    String[] values = knob.getHeaderValues(headername);
+                    for (String value : values) {
+                        routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
+                    }
+                }
+            }
         } else {
+            HttpRequestKnob knob;
+            try {
+                knob = context.getRequest().getHttpRequestKnob();
+            } catch (IllegalStateException e) {
+                logger.log(Level.FINE, "incoming headers wont be forwarded cause this is not an incoming http request");
+                knob = null;
+            }
             for (int i = 0; i < rules.getRules().length; i++) {
                 HttpPassthroughRule rule = rules.getRules()[i];
                 if (rule.isUsesCustomizedValue()) {
@@ -50,7 +83,7 @@ public class HttpForwardingRuleEnforcer {
                     // resolve context variable if applicable
                     // todo (see above)
                     routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
-                } else {
+                } else if (knob != null) {
                     // set header with incoming value if it's present
                     String headername = rule.getName();
                     // special cookie handling
@@ -61,13 +94,9 @@ public class HttpForwardingRuleEnforcer {
                                                                                      HttpCookie.getCookieHeader(res)));
                         }
                     } else {
-                        try {
-                            String[] values = context.getRequest().getHttpRequestKnob().getHeaderValues(headername);
-                            for (String value : values) {
-                                routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
-                            }
-                        } catch (IllegalStateException e) {
-                            logger.log(Level.FINE, "cannot get http header " + headername, e);
+                        String[] values = knob.getHeaderValues(headername);
+                        for (String value : values) {
+                            routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
                         }
                     }
                 }
