@@ -21,7 +21,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.ExpandVariables;
@@ -32,6 +31,7 @@ import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
+import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -228,12 +228,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedRequestParams.addExtraHeader(new GenericHttpHeader(HOST, hostValue.toString()));
 
             HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-            String soapAction = httpRequestKnob == null ? null : httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
-            if (httpRequestKnob == null || soapAction == null) {
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\""));
-            } else {
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction));
-            }
 
             if (data.isTaiCredentialChaining()) {
                 doTaiCredentialChaining(context, routedRequestParams, url);
@@ -403,12 +397,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
 
-            // todo fla, enforce ALL headers and parameter rules
-            int cookieRule = data.getRequestHeaderRules().ruleForName("cookie");
-            if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
-                cookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
-                copyCookiesOutbound(routedRequestParams, context, url.getHost());
-            }
+            // this will forward soapaction, content-type, cookies, etc based on assertion settings
+            HttpForwardingRuleEnforcer.handleRequestHeaders(routedRequestParams, context, url.getHost(),
+                                                            data.getRequestHeaderRules(), auditor);
 
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
                                                                  getMaxConnectionsPerHost(),
@@ -468,7 +459,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (httpResponseKnob != null)
                 httpResponseKnob.setStatus(status);
 
-            // todo fla, all header and parameter rules should be enforced
+            // todo fla, plugin HttpForwardingRuleEnforcer instead of below
             int setcookieRule = data.getResponseHeaderRules().ruleForName("set-cookie");
             if (setcookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                 setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
@@ -587,46 +578,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return url;
-    }
-
-    /**
-     * Copy cookies sent by the client to the protected service request
-     *
-     * @param routedRequestParams the request parameters
-     * @param context the context for this request
-     */
-    private void copyCookiesOutbound(GenericHttpRequestParams routedRequestParams,
-                                     PolicyEnforcementContext context,
-                                     String targetDomain)
-    {
-        List<HttpCookie> routeCookies = new ArrayList<HttpCookie>();
-        Set<HttpCookie> contextCookies = context.getCookies();
-
-        for (HttpCookie ssgc : contextCookies) {
-            if (CookieUtils.isPassThroughCookie(ssgc)) {
-                if (ssgc.isNew()) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[]{ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
-                } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[]{ssgc.getCookieName()});
-                }
-                HttpCookie newCookie = new HttpCookie(
-                        ssgc.getCookieName(),
-                        ssgc.getCookieValue(),
-                        ssgc.getVersion(),
-                        "/",
-                        targetDomain,
-                        ssgc.getMaxAge(),
-                        ssgc.isSecure(),
-                        ssgc.getComment()
-                );
-
-                // attach and record
-                routeCookies.add(newCookie);
-            }
-        }
-
-        if (!routeCookies.isEmpty())
-            routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(routeCookies)));
     }
 
     /**

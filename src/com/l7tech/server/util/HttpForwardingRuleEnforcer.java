@@ -28,6 +28,9 @@ import java.util.logging.Level;
  */
 public class HttpForwardingRuleEnforcer {
     private static final Logger logger = Logger.getLogger(HttpForwardingRuleEnforcer.class.getName());
+    private static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"content-length", "user-agent", "host",
+                                                                        "accept", "accept-language", "accept-encoding",
+                                                                        "accept-charset", "keep-alive", "connection"};
 
     /**
      * for forwarding request http headers downstream (from routing assertion)
@@ -51,8 +54,11 @@ public class HttpForwardingRuleEnforcer {
             String[] headerNames = knob.getHeaderNames();
             boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
             for (String headername : headerNames) {
-                // special cookie handling
-                if (headername.equals(HttpConstants.HEADER_COOKIE) && !cookieAlreadyHandled) {
+                if (headerShouldBeIgnored(headername)) {
+                    // some headers should just be ignored cause they are not 'application headers'
+                    logger.fine("not passing through " + headername);
+                } else if (headername.equals(HttpConstants.HEADER_COOKIE) && !cookieAlreadyHandled) {
+                    // special cookie handling
                     List<HttpCookie> res = passableCookies(context, targetDomain, auditor);
                     if (!res.isEmpty()) {
                         routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
@@ -114,6 +120,14 @@ public class HttpForwardingRuleEnforcer {
 
     public static void handleResponseParameters() {
         // todo
+    }
+
+    private static boolean headerShouldBeIgnored(String headerName) {
+        headerName = headerName.toLowerCase();
+        for (String ignoreme : HEADERS_NOT_TO_IMPLICITELY_FORWARD) {
+            if (ignoreme.equals(headerName)) return true;
+        }
+        return false;
     }
 
     private static List<HttpCookie> passableCookies(PolicyEnforcementContext context, String targetDomain, Auditor auditor) {
