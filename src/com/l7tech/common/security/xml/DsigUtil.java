@@ -7,6 +7,8 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -215,6 +218,15 @@ public class DsigUtil {
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
                 return SoapUtil.getElementByWsuId(doc, s);
+            }
+        });
+
+        sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+            public Transform getTransform(String transform) throws NoSuchAlgorithmException {
+                if (SoapUtil.TRANSFORM_XSLT.equals(transform)) {
+                    throw new NoSuchAlgorithmException(transform);
+                }
+                return super.getTransform(transform);
             }
         });
 
