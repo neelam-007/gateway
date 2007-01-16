@@ -808,4 +808,8 @@ public class SsgRuntime {
         if (ssgKeyStoreManager == null) throw new NullPointerException();
         this.ssgKeyStoreManager = ssgKeyStoreManager;
     }
+
+    public String toString() {
+        return "SsgRuntime:" + ssg.toString();
+    }
 }
