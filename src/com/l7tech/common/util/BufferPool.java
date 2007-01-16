@@ -6,17 +6,21 @@
 package com.l7tech.common.util;
 
 import java.util.*;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 
 /**
  * Class that provides access to a pool of not-zeroed-on-use byte arrays to use as read buffers.
  * Each thread has its own pool of small buffers, but buffers larger than 64k are shared process wide
  * (and involve some synchronization).
+ * @noinspection unchecked
  */
 public class BufferPool {
     public static final int MIN_BUFFER_SIZE = 1024;
 
     // Don't accumulate an infinite number of buffers in the pool
     private static int[] MAX_BUFFERS_PER_LIST = { 20, 20, 10, 4, 20, 15, 10, 5 };
+    private static int MAX_HUGE_BUFFERS = 4;
 
     private int[] sizes = { 1024, 4096, 16384, 65536, 128 * 1024, 256 * 1024, 512 * 1024, 1024 * 1024 };
 
@@ -32,6 +36,7 @@ public class BufferPool {
     private static final LinkedList p256k = new LinkedList();
     private static final LinkedList p512k = new LinkedList();
     private static final LinkedList p1024k = new LinkedList();
+    private static final LinkedList pHuge = new LinkedList();
 
     private final LinkedList[] buffers = new LinkedList[] {
             p1k,  // list of buffers that are 1k
@@ -89,11 +94,15 @@ public class BufferPool {
     }
 
     private byte[] getBufferFromList(LinkedList buffers, int size, int minSize) {
-        if (buffers.isEmpty())
-            return new byte[size];
-        final byte[] buf = (byte[])buffers.removeFirst();
-        assert buf.length >= minSize;
-        return buf;
+        while (!buffers.isEmpty()) {
+            final SoftReference bufRef = (SoftReference)buffers.removeFirst();
+            final byte[] buf = (byte[])bufRef.get();
+            if (buf != null) {
+                assert buf.length >= minSize;
+                return buf;
+            }
+        }
+        return new byte[size];
     }
 
     /**
@@ -130,13 +139,13 @@ public class BufferPool {
                 if (i <= LAST_LOCAL_INDEX) {
                     // Thread local -- no synch needed
                     if (buffers.size() < MAX_BUFFERS_PER_LIST[i])
-                        buffers.add(buffer);
+                        buffers.add(new SoftReference(buffer));
                     return;
                 }
                 // Shared -- synch needed
                 synchronized (buffers) {
                     if (buffers.size() < MAX_BUFFERS_PER_LIST[i])
-                        buffers.add(buffer);
+                        buffers.add(new SoftReference(buffer));
                     return;
                 }
             }
@@ -152,6 +161,18 @@ public class BufferPool {
      */
     private static byte[] getHugeBuffer(int size) {
         if (size < 1024 * 1024) throw new IllegalArgumentException("size must be greater than 1mb");
+        synchronized (pHuge) {
+            for (ListIterator i = pHuge.listIterator(); i.hasNext();) {
+                WeakReference ref = (WeakReference)i.next();
+                byte[] buff = (byte[])ref.get();
+                if (buff == null) {
+                    i.remove();
+                } else if (buff.length >= size) {
+                    i.remove();
+                    return buff;
+                }
+            }
+        }
         return new byte[size];
     }
 
@@ -163,5 +184,10 @@ public class BufferPool {
     private static void returnHugeBuffer(byte[] buffer) {
         final int size = buffer.length;
         if (size < 1024 * 1024) throw new IllegalArgumentException("size must be greater than 1mb");
+        synchronized (pHuge) {
+            while (pHuge.size() >= MAX_HUGE_BUFFERS)
+                pHuge.removeFirst();
+            pHuge.add(new WeakReference(buffer));
+        }
     }
 }

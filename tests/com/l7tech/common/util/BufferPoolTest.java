@@ -51,12 +51,12 @@ public class BufferPoolTest extends TestCase {
         BufferPool.returnBuffer(b3mb);
 
         byte[] a = BufferPool.getBuffer(2 * 1024 * 1024);
-        // Should NOT have reused the one we just put back since it's bigger than 1mb
-        assertFalse(a == b3mb);
+        // Should have reused the one we just put back since it's bigger
+        assertTrue(a == b3mb);
 
         BufferPool.returnBuffer(b2mb);
         byte[] c = BufferPool.getBuffer(2 * 1024 * 1024);
-        assertFalse(c == b2mb);
+        assertTrue(c == b2mb);
 
         final int size = 2 * 1024 * 1024 + 17;
         byte[] d = BufferPool.getBuffer(size);
