@@ -247,20 +247,22 @@ public class PartitionManager {
             if (defaultPartitionDir.listFiles().length == 0) {
                 System.out.println("Copying configuration files to the default partition.");
                 try {
-                    if (filesInOldConfigDirectory.length <= 1) {//no originals, this is a new install, copy the ones from the partition template
-                        List<File> templateFiles = new ArrayList<File>();
-                        templateFiles.add(oldKeystoreDirectory);
-                        templateFiles.add(oldTomcatServerConfig);
-                        templateFiles.addAll(Arrays.asList(templatePartitionDir.listFiles()));
+                    // copy template configuration
+                    List<File> templateFiles = new ArrayList<File>();
+                    templateFiles.add(oldKeystoreDirectory);
+                    templateFiles.add(oldTomcatServerConfig);
+                    templateFiles.addAll(Arrays.asList(templatePartitionDir.listFiles()));
 
-                        copyConfigurations(templateFiles, defaultPartitionDir);
+                    copyConfigurations(templateFiles, defaultPartitionDir);
+                    if (filesInOldConfigDirectory.length <= 1) {//no originals, this is a new install, copy the ones from the partition template
                         fileNames.clear();
                         for (File templateFile : templateFiles) {
                             fileNames.add(templateFile.getName());
                         }
                         pa.setLinuxFilePermissions(fileNames.toArray(new String[0]), "775", defaultPartitionDir, osf);
                     } else {
-                        copyConfigurations(originalFiles, defaultPartitionDir);
+                        // copy old config, backup any existing files with the given extension.
+                        copyConfigurations(originalFiles, defaultPartitionDir, osf.getUpgradedFileExtension());
                         fileNames.clear();
                         for (File originalFile : originalFiles) {
                             fileNames.add(originalFile.getName());
@@ -310,12 +312,32 @@ public class PartitionManager {
     }
 
     private static void copyConfigurations(List<File> filesToCopy, File destinationDir) throws IOException {
-        if (!destinationDir.exists()) destinationDir.mkdir();
+        copyConfigurations(filesToCopy, destinationDir, null);       
+    }
+
+    private static void copyConfigurations(List<File> filesToCopy, File destinationDir, String backupExtn) throws IOException {
+        if (!destinationDir.exists()) {
+            if(!destinationDir.mkdir())
+                System.out.println("Error while creating directory '"+destinationDir.getAbsolutePath()+"'.");
+        }        
+
         for (File currentFile : filesToCopy) {
             if (currentFile.isDirectory()) {
-                copyConfigurations(new ArrayList<File>(Arrays.asList(currentFile.listFiles())), new File(destinationDir, currentFile.getName()));
+                copyConfigurations(
+                        new ArrayList<File>(Arrays.asList(currentFile.listFiles())), 
+                        new File(destinationDir, currentFile.getName()),
+                        backupExtn);
             } else {
                 File newFile = new File(destinationDir, currentFile.getName());
+
+                // backup existing file if required
+                if (newFile.exists() && backupExtn != null) {
+                    File targetFile = new File(destinationDir, currentFile.getName());
+                    File backupFile = new File(destinationDir, currentFile.getName() + "." + backupExtn);
+                    if (!targetFile.renameTo(backupFile))
+                        System.out.println("Could not create backup for file '"+newFile.getAbsolutePath()+"'.");
+                }
+
                 if (currentFile.exists())
                     FileUtils.copyFile(currentFile, newFile);
             }
