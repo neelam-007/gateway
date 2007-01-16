@@ -9,7 +9,6 @@ package com.l7tech.proxy;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
