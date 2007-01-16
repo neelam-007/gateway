@@ -238,9 +238,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             String domain = data.getRealm();
             String host = data.getNtlmHost();
 
-            if (login != null && login.length() > 0
-              && password != null && password.length() > 0) {
-                Map vars = context.getVariableMap(varNames, auditor);
+            Map vars = null;
+            if (login != null && login.length() > 0 && password != null && password.length() > 0) {
+                if (vars == null) {
+                    vars = context.getVariableMap(varNames, auditor);
+                }
                 login = ExpandVariables.process(login, vars);
                 password = ExpandVariables.process(password, vars);
                 if (domain != null) domain = ExpandVariables.process(domain, vars);
@@ -274,7 +276,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            return reallyTryUrl(context, routedRequestParams, url, true);
+            return reallyTryUrl(context, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
@@ -366,11 +368,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return GenericHttpClient.POST;
     }
 
-    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context,
-                                         GenericHttpRequestParams routedRequestParams,
-                                         URL url, boolean allowRetry)
-            throws PolicyAssertionException
-    {
+    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams,
+                                         URL url, boolean allowRetry, Map vars) throws PolicyAssertionException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
         int status = -1;
@@ -399,7 +398,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // this will forward soapaction, content-type, cookies, etc based on assertion settings
             HttpForwardingRuleEnforcer.handleRequestHeaders(routedRequestParams, context, url.getHost(),
-                                                            data.getRequestHeaderRules(), auditor);
+                                                            data.getRequestHeaderRules(), auditor, vars, varNames);
 
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
                                                                  getMaxConnectionsPerHost(),
@@ -447,7 +446,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if(status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[] {url.getPath(), String.valueOf(status)});
-                return reallyTryUrl(context, routedRequestParams, url, false);
+                return reallyTryUrl(context, routedRequestParams, url, false, vars);
             }
 
             if (status == HttpConstants.STATUS_OK)
@@ -464,7 +463,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
                 HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse, httpResponseKnob, auditor,
                                                                  data.getResponseHeaderRules(), context,
-                                                                 routedRequestParams);
+                                                                 routedRequestParams, vars, varNames);
             }
             if (data.isPassthroughHttpAuthentication()) {
                 boolean passed = false;

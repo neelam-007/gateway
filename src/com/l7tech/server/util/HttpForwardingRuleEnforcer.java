@@ -8,11 +8,13 @@ import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -41,9 +43,12 @@ public class HttpForwardingRuleEnforcer {
      * @param targetDomain name of domain used for cookie forwarding
      * @param rules http rules dictating what headers should be forwarded and under which conditions
      * @param auditor for runtime auditing
+     * @param vars pre-populated map of context variables (pec.getVariableMap) or null
+     * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
     public static void handleRequestHeaders(GenericHttpRequestParams routedRequestParams, PolicyEnforcementContext context,
-                                            String targetDomain, HttpPassthroughRuleSet rules, Auditor auditor) {
+                                            String targetDomain, HttpPassthroughRuleSet rules, Auditor auditor,
+                                            Map vars, String[] varNames) {
         if (rules.isForwardAll()) {
             // forward everything
             HttpRequestKnob knob;
@@ -89,7 +94,12 @@ public class HttpForwardingRuleEnforcer {
                     String headername = rule.getName();
                     String headervalue = rule.getCustomizeValue();
                     // resolve context variable if applicable
-                    // todo (see above)
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        headervalue = ExpandVariables.process(headervalue, vars);
+                    }
                     routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
                 } else if (knob != null) {
                     // set header with incoming value if it's present
@@ -118,10 +128,22 @@ public class HttpForwardingRuleEnforcer {
         // GetMethod does not have those
     }
 
+    /**
+     * Handle response http headers from a response
+     * @param sourceOfResponseHeaders the response gotten from the routing assertion
+     * @param targetForResponseHeaders the response message to put the headers into
+     * @param context the pec
+     * @param rules http rules dictating what headers should be forwarded and under which conditions
+     * @param auditor for runtime auditing
+     * @param routedRequestParams httpclientproperty
+     * @param vars pre-populated map of context variables (pec.getVariableMap) or null
+     * @param varNames the context variables used by the calling assertion used to populate vars if null
+     */
     public static void handleResponseHeaders(GenericHttpResponse sourceOfResponseHeaders,
                                              HttpResponseKnob targetForResponseHeaders, Auditor auditor,
                                              HttpPassthroughRuleSet rules, PolicyEnforcementContext context,
-                                             GenericHttpRequestParams routedRequestParams) {
+                                             GenericHttpRequestParams routedRequestParams, Map vars,
+                                             String[] varNames) {
         boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {
             HttpHeader[] responseHeaders = sourceOfResponseHeaders.getHeaders().toArray();
@@ -141,7 +163,12 @@ public class HttpForwardingRuleEnforcer {
                 if (rule.isUsesCustomizedValue()) {
                     String headervalue = rule.getCustomizeValue();
                     // resolve context variable if applicable
-                    // todo (see above)
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        headervalue = ExpandVariables.process(headervalue, vars);
+                    }
                     targetForResponseHeaders.setHeader(rule.getName(), headervalue);
                 } else {
                     if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
