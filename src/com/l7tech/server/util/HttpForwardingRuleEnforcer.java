@@ -114,6 +114,8 @@ public class HttpForwardingRuleEnforcer {
 
     public static void handleRequestParameters() {
         // todo
+        // see PostMethod.addparam, removeparam, etc
+        // GetMethod does not have those
     }
 
     public static void handleResponseHeaders(GenericHttpResponse sourceOfResponseHeaders,
@@ -174,15 +176,13 @@ public class HttpForwardingRuleEnforcer {
                 }
             }
             for (HttpCookie routedCookie : newCookies) {
-                HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(), routedCookie.getCookieValue(), routedCookie.getVersion(), null, null);
+                HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(),
+                                                              routedCookie.getCookieValue(),
+                                                              routedCookie.getVersion(), null, null);
                 context.addCookie(ssgResponseCookie);
             }
         }
 
-    }
-
-    public static void handleResponseParameters() {
-        // todo
     }
 
     private static boolean headerShouldBeIgnored(String headerName) {
@@ -200,7 +200,8 @@ public class HttpForwardingRuleEnforcer {
         for (HttpCookie ssgc : contextCookies) {
             if (CookieUtils.isPassThroughCookie(ssgc)) {
                 if (ssgc.isNew()) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[]{ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION,
+                                        new String[]{ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
                 } else {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[]{ssgc.getCookieName()});
                 }

@@ -24,6 +24,8 @@ public class HeaderSender {
         post.addRequestHeader("header1", "header1value");
         post.addRequestHeader("soapaction", "getsomeaction");
 
+        post.addParameter("param2", "param2value");
+
         int res = client.executeMethod(post);
         System.out.println("Post retulted in status " + res);
         Header[] rheaders = post.getResponseHeaders();

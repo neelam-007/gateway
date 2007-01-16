@@ -7,6 +7,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -243,7 +244,24 @@ public class HttpRoutingAssertion
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(login + password + protectedServiceUrl + ntlmHost + realm);
+        StringBuffer tmp = new StringBuffer();
+        if (!StringUtils.isEmpty(login)) tmp.append(login);
+        if (!StringUtils.isEmpty(password)) tmp.append(password);
+        if (!StringUtils.isEmpty(protectedServiceUrl)) tmp.append(protectedServiceUrl);
+        if (!StringUtils.isEmpty(ntlmHost)) tmp.append(ntlmHost);
+        if (!StringUtils.isEmpty(realm)) tmp.append(realm);
+
+        HttpPassthroughRuleSet[] ruleset = {responseHeaderRules, requestHeaderRules, requestParamRules};
+        for (int i = 0; i < ruleset.length; i++) {
+            HttpPassthroughRuleSet rules = ruleset[i];
+            if (!rules.isForwardAll()) {
+                for (int j = 0; j < rules.getRules().length; j++) {
+                    HttpPassthroughRule rule = rules.getRules()[j];
+                    if (!StringUtils.isEmpty(rule.getCustomizeValue())) tmp.append(rule.getCustomizeValue());
+                }
+            }
+        }
+        return ExpandVariables.getReferencedNames(tmp.toString());
     }
 
     public VariableMetadata[] getVariablesSet() {
