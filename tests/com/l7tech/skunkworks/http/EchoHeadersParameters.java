@@ -20,6 +20,11 @@ import java.util.Enumeration;
  */
 public class EchoHeadersParameters extends HttpServlet {
     private void outputResponse(String method, HttpServletRequest req, HttpServletResponse res) throws IOException {
+
+        // add a couple headers to response
+        res.setHeader("rehr1", "" + System.currentTimeMillis());
+        res.setHeader("rehr2", "" + System.currentTimeMillis());
+
         StringBuffer payload = new StringBuffer();
         payload.append("<RequestReceived>");
         payload.append("\n\t<Method>");

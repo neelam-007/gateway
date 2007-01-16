@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.http;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.Header;
 
 
 /**
@@ -25,6 +26,11 @@ public class HeaderSender {
 
         int res = client.executeMethod(post);
         System.out.println("Post retulted in status " + res);
+        Header[] rheaders = post.getResponseHeaders();
+        System.out.println("Response Headers:");
+        for (Header h : rheaders) {
+            System.out.println("\t" + h.getName() + " : " + h.getValue());
+        }
         System.out.println("Response payload: " + new String(post.getResponseBody()));
     }
 }
