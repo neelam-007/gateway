@@ -452,8 +452,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             if (status == HttpConstants.STATUS_OK)
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
-            else
+            else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
+            } else {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
+            }
 
             HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
             if (httpResponseKnob != null)
@@ -478,8 +481,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
                 if (passed) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE);
-                } else {
+                } else if (status != HttpConstants.STATUS_UNAUTHORIZED) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE_NC);
+                } else {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
                 }
             }
 
