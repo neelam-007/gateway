@@ -16,7 +16,7 @@ import org.apache.commons.httpclient.Header;
  */
 public class HeaderSender {
     //public static final String URL = "http://soong:8080/test/blahness?param1=value1";
-    public static final String URL = "http://soong:8080/sms";
+    public static final String URL = "http://soong:8080/testh";
     
     public static void main(String[] args) throws Exception {
         HttpClient client = new HttpClient();

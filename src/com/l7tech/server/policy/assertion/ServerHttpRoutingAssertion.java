@@ -459,16 +459,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
-            if (httpResponseKnob != null)
+            if (httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
-            // todo fla, plugin HttpForwardingRuleEnforcer instead of below
-            int setcookieRule = data.getResponseHeaderRules().ruleForName("set-cookie");
-            if (setcookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
-                setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
-                copyCookiesInbound(routedRequestParams, routedResponse, context);
+                HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse, httpResponseKnob, auditor,
+                                                                 data.getResponseHeaderRules(), context,
+                                                                 routedRequestParams);
             }
-
             if (data.isPassthroughHttpAuthentication()) {
                 boolean passed = false;
                 List wwwAuthValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_WWW_AUTHENTICATE);
@@ -584,30 +581,4 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         return url;
     }
-
-    /**
-     * Get new cookies from the routed response, and add them to the SSG response.
-     *
-     * @param routedResponse the response received from the protected service, where cookies will be copied from
-     * @param context the context for the SSG request, to which the cookies should be copied
-     */
-    private void copyCookiesInbound(GenericHttpRequestParams routedRequestParams, GenericHttpResponse routedResponse, PolicyEnforcementContext context) {
-        List setCookieValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
-        List<HttpCookie> newCookies = new ArrayList<HttpCookie>();
-        for (Iterator i = setCookieValues.iterator(); i.hasNext();) {
-            String setCookieValue = (String)i.next();
-            try {
-                newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
-            } catch (HttpCookie.IllegalFormatException hcife) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, new String[]{setCookieValue});
-            }
-        }
-
-        for (HttpCookie routedCookie : newCookies) {
-            HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(), routedCookie.getCookieValue(), routedCookie.getVersion(), null, null);
-            context.addCookie(ssgResponseCookie);
-        }
-    }
-
-
 }

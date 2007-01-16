@@ -31,7 +31,8 @@ public class HttpForwardingRuleEnforcer {
     private static final Logger logger = Logger.getLogger(HttpForwardingRuleEnforcer.class.getName());
     private static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"content-length", "user-agent", "host",
                                                                         "accept", "accept-language", "accept-encoding",
-                                                                        "accept-charset", "keep-alive", "connection"};
+                                                                        "accept-charset", "keep-alive", "connection",
+                                                                        "server", "content-type", "date"};
 
     /**
      * for forwarding request http headers downstream (from routing assertion)
@@ -117,19 +118,21 @@ public class HttpForwardingRuleEnforcer {
 
     public static void handleResponseHeaders(GenericHttpResponse sourceOfResponseHeaders,
                                              HttpResponseKnob targetForResponseHeaders, Auditor auditor,
-                                             HttpPassthroughRuleSet rules, PolicyEnforcementContext context) {
+                                             HttpPassthroughRuleSet rules, PolicyEnforcementContext context,
+                                             GenericHttpRequestParams routedRequestParams) {
+        boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {
             HttpHeader[] responseHeaders = sourceOfResponseHeaders.getHeaders().toArray();
             for (HttpHeader h : responseHeaders) {
                 if (headerShouldBeIgnored(h.getName())) {
                     logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
                 } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
-                    // special cookie handling
-                    // todo (see above)
+                    // special cookie handling happens outside this loop (see below)
                 } else {
                     targetForResponseHeaders.setHeader(h.getName(), h.getFullValue());
                 }
             }
+            passIncomingCookies = true;
         } else {
             for (int i = 0; i < rules.getRules().length; i++) {
                 HttpPassthroughRule rule = rules.getRules()[i];
@@ -140,8 +143,8 @@ public class HttpForwardingRuleEnforcer {
                     targetForResponseHeaders.setHeader(rule.getName(), headervalue);
                 } else {
                     if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
-                        // special cookie handling
-                        // todo (see above)
+                        // special cookie handling outside this loop (see below)
+                        passIncomingCookies = true;
                     } else {
                         List vals = sourceOfResponseHeaders.getHeaders().getValues(rule.getName());
                         if (vals != null && vals.size() > 0) {
@@ -157,6 +160,25 @@ public class HttpForwardingRuleEnforcer {
                 }
             }
         }
+
+        // handle cookies separately
+        if (passIncomingCookies) {
+            List setCookieValues = sourceOfResponseHeaders.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
+            List<HttpCookie> newCookies = new ArrayList<HttpCookie>();
+            for (Object setCookieValue1 : setCookieValues) {
+                String setCookieValue = (String) setCookieValue1;
+                try {
+                    newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+                } catch (HttpCookie.IllegalFormatException hcife) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, new String[]{setCookieValue});
+                }
+            }
+            for (HttpCookie routedCookie : newCookies) {
+                HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(), routedCookie.getCookieValue(), routedCookie.getVersion(), null, null);
+                context.addCookie(ssgResponseCookie);
+            }
+        }
+
     }
 
     public static void handleResponseParameters() {
