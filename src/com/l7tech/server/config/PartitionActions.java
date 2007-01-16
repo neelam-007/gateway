@@ -94,7 +94,8 @@ public class PartitionActions {
         }
         copyTemplateFiles(newPartitionDir);
         setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath()}, "775", newPartitionDir, osFunctions);
-        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/*"}, "775", newPartitionDir, osFunctions);
+        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/attachments"}, "775", newPartitionDir, osFunctions);
+        setLinuxFilePermissions(new String[]{newPartitionDir.getAbsolutePath() + "/var/modules"}, "775", newPartitionDir, osFunctions);
         return newPartitionDir;
     }
 
@@ -651,6 +652,7 @@ public class PartitionActions {
         if (!osf.isLinux())
             return;
 
+        logger.fine("Setting Permissions on var directory to 775");
         List<String> commandLine = new ArrayList<String>();
         commandLine.add("chmod");
         commandLine.add(permissions);
@@ -658,16 +660,19 @@ public class PartitionActions {
             commandLine.add(file);
         }
 
+        logger.fine("Command Line = " + commandLine);
 
         Process changer = null;
         try {
             String[] commandsArray = commandLine.toArray(new String[0]);
             changer = Runtime.getRuntime().exec(commandsArray, null, workingDir);
-            changer.waitFor();
+            int x = changer.waitFor();
             BufferedInputStream is = new BufferedInputStream(changer.getInputStream());
-            
             //make sure the command executes if it's waiting for someone to read it's output
-            HexUtils.slurpStreamLocalBuffer(is);
+            byte[] bytes = HexUtils.slurpStreamLocalBuffer(is);
+            logger.fine("Return Code = " + String.valueOf(x));
+            logger.fine("Output of command = " + new String(bytes));
+
         } finally {
             if (changer != null)
                 changer.destroy();
