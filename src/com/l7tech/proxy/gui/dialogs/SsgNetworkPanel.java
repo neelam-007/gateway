@@ -31,10 +31,11 @@ import java.util.regex.Pattern;
  * The Network panel for the SSG Property Dialog.
  *
  * @author mike
+ * @noinspection UnnecessaryUnboxing
  */
 class SsgNetworkPanel extends JPanel {
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
-    private final int ENDPOINT_MAX = SyspropUtil.getInteger(getClass().getName() + ".endpointMax", 400);
+    private final int ENDPOINT_MAX = SyspropUtil.getInteger(getClass().getName() + ".endpointMax", 400).intValue();
     private final Pattern ENDPOINT_PATTERN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     private final InputValidator validator;
