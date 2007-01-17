@@ -123,6 +123,76 @@ public class HttpForwardingRuleEnforcer {
         }
     }
 
+    public static void handleRequestHeaders(GenericHttpRequestParams routedRequestParams,
+                                            PolicyEnforcementContext context, HttpPassthroughRuleSet rules,
+                                            Auditor auditor, Map vars, String[] varNames) {
+        if (rules.isForwardAll()) {
+            // forward everything
+            HttpRequestKnob knob;
+            try {
+                knob = context.getRequest().getHttpRequestKnob();
+            } catch (IllegalStateException e) {
+                logger.log(Level.FINE, "no header to forward cause this is not an incoming http request");
+                return;
+            }
+            String[] headerNames = knob.getHeaderNames();
+            boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
+            for (String headername : headerNames) {
+                if (headerShouldBeIgnored(headername)) {
+                    // some headers should just be ignored cause they are not 'application headers'
+                    logger.fine("not passing through " + headername);
+                } else if (headername.toLowerCase().equals(HttpConstants.HEADER_COOKIE.toLowerCase()) && !cookieAlreadyHandled) {
+                    // cookies are handled separately by the ServerBRA
+                }  else if (headername.toLowerCase().equals("soapaction") && !cookieAlreadyHandled) {
+                    // the bridge has it's own handling for soapaction
+                } else {
+                    String[] values = knob.getHeaderValues(headername);
+                    for (String value : values) {
+                        routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
+                    }
+                }
+            }
+        } else {
+            HttpRequestKnob knob;
+            try {
+                knob = context.getRequest().getHttpRequestKnob();
+            } catch (IllegalStateException e) {
+                logger.log(Level.FINE, "incoming headers wont be forwarded cause this is not an incoming http request");
+                knob = null;
+            }
+            for (int i = 0; i < rules.getRules().length; i++) {
+                HttpPassthroughRule rule = rules.getRules()[i];
+                if (rule.isUsesCustomizedValue()) {
+                    // set header with custom value
+                    String headername = rule.getName();
+                    String headervalue = rule.getCustomizeValue();
+                    // resolve context variable if applicable
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        headervalue = ExpandVariables.process(headervalue, vars);
+                    }
+                    routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
+                } else if (knob != null) {
+                    // set header with incoming value if it's present
+                    String headername = rule.getName();
+                    // special cookie handling
+                    if (headername.toLowerCase().equals(HttpConstants.HEADER_COOKIE.toLowerCase())) {
+                        // outgoing cookies are handled separately by the ServerBra
+                    } else if (headername.toLowerCase().equals("soapaction")) {
+                        // the bride already has its own handling for soapaction
+                    } else {
+                        String[] values = knob.getHeaderValues(headername);
+                        for (String value : values) {
+                            routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, value));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static void handleRequestParameters() {
         // todo
         // see PostMethod.addparam, removeparam, etc
@@ -138,7 +208,7 @@ public class HttpForwardingRuleEnforcer {
             for (HttpHeader h : headers) {
                 if (headerShouldBeIgnored(h.getName())) {
                     logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
-                } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
+                } else if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(h.getName().toLowerCase())) {
                     // special cookie handling happens outside this class by the ServerBRA
                 } else {
                     targetForResponseHeaders.setHeader(h.getName(), h.getFullValue());
@@ -158,7 +228,7 @@ public class HttpForwardingRuleEnforcer {
                     }
                     targetForResponseHeaders.setHeader(rule.getName(), headervalue);
                 } else {
-                    if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
+                    if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(rule.getName().toLowerCase())) {
                         // special cookie handling happens outside this class by the ServerBRA
                     } else {
                         List vals = hh.getHeaders().getValues(rule.getName());

@@ -496,9 +496,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
             public HttpCookie[] getSessionCookies() {
-                // todo fla, enforce ALL headers and parameter rules
-                // replace these overrides by something that will hookup into
-                // proxy message processor line 592
                 int cookieRule = data.getRequestHeaderRules().ruleForName("cookie");
                 Set cookies = Collections.EMPTY_SET;
                 if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
@@ -534,6 +531,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private SimpleHttpClient newRRLSimpleHttpClient(final PolicyEnforcementContext context, final SimpleHttpClient client, final RoutingResultListener rrl, final HeaderHolder hh) {
         return new SimpleHttpClient(client) {
             public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)  {
+                // enforce http outgoing rules here
+                HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
+                                                                auditor, null, varNames);
+                
                 return new RerunnableHttpRequest() {
                     private RerunnableHttpRequest.InputStreamFactory isf = null;
                     private InputStream is = null;
