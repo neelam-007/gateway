@@ -16,7 +16,7 @@ import org.apache.commons.httpclient.Header;
  */
 public class HeaderSender {
     //public static final String URL = "http://soong:8080/test/blahness?param1=value1";
-    public static final String URL = "http://soong:8080/testh";
+    public static final String URL = "http://soong:8080/testb";
     
     public static void main(String[] args) throws Exception {
         HttpClient client = new HttpClient();
@@ -25,6 +25,18 @@ public class HeaderSender {
         post.addRequestHeader("soapaction", "getsomeaction");
 
         post.addParameter("param2", "param2value");
+
+        post.setRequestBody("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                "        <soapenv:Body>\n" +
+                "                <sendSms xmlns=\"http://www.csapi.org/schema/parlayx/sms/send/v1_0/local\">\n" +
+                "                        <destAddressSet/>\n" +
+                "                        <senderName>sender</senderName>\n" +
+                "                        <charging>charging</charging>\n" +
+                "                        <message>message</message>\n" +
+                "                </sendSms>\n" +
+                "        </soapenv:Body>\n" +
+                "</soapenv:Envelope>");
 
         int res = client.executeMethod(post);
         System.out.println("Post retulted in status " + res);

@@ -129,9 +129,52 @@ public class HttpForwardingRuleEnforcer {
         // GetMethod does not have those
     }
 
-    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, ServerBridgeRoutingAssertion.HeaderHolder hh,
-                                             HttpPassthroughRuleSet rules) {
-        // todo, support BRA. see ServerBRA:222
+    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, Auditor auditor,
+                                             ServerBridgeRoutingAssertion.HeaderHolder hh,
+                                             HttpPassthroughRuleSet rules, Map vars, String[] varNames,
+                                             PolicyEnforcementContext context) {
+        if (rules.isForwardAll()) {
+            HttpHeader[] headers = hh.getHeaders().toArray();
+            for (HttpHeader h : headers) {
+                if (headerShouldBeIgnored(h.getName())) {
+                    logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
+                } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
+                    // special cookie handling happens outside this class by the ServerBRA
+                } else {
+                    targetForResponseHeaders.setHeader(h.getName(), h.getFullValue());
+                }
+            }
+        } else {
+            for (int i = 0; i < rules.getRules().length; i++) {
+                HttpPassthroughRule rule = rules.getRules()[i];
+                if (rule.isUsesCustomizedValue()) {
+                    String headervalue = rule.getCustomizeValue();
+                    // resolve context variable if applicable
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        headervalue = ExpandVariables.process(headervalue, vars);
+                    }
+                    targetForResponseHeaders.setHeader(rule.getName(), headervalue);
+                } else {
+                    if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
+                        // special cookie handling happens outside this class by the ServerBRA
+                    } else {
+                        List vals = hh.getHeaders().getValues(rule.getName());
+                        if (vals != null && vals.size() > 0) {
+                            for (Object valo : vals) {
+                                String val = (String) valo;
+                                targetForResponseHeaders.setHeader(rule.getName(), val);
+                            }
+                        } else {
+                            logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
+                                        "incoming value but this header is not present.");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**

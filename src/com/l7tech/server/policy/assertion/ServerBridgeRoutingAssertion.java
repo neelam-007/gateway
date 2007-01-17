@@ -40,6 +40,7 @@ import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -63,6 +64,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.Collections;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,6 +72,8 @@ import java.util.logging.Logger;
  * SSG implementation of a routing assertion that uses the SSB.
  */
 public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutingAssertion<BridgeRoutingAssertion> {
+
+    private final String[] varNames;
 
     private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
         new Managers.BridgeStashManagerFactory() {
@@ -95,6 +99,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         } catch (IOException e) {
             throw new RuntimeException("Can't read the keystore for signing outbound SAML", e);
         }
+
+        varNames = assertion.getVariablesUsed();
 
         URL url;
         Policy hardcodedPolicy;
@@ -180,6 +186,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 try {
                     final HttpRequestKnob httpRequestKnob = (HttpRequestKnob) context.getRequest().getKnob(HttpRequestKnob.class);
 
+                    Map vars = null;
+
                     // TODO support non-SOAP messaging with SSB api
                     String soapAction = "\"\"";
                     String[] uris = context.getRequest().getSoapKnob().getPayloadNamespaceUris();
@@ -219,7 +227,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                     HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
-                        // todo, fla, use hh to populate response headers into httpResponseKnob
+                        HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, auditor, hh,
+                                                                         data.getResponseHeaderRules(), vars,
+                                                                         varNames, context);
+
                         httpResponseKnob.setStatus(status);
                     }
 
