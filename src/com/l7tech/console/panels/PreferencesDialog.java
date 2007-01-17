@@ -3,10 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.text.MaxLengthDocument;
+import com.l7tech.common.gui.MaxLengthDocument;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;

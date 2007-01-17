@@ -42,8 +42,9 @@ class GatewaysNoun extends Noun {
             return;
         }
 
-        out.println(" Proxy      Hostname                         Type      User Name");
-        out.println(" ========== ================================ ========= =================");
+        out.println(" Proxy      Label      Hostname                       Type      User Name");
+        out.println(" ========== ========== ============================== ========= ===============");
+                  // ---------1---------2---------3---------4---------5---------6---------7---------8---------9
 
         boolean sawDefault = false;
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
@@ -53,13 +54,15 @@ class GatewaysNoun extends Noun {
                 sawDefault = true;
             } else
                 out.print(' ');
+            out.print(TextUtils.pad(ssg.makeDefaultLocalEndpoint(), 10));
+            out.print(' ');
             out.print(TextUtils.pad(ssg.getLocalEndpoint(), 10));
             out.print(' ');
-            out.print(TextUtils.pad(ssg.getSsgAddress(), 32));
+            out.print(TextUtils.pad(ssg.getSsgAddress(), 30));
             out.print(' ');
             out.print(TextUtils.pad((ssg.isFederatedGateway() ? "Federated" : "Trusted"), 9));
             out.print(' ');
-            out.print(TextUtils.pad(ssg.getUsername(), 17));
+            out.print(TextUtils.pad(ssg.getUsername(), 15));
             out.println();
         }
         if (sawDefault) out.println("\n* Default Gateway Account");
@@ -84,7 +87,7 @@ class GatewaysNoun extends Noun {
             ssg.setSavePasswordToDisk(true);
         }
         ssgManager.add(ssg);
-        out.println(ssg.getLocalEndpoint() + " created");
+        out.println(ssg.makeDefaultLocalEndpoint() + " created");
     }
 
     public void printHelp(PrintStream out, String[] args) throws CommandException {

@@ -32,10 +32,11 @@ class SsgNoun extends Noun {
     private static final SsgNoun EXAMPLE = new SsgNoun(null, new Ssg(1));
 
     public SsgNoun(CommandSession session, Ssg inssg) {
-        super(inssg.getLocalEndpoint(), "Gateway Account for " + inssg.getUsername() + "@" + inssg.getSsgAddress());
+        super(inssg.makeDefaultLocalEndpoint(), "Gateway Account for " + inssg.getUsername() + "@" + inssg.getSsgAddress());
         this.session = session;
         this.ssg = inssg;
         properties = new Words(Arrays.asList(new NounProperty[] {
+                new NounProperty(ssg, "label", "LocalEndpoint", "Proxy URI"),
                 new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of SecureSpan Gateway"),
                 new NounProperty(ssg, "username", "Username", "Username of account on this Gateway"),
                 new PasswordProperty(),

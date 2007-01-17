@@ -12,7 +12,7 @@ import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.security.InvalidHostCertificateException;
 import com.l7tech.console.security.InvalidHostNameException;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.text.FilterDocument;
+import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SsmPreferences;

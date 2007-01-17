@@ -11,12 +11,21 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.gui.MaxLengthDocument;
+import com.l7tech.common.gui.FilterDocument;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.proxy.datamodel.Ssg;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.util.regex.Pattern;
 
 /**
  * The Network panel for the SSG Property Dialog.
@@ -25,6 +34,8 @@ import java.awt.*;
  */
 class SsgNetworkPanel extends JPanel {
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
+    private final int ENDPOINT_MAX = SyspropUtil.getInteger(getClass().getName() + ".endpointMax", 400);
+    private final Pattern ENDPOINT_PATTERN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     private final InputValidator validator;
     private JPanel networkPane;
@@ -44,8 +55,15 @@ class SsgNetworkPanel extends JPanel {
     private JPanel ssgPortFieldPanel;
     private JPanel ipListPanel;
     private JPanel outgoingRequestsPanel;
+    private JTextField customLabelField;
+    private JCheckBox customLabelCb;
     private IpListPanel ipList;
     private boolean enableOutgoingRequestsPanel;
+
+    private String endpointBase;
+    private String defaultEndpoint;
+    private String initialEndpoint;
+    private String wsdlEndpointSuffix;
 
     public SsgNetworkPanel(InputValidator validator, boolean enableOutgoingRequestsPanel) {
         this.validator = validator;
@@ -77,11 +95,54 @@ class SsgNetworkPanel extends JPanel {
         fieldLocalEndpoint.setContextMenuEnabled(true);
         proxyUrlPanel.add(fieldLocalEndpoint,
                           new GridConstraints(0, 0, 1, 1,
-                                              GridConstraints.ANCHOR_NORTHWEST,
+                                              GridConstraints.ANCHOR_WEST,
                                               GridConstraints.FILL_HORIZONTAL,
                                               GridConstraints.SIZEPOLICY_CAN_GROW,
                                               GridConstraints.SIZEPOLICY_FIXED,
                                               null, null, null));
+
+        ActionListener labelActionListener = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                boolean custom = customLabelCb.isSelected();
+                customLabelField.setEnabled(custom);
+                customLabelField.setEditable(custom);
+                if (custom)
+                    customLabelField.requestFocusInWindow();
+                fieldLocalEndpoint.setText(getLocalEndpointUrl());
+                fieldWsdlEndpoint.setText(getLocalEndpointUrl() + wsdlEndpointSuffix);
+            }
+        };
+        customLabelCb.addActionListener(labelActionListener);
+        Utilities.enableGrayOnDisabled(customLabelField);
+        Utilities.attachDefaultContextMenu(customLabelField);
+        customLabelField.setDocument(new FilterDocument(ENDPOINT_MAX, new FilterDocument.Filter() {
+            public boolean accept(String s) {
+                return ENDPOINT_PATTERN.matcher(s).matches();
+            }
+        }));
+        validator.constrainTextFieldToBeNonEmpty("Custom label", customLabelField, new InputValidator.ValidationRule() {
+            public String getValidationError() {
+                String text = customLabelField.getText();
+                int len = text.length();
+                String ret = len <= ENDPOINT_MAX ? null : "Custom label field must be " + ENDPOINT_MAX + " characters or fewer.";
+                if (ret == null)
+                    ret = ENDPOINT_PATTERN.matcher(text).matches()
+                          ? null 
+                          : "Custom label may contain only letters, numbers, or underscore.";
+                return ret;
+            }
+        });
+        customLabelField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { changed(); }
+            public void removeUpdate(DocumentEvent e) { changed(); }
+            public void changedUpdate(DocumentEvent e) { changed(); }
+            private void changed() {
+                if (customLabelCb.isSelected()) {
+                    fieldLocalEndpoint.setText(getLocalEndpointUrl());
+                    fieldWsdlEndpoint.setText(getLocalEndpointUrl() + wsdlEndpointSuffix);
+                }
+            }
+        });
 
         WrappingLabel splain02 = new WrappingLabel("The SecureSpan Bridge offers proxied WSDL lookups at the " +
                                                    "following local WSDL URL:", 1);
@@ -136,6 +197,33 @@ class SsgNetworkPanel extends JPanel {
         updateCustomPortsEnableState();
     }
 
+    String getLocalEndpoint() {
+        return customLabelCb.isSelected() ? HexUtils.urlEncode(customLabelField.getText()) : defaultEndpoint;
+    }
+
+    private String getLocalEndpointUrl() {
+        return endpointBase + getLocalEndpoint();
+    }
+
+    private void checkCustom() {
+        if (initialEndpoint == null || endpointBase == null || defaultEndpoint == null)
+            return;
+        boolean custom = !initialEndpoint.equals(defaultEndpoint);
+        customLabelCb.setSelected(custom);
+        customLabelField.setEnabled(custom);
+        customLabelField.setEditable(custom);
+        if (custom)
+            customLabelField.setText(initialEndpoint);
+    }
+
+    boolean isCustomLabel() {
+        return customLabelCb.isSelected();
+    }
+
+    String getCustomLabel() {
+        return customLabelField.getText();
+    }
+
     void updateCustomPortsEnableState() {
         boolean en = enableOutgoingRequestsPanel && radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
@@ -163,12 +251,15 @@ class SsgNetworkPanel extends JPanel {
         fieldSsgPort.setText(Integer.toString(ssgPort));
     }
 
-    void setLocalEndpoint(String endpointUrl) {
-        fieldLocalEndpoint.setText(endpointUrl);
+    void setCurrentLocalEndpoint(String endpointUrl) {
+        this.initialEndpoint = endpointUrl;
+        fieldLocalEndpoint.setText(endpointBase + endpointUrl);
+        checkCustom();
     }
 
-    void setWsdlEndpoint(String s) {
-        fieldWsdlEndpoint.setText(s);
+    void setWsdlEndpointSuffix(String s) {
+        this.wsdlEndpointSuffix = s;
+        fieldWsdlEndpoint.setText(getLocalEndpointUrl() + s);
     }
 
     boolean isCustomPorts() {
@@ -197,5 +288,15 @@ class SsgNetworkPanel extends JPanel {
 
     public String getFailoverStrategyName() {
         return ipList.getFailoverStrategyName();
+    }
+
+    public void setLocalEndpointBase(String endpointBase) {
+        this.endpointBase = endpointBase;
+        checkCustom();
+    }
+
+    public void setDefaultLocalEndpoint(String defaultEndpoint) {
+        this.defaultEndpoint = defaultEndpoint;
+        checkCustom();
     }
 }

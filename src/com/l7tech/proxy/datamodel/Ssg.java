@@ -271,14 +271,18 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     public String getLocalEndpoint() {
         if (localEndpoint == null)
-            localEndpoint = "gateway" + getId();
+            localEndpoint = makeDefaultLocalEndpoint();
         return localEndpoint;
+    }
+
+    public String makeDefaultLocalEndpoint() {
+        return "gateway" + getId();
     }
 
     public void setLocalEndpoint(String localEndpoint) {
         if (localEndpoint == null)
-            throw new IllegalArgumentException("localEndpoint may not be null");
-        if (localEndpoint.length() > 1 && "/".equals(localEndpoint.substring(0, 1)))
+            localEndpoint = makeDefaultLocalEndpoint();
+        else if (localEndpoint.length() > 1 && "/".equals(localEndpoint.substring(0, 1)))
             localEndpoint = localEndpoint.substring(1);
         this.localEndpoint = localEndpoint;
     }

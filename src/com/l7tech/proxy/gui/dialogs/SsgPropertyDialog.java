@@ -741,10 +741,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             updateIdentityEnableState();
             boolean customPorts = isPortsCustom(ssg);
             getNetworkPane().setCustomPorts(customPorts);
-            getNetworkPane().setLocalEndpoint("http://localhost:" + bindPort + "/" +
-                                       ssg.getLocalEndpoint());
-            getNetworkPane().setWsdlEndpoint("http://localhost:" + bindPort + "/" +
-                                      ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
+            String endpointBase = "http://localhost:" + bindPort + "/";
+            getNetworkPane().setLocalEndpointBase(endpointBase);
+            getNetworkPane().setDefaultLocalEndpoint(ssg.makeDefaultLocalEndpoint());
+            getNetworkPane().setCurrentLocalEndpoint(ssg.getLocalEndpoint());
+            getNetworkPane().setWsdlEndpointSuffix(ClientProxy.WSIL_SUFFIX);
 
             if (ssg.isGeneric()) {
                 getFieldServerAddress().setText(ssg.getServerUrl());
@@ -825,6 +826,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
                 ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
                 ssg.setFailoverStrategyName(getNetworkPane().getFailoverStrategyName());
+
+                if (getNetworkPane().isCustomLabel()) {
+                    ssg.setLocalEndpoint(getNetworkPane().getCustomLabel());
+                } else {
+                    ssg.setLocalEndpoint(ssg.makeDefaultLocalEndpoint());
+                }
 
                 ssg.getRuntime().reset();
             }

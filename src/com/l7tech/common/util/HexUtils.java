@@ -11,6 +11,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.net.URLEncoder;
+import java.net.URLDecoder;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -525,5 +527,34 @@ public class HexUtils {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // Can't happen
         }
+    }
+
+    /**
+     * URL encode the specified string, using UTF-8 to get the bytes of unsafe characters.
+     *
+     * @param stuff the string to encode.  Must not be null.
+     * @return the URL encoded form, using UTF-8 representations of escaped unsafe characters.
+     */
+    public static String urlEncode(String stuff) {
+        try {
+            return URLEncoder.encode(stuff, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("UTF-8 encoding not available"); // not possible
+        }
+    }
+
+    /**
+     * Decode the specified URL encoded string, assuming that escaped characters use UTF-8 encoding.
+     *
+     * @param encoded the string to decode.  Must not be null.
+     * @return the decoded string.
+     * @throws IOException if the URL encoding is invalid.
+     */
+    public static String urlDecode(String encoded) throws IOException {
+        try {
+            return URLDecoder.decode(encoded, "UTF-8");
+        } catch (IllegalArgumentException e) {
+            throw new CausedIOException(e);
+        }            
     }
 }

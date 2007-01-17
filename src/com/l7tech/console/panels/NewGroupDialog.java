@@ -7,7 +7,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.text.FilterDocument;
+import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;

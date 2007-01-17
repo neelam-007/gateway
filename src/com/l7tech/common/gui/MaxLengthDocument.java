@@ -1,4 +1,4 @@
-package com.l7tech.console.text;
+package com.l7tech.common.gui;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;

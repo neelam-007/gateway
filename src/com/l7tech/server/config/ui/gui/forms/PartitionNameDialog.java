@@ -1,6 +1,6 @@
 package com.l7tech.server.config.ui.gui.forms;
 
-import com.l7tech.console.text.FilterDocument;
+import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.RunOnChangeListener;

@@ -20,7 +20,7 @@ import java.awt.event.ComponentEvent;
  */
 public abstract class PropertyDialog extends JDialog {
     protected static final Dimension MIN_SIZE = new Dimension(200, 150);
-    private static final Dimension PREFERRED_SIZE = new Dimension(500, 470);
+    private static final Dimension PREFERRED_SIZE = new Dimension(530, 560);
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
     protected JButton cancelButton;

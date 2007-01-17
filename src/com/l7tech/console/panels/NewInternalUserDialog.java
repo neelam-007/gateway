@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.ExceptionUtils;
@@ -8,7 +9,6 @@ import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;

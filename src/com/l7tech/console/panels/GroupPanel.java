@@ -9,7 +9,7 @@ import static com.l7tech.common.security.rbac.EntityType.GROUP;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.text.MaxLengthDocument;
+import com.l7tech.common.gui.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
