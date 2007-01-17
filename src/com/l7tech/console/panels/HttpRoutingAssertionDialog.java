@@ -14,6 +14,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.service.PublishedService;
@@ -299,30 +300,38 @@ public class HttpRoutingAssertionDialog extends JDialog {
             reqHeadersCustomize.setSelected(true);
         }
 
-        tablestate = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (reqParamsCustomize.isSelected()) {
-                    reqParamsTable.setEnabled(true);
-                    reqParamsAdd.setEnabled(true);
-                    reqParamsRemove.setEnabled(true);
-                } else {
-                    reqParamsTable.setEnabled(false);
-                    reqParamsAdd.setEnabled(false);
-                    reqParamsRemove.setEnabled(false);
-                }
-            }
-        };
-        reqParamsAll.addActionListener(tablestate);
-        reqParamsCustomize.addActionListener(tablestate);
-        requestParamsRulesTableHandler = new HttpRuleTableHandler("Parameter", reqParamsTable,
-                                                                 reqParamsAdd, reqParamsRemove,
-                                                                 assertion.getRequestParamRules());
-        if (assertion.getRequestParamRules().isForwardAll()) {
-            reqParamsAll.setSelected(true);
+        if (assertion instanceof BridgeRoutingAssertion) {
+            reqParamsAll.setEnabled(false);
+            reqParamsCustomize.setEnabled(false);
+            reqParamsTable.setEnabled(false);
             reqParamsAdd.setEnabled(false);
             reqParamsRemove.setEnabled(false);
         } else {
-            reqParamsCustomize.setSelected(true);
+            tablestate = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (reqParamsCustomize.isSelected()) {
+                        reqParamsTable.setEnabled(true);
+                        reqParamsAdd.setEnabled(true);
+                        reqParamsRemove.setEnabled(true);
+                    } else {
+                        reqParamsTable.setEnabled(false);
+                        reqParamsAdd.setEnabled(false);
+                        reqParamsRemove.setEnabled(false);
+                    }
+                }
+            };
+            reqParamsAll.addActionListener(tablestate);
+            reqParamsCustomize.addActionListener(tablestate);
+            requestParamsRulesTableHandler = new HttpRuleTableHandler("Parameter", reqParamsTable,
+                                                                     reqParamsAdd, reqParamsRemove,
+                                                                     assertion.getRequestParamRules());
+            if (assertion.getRequestParamRules().isForwardAll()) {
+                reqParamsAll.setSelected(true);
+                reqParamsAdd.setEnabled(false);
+                reqParamsRemove.setEnabled(false);
+            } else {
+                reqParamsCustomize.setSelected(true);
+            }
         }
 
         // init the response stuff
