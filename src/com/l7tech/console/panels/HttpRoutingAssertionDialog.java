@@ -447,8 +447,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
             assertion.getRequestHeaderRules().setRules(requestHttpRulesTableHandler.getData());
             assertion.getRequestHeaderRules().setForwardAll(reqHeadersAll.isSelected());
 
-            assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
-            assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
+            if (requestParamsRulesTableHandler != null) { // this will be null in case of BRA
+                assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
+                assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
+            }
 
             fireEventAssertionChanged(assertion);
 
