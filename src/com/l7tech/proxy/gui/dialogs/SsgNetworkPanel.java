@@ -8,6 +8,7 @@ package com.l7tech.proxy.gui.dialogs;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
@@ -25,6 +26,8 @@ import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyAdapter;
 import java.util.regex.Pattern;
 
 /**
@@ -107,8 +110,13 @@ class SsgNetworkPanel extends JPanel {
                 boolean custom = customLabelCb.isSelected();
                 customLabelField.setEnabled(custom);
                 customLabelField.setEditable(custom);
-                if (custom)
+                if (custom) {
+                    if (customLabelField.getText().trim().length() < 1) {
+                        customLabelField.setText(defaultEndpoint);
+                        customLabelField.selectAll();
+                    }
                     customLabelField.requestFocusInWindow();
+                }
                 fieldLocalEndpoint.setText(getLocalEndpointUrl());
                 fieldWsdlEndpoint.setText(getLocalEndpointUrl() + wsdlEndpointSuffix);
             }
@@ -133,17 +141,21 @@ class SsgNetworkPanel extends JPanel {
                 return ret;
             }
         });
-        customLabelField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { changed(); }
-            public void removeUpdate(DocumentEvent e) { changed(); }
-            public void changedUpdate(DocumentEvent e) { changed(); }
-            private void changed() {
+        customLabelField.addKeyListener(new KeyAdapter() {
+            public void keyTyped(KeyEvent e) {
+                if (e.getKeyChar() == ' ')
+                    e.setKeyChar('_');
+                super.keyTyped(e);
+            }
+        });
+        customLabelField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            public void run() {
                 if (customLabelCb.isSelected()) {
                     fieldLocalEndpoint.setText(getLocalEndpointUrl());
                     fieldWsdlEndpoint.setText(getLocalEndpointUrl() + wsdlEndpointSuffix);
                 }
             }
-        });
+        }));
 
         WrappingLabel splain02 = new WrappingLabel("The SecureSpan Bridge offers proxied WSDL lookups at the " +
                                                    "following local WSDL URL:", 1);
