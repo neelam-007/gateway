@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -128,7 +129,7 @@ public class HttpForwardingRuleEnforcer {
         // GetMethod does not have those
     }
 
-    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, HeaderHolder hh,
+    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, ServerBridgeRoutingAssertion.HeaderHolder hh,
                                              HttpPassthroughRuleSet rules) {
         // todo, support BRA. see ServerBRA:222
     }

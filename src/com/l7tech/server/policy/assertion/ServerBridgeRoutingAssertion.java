@@ -612,7 +612,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         };
     }
 
-    private class HeaderHolder {
+    public class HeaderHolder {
         private HttpHeaders headers;
 
         public HttpHeaders getHeaders() {
