@@ -218,8 +218,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
                     HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
-                    if (httpResponseKnob != null)
+                    if (httpResponseKnob != null) {
+                        // todo, fla, use hh to populate response headers into httpResponseKnob
                         httpResponseKnob.setStatus(status);
+                    }
 
                     context.setRoutingStatus(RoutingStatus.ROUTED);
 

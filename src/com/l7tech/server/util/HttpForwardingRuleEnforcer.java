@@ -128,6 +128,11 @@ public class HttpForwardingRuleEnforcer {
         // GetMethod does not have those
     }
 
+    public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, HeaderHolder hh,
+                                             HttpPassthroughRuleSet rules) {
+        // todo, support BRA. see ServerBRA:222
+    }
+
     /**
      * Handle response http headers from a response
      * @param sourceOfResponseHeaders the response gotten from the routing assertion
