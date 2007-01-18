@@ -20,6 +20,8 @@ import java.security.AccessControlException;
  * @version 1.0
  */
 public class CancelableOperationDialog extends JDialog {
+    private final JLabel messageLabel = new JLabel();
+
     public CancelableOperationDialog(Frame owner, String title, String message, JProgressBar progressBar) {
         super(owner, title, true);
         doInit(message, progressBar);
@@ -41,7 +43,8 @@ public class CancelableOperationDialog extends JDialog {
 
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
-        p.add(new JLabel(message),
+        messageLabel.setText(message);
+        p.add(messageLabel,
               new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
                                      GridBagConstraints.CENTER,
                                      GridBagConstraints.NONE,
@@ -67,5 +70,13 @@ public class CancelableOperationDialog extends JDialog {
 
         pack();
         Utilities.centerOnScreen(this);
+    }
+
+    public void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    public String getMessage() {
+        return messageLabel.getText();
     }
 }

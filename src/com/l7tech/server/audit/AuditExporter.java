@@ -27,7 +27,7 @@ public interface AuditExporter {
     @Transactional(propagation=Propagation.SUPPORTS)
     long getApproxNumToExport();
 
-    @Transactional(readOnly=true)
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     void exportAuditsAsZipFile(OutputStream fileOut,
                                X509Certificate signingCert,
                                PrivateKey signingKey)

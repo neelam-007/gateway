@@ -105,7 +105,7 @@ public class DownloadAuditEventsAction extends SecureAction {
             progressBar.setIndeterminate(true);
             final CancelableOperationDialog dlg = new CancelableOperationDialog(mainWindow,
                                                                                 "Downloading Audits",
-                                                                                "Please wait, downloading audits...",
+                                                                                "Preparing audit download...                                    ",
                                                                                 progressBar);
             final SwingWorker worker = new SwingWorker() {
                 public Object construct() {
@@ -121,14 +121,18 @@ public class DownloadAuditEventsAction extends SecureAction {
                                 logger.log(Level.INFO, "Downloaded chunk of audit records: " + chunk.auditsDownloaded + "/" + chunk.approxTotalAudits + "  chunkSize=" + chunk.chunk.length + " bytes");
                                 final int max = (int)chunk.approxTotalAudits;
                                 final int min = (int)chunk.auditsDownloaded;
-                                SwingUtilities.invokeLater(new Runnable() {
-                                    public void run() {
-                                        progressBar.setIndeterminate(false);
-                                        progressBar.setMaximum(max);
-                                        progressBar.setMinimum(0);
-                                        progressBar.setValue(min);
-                                    }
-                                });
+                                final long percent = (100L * min/max);
+                                if (max > 1) {
+                                    SwingUtilities.invokeLater(new Runnable() {
+                                        public void run() {
+                                            progressBar.setIndeterminate(false);
+                                            progressBar.setMaximum(max);
+                                            progressBar.setMinimum(0);
+                                            progressBar.setValue(min);
+                                            dlg.setMessage("Downloading audit records (" + min + "/" + max + "; " + percent + "%)");
+                                        }
+                                    });
+                                }
                             } else if (chunk.chunk != null) {
                                 logger.log(Level.INFO, "Audit download still being prepared on server side; will try again");
                             }
