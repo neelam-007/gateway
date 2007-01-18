@@ -22,12 +22,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.BufferedOutputStream;
 import java.security.*;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.sql.*;
 import java.util.regex.Pattern;
@@ -43,6 +42,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
             "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
             "d";
+    private static final int FETCH_SIZE_ROWS = Integer.MIN_VALUE;
     private static final String COUNT_SQL = "select count(*) from audit_main"; // TODO replace with faster query that counts index instead
     private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
     private static final char DELIM = ':';
@@ -96,6 +96,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             session = getSession();
             conn = session.connection();
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+            st.setFetchSize(FETCH_SIZE_ROWS);
 
             rs = st.executeQuery(COUNT_SQL);
 

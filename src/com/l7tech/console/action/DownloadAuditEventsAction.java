@@ -199,14 +199,10 @@ public class DownloadAuditEventsAction extends SecureAction {
     }
 
     private void cleanupPartialFile(FileOutputStream[] out, File outFile1) {
-        try {
-            if (out[0] != null)
-                out[0].close();
-            out[0] = null;
-            if (outFile1 != null && outFile1.exists())
-                outFile1.delete();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to clean up save file: " + ExceptionUtils.getMessage(e), e);
-        }
+        if (out[0] != null)
+            try { out[0].close(); } catch (IOException e) { /* ignore */ }
+        out[0] = null;
+        if (outFile1 != null && outFile1.exists())
+            outFile1.delete();
     }
 }

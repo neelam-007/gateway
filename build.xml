@@ -189,7 +189,7 @@
     <patternset id="configurationwizard.libs">
         <include name="**/commons-lang-1.0.1.jar"/>
         <include name="**/forms_rt-l7p1.jar"/>
-        <include name="**/mysql-connector-java-3.0.17-ga-bin.jar"/>
+        <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
         <include name="**/xss4j.jar"/>
         <include name="**/bcprov-jdk15-134.jar"/>
         <include name="**/kunststoff.jar"/>
@@ -208,7 +208,7 @@
     </patternset>
 
     <patternset id="ssgflasher.libs">
-        <include name="**/mysql-connector-java-3.0.17-ga-bin.jar"/>
+        <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
         <include name="**/commons-lang-1.0.1.jar"/>
         <include name="**/xercesImpl.jar"/>
     </patternset>
@@ -1047,7 +1047,7 @@
                 <include name="ojdbc14.jar" if="db.oracle9"/>
                 <include name="ojdbc14.jar" if="db.oracle10"/>
 
-                <include name="mysql-connector-java-3.0.17-ga-bin.jar" if="db.mysql"/>
+                <include name="mysql-connector-java-5.0.4-bin.jar" if="db.mysql"/>
                 <include name="postgresql.jar" if="db.postgres"/>
             </lib>
 
