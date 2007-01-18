@@ -12,10 +12,7 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -193,10 +190,70 @@ public class HttpForwardingRuleEnforcer {
         }
     }
 
-    public static void handleRequestParameters() {
-        // todo
-        // see PostMethod.addparam, removeparam, etc
-        // GetMethod does not have those
+    public static class Param {
+        Param(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+        public String name;
+        public String value;
+    }
+
+    public static List<Param> handleRequestParameters(PolicyEnforcementContext context,
+                                                      HttpPassthroughRuleSet rules, Auditor auditor, Map vars,
+                                                      String[] varNames) {
+        // 1st, make sure we have a HttpRequestKnob
+        HttpRequestKnob knob;
+        try {
+            knob = context.getRequest().getHttpRequestKnob();
+        } catch (IllegalStateException e) {
+            logger.log(Level.FINE, "no parameter to forward cause the incoming request is not http");
+            return null;
+        }
+
+        // 2nd, look the for a content type which would include payload parameters "application/x-www-form-urlencoded"
+        if (!isItAForm(knob)) {
+            logger.log(Level.FINE, "this request is not a form post so the parameter rules are being ignored");
+            return null;
+        }
+
+        ArrayList<Param> output = new ArrayList<Param>();
+
+        // 3rd, apply the rules
+        if (rules.isForwardAll()) {
+            for (Enumeration i = knob.getParameterNames(); i.hasMoreElements();) {
+                String paramName = (String)i.nextElement();
+                String[] vals = knob.getParameterValues(paramName);
+                for (String paramVal : vals) {
+                    output.add(new Param(paramName, paramVal));
+                }
+                logger.severe("potentially forward the parameter " + paramName);
+            }
+        } else {
+            for (int i = 0; i < rules.getRules().length; i++) {
+                HttpPassthroughRule rule = rules.getRules()[i];
+                String paramName = rule.getName();
+                if (rule.isUsesCustomizedValue()) {
+                    // set param with custom value
+                    String paramVal = rule.getCustomizeValue();
+                    // resolve context variable if applicable
+                    if (varNames != null && varNames.length > 0) {
+                        if (vars == null) {
+                            vars = context.getVariableMap(varNames, auditor);
+                        }
+                        paramVal = ExpandVariables.process(paramVal, vars);
+                    }
+                    output.add(new Param(paramName, paramVal));
+                } else {
+                    String[] vals = knob.getParameterValues(paramName);
+                    for (String paramVal : vals) {
+                        output.add(new Param(paramName, paramVal));
+                    }
+                }
+            }
+        }
+
+        return output;
     }
 
     public static void handleResponseHeaders(HttpResponseKnob targetForResponseHeaders, Auditor auditor,
@@ -209,7 +266,8 @@ public class HttpForwardingRuleEnforcer {
                 if (headerShouldBeIgnored(h.getName())) {
                     logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
                 } else if (HttpConstants.HEADER_SET_COOKIE.toLowerCase().equals(h.getName().toLowerCase())) {
-                    // special cookie handling happens outside this class by the ServerBRA
+                    // special cookie handling happen
+                    // s outside this class by the ServerBRA
                 } else {
                     targetForResponseHeaders.setHeader(h.getName(), h.getFullValue());
                 }
@@ -328,7 +386,16 @@ public class HttpForwardingRuleEnforcer {
                 context.addCookie(ssgResponseCookie);
             }
         }
+    }
 
+    private static boolean isItAForm(HttpRequestKnob knob) {
+        String[] ctypes = knob.getHeaderValues("content-type");
+        if (ctypes != null) {
+            for (String val : ctypes) {
+                if (val.toLowerCase().contains("form")) return true;
+            }
+        }
+        return false;
     }
 
     private static boolean headerShouldBeIgnored(String headerName) {
