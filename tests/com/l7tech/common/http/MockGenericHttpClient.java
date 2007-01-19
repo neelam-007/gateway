@@ -170,6 +170,10 @@ public class MockGenericHttpClient implements GenericHttpClient {
             return new MockGenericHttpResponse();
         }
 
+        public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+            throw new IllegalStateException("this impl does not support addParameter");
+        }
+
         public void close() {
             // mock ...
         }

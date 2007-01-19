@@ -39,6 +39,15 @@ public interface GenericHttpRequest {
     GenericHttpResponse getResponse() throws GenericHttpException;
 
     /**
+     * Adds a new parameter to be used in the POST request body.
+     * @param paramName The parameter name to add.
+     * @param paramValue The parameter value to add.
+     * @throws IllegalArgumentException if either argument is null
+     * @throws IllegalStateException if the request is not in a state to receive http post parameters
+     */
+    public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException;
+
+    /**
      * Release all resources used by an in-progress request.  If {@link #getResponse} has been called,
      * the response will still need to be closed seperately.  To reiterate, closing the request will not affect
      * the usability of the GenericHttpResponse, if a response has already been obtained.

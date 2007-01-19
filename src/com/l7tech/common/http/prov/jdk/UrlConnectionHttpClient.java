@@ -89,6 +89,10 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                     requestInputStream = bodyInputStream;
                 }
 
+                public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                    throw new IllegalStateException("this implementation of the GenericHttpRequest does not support addParameter");
+                }
+
                 public GenericHttpResponse getResponse() throws GenericHttpException {
                     try {
                         if (requestInputStream != null)

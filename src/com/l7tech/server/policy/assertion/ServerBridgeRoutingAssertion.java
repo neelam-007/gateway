@@ -558,6 +558,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         return doGetResponse(true);
                     }
 
+                    public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                        throw new IllegalStateException("The bridge currently does not support form posts");
+                    }
+
                     private RerunnableHttpRequest.InputStreamFactory getInputStreamFactory() throws GenericHttpException {
                         if(isf==null) {
                             BufferPoolByteArrayOutputStream baos = null;

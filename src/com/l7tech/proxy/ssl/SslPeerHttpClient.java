@@ -113,6 +113,10 @@ public class SslPeerHttpClient implements GenericHttpClient {
                 };
             }
 
+            public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                throw new IllegalStateException("this implementation of the GenericHttpRequest does not support addParameter");
+            }
+
             public void close() {
                 request.close();
             }

@@ -408,24 +408,35 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  connectionId);
             GenericHttpClient.GenericHttpMethod method = methodFromRequest(context);
             routedRequest = httpClient.createRequest(method, routedRequestParams);
-            // only include payload if the method is POST or PUT
-            if (method == GenericHttpClient.POST || method == GenericHttpClient.PUT) {
-                if (routedRequest instanceof RerunnableHttpRequest) {
-                    RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
-                    rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
-                        public InputStream getInputStream() {
-                            try {
-                                return reqMime.getEntireMessageBodyAsInputStream();
-                            } catch (NoSuchPartException nspe) {
-                                return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
-                            } catch (IOException ioe) {
-                                return new IOExceptionThrowingInputStream(ioe);
+
+            List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
+                    handleRequestParameters(context, assertion.getRequestParamRules(), auditor, vars, varNames);
+
+
+            if (paramRes != null && paramRes.size() > 0) {
+                for (HttpForwardingRuleEnforcer.Param p : paramRes) {
+                    routedRequest.addParameter(p.name, p.value);
+                }
+            } else {
+                // only include payload if the method is POST or PUT
+                if (method == GenericHttpClient.POST || method == GenericHttpClient.PUT) {
+                    if (routedRequest instanceof RerunnableHttpRequest) {
+                        RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
+                        rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
+                            public InputStream getInputStream() {
+                                try {
+                                    return reqMime.getEntireMessageBodyAsInputStream();
+                                } catch (NoSuchPartException nspe) {
+                                    return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
+                                } catch (IOException ioe) {
+                                    return new IOExceptionThrowingInputStream(ioe);
+                                }
                             }
-                        }
-                    });
-                } else {
-                    final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-                    routedRequest.setInputStream(bodyInputStream);
+                        });
+                    } else {
+                        final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+                        routedRequest.setInputStream(bodyInputStream);
+                    }
                 }
             }
             long latencyTimerStart = System.currentTimeMillis();

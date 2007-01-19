@@ -229,6 +229,21 @@ public class CommonsHttpClient implements GenericHttpClient {
                 });
             }
 
+            public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                if (method == null) {
+                    logger.warning("addParam is called before method is assigned");
+                    throw new IllegalStateException("the http method object is not yet assigned");
+                }
+                if (method instanceof PostMethod) {
+                    PostMethod post = (PostMethod)method;
+                    post.addParameter(paramName, paramValue);
+                } else {
+                    logger.warning("addParam is called but the internal method is not post : " +
+                                   method.getClass().getName());
+                    throw new IllegalStateException("not a post");
+                }
+            }
+
             public void setInputStreamFactory(final InputStreamFactory inputStreamFactory) {
                 if (inputStreamFactory == null)
                     throw new IllegalArgumentException("inputStreamFactory must not be null");
