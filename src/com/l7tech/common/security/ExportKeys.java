@@ -40,21 +40,27 @@ public class ExportKeys {
             keystoreType = args[5];
         }
 
-        File keystoreFile = new File(keystoreFilename);
-        if (!(keystoreFile.exists() && keystoreFile.isFile() && keystoreFile.canRead())) {
-            System.err.println("Keystore File '" + keystoreFilename + "' does not exist or is not a readable file");
-            System.exit(2);
+        FileInputStream fis = null;
+        if (keystoreFilename.length() > 0 && !"NONE".equals(keystoreFilename)) {
+            File keystoreFile = new File(keystoreFilename);
+            if (!(keystoreFile.exists() && keystoreFile.isFile() && keystoreFile.canRead())) {
+                System.err.println("Keystore File '" + keystoreFilename + "' does not exist or is not a readable file");
+                System.exit(2);
+            }
+            fis = new FileInputStream(keystoreFile);
         }
 
         KeyStore ks = KeyStore.getInstance(keystoreType);
-        ks.load( new FileInputStream( keystoreFile ), keystorePassword.toCharArray()) ;
+        ks.load(fis, keystorePassword.toCharArray()) ;
         Enumeration e = ks.aliases();
+        int count = 0;
         while (e.hasMoreElements()) {
             String alias = (String) e.nextElement();
             System.err.println("alias="+alias);
+            count++;
 
             if ( ks.isKeyEntry(alias) ){
-                Key privkey = ks.getKey( alias, keyPassword.toCharArray() );
+                Key privkey = ks.getKey( alias, keyPassword.equals("NULL") ? null : keyPassword.toCharArray() );
 
                 System.err.println("private key format=" + privkey.getFormat());
                 FileOutputStream fos = null;
@@ -82,5 +88,6 @@ public class ExportKeys {
                 }
             }
         }
+        System.err.println("Found " + count + " aliases");
     }
 }
