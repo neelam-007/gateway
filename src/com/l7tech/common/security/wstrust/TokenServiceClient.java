@@ -115,6 +115,7 @@ public class TokenServiceClient {
                 req.getElementsToSign().add(body);
             }
             req.setTimestampCreatedDate(timestampCreatedDate);
+            req.setIncludeTimestamp(false);
             wssDecorator.decorateMessage(msg, req);
 
             return msg;
