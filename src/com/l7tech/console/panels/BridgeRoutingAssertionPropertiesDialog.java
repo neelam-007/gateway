@@ -37,12 +37,12 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private JButton buttonHttpProperties;
     private JRadioButton rbServerCertAuto;
     private JRadioButton rbServerCertManual;
+    private JLabel xmlMessages;
+    private JList serverCertList;
+    private JButton newServerCertButton;
 
     private final HttpRoutingAssertionDialog httpDialog;
     private final BridgeRoutingAssertion assertion;
-    private JLabel xmlMessages;
-    private JButton serverCertChangeButton;
-    private JLabel serverCertLabel;
 
     public BridgeRoutingAssertionPropertiesDialog(Frame owner, BridgeRoutingAssertion a, PublishedService service) {
         super(owner, true);
@@ -86,22 +86,19 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
             }
         };
 
-        ButtonGroup bg2 = new ButtonGroup();
-        bg2.add(rbPolicyAutoDisco);
-        bg2.add(rbPolicyManual);
         rbPolicyAutoDisco.addActionListener(updateEnableStates);
         rbPolicyManual.addActionListener(updateEnableStates);
 
-        ButtonGroup bg3 = new ButtonGroup();
-        bg3.add(rbServerCertAuto);
-        bg3.add(rbServerCertManual);
         rbServerCertAuto.addActionListener(updateEnableStates);
         rbServerCertManual.addActionListener(updateEnableStates);
 
+        Utilities.enableGrayOnDisabled(serverCertList);
+
         // TODO reenable when it is ready
+        rbServerCertAuto.setSelected(true);
         rbServerCertManual.setEnabled(false);
-        serverCertChangeButton.setEnabled(false);
-        serverCertLabel.setText(" ");
+        serverCertList.setEnabled(false);
+        newServerCertButton.setEnabled(false);
 
         Utilities.enableGrayOnDisabled(policyXmlText);
 
