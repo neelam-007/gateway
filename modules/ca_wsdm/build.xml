@@ -76,6 +76,7 @@
             <fileset dir="." includes="ssg/**/*"/>
             <fileset dir="build" includes="ssg/**/*"/>
             <fileset dir="bin" includes="install.cmd"/>
+            <fileset dir="bin" includes="EditSsgLog.cmd"/>
             <zipfileset dir="bin" filemode="755">
                 <include name="install.sh"/>
             </zipfileset>
