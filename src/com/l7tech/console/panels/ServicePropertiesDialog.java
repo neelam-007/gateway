@@ -17,6 +17,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.Set;
+import java.util.HashSet;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * SSM Dialog for editing properties of a PublishedService object.
@@ -91,11 +94,23 @@ public class ServicePropertiesDialog extends JDialog {
         if (existinguri == null) {
             noURIRadio.setSelected(true);
             customURIRadio.setSelected(false);
+            uriField.setEnabled(false);
         } else {
             noURIRadio.setSelected(false);
             customURIRadio.setSelected(true);
             uriField.setText(existinguri);
         }
+        ActionListener toggleurifield = new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (noURIRadio.isSelected()) {
+                    uriField.setEnabled(false);
+                } else {
+                    uriField.setEnabled(true);
+                }
+            }
+        };
+        noURIRadio.addActionListener(toggleurifield);
+        customURIRadio.addActionListener(toggleurifield);
         Set<String> methods = subject.getHttpMethods();
         if (methods.contains("GET")) {
             getCheck.setSelected(true);
@@ -207,6 +222,8 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
+        // todo, wsdl reset thing
+
         updateURL();
     }
 
@@ -231,15 +248,26 @@ public class ServicePropertiesDialog extends JDialog {
             return;
         }
         // validate the uri
-        String newURI = uriField.getText();
-        // remove leading '/'
-        while (newURI.startsWith("/")) {
-            newURI = newURI.substring(1);
+        String newURI = null;
+        if (customURIRadio.isSelected()) {
+            newURI = uriField.getText();
+            // remove leading '/'s
+            if (newURI != null) {
+                newURI = newURI.trim();
+                while (newURI.startsWith("//")) {
+                    newURI = newURI.substring(1);
+                }
+                if (!newURI.startsWith("/")) newURI = "/" + newURI;
+                uriField.setText(newURI);
+            }
+            try {
+                new URL(ssgURL + newURI);
+            } catch (MalformedURLException e) {
+                JOptionPane.showMessageDialog(this, ssgURL + newURI + " is not a valid URL");
+                return;
+            }
         }
-        uriField.setText(newURI);
-        if (newURI != null) {
 
-        }
         if (!subject.isSoap()) {
             if (newURI == null || newURI.length() <= 0 || newURI.equals("/")) { // non-soap service cannot have null routing uri
                 JOptionPane.showMessageDialog(this, "Cannot set empty uri on non-soap service");
@@ -255,7 +283,25 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        // todo, other validations
+        // set the new data into the edited subject
+        subject.setName(name);
+        subject.setDisabled(!enableRadio.isSelected());
+        subject.setRoutingUri(newURI);
+        Set<String> methods = new HashSet<String>();
+        if (getCheck.isSelected()) {
+            methods.add("GET");
+        }
+        if (putCheck.isSelected()) {
+            methods.add("PUT");
+        }
+        if (postCheck.isSelected()) {
+            methods.add("POST");
+        }
+        if (deleteCheck.isSelected()) {
+            methods.add("DELETE");
+        }
+        subject.setHttpMethods(methods);
+
         wasoked = true;
         cancel();
     }
