@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1">
-  <grid id="27dc6" binding="panel1" default-binding="true" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.RateLimitAssertionPropertiesDialog">
+  <grid id="27dc6" binding="topPanel" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="6" left="6" bottom="6" right="6"/>
     <constraints>
       <xy x="20" y="20" width="667" height="364"/>
@@ -8,7 +8,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="706ec" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+      <component id="706ec" class="javax.swing.JTextField" binding="counterNameField">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="150" height="-1"/>
@@ -23,7 +23,8 @@
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Counter name:"/>
+          <labelFor value="706ec"/>
+          <text value="Counter &amp;name:"/>
         </properties>
       </component>
       <grid id="720ef" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -34,12 +35,12 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="b3c7e" class="javax.swing.JButton" binding="button1" default-binding="true">
+          <component id="b3c7e" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Cancel"/>
+              <text value="&amp;Cancel"/>
             </properties>
           </component>
           <hspacer id="e60e9">
@@ -47,17 +48,17 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
-          <component id="acd39" class="javax.swing.JButton" binding="button2" default-binding="true">
+          <component id="acd39" class="javax.swing.JButton" binding="okButton">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Ok"/>
+              <text value="&amp;Ok"/>
             </properties>
           </component>
         </children>
       </grid>
-      <component id="bef9f" class="javax.swing.JTextField" binding="textField2" default-binding="true">
+      <component id="bef9f" class="javax.swing.JTextField" binding="maxRequestsPerSecondField">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="100" height="-1"/>
@@ -72,7 +73,8 @@
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Maximum requests per second:"/>
+          <labelFor value="bef9f"/>
+          <text value="Maximum &amp;requests per second:"/>
         </properties>
       </component>
       <hspacer id="f694d">
@@ -101,32 +103,33 @@
             <properties/>
             <border type="etched" title="Maximum concurrent requests:"/>
             <children>
-              <component id="324a3" class="javax.swing.JRadioButton" binding="radioButton3" default-binding="true">
+              <component id="324a3" class="javax.swing.JRadioButton" binding="concurrencyLimitOffRb">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <selected value="true"/>
-                  <text value="Unlimited"/>
+                  <text value="&amp;Unlimited"/>
                 </properties>
               </component>
-              <component id="6311" class="javax.swing.JRadioButton" binding="radioButton4" default-binding="true">
+              <component id="6311" class="javax.swing.JRadioButton" binding="concurrencyLimitOnRb">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Limited to:"/>
+                  <text value="&amp;Limited to:"/>
                 </properties>
               </component>
-              <component id="fa49c" class="javax.swing.JTextField" default-binding="true">
+              <component id="fa49c" class="javax.swing.JTextField" binding="concurrencyLimitField">
                 <constraints>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
                     <preferred-size width="80" height="-1"/>
                   </grid>
                 </constraints>
                 <properties>
-                  <editable value="false"/>
-                  <text value="100"/>
+                  <editable value="true"/>
+                  <enabled value="true"/>
+                  <text value="10"/>
                 </properties>
               </component>
               <hspacer id="52ce4">
@@ -136,7 +139,7 @@
               </hspacer>
             </children>
           </grid>
-          <grid id="367ad" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
+          <grid id="367ad" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -144,21 +147,21 @@
             <properties/>
             <border type="etched" title="When limit exceeded:"/>
             <children>
-              <component id="ac2e5" class="javax.swing.JRadioButton" binding="radioButton1" default-binding="true">
+              <component id="ac2e5" class="javax.swing.JRadioButton" binding="shapingOffRb">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <selected value="true"/>
-                  <text value="Fail immediately"/>
+                  <text value="&amp;Fail immediately"/>
                 </properties>
               </component>
-              <component id="4d679" class="javax.swing.JRadioButton" binding="radioButton2" default-binding="true">
+              <component id="4d679" class="javax.swing.JRadioButton" binding="shapingOnRb">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Delay if possible"/>
+                  <text value="&amp;Delay if possible"/>
                 </properties>
               </component>
             </children>

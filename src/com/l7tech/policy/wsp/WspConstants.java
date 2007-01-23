@@ -291,6 +291,7 @@ public class WspConstants {
         new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
         new AssertionMapping(new SetVariableAssertion(), "SetVariable"),
         new AssertionMapping(new CookieCredentialSourceAssertion(), "CookieCredentialSource"),
+        new AssertionMapping(new RateLimitAssertion(), "RateLimit"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

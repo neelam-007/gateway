@@ -349,6 +349,12 @@ public class AssertionMessages extends Messages {
     public static final M THROUGHPUT_QUOTA_EXCEEDED =    m(6900, Level.INFO, "Quota exceeded on counter {0}. Assertion limit is {1} current counter value is {2}");
     public static final M THROUGHPUT_QUOTA_ALREADY_MET = m(6901, Level.INFO, "Quota already exceeded on counter {0}.");
 
+    // ServerRateLimitAssertion
+    public static final M RATELIMIT_RATE_EXCEEDED        = m(6950, Level.INFO, "Rate limit exceeded on counter {0}.");
+    public static final M RATELIMIT_MSG_1                = m(6951, Level.INFO, "Reserved on counter {0}.");
+    public static final M RATELIMIT_NODE_CONCURRENCY     = m(6952, Level.INFO, "Unable to delay request (node concurrency reached) for counter {0}.");
+    public static final M RATELIMIT_CONCURRENCY_EXCEEDED = m(6953, Level.INFO, "Concurrency exceeded on counter {0}.");
+
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");

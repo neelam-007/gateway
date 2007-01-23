@@ -11,8 +11,6 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 /**
  * Tree node in the assertion palette corresponding to the ThroughputQuota assertion type.
- *
- * @author flascelles@layer7-tech.com
  */
 public class ThroughputQuotaPaletteNode extends AbstractLeafPaletteNode {
 

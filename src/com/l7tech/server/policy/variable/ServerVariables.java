@@ -5,10 +5,7 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.common.RequestId;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpResponseKnob;
-import com.l7tech.common.message.SoapKnob;
-import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.message.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -31,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class ServerVariables {
     private static final Logger logger = Logger.getLogger(ServerVariables.class.getName());
+    private static final String CLIENT_ID_UNKNOWN = "ClientId:Unknown";
 
     private static final RemoteIpGetter remoteIpGetter = new RemoteIpGetter();
     private static final OperationGetter soapOperationGetter = new OperationGetter();
@@ -115,24 +113,25 @@ public class ServerVariables {
         }),
         new Variable("request.authenticateduser", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                String user = null;
-                User authenticatedUser = context.getAuthenticatedUser();
-                if (authenticatedUser != null) {
-                    user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getId();
-                }
-                return user;
+                return getAuthenticatedUser(context);
             }
         }),
-        new Variable("request.authenticateduser", new Getter() {
+        new Variable("request.clientid", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                String user = "nobody";
-                User authenticatedUser = context.getAuthenticatedUser();
-                if (authenticatedUser != null) {
-                    user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getId();
-                }
-                return user;
+                String dat = getAuthenticatedUser(context);
+                if (dat != null) return "AuthUser:" + dat;
+
+                final Message request = context.getRequest();
+                dat = getRequestRemoteIp(request);
+                if (dat != null) return "ClientIp:" + dat;
+
+                dat = getRequestProtocolId(request);
+                if (dat != null) return "ProtocolId:" + dat;
+
+                dat = getRequestProtocol(request);
+                if (dat != null) return "Protocol:" + dat;
+
+                return CLIENT_ID_UNKNOWN;
             }
         }),
         new Variable("request.tcp.localPort", new Getter() {
@@ -306,6 +305,32 @@ public class ServerVariables {
         })
     };
 
+    private static String getRequestRemoteIp(Message request) {
+        TcpKnob tk = (TcpKnob)request.getKnob(TcpKnob.class);
+        return tk == null ? null : tk.getRemoteAddress();
+    }
+
+    private static String getAuthenticatedUser(PolicyEnforcementContext context) {
+        String user = null;
+        User authenticatedUser = context.getAuthenticatedUser();
+        if (authenticatedUser != null) {
+            user = authenticatedUser.getName();
+            if (user == null) user = authenticatedUser.getId();
+        }
+        return user;
+    }
+
+    private static String getRequestProtocolId(Message request) {
+        // We shouldn't get here if it's HTTP (it should have had a client IP), and we currently know of no
+        // equivalent identifier for other supported protocols, so just return null for now
+        return null;
+    }
+
+    private static String getRequestProtocol(Message request) {
+        // We shouldn't get here if it's HTTP (it should have had a client IP) so check for JMS
+        return request.getKnob(JmsKnob.class) != null ? "Protocol:JMS" : null;
+    }
+
     private static Object getUrlValue(String prefix, String name, Object u) {
         if (u == null) return null;
         String suffix = name.substring(prefix.length());
@@ -377,8 +402,7 @@ public class ServerVariables {
 
     private static class RemoteIpGetter implements Getter {
         public Object get(String name, PolicyEnforcementContext context) {
-            TcpKnob tk = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-            return tk == null ? null : tk.getRemoteAddress();
+            return getRequestRemoteIp(context.getRequest());
         }
     }
 

@@ -38,6 +38,7 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
         insert( new TimeRangePaletteNode(), index++ );
         insert( new RemoteIpRangePaletteNode(), index++ );
         insert( new ThroughputQuotaPaletteNode(), index++ );
+        insert( new RateLimitAssertionPaletteNode(), index++ );
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.AVAILABILITY).iterator();

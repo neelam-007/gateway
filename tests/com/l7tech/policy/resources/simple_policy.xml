@@ -166,6 +166,7 @@
                 <L7p:IdentityMapping/>
                 <L7p:SetVariable/>
                 <L7p:CookieCredentialSource/>
+                <L7p:RateLimit/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

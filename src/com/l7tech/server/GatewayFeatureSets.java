@@ -276,7 +276,8 @@ public class GatewayFeatureSets {
         fsr("set:Availability:Firewall", "SecureSpan Firewall service availability",
             "Adds throughput qutoa",
             fs(availabilityAccel),
-            ass(ThroughputQuota.class));
+            ass(ThroughputQuota.class),
+            ass(RateLimitAssertion.class));
 
         // Logging/auditing and alerts
         GatewayFeatureSet auditAccel =

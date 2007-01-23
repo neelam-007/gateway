@@ -207,6 +207,7 @@ public class AllAssertions {
         new MappingAssertion(),
         new SetVariableAssertion(),
         new CookieCredentialSourceAssertion(),
+        new RateLimitAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {

@@ -342,7 +342,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
             try {
                 vars.put(name, getVariable(name.toLowerCase()));
             } catch (NoSuchVariableException e) {
-                vars.addBadName(name);
                 auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{name});
             }
         }

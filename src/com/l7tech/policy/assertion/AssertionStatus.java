@@ -43,6 +43,7 @@ public class AssertionStatus {
     public static final AssertionStatus SERVER_ERROR        = make( statuses, SERVER + 0, Level.INFO, "Internal Server Error" );
     public static final AssertionStatus SERVER_AUTH_FAILED  = make( statuses, SERVER + 1, Level.INFO, "Access Denied by Protected Service" );
     public static final AssertionStatus BAD_RESPONSE        = make( statuses, SERVER + 2, Level.INFO, "Bad Response from Protected Service" );
+    public static final AssertionStatus SERVICE_UNAVAILABLE = make( statuses, SERVER + 3, Level.INFO, "Service Temporarily Unavailable" );
 
     /** A generic negative result */
     public static final AssertionStatus FALSIFIED = make( statuses, POLICY + 0, Level.INFO, "Assertion Falsified" );
