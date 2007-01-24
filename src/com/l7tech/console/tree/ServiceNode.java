@@ -91,7 +91,7 @@ public class ServiceNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        PublishedService ps = null;
+        PublishedService ps;
         try {
             ps = getPublishedService();
         }
@@ -103,32 +103,16 @@ public class ServiceNode extends EntityHeaderNode {
             log.warning("Cannot retrieve service");
             return new Action[0];
         }
-        DisableServiceAction da = new DisableServiceAction(this);
-        da.setEnabled(false);
-        EnableServiceAction ea = new EnableServiceAction(this);
-        ea.setEnabled(false);
-
-        try {
-            boolean disabled = ps.isDisabled();
-            da.setEnabled(!disabled);
-            ea.setEnabled(disabled);
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Error retrieving service", e);
-
-        }
 
         boolean s = svc.isSoap();
         boolean a = TopComponents.getInstance().isApplet();
         Collection<Action> actions = new ArrayList<Action>();
 
         actions.add(new EditServicePolicyAction(this));
-        if (s) actions.add(new ViewServiceWsdlAction(this));
+        actions.add(new EditServiceProperties(this));
+        // todo, remove this once the service proeprties dlg is handling it as well
         if (s) actions.add(new FeedNewWSDLToPublishedServiceAction(this));
-        actions.add(new EditServiceRoutingURIAction(this));
-        actions.add(new EditServiceNameAction(this));
         if (s && !a) actions.add(new PublishPolicyToSystinetRegistry(this));
-        actions.add(ea);
-        actions.add(da);
         actions.add(new DeleteServiceAction(this));
 
         return actions.toArray(new Action[0]);

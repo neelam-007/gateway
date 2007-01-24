@@ -222,7 +222,7 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
-        // todo, wsdl reset thing
+        // todo, wsdl reset thing (see FeedNewWSDLToPublishedServiceAction.java)
 
         updateURL();
     }
