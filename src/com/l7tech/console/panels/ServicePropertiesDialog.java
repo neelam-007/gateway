@@ -11,6 +11,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 
@@ -45,6 +46,9 @@ public class ServicePropertiesDialog extends JDialog {
     private Document newWSDL = null;
     private String newWSDLUrl = null;
     private boolean wasoked = false;
+    // todo, we need to be able to query gateway to get port instead of assuming default
+    // (whenever it becomes available)
+    private static final String STD_PORT = ":8080";
     private JPanel mainPanel;
     private JTabbedPane tabbedPane1;
     private JTextField nameField;
@@ -82,23 +86,20 @@ public class ServicePropertiesDialog extends JDialog {
         } else {
             enableRadio.setSelected(true);
         }
-        //ssgURL = TopComponents.getInstance().ssgURL();
-        ssgURL = "ssg.franco.net";
+        ssgURL = TopComponents.getInstance().ssgURL();
         if (!ssgURL.startsWith("http://")) {
             ssgURL = "http://" + ssgURL;
         }
         int pos = ssgURL.lastIndexOf(':');
         if (pos > 4) {
             ssgURL = ssgURL.substring(0, pos);
-            // todo, we need to be able to query gateway to get port instead of assuming default
-            ssgURL = ssgURL + ":8080";
+
+            ssgURL = ssgURL + STD_PORT;
         } else {
             if (ssgURL.endsWith("/") || ssgURL.endsWith("\\")) {
-                // todo, we need to be able to query gateway to get port instead of assuming default
-                ssgURL = ssgURL.substring(0, ssgURL.length()-1) + ":8080";
+                ssgURL = ssgURL.substring(0, ssgURL.length()-1) + STD_PORT;
             } else {
-                // todo, we need to be able to query gateway to get port instead of assuming default
-                ssgURL = ssgURL + ":8080";
+                ssgURL = ssgURL + STD_PORT;
             }
         }
         String existinguri = subject.getRoutingUri();
@@ -296,6 +297,11 @@ public class ServicePropertiesDialog extends JDialog {
                 JOptionPane.showMessageDialog(this, "URI cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
                 return;
             }
+        }
+
+        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected()) {
+            JOptionPane.showMessageDialog(this, "At least one HTTP method must be enabled");
+            return;
         }
 
         // set the new data into the edited subject
