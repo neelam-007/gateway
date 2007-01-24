@@ -1,25 +1,33 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.service.PublishedService;
-import com.l7tech.console.action.Actions;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.action.Actions;
+import com.l7tech.service.PublishedService;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.Set;
-import java.util.HashSet;
-import java.net.URL;
+import java.awt.event.KeyListener;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SSM Dialog for editing properties of a PublishedService object.
@@ -32,7 +40,10 @@ import java.net.MalformedURLException;
  */
 public class ServicePropertiesDialog extends JDialog {
     private PublishedService subject;
-    private XMLContainer xmlContainer;
+    private XMLEditor editor;
+    private final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
+    private Document newWSDL = null;
+    private String newWSDLUrl = null;
     private boolean wasoked = false;
     private JPanel mainPanel;
     private JTabbedPane tabbedPane1;
@@ -130,9 +141,9 @@ public class ServicePropertiesDialog extends JDialog {
             noURIRadio.setEnabled(false);
             customURIRadio.setSelected(true);
         } else {
-            xmlContainer = new XMLContainer(true);
+            XMLContainer xmlContainer = new XMLContainer(true);
             final UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
-            XMLEditor editor = uiAccessibility.getEditor();
+            editor = uiAccessibility.getEditor();
             editor.setText(subject.getWsdlXml());
             Action reformatAction = ActionModel.getActionByName(ActionModel.FORMAT_ACTION);
             reformatAction.actionPerformed(null);
@@ -210,6 +221,12 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
+        resetWSDLButton.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent actionEvent) {
+                resetWSDL();
+            }
+        });
+
         Utilities.setEscAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
@@ -221,8 +238,6 @@ public class ServicePropertiesDialog extends JDialog {
                 ok();
             }
         });
-
-        // todo, wsdl reset thing (see FeedNewWSDLToPublishedServiceAction.java)
 
         updateURL();
     }
@@ -302,6 +317,19 @@ public class ServicePropertiesDialog extends JDialog {
         }
         subject.setHttpMethods(methods);
 
+        if (newWSDL != null) {
+            try {
+                subject.setWsdlUrl(newWSDLUrl.startsWith("http") ? newWSDLUrl : null);
+                subject.setWsdlXml(XmlUtil.nodeToString(newWSDL));
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("Invalid URL", e);
+            } catch (RemoteException e) {
+                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+            } catch (IOException e) {
+                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
+            }
+        }
+
         wasoked = true;
         cancel();
     }
@@ -325,341 +353,28 @@ public class ServicePropertiesDialog extends JDialog {
         routingURL.setText("<html><a href=\"" + urlvalue + "\">" + urlvalue + "</a></html>");
     }
 
-    /* todo, erase this main when dev testing is complete
-    public static void main(String[] args) {
-        PublishedService svc = new PublishedService();
-        svc.setName("flows");
-        svc.setSoap(false);
-        svc.setWsdlXml("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<wsdl:definitions targetNamespace=\"http://www.csapi.org/schema/parlayx/mm/send/v1_0/local\" xmlns:apachesoap=\"http://xml.apache.org/xml-soap\" xmlns:impl=\"http://www.csapi.org/schema/parlayx/mm/send/v1_0/local\" xmlns:intf=\"http://www.csapi.org/schema/parlayx/mm/send/v1_0/local\" xmlns:tns1=\"http://www.csapi.org/schema/parlayx/common/v1_0\" xmlns:tns2=\"http://www.csapi.org/schema/parlayx/mm/v1_0\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" xmlns:wsdlsoap=\"http://schemas.xmlsoap.org/wsdl/soap/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
-                "<!--WSDL created by Apache Axis version: 1.2RC3\n" +
-                "Built on Feb 28, 2005 (10:15:14 EST)-->\n" +
-                " <wsdl:types>\n" +
-                "  <schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.csapi.org/schema/parlayx/mm/send/v1_0/local\" xmlns=\"http://www.w3.org/2001/XMLSchema\">\n" +
-                "   <import namespace=\"http://www.csapi.org/schema/parlayx/common/v1_0\"/>\n" +
-                "   <import namespace=\"http://www.csapi.org/schema/parlayx/mm/v1_0\"/>\n" +
-                "   <element name=\"sendMessage\">\n" +
-                "    <complexType>\n" +
-                "     <sequence>\n" +
-                "      <element name=\"destinationAddress\" type=\"tns1:ArrayOfEndUserIdentifier\"/>\n" +
-                "      <element name=\"senderAddress\" type=\"xsd:string\"/>\n" +
-                "      <element name=\"subject\" type=\"xsd:string\"/>\n" +
-                "      <element name=\"priority\" type=\"tns2:MessagePriority\"/>\n" +
-                "      <element name=\"charging\" type=\"xsd:string\"/>\n" +
-                "     </sequence>\n" +
-                "    </complexType>\n" +
-                "   </element>\n" +
-                "   <element name=\"sendMessageResponse\">\n" +
-                "    <complexType>\n" +
-                "     <sequence>\n" +
-                "      <element name=\"result\" type=\"xsd:string\"/>\n" +
-                "     </sequence>\n" +
-                "    </complexType>\n" +
-                "   </element>\n" +
-                "   <element name=\"getMessageDeliveryStatus\">\n" +
-                "    <complexType>\n" +
-                "     <sequence>\n" +
-                "      <element name=\"requestIdentifier\" type=\"xsd:string\"/>\n" +
-                "     </sequence>\n" +
-                "    </complexType>\n" +
-                "   </element>\n" +
-                "   <element name=\"getMessageDeliveryStatusResponse\">\n" +
-                "    <complexType>\n" +
-                "     <sequence>\n" +
-                "      <element name=\"result\" type=\"tns2:ArrayOfDeliveryStatusType\"/>\n" +
-                "     </sequence>\n" +
-                "    </complexType>\n" +
-                "   </element>\n" +
-                "  </schema>\n" +
-                "  <schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.csapi.org/schema/parlayx/common/v1_0\" xmlns=\"http://www.w3.org/2001/XMLSchema\">\n" +
-                "   <import namespace=\"http://www.csapi.org/schema/parlayx/mm/v1_0\"/>\n" +
-                "   <complexType name=\"EndUserIdentifier\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"value\" type=\"xsd:anyURI\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <complexType name=\"ArrayOfEndUserIdentifier\">\n" +
-                "    <sequence>\n" +
-                "     <element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"ArrayOfEndUserIdentifier\" nillable=\"true\" type=\"tns1:EndUserIdentifier\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <complexType name=\"InvalidArgumentException\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"InvalidArgumentException\" nillable=\"true\" type=\"xsd:string\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <element name=\"InvalidArgumentException\" type=\"tns1:InvalidArgumentException\"/>\n" +
-                "   <complexType name=\"UnknownEndUserException\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"UnknownEndUserException\" nillable=\"true\" type=\"xsd:string\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <element name=\"UnknownEndUserException\" type=\"tns1:UnknownEndUserException\"/>\n" +
-                "   <complexType name=\"MessageTooLongException\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"MessageTooLongException\" nillable=\"true\" type=\"xsd:string\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <element name=\"MessageTooLongException\" type=\"tns1:MessageTooLongException\"/>\n" +
-                "   <complexType name=\"PolicyException\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"PolicyException\" nillable=\"true\" type=\"xsd:string\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <element name=\"PolicyException\" type=\"tns1:PolicyException\"/>\n" +
-                "   <complexType name=\"ServiceException\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"ServiceException\" nillable=\"true\" type=\"xsd:string\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <element name=\"ServiceException\" type=\"tns1:ServiceException\"/>\n" +
-                "  </schema>\n" +
-                "  <schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.csapi.org/schema/parlayx/mm/v1_0\" xmlns=\"http://www.w3.org/2001/XMLSchema\">\n" +
-                "   <import namespace=\"http://www.csapi.org/schema/parlayx/common/v1_0\"/>\n" +
-                "   <simpleType name=\"MessagePriority\">\n" +
-                "    <restriction base=\"xsd:string\">\n" +
-                "     <enumeration value=\"Default\"/>\n" +
-                "     <enumeration value=\"Low\"/>\n" +
-                "     <enumeration value=\"Normal\"/>\n" +
-                "     <enumeration value=\"High\"/>\n" +
-                "    </restriction>\n" +
-                "   </simpleType>\n" +
-                "   <simpleType name=\"DeliveryStatus\">\n" +
-                "    <restriction base=\"xsd:string\">\n" +
-                "     <enumeration value=\"Delivered\"/>\n" +
-                "     <enumeration value=\"DeliveryUncertain\"/>\n" +
-                "     <enumeration value=\"DeliveryImpossible\"/>\n" +
-                "     <enumeration value=\"MessageWaiting\"/>\n" +
-                "    </restriction>\n" +
-                "   </simpleType>\n" +
-                "   <complexType name=\"DeliveryStatusType\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"destinationAddress\" type=\"tns1:EndUserIdentifier\"/>\n" +
-                "     <element name=\"deliveryStatus\" type=\"tns2:DeliveryStatus\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <complexType name=\"ArrayOfDeliveryStatusType\">\n" +
-                "    <sequence>\n" +
-                "     <element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"ArrayOfDeliveryStatusType\" nillable=\"true\" type=\"tns2:DeliveryStatusType\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <complexType name=\"UnknownRequestIdentifierException\">\n" +
-                "    <sequence>\n" +
-                "     <element name=\"UnknownRequestIdentifierException\" nillable=\"true\" type=\"xsd:string\"/>\n" +
-                "    </sequence>\n" +
-                "   </complexType>\n" +
-                "   <element name=\"UnknownRequestIdentifierException\" type=\"tns2:UnknownRequestIdentifierException\"/>\n" +
-                "  </schema>\n" +
-                " </wsdl:types>\n" +
-                "\n" +
-                "   <wsdl:message name=\"getMessageDeliveryStatusRequest\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"impl:getMessageDeliveryStatus\" name=\"parameters\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"sendMessageRequest\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"impl:sendMessage\" name=\"parameters\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"getMessageDeliveryStatusResponse\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"impl:getMessageDeliveryStatusResponse\" name=\"parameters\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"UnknownEndUserException\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"tns1:UnknownEndUserException\" name=\"UnknownEndUserException\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"UnknownRequestIdentifierException\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"tns2:UnknownRequestIdentifierException\" name=\"UnknownRequestIdentifierException\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"MessageTooLongException\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"tns1:MessageTooLongException\" name=\"MessageTooLongException\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"ServiceException\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"tns1:ServiceException\" name=\"ServiceException\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"InvalidArgumentException\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"tns1:InvalidArgumentException\" name=\"InvalidArgumentException\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"sendMessageResponse\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"impl:sendMessageResponse\" name=\"parameters\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:message name=\"PolicyException\">\n" +
-                "\n" +
-                "      <wsdl:part element=\"tns1:PolicyException\" name=\"PolicyException\"/>\n" +
-                "\n" +
-                "   </wsdl:message>\n" +
-                "\n" +
-                "   <wsdl:portType name=\"SendMessage\">\n" +
-                "\n" +
-                "      <wsdl:operation name=\"sendMessage\">\n" +
-                "\n" +
-                "         <wsdl:input message=\"impl:sendMessageRequest\" name=\"sendMessageRequest\"/>\n" +
-                "\n" +
-                "         <wsdl:output message=\"impl:sendMessageResponse\" name=\"sendMessageResponse\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:InvalidArgumentException\" name=\"InvalidArgumentException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:UnknownEndUserException\" name=\"UnknownEndUserException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:MessageTooLongException\" name=\"MessageTooLongException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:PolicyException\" name=\"PolicyException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:ServiceException\" name=\"ServiceException\"/>\n" +
-                "\n" +
-                "      </wsdl:operation>\n" +
-                "\n" +
-                "      <wsdl:operation name=\"getMessageDeliveryStatus\">\n" +
-                "\n" +
-                "         <wsdl:input message=\"impl:getMessageDeliveryStatusRequest\" name=\"getMessageDeliveryStatusRequest\"/>\n" +
-                "\n" +
-                "         <wsdl:output message=\"impl:getMessageDeliveryStatusResponse\" name=\"getMessageDeliveryStatusResponse\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:InvalidArgumentException\" name=\"InvalidArgumentException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:UnknownRequestIdentifierException\" name=\"UnknownRequestIdentifierException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:PolicyException\" name=\"PolicyException\"/>\n" +
-                "\n" +
-                "         <wsdl:fault message=\"impl:ServiceException\" name=\"ServiceException\"/>\n" +
-                "\n" +
-                "      </wsdl:operation>\n" +
-                "\n" +
-                "   </wsdl:portType>\n" +
-                "\n" +
-                "   <wsdl:binding name=\"SendMessageSoapBinding\" type=\"impl:SendMessage\">\n" +
-                "\n" +
-                "      <wsdlsoap:binding style=\"document\" transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n" +
-                "\n" +
-                "      <wsdl:operation name=\"sendMessage\">\n" +
-                "\n" +
-                "         <wsdlsoap:operation soapAction=\"\"/>\n" +
-                "\n" +
-                "         <wsdl:input name=\"sendMessageRequest\">\n" +
-                "\n" +
-                "            <wsdlsoap:body use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:input>\n" +
-                "\n" +
-                "         <wsdl:output name=\"sendMessageResponse\">\n" +
-                "\n" +
-                "            <wsdlsoap:body use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:output>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"InvalidArgumentException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"InvalidArgumentException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"UnknownEndUserException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"UnknownEndUserException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"MessageTooLongException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"MessageTooLongException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"PolicyException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"PolicyException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"ServiceException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"ServiceException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "      </wsdl:operation>\n" +
-                "\n" +
-                "      <wsdl:operation name=\"getMessageDeliveryStatus\">\n" +
-                "\n" +
-                "         <wsdlsoap:operation soapAction=\"\"/>\n" +
-                "\n" +
-                "         <wsdl:input name=\"getMessageDeliveryStatusRequest\">\n" +
-                "\n" +
-                "            <wsdlsoap:body use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:input>\n" +
-                "\n" +
-                "         <wsdl:output name=\"getMessageDeliveryStatusResponse\">\n" +
-                "\n" +
-                "            <wsdlsoap:body use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:output>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"InvalidArgumentException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"InvalidArgumentException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"UnknownRequestIdentifierException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"UnknownRequestIdentifierException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"PolicyException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"PolicyException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "         <wsdl:fault name=\"ServiceException\">\n" +
-                "\n" +
-                "            <wsdlsoap:fault name=\"ServiceException\" use=\"literal\"/>\n" +
-                "\n" +
-                "         </wsdl:fault>\n" +
-                "\n" +
-                "      </wsdl:operation>\n" +
-                "\n" +
-                "   </wsdl:binding>\n" +
-                "\n" +
-                "   <wsdl:service name=\"SendMessageService\">\n" +
-                "\n" +
-                "      <wsdl:port binding=\"impl:SendMessageSoapBinding\" name=\"SendMessage\">\n" +
-                "\n" +
-                "         <wsdlsoap:address location=\"http://localhost:8080/parlayx/services/SendMessage\"/>\n" +
-                "\n" +
-                "      </wsdl:port>\n" +
-                "\n" +
-                "   </wsdl:service>\n" +
-                "\n" +
-                "</wsdl:definitions>");
+    private void resetWSDL() {
+        String existingURL = subject.getWsdlUrl();
+        if (existingURL == null) existingURL = "";
 
-        ServicePropertiesDialog me = new ServicePropertiesDialog(null, svc);
-        me.pack();
-        me.setVisible(true);
-    }*/
+        final SelectWsdlDialog rwd = new SelectWsdlDialog(this, "Reset WSDL");
+        rwd.setWsdlUrl(existingURL);
+        rwd.pack();
+        Utilities.centerOnScreen(rwd);
+        DialogDisplayer.display(rwd, new Runnable() {
+            public void run() {
+                Wsdl wsdl = rwd.getWsdl();
+                if (wsdl != null) {
+                    newWSDL = rwd.getWsdlDocument();
+                    newWSDLUrl = rwd.getWsdlUrl();
+                    // display new xml in xml display
+                    try {
+                        editor.setText(XmlUtil.nodeToFormattedString(newWSDL));
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "cannot display new wsdl ", e);
+                    }
+                }
+            }
+        });
+    }
 }

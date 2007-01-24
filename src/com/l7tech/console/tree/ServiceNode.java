@@ -110,8 +110,6 @@ public class ServiceNode extends EntityHeaderNode {
 
         actions.add(new EditServicePolicyAction(this));
         actions.add(new EditServiceProperties(this));
-        // todo, remove this once the service proeprties dlg is handling it as well
-        if (s) actions.add(new FeedNewWSDLToPublishedServiceAction(this));
         if (s && !a) actions.add(new PublishPolicyToSystinetRegistry(this));
         actions.add(new DeleteServiceAction(this));
 

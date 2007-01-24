@@ -6,7 +6,6 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SelectWsdlDialog;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
@@ -37,6 +36,7 @@ import java.awt.*;
  * <p/>
  * User: flascell<br/>
  * Date: Oct 18, 2004<br/>
+ * @deprecated todo, erase this
  */
 public class FeedNewWSDLToPublishedServiceAction extends ServiceNodeAction {
 
