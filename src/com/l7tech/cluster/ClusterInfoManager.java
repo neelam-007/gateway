@@ -31,8 +31,17 @@ public interface ClusterInfoManager {
 
     void updateSelfUptime() throws UpdateException;
 
+    /**
+     * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
+     * the SSG operated by itself outsides a cluster.
+     * @throws com.l7tech.objectmodel.FindException if there is an error reading from the database
+     */
     @Transactional(readOnly=true)
     Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException;
 
+    /**
+     * determines this node's nodeid value
+     * @return the node info for the current node.
+     */
     ClusterNodeInfo getSelfNodeInf();
 }

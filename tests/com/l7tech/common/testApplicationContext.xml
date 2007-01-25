@@ -8,7 +8,7 @@
      * singleton using the factory method. This is transitional, as it is referencef from
      * too many places.
      -->
-    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub"/>
 
     <!-- server side identity provider factory (same as the prod)-->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
@@ -249,4 +249,6 @@
 
     <bean id="stashManagerFactory" class="com.l7tech.server.TestStashManagerFactory" factory-method="getInstance"/>
 
+    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerStub"/>
+    
 </beans>

@@ -632,7 +632,7 @@ public class ServerConfig implements ClusterPropertyListener {
     private String _hostname;
     private InitialContext _icontext;
 
-    private ServerConfig() {
+    ServerConfig() {
         _properties = new Properties();
 
         String configPropertiesPath = System.getProperty(PROPS_PATH_PROPERTY);
@@ -700,7 +700,7 @@ public class ServerConfig implements ClusterPropertyListener {
         }
     }
     
-    private void invalidateCachedProperty(final String propName) {
+    void invalidateCachedProperty(final String propName) {
         valueCache.remove(propName);
     }
 
