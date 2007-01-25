@@ -111,6 +111,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(Operation.class, OperationTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
         assertionMap.put(RateLimitAssertion.class, RateLimitAssertionPolicyNode.class);
+        assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
     }
 
     /**

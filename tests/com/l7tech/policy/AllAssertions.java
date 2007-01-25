@@ -134,6 +134,7 @@ public class AllAssertions {
         new CookieCredentialSourceAssertion(),
         new XpathCredentialSource(),
         new AuthenticationAssertion(),
+        new HtmlFormDataAssertion(),
     };
 
 
@@ -208,6 +209,7 @@ public class AllAssertions {
         new SetVariableAssertion(),
         new CookieCredentialSourceAssertion(),
         new RateLimitAssertion(),
+        new HtmlFormDataAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {

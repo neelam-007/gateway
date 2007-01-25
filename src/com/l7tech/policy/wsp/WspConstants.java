@@ -139,6 +139,8 @@ public class WspConstants {
         new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
         new WspEnumTypeMapping(TimeUnit.class, "abbreviation"),
         new WspEnumTypeMapping(AssertionResourceType.class, "resourceType"),
+        new WspEnumTypeMapping(HtmlFormDataType.class, "fieldDataType"),
+        new WspEnumTypeMapping(HtmlFormDataLocation.class, "fieldLocation"),
 
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
@@ -292,6 +294,7 @@ public class WspConstants {
         new AssertionMapping(new SetVariableAssertion(), "SetVariable"),
         new AssertionMapping(new CookieCredentialSourceAssertion(), "CookieCredentialSource"),
         new AssertionMapping(new RateLimitAssertion(), "RateLimit"),
+        new AssertionMapping(new HtmlFormDataAssertion(), "HtmlFormDataAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),
@@ -322,6 +325,8 @@ public class WspConstants {
         new BeanTypeMapping(HttpPassthroughRule.class, "httpPassthroughRule"),
         new ArrayTypeMapping(new HttpPassthroughRule[0], "httpPassthroughRules"),
         new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
+        new BeanTypeMapping(HtmlFormDataAssertion.Field.class, "htmlFormField"),
+        new ArrayTypeMapping(new HtmlFormDataAssertion.Field[0], "htmlFormFieldArray"),
 
 
         // Backward compatibility with old policy documents

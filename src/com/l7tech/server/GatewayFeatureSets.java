@@ -214,7 +214,8 @@ public class GatewayFeatureSets {
             "Adds regex and attachments",
             fs(validationAccel),
             ass(RequestSwAAssertion.class),
-            ass(Regex.class));
+            ass(Regex.class),
+            ass(HtmlFormDataAssertion.class));
 
         GatewayFeatureSet validationFw =
         fsr("set:Validation:Firewall", "SecureSpan Firewall message validation and transformation",
@@ -224,7 +225,8 @@ public class GatewayFeatureSets {
             ass(RequestSwAAssertion.class),
             ass(Regex.class),
             ass(WsiBspAssertion.class),
-            ass(WsiSamlAssertion.class));
+            ass(WsiSamlAssertion.class),
+            ass(HtmlFormDataAssertion.class));
 
         GatewayFeatureSet validationGateway =
         fsr("set:Validation:Gateway", "SecureSpan Gateway message validation and transformation",

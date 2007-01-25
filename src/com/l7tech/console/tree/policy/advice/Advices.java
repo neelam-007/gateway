@@ -1,22 +1,24 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Supporting class for assertion advices.
@@ -118,5 +120,6 @@ public class Advices {
         advicesMap.put(WsiBspAssertion.class, new Class[]{AddWsiBspAssertionAdvice.class});
         advicesMap.put(WsiSamlAssertion.class, new Class[]{AddWsiSamlAssertionAdvice.class});
         advicesMap.put(EchoRoutingAssertion.class, new Class[]{AddEchoRoutingAssertionAdvice.class});
+        advicesMap.put(HtmlFormDataAssertion.class, new Class[]{HtmlFormDataAssertionAdvice.class});
     }
 }
