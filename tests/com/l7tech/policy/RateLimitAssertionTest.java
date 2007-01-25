@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.util.TimeoutExecutor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -18,10 +19,13 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Test the RateLimitAssertion.
@@ -155,6 +159,11 @@ public class RateLimitAssertionTest extends TestCase {
         public synchronized void setResult(AssertionStatus result) {
             this.result = result;
         }
+
+        protected void finalize() throws Throwable {
+            super.finalize();
+            closeContext();
+        }
     }
 
     // Kill all request threads and wait for them to finish
@@ -165,6 +174,46 @@ public class RateLimitAssertionTest extends TestCase {
     }
 
     public void testSimpleRateLimit() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setMaxRequestsPerSecond(2);
+        ServerAssertion ass = makePolicy(rla);
+
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        Thread.sleep(1000);
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+    }
+
+    public void testSimpleRateLimitWithSleep() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setMaxRequestsPerSecond(2);
+        rla.setShapeRequests(true);
+        final ServerAssertion ass = makePolicy(rla);
+
+        final boolean[] finished = { false };
+        try {
+            TimeoutExecutor.runWithTimeout(new Timer(), 4000, new Callable<Object>() {
+                public Object call() throws Exception {
+                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+                    finished[0] = true;
+                    return null;
+                }
+            });
+            // Ok
+        } catch (InvocationTargetException e) {
+            fail("Exception (timeout?) while trying to send 6 requests through a shaping rate limit of 2 req/sec");
+        }
+        assertTrue("All 6 requests went through in under 4 seconds", finished[0]);
     }
 
     public void testSleepLimit() throws Exception {

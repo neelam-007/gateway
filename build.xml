@@ -2372,6 +2372,7 @@
             <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
             <exclude name="com/l7tech/common/alert/**/*.java"/>
             <exclude name="com/l7tech/common/util/JaasUtils.java"/>
+            <exclude name="com/l7tech/common/util/TimeoutExecutor.java"/>
             <exclude name="com/l7tech/common/util/DnParserJava15.java"/>
             <exclude name="com/l7tech/common/util/Functions.java"/>
             <exclude name="com/l7tech/common/audit/**/*.java"/>
