@@ -300,8 +300,12 @@ public class ServicePropertiesDialog extends JDialog {
         }
 
         if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected()) {
-            JOptionPane.showMessageDialog(this, "At least one HTTP method must be enabled");
-            return;
+            int res = JOptionPane.showConfirmDialog(this, "Because no HTTP methods are selected, this service will " +
+                                                          "not be accessible through HTTP. Are you sure you want to " +
+                                                          "do this?", "Warning", JOptionPane.YES_NO_OPTION);
+            if (res != JOptionPane.YES_OPTION) {
+                return;
+            }
         }
 
         // set the new data into the edited subject
