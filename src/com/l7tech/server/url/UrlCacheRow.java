@@ -1,56 +1,113 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.url;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
+ * A cached original document, to be stored in the database to avoid having to retrieve it over a network at runtime.
+ *
+ * The inherited {@link #_name} field is optional.
+ * 
  * @author alex
- * @version $Revision$
  */
-public class UrlCacheRow extends PersistentEntityImp {
+public class UrlCacheRow extends NamedEntityImp {
     public UrlCacheRow() {
         super();
     }
 
+    /**
+     * The document itself
+     */
     public String getContent() {
-        return _content;
+        return content;
     }
 
-    public void setContent(String content) {
-        _content = content;
+    /**
+     * The original URL from which the document was fetched
+     */
+    public String getOriginalUrl() {
+        return originalUrl;
     }
 
-    public String getUrl() {
-        return _url;
+    /**
+     * The canonical URL from which the document can officially be downloaded
+     */
+    public String getCanonicalUrl() {
+        return canonicalUrl;
     }
 
-    public void setUrl(String url) {
-        _url = url;
-    }
-
+    /**
+     * The size, in bytes, of a UTF-8 serialization of the content.
+     * @return
+     */
     public int getSize() {
-        return _size;
+        return size;
     }
 
-    public void setSize(int size) {
-        _size = size;
-    }
-
+    /**
+     * The time, in milliseconds UTC, when this version of the document was retrieved.
+     */
     public long getTimestamp() {
-        return _timestamp;
+        return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        _timestamp = timestamp;
+    /**
+     * The type of resource
+     */
+    public UrlCacheEntryType getType() {
+        return type;
     }
 
-    private String _content;
-    private String _url;
-    private int _size;
-    private long _timestamp;
+    /**
+     * The MIME type of the resource
+     */
+    public String getMimeType() {
+        return mimeType;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    protected void setCanonicalUrl(String canonicalUrl) {
+        this.canonicalUrl = canonicalUrl;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    protected void setContent(String content) {
+        this.content = content;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    protected void setOriginalUrl(String originalUrl) {
+        this.originalUrl = originalUrl;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    protected void setSize(int size) {
+        this.size = size;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    protected void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    /** @deprecated only used for serialization and persistence */
+    protected void setType(UrlCacheEntryType type) {
+        this.type = type;
+    }
+
+    private UrlCacheEntryType type;
+    private String content;
+    private String originalUrl;
+    private String canonicalUrl;
+    private String mimeType;
+    private int size;
+    private long timestamp;
 }
