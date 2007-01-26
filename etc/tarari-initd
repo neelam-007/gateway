@@ -33,6 +33,11 @@ else
 fi
 # FIXME: need to add other card ID's if we get new ones
 
+if [ -z "`/sbin/lspci -nv |grep Subsystem |grep 1863`" ]; then
+    echo "No Tarari card was found in this system"
+    exit
+fi
+
 CARD=`/sbin/lspci -nv |grep Subsystem |grep 1863 |grep ${CARD_ID}`
 
 if [ -z "${CARD}" ]; then
