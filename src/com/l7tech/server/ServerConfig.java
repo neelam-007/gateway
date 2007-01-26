@@ -97,6 +97,9 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
 
     public static final String PARAM_RATELIMIT_MAX_CONCURRENCY = "ratelimitMaxNodeConcurrency";
+    public static final String PARAM_RATELIMIT_CLEANER_PERIOD = "ratelimitCleanerPeriod";
+    public static final String PARAM_RATELIMIT_MAX_NAP_TIME = "ratelimitMaxNapTime";
+    public static final String PARAM_RATELIMIT_MAX_TOTAL_SLEEP_TIME = "ratelimitMaxTotalSleepTime";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 

@@ -28,6 +28,7 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
     private JRadioButton concurrencyLimitOffRb;
     private JRadioButton concurrencyLimitOnRb;
     private JTextField concurrencyLimitField;
+    private JCheckBox burstTrafficCb;
 
     private boolean confirmed = false;
 
@@ -118,6 +119,8 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
         shapingOnRb.setSelected(rla.isShapeRequests());
         shapingOffRb.setSelected(!rla.isShapeRequests());
 
+        burstTrafficCb.setSelected(!rla.isHardLimit());
+
         int maxConc = rla.getMaxConcurrency();
         boolean concLimit = maxConc > 0;
         concurrencyLimitOnRb.setSelected(concLimit);
@@ -131,6 +134,7 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
         rla.setMaxRequestsPerSecond(Integer.parseInt(maxRequestsPerSecondField.getText()));
         rla.setShapeRequests(shapingOnRb.isSelected());
         rla.setMaxConcurrency(concurrencyLimitOnRb.isSelected() ? getViewConcurrency() : 0);
+        rla.setHardLimit(!burstTrafficCb.isSelected());
         return rla;
     }
 

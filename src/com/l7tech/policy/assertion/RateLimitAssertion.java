@@ -11,6 +11,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private int maxRequestsPerSecond = 100;
     private boolean shapeRequests = false;
     private int maxConcurrency = 0;
+    private boolean hardLimit = true;
 
     public String[] getVariablesUsed() {
         return ExpandVariables.getReferencedNames(getCounterName());
@@ -61,5 +62,28 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     public void setMaxConcurrency(int maxConcurrency) {
         if (maxConcurrency < 0) throw new IllegalArgumentException();
         this.maxConcurrency = maxConcurrency;
+    }
+
+    public boolean isHardLimit() {
+        return hardLimit;
+    }
+
+    /**
+     * Set whether the limit is hard or soft.
+     * <p/>
+     * A hard limit will reject (or delay) a second message that arrives
+     * too soon after a first message, even if the counter had been sitting idle for a long time before them.
+     * Thus, a hard limit prevents burst rate from exceeding the limit.
+     * <p/>
+     * A soft limit will allow an idle counter to accumulate up to one seconds worth of "buffer", and will then
+     * allow burst traffic at full speed until this buffer is exhausted.
+     * Thus, a soft limit puts a lid of requests over time, but may allow burst traffic to exceed the limit temporarily
+     * (as long as the counter was idle for a period of time before the burst).
+     *
+     * @param hardLimit if true, no burst traffic above the limit will be permitted.
+     *                  if false, up to one second's worth of traffic may be bursted before rate limiting is imposed
+     */
+    public void setHardLimit(boolean hardLimit) {
+        this.hardLimit = hardLimit;
     }
 }
