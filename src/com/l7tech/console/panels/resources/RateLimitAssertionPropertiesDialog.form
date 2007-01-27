@@ -3,28 +3,27 @@
   <grid id="27dc6" binding="topPanel" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="6" left="6" bottom="6" right="6"/>
     <constraints>
-      <xy x="20" y="20" width="667" height="364"/>
+      <xy x="20" y="20" width="745" height="310"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <component id="706ec" class="javax.swing.JTextField" binding="counterNameField">
+      <component id="850a3" class="javax.swing.JLabel">
         <constraints>
-          <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-            <preferred-size width="150" height="-1"/>
-          </grid>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="RateLimit-${request.clientid}"/>
+          <labelFor value="706ec"/>
+          <text value="Limit each:"/>
         </properties>
       </component>
-      <component id="850a3" class="javax.swing.JLabel">
+      <component id="c8fe9" class="javax.swing.JLabel">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <labelFor value="706ec"/>
-          <text value="Counter &amp;name:"/>
+          <labelFor value="bef9f"/>
+          <text value="Maximum &amp;requests per second:"/>
         </properties>
       </component>
       <grid id="720ef" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -60,7 +59,7 @@
       </grid>
       <component id="bef9f" class="javax.swing.JTextField" binding="maxRequestsPerSecondField">
         <constraints>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="100" height="-1"/>
           </grid>
         </constraints>
@@ -68,26 +67,38 @@
           <text value="100"/>
         </properties>
       </component>
-      <component id="c8fe9" class="javax.swing.JLabel">
+      <component id="25c4f" class="javax.swing.JComboBox" binding="counterCb">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <labelFor value="bef9f"/>
-          <text value="Maximum &amp;requests per second:"/>
+          <model>
+            <item value="User or IP"/>
+            <item value="Authenticated user"/>
+            <item value="Client IP"/>
+            <item value="Gateway node (global)"/>
+            <item value="SOAP operation name"/>
+            <item value="SOAP namespace"/>
+            <item value="Custom:"/>
+          </model>
         </properties>
       </component>
-      <hspacer id="f694d">
+      <component id="9c592" class="javax.swing.JCheckBox" binding="burstTrafficCb">
         <constraints>
-          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
-      </hspacer>
+        <properties>
+          <text value="Allow burst traffic"/>
+        </properties>
+      </component>
       <vspacer id="8ea3f">
         <constraints>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+            <minimum-size width="-1" height="8"/>
+          </grid>
         </constraints>
       </vspacer>
-      <grid id="98cba" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="43969" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -95,10 +106,10 @@
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="eaa9" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
+          <grid id="eaa9" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="etched" title="Maximum concurrent requests:"/>
@@ -137,17 +148,12 @@
                   <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
               </hspacer>
-              <vspacer id="2c511">
-                <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </vspacer>
             </children>
           </grid>
-          <grid id="367ad" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
+          <grid id="367ad" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="etched" title="When limit exceeded:"/>
@@ -169,34 +175,39 @@
                   <text value="&amp;Delay if possible"/>
                 </properties>
               </component>
-              <component id="9c592" class="javax.swing.JCheckBox" binding="burstTrafficCb">
-                <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text value="Allow burst traffic"/>
-                </properties>
-              </component>
-              <vspacer id="908f5">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                    <minimum-size width="-1" height="8"/>
-                  </grid>
-                </constraints>
-              </vspacer>
             </children>
           </grid>
-          <hspacer id="b93a7">
+          <hspacer id="4388a">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                <minimum-size width="24" height="-1"/>
+                <minimum-size width="18" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
-          <hspacer id="7d391">
+        </children>
+      </grid>
+      <grid id="a0a5c" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="706ec" class="javax.swing.JTextField" binding="counterNameField">
             <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                <minimum-size width="24" height="-1"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <minimum-size width="220" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text value="RateLimit-${request.clientid}"/>
+            </properties>
+          </component>
+          <hspacer id="e218f">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                <minimum-size width="220" height="-1"/>
               </grid>
             </constraints>
           </hspacer>

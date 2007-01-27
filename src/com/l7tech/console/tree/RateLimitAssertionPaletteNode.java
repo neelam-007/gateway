@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RateLimitAssertion;
+import com.l7tech.console.panels.RateLimitAssertionPropertiesDialog;
 
 /**
  * Palette node representing the Rate Limit assertion.
@@ -13,6 +14,8 @@ public class RateLimitAssertionPaletteNode extends AbstractLeafPaletteNode {
     }
 
     public Assertion asAssertion() {
-        return new RateLimitAssertion();
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setCounterName(RateLimitAssertionPropertiesDialog.makeDefaultCounterName());
+        return rla;
     }
 }
