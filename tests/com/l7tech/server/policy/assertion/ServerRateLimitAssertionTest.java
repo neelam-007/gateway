@@ -29,6 +29,10 @@ import java.util.logging.Logger;
  * Test the RateLimitAssertion.
  */
 public class ServerRateLimitAssertionTest extends TestCase {
+    static {
+        System.setProperty("com.l7tech.server.ratelimit.logAtInfo", "true");
+    }
+
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
     private static ApplicationContext applicationContext;
     private static ServerPolicyFactory serverPolicyFactory;
@@ -130,7 +134,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
-        Thread.sleep(1000);
+        Thread.sleep(1001);
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
@@ -318,9 +322,5 @@ public class ServerRateLimitAssertionTest extends TestCase {
             if (!want.equals(future.get()))
                 return false;
         return true;
-    }
-
-    public void testMissingNotifyBug() throws Exception {
-        // TODO: run at full speed with a very high limit (1000 req/sec) and watch for pauses napTime millis long
     }
 }

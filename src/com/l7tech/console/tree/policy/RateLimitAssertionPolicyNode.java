@@ -17,7 +17,28 @@ public class RateLimitAssertionPolicyNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "Rate Limit";
+        RateLimitAssertion ass = getAssertion();
+        boolean shaped = ass.isShapeRequests();
+        boolean burst = !ass.isHardLimit();
+        int concurrency = ass.getMaxConcurrency();
+        StringBuffer sb = new StringBuffer("Rate Limit: ");
+        sb.append(ass.getMaxRequestsPerSecond()).
+                append(" transactions per second on \"").
+                append(ass.getCounterName()).
+                append("\"");
+        if (burst || shaped) {
+            sb.append(" (");
+            if (shaped) sb.append("shaped").append(burst ? ", " : "");
+            if (burst) sb.append("burst");
+            sb.append(")");
+        }
+        if (concurrency > 0) sb.append(" (concurrency ").append(concurrency).append(")");
+        return sb.toString();
+    }
+
+    private RateLimitAssertion getAssertion() {
+        RateLimitAssertion ass = (RateLimitAssertion)getUserObject();
+        return ass;
     }
 
     protected String iconResource(boolean open) {

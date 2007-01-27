@@ -18,6 +18,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,7 +38,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
     private static final int DEFAULT_MAX_TOTAL_SLEEP_TIME = 18371;
-    private static final Level SUBINFO_LEVEL = Level.INFO;
+    private static final long MAX_IDLE_TIME = 3 * 1000L; // Point pool maxes out after 3 seconds idle
+    private static final long POINTS_PER_REQUEST = 0x8000L; // cost in points to send a single request
+    private static final Level SUBINFO_LEVEL =
+                Boolean.getBoolean("com.l7tech.server.ratelimit.logAtInfo") ? Level.INFO : Level.FINE;
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_SLEEP_THREADS);
 
@@ -49,9 +53,9 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong cleanerPeriod = new AtomicLong(DEFAULT_CLEANER_PERIOD);
     private static final AtomicLong maxNapTime = new AtomicLong(DEFAULT_MAX_NAP_TIME);
     private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
-    private static final ThreadLocal threadTokens = new ThreadLocal() {
-        protected Object initialValue() {
-            return new Object();
+    private static final ThreadLocal<ThreadToken> threadTokens = new ThreadLocal<ThreadToken>() {
+        protected ThreadToken initialValue() {
+            return new ThreadToken();
         }
     };
 
@@ -89,12 +93,40 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         if (serverConfig == null) throw new PolicyAssertionException(rla, "Missing serverConfig bean");
     }
 
-    private static class Counter {
-        private static final long MAX_IDLE_TIME = 10 * 1000L; // Point pool maxes out after 10 seconds idle
-        private static final long POINTS_PER_REQUEST = 65536L; // cost in points to send a single request
+    private static class ThreadToken {
+        private boolean notified = false;
 
+        private synchronized boolean waitIfPossible() throws CausedIOException {
+            try {
+                // Check for pending notification
+                if (notified)
+                    return true;
+                notified = false;
+
+                int sleepers = curSleepThreads.incrementAndGet();
+                if (sleepers > (long)maxSleepThreads.get())
+                    return false;
+
+                if (logger.isLoggable(SUBINFO_LEVEL))
+                    logger.log(SUBINFO_LEVEL, "Thread " + Thread.currentThread().getName() + ": WAIT to be notified by previous in line");
+                wait(maxNapTime.get());
+                return true;
+            } catch (InterruptedException e) {
+                throw new CausedIOException("Thread interrupted", e);
+            } finally {
+                curSleepThreads.decrementAndGet();
+            }
+        }
+
+        public synchronized void doNotify() {
+            notified = true;
+            super.notify();
+        }
+    }
+
+    private static class Counter {
         private final AtomicInteger concurrency = new AtomicInteger();  // total not-yet-closed request threads that have passed through an RLA with this counter
-        private final LinkedList<Object> tokenQueue = new LinkedList<Object>();
+        private final ConcurrentLinkedQueue<ThreadToken> tokenQueue = new ConcurrentLinkedQueue<ThreadToken>();
         private long points = 0;
         private long lastUsed = 0;
         private long lastSpent = 0;
@@ -128,25 +160,13 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
 
         private synchronized boolean isStale(long now) {
-            return concurrency.get() < 1 && getNumWaiters() < 1 && (now - lastUsed) > MAX_IDLE_TIME;
+            return concurrency.get() < 1 && tokenQueue.isEmpty() && (now - lastUsed) > (MAX_IDLE_TIME * 10);
         }
 
-        private synchronized int getNumWaiters() {
-            return tokenQueue.size();
-        }
-
-        private void removeToken(Object token) {
-            Object wakeToken = null;
-            synchronized (this) {
-                tokenQueue.remove(token);
-                if (tokenQueue.size() > 0)
-                    wakeToken = tokenQueue.getFirst();
-            }
-            if (wakeToken != null) {
-                synchronized (wakeToken) {
-                    wakeToken.notify();
-                }
-            }
+        private void removeToken(ThreadToken token) {
+            tokenQueue.remove(token);
+            ThreadToken wake = tokenQueue.peek();
+            if (wake != null) wake.doNotify();
         }
 
         // Unconditionally add the specified token to the end of the queue, and then
@@ -155,25 +175,24 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         // @return 0 if the given token is now in first place
         //         1 if the sleep concurrency limit was hit
         //         2 if the maximum total sleep time was hit
-        private int pushTokenAndWaitUntilFirst(long startTime, Object token) throws IOException {
-            synchronized (this) {
-                tokenQueue.addLast(token);
-                if (tokenQueue.size() == 1)
+        private int pushTokenAndWaitUntilFirst(long startTime, ThreadToken token) throws IOException {
+            synchronized (token) {
+                token.notified = false;
+                tokenQueue.offer(token);
+                if (token.equals(tokenQueue.peek()))
                     return 0;
             }
 
             for (;;) {
                 synchronized (token) {
-                    if (!waitIfPossible(token, curSleepThreads, maxSleepThreads.get()))
+                    if (!token.waitIfPossible())
                         return 1;
-
-                    synchronized (this) {
-                        if (tokenQueue.getFirst().equals(token))
-                            return 0;
-                    }
+                    if (token.equals(tokenQueue.peek()))
+                        return 0;
+                    token.notified = false;
                 }
 
-                if (isOverslept(startTime))
+                if (isOverslept(startTime, System.currentTimeMillis()))
                     return 2;
             }
         }
@@ -202,7 +221,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         boolean canSleep = rla.isShapeRequests();
         long pps = findPointsPerSecond();
 
-        final long maxPoints = rla.isHardLimit() ? (Counter.POINTS_PER_REQUEST + (Counter.POINTS_PER_REQUEST / 2)) : pps;                               
+        final long maxPoints = rla.isHardLimit() ? (POINTS_PER_REQUEST + (POINTS_PER_REQUEST / 2)) : pps;
 
         return !canSleep
                ? checkNoSleep(pps, counter, counterName, maxPoints)
@@ -222,7 +241,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
 
     private AssertionStatus checkWithSleep(long pps, Counter counter, String counterName, long maxPoints) throws IOException {
-        final Object token = threadTokens.get();
+        final ThreadToken token = threadTokens.get();
         final long maxnap = maxNapTime.get();
         long startTime = System.currentTimeMillis();
 
@@ -244,16 +263,18 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 if (shortfall == 0)
                     return AssertionStatus.NONE;
 
-                if (isOverslept(startTime)) {
+                if (isOverslept(startTime, now)) {
                     auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, new String[] { counterName });
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
 
-                long sleepTime =  shortfall * 1000L / pps + 2;
-                if (sleepTime < 1) sleepTime = 1;
+                long sleepNanos = shortfall * 1000L * 1000000L / pps + 1;
+                if (sleepNanos < 1) sleepNanos = 1;
+                long sleepTime = sleepNanos / 1000000L;
+
                 if (sleepTime > maxnap) sleepTime = maxnap; // don't sleep for too long
 
-                if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime)) {
+                if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime, (int)(sleepNanos % 1000000L))) {
                     auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, new String[] { counterName });
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
@@ -266,36 +287,19 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
 
-    private static boolean isOverslept(long startTime) {
-        return System.currentTimeMillis() - startTime > maxTotalSleepTime.get();
+    private static boolean isOverslept(long startTime, long now) {
+        return now - startTime > maxTotalSleepTime.get();
     }
 
-    private static boolean sleepIfPossible(AtomicInteger sleepCounter, int maxSleepers, long sleepMillis) throws CausedIOException {
-        if (sleepMillis < 1)
-            throw new IllegalArgumentException("sleepMillis must be positive");
+    private static boolean sleepIfPossible(AtomicInteger sleepCounter, int maxSleepers, long sleepMillis, int nanos) throws CausedIOException {
         try {
             int sleepers = sleepCounter.incrementAndGet();
             if (sleepers > maxSleepers)
                 return false;
 
-            if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Rate limit: Thead " + Thread.currentThread().getName() + ": sleeping " + sleepMillis + " ms");
-            Thread.sleep(sleepMillis);
-            return true;
-        } catch (InterruptedException e) {
-            throw new CausedIOException("Thread interrupted", e);
-        } finally {
-            sleepCounter.decrementAndGet();
-        }
-    }
-
-    private static boolean waitIfPossible(Object token, AtomicInteger sleepCounter, long maxSleepers) throws CausedIOException {
-        try {
-            int sleepers = sleepCounter.incrementAndGet();
-            if (sleepers > maxSleepers)
-                return false;
-
-            if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Thread " + Thread.currentThread().getName() + ": WAIT to be notified by previous in line");
-            token.wait(maxNapTime.get());
+            if (logger.isLoggable(SUBINFO_LEVEL))
+                logger.log(SUBINFO_LEVEL, "Rate limit: Thead " + Thread.currentThread().getName() + ": sleeping " + sleepMillis + "ms " + nanos + "ns");
+            Thread.sleep(sleepMillis, nanos);
             return true;
         } catch (InterruptedException e) {
             throw new CausedIOException("Thread interrupted", e);
@@ -309,7 +313,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     private long findPointsPerSecond() {
-        return rla.getMaxRequestsPerSecond() * Counter.POINTS_PER_REQUEST / getClusterSize();
+        return rla.getMaxRequestsPerSecond() * POINTS_PER_REQUEST / getClusterSize();
     }
 
     // @return the cluster size. always positive
@@ -396,7 +400,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 it.remove();
             } else {
                 if (counter.isStale(now)) {
-                    if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Removing stale rate limit counter " + entry.getKey());
+                    if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Removing stale rate limit counter " + entry.getKey());
                     it.remove();
                 }
             }
