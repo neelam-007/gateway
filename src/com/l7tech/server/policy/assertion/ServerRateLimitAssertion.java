@@ -4,28 +4,28 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.Background;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RateLimitAssertion;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
-import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the RateLimitAssertion.
@@ -53,6 +53,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong cleanerPeriod = new AtomicLong(DEFAULT_CLEANER_PERIOD);
     private static final AtomicLong maxNapTime = new AtomicLong(DEFAULT_MAX_NAP_TIME);
     private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
+    private static boolean useNanos = true;
+    private static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.server.ratelimit.forceNanos");
     private static final ThreadLocal<ThreadToken> threadTokens = new ThreadLocal<ThreadToken>() {
         protected ThreadToken initialValue() {
             return new ThreadToken();
@@ -129,7 +131,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         private final ConcurrentLinkedQueue<ThreadToken> tokenQueue = new ConcurrentLinkedQueue<ThreadToken>();
         private long points = 0;
         private long lastUsed = 0;
-        private long lastSpent = 0;
+        private long lastSpentMillis = 0;
+        private long lastSpentNanos = Long.MIN_VALUE;
 
         // Attempt to spend enough points to send a request.
         // @param now the current time of day
@@ -137,10 +140,22 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         // @param maxPoints   maximum number of points this counter should be allowed to accumulate
         // @return 0 if the spend was successful; otherwise, the number of points still needed
         private synchronized long spend(long now, long pointsPerSecond, long maxPoints) {
+            return useNanos
+                    ? spendNano(now, pointsPerSecond, maxPoints)
+                    : spendMilli(now, pointsPerSecond, maxPoints);
+        }
+
+        private synchronized long spendMilli(long now, long pointsPerSecond, long maxPoints) {
             // First add points for time passed
             lastUsed = now;
-            long idleMs = now - lastSpent;
-            if (idleMs > MAX_IDLE_TIME) idleMs = MAX_IDLE_TIME;
+            long idleMs;
+            if (lastSpentMillis > now) {
+                // Millisecond clock changed -- ntp adjustment?  shouldn't happen
+                idleMs = 0;
+            } else {
+                idleMs = now - lastSpentMillis;
+                if (idleMs > MAX_IDLE_TIME) idleMs = MAX_IDLE_TIME;
+            }
 
             long newPoints = points + (idleMs * pointsPerSecond) / 1000L;
             if (newPoints > maxPoints)
@@ -150,7 +165,49 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 // Spend-n-send
                 newPoints -= POINTS_PER_REQUEST;
                 points = newPoints;
-                lastSpent = now;
+                lastSpentMillis = now;
+                return 0;
+            }
+
+            // Needs more points
+            points = newPoints;
+            return POINTS_PER_REQUEST - newPoints;
+        }
+
+        private synchronized long spendNano(long now, long pointsPerSecond, long maxPoints) {
+            // First add points for time passed
+            final long maxIdleNanos = MAX_IDLE_TIME * 1000000L;
+            lastUsed = now;
+            final long nanoNow = System.nanoTime();
+            long idleNanos;
+            if (lastSpentNanos == Long.MIN_VALUE) {
+                idleNanos = maxIdleNanos;
+            } else if (lastSpentNanos > nanoNow) {
+                // Nano jump backwards in time detected (Sun Java bug 6458294)
+                idleNanos = 0;
+                if (autoFallbackFromNanos && Math.abs(nanoNow - lastSpentNanos) > 10000000L) {
+                    synchronized (ServerRateLimitAssertion.class) {
+                        if (useNanos) {
+                            logger.severe("Nanosecond timer is too unreliable on this system; will use millisecond timer instead from now on");
+                            useNanos = false;
+                        }
+                    }
+                }
+
+            } else {
+                idleNanos = nanoNow - lastSpentNanos;
+                if (idleNanos > maxIdleNanos) idleNanos = maxIdleNanos;
+            }
+
+            long newPoints = points + (idleNanos * pointsPerSecond) / (1000L * 1000000L);
+            if (newPoints > maxPoints)
+                newPoints = maxPoints;
+
+            if (newPoints >= POINTS_PER_REQUEST) {
+                // Spend-n-send
+                newPoints -= POINTS_PER_REQUEST;
+                points = newPoints;
+                lastSpentNanos = nanoNow;
                 return 0;
             }
 
@@ -271,10 +328,11 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 long sleepNanos = shortfall * 1000L * 1000000L / pps + 1;
                 if (sleepNanos < 1) sleepNanos = 1;
                 long sleepTime = sleepNanos / 1000000L;
+                sleepNanos %= 1000000L;
 
                 if (sleepTime > maxnap) sleepTime = maxnap; // don't sleep for too long
 
-                if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime, (int)(sleepNanos % 1000000L))) {
+                if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime, (int)sleepNanos)) {
                     auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, new String[] { counterName });
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
