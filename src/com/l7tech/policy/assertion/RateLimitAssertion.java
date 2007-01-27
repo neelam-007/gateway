@@ -11,7 +11,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private int maxRequestsPerSecond = 100;
     private boolean shapeRequests = false;
     private int maxConcurrency = 0;
-    private boolean hardLimit = true;
+    private boolean hardLimit = false;
 
     public String[] getVariablesUsed() {
         return ExpandVariables.getReferencedNames(getCounterName());
