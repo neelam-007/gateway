@@ -47,6 +47,7 @@ public class HttpRoutingAssertion
                                                              new HttpPassthroughRule("SOAPAction", false, null),
                                                              new HttpPassthroughRule("Content-Type", false, null)});
     protected HttpPassthroughRuleSet requestParamRules = new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{});
+    protected boolean followRedirects = false;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -138,6 +139,15 @@ public class HttpRoutingAssertion
 
     public void setRequestParamRules(HttpPassthroughRuleSet requestParamRules) {
         this.requestParamRules = requestParamRules;
+    }
+
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 
     public boolean isPassthroughHttpAuthentication() {

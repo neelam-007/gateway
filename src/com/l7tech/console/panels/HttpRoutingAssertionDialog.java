@@ -93,6 +93,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JButton reqHeadersRemove;
     private JButton reqParamsAdd;
     private JButton reqParamsRemove;
+    private JCheckBox followRedirectCheck;
 
     private final SecureAction okButtonAction;
 
@@ -451,6 +452,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
                 assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
             }
+            assertion.setFollowRedirects(followRedirectCheck.isSelected());
 
             fireEventAssertionChanged(assertion);
 
@@ -525,8 +527,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
             wssPromoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
         }
 
-        // address the fact that this is no longer controlled by this assertion
-        // cookiePropagationCheckBox.setSelected(assertion.isCopyCookies());
+        followRedirectCheck.setSelected(assertion.isFollowRedirects());
     }
 
     /**

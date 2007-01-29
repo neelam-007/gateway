@@ -46,8 +46,8 @@ public class ServicePropertiesDialog extends JDialog {
     private Document newWSDL = null;
     private String newWSDLUrl = null;
     private boolean wasoked = false;
-    // todo, we need to be able to query gateway to get port instead of assuming default
-    // (whenever it becomes available)
+    // todo, we need to be able to query gateway to get port instead
+    //  of assuming default (whenever it becomes available)
     private static final String STD_PORT = ":8080";
     private JPanel mainPanel;
     private JTabbedPane tabbedPane1;

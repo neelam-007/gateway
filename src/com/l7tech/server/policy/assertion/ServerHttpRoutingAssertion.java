@@ -210,6 +210,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             GenericHttpRequestParams routedRequestParams = new GenericHttpRequestParams(url);
             routedRequestParams.setSslSocketFactory(socketFactory);
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
+            routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             handleProcessedSecurityHeader(context,
                                           data.getCurrentSecurityHeaderHandling(),
