@@ -311,13 +311,8 @@ public class ServerVariables {
     }
 
     private static String getAuthenticatedUser(PolicyEnforcementContext context) {
-        String user = null;
-        User authenticatedUser = context.getAuthenticatedUser();
-        if (authenticatedUser != null) {
-            user = authenticatedUser.getName();
-            if (user == null) user = authenticatedUser.getId();
-        }
-        return user;
+        User user = context.getAuthenticatedUser();
+        return user == null ? null : user.getProviderId() + ":" + user.getId();
     }
 
     private static String getRequestProtocolId(Message request) {
