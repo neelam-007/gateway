@@ -352,7 +352,7 @@ public class AssertionMessages extends Messages {
     // ServerRateLimitAssertion
     public static final M RATELIMIT_RATE_EXCEEDED        = m(6950, Level.INFO, "Rate limit exceeded on counter {0}.");
     public static final M RATELIMIT_SLEPT_TOO_LONG       = m(6951, Level.INFO, "Unable to further delay request (maximum delay reached) for counter {0}.");
-    public static final M RATELIMIT_NODE_CONCURRENCY     = m(6952, Level.INFO, "Unable to delay request (node concurrency reached) for counter {0}.");
+    public static final M RATELIMIT_NODE_CONCURRENCY     = m(6952, Level.INFO, "Unable to delay request (queued thread limit reached) for counter {0}.");
     public static final M RATELIMIT_CONCURRENCY_EXCEEDED = m(6953, Level.INFO, "Concurrency exceeded on counter {0}.");
 
     // HTTP Form POST
