@@ -350,10 +350,10 @@ public class AssertionMessages extends Messages {
     public static final M THROUGHPUT_QUOTA_ALREADY_MET = m(6901, Level.INFO, "Quota already exceeded on counter {0}.");
 
     // ServerRateLimitAssertion
-    public static final M RATELIMIT_RATE_EXCEEDED        = m(6950, Level.INFO, "Rate limit exceeded on counter {0}.");
-    public static final M RATELIMIT_SLEPT_TOO_LONG       = m(6951, Level.INFO, "Unable to further delay request (maximum delay reached) for counter {0}.");
-    public static final M RATELIMIT_NODE_CONCURRENCY     = m(6952, Level.INFO, "Unable to delay request (queued thread limit reached) for counter {0}.");
-    public static final M RATELIMIT_CONCURRENCY_EXCEEDED = m(6953, Level.INFO, "Concurrency exceeded on counter {0}.");
+    public static final M RATELIMIT_RATE_EXCEEDED        = m(6950, Level.INFO, "Rate limit exceeded on rate limiter {0}.");
+    public static final M RATELIMIT_SLEPT_TOO_LONG       = m(6951, Level.INFO, "Unable to further delay request (maximum delay reached) for rate limiter {0}.");
+    public static final M RATELIMIT_NODE_CONCURRENCY     = m(6952, Level.INFO, "Unable to delay request (queued thread limit reached) for rate limiter {0}.");
+    public static final M RATELIMIT_CONCURRENCY_EXCEEDED = m(6953, Level.INFO, "Concurrency exceeded on rate limiter {0}.");
 
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");

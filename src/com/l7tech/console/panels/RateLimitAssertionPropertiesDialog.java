@@ -236,7 +236,7 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
         String err = null;
 
         if (PRESET_CUSTOM.equals(counterCb.getSelectedItem()) && counterNameField.getText().trim().length() < 1)
-            err = "Custom counter name must not be empty.";
+            err = "Custom rate limiter name must not be empty.";
 
         if (getViewConcurrency() < 1)
             err = "Concurrency limit must be positive.";

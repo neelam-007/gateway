@@ -458,7 +458,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 it.remove();
             } else {
                 if (counter.isStale(now)) {
-                    if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Removing stale rate limit counter " + entry.getKey());
+                    if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Removing stale rate limiter " + entry.getKey());
                     it.remove();
                 }
             }
