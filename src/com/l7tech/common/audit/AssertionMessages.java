@@ -317,7 +317,7 @@ public class AssertionMessages extends Messages {
     public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn''t login");
 
     // XPath Credential Source
-    public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not valid XML");
+    public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not XML");
     public static final M XPATHCREDENTIAL_LOGIN_XPATH_FAILED       = m(6601, Level.WARNING, "Login XPath evaluation failed");
     public static final M XPATHCREDENTIAL_LOGIN_XPATH_NOT_FOUND    = m(6602, Level.WARNING, "Login XPath evaluation failed to find any result");
     public static final M XPATHCREDENTIAL_LOGIN_FOUND_MULTI        = m(6603, Level.WARNING, "Login XPath evaluation found multiple results");
