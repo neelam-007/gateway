@@ -3,7 +3,7 @@
   <grid id="83deb" binding="mainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="52" y="32" width="668" height="478"/>
+      <xy x="52" y="32" width="668" height="612"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -323,7 +323,7 @@
           <grid id="4eb99" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
-              <tabbedpane title="Req HTTP Rules"/>
+              <tabbedpane title="Request HTTP Rules"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -354,7 +354,9 @@
                   </component>
                   <scrollpane id="d6169">
                     <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <minimum-size width="-1" height="80"/>
+                      </grid>
                     </constraints>
                     <properties/>
                     <border type="none"/>
@@ -424,7 +426,9 @@
                   </component>
                   <scrollpane id="dee7c">
                     <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <minimum-size width="-1" height="80"/>
+                      </grid>
                     </constraints>
                     <properties/>
                     <border type="none"/>
@@ -473,7 +477,7 @@
           <grid id="3af09" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
-              <tabbedpane title="Res HTTP Rules"/>
+              <tabbedpane title="Response HTTP Rules"/>
             </constraints>
             <properties/>
             <border type="none"/>

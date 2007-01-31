@@ -279,10 +279,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 if (reqHeadersCustomize.isSelected()) {
                     reqHeadersTable.setEnabled(true);
+                    reqHeadersTable.setCellSelectionEnabled(true);
                     reqHeadersAdd.setEnabled(true);
                     reqHeadersRemove.setEnabled(true);
                 } else {
                     reqHeadersTable.setEnabled(false);
+                    reqHeadersTable.setCellSelectionEnabled(false);
                     reqHeadersAdd.setEnabled(false);
                     reqHeadersRemove.setEnabled(false);
                 }
