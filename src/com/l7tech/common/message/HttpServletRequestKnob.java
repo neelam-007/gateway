@@ -26,9 +26,9 @@ import java.util.*;
  * from a servlet request.
  */
 public class HttpServletRequestKnob implements HttpRequestKnob {
-    private Map<String, String[]> queryParams;
-    private Map<String, String[]> requestBodyParams;
-    private Map<String, String[]> allParams;
+    private Map queryParams;
+    private Map requestBodyParams;
+    private Map allParams;
 
     private final HttpServletRequest request;
     private final URL url;
@@ -47,13 +47,14 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public HttpCookie[] getCookies() {
         Cookie[] cookies = request.getCookies();
-        List<HttpCookie> out = new ArrayList<HttpCookie>();
+        List out = new ArrayList();
         if(cookies!=null) {
-            for (Cookie cookie : cookies) {
+            for (Iterator i = out.iterator(); i.hasNext();) {
+                Cookie cookie = (Cookie) i.next();
                 out.add(CookieUtils.fromServletCookie(cookie, false));
             }
         }
-        return out.toArray(new HttpCookie[out.size()]);
+        return (HttpCookie[]) out.toArray(new HttpCookie[out.size()]);
     }
 
     public String getMethod() {
@@ -68,7 +69,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         if (queryParams == null || requestBodyParams == null) {
             collectParameters();
         }
-        String[] values = allParams.get(name);
+        String[] values = (String[]) allParams.get(name);
         if (values != null && values.length >= 1) {
             return values[0];
         } else {
@@ -86,7 +87,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
         // Check for PUT or POST; otherwise there can't be body params
         int len = request.getContentLength();
-        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Type = {0} bytes)", len));
+        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Type = {0} bytes)", new Object[] { Integer.valueOf(len) }));
         if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
             nobody();
             return;
@@ -110,14 +111,15 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             return;
         }
 
-        Set<String> keys = new HashSet<String>();
+        Set keys = new HashSet();
         keys.addAll(queryParams.keySet());
         keys.addAll(requestBodyParams.keySet());
-        Map<String, String[]> allParams = new HashMap<String, String[]>();
-        for (String key : keys) {
-            String[] queryVals = queryParams.get(key);
-            String[] bodyVals = requestBodyParams.get(key);
-            Set<String> newVals = new HashSet<String>();
+        Map allParams = new HashMap();
+        for (Iterator i = keys.iterator(); i.hasNext();) {
+            String key = (String) i.next();
+            String[] queryVals = (String[]) queryParams.get(key);
+            String[] bodyVals = (String[]) requestBodyParams.get(key);
+            Set newVals = new HashSet();
             if (queryVals != null) newVals.addAll(Arrays.asList(queryVals));
             if (bodyVals != null) newVals.addAll(Arrays.asList(bodyVals));
             allParams.put(key, newVals.toArray(new String[0]));
@@ -138,7 +140,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     }
 
     /**
-     * @return the Map<String, String[]> of this request's parameters
+     * @return the Map&lt;String, String[]&gt; of this request's parameters
      */
     public Map getParameterMap() throws IOException {
         if (allParams == null) collectParameters();
@@ -147,7 +149,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public String[] getParameterValues(String s) throws IOException {
         if (allParams == null) collectParameters();
-        return allParams.get(s);
+        return (String[]) allParams.get(s);
     }
 
     public Enumeration getParameterNames() throws IOException {
