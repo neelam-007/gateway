@@ -1,29 +1,27 @@
-Summary: Secure Span Gateway
+Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2007
 Name: ssg
 Version: 3.7
 Release: 1
 Group: Applications/Internet
-License: Copyright Layer7 Technologies 2003-2006
+License: Commercial
 URL: http://www.layer7tech.com
-Packager: Layer7 Technologies, <support@layer7tech.com>
-Source0: ~/rpm/SOURCES/ssg.tar.gz
+Vendor: Layer 7 Technologies
+Packager: Layer 7 Technologies, <support@layer7tech.com>
+source: ssg.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-provides: ssg
 
 # Prevents rpm build from erroring and halting
-%undefine       __check_files
+#%undefine       __check_files
 
 %description
-Secure Span Gateway software package
+SecureSpan Gateway software package
 
 %clean
 rm -fr %{buildroot}
 
 %prep
 rm -fr %{buildroot}
-mkdir %{buildroot}
-cd %{buildroot}
-tar -xzf ~/rpm/SOURCES/ssg.tar.gz
+%setup -qc %{buildroot}
 
 %build
 mkdir %{buildroot}/etc/
@@ -56,59 +54,132 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 
 %files
 # Root owned OS components
-%defattr(-,root,root)
+%defattr(0755,root,root)
 /etc/init.d/ssg
 /etc/init.d/ssgsysconfig
 /etc/init.d/ssg-dbstatus
 /etc/init.d/tcp_tune
-/etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh
+%config(noreplace) /etc/sysconfig/iptables
+%defattr(0644,root,root)
+/etc/snmp/snmpd.conf_example
 # Config components, owned by root
 %config(noreplace) /etc/my.cnf.ssg
-%config(noreplace) /etc/sysconfig/iptables
 
 # Main tree, owned by gateway
+%defattr(0644,gateway,gateway,0755)
+%dir /ssg
+
 # Group writable config files
-%defattr(0775,gateway,gateway)
-%config(noreplace) /ssg/etc/conf/
-%config(noreplace) /ssg/tomcat/conf/
-%config(noreplace) /ssg/jdk/jre/lib/ext/
-%config(noreplace) /ssg/jdk/jre/lib/security/
-
-%defattr(0664,gateway,gateway)
-%config(noreplace) /ssg/etc/conf/*
-%config(noreplace) /ssg/tomcat/conf/*
-%config(noreplace) /ssg/jdk/jre/lib/ext/*
-%config(noreplace) /ssg/jdk/jre/lib/security/java.security
-
-%attr(0775,gateway,gateway) /ssg/bin/partition*.sh
+%dir /ssg/etc
+%config(noreplace) /ssg/etc/conf
 
 # Group writeable directories and files
 
-#Config Wizard
-%attr(0775,gateway,gateway) /ssg/configwizard
-%attr(0664,gateway,gateway) /ssg/configwizard/*
+# Ssg bin
+%dir /ssg/bin
+/ssg/bin/*.txt
+%attr(0755,gateway,gateway) /ssg/bin/iptables*
+%attr(0755,gateway,gateway) /ssg/bin/*.pl
+%attr(0755,gateway,gateway) /ssg/bin/*.sh
+%attr(0755,gateway,gateway) /ssg/bin/*-initd
 
-%attr(0775,gateway,gateway) /ssg/configwizard/*.sh
-%attr(0775,gateway,gateway) /ssg/configwizard/lib
+# Tomcat
+%dir /ssg/tomcat
+/ssg/tomcat/LICENSE
+/ssg/tomcat/NOTICE
+/ssg/tomcat/RELEASE-NOTES
+/ssg/tomcat/RUNNING.txt
+%dir /ssg/tomcat/bin
+/ssg/tomcat/bin/*.jar
+%attr(0755,gateway,gateway) /ssg/tomcat/bin/*.sh
+/ssg/tomcat/bin/*.xml
+/ssg/tomcat/common
+%config(noreplace) /ssg/tomcat/conf
+%dir /ssg/tomcat/logs
+/ssg/tomcat/server
+/ssg/tomcat/shared
+/ssg/tomcat/temp
+/ssg/tomcat/webapps
+/ssg/tomcat/work
+
+# JDK
+%dir /ssg/jdk
+/ssg/jdk/COPYRIGHT
+/ssg/jdk/LICENSE
+/ssg/jdk/README.html
+/ssg/jdk/THIRDPARTYLICENSEREADME.txt
+%attr(0755,gateway,gateway) /ssg/jdk/bin
+/ssg/jdk/include
+%dir /ssg/jdk/jre
+/ssg/jdk/jre/CHANGES
+/ssg/jdk/jre/COPYRIGHT
+/ssg/jdk/jre/LICENSE
+/ssg/jdk/jre/README
+/ssg/jdk/jre/THIRDPARTYLICENSEREADME.txt
+/ssg/jdk/jre/Welcome.html
+/ssg/jdk/jre/.systemPrefs
+%attr(0755,gateway,gateway) /ssg/jdk/jre/bin
+/ssg/jdk/jre/javaws
+%dir /ssg/jdk/jre/lib
+/ssg/jdk/jre/lib/*.bfc
+/ssg/jdk/jre/lib/*.jar
+/ssg/jdk/jre/lib/*.properties
+/ssg/jdk/jre/lib/*.properties.ja
+/ssg/jdk/jre/lib/*.src
+/ssg/jdk/jre/lib/*.txt
+/ssg/jdk/jre/lib/classlist
+/ssg/jdk/jre/lib/applet
+/ssg/jdk/jre/lib/audio
+/ssg/jdk/jre/lib/cmm
+%config(noreplace) /ssg/jdk/jre/lib/ext
+/ssg/jdk/jre/lib/fonts
+/ssg/jdk/jre/lib/i386
+/ssg/jdk/jre/lib/im
+/ssg/jdk/jre/lib/images
+/ssg/jdk/jre/lib/javaws
+/ssg/jdk/jre/lib/locale
+/ssg/jdk/jre/lib/management
+/ssg/jdk/jre/lib/oblique-fonts
+%config(noreplace) /ssg/jdk/jre/lib/security
+/ssg/jdk/jre/lib/zi
+/ssg/jdk/jre/plugin
+/ssg/jdk/lib
+
+# Other stuff
+/ssg/etc/ldapTemplates
+/ssg/etc/sql
+/ssg/lib
+%dir /ssg/logs
+/ssg/modules
+/ssg/var
+
+#Config Wizard
+%dir /ssg/configwizard
+/ssg/configwizard/lib
+/ssg/configwizard/*.jar
+/ssg/configwizard/*.properties
+%attr(0755,gateway,gateway) /ssg/configwizard/*.sh
 
 #System Config Wizard
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard
-%attr(0664,gateway,gateway) /ssg/sysconfigwizard/*
-
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard/*.sh
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard/lib
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard/configfiles
+%dir /ssg/sysconfigwizard
+%dir /ssg/sysconfigwizard/configfiles
+/ssg/sysconfigwizard/lib
+/ssg/sysconfigwizard/*.jar
+/ssg/sysconfigwizard/*.properties
+# this script does not need to be executable
+/ssg/sysconfigwizard/ssg_sys_config.pl
+%attr(0755,gateway,gateway) /ssg/sysconfigwizard/*.sh
 
 %attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
 
 # Group writable for migration stuff
-%defattr(0775,gateway,gateway) 
-/ssg/migration
-/ssg/migration/*
-%defattr(-,gateway,gateway)
-/ssg/
-/ssg/*
+%dir /ssg/migration
+/ssg/migration/cfg
+/ssg/migration/lib
+/ssg/migration/*.properties
+/ssg/migration/*.jar
+%attr(0755,gateway,gateway) /ssg/migration/*.sh
 
 %pre
 if [ `grep ^gateway: /etc/passwd` ]; then

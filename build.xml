@@ -330,6 +330,7 @@
         <property name="build.etc" value="${build.dir}/etc"/>
         <property name="build.reports" value="${build.dir}/reports"/>
         <property name="build.installer" value="${src.root}/installer"/>
+        <property name="build.rpm" value="${build.dir}/rpm"/>
 
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
@@ -369,6 +370,20 @@
                 <isset property="makensis"/>
             </and>
         </condition>
+
+        <condition property="makerpm.available">
+            <or>
+                <available file="rpmbuild" filepath="/bin:/usr/bin:/usr/local/bin"/>
+                <available file="rpm" filepath="/bin:/usr/bin:/usr/local/bin"/>
+            </or>
+        </condition>
+        <condition property="makerpm.enabled">
+            <and>
+                <isset property="makerpm.available"/>
+                <isset property="makerpm"/>
+            </and>
+        </condition>
+
     </target>
 
     <!--
@@ -691,6 +706,7 @@
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
         <delete dir="${build.dir}"/>
+        <delete dir="${build.rpm}"/>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*"/>
@@ -800,17 +816,22 @@
     -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.readversion, package.gateway, package.manager, package.bridge, package.installclients, package.api, package.bcluna-jce, package.configwiz.all, package.ssgflasher, package.modules, obfuscate.work"/>
+            depends="package.readversion, package.gateway.all, package.manager, package.bridge, package.installclients, package.installgateway.work"/>
 
+
+    <target name="package.gateway.all" depends="package.gateway, package.api, obfuscate.gateway, package.bcluna-jce, package.configwiz.all, package.ssgflasher, package.modules"/>
 
     <!--
       Build the windows installers without any dependencies.
 
       This target is a direct replacement for the old perl "make_installers.pl -b"
+
+      NOTE: This is "broken" by design, it does exactly what the perl script used to do, you must
+            build the ssg before running this target.
     -->
     <target name="make_installers"
             description="Create the SSG WAR file and SSB/SSM Win32 installers (was make_installers.pl -b)."
-            depends="makensis, package.installbridge.work, package.installmanager.work, package.installgateway.work">
+            depends="makensis-unsafe, package.installbridge.work, package.installmanager.work, package.installgateway.work">
     </target>
 
     <!--
@@ -860,7 +881,7 @@
     <!--
       Compile and package the SSG
     -->
-    <target name="gateway" description="Build and package the SSG" depends="package.gateway"/>
+    <target name="gateway" description="Build and package the SSG" depends="package.installgateway.work"/>
 
     <!--
       Compile and package just the ConfigWizards
@@ -1172,7 +1193,8 @@
     <!--
       Package the SSB (JAR)
     -->
-    <target name="package.bridge" unless="ssg.only" depends="compile">
+    <target name="package.bridge" unless="ssg.only" depends="package.bridge.jar, obfuscate.bridge"/>
+    <target name="package.bridge.jar" unless="ssg.only" depends="compile">
         <!-- the client proxy jar -->
         <generate-manifest propertyPrefix="bridge" filename="Bridge.mf">
             <section>
@@ -1579,13 +1601,15 @@
         </exec>
     </target>
 
+    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.nsis, package.installgateway.work.rpm"/>
+    
     <!--
       Build the SSG windows installer
       - Update NSI (with jars)
       - Generate start script from template
       - Run makensis (wine?)
     -->
-    <target name="package.installgateway.work" depends="package.readversion.unsafe"  if="makensis.enabled">
+    <target name="package.installgateway.work.nsis" depends="package.readversion.unsafe"  if="makensis.enabled">
         <!-- Update NSI file -->
         <generate-nsi nsiFile="SSG.nsi"
                       nsiPath="server/win32/"
@@ -1600,6 +1624,30 @@
             <arg value="/XSetCompressor bzip2"/>
             <arg value="../../../build/etc/SSG.nsi"/>
         </exec>
+    </target>
+
+    <target name="package.installgateway.work.rpm.check" if="makerpm.enabled">
+        <available property="package.installgateway.work.rpm.sourceavailable" file="${tarball}"/>
+    </target>
+    
+    <!--
+      Create the SSG RPM
+    -->
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.check" if="package.installgateway.work.rpm.sourceavailable">
+        <!-- create directories -->
+        <mkdir dir="${build.rpm}/BUILD"/>
+        <mkdir dir="${build.rpm}/RPMS"/>
+        <mkdir dir="${build.rpm}/SOURCES"/>
+        <mkdir dir="${build.rpm}/SPECS"/>        
+        <mkdir dir="${build.rpm}/SRPMS"/>
+
+        <property name="package.installgateway.work.rpmspec" value="etc/ssg.spec"/>
+        <echo level="info">Using spec file : ${package.installgateway.work.rpmspec}</echo>
+        <echo level="info">Using source TGZ: ${tarball}</echo>
+        <copy file="${tarball}" tofile="${build.rpm}/SOURCES/ssg.tar.gz"/>
+        <copy file="${package.installgateway.work.rpmspec}" todir="${build.rpm}/SPECS"/>
+        
+        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target i386"/>
     </target>
 
     <!--
@@ -2527,14 +2575,19 @@
       Official build
     -->
     <target name="ssg-install-full"
-            description="Offical build target [optionally use with obfuscate and makensis]"
-            depends="INTERNAL-ssg-install,package.installgateway.work">
+            description="Offical build target [optionally use with obfuscate, makerpm and makensis]"
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package.installgateway.work">
+    </target>
+
+    <target name="ssg-install-full-init" depends="clean">
+        <property name="ssg.install.enabled" value="true"/>
+        <property name="ssg.install.official" value="true"/>
     </target>
 
     <!--
       Process configuration files for the full install
     -->
-    <target name="INTERNAL-ssg-install-properties" depends="db.properties">
+    <target name="INTERNAL-ssg-install-properties" depends="db.properties" if="ssg.install.enabled">
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties"
@@ -2570,18 +2623,26 @@
     <!--
       Initialize full install (before anything is done, ie. packaging)
     -->
-    <target name="INTERNAL-ssg-install-init-pre">
+    <target name="INTERNAL-ssg-install-init-pre" if="ssg.install.enabled" depends="INTERNAL-ssg-install-init-pre-dev">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
 
         <echo level="info" message="Enabling Pack200"/>
         <property name="pack200" value="true"/>
     </target>
+    
+    <!--
+      If not an official build, make up a build number if it is not already set
+    -->
+    <target name="INTERNAL-ssg-install-init-pre-dev" if="ssg.install.enabled" unless="ssg.install.official">
+        <property name="install.build.number" value="0000"/>
+        <echo level="info" message="Using build number ${install.build.number}"/>
+    </target>
 
     <!--
       Initialize full install
     -->
-    <target name="INTERNAL-ssg-install-init" depends="INTERNAL-ssg-install-init-pre, clean, package, init">
+    <target name="INTERNAL-ssg-install-init" depends="INTERNAL-ssg-install-init-pre, package.gateway.all, init" if="ssg.install.enabled">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
         <property file="etc/install.properties"/>
@@ -2684,7 +2745,7 @@
     <!--
       Full install main work
     -->
-    <target name="INTERNAL-ssg-install-main" depends="INTERNAL-ssg-install-properties">
+    <target name="INTERNAL-ssg-install-main" depends="INTERNAL-ssg-install-properties" if="ssg.install.enabled">
         <!-- Extract Tomcat & JDK tarballs -->
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
@@ -2751,7 +2812,7 @@
     <!--
       Top level work target for official builds
     -->
-    <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main">
+    <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
         <!-- Copy misc. stuff -->
         <copy todir="${install.src.sql}">
             <fileset dir="${src.root}/etc/db/${database.type}">
@@ -2925,7 +2986,7 @@
     <!--
       SecureSpan Bridge obfuscation target
     -->
-    <target name="obfuscate.bridge" depends="obfuscate.init" if="obfuscate">
+    <target name="obfuscate.bridge" depends="obfuscate.init" if="obfuscate" unless="ssg.only">
         <echo>Obfuscating Bridge.jar</echo>
         <Zelix scriptFileName="build/etc/bridge.zkm"
                logFileName="build/obfuscation/bridgeobfuscation.log"
@@ -3000,7 +3061,7 @@
     <!--
       Initialization for obfuscation
     -->
-    <target name="obfuscate.init" if="obfuscate">
+    <target name="obfuscate.init" if="obfuscate" depends="package.api">
         <echo>Extracting classes from ROOT.war</echo>
         <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
         <!--
@@ -3025,9 +3086,22 @@
         <property name="obfuscate" value="true"/>
     </target>
 
-    <target name="makensis" description="Enable building of Win32 installers">
+    <!--
+       Enable installer build but don't require dependencies to be built
+    -->
+    <target name="makensis-unsafe">
         <echo level="info">Enabling Win32 installers for build.</echo>
         <property name="makensis" value="true"/>
+    </target>
+
+    <target name="makensis" description="Enable building of Win32 installers" depends="makensis-unsafe">
+        <property name="ssg.install.enabled" value="true"/>
+    </target>
+
+    <target name="makerpm" description="Enable building of rpm installer(s)">
+        <echo level="info">Enabling RPM installers for build.</echo>
+        <property name="makerpm" value="true"/>
+        <property name="ssg.install.enabled" value="true"/>        
     </target>
 
     <!--
