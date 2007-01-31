@@ -25,12 +25,15 @@ public class HttpRuleTableHandler {
     final private JTable table;
     final DefaultTableModel model;
     private JDialog parentDlg;
+    boolean editable = true;
 
     public HttpRuleTableHandler(final String subject, final JTable table,
                                 final JButton addButton, final JButton removeButton,
                                 HttpPassthroughRuleSet data) {
         this.subject = subject;
         this.table = table;
+
+        Utilities.enableGrayOnDisabled(table);
 
         table.setColumnSelectionAllowed(false);
         Object[][] rows = dataToRows(data);
@@ -94,6 +97,15 @@ public class HttpRuleTableHandler {
         }
     }
 
+    public boolean isEditable() {
+        return editable;
+    }
+
+    public void setEditable(boolean editable) {
+        this.editable = editable;
+        table.setEnabled(editable);
+    }
+
     private Object[][] dataToRows(HttpPassthroughRuleSet data) {
         if (data.getRules() == null || data.getRules().length < 1) {
             return null;
@@ -151,6 +163,7 @@ public class HttpRuleTableHandler {
     }
 
     private void editRuleRow() {
+        if (!editable) return;
         int[] selectedrows = table.getSelectedRows();
         if (selectedrows != null && selectedrows.length > 0) {
             HttpPassthroughRule toedit = rowToData(selectedrows[0]);
