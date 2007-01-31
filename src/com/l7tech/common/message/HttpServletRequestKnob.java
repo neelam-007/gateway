@@ -6,7 +6,10 @@ package com.l7tech.common.message;
 
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.ParameterizedString;
 import com.l7tech.common.util.IteratorEnumeration;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +18,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -22,21 +26,17 @@ import java.util.*;
  * from a servlet request.
  */
 public class HttpServletRequestKnob implements HttpRequestKnob {
+    private Map<String, String[]> queryParams;
+    private Map<String, String[]> requestBodyParams;
+    private Map<String, String[]> allParams;
+
     private final HttpServletRequest request;
-    private final Map paramMap; // Necessary because you can't get parameters after reading the request's InputStream
     private final URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
     private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
+    private static final int MAX_FORM_POST = 512 * 1024;
 
     public HttpServletRequestKnob(HttpServletRequest request) {
-        if (request == null) throw new NullPointerException();
-        Enumeration names = request.getParameterNames();
-        Map params = new HashMap();
-        while (names.hasMoreElements()) {
-            String name = (String) names.nextElement();
-            params.put(name, request.getParameterValues(name));
-        }
-        this.paramMap = Collections.unmodifiableMap(params);
         this.request = request;
         try {
             this.url = new URL(request.getRequestURL().toString());
@@ -47,14 +47,13 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public HttpCookie[] getCookies() {
         Cookie[] cookies = request.getCookies();
-        List out = new ArrayList();
+        List<HttpCookie> out = new ArrayList<HttpCookie>();
         if(cookies!=null) {
-            for (int i=0; i < cookies.length; i++) {
-                Cookie cookie = cookies[i];
+            for (Cookie cookie : cookies) {
                 out.add(CookieUtils.fromServletCookie(cookie, false));
             }
         }
-        return (HttpCookie[]) out.toArray(new HttpCookie[out.size()]);
+        return out.toArray(new HttpCookie[out.size()]);
     }
 
     public String getMethod() {
@@ -65,10 +64,73 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return request.getRequestURI();
     }
 
-    public String getParameter(String name) {
-        String[] values = (String[]) paramMap.get(name);
-        if (values == null) return null;
-        return values[0];
+    public String getParameter(String name) throws IOException {
+        if (queryParams == null || requestBodyParams == null) {
+            collectParameters();
+        }
+        String[] values = allParams.get(name);
+        if (values != null && values.length >= 1) {
+            return values[0];
+        } else {
+            return null;
+        }
+    }
+
+    private void collectParameters() throws IOException {
+        String q = getQueryString();
+        if (q == null || q.length() == 0) {
+            queryParams = Collections.emptyMap();
+        } else {
+            queryParams = Collections.unmodifiableMap(ParameterizedString.parseQueryString(q, true)); // TODO configurable strictness?
+        }
+
+        // Check for PUT or POST; otherwise there can't be body params
+        int len = request.getContentLength();
+        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Type = {0} bytes)", len));
+        if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
+            nobody();
+            return;
+        }
+
+        ContentTypeHeader ctype = ContentTypeHeader.parseValue(request.getHeader("Content-Type"));
+        if (ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED.equals(ctype) || ctype == null) {
+            // This stanza is copied because we don't want to parse the Content-Type unnecessarily
+            nobody();
+            return;
+        }
+
+        String enc = ctype.getEncoding();
+        byte[] buf = HexUtils.slurpStream(request.getInputStream());
+        String blob = new String(buf, enc);
+        ParameterizedString.parseParameterString(requestBodyParams, blob, true);
+
+        if (queryParams.isEmpty() && requestBodyParams.isEmpty()) {
+            // Nothing left to do
+            allParams = Collections.emptyMap();
+            return;
+        }
+
+        Set<String> keys = new HashSet<String>();
+        keys.addAll(queryParams.keySet());
+        keys.addAll(requestBodyParams.keySet());
+        Map<String, String[]> allParams = new HashMap<String, String[]>();
+        for (String key : keys) {
+            String[] queryVals = queryParams.get(key);
+            String[] bodyVals = requestBodyParams.get(key);
+            Set<String> newVals = new HashSet<String>();
+            if (queryVals != null) newVals.addAll(Arrays.asList(queryVals));
+            if (bodyVals != null) newVals.addAll(Arrays.asList(bodyVals));
+            allParams.put(key, newVals.toArray(new String[0]));
+        }
+        this.allParams = Collections.unmodifiableMap(allParams);
+    }
+
+    /**
+     * Signal not to try to parse parameters again -- request is not an acceptable form post
+     */
+    private void nobody() {
+        requestBodyParams = Collections.emptyMap();
+        allParams = queryParams;
     }
 
     public String getQueryString() {
@@ -78,16 +140,19 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     /**
      * @return the Map<String, String[]> of this request's parameters
      */
-    public Map getParameterMap() {
-        return paramMap;
+    public Map getParameterMap() throws IOException {
+        if (allParams == null) collectParameters();
+        return allParams;
     }
 
-    public String[] getParameterValues(String s) {
-        return (String[]) paramMap.get(s);
+    public String[] getParameterValues(String s) throws IOException {
+        if (allParams == null) collectParameters();
+        return allParams.get(s);
     }
 
-    public Enumeration getParameterNames() {
-        return new IteratorEnumeration(paramMap.keySet().iterator());
+    public Enumeration getParameterNames() throws IOException {
+        if (allParams == null) collectParameters();
+        return new IteratorEnumeration(allParams.keySet().iterator());
     }
 
     public String getRequestUrl() {

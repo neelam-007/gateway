@@ -6,7 +6,9 @@
 
 package com.l7tech.server;
 
-import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import com.l7tech.cluster.ClusterPropertyManager;
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
@@ -15,35 +17,33 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultLevel;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.cluster.ClusterPropertyManager;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +64,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
-    private ServerConfig serverConfig;
     private SoapFaultManager soapFaultManager;
     private ClusterPropertyManager clusterPropertyManager;
     private LicenseManager licenseManager;
@@ -78,7 +77,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
         messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
-        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
@@ -115,12 +113,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
           ? ContentTypeHeader.parseValue(rawct)
           : ContentTypeHeader.XML_DEFAULT;
 
-        final HttpRequestKnob reqKnob = new HttpServletRequestKnob(hrequest);
-        request.attachHttpRequestKnob(reqKnob);
-
-        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
-        response.attachHttpResponseKnob(respKnob);
-
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply
 
@@ -133,9 +125,16 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             context.setSoapFaultManager(soapFaultManager);
             context.setClusterPropertyManager(clusterPropertyManager);
 
-            // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());
 
+            final MimeKnob mk = request.getMimeKnob();
+            HttpServletRequestKnob reqKnob = new HttpServletRequestKnob(new LazyInputStreamServletRequestWrapper(hrequest, new MimeKnobInputStreamHolder(mk)));
+            request.attachHttpRequestKnob(reqKnob);
+
+            final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
+            response.attachHttpResponseKnob(respKnob);
+
+            // Process message
             AssertionStatus status = messageProcessor.processMessage(context);
 
             // if the policy is not successful AND the stealth flag is on, drop connection
@@ -244,23 +243,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void initCookies(Cookie[] cookies, PolicyEnforcementContext context) {
         if(cookies!=null) {
-            for (int i = 0; i < cookies.length; i++) {
-                Cookie cookie = cookies[i];
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "Adding request cookie to context; name='"+cookie.getName()+"'.");
+            for (Cookie cookie : cookies) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Adding request cookie to context; name='" + cookie.getName() + "'.");
                 }
-                context.addCookie(CookieUtils.fromServletCookie(cookie,false));
+                context.addCookie(CookieUtils.fromServletCookie(cookie, false));
             }
         }
     }
 
     private void propagateCookies(PolicyEnforcementContext context, HttpRequestKnob reqKnob, HttpResponseKnob resKnob) {
-        Set cookies = context.getCookies();
-        for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
-            HttpCookie cookie = (HttpCookie) iterator.next();
-            if(cookie.isNew()) {
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "Adding new cookie to response; name='"+cookie.getCookieName()+"'.");
+        Set<HttpCookie> cookies = context.getCookies();
+        for (HttpCookie cookie : cookies) {
+            if (cookie.isNew()) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
                 }
                 URI url = URI.create(reqKnob.getRequestUrl());
                 resKnob.addCookie(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
@@ -313,8 +310,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (responseStream != null) responseStream.close();
         }
 
-        if (faultXml != null)
-            applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+        applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
@@ -342,8 +338,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (responseStream != null) responseStream.close();
         }
 
-        if (faultXml != null)
-            applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+        applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     /**
@@ -384,4 +379,38 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private static interface InputStreamHolder {
+        InputStream getInputStream() throws IOException;
+    }
+
+    private static class LazyInputStreamServletRequestWrapper extends HttpServletRequestWrapper {
+        private final InputStreamHolder holder;
+
+        private LazyInputStreamServletRequestWrapper(HttpServletRequest hrequest, InputStreamHolder holder) {
+            super(hrequest);
+            this.holder = holder;
+        }
+
+        @Override
+        public ServletInputStream getInputStream() throws IOException {
+            return new DelegatingServletInputStream(holder.getInputStream());
+        }
+    }
+
+    private static class MimeKnobInputStreamHolder implements InputStreamHolder {
+        private final MimeKnob mk;
+
+        private MimeKnobInputStreamHolder(MimeKnob mk) {
+            this.mk = mk;
+        }
+
+        public InputStream getInputStream() throws IOException {
+            try {
+                return mk.getEntireMessageBodyAsInputStream();
+            } catch (NoSuchPartException e) {
+                throw (IOException)new IOException(ExceptionUtils.getMessage(e)).initCause(e);
+            }
+        }
+    }
 }

@@ -89,13 +89,13 @@ public interface HttpRequestKnob extends TcpKnob {
      */
     boolean isSecure();
 
-    String getParameter(String name);
+    String getParameter(String name) throws IOException;
 
-    Map getParameterMap();
+    Map getParameterMap() throws IOException;
 
-    String[] getParameterValues(String s);
+    String[] getParameterValues(String s) throws IOException;
 
-    Enumeration getParameterNames();
+    Enumeration getParameterNames() throws IOException;
 
     Object getConnectionIdentifier();
 

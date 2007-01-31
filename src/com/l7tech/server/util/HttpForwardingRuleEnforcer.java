@@ -15,6 +15,7 @@ import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * This class handles the runtime enforcement of the forwarding rules
@@ -201,7 +202,7 @@ public class HttpForwardingRuleEnforcer {
 
     public static List<Param> handleRequestParameters(PolicyEnforcementContext context,
                                                       HttpPassthroughRuleSet rules, Auditor auditor, Map vars,
-                                                      String[] varNames) {
+                                                      String[] varNames) throws IOException {
         // 1st, make sure we have a HttpRequestKnob
         HttpRequestKnob knob;
         try {

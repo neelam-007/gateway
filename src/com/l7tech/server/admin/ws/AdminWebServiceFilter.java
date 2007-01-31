@@ -36,6 +36,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.util.DelegatingServletInputStream;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -196,19 +197,7 @@ public class AdminWebServiceFilter implements Filter {
                     public ServletInputStream getInputStream() throws IOException {
                         try {
                             final InputStream is = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-                            return new ServletInputStream() {
-                                public int read() throws IOException {
-                                    return is.read();
-                                }
-
-                                public int read(byte b[]) throws IOException {
-                                    return is.read(b);
-                                }
-
-                                public int read(byte b[], int off, int len) throws IOException {
-                                    return is.read(b, off, len);
-                                }
-                            };
+                            return new DelegatingServletInputStream(is);
                         } catch (NoSuchPartException e) {
                             throw new IOException("Couldn't get InputStream"); // Very unlikely
                         }

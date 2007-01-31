@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -53,7 +54,7 @@ public class ServerVariables {
         return null;
     }
 
-    private static String[] getParamValues(String prefix, String name, PolicyEnforcementContext context) {
+    private static String[] getParamValues(String prefix, String name, PolicyEnforcementContext context) throws IOException {
         HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
         if (hrk == null) return new String[0];
 
@@ -209,7 +210,7 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                String[] vals = new String[0];
+                String[] vals;
                 try {
                     vals = getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, name, context);
                 } catch (NoSuchVariableException e) {
@@ -222,7 +223,13 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                String[] vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
+                String[] vals;
+                try {
+                    vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Couldn't get HTTP parameter: " + name, e);
+                    return null;
+                }
                 if (vals.length > 0) return vals[0];
                 return null;
             }
@@ -276,7 +283,7 @@ public class ServerVariables {
                         }
                         name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
                         // TODO make this cache timeout configurable
-                        ClusterProperty cp = (ClusterProperty)context.getClusterPropertyManager().getCachedEntityByName(name, 30000);
+                        ClusterProperty cp = context.getClusterPropertyManager().getCachedEntityByName(name, 30000);
                         if (cp == null) return null;
                         return cp.getValue();
                     } catch (FindException e) {
