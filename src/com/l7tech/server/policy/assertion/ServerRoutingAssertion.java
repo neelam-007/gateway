@@ -207,7 +207,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     private static final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
     // instance
-    private final Auditor auditor;
+    protected final Auditor auditor;
 
     /**
      * Get a system property using the configured min, max and default values.

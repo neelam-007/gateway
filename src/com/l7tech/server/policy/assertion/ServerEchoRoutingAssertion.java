@@ -4,6 +4,7 @@ import com.l7tech.common.message.*;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EchoRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -43,6 +44,18 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message request = context.getRequest();
         final Message response = context.getResponse();
+
+        XmlKnob xnob = (XmlKnob)request.getKnob(XmlKnob.class);
+        if (xnob == null) {
+            String contenttype = "unknown";
+            HttpRequestKnob htknob = (HttpRequestKnob) request.getKnob(HttpRequestKnob.class);
+            if (htknob != null) {
+                String[] ctypes = htknob.getHeaderValues("content-type");
+                if (ctypes != null && ctypes.length > 0) contenttype = ctypes[0];
+            }
+            auditor.logAndAudit(AssertionMessages.CANNOT_ECHO_NON_XML, new String[] {contenttype});
+            return AssertionStatus.FAILED;
+        }
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
         try {
