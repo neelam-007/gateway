@@ -103,6 +103,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         String enc = ctype.getEncoding();
         byte[] buf = HexUtils.slurpStream(request.getInputStream());
         String blob = new String(buf, enc);
+        requestBodyParams = new HashMap();
         ParameterizedString.parseParameterString(requestBodyParams, blob, true);
 
         if (queryParams.isEmpty() && requestBodyParams.isEmpty()) {
