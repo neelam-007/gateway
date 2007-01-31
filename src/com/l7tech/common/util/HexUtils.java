@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * 
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.util;
+
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import org.apache.commons.codec.binary.Base64;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -13,11 +14,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
-
-import org.apache.commons.codec.binary.Base64;
-
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
@@ -104,7 +100,7 @@ public class HexUtils {
         // input to bytes even though it was not valid base64.
         //
         // The commons codec decoder handles whitespace, so this is no longer
-        // stripped out.        
+        // stripped out.
         return decodeBase64(s);
     }
 
@@ -112,7 +108,7 @@ public class HexUtils {
         ByteBuffer buffer = UTF8_CHARSET.encode(text);
         byte[] backingArray = buffer.array();
         byte[] encoded;
-        
+
         if (backingArray.length == buffer.limit()) {
             encoded = backingArray;
         } else {
@@ -359,7 +355,7 @@ public class HexUtils {
     /**
      * Join the specified array of CharSequence into a single StringBuffer, joined with the specified delimiter.
      * @param delim   delimiter to join with.  may not be null.
-     * @param tojoin  array of eg. String to join. may be null or empty.      
+     * @param tojoin  array of eg. String to join. may be null or empty.
      * @return a new StringBuffer containing XdYdZ where X, Y and Z were memebers of tojoin and d is delim.  Returns
      *         a StringBuffer containing the empty string if tojoin is null or empty.
      */
@@ -388,6 +384,27 @@ public class HexUtils {
     }
 
     /**
+     * Copy all of the in, right up to EOF, into out.  Does not flush or close either stream.
+     *
+     * @param in  the Reader to read.  Must not be null.
+     * @param out the Writer to write.  Must not be null.
+     * @return the number bytes copied
+     * @throws IOException if in could not be read, or out could not be written
+     */
+    public static long copyReader(Reader in, Writer out) throws IOException {
+        if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
+        char[] buf = new char[4096];
+        int got;
+        long total = 0;
+        while ((got = in.read(buf)) > 0) {
+            out.write(buf, 0, got);
+            total += got;
+        }
+        return total;
+    }
+
+
+    /**
      * Compare two InputStreams for an exact match.  This method returns true if and only if both InputStreams
      * produce exactly the same bytes when read from the current position through EOF, and that both reach EOF
      * at the same time.  If so requested, each stream can be closed after reading.  Otherwise, if the comparison
@@ -409,7 +426,7 @@ public class HexUtils {
                                               InputStream right, boolean closeRight) throws IOException
     {
         byte[] lb = BufferPool.getBuffer(4096);
-        byte[] rb = BufferPool.getBuffer(4096);        
+        byte[] rb = BufferPool.getBuffer(4096);
         try {
             boolean match = true;
 
