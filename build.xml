@@ -325,12 +325,14 @@
         <property name="build.dir" value="${src.root}/build"/>
         <property name="build.classes" value="${build.dir}/classes"/>
         <property name="build.test.classes" value="${build.dir}/test-classes"/>
-        <property name="doc.root" value="${build.dir}/htdocs"/>
         <property name="build.lib" value="${build.dir}/lib"/>
         <property name="build.etc" value="${build.dir}/etc"/>
         <property name="build.reports" value="${build.dir}/reports"/>
         <property name="build.installer" value="${src.root}/installer"/>
         <property name="build.rpm" value="${build.dir}/rpm"/>
+
+        <property name="dist.dir" value="${src.root}/dist"/>
+        <property name="doc.root" value="${build.dir}/htdocs"/>
 
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
@@ -701,6 +703,7 @@
       Remove any build artifacts
     -->
     <target name="clean" depends="init,clean.test,clean.modules" description="Delete all build output.">
+        <delete dir="${dist.dir}"/>
         <delete dir="${build.classes}"/>
         <delete dir="${build.test.classes}"/>
         <delete dir="${doc.root}"/>
@@ -2576,7 +2579,28 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package.installgateway.work">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.installgateway.work">
+    </target>
+
+    <!--
+      Unofficial build
+    -->
+    <target name="dist"
+            description="Build distributable software packages [optionally use with obfuscate]"
+            depends="makensis, makerpm, pack200, clean, package">
+        <echo level="info">Moving packaged software to distribution directory.</echo>
+
+        <echo level="info">Creating: ${dist.dir}</echo>
+        <mkdir dir="${dist.dir}"/>
+
+        <move todir="${dist.dir}" flatten="true">
+            <fileset dir="${build.rpm}/RPMS">
+                <include name="*/*.rpm"/>
+            </fileset>
+            <fileset dir="${build.installer}">
+                <include name="*/win32/*Installer.exe"/>
+            </fileset>
+        </move>
     </target>
 
     <target name="ssg-install-full-init" depends="clean">
@@ -2630,7 +2654,12 @@
         <echo level="info" message="Enabling Pack200"/>
         <property name="pack200" value="true"/>
     </target>
-    
+
+
+    <target name="pack200">
+        <property name="pack200" value="true"/>
+    </target>
+
     <!--
       If not an official build, make up a build number if it is not already set
     -->
