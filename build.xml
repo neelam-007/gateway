@@ -1632,11 +1632,24 @@
     <target name="package.installgateway.work.rpm.check" if="makerpm.enabled">
         <available property="package.installgateway.work.rpm.sourceavailable" file="${tarball}"/>
     </target>
-    
+
+    <!--
+      Set the release for the build, by default this is the date with "cvs" prepended.
+      
+      Other (optional) additions could be:
+        - .rc1 (release candidate)
+        - .m1  (milestone)
+
+      This gets added after any existing release number in the spec file (e.g 0.1.cvs20060201)
+    -->
+    <target name="package.checkrelease" unless="ssg.install.official">
+        <property name="build.release" value=".cvs${DSTAMP}"/>
+    </target>
+
     <!--
       Create the SSG RPM
     -->
-    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.check" if="package.installgateway.work.rpm.sourceavailable">
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.sourceavailable">
         <!-- create directories -->
         <mkdir dir="${build.rpm}/BUILD"/>
         <mkdir dir="${build.rpm}/RPMS"/>
@@ -1644,11 +1657,21 @@
         <mkdir dir="${build.rpm}/SPECS"/>        
         <mkdir dir="${build.rpm}/SRPMS"/>
 
+        <!-- Set release as empty if not yet set -->
+        <property name="build.release" value=""/>
         <property name="package.installgateway.work.rpmspec" value="etc/ssg.spec"/>
         <echo level="info">Using spec file : ${package.installgateway.work.rpmspec}</echo>
         <echo level="info">Using source TGZ: ${tarball}</echo>
         <copy file="${tarball}" tofile="${build.rpm}/SOURCES/ssg.tar.gz"/>
-        <copy file="${package.installgateway.work.rpmspec}" todir="${build.rpm}/SPECS"/>
+        <copy file="${package.installgateway.work.rpmspec}" todir="${build.rpm}/SPECS">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>                                                            
+                </tokenfilter>
+            </filterchain>
+        </copy>
         
         <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target i386"/>
     </target>
@@ -2263,7 +2286,7 @@
     <!--
       Core prepare target
     -->
-    <target name="prepare.base">
+    <target name="prepare.base" depends="init">
         <!-- time stamp -->
         <tstamp/>
         <mkdir dir="${build.dir}"/>
@@ -2579,7 +2602,7 @@
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.installgateway.work">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package">
     </target>
 
     <!--
@@ -2647,9 +2670,9 @@
     <!--
       Initialize full install (before anything is done, ie. packaging)
     -->
-    <target name="INTERNAL-ssg-install-init-pre" if="ssg.install.enabled" depends="INTERNAL-ssg-install-init-pre-dev">
-        <fail unless="install.build.number"
-              message="Set the install.build.number property before running this target!"/>
+    <target name="INTERNAL-ssg-install-init-pre" if="ssg.install.enabled" depends="prepare.base">
+        <property name="install.build.number" value="${build.number}"/>
+        <echo level="info" message="Using build number ${install.build.number}"/>
 
         <echo level="info" message="Enabling Pack200"/>
         <property name="pack200" value="true"/>
@@ -2661,17 +2684,9 @@
     </target>
 
     <!--
-      If not an official build, make up a build number if it is not already set
-    -->
-    <target name="INTERNAL-ssg-install-init-pre-dev" if="ssg.install.enabled" unless="ssg.install.official">
-        <property name="install.build.number" value="0000"/>
-        <echo level="info" message="Using build number ${install.build.number}"/>
-    </target>
-
-    <!--
       Initialize full install
     -->
-    <target name="INTERNAL-ssg-install-init" depends="INTERNAL-ssg-install-init-pre, package.gateway.all, init" if="ssg.install.enabled">
+    <target name="INTERNAL-ssg-install-init" depends="package.readversion, INTERNAL-ssg-install-init-pre, package.gateway.all, init" if="ssg.install.enabled">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
         <property file="etc/install.properties"/>
@@ -2914,6 +2929,22 @@
             </tarfileset>
         </tar>		
         <echo level="info">BUILD COMPLETE - Produced ${tarball}!</echo>
+    </target>
+
+    <!--
+      Used if you want to set the version in your source tree, use with compile, package, etc
+    -->
+    <target name="version">
+        <property name="buildinfo.update" value="true"/>
+        <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}"/>
+    </target>
+
+    <!--
+      Used if you want to reset the version in your source tree (HEAD),  use with compile, package, etc
+    -->
+    <target name="unversion">
+        <property name="buildinfo.update" value="true"/>
+        <property name="build.version" value="HEAD"/>
     </target>
 
     <!--

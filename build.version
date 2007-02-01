@@ -1,7 +1,7 @@
 # Stores the major and minor version of the software in this branch of this source tree.
 # Must be edited by hand whenever a new branch is created:
 #   - tag the branch
-#   - in HEAD, edit this file (build.number) to bump up the major and minor versions
+#   - in HEAD, edit this file (build.version) to bump up the major and minor versions
 build.version.major=3
-build.version.minor=6
-build.version.subminor=5
+build.version.minor=7
+build.version.subminor=0

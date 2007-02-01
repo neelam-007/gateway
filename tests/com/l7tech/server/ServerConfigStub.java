@@ -3,6 +3,8 @@ package com.l7tech.server;
 import java.util.Map;
 import java.util.HashMap;
 
+import com.l7tech.cluster.ClusterPropertyCache;
+
 /**
  * Stub mode ServerConfig.
  */
@@ -12,6 +14,15 @@ public class ServerConfigStub extends ServerConfig {
     public String getPropertyUncached(String propName, boolean includeClusterProperties) {
         if (overrides != null && overrides.containsKey(propName)) return overrides.get(propName);
         return super.getPropertyUncached(propName, includeClusterProperties);
+    }
+
+    public void setClusterPropertyCache(final ClusterPropertyCache clusterPropertyCache) {
+        super.setClusterPropertyCache(clusterPropertyCache);
+        try {
+            ServerConfig.getInstance().setClusterPropertyCache(clusterPropertyCache);
+        } catch(IllegalStateException ise) {
+            // ignore already set exception
+        }
     }
 
     /**

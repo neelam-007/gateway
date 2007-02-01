@@ -8,7 +8,17 @@
      * singleton using the factory method. This is transitional, as it is referencef from
      * too many places.
      -->
-    <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub"/>
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
+        <property name="clusterPropertyCache">
+            <ref bean="clusterPropertyCache"/>
+        </property>
+    </bean>
+
+   <bean id="clusterPropertyCache" class="com.l7tech.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager">
+            <ref bean="clusterPropertyManager"/>
+        </property>
+    </bean>
 
     <!-- server side identity provider factory (same as the prod)-->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
