@@ -256,6 +256,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
 
         serverConfig.putProperty(ServerConfig.PARAM_RATELIMIT_MAX_CONCURRENCY, String.valueOf(maxNodeConcurrency));
         ServerRateLimitAssertion.maxSleepThreads.set(maxNodeConcurrency);
+        Thread.sleep(1000);
 
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
