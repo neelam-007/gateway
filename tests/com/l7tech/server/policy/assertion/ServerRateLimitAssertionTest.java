@@ -228,11 +228,11 @@ public class ServerRateLimitAssertionTest extends TestCase {
         testSleepLimit(2, 2, 2);
     }
 
-    public void testSleepLimit333() throws Exception {
+    public void DISABLED_testSleepLimit333() throws Exception {
         testSleepLimit(3, 3, 3);
     }
 
-    public void testSleepLimit490() throws Exception {
+    public void DISABLED_testSleepLimit490() throws Exception {
         testSleepLimit(4, 9, 0);
     }
 
@@ -256,6 +256,12 @@ public class ServerRateLimitAssertionTest extends TestCase {
 
         serverConfig.putProperty(ServerConfig.PARAM_RATELIMIT_MAX_CONCURRENCY, String.valueOf(maxNodeConcurrency));
         ServerRateLimitAssertion.maxSleepThreads.set(maxNodeConcurrency);
+        for (int i =0; i < 10; ++i) {
+            System.gc();
+            Thread.sleep(100);
+            System.runFinalization();
+            Thread.sleep(100);
+        }
         Thread.sleep(1000);
 
         RateLimitAssertion rla = new RateLimitAssertion();
