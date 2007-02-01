@@ -43,8 +43,8 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
     private static final Map<String, String> counterNameTypes = new LinkedHashMap<String, String>() {{
         put(PRESET_DEFAULT, "${request.clientid}");
         put("Authenticated user", "${request.authenticateduser}");
-        put("Client IP", "${request.tcp.remoteip}");
-        put("SOAP operation", "${request.soap.operationname}");
+        put("Client IP", "${request.tcp.remoteAddress}");
+        put("SOAP operation", "${request.soap.operation}");
         put("SOAP namespace", "${request.soap.namespace}");
         put(PRESET_GLOBAL, "");
         put(PRESET_CUSTOM, makeUuid());
