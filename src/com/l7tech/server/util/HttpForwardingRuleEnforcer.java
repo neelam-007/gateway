@@ -327,7 +327,7 @@ public class HttpForwardingRuleEnforcer {
                 } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
                     // special cookie handling happens outside this loop (see below)
                 } else {
-                    targetForResponseHeaders.setHeader(h.getName(), h.getFullValue());
+                    targetForResponseHeaders.addHeader(h.getName(), h.getFullValue());
                 }
             }
             passIncomingCookies = true;
