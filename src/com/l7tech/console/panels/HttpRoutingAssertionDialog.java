@@ -10,6 +10,8 @@ import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.table.HttpRuleTableHandler;
+import com.l7tech.console.table.HttpHeaderRuleTableHandler;
+import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -275,8 +277,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private void initializeHttpRulesTabs() {
 
         // init req rules stuff
-        requestHttpRulesTableHandler = new HttpRuleTableHandler("Header", reqHeadersTable,
-                                                                 reqHeadersAdd, reqHeadersRemove,
+        requestHttpRulesTableHandler = new HttpHeaderRuleTableHandler(reqHeadersTable, reqHeadersAdd, reqHeadersRemove,
                                                                  assertion.getRequestHeaderRules());
         ActionListener tablestate = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -311,9 +312,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
             reqParamsAdd.setEnabled(false);
             reqParamsRemove.setEnabled(false);
         } else {
-            requestParamsRulesTableHandler = new HttpRuleTableHandler("Parameter", reqParamsTable,
-                                                                     reqParamsAdd, reqParamsRemove,
-                                                                     assertion.getRequestParamRules());
+            requestParamsRulesTableHandler = new HttpParamRuleTableHandler(reqParamsTable, reqParamsAdd,
+                                                                           reqParamsRemove,
+                                                                           assertion.getRequestParamRules());
             tablestate = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (reqParamsCustomize.isSelected()) {
@@ -342,8 +343,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         }
 
         // init the response stuff
-        responseHttpRulesTableHandler = new HttpRuleTableHandler("Header", resHeadersTable,
-                                                                 resHeadersAdd, resHeadersDelete,
+        responseHttpRulesTableHandler = new HttpHeaderRuleTableHandler(resHeadersTable, resHeadersAdd, resHeadersDelete,
                                                                  assertion.getResponseHeaderRules());
         tablestate = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -447,9 +447,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
                 assertion.setXmlSecurityActorToPromote(null);
             }
-
-            // todo, address the fact that this is no longer controlled by this checkbox
-            // assertion.setCopyCookies(cookiePropagationCheckBox.isSelected());
 
             assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
             assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());

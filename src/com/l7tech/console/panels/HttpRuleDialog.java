@@ -90,13 +90,17 @@ public class HttpRuleDialog extends JDialog {
     private void ok() {
         wasOKed = true;
         // save data
-        data.setName(nameField.getText());
+        String tmp = nameField.getText();
+        if (tmp != null) tmp = tmp.trim();
+        data.setName(tmp);
         if (customRadio.isSelected()) {
             data.setUsesCustomizedValue(true);
         } else {
             data.setUsesCustomizedValue(false);
         }
-        data.setCustomizeValue(valueField.getText());
+        tmp = valueField.getText();
+        if (tmp != null) tmp = tmp.trim();
+        data.setCustomizeValue(tmp);
         cancel();
     }
     

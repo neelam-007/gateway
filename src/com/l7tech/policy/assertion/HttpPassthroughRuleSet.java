@@ -21,6 +21,11 @@ public class HttpPassthroughRuleSet implements Serializable  {
     public static final int CUSTOM_AND_ORIGINAL_PASSTHROUGH = 2;
     public static final int BLOCK = 3;
 
+    public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"content-length", "user-agent", "host",
+                                                                        "accept", "accept-language", "accept-encoding",
+                                                                        "accept-charset", "keep-alive", "connection",
+                                                                        "server", "content-type", "date"};
+
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;
 
@@ -33,7 +38,7 @@ public class HttpPassthroughRuleSet implements Serializable  {
     public HttpPassthroughRuleSet(boolean forwardAll, HttpPassthroughRule[] rules) {
         this.forwardAll = forwardAll;
         this.rules = rules;
-        if (rules == null) throw new IllegalArgumentException("dont pass null arrays");
+        if (rules == null) throw new IllegalArgumentException("don't pass null arrays");
     }
 
     public boolean isForwardAll() {

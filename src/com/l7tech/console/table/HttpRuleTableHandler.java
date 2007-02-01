@@ -19,10 +19,10 @@ import java.awt.*;
  * User: flascell<br/>
  * Date: Jan 5, 2007<br/>
  */
-public class HttpRuleTableHandler {
+public abstract class HttpRuleTableHandler {
     private static final String MAGIC_DEF_VALUE = "<original value>";
     private String subject;
-    final private JTable table;
+    final protected JTable table;
     final DefaultTableModel model;
     private JDialog parentDlg;
     boolean editable = true;
@@ -162,6 +162,8 @@ public class HttpRuleTableHandler {
         }
     }
 
+    protected abstract boolean validateNewRule(HttpPassthroughRule in);
+
     private void editRuleRow() {
         if (!editable) return;
         int[] selectedrows = table.getSelectedRows();
@@ -173,9 +175,12 @@ public class HttpRuleTableHandler {
             editor.pack();
             editor.setVisible(true);
             if (editor.wasOKed()) {
-                String[] res = dataToRow(editor.getData());
-                model.setValueAt(res[0], selectedrows[0], 0);
-                model.setValueAt(res[1], selectedrows[0], 1);
+                HttpPassthroughRule dres = editor.getData();
+                if (validateNewRule(dres)) {
+                    String[] res = dataToRow(dres);
+                    model.setValueAt(res[0], selectedrows[0], 0);
+                    model.setValueAt(res[1], selectedrows[0], 1);
+                }
             }
         }
     }

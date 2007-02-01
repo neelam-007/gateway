@@ -30,10 +30,6 @@ import java.io.IOException;
  */
 public class HttpForwardingRuleEnforcer {
     private static final Logger logger = Logger.getLogger(HttpForwardingRuleEnforcer.class.getName());
-    private static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"content-length", "user-agent", "host",
-                                                                        "accept", "accept-language", "accept-encoding",
-                                                                        "accept-charset", "keep-alive", "connection",
-                                                                        "server", "content-type", "date"};
 
     /**
      * for forwarding request http headers downstream (from routing assertion)
@@ -401,7 +397,7 @@ public class HttpForwardingRuleEnforcer {
 
     private static boolean headerShouldBeIgnored(String headerName) {
         headerName = headerName.toLowerCase();
-        for (String ignoreme : HEADERS_NOT_TO_IMPLICITELY_FORWARD) {
+        for (String ignoreme : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD) {
             if (ignoreme.equals(headerName)) return true;
         }
         return false;
