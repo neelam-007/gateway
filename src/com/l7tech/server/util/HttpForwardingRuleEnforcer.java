@@ -343,7 +343,7 @@ public class HttpForwardingRuleEnforcer {
                         }
                         headervalue = ExpandVariables.process(headervalue, vars);
                     }
-                    targetForResponseHeaders.setHeader(rule.getName(), headervalue);
+                    targetForResponseHeaders.addHeader(rule.getName(), headervalue);
                 } else {
                     if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
                         // special cookie handling outside this loop (see below)
@@ -353,7 +353,7 @@ public class HttpForwardingRuleEnforcer {
                         if (vals != null && vals.size() > 0) {
                             for (Object valo : vals) {
                                 String val = (String) valo;
-                                targetForResponseHeaders.setHeader(rule.getName(), val);
+                                targetForResponseHeaders.addHeader(rule.getName(), val);
                             }
                         } else {
                             logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
