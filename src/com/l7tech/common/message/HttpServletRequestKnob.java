@@ -94,7 +94,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
 
         ContentTypeHeader ctype = ContentTypeHeader.parseValue(request.getHeader("Content-Type"));
-        if (ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED.equals(ctype) || ctype == null) {
+        if (!ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
             // This stanza is copied because we don't want to parse the Content-Type unnecessarily
             nobody();
             return;
