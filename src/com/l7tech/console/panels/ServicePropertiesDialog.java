@@ -46,9 +46,8 @@ public class ServicePropertiesDialog extends JDialog {
     private Document newWSDL = null;
     private String newWSDLUrl = null;
     private boolean wasoked = false;
-    // todo, we need to be able to query gateway to get port instead
-    //  of assuming default (whenever it becomes available)
     private static final String STD_PORT = ":8080";
+    private static final String STD_PORT_DISPLAYED = ":[port]";
     private JPanel mainPanel;
     private JTabbedPane tabbedPane1;
     private JTextField nameField;
@@ -360,7 +359,8 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        routingURL.setText("<html><a href=\"" + urlvalue + "\">" + urlvalue + "</a></html>");
+        String tmp = urlvalue.replace(STD_PORT, STD_PORT_DISPLAYED);
+        routingURL.setText("<html><a href=\"" + urlvalue + "\">" + tmp + "</a></html>");
     }
 
     private void resetWSDL() {
