@@ -162,7 +162,7 @@
                 <L7p:CookieCredentialSource/>
                 <L7p:RateLimit/>
                 <L7p:HtmlFormDataAssertion>
-                    <L7p:Fields htmlFormFieldArray="included"/>
+                    <L7p:Fields htmlFormFieldSpecArray="included"/>
                 </L7p:HtmlFormDataAssertion>
             </wsp:OneOrMore>
         </wsp:All>
