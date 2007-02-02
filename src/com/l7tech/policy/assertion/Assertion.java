@@ -444,7 +444,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      */
     public AssertionMetadata meta() {
         try {
-            return new DefaultAssertionMetadata(getClass().newInstance());
+            return new DefaultAssertionMetadata((Assertion)getClass().newInstance());
         } catch (InstantiationException e) {
             throw new RuntimeException(); // can't happen; assertion must have public no-arg constructor
         } catch (IllegalAccessException e) {
