@@ -7,6 +7,7 @@ import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
@@ -77,6 +78,13 @@ public class ServicePropertiesDialog extends JDialog {
     private void initialize() {
         setContentPane(mainPanel);
         setTitle("Published Service Properties");
+
+        nameField.setDocument(new FilterDocument(254, new FilterDocument.Filter() {
+                                                             public boolean accept(String str) {
+                                                                 return str != null;
+                                                             }
+                                                         }));
+        uriField.setDocument(new FilterDocument(127, null));
 
         // set initial data
         nameField.setText(subject.getName());
