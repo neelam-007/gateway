@@ -16,8 +16,8 @@ import javax.swing.*;
  */
 public class HttpParamRuleTableHandler extends HttpRuleTableHandler {
     public HttpParamRuleTableHandler(final JTable table, final JButton addButton, final JButton removeButton,
-                                     HttpPassthroughRuleSet data) {
-        super("Parameter", table, addButton, removeButton, data);
+                                     final JButton editButton, HttpPassthroughRuleSet data) {
+        super("Parameter", table, addButton, removeButton, editButton, data);
 
     }
     protected boolean validateNewRule(HttpPassthroughRule in) {

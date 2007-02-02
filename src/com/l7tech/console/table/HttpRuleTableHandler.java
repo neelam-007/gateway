@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
 import java.awt.*;
@@ -26,12 +28,14 @@ public abstract class HttpRuleTableHandler {
     final DefaultTableModel model;
     private JDialog parentDlg;
     boolean editable = true;
+    private JButton editButton;
 
     public HttpRuleTableHandler(final String subject, final JTable table,
-                                final JButton addButton, final JButton removeButton,
+                                final JButton addButton, final JButton removeButton, final JButton editButton,
                                 HttpPassthroughRuleSet data) {
         this.subject = subject;
         this.table = table;
+        this.editButton = editButton;
 
         Utilities.enableGrayOnDisabled(table);
 
@@ -56,6 +60,11 @@ public abstract class HttpRuleTableHandler {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
                     editRuleRow();
+            }
+        });
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent listSelectionEvent) {
+                updateeditState();
             }
         });
         /*table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -87,6 +96,12 @@ public abstract class HttpRuleTableHandler {
             }
         });
 
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                editRuleRow();
+            }
+        });
+
         Container c = table.getParent();
         while (c != null) {
             if (c instanceof JDialog) {
@@ -95,6 +110,14 @@ public abstract class HttpRuleTableHandler {
             }
             c = c.getParent();
         }
+    }
+
+    public void updateeditState() {
+        boolean selection = false;
+        if (table.getSelectedRows() != null && table.getSelectedRows().length > 0) {
+            selection = true;
+        }
+        editButton.setEnabled(selection);
     }
 
     public boolean isEditable() {

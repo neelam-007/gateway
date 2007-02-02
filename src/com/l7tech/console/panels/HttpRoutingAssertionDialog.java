@@ -96,6 +96,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JButton reqParamsAdd;
     private JButton reqParamsRemove;
     private JCheckBox followRedirectCheck;
+    private JButton editReqHrButton;
+    private JButton editReqPmButton;
+    private JButton editResHrButton;
 
     private final SecureAction okButtonAction;
 
@@ -277,7 +280,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private void initializeHttpRulesTabs() {
 
         // init req rules stuff
-        requestHttpRulesTableHandler = new HttpHeaderRuleTableHandler(reqHeadersTable, reqHeadersAdd, reqHeadersRemove,
+        requestHttpRulesTableHandler = new HttpHeaderRuleTableHandler(reqHeadersTable, reqHeadersAdd, reqHeadersRemove, editReqHrButton,
                                                                  assertion.getRequestHeaderRules());
         ActionListener tablestate = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -286,11 +289,13 @@ public class HttpRoutingAssertionDialog extends JDialog {
                     requestHttpRulesTableHandler.setEditable(true);
                     reqHeadersAdd.setEnabled(true);
                     reqHeadersRemove.setEnabled(true);
+                    requestHttpRulesTableHandler.updateeditState();
                 } else {
                     reqHeadersTable.setEnabled(false);
                     requestHttpRulesTableHandler.setEditable(false);
                     reqHeadersAdd.setEnabled(false);
                     reqHeadersRemove.setEnabled(false);
+                    editReqHrButton.setEnabled(false);
                 }
             }
         };
@@ -301,8 +306,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
             reqHeadersAll.setSelected(true);
             reqHeadersAdd.setEnabled(false);
             reqHeadersRemove.setEnabled(false);
+            editReqHrButton.setEnabled(false);
         } else {
             reqHeadersCustomize.setSelected(true);
+            requestHttpRulesTableHandler.updateeditState();
         }
 
         if (assertion instanceof BridgeRoutingAssertion) {
@@ -311,9 +318,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
             reqParamsTable.setEnabled(false);
             reqParamsAdd.setEnabled(false);
             reqParamsRemove.setEnabled(false);
+            editReqPmButton.setEnabled(false);
         } else {
             requestParamsRulesTableHandler = new HttpParamRuleTableHandler(reqParamsTable, reqParamsAdd,
-                                                                           reqParamsRemove,
+                                                                           reqParamsRemove, editReqPmButton,
                                                                            assertion.getRequestParamRules());
             tablestate = new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -322,11 +330,13 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         requestParamsRulesTableHandler.setEditable(true);
                         reqParamsAdd.setEnabled(true);
                         reqParamsRemove.setEnabled(true);
+                        requestParamsRulesTableHandler.updateeditState();
                     } else {
                         reqParamsTable.setEnabled(false);
                         requestParamsRulesTableHandler.setEditable(false);
                         reqParamsAdd.setEnabled(false);
                         reqParamsRemove.setEnabled(false);
+                        editReqPmButton.setEnabled(false);
                     }
                 }
             };
@@ -337,14 +347,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 reqParamsAll.setSelected(true);
                 reqParamsAdd.setEnabled(false);
                 reqParamsRemove.setEnabled(false);
+                editReqPmButton.setEnabled(false);
             } else {
                 reqParamsCustomize.setSelected(true);
+                requestParamsRulesTableHandler.updateeditState();
             }
         }
 
         // init the response stuff
         responseHttpRulesTableHandler = new HttpHeaderRuleTableHandler(resHeadersTable, resHeadersAdd, resHeadersDelete,
-                                                                 assertion.getResponseHeaderRules());
+                                                                       editResHrButton, assertion.getResponseHeaderRules());
         tablestate = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (resHeadersCustomize.isSelected()) {
@@ -352,11 +364,13 @@ public class HttpRoutingAssertionDialog extends JDialog {
                     responseHttpRulesTableHandler.setEditable(true);
                     resHeadersAdd.setEnabled(true);
                     resHeadersDelete.setEnabled(true);
+                    responseHttpRulesTableHandler.updateeditState();
                 } else {
                     resHeadersTable.setEnabled(false);
                     responseHttpRulesTableHandler.setEditable(false);
                     resHeadersAdd.setEnabled(false);
                     resHeadersDelete.setEnabled(false);
+                    editResHrButton.setEnabled(false);
                 }
             }
         };
@@ -367,8 +381,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
             resHeadersAll.setSelected(true);
             resHeadersAdd.setEnabled(false);
             resHeadersDelete.setEnabled(false);
+            editResHrButton.setEnabled(false);
         } else {
             resHeadersCustomize.setSelected(true);
+            responseHttpRulesTableHandler.updateeditState();
         }
     }
 
