@@ -73,6 +73,7 @@ public class ServicePropertiesDialog extends JDialog {
         super(owner, true);
         subject = svc;
         initialize();
+        DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
     private void initialize() {
