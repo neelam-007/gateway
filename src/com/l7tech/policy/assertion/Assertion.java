@@ -17,6 +17,7 @@ import java.util.*;
  *
  * @author alex
  * @version $Revision$
+ * @noinspection unchecked,ForLoopReplaceableByForEach
  */
 public abstract class Assertion implements Cloneable, Serializable {
     protected transient CompositeAssertion parent;
@@ -36,7 +37,7 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     /**
      * Reparent this assertion.  In normal operation, this should only be called by CompositeAssertions.
-     * @param parent
+     * @param parent the new parent
      */
     protected void setParent(CompositeAssertion parent) {
         this.parent = parent;
@@ -75,13 +76,25 @@ public abstract class Assertion implements Cloneable, Serializable {
         return null;
     }
 
-    /** Renumber the target assertion and all its children. */
-    protected static final int renumber(Assertion target, int number) {
+    /**
+     * Renumber the target assertion and all its children.
+     *
+     * @param target             the assertion to renumber
+     * @param number             the number to assign to this assertion.  Must be non-negative.
+     *                           It's first child, if any, will be assigned the number (newStartingOrdinal + 1).
+     * @return the lowest unused ordinal after this assertion and any children have been renumbered.
+     */
+    protected static int renumber(Assertion target, int number) {
         return target.renumber(number);
     }
 
-    /** Set the target assertion's parent. */
-    protected static final void setParent(Assertion target, CompositeAssertion parent) {
+    /**
+     * Set the target assertion's parent.
+     *
+     * @param target  the assertion to reparent
+     * @param parent  the new parent
+     */
+    protected static void setParent(Assertion target, CompositeAssertion parent) {
         target.setParent(parent);
     }
 
@@ -101,9 +114,12 @@ public abstract class Assertion implements Cloneable, Serializable {
         return newStartingOrdinal + 1;
     }
 
-    /** Properly clone this Assertion.  The clone will have its parent set to null. */
+    /**
+     * Properly clone this Assertion.  The clone will have its parent set to null.
+     * @noinspection CloneDoesntDeclareCloneNotSupportedException
+     */
     public Object clone() {
-        Assertion clone = null;
+        final Assertion clone;
         try {
             clone = (Assertion) super.clone();
             clone.setParent(null);
@@ -114,7 +130,10 @@ public abstract class Assertion implements Cloneable, Serializable {
         return clone;
     }
 
-    /** More user friendly version of clone. */
+    /**
+     * More user friendly version of clone.
+     * @return an Assertion instance that is a (hopefully) deep copy of this one.
+     */
     public Assertion getCopy() {
         return (Assertion) clone();
     }
@@ -209,7 +228,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         public Object next() {
-            Iterator iterator = null;
+            final Iterator iterator;
 
             try {
                 iterator = (Iterator)stack.peek();
@@ -302,7 +321,6 @@ public abstract class Assertion implements Cloneable, Serializable {
      */
     void simplify() {
         // Leaf assertions have nothing to do here
-        return;
     }
 
     /**
@@ -417,6 +435,21 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         return found;
+    }
+
+    /**
+     * Get the metadata for this assertion class.
+     *
+     * @return an AssertionMetadata instance.  Never null.
+     */
+    public AssertionMetadata meta() {
+        try {
+            return new DefaultAssertionMetadata(getClass().newInstance());
+        } catch (InstantiationException e) {
+            throw new RuntimeException(); // can't happen; assertion must have public no-arg constructor
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(); // can't happen; assertion must have public no-arg constructor
+        }
     }
 
     /**

@@ -12,6 +12,7 @@ import java.util.*;
 
 /**
  * @author alex
+ * @noinspection ForLoopReplaceableByForEach,unchecked
  */
 public abstract class CompositeAssertion extends Assertion implements Cloneable, Serializable {
     protected List children = new ArrayList();
@@ -23,7 +24,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     /**
      * Create a new CompositeAssertion with no parent and the specified children.
      * The children will be copied, and each of their parents reset to point to us.
-     * @param children
+     * @param children the children to adopt.  May be empty but never null.
      */
     public CompositeAssertion( List children ) {
         super();
