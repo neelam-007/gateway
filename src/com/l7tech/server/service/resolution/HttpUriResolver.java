@@ -77,7 +77,7 @@ public class HttpUriResolver extends ServiceResolver {
                 for (URIResolutionParam key : keys) {
                     if (key.hasWildcards) {
                         // only consider cached URI associated to at least one service in the passed subset
-                        // this ensures that further calls to narrowList will not yeild empty service sets and
+                        // this ensures that further calls to narrowList will not yield empty service sets and
                         // that the best fit will chosen from a set of potentially valid ones only
                         if (isInSubset(serviceSubset, uriToServiceMap.get(key))) {
                             if (((Pattern) key.pattern).matcher(requestValue).matches()) {

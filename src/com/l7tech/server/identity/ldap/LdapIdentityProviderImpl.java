@@ -674,12 +674,12 @@ public class LdapIdentityProviderImpl implements InitializingBean, LdapIdentityP
 
         if (!atLeastOneUser) {
             if (error.length() > 0) error.append('\n');
-            error.append("This configuration did not yeild any users");
+            error.append("This configuration did not yield any users");
         }
 
         if (!atLeastOneGroup && groupTypes.length > 0) {
             if (error.length() > 0) error.append('\n');
-            error.append("This configuration did not yeild any group");
+            error.append("This configuration did not yield any group");
         }
 
 
