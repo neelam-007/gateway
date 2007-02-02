@@ -224,7 +224,6 @@ public class HttpForwardingRuleEnforcer {
                 for (String paramVal : vals) {
                     output.add(new Param(paramName, paramVal));
                 }
-                logger.severe("potentially forward the parameter " + paramName);
             }
         } else {
             for (int i = 0; i < rules.getRules().length; i++) {
