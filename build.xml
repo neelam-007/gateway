@@ -1972,6 +1972,10 @@
             </fileset>
         </javadoc>
 
+    </target>
+
+    <target name="zip.api" depends="package.api">
+
         <!-- package layer7 api for distribution -->
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}"/>
         <copy todir="${build.dir}/CustomAssertionAPI-${build.version}">
@@ -2013,7 +2017,6 @@
         <copy file="${build.dir}/layer7-api.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib/layer7-api.jar"/>
 
         <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}.zip" basedir="${build.dir}" includes="CustomAssertionAPI-${build.version}/**" />
-
     </target>
 
     <!--
