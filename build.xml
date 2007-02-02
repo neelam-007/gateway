@@ -2106,14 +2106,14 @@
         </sequential>
     </macrodef>
 
-    <target name="testpackage.work" depends="package, testpackage.bridge, testpackage.manager, testpackage.config"/>
+    <target name="testpackage.work" depends="testpackage.bridge, testpackage.manager, testpackage.config"/>
 
     <target name="testpackage.init">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" verbose="no"/>
     </target>
 
-    <target name="testpackage.bridge" depends="testpackage.init, package.bridge">
+    <target name="testpackage.bridge" depends="testpackage.init, package.bridge.jar">
         <!-- Testpackage for SecureSpan Bridge -->
         <fileset id="bridge.testpackage.fileset" dir="${build.lib}">
             <patternset refid="bridge.libs"/>
@@ -2130,7 +2130,7 @@
         </condition>
     </target>
 
-    <target name="testpackage.manager" depends="testpackage.init, package.manager">
+    <target name="testpackage.manager" depends="testpackage.init, package.manager.jar">
         <!-- Testpackage for SecureSpan Manager -->
         <fileset id="manager.testpackage.fileset" dir="${build.lib}">
             <patternset refid="manager.libs"/>
