@@ -42,9 +42,9 @@ import java.util.regex.Pattern;
  * Creates and manages all in-memory instances of {@link CompiledSchema}, including uploading them to hardware
  * when they are unambiguous, and unloading them from hardware when they become ambiguous.
  * <p/>
- * Users of {@link CompiledSchema}s should feel free to hold hard references to any that are
+ * Users of {@link CompiledSchema}s should feel free to retain {@link SchemaHandle}s for any that are
  * actually in use, but should not cache them any longer than needed; hardware acceleration
- * relies on their prompt finalization.
+ * relies on their prompt closure.
  */
 public class SchemaManagerImpl implements SchemaManager {
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
