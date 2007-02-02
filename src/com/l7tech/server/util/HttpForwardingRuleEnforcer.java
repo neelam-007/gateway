@@ -242,8 +242,10 @@ public class HttpForwardingRuleEnforcer {
                     output.add(new Param(paramName, paramVal));
                 } else {
                     String[] vals = knob.getParameterValues(paramName);
-                    for (String paramVal : vals) {
-                        output.add(new Param(paramName, paramVal));
+                    if (vals != null && vals.length > 0) {
+                        for (String paramVal : vals) {
+                            output.add(new Param(paramName, paramVal));
+                        }
                     }
                 }
             }
