@@ -93,20 +93,20 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
 
         /**
          * Creates the table model and populates it with given fields in sorted order by name.
-         * @param fields    Form fields to initialize with; field properties
-         *                  will be copied (not referenced)
+         * @param fieldSpecs    field specifications to initialize with; field
+         *                      properties will be copied (not referenced)
          */
-        public FieldTableModel(final HtmlFormDataAssertion.Field[] fields) {
-            super(FieldColumn.getNames(), fields.length);
+        public FieldTableModel(final HtmlFormDataAssertion.FieldSpec[] fieldSpecs) {
+            super(FieldColumn.getNames(), fieldSpecs.length);
 
             // Populates the table with the initial Form field values.
             int row = 0;
-            for (HtmlFormDataAssertion.Field field : fields) {
-                setValueAt(field.getName(), row, FIELD_NAME_COLUMN.index);
-                setValueAt(field.getDataType(), row, FIELD_DATA_TYPE_COLUMN.index);
-                setValueAt(field.getMinOccurs(), row, FIELD_MIN_OCCURS_COLUMN.index);
-                setValueAt(field.getMaxOccurs(), row, FIELD_MAX_OCCURS_COLUMN.index);
-                setValueAt(field.getAllowedLocation(), row, FIELD_LOCATION_COLUMN.index);
+            for (HtmlFormDataAssertion.FieldSpec fieldSpec : fieldSpecs) {
+                setValueAt(fieldSpec.getName(), row, FIELD_NAME_COLUMN.index);
+                setValueAt(fieldSpec.getDataType(), row, FIELD_DATA_TYPE_COLUMN.index);
+                setValueAt(fieldSpec.getMinOccurs(), row, FIELD_MIN_OCCURS_COLUMN.index);
+                setValueAt(fieldSpec.getMaxOccurs(), row, FIELD_MAX_OCCURS_COLUMN.index);
+                setValueAt(fieldSpec.getAllowedLocation(), row, FIELD_LOCATION_COLUMN.index);
                 ++ row;
             }
 
@@ -177,6 +177,11 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                             return "Duplicate field name.";
                         }
                     }
+                }
+            } else if (column == FIELD_DATA_TYPE_COLUMN.index) {
+                final HtmlFormDataType dataType = (HtmlFormDataType) getValueAt(row, column);
+                if (!_allowPostCheckbox.isSelected() && dataType == HtmlFormDataType.FILE) {
+                    return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when POST is not selected.";
                 }
             } else if (column == FIELD_MIN_OCCURS_COLUMN.index) {
                 final Integer minValue = (Integer) getValueAt(row, column);
@@ -346,7 +351,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
         _warningLabel.setIcon(null);
         _warningLabel.setText(null);
 
-        _fieldTableModel = new FieldTableModel(assertion.getFields());
+        _fieldTableModel = new FieldTableModel(assertion.getFieldSpecs());
         _fieldTableModel.addTableModelListener(this);
 
         _fieldTable.setModel(_fieldTableModel);
@@ -498,20 +503,20 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
         _assertion.setAllowPost(_allowPostCheckbox.isSelected());
         _assertion.setOnlyAllowThese(_onlyAllowTheseCheckBox.isSelected());
 
-        // Replaces fields in assertion by fields in table.
+        // Replaces FieldSpec's in assertion by FieldSpec's in table.
         final int numFields = _fieldTable.getRowCount();
-        final HtmlFormDataAssertion.Field[] fields = new HtmlFormDataAssertion.Field[numFields];
+        final HtmlFormDataAssertion.FieldSpec[] fieldSpecs = new HtmlFormDataAssertion.FieldSpec[numFields];
         for (int i = 0; i < numFields; ++i) {
             final String name = ((String) _fieldTable.getValueAt(i, FIELD_NAME_COLUMN.index)).trim();
             final HtmlFormDataType dataType = (HtmlFormDataType) _fieldTable.getValueAt(i, FIELD_DATA_TYPE_COLUMN.index);
             final int minOccurs = ((Integer) _fieldTable.getValueAt(i, FIELD_MIN_OCCURS_COLUMN.index)).intValue();
             final int maxOccurs = ((Integer) _fieldTable.getValueAt(i, FIELD_MAX_OCCURS_COLUMN.index)).intValue();
             final HtmlFormDataLocation allowedLocation = (HtmlFormDataLocation) _fieldTable.getValueAt(i, FIELD_LOCATION_COLUMN.index);
-            fields[i] = new HtmlFormDataAssertion.Field(
+            fieldSpecs[i] = new HtmlFormDataAssertion.FieldSpec(
                     name, dataType, minOccurs, maxOccurs, allowedLocation
             );
         }
-        _assertion.setFields(fields);
+        _assertion.setFieldSpecs(fieldSpecs);
 
         _modified = true;
         dispose();

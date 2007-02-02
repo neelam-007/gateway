@@ -345,6 +345,18 @@ public class AssertionMessages extends Messages {
     public static final M HTTPFORM_BAD_MIME      = m(6805, Level.WARNING, "Unable to write new MIME message");
     public static final M HTTPFORM_TOO_BIG       = m(6806, Level.WARNING, "Field {0} is too large (>= " + 512 * 1024 + " bytes)");
 
+    // HtmlFormDataAssertion
+    public static final M HTMLFORMDATA_NOT_HTTP = m(6850, Level.INFO, "Request is not HTTP.");
+    public static final M HTTP_POST_NOT_FORM_DATA = m(6851, Level.INFO, "HTTP POST does not contain HTML Form data. (content type= {0})");
+    public static final M HTMLFORMDATA_METHOD_NOT_ALLOWED = m(6852, Level.WARNING, "HTTP request method not allowed: {0}");
+    public static final M HTMLFORMDATA_FIELD_NOT_FOUND = m(6582, Level.WARNING, "A required Form field is missing in the request. (name={0})");
+    public static final M HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED = m(6853, Level.WARNING, "Unspecified Form field encountered and not allowed. (name={0})");
+    public static final M HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED = m(6854, Level.FINE, "Unspecified Form field encountered but allowed through. (name={0}}");
+    public static final M HTMLFORMDATA_FAIL_DATATYPE = m(6855, Level.WARNING, "Form field value has wrong data type. (name={0}, value={1}, data type allowed={2})");
+    public static final M HTMLFORMDATA_FAIL_MINOCCURS = m(6856, Level.WARNING, "Form field ocurrences < min allowed. (name={0}, occurs={1}, min occurs allowed={2})");
+    public static final M HTMLFORMDATA_FAIL_MAXOCCURS = m(6857, Level.WARNING, "Form field ocurrences > max allowed. (name={0}, occurs={1}, max occurs allowed={2})");
+    public static final M HTMLFORMDATA_LOCATION_NOT_ALLOWED = m(6858, Level.WARNING, "Form field is found in location not allowed. (name={0}, location not allowed={1})");
+
     // ServerThroughputQuota
     public static final M THROUGHPUT_QUOTA_EXCEEDED =    m(6900, Level.INFO, "Quota exceeded on counter {0}. Assertion limit is {1} current counter value is {2}");
     public static final M THROUGHPUT_QUOTA_ALREADY_MET = m(6901, Level.INFO, "Quota already exceeded on counter {0}.");

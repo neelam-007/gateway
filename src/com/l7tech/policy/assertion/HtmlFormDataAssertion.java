@@ -15,23 +15,26 @@ import java.io.Serializable;
  * @author rmak
  * @since SecureSpan 3.7
  */
-public class HtmlFormDataAssertion extends Assertion {
+public class HtmlFormDataAssertion extends Assertion implements MimeMultipartAssertion {
 
-    public static class Field implements Serializable {
+    /**
+     * A FieldSpec specifies the constraints on a HTML Form field.
+     */
+    public static class FieldSpec implements Serializable {
         private String _name;
         private HtmlFormDataType _dataType;
         private int _minOccurs;
         private int _maxOccurs;
         private HtmlFormDataLocation _allowedLocation = HtmlFormDataLocation.ANYWHERE;
 
-        public Field() {
+        public FieldSpec() {
         }
 
-        public Field(final String name,
-                     final HtmlFormDataType dataType,
-                     final int minOccurs,
-                     final int maxOccurs,
-                     final HtmlFormDataLocation allowedLocation) {
+        public FieldSpec(final String name,
+                         final HtmlFormDataType dataType,
+                         final int minOccurs,
+                         final int maxOccurs,
+                         final HtmlFormDataLocation allowedLocation) {
             _name = name;
             _dataType = dataType;
             _minOccurs = minOccurs;
@@ -86,8 +89,8 @@ public class HtmlFormDataAssertion extends Assertion {
     /** Whether HTTP POST method is allowed. */
     private boolean _allowPost;
 
-    /** All specified Form fields; as a set of {@link Field} objects. */
-    private Field[] _fields = new Field[0];
+    /** All specified Form fields; as a set of {@link FieldSpec} objects. */
+    private FieldSpec[] _fieldSpecs = new FieldSpec[0];
 
     /** Whether only the specified fields are allowed. */
     private boolean _onlyAllowThese;
@@ -121,15 +124,15 @@ public class HtmlFormDataAssertion extends Assertion {
         _onlyAllowThese = b;
     }
 
-    /** @return an array of {@link Field}s backed by the assertion; never null */
-    public Field[] getFields() {
-        return _fields;
+    /** @return an array of {@link FieldSpec}s backed by the assertion; never null */
+    public FieldSpec[] getFieldSpecs() {
+        return _fieldSpecs;
     }
 
-    /** @param fields   array of {@link Field}s for this assertion; must be non-null */
-    public void setFields(final Field[] fields) {
-        if (fields == null)
+    /** @param fieldSpecs   array of {@link FieldSpec}s for this assertion; must be non-null */
+    public void setFieldSpecs(final FieldSpec[] fieldSpecs) {
+        if (fieldSpecs == null)
             throw new IllegalArgumentException("fields must be non-null");
-        _fields = fields;
+        _fieldSpecs = fieldSpecs;
     }
 }

@@ -112,18 +112,20 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             return;
         }
 
-        Set keys = new HashSet();
-        keys.addAll(queryParams.keySet());
-        keys.addAll(requestBodyParams.keySet());
-        Map allParams = new HashMap();
-        for (Iterator i = keys.iterator(); i.hasNext();) {
-            String key = (String) i.next();
-            String[] queryVals = (String[]) queryParams.get(key);
-            String[] bodyVals = (String[]) requestBodyParams.get(key);
-            Set newVals = new HashSet();
-            if (queryVals != null) newVals.addAll(Arrays.asList(queryVals));
-            if (bodyVals != null) newVals.addAll(Arrays.asList(bodyVals));
-            allParams.put(key, newVals.toArray(new String[0]));
+        // Combines queryParams and requestBodyParams into allParams.
+        Map allParams = new HashMap(queryParams);
+        for (Iterator i = requestBodyParams.keySet().iterator(); i.hasNext(); ) {
+            String name = (String) i.next();
+            String[] bodyValues = (String[]) requestBodyParams.get(name);
+            String[] queryValues = (String[]) queryParams.get(name);
+            if (queryValues == null) {
+                allParams.put(name, bodyValues);
+            } else {
+                String[] allValues = new String[queryValues.length + bodyValues.length];
+                System.arraycopy(queryValues, 0, allValues, 0, queryValues.length);
+                System.arraycopy(bodyValues, 0, allValues, queryValues.length, bodyValues.length);
+                allParams.put(name, allValues);
+            }
         }
         this.allParams = Collections.unmodifiableMap(allParams);
     }
@@ -156,6 +158,22 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     public Enumeration getParameterNames() throws IOException {
         if (allParams == null) collectParameters();
         return new IteratorEnumeration(allParams.keySet().iterator());
+    }
+
+    /**
+     * @return the Map&lt;String, String[]&gt; of parameters found in the URL query string.
+     */
+    public Map getQueryParameterMap() throws IOException {
+        if (queryParams == null) collectParameters();
+        return queryParams;
+    }
+
+    /**
+     * @return the Map&lt;String, String[]&gt; of parameters found in the request message body.
+     */
+    public Map getRequestBodyParameterMap() throws IOException {
+        if (requestBodyParams == null) collectParameters();
+        return requestBodyParams;
     }
 
     public String getRequestUrl() {

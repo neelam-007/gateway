@@ -325,8 +325,8 @@ public class WspConstants {
         new BeanTypeMapping(HttpPassthroughRule.class, "httpPassthroughRule"),
         new ArrayTypeMapping(new HttpPassthroughRule[0], "httpPassthroughRules"),
         new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
-        new BeanTypeMapping(HtmlFormDataAssertion.Field.class, "htmlFormField"),
-        new ArrayTypeMapping(new HtmlFormDataAssertion.Field[0], "htmlFormFieldArray"),
+        new BeanTypeMapping(HtmlFormDataAssertion.FieldSpec.class, "htmlFormFieldSpec"),
+        new ArrayTypeMapping(new HtmlFormDataAssertion.FieldSpec[0], "htmlFormFieldSpecArray"),
 
 
         // Backward compatibility with old policy documents
