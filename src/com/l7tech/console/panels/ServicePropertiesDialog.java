@@ -318,6 +318,7 @@ public class ServicePropertiesDialog extends JDialog {
         // set the new data into the edited subject
         subject.setName(name);
         subject.setDisabled(!enableRadio.isSelected());
+        if (newURI != null && (newURI.length() < 1 || newURI.equals("/"))) newURI = null;
         subject.setRoutingUri(newURI);
         Set<String> methods = new HashSet<String>();
         if (getCheck.isSelected()) {
@@ -357,6 +358,13 @@ public class ServicePropertiesDialog extends JDialog {
             currentValue = uriField.getText();
         }
         String urlvalue;
+        if (currentValue != null) {
+            currentValue = currentValue.trim();
+            String cvWithoutSlashes = currentValue.replace("/", "");
+            if (cvWithoutSlashes.length() <= 0) {
+                currentValue = null;
+            }
+        }
         if (currentValue == null || currentValue.length() < 1) {
             urlvalue = ssgURL + "/ssg/soap";
         } else {
@@ -368,7 +376,7 @@ public class ServicePropertiesDialog extends JDialog {
         }
 
         String tmp = urlvalue.replace(STD_PORT, STD_PORT_DISPLAYED);
-        routingURL.setText("<html><a href=\"" + urlvalue + "\">" + tmp + "</a></html>");
+        routingURL.setText("<html><p><a href=\"" + urlvalue + "\">" + tmp + "</a></p></html>");
     }
 
     private void resetWSDL() {
