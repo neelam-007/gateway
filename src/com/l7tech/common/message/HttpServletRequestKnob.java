@@ -26,8 +26,11 @@ import java.util.*;
  * from a servlet request.
  */
 public class HttpServletRequestKnob implements HttpRequestKnob {
+    /** Map&lt;String, String[]&gt; of parameters found in the URL query string. */
     private Map queryParams;
+    /** Map&lt;String, String[]&gt; of parameters found in the request message body. */
     private Map requestBodyParams;
+    /** Map&lt;String, String[]&gt; of all request parameters; i.e., union of {@link #queryParams} and {@link #requestBodyParams}. */
     private Map allParams;
 
     private final HttpServletRequest request;
@@ -162,6 +165,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     /**
      * @return the Map&lt;String, String[]&gt; of parameters found in the URL query string.
+     * @since SecureSpan 3.7
      */
     public Map getQueryParameterMap() throws IOException {
         if (queryParams == null) collectParameters();
@@ -170,6 +174,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     /**
      * @return the Map&lt;String, String[]&gt; of parameters found in the request message body.
+     * @since SecureSpan 3.7
      */
     public Map getRequestBodyParameterMap() throws IOException {
         if (requestBodyParams == null) collectParameters();

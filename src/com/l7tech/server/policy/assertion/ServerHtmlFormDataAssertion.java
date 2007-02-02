@@ -212,7 +212,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
     }
 
     /**
-     * Convert contents of a parameter map and adds to a {@link Field} map.
+     * Adds elements of a parameter map into a {@link Field} map.
      *
      * @param params        parameter map
      * @param fields        <code>Field</code>s map
@@ -235,6 +235,14 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         }
     }
 
+    /**
+     * Parses multipart/form-data for fields; in particular, scan for file uploads.
+     *
+     * @param holder    map to put results into
+     * @param mimeKnob  the request MIME knob
+     * @throws IOException if parsing error
+     * @see <a href="http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.2">HTML 4.0 specification for Form submission using multipart/form-data</a>
+     */
     private void parseMultipartFormData(final Map<String, Field> holder, final MimeKnob mimeKnob)
             throws IOException {
         final PartIterator itor = mimeKnob.getParts();
