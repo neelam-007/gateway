@@ -162,6 +162,8 @@ class PathValidator {
             setSeenCredentials(a, true);
         } else if (a instanceof Regex) {
             validateRegex((Regex)a);
+        } else if (a instanceof HtmlFormDataAssertion) {
+            processHtmlFormDataAssertion((HtmlFormDataAssertion)a);
         }
 
         if (a instanceof SetsVariables) {
@@ -202,6 +204,14 @@ class PathValidator {
         }
         // todo check you thing
         //result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "Dont dot this stupid!.", null));
+    }
+
+    private void processHtmlFormDataAssertion(HtmlFormDataAssertion htmlFormDataAssertion) {
+        if (htmlFormDataAssertion != null && seenRouting) {
+            result.addWarning(new PolicyValidatorResult.Warning(htmlFormDataAssertion, assertionPath,
+                                                                "This assertion should occur before the request is routed.",
+                                                                null));
+        }
     }
 
     List getDeferredValidators() {
