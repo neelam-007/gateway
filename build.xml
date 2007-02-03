@@ -2428,43 +2428,8 @@
             deprecation="on" verbose="off" target="1.4" source="1.4">
             <classpath refid="project.classpath"/>
 
-            <!-- All these includes should be maintained at 1.4 compatibility -->
-            <include name="com/l7tech/common/**/*.java"/>
-            <include name="com/l7tech/policy/**/*.java"/>
-            <include name="com/l7tech/proxy/**/*.java"/>
-            <include name="com/l7tech/objectmodel/EntityHeader.java"/>
-            <include name="com/l7tech/objectmodel/EntityType.java"/>
-            <include name="com/l7tech/policy/variable/BuiltinVariables.java"/> <!-- Used by assertion beans -->
-            <include name="com/l7tech/policy/variable/ExpandVariables.java"/> <!-- Used by assertion beans -->
-
-            <!-- The following, as well as anything not included above, can go to 1.5 -->
-            <exclude name="com/l7tech/policy/variable/**/*.java"/>
-            <exclude name="com/l7tech/policy/PolicyValidator.java"/>
-            <exclude name="com/l7tech/policy/validator/**/*.java"/>
-            <exclude name="com/l7tech/policy/PolicyPathResult.java"/>
-            <exclude name="com/l7tech/policy/PolicyPathBuilder.java"/>
-            <exclude name="com/l7tech/policy/DefaultPolicyPathBuilder.java"/>
-            <exclude name="com/l7tech/common/Authorizer.java"/>
-            <exclude name="com/l7tech/common/http/cache/**/*.java"/>
-	        <exclude name="com/l7tech/common/security/rbac/**/*.java"/>
-            <exclude name="com/l7tech/common/security/kerberos/**/*.java"/>
-            <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
-            <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
-            <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
-            <exclude name="com/l7tech/common/alert/**/*.java"/>
-            <exclude name="com/l7tech/common/util/JaasUtils.java"/>
-            <exclude name="com/l7tech/common/util/TimeoutExecutor.java"/>
-            <exclude name="com/l7tech/common/util/DnParserJava15.java"/>
-            <exclude name="com/l7tech/common/util/Functions.java"/>
-            <exclude name="com/l7tech/common/audit/**/*.java"/>
-            <exclude name="com/l7tech/common/transport/jms/**/*.java"/>
-            <exclude name="com/l7tech/common/security/TrustedCert.java"/>
-            <exclude name="com/l7tech/common/security/TrustedCertAdmin.java"/>
-            <exclude name="com/l7tech/common/security/X509Entity.java"/>
-            <exclude name="com/l7tech/common/xml/SoapMessageGenerator.java"/>
-            <exclude name="com/l7tech/common/xml/schema/**/*.java"/>
-            <exclude name="com/l7tech/common/xml/tarari/**/*.java"/>
-            <exclude name="com/l7tech/policy/assertion/ext/**/*.java"/>
+            <!-- Currently there are no classes restricted to 1.4 (although there are a couple restricted to 1.3) -->
+            <exclude name="**/*"/>
         </javac>
     </target>
 
