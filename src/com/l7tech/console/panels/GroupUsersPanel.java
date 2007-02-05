@@ -165,8 +165,14 @@ class GroupUsersPanel extends JPanel {
               public int compare(Object o1, Object o2) {
                   EntityHeader e1 = (EntityHeader)o1;
                   EntityHeader e2 = (EntityHeader)o2;
-
-                  return e1.getName().compareTo(e2.getName());
+                  String s1 = null;
+                  if (e1 != null) s1 = e1.getName();
+                  String s2 = null;
+                  if (e2 != null) s2 = e2.getName();
+                  if (s1 == null && s2 == null) return 0;
+                  if (s1 == null) return 1;
+                  if (s2 == null) return -1;
+                  return s1.compareTo(s2);
               }
           });
 

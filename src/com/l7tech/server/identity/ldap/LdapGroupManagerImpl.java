@@ -498,7 +498,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                     String memberlogin = val.toString();
                                     LdapUser u = getUserManager().findByLogin(memberlogin);
                                     if (u != null) {
-                                        headers.add(new IdentityHeader(providerOid, u.getName(), EntityType.USER, u.getLogin(), null));
+                                        IdentityHeader h = new IdentityHeader(providerOid, u.getName(), EntityType.USER,
+                                                                              u.getLogin(), null);
+                                        if (h == null) {
+                                            logger.info("the user " + u + " is not valid according to template " +
+                                                        "and will not be considered a member");
+                                        } else {
+                                            headers.add(h);
+                                        }
                                     }
                                 }
                             }
@@ -519,11 +526,17 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                     try {
                                         LdapUser u = getUserManager().findByPrimaryKey(memberhint);
                                         if (u != null) {
-                                            IdentityHeader newheader = new IdentityHeader(
-                                                    providerOid,
-                                                    u.getDn(), EntityType.USER, u.getLogin(), null);
-                                            if (!headers.contains(newheader))
-                                                headers.add(newheader);
+                                            IdentityHeader newheader = new IdentityHeader(providerOid, u.getDn(),
+                                                                                          EntityType.USER,
+                                                                                          u.getLogin(), null);
+                                            if (newheader == null) {
+                                                logger.info("the user " + u + " is not valid according to template " +
+                                                            "and will not be considered a member");
+                                            } else {
+                                                if (!headers.contains(newheader)) {
+                                                    headers.add(newheader);
+                                                }
+                                            }
                                             done = true;
                                         } else {
                                             // GROUPS WITHIN GROUPS
@@ -677,7 +690,12 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 SearchResult sr = (SearchResult)answer.next();
                 entitydn = sr.getName() + "," + dn;
                 IdentityHeader header = identityProvider.searchResultToHeader(sr, entitydn);
-                memberHeaders.add(header);
+                if (header == null) {
+                    logger.info("The user " + entitydn + " is not valid according to template and will not " +
+                                "be considered as a member");
+                } else {
+                    memberHeaders.add(header);
+                }
             }
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
@@ -758,8 +776,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             SearchResult sr = (SearchResult)answer.next();
             userdn = sr.getName() + "," + ldapIdentityProviderConfig.getSearchBase();
             IdentityHeader newheader = identityProvider.searchResultToHeader(sr, userdn);
-            if (!memberHeaders.contains(newheader))
-                memberHeaders.add(newheader);
+            if (newheader == null) {
+                logger.info("User " + userdn + " is not valid according to the template and will not " +
+                            "be considered as a member");
+            } else {
+                if (!memberHeaders.contains(newheader)) {
+                    memberHeaders.add(newheader);
+                }
+            }
         }
     }
 
