@@ -1453,7 +1453,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         mainSplitPane.setBorder(null);
         getMainLeftPanel().addComponentListener(new ComponentAdapter(){
             public void componentResized(ComponentEvent e) {
-                preferredHorizontalSplitLocation = mainSplitPane.getDividerLocation() / (double)(mainSplitPane.getWidth());
+                preferredHorizontalSplitLocation = mainSplitPane.getDividerLocation() / (double)(mainSplitPane.getWidth() - mainSplitPane.getDividerSize());
             }
         });
         addWindowListener(new WindowAdapter() {
@@ -1783,7 +1783,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         paletteSections.addComponentListener(new ComponentAdapter(){
             public void componentResized(ComponentEvent e) {
-                preferredVerticalSplitLocation = verticalSplitPane.getDividerLocation() / (double)(verticalSplitPane.getHeight());
+                preferredVerticalSplitLocation = verticalSplitPane.getDividerLocation() / (double)(verticalSplitPane.getHeight() - verticalSplitPane.getDividerSize());
             }
         });
         addWindowListener(new WindowAdapter(){
