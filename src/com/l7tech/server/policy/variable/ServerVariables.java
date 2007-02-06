@@ -156,7 +156,8 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-                return hrk == null ? null : getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, hrk.getRequestUrl());
+                final String fullUrl = hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
+                return hrk == null ? null : getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
             }
         }),
         new Variable("request.http.secure", new Getter() {
@@ -377,7 +378,7 @@ public class ServerVariables {
         } else if (BuiltinVariables.URLSUFFIX_PATH.equalsIgnoreCase(part)) {
             return url.getPath();
         } else if (BuiltinVariables.URLSUFFIX_QUERY.equalsIgnoreCase(part)) {
-            return url.getQuery();
+            return url.getQuery() == null ? null : "?" + url.getQuery();
         } else if (BuiltinVariables.URLSUFFIX_FRAGMENT.equalsIgnoreCase(part)) {
             return url.getRef();
         } else {
