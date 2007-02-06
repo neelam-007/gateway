@@ -373,10 +373,14 @@ public class ServicePropertiesDialog extends JDialog {
                 urlvalue = ssgURL + currentValue;
             } else {
                 urlvalue = ssgURL + "/" + currentValue;
+                if (currentValue.length() > 0) {
+                    uriField.setText("/" + currentValue);
+                }
             }
         }
 
         String tmp = urlvalue.replace(STD_PORT, STD_PORT_DISPLAYED);
+        tmp = tmp.replace("http://", "http(s)://");
         routingURL.setText("<html><p><a href=\"" + urlvalue + "\">" + tmp + "</a></p></html>");
     }
 
