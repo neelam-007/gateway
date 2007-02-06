@@ -18,6 +18,10 @@ import org.xml.sax.SAXException;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
+import javax.wsdl.extensions.ExtensionRegistry;
+import javax.wsdl.extensions.ExtensionDeserializer;
+import javax.wsdl.extensions.ExtensionSerializer;
+import javax.wsdl.extensions.AttributeExtensible;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
@@ -138,6 +142,7 @@ public class Wsdl {
         InputSource source = new InputSource(reader);
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader wsdlReader = fac.newWSDLReader();
+        disableSchemaExtensions(fac, wsdlReader);
         return new Wsdl(wsdlReader.readWSDL(documentBaseURI, source));
     }
 
@@ -158,6 +163,7 @@ public class Wsdl {
       throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader reader = fac.newWSDLReader();
+        disableSchemaExtensions(fac, reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, wsdlDocument));
     }
 
@@ -201,6 +207,7 @@ public class Wsdl {
     public static Wsdl newInstance(final WSDLFactory fac, final String documentBaseURI, final Reader reader, final boolean allowLocalImports)
             throws WSDLException {
         WSDLReader wsdlReader = fac.newWSDLReader();
+        disableSchemaExtensions(fac, wsdlReader);       
 
         return new Wsdl(wsdlReader.readWSDL(new WSDLLocator() {
             private String lastResolvedUri = null;
@@ -281,6 +288,7 @@ public class Wsdl {
       throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader reader = fac.newWSDLReader();
+        disableSchemaExtensions(fac, reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
     }
 
@@ -1264,12 +1272,10 @@ public class Wsdl {
             throw new IllegalArgumentException("No WSDL port was provided");
         List elements = wsdlPort.getExtensibilityElements();
         ExtensibilityElement eel;
-        int num = 0;
         for (int i = 0; i < elements.size(); i++) {
             eel = (ExtensibilityElement)elements.get(i);
             if (eel instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress)eel;
-                num++;
                 if (sadd.getLocationURI() != null) {
                     return sadd.getLocationURI();
                 }
@@ -1314,7 +1320,7 @@ public class Wsdl {
      * @throws SAXException          when error occured in parsing XML
      */
     public static Element getSchemaElement(Definition def, UrlGetter getter)
-      throws RemoteException, MalformedURLException, IOException, SAXException {
+      throws IOException, SAXException {
         Element schemaElement = null;
         Import imp = null;
         if (def.getImports().size() > 0) {
@@ -1352,9 +1358,28 @@ public class Wsdl {
         return schemaElement;
     }
 
+    private static final Collection<QName> XMLSCHEMA_ELEMENTS = Collections.unmodifiableList(Arrays.asList(
+            new QName("http://www.w3.org/1999/XMLSchema", "schema"),
+            new QName("http://www.w3.org/2000/10/XMLSchema", "schema"),
+            new QName("http://www.w3.org/2001/XMLSchema", "schema")
+    ));
+
     private Definition definition;
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
+
+    private static void disableSchemaExtensions(WSDLFactory factory, WSDLReader reader) {
+        if (reader.getExtensionRegistry() != null) {
+            reader.setExtensionRegistry(disableSchemaExtensions(reader.getExtensionRegistry()));
+        }
+        else {
+            reader.setExtensionRegistry(disableSchemaExtensions(factory.newPopulatedExtensionRegistry()));            
+        }
+    }
+
+    private static ExtensionRegistry disableSchemaExtensions(ExtensionRegistry extensionRegistry) {
+        return extensionRegistry == null ? null : new NoSchemaExtensionRegistry(extensionRegistry);
+    }
 
     private interface ElementCollector {
         /**
@@ -1363,5 +1388,70 @@ public class Wsdl {
          * @param def the wsdl DEfinition
          */
         void collect(Definition def);
+    }
+
+    private static final class NoSchemaExtensionRegistry extends ExtensionRegistry {
+        private final ExtensionRegistry delegate;
+
+        private NoSchemaExtensionRegistry(ExtensionRegistry extensionRegistry) {
+            this.delegate = extensionRegistry;
+        }
+
+        public ExtensibilityElement createExtension(Class parentType, QName elementType) throws WSDLException {
+            return delegate.createExtension(parentType, elementType);
+        }
+
+        public Set getAllowableExtensions(Class parentType) {
+            return delegate.getAllowableExtensions(parentType);
+        }
+
+        public ExtensionDeserializer getDefaultDeserializer() {
+            return delegate.getDefaultDeserializer();
+        }
+
+        public ExtensionSerializer getDefaultSerializer() {
+            return delegate.getDefaultSerializer();
+        }
+
+        public void mapExtensionTypes(Class parentType, QName elementType, Class extensionType) {
+            delegate.mapExtensionTypes(parentType, elementType, extensionType);
+        }
+
+        public ExtensionDeserializer queryDeserializer(Class parentType, QName elementType) throws WSDLException {
+            if (XMLSCHEMA_ELEMENTS.contains(elementType)) return delegate.getDefaultDeserializer();
+            return delegate.queryDeserializer(parentType, elementType);
+        }
+
+        public int queryExtensionAttributeType(Class parentType, QName attrName) {
+            if (XMLSCHEMA_ELEMENTS.contains(attrName)) return AttributeExtensible.NO_DECLARED_TYPE;
+            return delegate.queryExtensionAttributeType(parentType, attrName);
+        }
+
+        public ExtensionSerializer querySerializer(Class parentType, QName elementType) throws WSDLException {
+            if (XMLSCHEMA_ELEMENTS.contains(elementType)) return delegate.getDefaultSerializer();
+            return delegate.querySerializer(parentType, elementType);
+        }
+
+        public void registerDeserializer(Class parentType, QName elementType, ExtensionDeserializer ed) {
+            delegate.registerDeserializer(parentType, elementType, ed);
+        }
+
+        public void registerExtensionAttributeType(Class parentType, QName attrName, int attrType) {
+            delegate.registerExtensionAttributeType(parentType, attrName, attrType);
+        }
+
+        public void registerSerializer(Class parentType, QName elementType, ExtensionSerializer es) {
+            delegate.registerSerializer(parentType, elementType, es);
+        }
+
+        public void setDefaultDeserializer(ExtensionDeserializer defaultDeser) {
+            if (delegate != null)
+                delegate.setDefaultDeserializer(defaultDeser);
+        }
+
+        public void setDefaultSerializer(ExtensionSerializer defaultSer) {
+           if (delegate != null)
+               delegate.setDefaultSerializer(defaultSer);
+        }
     }
 }
