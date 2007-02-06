@@ -116,7 +116,7 @@ public class CustomAssertionsRegistrarImpl
      * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-        return WspReader.parsePermissively(xml);
+        return ((WspReader)getApplicationContext().getBean("wspReader", WspReader.class)).parsePermissively(xml);
     }
 
     /**

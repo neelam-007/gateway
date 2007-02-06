@@ -19,11 +19,10 @@ import java.util.logging.Logger;
  */
 public class WspUpgradeUtilFrom365 {
     private static final Logger logger = Logger.getLogger(WspUpgradeUtilFrom365.class.getName());
-    static class HttpRoutingPropertyVisitor implements WspVisitor {
-        private final WspVisitor originalVisitor;
+    static class HttpRoutingPropertyVisitor extends WspVisitorWrapper {
 
         public HttpRoutingPropertyVisitor(WspVisitor originalVisitor) {
-            this.originalVisitor = originalVisitor;
+            super(originalVisitor);
         }
 
         public void unknownProperty(Element originalObject, Element problematicParameter, Object deserializedObject, String parameterName, TypedReference parameterValue, Exception problemEncountered) throws InvalidPolicyStreamException {
@@ -45,10 +44,6 @@ public class WspUpgradeUtilFrom365 {
                 logger.warning("unknown property not accounted for: " + parameterName);
             }
 
-        }
-
-        public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
-            return originalVisitor.invalidElement(problematicElement, problemEncountered);
         }
     }
 }

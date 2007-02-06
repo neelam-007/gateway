@@ -53,6 +53,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected ServiceManager serviceManager;
     protected ClientCertManager clientCertManager;
     protected IdentityProviderConfigManager providerConfigManager;
+    protected WspReader wspReader;
     private IdentityProviderFactory identityProviderFactory;
     private LicenseManager licenseManager;
 
@@ -69,6 +70,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         identityProviderFactory = (IdentityProviderFactory)getBean("identityProviderFactory");
         licenseManager = (LicenseManager)getBean("licenseManager");
         serviceManager = (ServiceManager)getBean("serviceManager");
+        wspReader = (WspReader)getBean("wspReader");
     }
 
     private Object getBean(String name) throws ServletException {
@@ -308,7 +310,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected boolean policyAllowAnonymous(PublishedService policy) throws IOException {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
-        Assertion rootassertion = WspReader.parsePermissively(policy.getPolicyXml());
+        Assertion rootassertion = wspReader.parsePermissively(policy.getPolicyXml());
 
         Iterator it = rootassertion.preorderIterator();
         boolean allIdentitiesAreFederated = true;

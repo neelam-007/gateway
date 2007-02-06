@@ -268,6 +268,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         return ssgURL;
     }
 
+    /** @return the SsmApplication for which this MainWindow was created. */
+    public SsmApplication getSsmApplication() {
+        return ssmApplication;
+    }
+
     /**
      * Return the ConnectMenuItem property value.
      *

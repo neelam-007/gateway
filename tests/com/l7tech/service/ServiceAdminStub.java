@@ -85,7 +85,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceId);
-            Assertion assertion = WspReader.parsePermissively(policyXml);
+            Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
             return policyValidator.validate(assertion, service, Registry.getDefault().getLicenseManager());
         } catch (FindException e) {
             throw new RemoteException("cannot get existing service: " + serviceId, e);

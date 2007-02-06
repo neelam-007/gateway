@@ -19,8 +19,29 @@ import java.util.List;
  * Time: 3:44:19 PM
  */
 public class WspReader {
+    private final WspVisitor permissiveWspVisitor;
+    private final WspVisitor strictWspVisitor;
 
-    private WspReader() {
+    /**
+     * Create a WspReader instance that will use the specified TypeMappingFinder to look up unrecognized elements
+     * when parsing the XML.
+     *
+     * @param tmf a TypeMappingFinder to use for unrecognized elements, or null to just treat them as unrecognized.
+     */
+    public WspReader(TypeMappingFinder tmf) {
+        permissiveWspVisitor = new PermissiveWspVisitor(tmf);
+        strictWspVisitor = new StrictWspVisitor(tmf);
+    }
+
+    /**
+     * Get a default WspReader instance, for callers that lack the ability to get the WspReader from the
+     * application context.  If there is any chance you can get the WspReader from the application context you should
+     * do that instead.
+     *
+     * @return a WspReader with the current default TypeMappingFinder.
+     */
+    public static WspReader getDefault() {
+        return new WspReader(WspConstants.getTypeMappingFinder());
     }
 
     /**
@@ -58,8 +79,8 @@ public class WspReader {
      *         it was empty.
      * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
      */
-    public static Assertion parsePermissively(Element policyElement) throws InvalidPolicyStreamException {
-        return parse(findPolicyElement(policyElement), PermissiveWspVisitor.INSTANCE);
+    public Assertion parsePermissively(Element policyElement) throws InvalidPolicyStreamException {
+        return parse(findPolicyElement(policyElement), permissiveWspVisitor);
     }
 
     static Assertion parse(Element policyElement, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -73,15 +94,14 @@ public class WspReader {
         if (WspConstants.L7_POLICY_NS.equals(XmlUtil.getNamespaceMap(policyElement).get(""))) {
             // L7 is default namespace -- we'll treat this as a hint to wrap UnknownAssertions using pre32 format
             wspWriter.setPre32Compat(true);
-        };
+        }
         WspWriter.setCurrent(wspWriter);
         try {
             Object target = TypeMappingUtils.thawElement((Element) childElements.get(0), visitor).target;
             if (!(target instanceof Assertion))
                 throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
             Assertion root = (Assertion) target;
-            if (root != null)
-                root.treeChanged();
+            root.treeChanged();
             return root;
         } finally {
             WspWriter.setCurrent(null);
@@ -105,7 +125,7 @@ public class WspReader {
             if (WspConstants.L7_POLICY_NS.equals(XmlUtil.getNamespaceMap(root).get(""))) {
                 // L7 is default namespace -- we'll treat this as a hint to wrap UnknownAssertions using pre32 format
                 wspWriter.setPre32Compat(true);
-            };
+            }
             WspWriter.setCurrent(wspWriter);
             return parse(root, visitor);
         } catch (Exception e) {
@@ -124,8 +144,8 @@ public class WspReader {
      * @return          the policy tree it contained, or null
      * @throws IOException if the policy was not valid.
      */
-    public static Assertion parseStrictly(String wspXml) throws IOException {
-        return parse(wspXml, StrictWspVisitor.INSTANCE);
+    public Assertion parseStrictly(String wspXml) throws IOException {
+        return parse(wspXml, strictWspVisitor);
     }
 
     /**
@@ -137,8 +157,8 @@ public class WspReader {
      * @return          the policy tree it contained, or null
      * @throws IOException if the policy was not valid, even if unrecognized assertions are preserved as {@link com.l7tech.policy.assertion.UnknownAssertion}.
      */
-    public static Assertion parsePermissively(String wspXml) throws IOException {
-        return parse(wspXml.trim(), PermissiveWspVisitor.INSTANCE);
+    public Assertion parsePermissively(String wspXml) throws IOException {
+        return parse(wspXml.trim(), permissiveWspVisitor);
     }
 
     static Assertion parse(String wspXml, WspVisitor visitor) throws IOException {

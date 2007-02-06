@@ -77,4 +77,10 @@
             </list>
         </property>
     </bean>
+
+    <bean id="assertionRegistry" class="com.l7tech.policy.AssertionRegistry"/>
+
+    <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
+        <constructor-arg ref="assertionRegistry"/>
+    </bean>    
 </beans>

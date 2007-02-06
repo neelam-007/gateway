@@ -28,7 +28,7 @@ public class AbstractClassTypeMapping extends BasicTypeMapping {
     }
 
     protected TypedReference doThawNamedNotNull(Element source, WspVisitor visitor, boolean recursing, String typeName, String value) throws InvalidPolicyStreamException {
-        TypeMapping subclassMapping = TypeMappingUtils.findTypeMappingByExternalName(typeName);
+        TypeMapping subclassMapping = TypeMappingUtils.findTypeMappingByExternalName(typeName, visitor.getTypeMappingFinder());
         if (subclassMapping == null) throw new InvalidPolicyStreamException("No TypeMapping found for " + typeName);
         if (subclassMapping instanceof AbstractClassTypeMapping) throw new InvalidPolicyStreamException("TypeMapping for concrete class is an AbstractClassTypeMapping");
         return subclassMapping.thaw(source, visitor);

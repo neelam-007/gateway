@@ -55,7 +55,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
 
         if (typeName == null) {
             // Appears to be an anonymous element  <Typename>..</Typename>
-            TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(source.getLocalName());
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(source.getLocalName(), visitor.getTypeMappingFinder());
             if (tm == null) {
                 final InvalidPolicyStreamException e = new InvalidPolicyStreamException(source.getLocalName());
                 if (recursing) throw e;
@@ -77,7 +77,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
             return new TypedReference(clazz, isNull ? null : new Object(), source.getLocalName());
         }
 
-        TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(typeName);
+        TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(typeName, visitor.getTypeMappingFinder());
         if (tm == null)
             throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getLocalName() + "\"");
 

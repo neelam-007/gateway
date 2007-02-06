@@ -17,15 +17,9 @@ class WspUpgradeUtilFrom35 {
     /**
      * A wrapper visitor that knows how to correct for the old 3.5 property names on XslTransformation.
      */
-    static class XslTransformationPropertyVisitor implements WspVisitor {
-        private final WspVisitor originalVisitor;
-
+    static class XslTransformationPropertyVisitor extends WspVisitorWrapper {
         public XslTransformationPropertyVisitor(WspVisitor originalVisitor) {
-            this.originalVisitor = originalVisitor;
-        }
-
-        public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
-            return originalVisitor.invalidElement(problematicElement, problemEncountered);
+            super(originalVisitor);
         }
 
         public void unknownProperty(Element originalObject,
@@ -107,23 +101,17 @@ class WspUpgradeUtilFrom35 {
                 }
             }
 
-            originalVisitor.unknownProperty(originalObject, problematicParameter, deserializedObject, propertyName, value, problemEncountered);
-            return;
+            super.unknownProperty(originalObject, problematicParameter, deserializedObject, propertyName, value, problemEncountered);
         }
     }
 
     /**
      * A wrapper visitor that knows how to correct for the old 3.5 property names on SchemaValidation.
      */
-    static class SchemaValidationPropertyVisitor implements WspVisitor {
-        private final WspVisitor originalVisitor;
+    static class SchemaValidationPropertyVisitor extends WspVisitorWrapper {
 
         public SchemaValidationPropertyVisitor(WspVisitor originalVisitor) {
-            this.originalVisitor = originalVisitor;
-        }
-
-        public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
-            return originalVisitor.invalidElement(problematicElement, problemEncountered);
+            super(originalVisitor);
         }
 
         public void unknownProperty(Element originalObject,
@@ -154,7 +142,7 @@ class WspUpgradeUtilFrom35 {
                     return;
                 }
             }
-            originalVisitor.unknownProperty(originalObject, problematicParameter, deserializedObject, propertyName, value, problemEncountered);
+            super.unknownProperty(originalObject, problematicParameter, deserializedObject, propertyName, value, problemEncountered);
         }
     }
 }

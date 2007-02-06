@@ -260,5 +260,11 @@
     <bean id="stashManagerFactory" class="com.l7tech.server.TestStashManagerFactory" factory-method="getInstance"/>
 
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerStub"/>
+
+    <bean id="assertionRegistry" class="com.l7tech.policy.AssertionRegistry"/>
+
+    <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
+        <constructor-arg ref="assertionRegistry"/>
+    </bean>
     
 </beans>

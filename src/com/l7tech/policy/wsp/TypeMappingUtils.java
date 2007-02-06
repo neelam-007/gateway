@@ -5,6 +5,9 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -12,13 +15,17 @@ import org.w3c.dom.NodeList;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility code used by some TypeMappings.
  */
 public class TypeMappingUtils {
+    protected static final Logger logger = Logger.getLogger(TypeMappingUtils.class.getName());
+
     static boolean isNullableType(Class type) {
         return !(int.class.equals(type) ||
           long.class.equals(type) ||
@@ -30,8 +37,7 @@ public class TypeMappingUtils {
     }
 
     static boolean isIgnorableProperty(String parm) {
-        for (int i = 0; i < WspConstants.ignoreAssertionProperties.length; i++) {
-            String ignoreProperty = WspConstants.ignoreAssertionProperties[i];
+        for (String ignoreProperty : WspConstants.ignoreAssertionProperties) {
             if (ignoreProperty.equals(parm))
                 return true;
         }
@@ -46,11 +52,23 @@ public class TypeMappingUtils {
      */
     public static TypeMapping findTypeMappingByClass(Class clazz) {
         final TypeMapping[] tms = WspConstants.typeMappings;
-        for (int i = 0; i < tms.length; i++) {
-            TypeMapping typeMapping = tms[i];
+        for (TypeMapping typeMapping : tms) {
             if (typeMapping.getMappedClass().equals(clazz))
                 return typeMapping;
         }
+
+        // Check for assertion
+        if (Assertion.class.isAssignableFrom(clazz)) {
+            try {
+                Assertion prototype = (Assertion)clazz.newInstance();
+                return (TypeMapping)prototype.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+            } catch (InstantiationException e) {
+                logger.log(Level.WARNING, "Unable to create instance of assertion: " + clazz.getName() + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (IllegalAccessException e) {
+                logger.log(Level.WARNING, "Unable to create instance of assertion: " + clazz.getName() + ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
         return null;
     }
 
@@ -58,14 +76,21 @@ public class TypeMappingUtils {
      * Find a TypeMapping corresponding to the specified external name (ie, "OneOrMore" or "mapValue").
      *
      * @param typeName The external name to look up
+     * @param fallback  TypeMappingFinder to look in if the specified typeName is not recognized as a builtin TypeMapping,
+     *                  or null to perform no fallback.
      * @return The TypeMapping for this external name, or null if not found.
      */
-    static TypeMapping findTypeMappingByExternalName(String typeName) {
-        for (int i = 0; i < WspConstants.typeMappings.length; i++) {
-            TypeMapping typeMapping = WspConstants.typeMappings[i];
+    static TypeMapping findTypeMappingByExternalName(String typeName, TypeMappingFinder fallback) {
+        for (TypeMapping typeMapping : WspConstants.typeMappings) {
             if (typeMapping.getExternalName().equals(typeName))
                 return typeMapping;
         }
+        for (TypeMapping typeMapping : WspConstants.readOnlyTypeMappings) {
+            if (typeMapping.getExternalName().equals(typeName))
+                return typeMapping;
+        }
+        if (fallback != null)
+            return fallback.getTypeMapping(typeName);
         return null;
     }
 
@@ -99,7 +124,7 @@ public class TypeMappingUtils {
      */
     static List getChildElements(Node node, String name) {
         NodeList kidNodes = node.getChildNodes();
-        LinkedList kidElements = new LinkedList();
+        List<Node> kidElements = new ArrayList<Node>();
         for (int i = 0; i < kidNodes.getLength(); ++i) {
             Node n = kidNodes.item(i);
             if (n.getNodeType() == Node.ELEMENT_NODE && (name == null || name.equals(n.getLocalName())))
@@ -144,6 +169,7 @@ public class TypeMappingUtils {
      * attempt to find a TypeMapper that recognizes the specified Element.
      *
      * @param source The DOM element to examine
+     * @param visitor  WspVisitor for handling unrecognized properties or subelements
      * @return A TypedReference with information about the object.  The name and/or target might be null.
      * @throws InvalidPolicyStreamException if we were unable to recover an object from this Element
      */
@@ -157,6 +183,7 @@ public class TypeMappingUtils {
      * @param source the element to examine
      * @return a String such as "typeValue" or "typeValueNull" if this attribute is a named reference, or null
      *         if no type name was found and hence the attribute should be assumed to be an anonymous reference.
+     * @throws InvalidPolicyStreamException if policy parsing can't continue
      */
     static String findTypeName(Element source) throws InvalidPolicyStreamException {
         // Only L7 elements can be named references

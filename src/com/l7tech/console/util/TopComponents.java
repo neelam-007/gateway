@@ -14,6 +14,8 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * The class is Central UI component registry in the SSM.
  * Provides component unregister/register and access to the top
@@ -193,6 +195,13 @@ public class TopComponents {
     }
 
     /**
+     * @return  the ApplicationContext for which the current MainWindow was created.
+     */
+    public ApplicationContext getApplicationContext() {
+        return getMainWindow().getSsmApplication().getApplicationContext();
+    }
+
+    /**
      * Returns the default policy tree component from component registry.
      * @return the PolicyTree.  never null
      */
@@ -200,7 +209,7 @@ public class TopComponents {
         synchronized (componentsRegistry) {
             JTree tree = (JTree)getComponent(PolicyTree.NAME);
             if (tree != null) return tree;
-            PolicyTree policyTree = new PolicyTree();
+            PolicyTree policyTree = new PolicyTree(getApplicationContext());
             registerComponent(PolicyTree.NAME, policyTree);
             return policyTree;
         }

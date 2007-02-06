@@ -31,6 +31,8 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.Managers;
@@ -93,6 +95,7 @@ public class MessageProcessor {
      * Construct a Client Proxy MessageProcessor.
      */
     public MessageProcessor() {
+        Managers.getAssertionRegistry();
     }
 
     /**

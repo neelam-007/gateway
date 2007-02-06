@@ -52,6 +52,8 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.StubDataStore;
@@ -121,6 +123,11 @@ public class PolicyProcessingTest extends TestCase {
          TestSetup wrapper = new TestSetup(suite) {
 
              protected void setUp() throws Exception {
+                 // Ordinarily, the application context would take care of configuring the registry,
+                 // but it has to be done before buildServices() is called, and buildServices() has
+                 // to be done before the application context is created (at least for this test).
+                 WspConstants.setTypeMappingFinder(new AssertionRegistry());
+
                  buildServices();
 
                  applicationContext = ApplicationContexts.getTestApplicationContext();

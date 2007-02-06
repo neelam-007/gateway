@@ -419,7 +419,7 @@ class SsgPoliciesPanel extends JPanel {
                         }
 
                         if (policyInputStream != null) {
-                            Assertion rootAssertion = WspReader.parsePermissively(XmlUtil.parse(policyInputStream).getDocumentElement());
+                            Assertion rootAssertion = WspReader.getDefault().parsePermissively(XmlUtil.parse(policyInputStream).getDocumentElement());
 
                             // TODO filter out assertions that aren't implemented by the SSB
                             Policy newPolicy = new Policy(rootAssertion, null);

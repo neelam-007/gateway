@@ -16,6 +16,7 @@ import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.*;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -42,6 +43,8 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * Class PolicyTree is the extended <code>JTree</code> with addtional
  *
@@ -62,18 +65,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private Point ptOffset = new Point();    // Where, in the drag image, the mouse was clicked
     private Border topBorder;
     private boolean writeAccess;
-
-
-    /**
-     * Create the new policy tree with the policy model.
-     *
-     * @param newModel
-     */
-    public PolicyTree(PolicyTreeModel newModel) {
-        super(newModel);
-        initialize();
-        setSelectionModel(getTreeSelectionModel());
-    }
+    private final WspReader wspReader;
 
     public PolicyEditorPanel getPolicyEditorPanel() {
         return policyEditorPanel;
@@ -82,8 +74,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
     /**
      * Create empty policy tree
      */
-    public PolicyTree() {
-        this(null);
+    public PolicyTree(ApplicationContext applicationContext) {
+        super((PolicyTreeModel)null);
+        wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
+        initialize();
+        setSelectionModel(getTreeSelectionModel());
     }
 
     public void setModel(TreeModel newModel) {
@@ -1251,7 +1246,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             try {
 
-                Assertion ass = WspReader.parsePermissively(maybePolicyXml);
+                Assertion ass = wspReader.parsePermissively(maybePolicyXml);
                 if (ass == null) {
                     log.fine("Paste of null policy; ignoring");
                     return false;

@@ -45,12 +45,9 @@ public class HideUnsupportedClientAssertions implements Filter {
                 return true;
             }
         } else {
-            Class assertionClass = arg.getClass();
-            for (int i = 0; i < supported.length; i++) {
-                Class c = supported[i];
-                if (c.isAssignableFrom(assertionClass))
-                    return false;
-            }
+            if (Boolean.TRUE.equals(arg.meta().get(AssertionMetadata.USED_BY_CLIENT)))
+                return false;
+
             if (parentIterator == null) {
                 throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
             }
@@ -59,28 +56,4 @@ public class HideUnsupportedClientAssertions implements Filter {
         }
         return false;
     }
-
-    // This is the whitelist of non-composite assertions that we will allow through to the client.
-    // This list must be kept up-to-date as the SSG wishes to publish additional assertions.
-    private static final Class[] supported = {
-        FalseAssertion.class,
-        SslAssertion.class,
-        TrueAssertion.class,
-        HttpBasic.class,
-        HttpDigest.class,
-        WssBasic.class,
-        EncryptedUsernameTokenAssertion.class,
-        RequestWssX509Cert.class,
-        SecureConversation.class,
-        RequestWssIntegrity.class,
-        RequestWssConfidentiality.class,
-        ResponseWssIntegrity.class,
-        ResponseWssConfidentiality.class,
-        //RequestXpathAssertion.class, fla, please leave commented - this is causing mucho problems
-        //ResponseXpathAssertion.class, fla, please leave commented - this is causing mucho problems
-        RequestWssReplayProtection.class,
-        RequestWssSaml.class,
-        RequestWssKerberos.class,
-        CookieCredentialSourceAssertion.class,
-    };
 }

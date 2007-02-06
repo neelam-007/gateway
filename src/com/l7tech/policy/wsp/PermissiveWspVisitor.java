@@ -18,7 +18,12 @@ import java.util.logging.Logger;
  */
 class PermissiveWspVisitor implements WspVisitor {
     private static final Logger logger = Logger.getLogger(PermissiveWspVisitor.class.getName());
-    public static final WspVisitor INSTANCE = new PermissiveWspVisitor();
+
+    private final TypeMappingFinder typeMappingFinder;
+
+    PermissiveWspVisitor(TypeMappingFinder typeMappingFinder) {
+        this.typeMappingFinder = typeMappingFinder;
+    }
 
     /** Log the unknown property and continue. */
     public void unknownProperty(Element originalObject,
@@ -56,5 +61,9 @@ class PermissiveWspVisitor implements WspVisitor {
             throw new RuntimeException("Unable to encapsulate invalid element", e); // shouldn't happen
         }
         return (Element)problematicElement.getOwnerDocument().importNode(node, true);
+    }
+
+    public TypeMappingFinder getTypeMappingFinder() {
+        return typeMappingFinder;
     }
 }

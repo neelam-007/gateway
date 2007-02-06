@@ -12,8 +12,11 @@ import org.w3c.dom.Element;
  * Implementation of WspVisitor that aborts policy parsing whenever it encounters any error.
  */
 class StrictWspVisitor implements WspVisitor {
-    /** A WspVisitor that always throws if any problem is encountered. */
-    static final WspVisitor INSTANCE = new StrictWspVisitor();
+    private final TypeMappingFinder typeMappingFinder;
+
+    public StrictWspVisitor(TypeMappingFinder typeMappingFinder) {
+        this.typeMappingFinder = typeMappingFinder;
+    }
 
     public void unknownProperty(Element originalObject,
                                 Element problematicParameter,
@@ -28,5 +31,9 @@ class StrictWspVisitor implements WspVisitor {
 
     public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
         throw new InvalidPolicyStreamException("Unrecognized element " + problematicElement.getLocalName(), problemEncountered);
+    }
+
+    public TypeMappingFinder getTypeMappingFinder() {
+        return typeMappingFinder;
     }
 }

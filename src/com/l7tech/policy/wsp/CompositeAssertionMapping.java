@@ -8,6 +8,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -44,6 +45,8 @@ class CompositeAssertionMapping implements TypeMapping {
                 throw new InvalidPolicyTreeException("Unable to serialize a null assertion");
             Class kidClass = kid.getClass();
             TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(kidClass);
+            if (tm == null)
+                tm = (TypeMapping)kid.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
             if (tm == null)
                 throw new InvalidPolicyTreeException("No TypeMapping found for class " + kidClass);
             tm.freeze(wspWriter, new TypedReference(kidClass, kid), element);

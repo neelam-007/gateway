@@ -46,4 +46,11 @@ interface WspVisitor {
     Element invalidElement(Element problematicElement,
                            Exception problemEncountered)
             throws InvalidPolicyStreamException;
+
+    /**
+     * Get an optional TypeMappingFinder to use to look up type mappings for unrecognized elements.
+     *
+     * @return a TypeMappingFinder to look up type mappings for unrecognized elements, or null if there isn't one.
+     */
+    TypeMappingFinder getTypeMappingFinder();
 }

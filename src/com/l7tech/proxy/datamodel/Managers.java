@@ -8,6 +8,8 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.wsp.WspConstants;
 
 /**
  * Used to obtain datamodel classes.
@@ -16,6 +18,7 @@ public class Managers {
     private static CredentialManager credentialManager = null;
     private static BridgeStashManagerFactory stashManagerFactory = new DefaultBridgeStashManagerFactory();
     private static int stashFileUnique = 1; // used to generate unique filenames for stashing large attachments
+    private static AssertionRegistry assertionRegistry = null;
 
     /**
      * Get the CredentialManager.
@@ -64,5 +67,20 @@ public class Managers {
      */
     public static StashManager createStashManager() {
         return stashManagerFactory.createStashManager();
+    }
+
+    public synchronized static AssertionRegistry getAssertionRegistry() {
+        if (assertionRegistry == null) {
+            assertionRegistry = new AssertionRegistry();
+            if (WspConstants.getTypeMappingFinder() == null) {
+                // Must be standalone SSB.   Attach default WspReader to assertion registry now
+                WspConstants.setTypeMappingFinder(assertionRegistry);
+            }
+        }
+        return assertionRegistry;
+    }
+
+    public synchronized static void setAssertionRegistry(AssertionRegistry reg) {
+        assertionRegistry = reg;
     }
 }

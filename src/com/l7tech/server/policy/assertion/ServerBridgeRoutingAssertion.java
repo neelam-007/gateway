@@ -28,6 +28,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
@@ -91,8 +92,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
 
+        AssertionRegistry assertionRegistry = (AssertionRegistry)applicationContext.getBean("assertionRegistry", AssertionRegistry.class);
+        Managers.setAssertionRegistry(assertionRegistry);
+
         hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager", TrustedCertManager.class);
+        wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
         final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         try {
             signerInfo = ku.getSslSignerInfo();
@@ -322,6 +327,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private final MessageProcessor messageProcessor;
     private final HostnameVerifier hostnameVerifier;
     private final TrustedCertManager trustedCertManager;
+    private final WspReader wspReader;
     private X509Certificate serverCert;
     private final boolean useClientCert;
 
@@ -339,7 +345,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         String policyXml = data.getPolicyXml();
         if (policyXml != null) {
             try {
-                Assertion a = WspReader.parsePermissively(policyXml);
+                Assertion a = wspReader.parsePermissively(policyXml);
                 hardcodedPolicy = new Policy(a, null);
                 hardcodedPolicy.setAlwaysValid(true);
             } catch (IOException e) {

@@ -67,6 +67,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     private CounterIDManager counterIDManager;
     private X509TrustManager trustManager;
     private RoleManager roleManager;
+    private WspReader wspReader;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -76,7 +77,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
                             SampleMessageManager sampleMessageManager,
                             CounterIDManager counterIDManager,
                             X509TrustManager trustManager,
-                            RoleManager roleManager) {
+                            RoleManager roleManager,
+                            WspReader wspReader) {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
@@ -86,6 +88,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         this.counterIDManager = counterIDManager;
         this.trustManager = trustManager;
         this.roleManager = roleManager;
+        this.wspReader = wspReader;
     }
 
     private void checkLicense() throws RemoteException {
@@ -174,7 +177,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceid);
-            Assertion assertion = WspReader.parseStrictly(policyXml);
+            Assertion assertion = wspReader.parseStrictly(policyXml);
             return policyValidator.validate(assertion, service, licenseManager);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);

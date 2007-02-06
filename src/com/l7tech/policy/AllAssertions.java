@@ -36,6 +36,8 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import java.util.Arrays;
 
 /**
+ * The canonical list of legacy assertions known to a new AssertionRegistry instance on startup.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -54,31 +56,18 @@ public class AllAssertions {
         new FalseAssertion(),
         new SslAssertion(),
         new TrueAssertion(),
-        new MemberOfGroup(),
-        new SpecificUser(),
         new RequestWssX509Cert(),
         new SecureConversation(),
         new RequestWssIntegrity(),
         new RequestWssConfidentiality(),
         new ResponseWssIntegrity(),
         new ResponseWssConfidentiality(),
-        new RequestXpathAssertion(),
-        new ResponseXpathAssertion(),
+        // new RequestXpathAssertion(),  // support removed from Bridge by Franco: fla, please leave commented - this is causing mucho problems
+        // new ResponseXpathAssertion(), // support removed from Bridge by Franco: fla, please leave commented - this is causing mucho problems
         new RequestWssReplayProtection(),
         new RequestWssKerberos(),
         new CookieCredentialSourceAssertion(),
     };
-
-    private static CustomAssertionHolder CUSTOM_ASSERTION_HOLDER = new CustomAssertionHolder();
-
-    static {
-        CUSTOM_ASSERTION_HOLDER.setCustomAssertion(new CustomAssertion() {
-            public String getName() {
-                return "test custom assertion";
-            }
-        });
-        CUSTOM_ASSERTION_HOLDER.setCategory(Category.ACCESS_CONTROL);
-    }
 
     /**
      * all assertions that the gateway must handle
@@ -115,7 +104,6 @@ public class AllAssertions {
         new WsFederationPassiveTokenExchange(),
         new WsFederationPassiveTokenRequest(),
         new EncryptedUsernameTokenAssertion(),
-        CUSTOM_ASSERTION_HOLDER,
         new Regex(),
         new UnknownAssertion(),
         new SnmpTrapAssertion(),

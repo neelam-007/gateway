@@ -172,7 +172,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
     public void testBug763MonsterPolicy() throws Exception {
-        Assertion policy = WspReader.parsePermissively(XmlUtil.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY)).getDocumentElement());
+        Assertion policy = WspReader.getDefault().parsePermissively(XmlUtil.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY)).getDocumentElement());
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
 
         PolicyPathResult result = builder.generate(policy);

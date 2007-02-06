@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wsp.WspConstants;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -38,6 +39,13 @@ public class WspReaderTest extends TestCase {
     private static String RESOURCE_PATH = "com/l7tech/policy/resources";
     private static String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
 
+    private final WspReader wspReader;
+    {
+        final AssertionRegistry tmf = new AssertionRegistry();
+        WspConstants.setTypeMappingFinder(tmf);
+        wspReader = new WspReader(tmf);
+    }
+
     static {
         System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
     }
@@ -52,7 +60,7 @@ public class WspReaderTest extends TestCase {
 
     public void testParseWsp() throws Exception {
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
-        Assertion policy = WspReader.parsePermissively(XmlUtil.parse(wspStream).getDocumentElement());
+        Assertion policy = wspReader.parsePermissively(XmlUtil.parse(wspStream).getDocumentElement());
         log.info("Got back policy: " + policy);
         assertTrue(policy != null);
         assertTrue(policy instanceof ExactlyOneAssertion);
@@ -63,14 +71,14 @@ public class WspReaderTest extends TestCase {
         // Do a round trip policyA -> xmlA -> policyB -> xmlB and verify that both XMLs match
         String xmlA = WspWriter.getPolicyXml(policy);
         log.info("Parsing policy: " + xmlA);
-        Assertion policyB = WspReader.parseStrictly(xmlA);
+        Assertion policyB = wspReader.parseStrictly(xmlA);
         String xmlB = WspWriter.getPolicyXml(policyB);
         assertEquals(xmlA, xmlB);
     }
 
     public void testParseNonXml() {
         try {
-            WspReader.parseStrictly("asdfhaodh/asdfu2h$9ha98h");
+            wspReader.parseStrictly("asdfhaodh/asdfu2h$9ha98h");
             fail("Expected IOException not thrown");
         } catch (IOException e) {
             // Ok
@@ -79,7 +87,7 @@ public class WspReaderTest extends TestCase {
 
     public void testParseStrangeXml() {
         try {
-            WspReader.parseStrictly("<foo><bar blee=\"1\"/></foo>");
+            wspReader.parseStrictly("<foo><bar blee=\"1\"/></foo>");
             fail("Expected IOException not thrown");
         } catch (IOException e) {
             // Ok
@@ -89,7 +97,7 @@ public class WspReaderTest extends TestCase {
     public void testParseSwAPolicy() throws Exception {
         Assertion policy = WspWriterTest.createSoapWithAttachmentsPolicy();
         String serialized = WspWriter.getPolicyXml(policy);
-        Assertion parsedPolicy = WspReader.parseStrictly(serialized);
+        Assertion parsedPolicy = wspReader.parseStrictly(serialized);
         assertTrue(parsedPolicy instanceof AllAssertion);
         AllAssertion all = (AllAssertion)parsedPolicy;
         Assertion kid = (Assertion)all.getChildren().get(0);
@@ -125,7 +133,7 @@ public class WspReaderTest extends TestCase {
         String xml = WspWriter.getPolicyXml(ass);
         log.info("Serialized SqlProtectionAssertion: \n" + xml);
 
-        SqlAttackAssertion out = (SqlAttackAssertion)WspReader.parseStrictly(xml);
+        SqlAttackAssertion out = (SqlAttackAssertion)wspReader.parseStrictly(xml);
         assertNotNull(out);
         assertTrue(out.getProtections().contains(SqlAttackAssertion.PROT_ORASQL));
         assertFalse(out.getProtections().contains(SqlAttackAssertion.PROT_METATEXT));
@@ -143,7 +151,7 @@ public class WspReaderTest extends TestCase {
             log.info("Trying to parse policy document; " + policyFile);
             policyStream = cl.getResourceAsStream(RESOURCE_PATH + "/" + policyFile);
             Document policy = XmlUtil.parse(policyStream);
-            Assertion root = WspReader.parsePermissively(policy.getDocumentElement());
+            Assertion root = wspReader.parsePermissively(policy.getDocumentElement());
             assertTrue(root != null);
             assertTrue(root instanceof ExactlyOneAssertion);
         } finally {
@@ -162,7 +170,7 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom21() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_21.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
+        Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 2.1 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
@@ -171,7 +179,7 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom30() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_30.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
+        Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.0 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
@@ -180,7 +188,7 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom31() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_31.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
+        Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.1 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
@@ -189,7 +197,7 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom32() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_32.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
+        Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.2 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
@@ -205,7 +213,7 @@ public class WspReaderTest extends TestCase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
         Document doc = XmlUtil.parse(new StringReader(policy), false);
-        AllAssertion ass = (AllAssertion)WspReader.parsePermissively(doc.getDocumentElement());
+        AllAssertion ass = (AllAssertion)wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.4 policy XML:\n" + ass);
         assertTrue(ass != null);
         ComparisonAssertion comp = (ComparisonAssertion)ass.getChildren().get(0);
@@ -237,12 +245,12 @@ public class WspReaderTest extends TestCase {
                 "    </All>\n" +
                 "</wsp:Policy>\n";
 
-        Assertion p = WspReader.parsePermissively(policyXml);
+        Assertion p = wspReader.parsePermissively(policyXml);
         String parsed1 = p.toString();
         log.info("Parsed data including unknown element: " + parsed1);
 
         String out = WspWriter.getPolicyXml(p);
-        Assertion p2 = WspReader.parsePermissively(out);
+        Assertion p2 = wspReader.parsePermissively(out);
         String parsed2 = p2.toString();
         log.info("After reparsing: " + parsed2);
 
@@ -260,7 +268,7 @@ public class WspReaderTest extends TestCase {
         RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression(xp, nsmap));
         String policyXml = WspWriter.getPolicyXml(ass);
         log.info("Serialized policy XML: " + policyXml);
-        RequestXpathAssertion got = (RequestXpathAssertion)WspReader.parsePermissively(policyXml);
+        RequestXpathAssertion got = (RequestXpathAssertion)wspReader.parsePermissively(policyXml);
         final String gotXpath = got.getXpathExpression().getExpression();
         log.info("Parsed xpath: " + gotXpath);
         final Map gotNsmap = got.getXpathExpression().getNamespaces();
@@ -288,7 +296,7 @@ public class WspReaderTest extends TestCase {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
-        Assertion p = WspReader.parsePermissively(policyxml);
+        Assertion p = wspReader.parsePermissively(policyxml);
         AllAssertion root = (AllAssertion)p;
         RequestWssIntegrity rwi = (RequestWssIntegrity)root.children().next();
         assertTrue(rwi.getRecipientContext().getActor().equals("fdsfd"));
@@ -323,7 +331,7 @@ public class WspReaderTest extends TestCase {
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
-        Assertion p = WspReader.parsePermissively(policyxml);
+        Assertion p = wspReader.parsePermissively(policyxml);
         AllAssertion root = (AllAssertion)p;
 
         RequestWssSaml rwi = (RequestWssSaml)root.children().next();
@@ -340,7 +348,7 @@ public class WspReaderTest extends TestCase {
         ema.messageString(body);
 
         String emXml = WspWriter.getPolicyXml(ema);
-        EmailAlertAssertion got = (EmailAlertAssertion)WspReader.parseStrictly(emXml);
+        EmailAlertAssertion got = (EmailAlertAssertion)wspReader.parseStrictly(emXml);
 
         assertEquals(got.messageString(), body);
     }
@@ -352,7 +360,7 @@ public class WspReaderTest extends TestCase {
         assertTrue(got.contains("SslAssertion"));
         assertTrue(got.contains("Optional"));
 
-        SslAssertion sa2 = (SslAssertion)WspReader.parseStrictly(got);
+        SslAssertion sa2 = (SslAssertion)wspReader.parseStrictly(got);
         assertEquals(sa2.getOption(), SslAssertion.OPTIONAL);
     }
 
@@ -384,7 +392,7 @@ public class WspReaderTest extends TestCase {
                 "            <L7p:FetchUrlRegexes stringArrayValue=\"included\"/>\n" +
                 "        </L7p:XslTransformation>" +
                 "</wsp:Policy>";
-        XslTransformation xslt = (XslTransformation)WspReader.parseStrictly(xsl35);
+        XslTransformation xslt = (XslTransformation)wspReader.parseStrictly(xsl35);
         assertNotNull(xslt);
         System.out.println(WspWriter.getPolicyXml(xslt));
     }
@@ -400,7 +408,7 @@ public class WspReaderTest extends TestCase {
                 "            </L7p:FetchUrlRegexes>\n" +
                 "        </L7p:XslTransformation>\n" +
                 "</wsp:Policy>";
-        XslTransformation xslt = (XslTransformation)WspReader.parseStrictly(xsl35);
+        XslTransformation xslt = (XslTransformation)wspReader.parseStrictly(xsl35);
         assertNotNull(xslt);
         System.out.println(WspWriter.getPolicyXml(xslt));
     }
@@ -489,7 +497,7 @@ public class WspReaderTest extends TestCase {
                 "    </All>\n" +
                 "</Policy>";
 
-        Assertion got = WspReader.parseStrictly(policy);
+        Assertion got = wspReader.parseStrictly(policy);
         assertNotNull(got);
         log.info("Parsed policy from Bug #2160: " + WspWriter.getPolicyXml(got));
     }
@@ -504,7 +512,7 @@ public class WspReaderTest extends TestCase {
         XslTransformation xslt = new XslTransformation();
         xslt.setResourceInfo(rinfo);
         String policy = WspWriter.getPolicyXml(xslt);
-        XslTransformation newXslt = (XslTransformation) WspReader.parseStrictly(policy);
+        XslTransformation newXslt = (XslTransformation) wspReader.parseStrictly(policy);
         assertTrue(newXslt.getResourceInfo().getType().equals(xslt.getResourceInfo().getType()));
     }
 

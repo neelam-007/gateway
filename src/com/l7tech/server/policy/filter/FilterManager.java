@@ -113,7 +113,7 @@ public class FilterManager {
         Assertion rootassertion = null;
         // modify the assertion tree
         try {
-            rootassertion = WspReader.parsePermissively(localCopyOfService.getPolicyXml());
+            rootassertion = WspReader.getDefault().parsePermissively(localCopyOfService.getPolicyXml());
         } catch (IOException e) {
             throw new FilteringException(e);
         }

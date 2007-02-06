@@ -47,6 +47,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Contains the registry of types we can freeze to a policy.
@@ -69,12 +70,32 @@ public class WspConstants {
     public static final List L7_POLICY_NAMESPACE_LIST = Arrays.asList(L7_POLICY_NAMESPACES);
 
     static boolean isRecognizedPolicyNsUri(String nsUri) {
-        for (int i = 0; i < POLICY_NAMESPACES.length; i++) {
-            String policyNamespace = POLICY_NAMESPACES[i];
+        for (String policyNamespace : POLICY_NAMESPACES) {
             if (policyNamespace.equals(nsUri))
                 return true;
         }
         return false;
+    }
+
+    /** TypeMappingFinder to use when parsing policies using a default WspVisitor (permissive or strict) */
+    private static final AtomicReference<TypeMappingFinder> typeMappingFinder = new AtomicReference<TypeMappingFinder>();
+
+    /**
+     * Check which TypeMappingFinder will be used when parsing policies using one of the default WspVisitors.
+     *
+     * @return a TypeMappingFinder instance, or null if none is currently set.
+     */
+    public static TypeMappingFinder getTypeMappingFinder() {
+        return typeMappingFinder.get();
+    }
+
+    /**
+     * Set a TypeMappingFinder to use when parsing policies using one of the default WspVisitors.
+     *
+     * @param tmf a TypeMappingFinder instance to set, or null to turn this off.
+     */
+    public static void setTypeMappingFinder(TypeMappingFinder tmf) {
+        typeMappingFinder.set(tmf);
     }
 
     static String[] ignoreAssertionProperties = {
@@ -216,19 +237,12 @@ public class WspConstants {
                 super.populateObject(object, source, new WspUpgradeUtilFrom35.XslTransformationPropertyVisitor(visitor));
             }
         },
-        new AssertionMapping(new TimeRange(), "TimeRange"),
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
         new AssertionMapping(new AuditDetailAssertion(), "AuditDetailAssertion"),
         new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
-        new AssertionMapping(new WsFederationPassiveTokenExchange(), "WsFederationPassiveTokenExchange"),
-        new AssertionMapping(new WsFederationPassiveTokenRequest(), "WsFederationPassiveTokenRequest"),
-        new AssertionMapping(new XpathCredentialSource(), "XpathCredentialSource"),
-        new AssertionMapping(new SamlBrowserArtifact(), "SamlBrowserArtifact"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
-        new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
-        new AssertionMapping(new ThroughputQuota(), "ThroughputQuota"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert") {
             protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
@@ -243,7 +257,7 @@ public class WspConstants {
 
                     EmailAlertAssertion ema = (EmailAlertAssertion) object.target;
                     ema.messageString(message);
-                    super.populateObject(object, source, PermissiveWspVisitor.INSTANCE);
+                    super.populateObject(object, source, new PermissiveWspVisitor(visitor.getTypeMappingFinder()));
                 }
             }
 
@@ -251,15 +265,10 @@ public class WspConstants {
                 super.populateElement(wspWriter, element, object);
             }
         },
-        new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
-        new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
-        new AssertionMapping(new FaultLevel(), "FaultLevel"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
-        new AssertionMapping(new OversizedTextAssertion(), "OversizedText"),
-        new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
         new AssertionMapping(new EchoRoutingAssertion(), "EchoRoutingAssertion"),
         new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse") {
             protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
@@ -279,7 +288,7 @@ public class WspConstants {
 
                     HardcodedResponseAssertion hra = (HardcodedResponseAssertion) object.target;
                     hra.responseBodyString(responseBody);
-                    super.populateObject(object, source, PermissiveWspVisitor.INSTANCE);
+                    super.populateObject(object, source, new PermissiveWspVisitor(visitor.getTypeMappingFinder()));
                 }
             }
         },
@@ -291,9 +300,7 @@ public class WspConstants {
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),
         new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
-        new AssertionMapping(new SetVariableAssertion(), "SetVariable"),
         new AssertionMapping(new CookieCredentialSourceAssertion(), "CookieCredentialSource"),
-        new AssertionMapping(new RateLimitAssertion(), "RateLimit"),
         new AssertionMapping(new HtmlFormDataAssertion(), "HtmlFormDataAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
@@ -317,7 +324,7 @@ public class WspConstants {
         new ArrayTypeMapping(new String[0], "fieldNames"),
         new BeanTypeMapping(AuthenticationProperties.class, "authenticationInfo"),
         new BeanTypeMapping(SoapFaultLevel.class, "soapFaultLevel"),
-            
+
         new AbstractClassTypeMapping(AssertionResourceInfo.class, "resourceInfo"),
         new BeanTypeMapping(StaticResourceInfo.class, "staticResourceInfo"),
         new BeanTypeMapping(SingleUrlResourceInfo.class, "singleUrlResourceInfo"),
@@ -327,7 +334,9 @@ public class WspConstants {
         new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
         new BeanTypeMapping(HtmlFormDataAssertion.FieldSpec.class, "htmlFormFieldSpec"),
         new ArrayTypeMapping(new HtmlFormDataAssertion.FieldSpec[0], "htmlFormFieldSpecArray"),
+    };
 
+    final static TypeMapping[] readOnlyTypeMappings = new TypeMapping[] {
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,

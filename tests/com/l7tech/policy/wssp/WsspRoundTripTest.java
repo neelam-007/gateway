@@ -46,7 +46,7 @@ public class WsspRoundTripTest extends TestCase {
 
     public void test_A11_L7WsspL7() throws Exception {
         String l7Xml = WsspWriterTest.L7_POLICY_A11;
-        Assertion l7root = WspReader.parsePermissively(l7Xml);
+        Assertion l7root = WspReader.getDefault().parsePermissively(l7Xml);
         System.out.println("Starting L7 policy:\n" + l7root + "\n\n");
 
         WsspWriter writer = new WsspWriter();
@@ -88,7 +88,7 @@ public class WsspRoundTripTest extends TestCase {
     }
 
     private void test_L7WsspL7(String l7Xml) throws IOException, SAXException, PolicyAssertionException, WSDLException, Wsdl.BadPolicyReferenceException, PolicyConversionException {
-        Assertion l7root = WspReader.parsePermissively(l7Xml);
+        Assertion l7root = WspReader.getDefault().parsePermissively(l7Xml);
         System.out.println("Starting L7 policy:\n" + l7root + "\n\n");
 
         // Get an undecorated WSDL

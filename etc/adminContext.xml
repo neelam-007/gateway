@@ -249,6 +249,7 @@
         <constructor-arg ref="counterIDManager"/>
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="wspReader"/>
     </bean>
 
     <!-- schema admin servant -->

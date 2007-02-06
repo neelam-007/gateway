@@ -147,7 +147,8 @@
         <include name="com/l7tech/policy/assertion/Assertion.java"/>
         <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
         <include name="com/l7tech/policy/assertion/composite/**"/>
-        <include name="com/l7tech/policy/assertion/*AssertionMetadata*.java"/>
+        <include name="com/l7tech/policy/assertion/AssertionMetadata*.java"/>
+        <include name="com/l7tech/policy/assertion/DefaultAssertionMetadata*.java"/>
         <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
         <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
         <include name="com/l7tech/policy/assertion/ext/Category.java"/>
@@ -245,6 +246,7 @@
         <include name="**/mailapi-1.4.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/spring-context.jar"/>
+        <include name="**/spring-beans.jar"/>
         <include name="**/xalan-2.7.0.jar"/>
         <include name="**/serializer-xalan-2.7.0.jar"/>
         <include name="**/nekohtml.jar"/>

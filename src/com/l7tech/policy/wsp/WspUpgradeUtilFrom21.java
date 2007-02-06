@@ -48,7 +48,7 @@ class WspUpgradeUtilFrom21 {
         }
 
         public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            Element translated = WspUpgradeUtilFrom21.translateOldXmlSecurityElement(source);
+            Element translated = WspUpgradeUtilFrom21.translateOldXmlSecurityElement(source, visitor);
             return TypeMappingUtils.thawElement(translated, visitor);
         }
     }
@@ -104,7 +104,7 @@ class WspUpgradeUtilFrom21 {
      * @return
      * @throws InvalidPolicyStreamException
      */
-    static Element translateOldXmlSecurityElement(Element in) throws InvalidPolicyStreamException {
+    static Element translateOldXmlSecurityElement(Element in, WspVisitor visitor) throws InvalidPolicyStreamException {
         final boolean isResponse;
         final String origName = in.getLocalName();
         if ("XmlRequestSecurity".equals(origName)) {
@@ -133,7 +133,7 @@ class WspUpgradeUtilFrom21 {
                 Element elementXpath = XmlUtil.findOnlyOneChildElementByName(item, item.getNamespaceURI(), "ElementXpath");
                 if (preconditionXpath == null || elementXpath == null)
                     throw new InvalidPolicyStreamException("Invalid 2.1 policy - " + origName + " requires both PreconditionXpath and ElementXpath");
-                TypedReference pxref = TypeMappingUtils.thawElement(preconditionXpath, StrictWspVisitor.INSTANCE);
+                TypedReference pxref = TypeMappingUtils.thawElement(preconditionXpath, new StrictWspVisitor(visitor.getTypeMappingFinder()));
                 final AllAssertion itemAll = new AllAssertion();
                 enforcementOr.addChild(itemAll);
                 if (pxref.target != null) {
@@ -154,7 +154,7 @@ class WspUpgradeUtilFrom21 {
                         seenNamespaceMap = pxpath.getNamespaces();
                 }
 
-                TypedReference exref = TypeMappingUtils.thawElement(elementXpath, StrictWspVisitor.INSTANCE);
+                TypedReference exref = TypeMappingUtils.thawElement(elementXpath, new StrictWspVisitor(visitor.getTypeMappingFinder()));
                 if (exref.target == null)
                     throw new InvalidPolicyStreamException("Invalid 2.1 policy - " + origName + " ElementXpath may not be null");
 
@@ -226,15 +226,9 @@ class WspUpgradeUtilFrom21 {
     }
 
     /** A wrapper visitor that knows how to correct for the old 2.1 property names on RequestXpathAssertion. */
-    static class RequestXpathAssertionPropertyVisitor implements WspVisitor {
-        private final WspVisitor originalVisitor;
-
+    static class RequestXpathAssertionPropertyVisitor extends WspVisitorWrapper {
         public RequestXpathAssertionPropertyVisitor(WspVisitor originalVisitor) {
-            this.originalVisitor = originalVisitor;
-        }
-
-        public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
-            return originalVisitor.invalidElement(problematicElement, problemEncountered);
+            super(originalVisitor);
         }
 
         public void unknownProperty(Element originalObject,
@@ -270,7 +264,7 @@ class WspUpgradeUtilFrom21 {
                 }
             }
 
-            originalVisitor.unknownProperty(originalObject, problematicParameter, deserializedObject, propertyName, value, problemEncountered);
+            super.unknownProperty(originalObject, problematicParameter, deserializedObject, propertyName, value, problemEncountered);
             return;
         }
     }

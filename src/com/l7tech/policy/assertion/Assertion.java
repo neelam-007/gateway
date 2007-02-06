@@ -20,6 +20,7 @@ import java.util.*;
  * @noinspection unchecked,ForLoopReplaceableByForEach
  */
 public abstract class Assertion implements Cloneable, Serializable {
+    private static final Map metadataCache = Collections.synchronizedMap(new HashMap());
     protected transient CompositeAssertion parent;
     private transient int ordinal;
 
@@ -443,13 +444,38 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return an AssertionMetadata instance.  Never null.
      */
     public AssertionMetadata meta() {
+        return defaultMeta();
+    }
+
+    /**
+     * Get the (possibly cached) DefaultAssertionMetadata for the current assertion class.
+     *
+     * Direct subclasses of Assertion (but ONLY direct subclasses) can safely downcast the returned
+     * value to DefaultAssertionMetadata.
+     *
+     * @return a DefaultAssertionMetadata instance for this assertion class.  Never null.
+     */
+    protected final DefaultAssertionMetadata defaultMeta() {
+        final String classname = getClass().getName();
         try {
-            return new DefaultAssertionMetadata((Assertion)getClass().newInstance());
+            DefaultAssertionMetadata meta = (DefaultAssertionMetadata)metadataCache.get(classname);
+            if (meta != null)
+                return meta;
+            meta = new DefaultAssertionMetadata((Assertion)getClass().newInstance());
+            metadataCache.put(classname, meta);
+            return meta;
         } catch (InstantiationException e) {
-            throw new RuntimeException(); // can't happen; assertion must have public no-arg constructor
+            throw needsMeta(classname, e);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(); // can't happen; assertion must have public no-arg constructor
+            throw needsMeta(classname, e);
         }
+    }
+    
+    private RuntimeException needsMeta(String classname, Exception cause) {
+        return new RuntimeException("Assertion class " + classname +
+                                        " must either override meta() and avoid calling defaultMeta(), " +
+                                        "or have a public nullary constructor",
+                                    cause);
     }
 
     /**
@@ -475,7 +501,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     /**
      * Get the name of the leaf feature set for the specified assertion class name.
      * For example, for "com.l7tech.policy.assertion.composite.OneOrMoreAssertion", will return
-     * the string "assertion:OneOrMore".
+     * the string "assertion:composite.OneOrMore".
      *
      * @param assertionClassname assertion class name.  Must start with "com.l7tech.policy.assertion.".
      * @return the leaf feature set name for this assertion.
@@ -488,6 +514,24 @@ public abstract class Assertion implements Cloneable, Serializable {
         if (rest.endsWith("Assertion"))
             rest = rest.substring(0, rest.length() - "Assertion".length());
         return "assertion:" + rest;
+    }
+
+    /**
+     * Get the local part of the specified assertion class name with all packages and any trailing "Assertion"
+     * removed.  For example, for "com.l7tech.policy.assertion.composite.OneOrMoreAssertion", will return
+     * the string "OneOrMore".
+     *
+     * @param className the assertion class name.  Should start with "com.l7tech.policy.assertion.".
+     * @return the base name of this assertion, assuming the usual naming convention.
+     */
+    public static String getBaseName(String className) {
+        if (className.endsWith("."))
+            throw new IllegalArgumentException("assertionClass name ends with dot");
+        int lastDot = className.lastIndexOf(".");
+        String rest = lastDot < 1 ? className : className.substring(lastDot + 1);
+        if (rest.endsWith("Assertion"))
+            rest = rest.substring(0, rest.length() - "Assertion".length());
+        return rest;
     }
 }
 

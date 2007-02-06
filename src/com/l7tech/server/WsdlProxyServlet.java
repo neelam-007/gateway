@@ -390,7 +390,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         try{
             if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
                 Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
-                Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
+                Assertion rootassertion = wspReader.parsePermissively(svc.getPolicyXml());
                 if (Assertion.contains(rootassertion, WsspAssertion.class)) {
                     // remove any existing policy
                     XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapUtil.WSP_NAMESPACE2);
@@ -446,7 +446,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
 
             try {
-                Assertion rootAssertion = WspReader.parsePermissively(svc.getPolicyXml());
+                Assertion rootAssertion = wspReader.parsePermissively(svc.getPolicyXml());
                 Assertion effectivePolicy = clientPolicyFilterManager.applyAllFilters(user, rootAssertion);
                 SslAssertion sslAssertion = (SslAssertion) getFirstChild(effectivePolicy, SslAssertion.class);
                 if (!secureRequest && sslAssertion != null && sslAssertion.getOption()==SslAssertion.REQUIRED) {
@@ -561,7 +561,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
         // start at the top
         Assertion rootassertion;
-        rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
+        rootassertion = wspReader.parsePermissively(svc.getPolicyXml());
         return checkForIdPotential(rootassertion, requestor);
     }
 

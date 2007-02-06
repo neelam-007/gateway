@@ -58,7 +58,7 @@ public class PublishedService extends NamedEntityImp {
             return FalseAssertion.getInstance();
         } else {
             if (_rootAssertion == null)
-                _rootAssertion = WspReader.parsePermissively(policyXml);
+                _rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
         }
 
         return _rootAssertion;

@@ -80,7 +80,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-        return WspReader.parsePermissively(xml);
+        return WspReader.getDefault().parsePermissively(xml);
     }
 
     /**
