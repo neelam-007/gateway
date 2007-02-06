@@ -6,7 +6,6 @@ import com.l7tech.common.util.TimeoutExecutor;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RateLimitAssertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -50,7 +49,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
                 applicationContext = ApplicationContexts.getTestApplicationContext();
                 serverPolicyFactory = (ServerPolicyFactory) applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
                 serverConfig = (ServerConfigStub) applicationContext.getBean("serverConfig", ServerConfigStub.class);
-                serverConfig.putProperty(ServerConfig.PARAM_RATELIMIT_CLEANER_PERIOD, String.valueOf(99999));
+                serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(99999));
             }
         };
     }
@@ -254,7 +253,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
         for (Future future : warmup)
             future.get();
 
-        serverConfig.putProperty(ServerConfig.PARAM_RATELIMIT_MAX_CONCURRENCY, String.valueOf(maxNodeConcurrency));
+        serverConfig.putProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, String.valueOf(maxNodeConcurrency));
         ServerRateLimitAssertion.maxSleepThreads.set(maxNodeConcurrency);
         for (int i =0; i < 10; ++i) {
             System.gc();

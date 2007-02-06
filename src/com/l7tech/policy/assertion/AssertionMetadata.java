@@ -48,6 +48,13 @@ public interface AssertionMetadata {
     /** String. Space separated list of parent feature set names. */
     String PARENT_FEATURE_SETS = "parentFeatureSets";
 
+    /**
+     * Map<String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.
+     * Keys are names of cluster properties (and server config keys).  Values are tuples of [description, default].
+     * This is the same format returned by ClusterStatusAdmin#getKnownProperties.
+     */
+    String CLUSTER_PROPERTIES = "clusterProperties";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     Class getAssertionClass();
 

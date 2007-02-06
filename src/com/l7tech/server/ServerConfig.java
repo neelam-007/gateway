@@ -96,11 +96,6 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
 
-    public static final String PARAM_RATELIMIT_MAX_CONCURRENCY = "ratelimitMaxNodeConcurrency";
-    public static final String PARAM_RATELIMIT_CLEANER_PERIOD = "ratelimitCleanerPeriod";
-    public static final String PARAM_RATELIMIT_MAX_NAP_TIME = "ratelimitMaxNapTime";
-    public static final String PARAM_RATELIMIT_MAX_TOTAL_SLEEP_TIME = "ratelimitMaxTotalSleepTime";
-
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
@@ -128,6 +123,29 @@ public class ServerConfig implements ClusterPropertyListener {
         return InstanceHolder.INSTANCE;
     }
 
+    /**
+     * Register a group of new serverConfig properties dynamically.  The database will be checked for up-to-date
+     * values afterward, as long as the cluster property manager is ready.
+     *
+     * @param newProps  an array of 4-tuples, each of which is
+     *                 [serverConfigPropertyName, clusterPropertyName, description, defaultValue].
+     */
+    public void registerServerConfigProperties(String[][] newProps) {
+        long now = System.currentTimeMillis();
+        for (String[] tuple : newProps) {
+            String propName = tuple[0];
+            String clusterPropName = tuple[1];
+            String description = tuple[2];
+            String defaultValue = tuple[3];
+
+            if (defaultValue != null) _properties.put(propName + SUFFIX_DEFAULT, defaultValue);
+            if (description != null) _properties.put(propName + SUFFIX_DESC, description);
+            if (clusterPropName != null) _properties.put(propName + SUFFIX_CLUSTER_KEY, clusterPropName);
+
+            String value = getPropertyUncached(propName, true);
+            valueCache.put(propName, new CachedValue(value, now));
+        }
+    }
 
     public void setPropertyChangeListener(final PropertyChangeListener propertyChangeListener) {
         propLock.writeLock().lock();

@@ -846,7 +846,9 @@
 
     <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"/>
 
-    <bean id="assertionRegistry" class="com.l7tech.policy.AssertionRegistry"/>
+    <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
         <constructor-arg ref="assertionRegistry"/>

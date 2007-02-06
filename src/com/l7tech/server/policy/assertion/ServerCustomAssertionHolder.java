@@ -68,9 +68,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
     public ServerCustomAssertionHolder(CustomAssertionHolder ca, ApplicationContext springContext) {
         super(ca);
-        if (ca == null || ca.getCustomAssertion() == null) {
+        if (ca == null)
             throw new IllegalArgumentException();
-        }
         this.data = ca;
         this.applicationContext = springContext;
         customAssertion = ca.getCustomAssertion(); // ignore hoder
@@ -119,6 +118,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (customAssertion == null) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "CustomAssertionHolder contains no CustomAssertion" });
+            return AssertionStatus.SERVER_ERROR;
+        }
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
         //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
 

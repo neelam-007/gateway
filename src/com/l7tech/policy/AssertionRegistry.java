@@ -52,16 +52,18 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, In
      * Nothing happens if the specified assertion class has already been registered with this registry.
      *
      * @param assertionClass the Assertion subclass to register.  Must not be null.
+     * @return the prototype instance that is now registered for this class.  Never null.
      */
-    public void registerAssertion(Class<? extends Assertion> assertionClass) {
+    public Assertion registerAssertion(Class<? extends Assertion> assertionClass) {
         try {
             final Assertion prototype = assertionClass.newInstance();
             Assertion old = prototypes.putIfAbsent(assertionClass.getName(), prototype);
-            if (old == null) {
-                Object externalName = prototype.meta().get(AssertionMetadata.WSP_EXTERNAL_NAME);
-                if (externalName instanceof String)
-                    byExternalName.put((String)externalName, prototype);
-            }
+            if (old != null)
+                return old;
+            Object externalName = prototype.meta().get(AssertionMetadata.WSP_EXTERNAL_NAME);
+            if (externalName instanceof String)
+                byExternalName.put((String)externalName, prototype);
+            return prototype;
         } catch (InstantiationException e) {
             throw new RuntimeException(e); // can't happen; assertion must have public nullary c'tor
         } catch (IllegalAccessException e) {

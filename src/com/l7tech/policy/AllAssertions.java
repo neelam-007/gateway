@@ -199,22 +199,4 @@ public class AllAssertions {
         new RateLimitAssertion(),
         new HtmlFormDataAssertion(),
     };
-
-    public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
-        new HttpBasic(),
-        new HttpDigest(),
-        new HttpNegotiate(),
-        new WssBasic(),
-        new EncryptedUsernameTokenAssertion(),            
-        new RequestWssX509Cert(),
-        new SecureConversation(),
-        new RequestWssSaml(),
-        new WsTrustCredentialExchange(),
-        new WsFederationPassiveTokenExchange(),
-        new WsFederationPassiveTokenRequest(),
-        new XpathCredentialSource(),
-        new RequestWssKerberos(),
-        new CookieCredentialSourceAssertion(),
-    };
-
 }

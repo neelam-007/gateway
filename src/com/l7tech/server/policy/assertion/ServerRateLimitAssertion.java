@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
     private static final long CLUSTER_POLL_INTERVAL = 1000 * 43; // Check every 43 seconds to see if cluster size has changed
-    private static final int DEFAULT_MAX_SLEEP_THREADS = 20;
+    private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
     private static final int DEFAULT_MAX_TOTAL_SLEEP_TIME = 18371;
@@ -43,7 +43,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final Level SUBINFO_LEVEL =
                 Boolean.getBoolean("com.l7tech.server.ratelimit.logAtInfo") ? Level.INFO : Level.FINE;
 
-    static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_SLEEP_THREADS);
+    static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
     private static final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Counter>();
     private static final AtomicLong lastClusterCheck = new AtomicLong();
@@ -418,10 +418,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     // Unconditionally load the cluster size from the database.
     private int loadClusterSizeFromDb() {
         try {
-            maxSleepThreads.set(serverConfig.getIntProperty(ServerConfig.PARAM_RATELIMIT_MAX_CONCURRENCY, DEFAULT_MAX_SLEEP_THREADS));
-            cleanerPeriod.set(serverConfig.getIntProperty(ServerConfig.PARAM_RATELIMIT_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD));
-            maxNapTime.set(serverConfig.getIntProperty(ServerConfig.PARAM_RATELIMIT_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME));
-            maxTotalSleepTime.set(serverConfig.getIntProperty(ServerConfig.PARAM_RATELIMIT_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME));
+            maxSleepThreads.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
+            cleanerPeriod.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD));
+            maxNapTime.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME));
+            maxTotalSleepTime.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME));
             Collection<ClusterNodeInfo> got = clusterInfoManager.retrieveClusterStatus();
             final int ret = got == null || got.size() < 1 ? 1 : got.size();
             if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Using cluster size: " + ret);
