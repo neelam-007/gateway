@@ -85,7 +85,10 @@ public abstract class HttpRuleTableHandler {
                 Utilities.centerOnScreen(editor);
                 editor.setVisible(true);
                 if (editor.wasOKed()) {
-                    model.addRow(dataToRow(editor.getData()));
+                    HttpPassthroughRule dres = editor.getData();
+                    if (validateNewRule(dres)) {
+                        model.addRow(dataToRow(dres));
+                    }
                 }
             }
         });
