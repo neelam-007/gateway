@@ -5,10 +5,12 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.panels.ServicePropertiesDialog;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
@@ -70,6 +72,27 @@ public class EditServiceProperties extends ServiceNodeAction {
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
+                    }
+
+                    // update name on top of editor if that service is being edited
+                    final WorkSpacePanel cws = TopComponents.getInstance().getCurrentWorkspace();
+                    JComponent jc = cws.getComponent();
+                    if (jc == null || !(jc instanceof PolicyEditorPanel)) {
+                        return;
+                    }
+                    PolicyEditorPanel pe = (PolicyEditorPanel)jc;
+                    try {
+                        PublishedService editedSvc = pe.getServiceNode().getPublishedService();
+                        // if currently edited service was deleted
+                        if (serviceNode.getPublishedService().getOid() == editedSvc.getOid()) {
+                            // update name on top of editor
+                            pe.changeSubjectName(serviceNode.getName());
+                            pe.updateHeadings();
+                        }
+                    } catch (RemoteException e) {
+                        logger.log(Level.WARNING, "problem modifying policy editor title");
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "problem modifying policy editor title");
                     }
                 }
             }

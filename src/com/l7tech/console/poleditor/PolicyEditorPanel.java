@@ -271,8 +271,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return policyTreePane;
     }
 
+    public void changeSubjectName(String newName) {
+        subjectName = newName;
+    }
+
     /** updates the service name, tab name etc */
-    private void updateHeadings() {
+    public void updateHeadings() {
         setName(subjectName);
         getSplitPane().setName(subjectName);
     }
