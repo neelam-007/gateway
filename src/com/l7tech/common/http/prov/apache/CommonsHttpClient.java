@@ -25,9 +25,7 @@ import org.apache.commons.httpclient.params.HttpParams;
 import org.apache.commons.httpclient.params.DefaultHttpParams;
 import org.apache.commons.httpclient.params.DefaultHttpParamsFactory;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.RequestEntity;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
@@ -148,8 +146,18 @@ public class CommonsHttpClient implements GenericHttpClient {
 
         // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
         //       we end up with the default socket factory for the protocol
-        final HttpMethod httpMethod = method == POST ? (HttpMethod) new PostMethod(targetUrl.getFile())
-                                                     : (HttpMethod) new GetMethod(targetUrl.getFile());
+        HttpMethod httpMethod = null;
+        if (method == POST) {
+            httpMethod = new PostMethod(targetUrl.getFile());
+        } else if (method == GET) {
+            httpMethod = new GetMethod(targetUrl.getFile());
+        } else if (method == PUT) {
+            httpMethod = new PutMethod(targetUrl.getFile());
+        } else if (method == DELETE) {
+            httpMethod = new DeleteMethod(targetUrl.getFile());
+        } else {
+            throw new IllegalStateException("Method " + method + " not supported");
+        }
 
         httpMethod.setFollowRedirects(params.isFollowRedirects());
         HttpMethodParams methodParams = httpMethod.getParams();
@@ -196,37 +204,59 @@ public class CommonsHttpClient implements GenericHttpClient {
         if (rct != null)
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
 
+        final HttpMethod fmtd = httpMethod;
         return new RerunnableHttpRequest() {
-            private HttpMethod method = httpMethod;
+            private HttpMethod method = fmtd;
             private boolean requestEntitySet = false;
 
             public void setInputStream(final InputStream bodyInputStream) {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
-                if (!(method instanceof PostMethod))
-                    throw new UnsupportedOperationException("Only POST requests require a body InputStream");
+                if (!(method instanceof PostMethod || method instanceof PutMethod))
+                    throw new UnsupportedOperationException("Only POST or PUT requests require a body InputStream");
                 if (requestEntitySet)
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
 
-                PostMethod postMethod = (PostMethod)method;
-                postMethod.setRequestEntity(new RequestEntity(){
-                    public long getContentLength() {
-                        return contentLen != null ? contentLen.longValue() : -1;
-                    }
+                if (method instanceof PostMethod) {
+                    PostMethod postMethod = (PostMethod)method;
+                    postMethod.setRequestEntity(new RequestEntity(){
+                        public long getContentLength() {
+                            return contentLen != null ? contentLen.longValue() : -1;
+                        }
 
-                    public String getContentType() {
-                        return rct != null ? rct.getFullValue() : null;
-                    }
+                        public String getContentType() {
+                            return rct != null ? rct.getFullValue() : null;
+                        }
 
-                    public boolean isRepeatable() {
-                        return false;
-                    }
+                        public boolean isRepeatable() {
+                            return false;
+                        }
 
-                    public void writeRequest(OutputStream outputStream) throws IOException {
-                        HexUtils.copyStream(bodyInputStream, outputStream);
-                    }
-                });
+                        public void writeRequest(OutputStream outputStream) throws IOException {
+                            HexUtils.copyStream(bodyInputStream, outputStream);
+                        }
+                    });
+                } else {
+                    PutMethod putMethod = (PutMethod)method;
+                    putMethod.setRequestEntity(new RequestEntity(){
+                        public long getContentLength() {
+                            return contentLen != null ? contentLen.longValue() : -1;
+                        }
+
+                        public String getContentType() {
+                            return rct != null ? rct.getFullValue() : null;
+                        }
+
+                        public boolean isRepeatable() {
+                            return false;
+                        }
+
+                        public void writeRequest(OutputStream outputStream) throws IOException {
+                            HexUtils.copyStream(bodyInputStream, outputStream);
+                        }
+                    });
+                }
             }
 
             public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
@@ -249,36 +279,63 @@ public class CommonsHttpClient implements GenericHttpClient {
                     throw new IllegalArgumentException("inputStreamFactory must not be null");
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
-                if (!(method instanceof PostMethod))
-                    throw new UnsupportedOperationException("Only POST requests require a body InputStream");
+                if (!(method instanceof PostMethod || method instanceof PutMethod))
+                    throw new UnsupportedOperationException("Only POST or PUT requests require a body InputStream");
                 if (requestEntitySet)
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
 
-                PostMethod postMethod = (PostMethod)method;
-                postMethod.setRequestEntity(new RequestEntity(){
-                    public long getContentLength() {
-                        return contentLen != null ? contentLen.longValue() : -1;
-                    }
-
-                    public String getContentType() {
-                        return rct != null ? rct.getFullValue() : null;
-                    }
-
-                    public boolean isRepeatable() {
-                        return true;
-                    }
-
-                    public void writeRequest(OutputStream outputStream) throws IOException {
-                        InputStream inputStream = null;
-                        try {
-                            inputStream = inputStreamFactory.getInputStream();
-                            HexUtils.copyStream(inputStream, outputStream);
-                        } finally {
-                            if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
+                if (method instanceof PostMethod) {
+                    PostMethod postMethod = (PostMethod)method;
+                    postMethod.setRequestEntity(new RequestEntity(){
+                        public long getContentLength() {
+                            return contentLen != null ? contentLen.longValue() : -1;
                         }
-                    }
-                });
+
+                        public String getContentType() {
+                            return rct != null ? rct.getFullValue() : null;
+                        }
+
+                        public boolean isRepeatable() {
+                            return true;
+                        }
+
+                        public void writeRequest(OutputStream outputStream) throws IOException {
+                            InputStream inputStream = null;
+                            try {
+                                inputStream = inputStreamFactory.getInputStream();
+                                HexUtils.copyStream(inputStream, outputStream);
+                            } finally {
+                                if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
+                            }
+                        }
+                    });
+                } else {
+                    PutMethod putMethod = (PutMethod)method;
+                    putMethod.setRequestEntity(new RequestEntity(){
+                        public long getContentLength() {
+                            return contentLen != null ? contentLen.longValue() : -1;
+                        }
+
+                        public String getContentType() {
+                            return rct != null ? rct.getFullValue() : null;
+                        }
+
+                        public boolean isRepeatable() {
+                            return true;
+                        }
+
+                        public void writeRequest(OutputStream outputStream) throws IOException {
+                            InputStream inputStream = null;
+                            try {
+                                inputStream = inputStreamFactory.getInputStream();
+                                HexUtils.copyStream(inputStream, outputStream);
+                            } finally {
+                                if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
+                            }
+                        }
+                    });
+                }
             }
 
             public GenericHttpResponse getResponse() throws GenericHttpException {
