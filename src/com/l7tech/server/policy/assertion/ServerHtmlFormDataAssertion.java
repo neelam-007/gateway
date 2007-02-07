@@ -131,9 +131,9 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         }
 
         // Enforces existence of specified fields:
-        for (String required : fieldSpecs.keySet()) {
-            if (!fields.containsKey(required)) {
-                _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, new String[]{required});
+        for (HtmlFormDataAssertion.FieldSpec required : fieldSpecs.values()) {
+            if (required.getMinOccurs() > 0 && !fields.containsKey(required.getName())) {
+                _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, new String[]{required.getName()});
                 return AssertionStatus.FAILED;
             }
         }
