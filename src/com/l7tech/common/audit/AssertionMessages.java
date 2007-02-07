@@ -375,8 +375,8 @@ public class AssertionMessages extends Messages {
     public static final M CANNOT_ECHO_NON_XML = m(7050, Level.INFO, "Request cannot be echoed because it is not XML (Content-Type {0}).");
 
     // ComparisonAssertion (formerly known as EqualityAssertion)
-    public static final M COMPARISON_OK           = m(7100, Level.INFO, "Comparison matched");
-    public static final M COMPARISON_NOT          = m(7101, Level.INFO, "Comparison did not match");
+    public static final M COMPARISON_OK           = m(7100, Level.FINE, "Comparison matched");
+    public static final M COMPARISON_NOT          = m(7101, Level.FINE, "Comparison did not match");
     public static final M COMPARISON_BAD_OPERATOR = m(7102, Level.WARNING, "Unsupported operator: {0}");
     public static final M COMPARISON_NULL         = m(7103, Level.WARNING, "At least one comparison value was null");
 
