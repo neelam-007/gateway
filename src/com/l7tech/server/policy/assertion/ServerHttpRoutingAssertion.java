@@ -210,11 +210,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             GenericHttpRequestParams routedRequestParams = new GenericHttpRequestParams(url);
             routedRequestParams.setSslSocketFactory(socketFactory);
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
-            routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(context,
-                                          data.getCurrentSecurityHeaderHandling(),
+            handleProcessedSecurityHeader(context, data.getCurrentSecurityHeaderHandling(),
                                           data.getXmlSecurityActorToPromote());
 
             String userAgent = data.getUserAgent();
@@ -347,18 +345,22 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-    private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context) {
+    private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
         if (context.getRequest().isHttpRequest()) {
             HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
             // Check the request method
             String requestMethod = httpRequestKnob.getMethod();
             if (requestMethod.equals("GET")) {
+                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
                 return GenericHttpClient.GET;
             } else if (requestMethod.equals("POST")) {
+                // redirects not supported under POST
                 return GenericHttpClient.POST;
             } else if (requestMethod.equals("PUT")) {
+                // redirects not supported under PUT
                 return GenericHttpClient.PUT;
             }  else if (requestMethod.equals("DELETE")) {
+                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
                 return GenericHttpClient.DELETE;
             } else {
                 logger.severe("Unexpected method " + requestMethod);
@@ -408,7 +410,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  getConnectionTimeout(),
                                                                  getTimeout(),
                                                                  connectionId);
-            GenericHttpClient.GenericHttpMethod method = methodFromRequest(context);
+            GenericHttpClient.GenericHttpMethod method = methodFromRequest(context, routedRequestParams);
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
@@ -456,7 +458,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             RoutingResultListener rrl = context.getRoutingResultListener();
             boolean retryRequested = allowRetry && rrl.reroute(url, status, routedResponse.getHeaders(), context); // only call listeners if retry is allowed
 
-            if(status != HttpConstants.STATUS_OK && retryRequested) {
+            if (status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[] {url.getPath(), String.valueOf(status)});
                 return reallyTryUrl(context, routedRequestParams, url, false, vars);
@@ -502,7 +504,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // notify listeners
             rrl.routed(url, status, routedResponse.getHeaders(), context);
 
-            if(!readOk) return AssertionStatus.FALSIFIED;
+            if (!readOk) return AssertionStatus.FALSIFIED;
 
             return AssertionStatus.NONE;
         } catch (MalformedURLException mfe) {

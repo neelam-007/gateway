@@ -47,6 +47,13 @@ public interface HttpResponseKnob extends MessageKnob {
     void addHeader(String name, String value);
 
     /**
+     * Get the values for an http header to be returned
+     * @param name name of the header
+     * @return an array of header values, never null
+     */
+    String[] getHeaderValues(String name);
+
+    /**
      * Add a WWW-Authenticate: challenge value to this response.  The actual challenge will not be sent unless
      * the request turns out to fail.
      *

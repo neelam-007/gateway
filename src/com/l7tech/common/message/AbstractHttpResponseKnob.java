@@ -45,6 +45,23 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
         headersToSend.add(new HttpServletResponseKnob.Pair(name, value));
     }
 
+    public String[] getHeaderValues(String name) {
+        ArrayList<Pair> tmp = new ArrayList<Pair>();
+        for (Object aHeadersToSend : headersToSend) {
+            Pair pair = (Pair) aHeadersToSend;
+            if (name.compareToIgnoreCase(pair.getName()) == 0) {
+                tmp.add(pair);
+            }
+        }
+        String[] output = new String[headersToSend.size()];
+        int i = 0;
+        for (Pair pair : tmp) {
+            output[i] = pair.getValue().toString();
+            i++;
+        }
+        return output;
+    }
+
     public boolean containsHeader(String name) {
         for (Iterator i = headersToSend.iterator(); i.hasNext();) {
             HttpServletResponseKnob.Pair pair = (HttpServletResponseKnob.Pair)i.next();
