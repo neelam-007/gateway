@@ -1100,6 +1100,7 @@
                 <!-- Classes that make up the Layer 7 API -->
                 <exclude name="com/l7tech/policy/assertion/Assertion.class"/>
                 <exclude name="com/l7tech/policy/assertion/*AssertionMetadata*.class"/>
+                <exclude name="com/l7tech/policy/assertion/MetadataFinder.class"/>
                 <exclude name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
                 <exclude name="com/l7tech/policy/assertion/composite/**"/>
                 <exclude name="com/l7tech/policy/assertion/ext/AssertionEditor.class"/>
