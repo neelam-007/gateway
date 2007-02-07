@@ -16,7 +16,7 @@ requires: ssg >= 3.2
 %undefine       __check_files
 
 %description
-Secure Span Gateway JBoss MQ Kit
+Secure Span Gateway JBoss MQ Kit (Sourced From JBoss 4.0.5GA Build)
 
 %clean
 rm -fr %{buildroot}
