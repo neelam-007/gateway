@@ -383,7 +383,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // Serialize the request
             final MimeKnob reqMime = context.getRequest().getMimeKnob();
-            routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue()));
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = reqMime.getContentLength();
@@ -411,6 +410,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  getTimeout(),
                                                                  connectionId);
             GenericHttpClient.GenericHttpMethod method = methodFromRequest(context, routedRequestParams);
+
+            // dont add content-type for get and deletes
+            if (method == GenericHttpClient.PUT || method == GenericHttpClient.POST) {
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue()));
+            }
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.

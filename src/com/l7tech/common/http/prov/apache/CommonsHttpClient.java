@@ -201,8 +201,9 @@ public class CommonsHttpClient implements GenericHttpClient {
         }
 
         final ContentTypeHeader rct = params.getContentType();
-        if (rct != null)
+        if (rct != null && (httpMethod instanceof PostMethod || httpMethod instanceof PutMethod)) {
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
+        }
 
         final HttpMethod fmtd = httpMethod;
         return new RerunnableHttpRequest() {
