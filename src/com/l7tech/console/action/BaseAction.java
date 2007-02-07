@@ -35,6 +35,10 @@ public abstract class BaseAction extends AbstractAction {
      * action name, icon and description form subclasses.
      */
     public BaseAction() {
+        setActionValues();
+    }
+
+    protected void setActionValues() {
         String name = getName();
         if (name != null) {
             putValue(Action.NAME, getName());

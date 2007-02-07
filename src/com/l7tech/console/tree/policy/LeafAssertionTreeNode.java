@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * Leaf policy nodes extend this node
  */
-abstract class LeafAssertionTreeNode extends AssertionTreeNode {
+public abstract class LeafAssertionTreeNode<AT extends Assertion> extends AssertionTreeNode<AT> {
     private static final Logger log =
       Logger.getLogger(LeafAssertionTreeNode.class.getName());
 
@@ -31,7 +31,7 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
      *
      * @param assertion the assertion
      */
-    public LeafAssertionTreeNode(Assertion assertion) {
+    public LeafAssertionTreeNode(AT assertion) {
         super(assertion);
         if (assertion == null) {
             throw new IllegalArgumentException();

@@ -1918,6 +1918,7 @@
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/policy/assertion/Assertion*.class"/>
                 <include name="com/l7tech/policy/assertion/*AssertionMetadata*.class"/>
+                <include name="com/l7tech/policy/assertion/MetadataFinder.class"/>
                 <include name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
                 <include name="com/l7tech/policy/assertion/composite/**"/>
                 <include name="com/l7tech/policy/assertion/UsesVariables.class"/>

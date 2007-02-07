@@ -1,15 +1,22 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.variable.ExpandVariables;
 
-import java.util.Map;
+import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Adds rate limiting to a policy.
  * See http://sarek.l7tech.com/mediawiki/index.php?title=POLM_1410_Rate_Limiting 
  */
 public class RateLimitAssertion extends Assertion implements UsesVariables {
+    protected static final Logger logger = Logger.getLogger(RateLimitAssertion.class.getName());
+
     private String counterName = "RateLimit-${request.clientid}";
     private int maxRequestsPerSecond = 100;
     private boolean shapeRequests = false;
@@ -90,7 +97,10 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         this.hardLimit = hardLimit;
     }
 
+    //
     // Metadata
+    //
+    private static final String META_INITIALIZED = RateLimitAssertion.class.getName() + ".metadataInitialized";
 
     public static final String PARAM_MAX_QUEUED_THREADS = "ratelimitMaxQueuedThreads";
     public static final String PARAM_CLEANER_PERIOD = "ratelimitCleanerPeriod";
@@ -99,7 +109,10 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
+        // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
         props.put("ratelimit.maxQueuedThreads", new String[] {
                 "Maximum number of requests that can be delayed for traffic shaping purposes on a single node.  When this limit is reached, rate limiters will start failing requests that hit the limit",
@@ -119,6 +132,38 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
+        // Set description for GUI
+        meta.put(AssertionMetadata.LONG_NAME, "Enforce a maximum transactions per second that may pass through this assertion");
+
+        // Set up smart Getter for nice, informative policy node name, for GUI
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, RateLimitAssertion>() {
+            public String call(RateLimitAssertion ass) {
+                int concurrency = ass.getMaxConcurrency();
+                StringBuffer sb = new StringBuffer("Rate Limit: ");
+                sb.append(ass.isHardLimit() ? "up to " : "average ");
+                sb.append(ass.getMaxRequestsPerSecond()).
+                        append(" msg/sec");
+                if (ass.isShapeRequests()) sb.append(", shaped,");
+
+                final String counterName = ass.getCounterName();
+                String prettyName = null;
+                try {
+                    // Have to reflect this since assertion bean loads on Gateway and Bridge as well
+                    Class dlgClass = Class.forName("com.l7tech.console.panels.RateLimitAssertionPropertiesDialog");
+                    Method findCounterNameKey = dlgClass.getMethod("findCounterNameKey", String.class, String[].class);
+                    prettyName = (String)findCounterNameKey.invoke(null, counterName, null);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
+                }
+
+                sb.append(" per ").append(prettyName != null ? prettyName : ("\"" + counterName + "\""));
+                if (concurrency > 0) sb.append(" (concurrency ").append(concurrency).append(")");
+                return sb.toString();
+            }
+        });
+
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 }

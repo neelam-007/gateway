@@ -49,7 +49,7 @@ public class AssertionMetadataTest extends TestCase {
         assertEquals(Boolean.FALSE, am.get(AssertionMetadata.USED_BY_CLIENT));
         assertEquals("com.l7tech.policy.wsp.UncustomizedMetadataAssertionMapping", am.get(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME));
         assertEquals("com.l7tech.policy.wsp.AssertionMapping", am.get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE).getClass().getName());
-        assertEquals("com.l7tech.console.action.UncustomizedMetadataPropertiesAction", am.get(AssertionMetadata.PROPERTIES_ACTION));
+        assertEquals("com.l7tech.console.action.UncustomizedMetadataPropertiesAction", am.get(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME));
         assertEquals("set:experimental", am.get(AssertionMetadata.PARENT_FEATURE_SETS));
         assertEquals("UncustomizedMetadata", am.get(AssertionMetadata.WSP_EXTERNAL_NAME));
         log.info("Generated defaults test OK");

@@ -6,6 +6,18 @@ package com.l7tech.common.util;
  * Requires Java 5.
  */
 public interface Functions {
+    /** A function that takes no arguments and returns a value. */
+    public interface Nullary<R> {
+        R call();
+    }
+
+    /**
+     * A function that takes no arguments and returns no value.
+     * Provided for symmetry; instead of this, you might consider using the equivalent but more idiomatic Runnable.
+     */
+    public interface NullaryVoid {
+        void call();
+    }
 
     /** A function that takes one argument and returns a value. */
     public interface Unary<R, P1> {

@@ -3,6 +3,7 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.TypeMappingFinder;
 import com.l7tech.policy.wsp.WspConstants;
@@ -103,7 +104,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, In
         if (enhancedMetadataDefaultsInstalled.get())
             return;
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE, new DefaultAssertionMetadata.Getter() {
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assClass = meta.getAssertionClass();
                 String typeMappingClassname = (String)meta.get(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME);
@@ -128,7 +129,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, In
             }
         });
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.USED_BY_CLIENT, new DefaultAssertionMetadata.Getter() {
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.USED_BY_CLIENT, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assertionClass = meta.getAssertionClass();
                 //noinspection ForLoopReplaceableByForEach

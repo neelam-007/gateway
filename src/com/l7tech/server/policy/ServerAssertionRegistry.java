@@ -4,6 +4,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.Started;
 import org.springframework.context.ApplicationEvent;
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
 public class ServerAssertionRegistry extends AssertionRegistry implements ApplicationListener {
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
 
-    // Install the default getters that are specified to the Gateway
+    // Install the default getters that are specific to the Gateway
     private static final AtomicBoolean gatewayMetadataDefaultsInstalled = new AtomicBoolean(false);
     static {
         installGatewayMetadataDefaults();
@@ -115,7 +116,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Applic
         if (gatewayMetadataDefaultsInstalled.get())
             return;
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.CLUSTER_PROPERTIES, new DefaultAssertionMetadata.Getter() {
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.CLUSTER_PROPERTIES, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return DefaultAssertionMetadata.cache(meta, key, new HashMap());
             }

@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
+public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> extends AssertionTreeNode<AT> {
     private static final Logger log =
       Logger.getLogger(CompositeAssertionTreeNode.class.getName());
 
@@ -27,7 +27,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
      *
      * @param assertion = the composite assertion
      */
-    public CompositeAssertionTreeNode(CompositeAssertion assertion) {
+    public CompositeAssertionTreeNode(AT assertion) {
         super(assertion);
         if (assertion == null) {
             throw new IllegalArgumentException();

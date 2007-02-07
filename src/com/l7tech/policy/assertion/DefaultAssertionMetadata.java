@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -21,53 +22,88 @@ import java.util.regex.Pattern;
  *</pre>
  * <p/>
  * It is safe for multiple threads to use this class simultaneously.
+ * <p/>
+ * This class is part of the Layer 7 API and so must avoid using any post-Java-1.3 features, or any parts
+ * of the Layer 7 code base other than the other bits that are already in the Layer 7 API.
  *
  * @noinspection unchecked,UnnecessaryUnboxing
  */
 public class DefaultAssertionMetadata implements AssertionMetadata {
     protected static final Logger logger = Logger.getLogger(DefaultAssertionMetadata.class.getName());
 
+    private static final Pattern ucfirst = Pattern.compile("(\\b[a-z])");
+
     /**
-     * Interface implemented by lazy getters of assertion properties.
+     * Convert a String like "foo b8r blatz_foo 99" into title caps, like "Foo B8r Blatz_foo 99".
+     *
+     * @param in the string to convert.  Must not be null.
+     * @return a new String in title caps.  Never null.
      */
-    public static interface Getter {
-        /**
-         * Get the specified property for the specified AssertionMetadata instance.
-         * <p/>
-         * Implementors should keep in mind that multiple threads may be calling
-         * this method at the same time, possibly passing the same AssertionMetadata instance.
-         *
-         * @param meta the AssertionMetadata instance whose property to find or generate.  Must not be null.
-         * @param key the name of the property that is being fetched.  Must not be null.
-         * @return the property value, if able to find or generate one, or null.
-         */
-        Object get(AssertionMetadata meta, String key);
+    private static String toTitleCaps(String in) {
+        Matcher matcher = ucfirst.matcher(in);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find())
+            matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     /**
      * Contains the code that generates the default metadata properties for this assertion.
      */
     private static final Map defaultGetters = Collections.synchronizedMap(new HashMap() {{
-        put(BASE_NAME, new Getter() {
+        put(BASE_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 String className = meta.getAssertionClass().getName();
                 return cache(meta, key, Assertion.getBaseName(className));
             }
         });
 
-        put(PROPERTIES_ACTION, new Getter() {
+        put(PROPERTIES_ACTION_NAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                String shortName = (String)meta.get(AssertionMetadata.SHORT_NAME);
+                return cache(meta, key, toTitleCaps(shortName) + " Properties");
+            }
+        });
+
+        put(PROPERTIES_ACTION_DESC, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                String shortName = (String)meta.get(AssertionMetadata.SHORT_NAME);
+                return cache(meta, key, "Change the properties of the " + shortName + " assertion.");
+            }
+        });
+
+        put(POLICY_NODE_ICON, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return "com/l7tech/console/resources/policy16.gif";
+            }
+        });
+
+        put(POLICY_NODE_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, "com.l7tech.console.tree.policy." + meta.get(BASE_NAME) + "PolicyNode");
+            }
+        });
+
+        put(PROPERTIES_ACTION_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com.l7tech.console.action." + meta.get(BASE_NAME) + "PropertiesAction");
             }
         });
 
-        put(WSP_TYPE_MAPPING_CLASSNAME, new Getter() {
+        put(PROPERTIES_EDITOR_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, "com.l7tech.console.panels." + meta.get(BASE_NAME) + "PropertiesDialog");
+            }
+        });
+
+        put(WSP_TYPE_MAPPING_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com.l7tech.policy.wsp." + meta.get(BASE_NAME) + "AssertionMapping");
             }
         });
 
-        put(WSP_EXTERNAL_NAME, new Getter() {
+        put(WSP_EXTERNAL_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(BASE_NAME));
             }
@@ -75,7 +111,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         // Default finder for wspTypeMappingInstance.  AssertionRegistry upgrades this to a smarter one that knows
         // how to fall back to AssertionMapping.
-        put(WSP_TYPE_MAPPING_INSTANCE, new Getter() {
+        put(WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 try {
                     return Class.forName((String)meta.get(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME));
@@ -89,46 +125,46 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         // Default finder for usedByClient.  AssertionRegistyr upgrades this to a smarter one that knows
         // how to check AllAssertions.BRIDGE_EVERYTHING.
-        put(USED_BY_CLIENT, new Getter() {
+        put(USED_BY_CLIENT, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return Boolean.FALSE;
             }
         });
 
         // Default finder for shortName.  The SSM replaces this with a smarter one that looks in properties files.
-        put(SHORT_NAME, new Getter() {
+        put(SHORT_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, Pattern.compile("(?<=[a-z])(?=[A-Z])").matcher((CharSequence)meta.get(BASE_NAME)).replaceAll(" "));
             }
         });
 
         // Default finder for longName.  The SSM replaces this with a smarter one that looks in properties files.
-        put(LONG_NAME, new Getter() {
+        put(LONG_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(SHORT_NAME) + " Assertion");
             }
         });
 
         // Default finder for description.  The SSM replaces this with a smarter one that looks in properties files.
-        put(DESCRIPTION, new Getter() {
+        put(DESCRIPTION, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return "";
             }
         });
 
-        put(PROPERTIES_FILE, new Getter() {
+        put(PROPERTIES_FILE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com.l7tech.console.resources." + meta.get(BASE_NAME) + "Assertion.properties");
             }
         });
 
-        put(PARENT_FEATURE_SETS, new Getter() {
+        put(PARENT_FEATURE_SETS, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "set:experimental");
             }
         });
 
-        put("", new Getter() {
+        put("", new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return null;
             }
@@ -159,19 +195,19 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
      * @param key the property name whose Getter to examine.  Must not be null.
      * @return the Getter that will be used to generate this property for a given assertion, or null if we don't have one.
      */
-    public static Getter getDefaultGetter(String key) {
-        return (Getter)defaultGetters.get(key);
+    public static MetadataFinder getDefaultGetter(String key) {
+        return (MetadataFinder)defaultGetters.get(key);
     }
 
     /**
      * Change the Getter which will be used to generate a property at runtime if one isn't set already for a given AssertionMetadata instance.
      *
      * @param key the property name whose Getter to set.  Must not be null.
-     * @param getter a new Getter for this property.  Must not be null.
+     * @param metadataFinder a new Getter for this property.  Must not be null.
      */
-    public static void putDefaultGetter(String key, Getter getter) {
-        if (getter == null) throw new IllegalArgumentException("Getter must not be null");
-        defaultGetters.put(key, getter);
+    public static void putDefaultGetter(String key, MetadataFinder metadataFinder) {
+        if (metadataFinder == null) throw new IllegalArgumentException("Getter must not be null");
+        defaultGetters.put(key, metadataFinder);
     }
 
     // Instance
@@ -249,7 +285,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
      */
     protected Object get(Map map, String key) {
         Object got = map.get(key);
-        return got instanceof Getter ? ((Getter)got).get(this, key) : got;
+        return got instanceof MetadataFinder ? ((MetadataFinder)got).get(this, key) : got;
     }
 
     /**

@@ -78,7 +78,9 @@
         </property>
     </bean>
 
-    <bean id="assertionRegistry" class="com.l7tech.policy.AssertionRegistry"/>
+    <bean id="assertionRegistry" class="com.l7tech.console.policy.ConsoleAssertionRegistry">
+        <constructor-arg ref="ssmApplication"/>
+    </bean>
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
         <constructor-arg ref="assertionRegistry"/>

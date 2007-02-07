@@ -10,14 +10,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Properties for RateLimitAssertion.
  */
-public class RateLimitAssertionPropertiesDialog extends JDialog implements ActionListener {
+public class RateLimitAssertionPropertiesDialog extends JDialog implements AssertionPropertiesEditor<RateLimitAssertion>, ActionListener {
     private static final int DEFAULT_CONCURRENCY_LIMIT = 10;
 
     private JPanel topPanel;
@@ -141,12 +144,18 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
         return HexUtils.hexDump(bytes);
     }
 
-    public RateLimitAssertionPropertiesDialog(Frame owner, RateLimitAssertion rla) throws HeadlessException {
+
+    public RateLimitAssertionPropertiesDialog() throws HeadlessException {
+        setModal(true);
+        initialize(null);
+    }
+
+    private RateLimitAssertionPropertiesDialog(Frame owner, RateLimitAssertion rla) throws HeadlessException {
         super(owner, true);
         initialize(rla);
     }
 
-    public RateLimitAssertionPropertiesDialog(Dialog owner, RateLimitAssertion rla) throws HeadlessException {
+    private RateLimitAssertionPropertiesDialog(Dialog owner, RateLimitAssertion rla) throws HeadlessException {
         super(owner, true);
         initialize(rla);
     }
@@ -182,7 +191,7 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
         getRootPane().setDefaultButton(okButton);
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         pack();
-        setData(rla);
+        if (rla != null) setData(rla);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -288,6 +297,10 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Actio
         rla.setMaxConcurrency(concurrencyLimitOnRb.isSelected() ? getViewConcurrency() : 0);
         rla.setHardLimit(!burstTrafficCb.isSelected());
         return rla;
+    }
+
+    public JDialog getDialog() {
+        return this;
     }
 
     /** @return true if the dialog was dismissed by the user pressing the Ok button. */

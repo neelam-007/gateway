@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
@@ -10,10 +11,10 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -27,6 +28,7 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 
 /**
@@ -38,6 +40,8 @@ import java.util.Map;
  * @version 1.1
  */
 public class AssertionTreeNodeFactory {
+    protected static final Logger logger = Logger.getLogger(AssertionTreeNodeFactory.class.getName());
+
     private static Map<Class<? extends Assertion>, Class<? extends AssertionTreeNode>> assertionMap = new HashMap<Class<? extends Assertion>, Class<? extends AssertionTreeNode>>();
 
     // maping assertions to assertion tree nodes
@@ -110,7 +114,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
         assertionMap.put(Operation.class, OperationTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
-        assertionMap.put(RateLimitAssertion.class, RateLimitAssertionPolicyNode.class);
         assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
     }
 
@@ -126,16 +129,25 @@ public class AssertionTreeNodeFactory {
      * In case there is no corresponding <code>AssertionTreeNode</code>
      * the <code>UnknownAssertionTreeNode</code> is returned
      * 
+     * @param assertion  the assertion for which to create the tree node.  Must not be null.
      * @return the AssertionTreeNode for a given assertion
      */
-    public static AssertionTreeNode asTreeNode(Assertion assertion) {
+    public static <AT extends Assertion> AssertionTreeNode<AT> asTreeNode(AT assertion) {
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
         // assertion lookup, find the  assertion tree node
         Class classNode = assertionMap.get(assertion.getClass());
         if (null == classNode) {
-            return new UnknownAssertionTreeNode(assertion);
+            // See if the assertion declares its own tree node factory
+            //noinspection unchecked
+            Functions.Unary< AssertionTreeNode<AT>, Assertion > factory =
+                    (Functions.Unary<AssertionTreeNode<AT>, Assertion>)
+                            assertion.meta().get(AssertionMetadata.POLICY_NODE_FACTORY);
+            if (factory != null)
+                return factory.call(assertion);
+
+            return new UnknownAssertionTreeNode<AT>(assertion);
         }
         try {
             return makeAssertionNode(classNode, assertion);
@@ -160,20 +172,21 @@ public class AssertionTreeNodeFactory {
      * @throws IllegalAccessException    thrown if there is no access to the desired
      *                                   constructor
      */
-    private static AssertionTreeNode makeAssertionNode(Class classNode, Assertion assertion)
+    private static <AT extends Assertion> AssertionTreeNode<AT> makeAssertionNode(Class classNode, AT assertion)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
         ConstructorInvocation ci = new ConstructorInvocation(classNode, new Object[]{assertion});
-        return (AssertionTreeNode)ci.invoke();
+        //noinspection unchecked
+        return (AssertionTreeNode<AT>)ci.invoke();
     }
 
     /**
      * special assertion tree node that describesd unknown assertion
      */
-    static class UnknownAssertionTreeNode extends LeafAssertionTreeNode {
+    static class UnknownAssertionTreeNode<AT extends Assertion> extends LeafAssertionTreeNode<AT> {
         String name = null;
 
-        public UnknownAssertionTreeNode(Assertion assertion) {
+        public UnknownAssertionTreeNode(AT assertion) {
             super(assertion);
             if (assertion instanceof UnknownAssertion) {
                 UnknownAssertion unknownAssertion = (UnknownAssertion)assertion;

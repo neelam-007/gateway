@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public abstract class AssertionTreeNode extends AbstractTreeNode {
+public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTreeNode {
     private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
 
     private List validatorMessages = new ArrayList();
@@ -50,7 +50,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      *
      * @param assertion that this node represents
      */
-    AssertionTreeNode(Assertion assertion) {
+    AssertionTreeNode(AT assertion) {
         super(assertion);
         this.setAllowsChildren(false);
     }
@@ -58,8 +58,8 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     /**
      * @return the assertion this node represents
      */
-    public final Assertion asAssertion() {
-        return (Assertion)getUserObject();
+    public final AT asAssertion() {
+        return (AT)getUserObject();
     }
 
     /**
@@ -207,8 +207,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     public Action[] getActions() {
         java.util.List<Action> list = new ArrayList<Action>();
         list.addAll(Arrays.asList(super.getActions()));
-        CompositeAssertionTreeNode ca =
-          (CompositeAssertionTreeNode)((this instanceof CompositeAssertionTreeNode) ? this : this.getParent());
+        CompositeAssertionTreeNode ca;
+        if (this instanceof CompositeAssertionTreeNode) {
+            ca = (CompositeAssertionTreeNode)this;
+        } else {
+            ca = (CompositeAssertionTreeNode)getParent();
+        }
+
         int position = (this instanceof CompositeAssertionTreeNode) ? 0 : this.getParent().getIndex(this) + 1;
         Action a = new AddAllAssertionAction(ca, position);
         list.add(a);

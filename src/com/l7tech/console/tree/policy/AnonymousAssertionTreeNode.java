@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * Class <code>AnonymousAssertionTreeNode</code> is a tree node that
@@ -9,7 +10,7 @@ import com.l7tech.policy.assertion.TrueAssertion;
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class AnonymousAssertionTreeNode extends LeafAssertionTreeNode {
+class AnonymousAssertionTreeNode extends LeafAssertionTreeNode<TrueAssertion> {
 
     public AnonymousAssertionTreeNode(TrueAssertion node) {
         super(node);
