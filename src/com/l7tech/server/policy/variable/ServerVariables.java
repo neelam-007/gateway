@@ -114,12 +114,19 @@ public class ServerVariables {
         }),
         new Variable("request.authenticateduser", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return getAuthenticatedUser(context);
+                String user = null;
+                User authenticatedUser = context.getAuthenticatedUser();
+                if (authenticatedUser != null) {
+                    user = authenticatedUser.getName();
+                    if (user == null) user = authenticatedUser.getId();
+                }
+                return user;
             }
         }),
         new Variable("request.clientid", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                String dat = getAuthenticatedUser(context);
+                User user = context.getAuthenticatedUser();
+                String dat = user == null ? null : user.getProviderId() + ":" + user.getId();
                 if (dat != null) return "AuthUser:" + dat;
 
                 final Message request = context.getRequest();
@@ -156,8 +163,10 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                if (hrk == null)
+                    return null;
                 final String fullUrl = hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
-                return hrk == null ? null : getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
+                return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
             }
         }),
         new Variable("request.http.secure", new Getter() {
@@ -337,11 +346,6 @@ public class ServerVariables {
     private static String getRequestRemoteIp(Message request) {
         TcpKnob tk = (TcpKnob)request.getKnob(TcpKnob.class);
         return tk == null ? null : tk.getRemoteAddress();
-    }
-
-    private static String getAuthenticatedUser(PolicyEnforcementContext context) {
-        User user = context.getAuthenticatedUser();
-        return user == null ? null : user.getProviderId() + ":" + user.getId();
     }
 
     private static String getRequestProtocolId(Message request) {
