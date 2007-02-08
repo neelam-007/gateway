@@ -48,4 +48,14 @@ public interface Functions {
     public interface TernaryVoid<P1, P2, P3> {
         void call(P1 p1, P2 p2, P3 p3);
     }
+
+    /** A function that takes any number of arguments and returns a value. */
+    public interface Variant<R, P> {
+        R call(P ... args);
+    }
+
+    /** A function that takes any number of arguments and returns void. */
+    public interface VariantVoid<P> {
+        void call(P ... args);
+    }
 }

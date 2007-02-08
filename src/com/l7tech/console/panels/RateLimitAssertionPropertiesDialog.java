@@ -145,17 +145,12 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Asser
     }
 
 
-    public RateLimitAssertionPropertiesDialog() throws HeadlessException {
-        setModal(true);
-        initialize(null);
-    }
-
-    private RateLimitAssertionPropertiesDialog(Frame owner, RateLimitAssertion rla) throws HeadlessException {
+    public RateLimitAssertionPropertiesDialog(Frame owner, RateLimitAssertion rla) throws HeadlessException {
         super(owner, true);
         initialize(rla);
     }
 
-    private RateLimitAssertionPropertiesDialog(Dialog owner, RateLimitAssertion rla) throws HeadlessException {
+    public RateLimitAssertionPropertiesDialog(Dialog owner, RateLimitAssertion rla) throws HeadlessException {
         super(owner, true);
         initialize(rla);
     }

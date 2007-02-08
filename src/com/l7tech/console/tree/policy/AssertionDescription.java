@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -33,7 +34,15 @@ public abstract class AssertionDescription {
     public String getLongDescription() {
         Class assertionClass = assertion.getClass();
         String key = assertionClass.getName()+ ".long";
-        return MessageFormat.format(getMessageBundle().getString(key), parameters());
+        String longDesc = null;
+        try {
+            longDesc = getMessageBundle().getString(key);
+        } catch (MissingResourceException e) {
+            // fallthrough
+        }
+        if (longDesc == null || longDesc.length() < 1) longDesc = (String)assertion.meta().get(AssertionMetadata.LONG_NAME);
+        if (longDesc == null) longDesc = "";
+        return MessageFormat.format(longDesc, parameters());
     }
 
     /**
@@ -49,8 +58,9 @@ public abstract class AssertionDescription {
         }
         catch(MissingResourceException mre) {
             logger.warning("Could not access resource with key '"+key+"' from bundle '"+DESCRIPTIONS_BUNDLE+"'.");
-            description = "DESCRIPTION NOT SET";
         }
+        if (description == null || description.length() < 1) description = (String)assertion.meta().get(AssertionMetadata.SHORT_NAME);
+        if (description == null) description = "DESCRIPTION NOT SET";
 
         return description;
     }
@@ -77,10 +87,9 @@ public abstract class AssertionDescription {
                 desc = null;
             }
         }
-        if (desc != null) {
-            return MessageFormat.format(desc, parameters());
-        }
-        return NODESCRIPTION_FOUND_MSG + assertionClass.getName();
+        if (desc == null) desc = (String)assertion.meta().get(AssertionMetadata.DESCRIPTION);
+
+        return desc != null ? MessageFormat.format(desc, parameters()) : NODESCRIPTION_FOUND_MSG + assertionClass.getName();
     }
 
 

@@ -93,15 +93,27 @@ public interface AssertionMetadata {
     String PROPERTIES_EDITOR_CLASSNAME = "propertiesEditorClassname";
 
     /**
-     * Functions.Nullary< AssertionPropertiesEditor > instance; SSM only.
+     * Functions.Binary< AssertionPropertiesEditor< FooBarAssertion >, Frame, FooBarAssertion > instance; SSM only.
      * AssertionPropertiesEditor factory that can be used to make a new APE instance
-     * that will edit properties for this assertion.
+     * that will edit properties for this assertion (here with type depicted as FooBarAssertion).
      * <p/>
-     * This is a nullary factory that takes no argument and returns a new AssertionPropertiesEditor instance.
+     * This is a factory that takes two arguments: a Frame to use the parent for any JDialog that may need to be
+     * displayed, and the FooBarAssertion bean that is to be edited.  It returns an AssertionPropertiesEditor
+     * instance ready to edit the assertion bean.
      * <p/>
      * If null, no "Properties..." action will be offered by the default assertion policy node.
+     * <p/>
+     * The SSM's default MetadataFinder for this property will look for an AssertionPropertiesEditor implementor
+     * at PROPERTIES_EDITOR_CLASSNAME and reflect it for a unary-constructor-from-Frame.
      */
     String PROPERTIES_EDITOR_FACTORY = "propertiesEditorFactory";
+
+    /**
+     * Boolean.  Set to Boolean.TRUE if your properties dialog won't display properly as a sheet and you don't have
+     * access to DialogDisplayer to turn it off yourself.  The DefaultAssertionPropertiesAction will disable
+     * sheet display on your dialog if this is TRUE. 
+     */
+    String PROPERTIES_EDITOR_FACTORY_SUPPRESS_SHEET_DISPLAY = "propertiesEditorFactorySuppressSheetDisplay";
 
     /**
      * String classname.  Name of custom TypeMapping to use for serializing this assertion, or null to just use AssertionTypeMapping.

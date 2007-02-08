@@ -27,7 +27,7 @@ public class DefaultAssertionPropertiesAction
     protected static final Logger logger = Logger.getLogger(DefaultAssertionPropertiesAction.class.getName());
 
     private final NT subject;
-    private final Functions.Nullary<AssertionPropertiesEditor<AT>> apeFactory;
+    private final Functions.Binary< AssertionPropertiesEditor<AT>, Frame, AT> apeFactory;
 
 
     /**
@@ -38,7 +38,7 @@ public class DefaultAssertionPropertiesAction
      *                 Must return a valid, non-null value from subject.asAssertion().
      * @param apeFactory the AssertionPropertiesEditor factory to use when the action is fired.  Must not be null.
      */
-    public DefaultAssertionPropertiesAction(NT subject, Functions.Nullary<AssertionPropertiesEditor<AT>> apeFactory) {
+    public DefaultAssertionPropertiesAction(NT subject, Functions.Binary< AssertionPropertiesEditor<AT>, Frame, AT> apeFactory) {
         super(null, subject.asAssertion().getClass());
         this.subject = subject;
         this.apeFactory = apeFactory;
@@ -60,10 +60,12 @@ public class DefaultAssertionPropertiesAction
     }
 
     protected void performAction() {
-        final AssertionPropertiesEditor<AT> ape = apeFactory.call();
         final AT ass = subject.asAssertion();
+        final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
         ape.setData(ass);
         final JDialog dlg = ape.getDialog();
+        if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_FACTORY_SUPPRESS_SHEET_DISPLAY)))
+            DialogDisplayer.suppressSheetDisplay(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         Frame f = TopComponents.getInstance().getTopParent();
