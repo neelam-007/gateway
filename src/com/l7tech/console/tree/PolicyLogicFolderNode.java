@@ -25,7 +25,7 @@ public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
      * a given entry.
      */
     public PolicyLogicFolderNode() {
-        super("Policy Logic");
+        super("Policy Logic", "policyLogic");
     }
 
     /**
@@ -41,6 +41,7 @@ public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
         insert(new TrueAssertionPaletteNode(), index++);
         insert(new FalseAssertionPaletteNode(), index++);
         insert(new SetVariableAssertionPaletteNode(), index++);
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.LOGIC).iterator();

@@ -499,12 +499,27 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
+     * Get the name of the leaf-most feature set for this assertion class.
+     *
+     * @return the leaf feature set name for this assertion.  Never null.
+     */
+    public final String getFeatureSetName() {
+        // We'll take the assertion's word about its own feature set name, but only if it's claiming
+        // to be a modular assertion.
+        String claimed = (String)meta().get(AssertionMetadata.FEATURE_SET_NAME);
+        if ("set:modularAssertions".equals(claimed))
+            return claimed;
+
+        return getFeatureSetName(getClass().getName());
+    }
+
+    /**
      * Get the name of the leaf feature set for the specified assertion class name.
      * For example, for "com.l7tech.policy.assertion.composite.OneOrMoreAssertion", will return
      * the string "assertion:composite.OneOrMore".
      *
      * @param assertionClassname assertion class name.  Must start with "com.l7tech.policy.assertion.".
-     * @return the leaf feature set name for this assertion.
+     * @return the leaf feature set name for this assertion.  Never null.
      */
     public static String getFeatureSetName(String assertionClassname) {
         String pass = "com.l7tech.policy.assertion.";

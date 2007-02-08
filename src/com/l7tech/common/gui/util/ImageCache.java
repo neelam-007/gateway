@@ -44,6 +44,8 @@ public final class ImageCache {
      *         cannot be found
      */
     public Image getIcon(String name) {
+        if (name == null) return null;
+        
         Object img = map.get(name);
 
         // no icon for this name (already tested)

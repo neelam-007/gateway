@@ -26,7 +26,7 @@ public class TransportLayerSecurityFolderNode extends AbstractPaletteFolderNode 
      *
      */
     public TransportLayerSecurityFolderNode() {
-        super("Transport Layer Security (TLS)");
+        super("Transport Layer Security (TLS)", "transportLayerSecurity");
     }
 
 
@@ -37,6 +37,7 @@ public class TransportLayerSecurityFolderNode extends AbstractPaletteFolderNode 
         //children = null;
         int index = 0;
         insert(new SslTransportNode(false), index++);
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.TRANSPORT_SEC).iterator();

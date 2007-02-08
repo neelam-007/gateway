@@ -23,7 +23,7 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public XmlFolderNode() {
-        super("Message Validation/Transformation");
+        super("Message Validation/Transformation", "xml");
     }
 
     /**
@@ -45,6 +45,7 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
         insert(new WsiBspPaletteNode(), index++);
         insert(new WsiSamlPaletteNode(), index++);
         insert(new WsspPaletteNode(), index++);
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.MESSAGE).iterator();

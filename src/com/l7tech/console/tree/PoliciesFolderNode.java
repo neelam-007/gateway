@@ -42,7 +42,7 @@ public class PoliciesFolderNode extends AbstractPaletteFolderNode {
      * a given home path
      */
     public PoliciesFolderNode() {
-        super(NAME, TopComponents.getInstance().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
+        super(NAME, "policies", TopComponents.getInstance().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
     }
 
 
@@ -50,6 +50,8 @@ public class PoliciesFolderNode extends AbstractPaletteFolderNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        // This folder does not allow modular assertions to invite themselves into it, so we don't call
+        // insertMatchingModularAssertions here.
         try {
             File[] files = listPolicies();
             children = null;

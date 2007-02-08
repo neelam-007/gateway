@@ -34,8 +34,4 @@ public class TestLicenseManager extends ConsoleLicenseManager implements Asserti
     public void disableFeature(String feature) {
         disabledFeatures.add(feature);
     }
-
-    public boolean isAssertionEnabled(String assertionClassname) {
-        return isFeatureEnabled(Assertion.getFeatureSetName(assertionClassname));
-    }
 }

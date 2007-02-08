@@ -381,7 +381,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         }
     }
 
-    public boolean isAssertionEnabled(String assertionClassname) {
-        return isFeatureEnabled(Assertion.getFeatureSetName(assertionClassname));
+    public boolean isAssertionEnabled(Assertion assertion) {
+        return isFeatureEnabled(assertion.getFeatureSetName());
     }
 }

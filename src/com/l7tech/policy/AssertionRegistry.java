@@ -9,6 +9,7 @@ import com.l7tech.policy.wsp.TypeMappingFinder;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.AssertionMapping;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.HashSet;
@@ -104,6 +105,24 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, In
         if (enhancedMetadataDefaultsInstalled.get())
             return;
 
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.ASSERTION_FACTORY, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                final Class metadataClass = meta.getAssertionClass();
+                return new Functions.Unary< Assertion, Assertion > () {
+                    public Assertion call(Assertion assertion) {
+                        Class clazz = assertion != null ? assertion.getClass() : metadataClass;
+                        try {
+                            return (Assertion)clazz.newInstance();
+                        } catch (InstantiationException e) {
+                            throw new RuntimeException(e); // shouldn't happen -- assertion should have public nullary ctor
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e); // shouldn't happen -- assertion should have public nullary ctor
+                        }
+                    }
+                };
+            }
+        });
+
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assClass = meta.getAssertionClass();
@@ -132,16 +151,26 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, In
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.USED_BY_CLIENT, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assertionClass = meta.getAssertionClass();
-                //noinspection ForLoopReplaceableByForEach
-                for (int i = 0; i < AllAssertions.BRIDGE_EVERYTHING.length; i++) {
-                    Class c = AllAssertions.BRIDGE_EVERYTHING[i].getClass();
-                    if (c.isAssignableFrom(assertionClass))
+                for (Assertion ass : AllAssertions.BRIDGE_EVERYTHING) {
+                    if (ass.getClass() == assertionClass)
                         return DefaultAssertionMetadata.cache(meta, key, Boolean.TRUE);
                 }
                 return DefaultAssertionMetadata.cache(meta, key, Boolean.FALSE);
             }
         });
 
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.FEATURE_SET_NAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                Class assertionClass = meta.getAssertionClass();
+                for (Assertion ass : AllAssertions.SERIALIZABLE_EVERYTHING) {
+                    if (ass.getClass() == assertionClass)
+                        return DefaultAssertionMetadata.cache(meta, key, null);
+                }
+
+                // Unknown assertion; treat as modular
+                return "set:modularAssertions";
+            }
+        });
 
         enhancedMetadataDefaultsInstalled.set(true);
     }

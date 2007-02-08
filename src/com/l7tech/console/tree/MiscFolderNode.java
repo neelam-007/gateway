@@ -26,7 +26,7 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public MiscFolderNode() {
-        super("Service Availability");
+        super("Service Availability", "misc");
     }
 
     /**
@@ -38,7 +38,7 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
         insert( new TimeRangePaletteNode(), index++ );
         insert( new RemoteIpRangePaletteNode(), index++ );
         insert( new ThroughputQuotaPaletteNode(), index++ );
-        insert( new RateLimitAssertionPaletteNode(), index++ );
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.AVAILABILITY).iterator();

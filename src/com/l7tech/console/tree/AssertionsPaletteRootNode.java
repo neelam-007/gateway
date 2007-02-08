@@ -19,7 +19,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
      */
     public AssertionsPaletteRootNode(String title)
       throws IllegalArgumentException {
-        super(title);
+        super(title, "_root");
         if (title == null)
             throw new IllegalArgumentException();
     }
@@ -28,6 +28,9 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
      * subclasses override this method
      */
     protected void loadChildren() {
+        // We don't allow modular assertions to invite themselves into this folder, so we don't call
+        // insertMatchingModularAssertions here.
+
         List nodeList = new LinkedList();
         nodeList.add(new AccessControlFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());

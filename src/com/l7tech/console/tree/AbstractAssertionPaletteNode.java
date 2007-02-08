@@ -6,10 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.MutableTreeNode;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * User: megery
@@ -18,18 +15,27 @@ import java.util.Iterator;
  */
 public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
     protected String descriptionText = null;
+    private boolean checkedDescriptionText = false;
 
     public AbstractAssertionPaletteNode(Object object) {
         super(object);
-        init();
     }
 
-    protected AbstractAssertionPaletteNode(Object object, Comparator c) {
+    protected AbstractAssertionPaletteNode(Object object, Comparator<? super TreeNode> c) {
         super(object, c);
-        init();
     }
 
     public String getDescriptionText() {
+        if (!checkedDescriptionText) {
+            Assertion assn = asAssertion();
+            if (assn != null) {
+                String desc = Descriptions.getDescription(assn).getDescriptionText();
+                if (desc != null) {
+                    descriptionText= desc;
+                }
+            }
+            checkedDescriptionText = true;
+        }
         return descriptionText;
     }
 
@@ -39,8 +45,8 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         if (numKids == 0) {
             // It's a leaf.
             Assertion ass = asAssertion();
-            if (ass == null) return true; // TODO Currently, non-Assertion palette nodes are shown regardless of license
-            return Registry.getDefault().getLicenseManager().isAssertionEnabled(ass);
+            // TODO Currently, non-Assertion palette nodes are shown regardless of license
+            return ass == null || Registry.getDefault().getLicenseManager().isAssertionEnabled(ass);
         }
 
         // Otherwise, we're enabled if at least one kid is enabled.
@@ -55,7 +61,7 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
     }
 
     protected void filterChildren() {
-        List keepKids = new ArrayList();
+        List<TreeNode> keepKids = new ArrayList<TreeNode>();
 
         int numKids = getChildCount();
         for (int i = 0; i < numKids; ++i) {
@@ -74,8 +80,8 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
 
         int index = 0;
         children = null;
-        for (Iterator i = keepKids.iterator(); i.hasNext();) {
-            MutableTreeNode treeNode = (MutableTreeNode)i.next();
+        for (TreeNode keepKid : keepKids) {
+            MutableTreeNode treeNode = (MutableTreeNode)keepKid;
             treeNode.setParent(null);
             insert(treeNode, index++);
         }
@@ -84,14 +90,4 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
     abstract public String getName();
 
     abstract protected String iconResource(boolean open);
-
-    private void init() {
-        Assertion assn = asAssertion();
-        if (assn != null) {
-            String desc = Descriptions.getDescription(asAssertion()).getDescriptionText();
-            if (desc != null) {
-                descriptionText= desc;
-            }
-        }
-    }
 }

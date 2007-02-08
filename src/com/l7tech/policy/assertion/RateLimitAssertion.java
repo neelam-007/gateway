@@ -1,14 +1,16 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.variable.ExpandVariables;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Level;
+import java.util.Random;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Adds rate limiting to a policy.
@@ -135,6 +137,10 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         // Set description for GUI
         meta.put(AssertionMetadata.LONG_NAME, "Enforce a maximum transactions per second that may pass through this assertion");
 
+        // Request to appear in "misc" ("Service Availability") palette folder
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
+
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, RateLimitAssertion>() {
@@ -147,15 +153,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
                 if (ass.isShapeRequests()) sb.append(", shaped,");
 
                 final String counterName = ass.getCounterName();
-                String prettyName = null;
-                try {
-                    // Have to reflect this since assertion bean loads on Gateway and Bridge as well
-                    Class dlgClass = Class.forName("com.l7tech.console.panels.RateLimitAssertionPropertiesDialog");
-                    Method findCounterNameKey = dlgClass.getMethod("findCounterNameKey", String.class, String[].class);
-                    prettyName = (String)findCounterNameKey.invoke(null, counterName, null);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
-                }
+                String prettyName = PresetInfo.findCounterNameKey(counterName, null);
 
                 sb.append(" per ").append(prettyName != null ? prettyName : ("\"" + counterName + "\""));
                 if (concurrency > 0) sb.append(" (concurrency ").append(concurrency).append(")");
@@ -163,7 +161,124 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
             }
         });
 
+        // Customize newly-created assertions so they have a nice counter name
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new Functions.Unary<RateLimitAssertion, RateLimitAssertion>() {
+            public RateLimitAssertion call(RateLimitAssertion rlaVariantPrototype) {
+                RateLimitAssertion rla = new RateLimitAssertion();
+                rla.setCounterName(PresetInfo.makeDefaultCounterName());
+                return rla;
+            }
+        });
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    /** Contains information about preset counters and counter IDs. */
+    public static class PresetInfo {
+        public static final int DEFAULT_CONCURRENCY_LIMIT = 10;
+        public static final String PRESET_DEFAULT = "User or client IP";
+        public static final String PRESET_GLOBAL = "Gateway node";
+        public static final String PRESET_CUSTOM = "Custom:";
+        public static final Map<String, String> counterNameTypes = new LinkedHashMap<String, String>() {{
+            put(PRESET_DEFAULT, "${request.clientid}");
+            put("Authenticated user", "${request.authenticateduser}");
+            put("Client IP", "${request.tcp.remoteAddress}");
+            put("SOAP operation", "${request.soap.operation}");
+            put("SOAP namespace", "${request.soap.namespace}");
+            put(PRESET_GLOBAL, "");
+            put(PRESET_CUSTOM, makeUuid());
+        }};
+        public static final Pattern presetFinder = Pattern.compile("^PRESET\\(([a-fA-F0-9]{16})\\)(.*)$");
+        public static final Pattern defaultCustomExprFinder = Pattern.compile("^([a-fA-F0-9]{8})-?(.*)$");
+
+        public static String makeDefaultCustomExpr(String uuid, String expr) {
+            return (uuid != null ? uuid : makeUuid()).substring(8) + (expr == null || expr.length() < 1 ? "" : "-" + expr);
+        }
+
+        public static boolean isDefaultCustomExpr(String rawExpr) {
+            Matcher matcher = defaultCustomExprFinder.matcher(rawExpr);
+            if (!matcher.matches())
+                return false;
+            String expr = matcher.group(2);
+            return counterNameTypes.containsValue(expr);
+        }
+
+        /**
+         * Generate a new counter name corresponding to the default preset (clientid).
+         * @return a counter name similar to "PRESET(deadbeefcafebabe)${request.clientid}".  Never null or empty.
+         */
+        public static String makeDefaultCounterName() {
+            return findRawCounterName(PRESET_DEFAULT, makeUuid(), null);
+        }
+
+        /**
+         * See if the specified raw counter name happens to match any of the user friendly presets we provide.
+         * If a counter key is matched, this updates uuidOut[0] as a side effect.
+         *
+         * @param rawCounterName  raw counter name ot look up, ie "foo bar blatz ${mumble}"
+         * @param uuidOut  An optional single-element String array to receive the UUID.
+         *                 Any UUID found will be copied into the first element of this array, if present.
+         * @return the key in counterNameTypes corresponding to the given raw counter name, or null for {@link #PRESET_CUSTOM}.
+         * for example given "PRESET(deadbeefcafebabe)${request.clientid}" this will return "User or client IP";
+         * when given        "PRESET(abcdefabcdefabcd)" this will return "Gateway node (global)"; and
+         * when given        "RateLimit-${request.clientid}" this will return null.
+         */
+        public static String findCounterNameKey(String rawCounterName, String[] uuidOut) {
+            String foundKey = null;
+            String foundUuid = null;
+
+            Matcher matcher = presetFinder.matcher(rawCounterName);
+            if (matcher.matches()) {
+                String expr = matcher.group(2);
+                if ((foundKey = findKeyForValue(counterNameTypes, expr)) != null)
+                    foundUuid = matcher.group(1);
+            } else {
+                matcher = defaultCustomExprFinder.matcher(rawCounterName);
+                if (matcher.matches()) {
+                    String expr = matcher.group(2);
+                    if ((foundKey = findKeyForValue(counterNameTypes, expr)) != null)
+                        foundUuid = makeUuid().substring(8) + matcher.group(1);
+                }
+            }
+
+            if (foundUuid != null && uuidOut != null && uuidOut.length > 0) uuidOut[0] = foundUuid;
+            return PRESET_CUSTOM.equals(foundKey) ? null : foundKey;
+        }
+
+        public static <K, V> K findKeyForValue(Map<K, V> map, V value) {
+            for (Map.Entry<K, V> entry : map.entrySet())
+                if (entry.getValue().equals(value))
+                    return entry.getKey();
+            return null;
+        }
+
+        /**
+         * Create the raw counter name to save in the assertion instance given the specified counterNameKey.
+         *
+         * @param counterNameKey a counter name key from {@link #counterNameTypes}, or null to use {@link #PRESET_CUSTOM}.
+         * @param uuid  the UUID to use to create unique counters.  Should be an 8-digit hex string.  Mustn't be null.
+         * @param customExpr the custom string to use if counterNameKey is CUSTOM or null or can't be found in the map.
+         *                    May be empty.  May only be null if counterNameKey is in the map and isn't CUSTOM.
+         * @return the raw counter name to store into the assertion.  Never null or otherwise invalid.
+         */
+        public static String findRawCounterName(String counterNameKey, String uuid, String customExpr) {
+            // If it claims to be custom, but looks just like a generated example, use whatever preset it was generated from
+            if (counterNameKey == null || PRESET_CUSTOM.equals(counterNameKey))
+                if (isDefaultCustomExpr(customExpr))
+                    counterNameKey = findCounterNameKey(customExpr, null);
+
+            String presetExpr = counterNameKey == null ? null : counterNameTypes.get(counterNameKey);
+            if (presetExpr == null || PRESET_CUSTOM.equals(counterNameKey))
+                return customExpr;
+            return "PRESET(" + uuid + ")" + presetExpr;
+        }
+
+        public static String makeUuid() {
+            Random random = new Random();
+            byte[] bytes = new byte[8];
+            random.nextBytes(bytes);
+            return HexUtils.hexDump(bytes);
+        }
     }
 }

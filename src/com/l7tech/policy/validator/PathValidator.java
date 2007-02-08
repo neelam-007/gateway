@@ -43,19 +43,18 @@ import java.nio.charset.Charset;
  */
 class PathValidator {
 
-    private static final Class ASSERTION_HTTPCREDENTIALS = HttpCredentialSourceAssertion.class;
-    private static final Class ASSERTION_HTTPBASIC = HttpBasic.class;
-    private static final Class ASSERTION_CUSTOM = CustomAssertionHolder.class;
-    private static final Class ASSERTION_SECURECONVERSATION = SecureConversation.class;
-    private static final Class ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
-    private static final Class ASSERTION_SAMLASSERTION = RequestWssSaml.class;
-    private static final Class ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
-    private static final Class ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
-    private static final Class ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
-    private static final Class ASSERTION_COOKIECREDS = CookieCredentialSourceAssertion.class;
+    private static final Class<? extends Assertion> ASSERTION_HTTPCREDENTIALS = HttpCredentialSourceAssertion.class;
+    private static final Class<? extends Assertion> ASSERTION_HTTPBASIC = HttpBasic.class;
+    private static final Class<? extends Assertion> ASSERTION_SECURECONVERSATION = SecureConversation.class;
+    private static final Class<? extends Assertion> ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
+    private static final Class<? extends Assertion> ASSERTION_SAMLASSERTION = RequestWssSaml.class;
+    private static final Class<? extends Assertion> ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
+    private static final Class<? extends Assertion> ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
+    private static final Class<? extends Assertion> ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
+    private static final Class<? extends Assertion> ASSERTION_COOKIECREDS = CookieCredentialSourceAssertion.class;
 
 
-    private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
+    private static Map<String, Object> policyParseCache = Collections.synchronizedMap(new WeakHashMap<String, Object>());
 
     /**
      * result accumulator
@@ -64,14 +63,13 @@ class PathValidator {
     private List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
     private PublishedService service;
-    private Collection wsdlBindingOperations;
-    private Set seenAssertionClasses = new HashSet();
-    private Map seenCredentials = new HashMap();
-    private Map seenCredentialsSinceModified = new HashMap();
-    private Map seenWssSignature = new HashMap();
-    private Map seenSamlSecurity = new HashMap();
-    private Map seenVariables = new HashMap();
-    private Map assertionFeatureName = new HashMap();
+    private Collection<BindingOperation> wsdlBindingOperations;
+    private Set<Class<? extends Assertion>> seenAssertionClasses = new HashSet<Class<? extends Assertion>>();
+    private Map<String, Boolean> seenCredentials = new HashMap<String, Boolean>();
+    private Map<String, Boolean> seenCredentialsSinceModified = new HashMap<String, Boolean>();
+    private Map<String, Boolean> seenWssSignature = new HashMap<String, Boolean>();
+    private Map<String, Boolean> seenSamlSecurity = new HashMap<String, Boolean>();
+    private Map<String, Boolean> seenVariables = new HashMap<String, Boolean>();
     private boolean seenSpecificUserAssertion = false;
     private boolean seenCustomAuth = false;
     private final AssertionLicense assertionLicense;
@@ -87,23 +85,12 @@ class PathValidator {
         if (assertionLicense == null) throw new NullPointerException();
     }
 
-    private boolean isAssertionEnabled(Assertion ass) {
-        String assclass = ass.getClass().getName();
-        String featureName = (String)assertionFeatureName.get(assclass);
-        if (featureName == null) {
-            featureName = Assertion.getFeatureSetName(assclass);
-            assertionFeatureName.put(assclass, featureName);
-        }
-
-        return assertionLicense.isAssertionEnabled(featureName);
-    }
-
     public void validate(Assertion a) {
         ValidatorFactory.getValidator(a).validate(assertionPath, service, result);
 
         // Check licensing
         if (assertionLicense != null) {
-            if (!assertionLicense.isAssertionEnabled(a.getClass().getName())) {
+            if (!assertionLicense.isAssertionEnabled(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion is not available on this Gateway cluster", null));
             }
@@ -139,15 +126,15 @@ class PathValidator {
             }
         }
 
-        if (isComposite(a)) {
+        if (a instanceof CompositeAssertion) {
             processComposite((CompositeAssertion)a);
         } else if (a.isCredentialModifier()) {
             processCredentialModifier(a);
         } else if (a.isCredentialSource()) {
             processCredentialSource(a);
-        } else if (isAccessControl(a)) {
+        } else if (a instanceof IdentityAssertion) {
             processAccessControl((IdentityAssertion)a);
-        } else if (isRouting(a)) {
+        } else if (a instanceof RoutingAssertion) {
             processRouting((RoutingAssertion)a);
         } else if (isCustom(a)) {
             processCustom(a);
@@ -169,9 +156,8 @@ class PathValidator {
         if (a instanceof SetsVariables) {
             SetsVariables sv = (SetsVariables) a;
             final VariableMetadata[] vars = sv.getVariablesSet();
-            for (int i = 0; i < vars.length; i++) {
-                setSeenVariable(vars[i].getName().toLowerCase());
-            }
+            for (VariableMetadata var : vars)
+                setSeenVariable(var.getName().toLowerCase());
         }
 
         setSeen(a.getClass());
@@ -449,12 +435,11 @@ class PathValidator {
         if (a instanceof UsesVariables) {
             UsesVariables ua = (UsesVariables)a;
             final String[] vars = ua.getVariablesUsed();
-            for (int i = 0; i < vars.length; i++) {
-                String var = vars[i];
+            for (String var : vars) {
                 if (!(BuiltinVariables.isPredefined(var) || seenVariable(var.toLowerCase()))) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                            "This assertion refers to the variable '" + var + "', which is neither predefined " +
-                            "nor set in the policy so far.", null));
+                                                                        "This assertion refers to the variable '" + var + "', which is neither predefined " +
+                                                                        "nor set in the policy so far.", null));
                 }
             }
         }
@@ -544,6 +529,7 @@ class PathValidator {
         if (service != null && service.isSoap()) {
             Wsdl parsedWsdl = service.parsedWsdl();
             if (wsdlBindingOperations == null) {
+                //noinspection unchecked
                 wsdlBindingOperations = parsedWsdl.getBindingOperations();
             }
             class RelativeURINamespaceProblemFeedback {
@@ -557,28 +543,27 @@ class PathValidator {
                     this.msgname = msgname;
                 }
             }
-            Collection feedback = new ArrayList();
-            for (Iterator iterator = wsdlBindingOperations.iterator(); iterator.hasNext();) {
-                BindingOperation operation = (BindingOperation)iterator.next();
+            Collection<RelativeURINamespaceProblemFeedback> feedback = new ArrayList<RelativeURINamespaceProblemFeedback>();
+            for (BindingOperation operation : wsdlBindingOperations) {
                 String ns = parsedWsdl.getBindingInputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
-                      operation.getName(),
-                      (operation.getBindingInput().getName() != null ? operation.getBindingInput().getName() : operation.getName() + "In")));
+                                                                         operation.getName(),
+                                                                         (operation.getBindingInput().getName() != null ? operation.getBindingInput().getName() : operation.getName() + "In")));
                 }
                 ns = parsedWsdl.getBindingOutputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
-                      operation.getName(),
-                      (operation.getBindingOutput().getName() != null ? operation.getBindingOutput().getName() : operation.getName() + "Out")));
+                                                                         operation.getName(),
+                                                                         (operation.getBindingOutput().getName() != null ? operation.getBindingOutput().getName() : operation.getName() + "Out")));
                 }
             }
             if (!feedback.isEmpty()) {
                 StringBuffer msg = new StringBuffer("The service refers to a relative namespace URI, " +
                   "which will prevent XML digital signatures from " +
                   "functioning properly.");
-                for (Iterator iterator = feedback.iterator(); iterator.hasNext();) {
-                    RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
+                for (Object aFeedback : feedback) {
+                    RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)aFeedback;
                     msg.append("<br>Namespace: ").append(fb.ns);
                     msg.append(", Operation Name: ").append(fb.operationName);
                     msg.append(", Message Name: ").append(fb.msgname);
@@ -601,10 +586,10 @@ class PathValidator {
     }
 
     private void processComposite(CompositeAssertion a) {
-        List children = a.getChildren();
-        for (Iterator iterator = children.iterator(); iterator.hasNext();) {
-            Assertion ass = (Assertion)iterator.next();
-            if (!(ass instanceof CommentAssertion)) {
+        //noinspection unchecked
+        List<Assertion> children = a.getChildren();
+        for (Assertion kid : children) {
+            if (!(kid instanceof CommentAssertion)) {
                 return;
             }
         }
@@ -622,20 +607,8 @@ class PathValidator {
               "This assertion is unrecognized and may cause all requests to fail.", null));
     }
 
-    private boolean isRouting(Assertion a) {
-        return a instanceof RoutingAssertion;
-    }
-
-    private boolean isAccessControl(Assertion a) {
-        return a instanceof IdentityAssertion;
-    }
-
     private boolean isSpecificUser(Assertion a) {
         return a instanceof SpecificUser;
-    }
-
-    private boolean isComposite(Assertion a) {
-        return a instanceof CompositeAssertion;
     }
 
     private boolean normallyBeforeRouting(Assertion a) {
@@ -680,17 +653,17 @@ class PathValidator {
     }
 
     public boolean seenCredentials(String actor) {
-        Boolean currentvalue = (Boolean)seenCredentials.get(actor);
-        return currentvalue != null && currentvalue.booleanValue();
+        Boolean currentvalue = seenCredentials.get(actor);
+        return currentvalue != null && currentvalue;
     }
 
-    public boolean seenAssertion(Class assertionClass) {
+    public boolean seenAssertion(Class<? extends Assertion> assertionClass) {
         return this.haveSeenInstanceOf(assertionClass);
     }
 
     private void setSeenCredentials(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenCredentials.put(actor, Boolean.valueOf(value));
+        seenCredentials.put(actor, value);
     }
 
     private boolean seenCredentialsSinceModified(Assertion context) {
@@ -699,8 +672,8 @@ class PathValidator {
     }
 
     private boolean seenCredentialsSinceModified(String actor) {
-        Boolean currentvalue = (Boolean)seenCredentialsSinceModified.get(actor);
-        return currentvalue != null && currentvalue.booleanValue();
+        Boolean currentvalue = seenCredentialsSinceModified.get(actor);
+        return currentvalue != null && currentvalue;
     }
 
     private void setSeenCredentialsSinceModified(Assertion context, boolean value) {
@@ -710,24 +683,24 @@ class PathValidator {
 
     private boolean seenWssSignature(Assertion context) {
         String actor = assertionToActor(context);
-        Boolean currentvalue = (Boolean)seenWssSignature.get(actor);
-        return currentvalue != null && currentvalue.booleanValue();
+        Boolean currentvalue = seenWssSignature.get(actor);
+        return currentvalue != null && currentvalue;
     }
 
     private void setSeenWssSignature(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenWssSignature.put(actor, Boolean.valueOf(value));
+        seenWssSignature.put(actor, value);
     }
 
     private boolean seenSamlSecurity(Assertion context) {
         String actor = assertionToActor(context);
-        Boolean currentvalue = (Boolean)seenSamlSecurity.get(actor);
-        return currentvalue != null && currentvalue.booleanValue();
+        Boolean currentvalue = seenSamlSecurity.get(actor);
+        return currentvalue != null && currentvalue;
     }
 
     private boolean seenVariable(String var) {
-        Boolean cur = (Boolean)seenVariables.get(var);
-        return cur != null && cur.booleanValue();
+        Boolean cur = seenVariables.get(var);
+        return cur != null && cur;
     }
 
     private void setSeenVariable(String var) {
@@ -736,18 +709,18 @@ class PathValidator {
 
     private void setSeenSamlStatement(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenSamlSecurity.put(actor, Boolean.valueOf(value));
+        seenSamlSecurity.put(actor, value);
     }
 
-    private boolean haveSeen(Class assertionClass) {
+    private boolean haveSeen(Class<? extends Assertion> assertionClass) {
         return seenAssertionClasses.contains(assertionClass);
     }
 
-    private boolean haveSeenInstanceOf(Class assertionClass) {
+    private boolean haveSeenInstanceOf(Class<? extends Assertion> assertionClass) {
         boolean seen = false;
-        for (Iterator iterator = seenAssertionClasses.iterator(); iterator.hasNext();) {
-            Class currentAssertionClass = (Class) iterator.next();
-            if(assertionClass.isAssignableFrom(currentAssertionClass)) {
+        for (Object seenAssertionClass : seenAssertionClasses) {
+            Class currentAssertionClass = (Class)seenAssertionClass;
+            if (assertionClass.isAssignableFrom(currentAssertionClass)) {
                 seen = true;
                 break;
             }
@@ -755,7 +728,7 @@ class PathValidator {
         return seen;
     }
 
-    private void setSeen(Class assertionClass) {
+    private void setSeen(Class<? extends Assertion> assertionClass) {
         seenAssertionClasses.add(assertionClass);
     }
 

@@ -29,7 +29,7 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
      * a given entry.
      */
     public AccessControlFolderNode() {
-        super("Access Control");
+        super("Access Control", "accessControl");
     }
 
     /**
@@ -55,6 +55,7 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new SamlBrowserArtifactPaletteNode(), index++);
         insert(new KerberosPaletteNode(), index++);
 //        insert(new MappingAssertionPaletteNode(), index++);
+        index = insertMatchingModularAssertions(index);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {

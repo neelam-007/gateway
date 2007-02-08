@@ -24,7 +24,7 @@ public class RoutingFolderNode extends AbstractPaletteFolderNode {
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public RoutingFolderNode() {
-        super("Message Routing");
+        super("Message Routing", "routing");
     }
 
     /**
@@ -39,6 +39,7 @@ public class RoutingFolderNode extends AbstractPaletteFolderNode {
         insert(new HardcodedResponsePaletteNode(), index++);
         insert(new EchoRoutingAssertionPaletteNode(), index++);
         // insert(new SmtpRoutingNode(), index++);
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.ROUTING).iterator();

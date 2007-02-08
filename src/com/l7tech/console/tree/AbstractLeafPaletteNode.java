@@ -15,7 +15,7 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
      */
     public AbstractLeafPaletteNode(String name, String iconResource) {
         super(null);
-        this.name = name;
+        this.name = name != null ? name : "NAME NOT SET";
         this.iconResource = iconResource;
     }
 

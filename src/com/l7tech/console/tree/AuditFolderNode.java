@@ -20,7 +20,7 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public AuditFolderNode() {
-        super("Logging, Auditing and Alerts");
+        super("Logging, Auditing and Alerts", "audit");
     }
 
     /**
@@ -33,6 +33,7 @@ public class AuditFolderNode extends AbstractPaletteFolderNode {
         insert( new AuditDetailAssertionPaletteNode(), index++ );
         insert( new SnmpTrapAssertionPaletteNode(), index++ );
         insert( new EmailAlertAssertionPaletteNode(), index++ );
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.AUDIT_ALERT).iterator();

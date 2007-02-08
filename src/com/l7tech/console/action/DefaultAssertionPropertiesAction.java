@@ -64,7 +64,7 @@ public class DefaultAssertionPropertiesAction
         final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
         ape.setData(ass);
         final JDialog dlg = ape.getDialog();
-        if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_FACTORY_SUPPRESS_SHEET_DISPLAY)))
+        if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY)))
             DialogDisplayer.suppressSheetDisplay(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

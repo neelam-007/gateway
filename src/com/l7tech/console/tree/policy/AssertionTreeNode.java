@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  */
 public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTreeNode {
     private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
+    private static final OneOrMoreAssertion ONEORMORE_PROTOTYPE = new OneOrMoreAssertion();
 
     private List validatorMessages = new ArrayList();
     private List viewValidatorMessages = null;
@@ -218,7 +219,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         Action a = new AddAllAssertionAction(ca, position);
         list.add(a);
 
-        if (Registry.getDefault().getLicenseManager().isAssertionEnabled(OneOrMoreAssertion.class.getName())) {
+        if (Registry.getDefault().getLicenseManager().isAssertionEnabled(ONEORMORE_PROTOTYPE)) {
             a = new AddOneOrMoreAssertionAction(ca, position);
             list.add(a);
         }

@@ -35,8 +35,12 @@ public class WspReader {
 
     /**
      * Get a default WspReader instance, for callers that lack the ability to get the WspReader from the
-     * application context.  If there is any chance you can get the WspReader from the application context you should
-     * do that instead.
+     * application context.
+     * <p/>
+     * <b>Note:</b> If there is any chance you can get the WspReader from the application context
+     * you should strongly prefer to do that instead: using this getDefault() method risks getting a
+     * WspReader before the AssertionRegistry has been hooked up, resulting in a WspReader that is unable to
+     * parse modular assertions. Going through Spring avoids this risk.
      *
      * @return a WspReader with the current default TypeMappingFinder.
      */

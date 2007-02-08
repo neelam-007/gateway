@@ -78,7 +78,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             Boolean le = licenseEnforcement.get();
             if (le == null)
                 throw new IllegalStateException("No license enforcement state set; use compilePolicy() instead of compileSubtree()");
-            if (le && !licenseManager.isAssertionEnabled(genericAssertion.getClass().getName()))
+            if (le && !licenseManager.isAssertionEnabled(genericAssertion))
                 throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
 
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs

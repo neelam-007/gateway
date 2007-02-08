@@ -16,15 +16,20 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.console.panels.LogonDialog;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Component that caches the license installed on the currently-connected Gateway cluster.
  */
 public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
     private static final ConsoleLicenseManager INSTANCE = new ConsoleLicenseManager();
+    private static final SpecificUser SPECIFICUSER_PROTOTYPE = new SpecificUser();
+    private static final MemberOfGroup MEMBEROFGROUP_PROTOTYPE = new MemberOfGroup();
+
     private License license = null;
     private Set<String> compat = new HashSet<String>(); // Features to enable in GUI for license backward compat (even though they don't appear explicitly in the license as downloaded from an older Gateway)
     private Map<LicenseListener, Object> licenseListeners = new WeakHashMap<LicenseListener, Object>();
+    private Map<String, Assertion> prototypeCache = new ConcurrentHashMap<String, Assertion>();
 
     protected ConsoleLicenseManager() {
     }
@@ -103,27 +108,44 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
     }
 
     public boolean isFeatureEnabled(String featureName) {
-        if (license == null) return false;
-        return compat.contains(featureName) || license.isFeatureEnabled(featureName);
+        return license != null && (compat.contains(featureName) || license.isFeatureEnabled(featureName));
     }
 
     public boolean isAuthenticationEnabled() {
-        return isAssertionEnabled(SpecificUser.class.getName()) || isAssertionEnabled(MemberOfGroup.class.getName());
+        return isAssertionEnabled(SPECIFICUSER_PROTOTYPE) || isAssertionEnabled(MEMBEROFGROUP_PROTOTYPE);
     }
 
     public boolean isAtLeastOneAssertionEnabled(List<Class<? extends Assertion>> assertionClasses) {
         for (Class<? extends Assertion> aClass : assertionClasses) {
-            if (isAssertionEnabled(aClass.getName())) return true;
+            if (isAssertionEnabled(aClass)) return true;
         }
         return false;
     }
 
-    public boolean isAssertionEnabled(Assertion prototype) {
-        return isAssertionEnabled(prototype.getClass().getName());
+    public boolean isAssertionEnabled(Class<? extends Assertion> assertionClass) {
+        Assertion prototype = getPrototype(assertionClass);
+        // Assertions with no public nullary constructor LOSE (as well they should IMO)
+        return prototype != null && isAssertionEnabled(prototype);
+
     }
 
-    public boolean isAssertionEnabled(String assertionClassname) {
-        return isFeatureEnabled(Assertion.getFeatureSetName(assertionClassname));
+    private Assertion getPrototype(Class<? extends Assertion> assertionClass) {
+        Assertion prototype = prototypeCache.get(assertionClass.getName());
+        if (prototype != null)
+            return prototype;
+        try {
+            prototype = assertionClass.newInstance();
+            prototypeCache.put(assertionClass.getName(), prototype);
+            return prototype;
+        } catch (InstantiationException e) {
+            return null;
+        } catch (IllegalAccessException e) {
+            return null;
+        }
+    }
+
+    public boolean isAssertionEnabled(Assertion prototype) {
+        return isFeatureEnabled(prototype.getFeatureSetName());
     }
 
     public void requireFeature(String featureName) throws LicenseException {

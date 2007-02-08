@@ -137,6 +137,10 @@ public class GatewayFeatureSets {
         fsr("set:trustStore", "Ability to configure Trusted Certificates",
             srv(SERVICE_TRUSTSTORE, "Ability to configure Trusted Certificates"));
 
+        GatewayFeatureSet modularAssertions =
+        fsr("set:modularAssertions", "Ability to use modular assertions",
+            "This includes any Assertion that was not listed in AllAssertions or GatewayFeatureSets when this version of the SecureSpan code was built");
+
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
@@ -416,6 +420,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw),
             fs(ssb),
+            fs(modularAssertions),
             fs(experimental));
 
         fsp("set:Profile:Federal", "SecureSpan Federal",
@@ -432,6 +437,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw),
             fs(ssb),
+            fs(modularAssertions),
             fs(experimental));
 
         // For now, if a license names no features explicitly, we will enable all features.

@@ -20,7 +20,7 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public ThreatProtectionFolderNode() {
-        super("Threat Protection");
+        super("Threat Protection", "threatProtection");
     }
 
     /**
@@ -35,6 +35,7 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
         insert( new RequestWssReplayProtectionNode(), index++ );
         insert( new SchemaValidationPaletteNode(), index++ );
         insert(new FaultLevelPaletteNode(), index++);
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.THREAT_PROT).iterator();

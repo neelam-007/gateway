@@ -73,6 +73,34 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(PALETTE_NODE_NAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, meta.get(AssertionMetadata.SHORT_NAME));
+            }
+        });
+
+        put(PALETTE_NODE_ICON, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return "com/l7tech/console/resources/policy16.gif";
+            }
+        });
+
+        put(PALETTE_NODE_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, "com.l7tech.console.tree." + meta.get(BASE_NAME) + "PaletteNode");
+            }
+        });
+
+        put(PALETTE_NODE_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
+
+        put(ASSERTION_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
+
+        put(POLICY_NODE_NAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, meta.get(AssertionMetadata.SHORT_NAME));
+            }
+        });
+
         put(POLICY_NODE_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return "com/l7tech/console/resources/policy16.gif";
@@ -85,15 +113,27 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(POLICY_NODE_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
+
         put(PROPERTIES_ACTION_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com.l7tech.console.action." + meta.get(BASE_NAME) + "PropertiesAction");
             }
         });
 
+        put(PROPERTIES_ACTION_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
+
         put(PROPERTIES_EDITOR_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com.l7tech.console.panels." + meta.get(BASE_NAME) + "PropertiesDialog");
+            }
+        });
+
+        put(PROPERTIES_EDITOR_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
+
+        put(PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return Boolean.FALSE;
             }
         });
 
@@ -103,42 +143,30 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(WSP_TYPE_MAPPING_INSTANCE, null); // installed by AssertionRegistry because it touches non-API classes
+
         put(WSP_EXTERNAL_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(BASE_NAME));
             }
         });
 
-        // Default finder for wspTypeMappingInstance.  AssertionRegistry upgrades this to a smarter one that knows
-        // how to fall back to AssertionMapping.
-        put(WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
-            public Object get(AssertionMetadata meta, String key) {
-                try {
-                    return Class.forName((String)meta.get(AssertionMetadata.WSP_TYPE_MAPPING_CLASSNAME));
-                } catch (ClassNotFoundException e) {
-                    // Give up.  AssertionRegistry will override this Getter with a smarter one that
-                    // knows how to fall back to AssertionMapping.
-                    return null;
-                }
-            }
-        });
-
-        // Default finder for usedByClient.  AssertionRegistyr upgrades this to a smarter one that knows
+        // Default finder for usedByClient.  AssertionRegistry upgrades this to a smarter one that knows
         // how to check AllAssertions.BRIDGE_EVERYTHING.
         put(USED_BY_CLIENT, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return Boolean.FALSE;
+                return cache(meta, key, Boolean.FALSE);
             }
         });
 
-        // Default finder for shortName.  The SSM replaces this with a smarter one that looks in properties files.
+        // Default finder for shortName.  This looks at the asertion class name, and changes (ie) FooBarAssertion into "Foo Bar".
         put(SHORT_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, Pattern.compile("(?<=[a-z])(?=[A-Z])").matcher((CharSequence)meta.get(BASE_NAME)).replaceAll(" "));
             }
         });
 
-        // Default finder for longName.  The SSM replaces this with a smarter one that looks in properties files.
+        // Default finder for longName.  This looks at the assertion class name, and changes (ie) FooBarAssertion into "Foo Bar Assertion".
         put(LONG_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, meta.get(SHORT_NAME) + " Assertion");
@@ -148,7 +176,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         // Default finder for description.  The SSM replaces this with a smarter one that looks in properties files.
         put(DESCRIPTION, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return "";
+                return cache(meta, key, "This is the " + meta.get(SHORT_NAME) + " assertion.");
             }
         });
 
@@ -158,9 +186,29 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
-        put(PARENT_FEATURE_SETS, new MetadataFinder() {
+        put(VARIANT_PROTOTYPES, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, "set:experimental");
+                return cache(meta, key, new Assertion[0]);
+            }
+        });
+
+        put(PALETTE_FOLDERS, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, new String[] { });
+            }
+        });
+
+        // Default finder for featureSetName.  AssertionRegistry upgrades this to a smarter one that knows
+        // how to check AllAssertions.SERIALIZABLE_EVERYTHING.
+        put(FEATURE_SET_NAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return null;
+            }
+        });
+
+        put(CLUSTER_PROPERTIES, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, new HashMap());
             }
         });
 

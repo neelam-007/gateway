@@ -7,6 +7,8 @@ import com.l7tech.console.action.DefaultAssertionPropertiesAction;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
+import com.l7tech.console.tree.AbstractAssertionPaletteNode;
+import com.l7tech.console.tree.DefaultAssertionPaletteNode;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -33,34 +35,61 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         //
         // Add metadata default getters that are specified to the SSM environment
         //
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_NODE_FACTORY, new MetadataFinder() {
-            public Object get(AssertionMetadata meta, String key) {
-                String classname = (String)meta.get(AssertionMetadata.POLICY_NODE_CLASSNAME);
-                final Class assclass = meta.getAssertionClass();
-                String assname = assclass.getName();
-                Functions.Unary< AssertionTreeNode, Assertion > factory = findPolicyNodeFactory(assclass.getClassLoader(), classname, assname);
-                if (factory != null)
-                    return DefaultAssertionMetadata.cache(meta, key, factory);
 
-                // Try to use the default
-                factory = new Functions.Unary< AssertionTreeNode, Assertion >() {
-                    public AssertionTreeNode call(Assertion assertion) {
-                        return new DefaultAssertionPolicyNode<Assertion>(assertion);
-                    }
-                };
-                return DefaultAssertionMetadata.cache(meta, key, factory);
-            }
-        });
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PALETTE_NODE_FACTORY, new PaletteNodeFactoryMetadataFinder());
+
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
 
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
 
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
     }
 
+    private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
+        public Object get(AssertionMetadata meta, String key) {
+            String classname = (String)meta.get(AssertionMetadata.PALETTE_NODE_CLASSNAME);
+            //noinspection unchecked
+            final Class<AT> assclass = meta.getAssertionClass();
+            Functions.Unary<AbstractAssertionPaletteNode, AT> factory =
+                    findPaletteNodeFactory(assclass.getClassLoader(), classname, assclass);
+            if (factory != null)
+                return DefaultAssertionMetadata.cache(meta, key, factory);
+
+            // Try to use the default
+            factory = new Functions.Unary<AbstractAssertionPaletteNode, AT>() {
+                public AbstractAssertionPaletteNode call(AT assertion) {
+                    return new DefaultAssertionPaletteNode<AT>(assertion);
+                }
+            };
+            return DefaultAssertionMetadata.cache(meta, key, factory);
+        }
+    }
+
+    private static class PolicyNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
+        public Object get(AssertionMetadata meta, String key) {
+            String classname = (String)meta.get(AssertionMetadata.POLICY_NODE_CLASSNAME);
+            //noinspection unchecked
+            final Class<AT> assclass = meta.getAssertionClass();
+            Functions.Unary<AssertionTreeNode, AT> factory =
+                    findPolicyNodeFactory(assclass.getClassLoader(), classname, assclass);
+            if (factory != null)
+                return DefaultAssertionMetadata.cache(meta, key, factory);
+
+            // Try to use the default
+            factory = new Functions.Unary< AssertionTreeNode, AT >() {
+                public AssertionTreeNode call(AT assertion) {
+                    return new DefaultAssertionPolicyNode<AT>(assertion);
+                }
+            };
+            return DefaultAssertionMetadata.cache(meta, key, factory);
+        }
+    }
+
     private static class PropertiesActionMetadataFinder<AT extends Assertion> implements MetadataFinder {
         public Object get(AssertionMetadata meta, String key) {
             String classname = (String)meta.get(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME);
-            final Class assclass = meta.getAssertionClass();
+            //noinspection unchecked
+            final Class<AT> assclass = meta.getAssertionClass();
             String assname = assclass.getName();
             Functions.Unary<Action, AssertionTreeNode> factory = findPropertiesActionFactory(assclass.getClassLoader(), classname, assname);
             if (factory != null)
@@ -112,10 +141,66 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         }
     }
 
-    private static Functions.Unary< AssertionTreeNode, Assertion >
-    findPolicyNodeFactory(ClassLoader loader, String classname, String assname) {
+    private static <AT extends Assertion> Functions.Unary<AbstractAssertionPaletteNode, AT>
+    findPaletteNodeFactory(ClassLoader loader, String classname, Class<AT> assclass) {
+        if (classname == null)
+            return null;
+
+        final String assname = assclass.getName();
         try {
-            return ConstructorInvocation.createFactoryOutOfUnaryConstructor(loader, classname, AssertionTreeNode.class, Assertion.class);
+            try {
+                Functions.Unary<AbstractAssertionPaletteNode, AT> factory =
+                        ConstructorInvocation.createFactoryOutOfUnaryConstructor(loader,
+                                                                                 classname,
+                                                                                 AbstractAssertionPaletteNode.class,                                                                              assclass);
+                if (factory != null)
+                    return factory;
+
+            } catch (ConstructorInvocation.NoMatchingPublicConstructorException e) {
+                // fallthrough and try Plan B
+            }
+
+            // Check for public nullary constructor
+            final Constructor<AbstractAssertionPaletteNode> nullary =
+                    ConstructorInvocation.findMatchingConstructor(loader, classname, AbstractAssertionPaletteNode.class, new Class[0]);
+
+            return nullary == null ? null : new Functions.Unary<AbstractAssertionPaletteNode, AT>() {
+                public AbstractAssertionPaletteNode call(AT prototype) {
+                    try {
+                        return nullary.newInstance();
+                    } catch (InstantiationException e) {
+                        throw new RuntimeException(e); // can't happen
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e); // can't happen
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+
+        } catch (ConstructorInvocation.WrongSuperclassException e) {
+            logger.warning("Palette node class for assertion " + assname + " is not assignable to AbstractAssertionPaletteNode" +
+            " (palette node class = " + classname + ")");
+        } catch (ConstructorInvocation.AbstractClassException e) {
+            logger.warning("Palette node class for assertion " + assname + " is abstract" +
+            " (palette node class = " + classname + ")");
+        } catch (ClassNotFoundException e) {
+            // Probably was just a generated-by-default classname that doesn't actually exist
+            logger.log(Level.FINER, "Unable to load palette node class for assertion class " + assname +
+                                      ": " + ExceptionUtils.getMessage(e), e);
+        } catch (ConstructorInvocation.NoMatchingPublicConstructorException e) {
+            logger.warning("Palette node class for assertion " + assname +
+                           " lacks public constructor-from-Assertion and nullary constructor" +
+                            " (palette node class = " + classname + ")");
+        }
+        return null;
+    }
+
+    private static <AT extends Assertion> Functions.Unary<AssertionTreeNode, AT>
+    findPolicyNodeFactory(ClassLoader loader, String classname, Class<AT> assclass) {
+        final String assname = assclass.getName();
+        try {
+            return ConstructorInvocation.createFactoryOutOfUnaryConstructor(loader, classname, AssertionTreeNode.class, assclass);
         } catch (ConstructorInvocation.WrongSuperclassException e) {
             logger.warning("Policy node class for assertion " + assname + " is not assignable to AssertionTreeNode" +
             " (policy node class = " + classname + ")");
@@ -123,12 +208,13 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             logger.warning("Policy node class for assertion " + assname + " is abstract" +
             " (policy node class = " + classname + ")");
         } catch (ClassNotFoundException e) {
+            // Probably was just a generated-by-default classname that doesn't actually exist
             logger.log(Level.FINER, "Unable to load policy node class for assertion class " + assname +
                                       ": " + ExceptionUtils.getMessage(e), e);
         } catch (ConstructorInvocation.NoMatchingPublicConstructorException e) {
             logger.warning("Policy node class for assertion " + assname +
                            " lacks public constructor-from-Assertion" +
-                            " (properties action class = " + classname + ")");
+                            " (policy node class = " + classname + ")");
         }
         return null;
     }
@@ -156,6 +242,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             logger.warning("Properties action class for assertion " + assertionClassname + " is abstract" +
                             " (properties action class = " + actionClassname + ")");
         } catch (ClassNotFoundException e) {
+            // Probably was just a generated-by-default classname that doesn't actually exist
             logger.log(Level.FINER, "Unable to load properties action class for assertion class " + assertionClassname +
                                       ": " + ExceptionUtils.getMessage(e), e);
         } catch (ConstructorInvocation.NoMatchingPublicConstructorException e) {

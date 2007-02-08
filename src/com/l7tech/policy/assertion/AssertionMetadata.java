@@ -18,17 +18,48 @@ public interface AssertionMetadata {
     /** String.  Name to display on the palette node for this assertion, if using DefaultAssertionPaletteNode. */
     String PALETTE_NODE_NAME = "paletteNodeName";
 
+    /** String file path.  Icon to display for the palette node for this assertion, if using DefaultAssertionPaletteNode. */
+    String PALETTE_NODE_ICON = "paletteNodeIcon";
+
     /** String classname.  Name of AbstractAssertionPaletteNode subclass to use when creating palette nodes for this assertion. */
     String PALETTE_NODE_CLASSNAME = "paletteNodeClassname";
 
     /**
      * Functions.Unary< AbstractAssertionPaletteNode, Assertion >; SSM only.
      * A factory that can be used to make a new AbstractAssertionPaletteNode for the assertion palette for
-     * a given assertion prototype instance.
+     * a given assertion prototype instance.  This is used by palette folder nodes to add palette nodes for registered
+     * assertions that have declared a desire to appear in that palette folder, by listing its ID in their
+     * paletteFolders metadata property.
      * <p/>
-     * This factory's call() method takes a single Assertion as its only argument, and returns a new AbstractAssertionPaletteNode instance.
+     * This factory's call() method takes a single Assertion prototype instance as its only argument,
+     * and returns a new AbstractAssertionPaletteNode instance.
+     * <p/>
+     * The SSM's default MetadataFinder for this property will try to load paletteNodeClassname and will
+     * generate a factory that produces them if that class exists and has either a nullary constructor
+     * or a unary constructor-from-Assertion; otherwise it will generate a factory that produces
+     * DefaultAssertionPaletteNode instances.
+     * <p/>
+     * If this is null, this assertion will not be offered in the assertion palette, regardless of the contents of
+     * its paletteFolders property, although it may still be usable via XML copy/paste in the policy editor panel.
      */
     String PALETTE_NODE_FACTORY = "paletteNodeFactory";
+
+    /**
+     * Functions.Unary< FooBarAssertion, FooBarAssertion >; SSM only.
+     * Creates a new Assertion bean instance configured appropriately given the specified variant prototype.
+     * This is used by DefaultAssertionPaletteNode to configure a new assertion instance.
+     * <p/>
+     * This factory takes a single FooBarAssertion instance as its only argument, and returns a new FooBarAssertion instance.
+     * The passed in instance is a prototype representing a variant as returned by VARIANT_PROTOTYPES; it may be null
+     * if this particular assertion metadata does not declare any configuration variants.
+     * <p/>
+     * The returned assertion must be a brand new instance (ie, not a prototype instance) that can be added to policies,
+     * freely modified, etc.
+     * <p/>
+     * The SSM's default MetadataFinder for this property will create a factory that just calls getClass().newInstance()
+     * on the passed-in prototype, if any, or on the metadata's assertion class otherwise.
+     */
+    String ASSERTION_FACTORY = "assertionFactory";
 
     /**
      * Functions.Unary< String, Assertion >.  Generator of name to display on the policy node for this assertion,
@@ -55,7 +86,6 @@ public interface AssertionMetadata {
      * <p/>
      * The SSM's default MetadataFinder for this property will try to create a factory that instantiates POLICY_NODE_CLASSNAME;
      * failing that, it will create a factory that produces DefaultAssertionPolicyNode instances.
-     *
      */
     String POLICY_NODE_FACTORY = "policyNodeFactory";
 
@@ -101,19 +131,28 @@ public interface AssertionMetadata {
      * displayed, and the FooBarAssertion bean that is to be edited.  It returns an AssertionPropertiesEditor
      * instance ready to edit the assertion bean.
      * <p/>
-     * If null, no "Properties..." action will be offered by the default assertion policy node.
+     * If null, no "Properties..." action will be offered by the DefaultAssertionPolicyNode.
      * <p/>
      * The SSM's default MetadataFinder for this property will look for an AssertionPropertiesEditor implementor
-     * at PROPERTIES_EDITOR_CLASSNAME and reflect it for a unary-constructor-from-Frame.
+     * at PROPERTIES_EDITOR_CLASSNAME and build a factory that creates instances of it as long as it has a
+     * public constructor in one of the following formats (in decreasing preference order):
+     * <pre>
+     *    public FooBarPropertiesDialog(Frame parent, FooBarAssertion bean)
+     *    public FooBarPropertiesDialog(Frame parent) // factory will call setData(bean)
+     *    public FooBarPropertiesDialog(FooBarAssertion bean)
+     *    public FooBarPropertiesDialog()             // factory will call setData(bean)
+     * </pre>
      */
     String PROPERTIES_EDITOR_FACTORY = "propertiesEditorFactory";
 
     /**
      * Boolean.  Set to Boolean.TRUE if your properties dialog won't display properly as a sheet and you don't have
-     * access to DialogDisplayer to turn it off yourself.  The DefaultAssertionPropertiesAction will disable
-     * sheet display on your dialog if this is TRUE. 
+     * access to DialogDisplayer to turn it off yourself.
+     * (Sheet display is a mechanism used by the Manager Applet to display assertion properties dialogs as
+     * internal frames, within the browser tab, whenever possible.  It is not used by the standalone SSM.)
+     * The DefaultAssertionPropertiesAction will disable sheet display on your dialog if this is TRUE.
      */
-    String PROPERTIES_EDITOR_FACTORY_SUPPRESS_SHEET_DISPLAY = "propertiesEditorFactorySuppressSheetDisplay";
+    String PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY = "propertiesEditorSuppressSheetDisplay";
 
     /**
      * String classname.  Name of custom TypeMapping to use for serializing this assertion, or null to just use AssertionTypeMapping.
@@ -148,16 +187,56 @@ public interface AssertionMetadata {
     /** String. If a GUI properties file should be used for this assertion, this holds its base name (default locale). */
     String PROPERTIES_FILE = "propertiesFile";
 
-    /** Assertion[].  Array of variant configurations of this assertion, or null or empty if there are no variants. */
+    /**
+     * Assertion[].  Array of prototype instances of variant default configurations of this assertion (including this one),
+     * or null or empty if there are no other variants.
+     * <p/>
+     * Explanation: some assertions present multiple palette nodes represeting different initial configurations.
+     * For example, the SslAssertion has one palette node in the "Transport Layer Security" folder whose initial
+     * configuration is "Require SSL; client cert optional", and a second palette node in the "Access Control"
+     * folder whose initial configuration is "Require SSL and client cert".
+     * <p/>
+     * Thus there are two different palette nodes representing the same assertion.  Unfortunately, an AssertionRegistry
+     * holds only one prototype instance per assertion concrete class.
+     * <p/>
+     * The solution is to use this variantPrototypes property: the default prototype can be queried for a list of
+     * all variant configuraitons offered by this assertion, and each variant provides its own prototype which
+     * can be added to the palette folders.  Each variant prototype is then free to customize its returned metadata
+     * for such things as paletteNodeName, assertionFactory, or even propertiesEditorFactory.
+     */
     String VARIANT_PROTOTYPES = "variantPrototypes";
 
     /**
-     * String[].  Array of palette folder names this assertion should appear in.
+     * String[].  Array of palette folder IDs this assertion variant should appear in.
+     * Here is the list of valid palette folder IDs as of version 3.7:
+     * <pre>
+     *  accessControl
+     *  transportLayerSecurity
+     *  xmlSecurity
+     *  xml
+     *  routing
+     *  misc
+     *  audit
+     *  policyLogic
+     *  threatProtection
+     * </pre>
+     * If this is null, or does not match any palette folder offered by this SSM version, this assertion
+     * will not be offered in the palette (although it can still be XML copy/pasted).
      */
     String PALETTE_FOLDERS = "paletteFolders";
 
-    /** String. Space separated list of parent feature set names. */
-    String PARENT_FEATURE_SETS = "parentFeatureSets";
+    /**
+     * String. Feature set name for this assertion.
+     * <p/>
+     * An assertion can claim to be a modular assertion by returning "set:modularAssertions" here, or it can
+     * return null to be assigned the default feature set name for its class.  For security reasons, any other
+     * return value will currently be ignored by {@link com.l7tech.policy.assertion.Assertion#getFeatureSetName()}
+     * and treated as though this property had returned null.
+     * <p/>
+     * AssertionRegistry installs a default MetadataFinder for this property that returns null for any assertion
+     * present in AllAssertions on this system, and "set:modularAssertions" for any other assertion.
+     */
+    String FEATURE_SET_NAME = "featureSetName";
 
     /**
      * Map<String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.

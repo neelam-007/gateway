@@ -26,7 +26,7 @@ public class XmlSecurityFolderNode extends AbstractPaletteFolderNode {
      *
      */
     public XmlSecurityFolderNode() {
-        super("XML Security");
+        super("XML Security", "xmlSecurity");
     }
 
     /**
@@ -42,6 +42,7 @@ public class XmlSecurityFolderNode extends AbstractPaletteFolderNode {
         insert(new RequestWssTimestampPaletteNode(), index++);
         insert(new ResponseWssTimestampPaletteNode(), index++);
         insert(new ResponseWssSecurityTokenPaletteNode(), index++);
+        index = insertMatchingModularAssertions(index);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.XML_SEC).iterator();

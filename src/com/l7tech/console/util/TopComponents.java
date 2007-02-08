@@ -7,6 +7,8 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.policy.AssertionFinder;
+import com.l7tech.policy.AssertionRegistry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -84,6 +86,10 @@ public class TopComponents {
 
     public void showNoPrivilegesErrorMessage() {
         getMainWindow().showNoPrivilegesErrorMessage();
+    }
+
+    public AssertionRegistry getAssertionRegistry() {
+        return (AssertionRegistry)getApplicationContext().getBean("assertionRegistry", AssertionRegistry.class);
     }
 
     /** Interface implemented by lazy component finders. */
