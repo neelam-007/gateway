@@ -13,6 +13,7 @@ import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.gui.Gui;
@@ -82,7 +83,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             ssg.setUseSslByDefault(false);
             getBridgePolicyPane(); // hide the bridge policy pane for generic services
         } else {
-            tabbedPane.add("Bridge Policy", getBridgePolicyPane());
+            tabbedPane.add(Constants.APP_NAME +" Policy", getBridgePolicyPane());
         }
         tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);

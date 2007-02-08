@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.proxy.Constants;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -79,7 +80,7 @@ public class CredentialManagerImpl extends CredentialManager {
 
     public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
         String msg = "The authenticity of the SSL server certificate could not be established automatically, " +
-                "and the user cannot be prompted because the Bridge is running in non-interactive mode.  Possible reasons:\n" + 
+                "and the user cannot be prompted because the "+ Constants.APP_NAME +" is running in non-interactive mode.  Possible reasons:\n" +
                 " -missing or incorrect username or password;\n -password unavailable to the Gateway;\n -server is not a Trusted Gateway";
         log.log(Level.SEVERE, msg);
         throw new OperationCanceledException(msg);

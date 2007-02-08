@@ -385,13 +385,13 @@ public class RequestHandler extends AbstractHttpHandler {
 
         response.addField(MimeUtil.CONTENT_TYPE, "text/html");
         PrintStream o = new PrintStream(response.getOutputStream());
-        o.println("<html><head><title>SecureSpan Bridge</title></head>" +
-          "<body><h2>SecureSpan Bridge</h2>");
+        o.println("<html><head><title>SecureSpan "+ Constants.APP_NAME+"</title></head>" +
+          "<body><h2>SecureSpan "+ Constants.APP_NAME+"</h2>");
         List ssgs = ssgFinder.getSsgList();
         if (ssgs.isEmpty()) {
-            o.println("<p>There are currently no Gateways registered with SecureSpan Bridge.");
+            o.println("<p>There are currently no Gateways registered with SecureSpan "+ Constants.APP_NAME+".");
         } else {
-            o.println("<p>SecureSpan Bridge is ready to proxy services provided by the following Gateways:</p><ul>");
+            o.println("<p>SecureSpan "+ Constants.APP_NAME+" is ready to proxy services provided by the following Gateways:</p><ul>");
             int port = clientProxy.getBindPort();
             for (Iterator i = ssgs.iterator(); i.hasNext();) {
                 Ssg ssg = (Ssg)i.next();

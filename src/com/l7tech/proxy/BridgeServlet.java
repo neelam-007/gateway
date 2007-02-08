@@ -83,7 +83,7 @@ public class BridgeServlet extends HttpServlet {
         } catch (LicenseException e) {
             // New exception to conceal original stack trace from LicenseManager
             e = new LicenseException(e.getMessage());
-            error(servletRequest, servletResponse, "Bridge service not enabled by license", e);
+            error(servletRequest, servletResponse, Constants.APP_NAME + " service not enabled by license", e);
         }
     }
 

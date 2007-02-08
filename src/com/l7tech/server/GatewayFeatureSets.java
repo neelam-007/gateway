@@ -122,7 +122,7 @@ public class GatewayFeatureSets {
             ass(JmsRoutingAssertion.class));
 
         GatewayFeatureSet ssb =
-        fsr("set:ssb", "Features needed for best use of the SecureSpan Bridge",
+        fsr("set:ssb", "Features needed for best use of the SecureSpan XML VPN Client",
             srv(SERVICE_CSRHANDLER, "Certificate signer (CA) service"),
             srv(SERVICE_PASSWD, "Internal user password change service"),
             srv(SERVICE_POLICYDISCO, "Policy discovery service"),
@@ -391,7 +391,7 @@ public class GatewayFeatureSets {
             fs(threatAccel));
 
         fsp("set:Profile:Firewall", "SecureSpan Firewall",
-            "XML firewall with custom assertions.  No BRA, no JMS, no special Bridge support",
+            "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
             fs(core),
             fs(admin),
             fs(accessFw),
@@ -407,7 +407,7 @@ public class GatewayFeatureSets {
         PROFILE_ALL =
         fsp("set:Profile:Gateway", "SecureSpan Gateway",
             "All features enabled.",
-            misc("bundle:Bridge", "Bundled SecureSpan Bridge", "No effect on Gateway license code -- only purpose is to distinguish two otherwise-identical feature sets"),
+            misc("bundle:Bridge", "Bundled SecureSpan XML VPN Client", "No effect on Gateway license code -- only purpose is to distinguish two otherwise-identical feature sets"),
             fs(core),
             fs(admin),
             fs(accessGateway),
@@ -424,7 +424,7 @@ public class GatewayFeatureSets {
             fs(experimental));
 
         fsp("set:Profile:Federal", "SecureSpan Federal",
-            "Exactly the same features as SecureSpan Gateway, but Bridge software is not bundled.",
+            "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",
             fs(core),
             fs(admin),
             fs(accessGateway),

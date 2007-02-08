@@ -8,6 +8,7 @@ package com.l7tech.proxy.cli;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.Constants;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class Main {
 
     public static void main(String[] args) {
         initLogging("com/l7tech/proxy/resources/cliLogging.properties");
-        System.out.println("SecureSpan Bridge Configuration Editor");
+        System.out.println("SecureSpan "+ Constants.APP_NAME+" Configuration Editor");
         JceProvider.init();
 
         if (args.length < 1 || cmdMatch(args[0], "i")) {

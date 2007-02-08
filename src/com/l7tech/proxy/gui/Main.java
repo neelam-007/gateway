@@ -6,6 +6,8 @@ import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.Constants;
+
 import org.mortbay.util.MultiException;
 
 import java.net.BindException;
@@ -60,7 +62,7 @@ public final class Main extends com.l7tech.proxy.Main {
         
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/cliLogging.properties");
         JceProvider.init();
-        log.info("Starting SecureSpan Bridge GUI Configuration Editor; " + BuildInfo.getLongBuildString());
+        log.info("Starting SecureSpan "+ Constants.APP_NAME +" GUI Configuration Editor; " + BuildInfo.getLongBuildString());
 
         if (hideMenus && quitLabel == null) 
             quitLabel = "Quit";
@@ -86,7 +88,7 @@ public final class Main extends com.l7tech.proxy.Main {
 
     private static void startGuiBridge() {
         initLogging();
-        log.info("Starting SecureSpan Bridge in GUI mode; " + BuildInfo.getLongBuildString());
+        log.info("Starting SecureSpan "+ Constants.APP_NAME +" in GUI mode; " + BuildInfo.getLongBuildString());
 
         final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
         final ClientProxy clientProxy = createClientProxy(ssgManager);
@@ -102,12 +104,12 @@ public final class Main extends com.l7tech.proxy.Main {
         try {
             clientProxy.start();
         } catch (Exception e) {
-            String message = "Unable to start the Bridge: " + e;
+            String message = "Unable to start the "+ Constants.APP_NAME +": " + e;
             // Friendlier error message for starting multiple instances
             if (e instanceof BindException ||
               (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException)) {
-                message = "The SecureSpan Bridge is already running.  \nPlease shut down the existing " +
-                  "Bridge and try again.";
+                message = "The SecureSpan "+ Constants.APP_NAME +" is already running.  \nPlease shut down the existing " +
+                  Constants.APP_NAME + " and try again.";
             }
 
             Gui.errorMessage(message);

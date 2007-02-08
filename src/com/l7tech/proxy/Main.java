@@ -133,7 +133,7 @@ public class Main {
     public static void main(final String[] argv) {
         initLogging();
         initConfig();
-        log.info("Starting SecureSpan Bridge in non-interactive mode; " + BuildInfo.getLongBuildString());
+        log.info("Starting SecureSpan "+ Constants.APP_NAME +" in non-interactive mode; " + BuildInfo.getLongBuildString());
 
         final SsgFinderImpl ssgFinderImpl = SsgFinderImpl.getSsgFinderImpl();
         final ClientProxy clientProxy = createClientProxy(ssgFinderImpl);
@@ -152,7 +152,7 @@ public class Main {
         try {
             clientProxy.start();
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Unable to start Layer 7 SecureSpan Bridge", e);
+            log.log(Level.SEVERE, "Unable to start Layer 7 SecureSpan " + Constants.APP_NAME, e);
             System.exit(2);
         }
 

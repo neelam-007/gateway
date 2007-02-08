@@ -31,9 +31,8 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Policy;
@@ -162,7 +161,7 @@ public class MessageProcessor {
                                     // We were talking to something else, probably a token provider.
                                     handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
                                 else
-                                    throw new ConfigurationException("Internal Bridge error: server certificate untrusted, but no SSL peer", e);
+                                    throw new ConfigurationException("Internal "+ Constants.APP_NAME+" error: server certificate untrusted, but no SSL peer", e);
                             } else
                                 ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry

@@ -11,6 +11,7 @@ import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.gui.dialogs.NewSsgDialog;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.Constants;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -44,7 +45,7 @@ class NewSsgAction extends AbstractAction {
         this.ssgFinder = ssgFinder;
         this.bindPort = bindPort;
         this.savePass = savePass;
-        putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Bridge");
+        putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this " + Constants.APP_NAME);
         putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_N));
     }
 

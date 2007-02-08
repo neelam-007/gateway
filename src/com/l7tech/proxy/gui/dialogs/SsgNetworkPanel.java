@@ -12,17 +12,15 @@ import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.gui.MaxLengthDocument;
 import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.Constants;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -83,7 +81,7 @@ class SsgNetworkPanel extends JPanel {
 
         // Endpoint panel
 
-        WrappingLabel splain01 = new WrappingLabel("The SecureSpan Bridge listens for incoming messages at the " +
+        WrappingLabel splain01 = new WrappingLabel("The SecureSpan "+ Constants.APP_NAME +" listens for incoming messages at the " +
                                                    "following local proxy URL, then routes the messages to the " +
                                                    "SecureSpan Gateway:", 2);
         //x,y,rows,col,anchor,fill,sizex,sizey,minsize,prefsize,maxsize
@@ -157,7 +155,7 @@ class SsgNetworkPanel extends JPanel {
             }
         }));
 
-        WrappingLabel splain02 = new WrappingLabel("The SecureSpan Bridge offers proxied WSDL lookups at the " +
+        WrappingLabel splain02 = new WrappingLabel("The SecureSpan "+ Constants.APP_NAME +" offers proxied WSDL lookups at the " +
                                                    "following local WSDL URL:", 1);
         wsdlUrlLabelPanel.add(splain02, gc);
 

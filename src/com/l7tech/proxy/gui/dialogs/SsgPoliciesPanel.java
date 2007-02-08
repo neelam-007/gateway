@@ -26,6 +26,8 @@ import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.Constants;
+
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -101,7 +103,7 @@ class SsgPoliciesPanel extends JPanel {
         JPanel pane = this;
         setBorder(BorderFactory.createEmptyBorder());
 
-        pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by Bridge</h4></HTML>"),
+        pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by "+ Constants.APP_NAME +"</h4></HTML>"),
                  new GridBagConstraints(0, y, 1, 1, 1.0, 0.0,
                                         GridBagConstraints.NORTHWEST,
                                         GridBagConstraints.HORIZONTAL,

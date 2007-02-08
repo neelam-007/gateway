@@ -8,6 +8,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.HelpUtil;
 import com.l7tech.common.util.JavaVersionChecker;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.dialogs.AboutBox;
 import com.l7tech.proxy.gui.util.IconManager;
@@ -34,7 +35,7 @@ public class Gui {
     // that uses it
     private static final String APPLICATION_HOME_PROPERTY = "com.l7tech.applicationHome";
 
-    public static final String APP_NAME = "SecureSpan Bridge";
+    public static final String APP_NAME = "SecureSpan " + Constants.APP_NAME;
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
@@ -46,7 +47,7 @@ public class Gui {
     private JFrame frame;
     private MessageViewer messageViewer;
 
-    private static final String SYSTRAY_TOOLTIP = "SecureSpan Bridge";
+    private static final String SYSTRAY_TOOLTIP = APP_NAME;
     private static final String WINDOW_TITLE = APP_NAME;
     private static final String WINDOW_TITLE_CONFIG = "Configure " + APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Recent Message Traffic";
@@ -257,7 +258,7 @@ public class Gui {
 
         SysTrayMenuItem smExit = new SysTrayMenuItem( "Exit", "exit" );
         smExit.addSysTrayMenuListener( systrayListener );
-        SysTrayMenuItem smShow = new SysTrayMenuItem( "Show Bridge window", "show" );
+        SysTrayMenuItem smShow = new SysTrayMenuItem( "Show "+ Constants.APP_NAME+" window", "show" );
         smShow.addSysTrayMenuListener( systrayListener );
 
         sysTrayMenu = new SysTrayMenu( systrayMenuIcon, SYSTRAY_TOOLTIP );

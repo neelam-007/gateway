@@ -11,6 +11,7 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.Constants;
 
 import java.io.PrintStream;
 import java.io.IOException;
@@ -24,7 +25,7 @@ class ClientCertProperty extends NounProperty {
     private SsgNoun ssgNoun;
 
     public ClientCertProperty(SsgNoun ssgNoun) {
-        super(ssgNoun.ssg, "clientCert", "ClientCertificate", "Bridge X.509 client ceritifcate");
+        super(ssgNoun.ssg, "clientCert", "ClientCertificate", Constants.APP_NAME+" X.509 client ceritifcate");
         this.ssgNoun = ssgNoun;
     }
 

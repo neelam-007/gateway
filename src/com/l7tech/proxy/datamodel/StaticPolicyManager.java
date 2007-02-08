@@ -6,6 +6,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
+import com.l7tech.proxy.Constants;
 
 import java.util.Collections;
 import java.util.Set;
@@ -37,7 +38,7 @@ public class StaticPolicyManager implements PolicyManager {
     }
 
     public void setPolicy(PolicyAttachmentKey key, Policy policy) throws PolicyLockedException {
-        throw new PolicyLockedException("Unable to save new policy: this Bridge instance is using a single statically-configured policy");
+        throw new PolicyLockedException("Unable to save new policy: this "+ Constants.APP_NAME +" instance is using a single statically-configured policy");
     }
 
     public Set getPolicyAttachmentKeys() {

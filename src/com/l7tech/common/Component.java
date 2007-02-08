@@ -36,7 +36,7 @@ public class Component {
     public static final Component   GW_CLUSTER            = new Component( 300000, "Cluster", GATEWAY);
     public static final Component   GW_DATABASE           = new Component( 400000, "Database", GATEWAY);
 
-    public static final Component BRIDGE = new Component(2000000, "SecureSpan Bridge", null);
+    public static final Component BRIDGE = new Component(2000000, "SecureSpan XML VPN Client", null);
     public static final Component MANAGER = new Component(3000000, "SecureSpan Manager", null);
 
     public Component(int localNum, String name, Component parent) {

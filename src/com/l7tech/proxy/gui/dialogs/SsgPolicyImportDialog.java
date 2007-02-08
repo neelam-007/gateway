@@ -18,6 +18,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
+import com.l7tech.proxy.Constants;
+
 /**
  * Policy import dialog.
  *
@@ -257,7 +259,7 @@ public class SsgPolicyImportDialog extends JDialog {
 
         URL resourceUrl = getClass().getClassLoader().getResource(TEMPLATE_DIRECTORY);
         if (resourceUrl == null) {
-            logger.warning("No template directory configured -- no Bridge policy templates available");
+            logger.warning("No template directory configured -- no "+ Constants.APP_NAME +" policy templates available");
             return new String[0];
         }
         if ("file".equals(resourceUrl.getProtocol())) {

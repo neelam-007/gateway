@@ -10,6 +10,7 @@ import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.Constants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -285,8 +286,8 @@ class SsgNoun extends Noun {
     }
 
     private static final String OVERVIEW_HELP_TEXT =
-            "The Gateway Account is at the heart of the SecureSpan Bridge.  Each \n" +
-                    "Gateway Account holds a set of Bridge credentials for a target Gateway.";
+            "The Gateway Account is at the heart of the SecureSpan "+ Constants.APP_NAME+".  Each \n" +
+                    "Gateway Account holds a set of "+ Constants.APP_NAME+" credentials for a target Gateway.";
 
     private static final String EXAMPLE_COMMANDS = "Example Commands: show gateways\n" +
             "                  gateway32 request clientCert\n" +

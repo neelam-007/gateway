@@ -76,7 +76,7 @@ class DeleteSsgAction extends AbstractAction {
         Object[] options = { "Delete", "Cancel" };
         int result = JOptionPane.showOptionDialog(null,
                                                   "Warning: Deleting the Gateway Account for " + ssg + "\n" +
-                                                  "will delete any associated certificate and policies from the SecureSpan Bridge.\n" +
+                                                  "will delete any associated certificate and policies from the "+Gui.APP_NAME+".\n" +
                                                   "The action cannot be undone.",
                                                   "Delete Gateway Account",
                                                   0, JOptionPane.WARNING_MESSAGE,
