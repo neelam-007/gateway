@@ -400,20 +400,18 @@ public class PublishedService extends NamedEntityImp {
                 Wsdl wsdl = parsedWsdl();
                 Assertion assertion = rootAssertion();
 
-                if (wsdl != null && wsdl.hasMultipartOperations()) {
+                if (!isSoap()) {
                     multipart = Boolean.TRUE;
-                }
-                else if (assertion != null && Assertion.contains(assertion, MimeMultipartAssertion.class)) {
+                } else if (wsdl != null && wsdl.hasMultipartOperations()) {
                     multipart = Boolean.TRUE;
-                }
-                else {
+                } else if (assertion != null && Assertion.contains(assertion, MimeMultipartAssertion.class)) {
+                    multipart = Boolean.TRUE;
+                } else {
                     multipart = Boolean.FALSE;
                 }
-            }
-            catch(WSDLException we) {
+            } catch(WSDLException we) {
                 throw new ServiceException("Cannot determine multipart flag, could not process WSDL.", we);
-            }
-            catch(IOException ioe) {
+            } catch(IOException ioe) {
                 throw new ServiceException("Cannot determine multipart flag, could not process Policy.", ioe);
             }
         }
