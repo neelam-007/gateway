@@ -32,6 +32,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
     protected static final Logger logger = Logger.getLogger(DefaultAssertionMetadata.class.getName());
 
     private static final Pattern ucfirst = Pattern.compile("(\\b[a-z])");
+    private static final Pattern badlocalnamechars = Pattern.compile("[^a-zA-Z0-9_]"); // very, very conservative.. us-ascii only!
 
     /**
      * Convert a String like "foo b8r blatz_foo 99" into title caps, like "Foo B8r Blatz_foo 99".
@@ -95,11 +96,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(ASSERTION_FACTORY, null); // installed by AssertionRegistry because it relies on non-API classes
 
-        put(POLICY_NODE_NAME, new MetadataFinder() {
-            public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, meta.get(AssertionMetadata.SHORT_NAME));
-            }
-        });
+        put(POLICY_NODE_NAME, null); // installed by AssertionRegistry because it relies on non-API classes
 
         put(POLICY_NODE_ICON, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
@@ -147,7 +144,9 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(WSP_EXTERNAL_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, meta.get(BASE_NAME));
+                String base = (String)meta.get(BASE_NAME);
+                base = badlocalnamechars.matcher(base).replaceAll("_");
+                return cache(meta, key, base);
             }
         });
 

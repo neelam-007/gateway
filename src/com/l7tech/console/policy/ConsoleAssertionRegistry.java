@@ -33,7 +33,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         super.afterPropertiesSet();
 
         //
-        // Add metadata default getters that are specified to the SSM environment
+        // Add metadata default getters that are specific to the SSM environment
         //
 
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PALETTE_NODE_FACTORY, new PaletteNodeFactoryMetadataFinder());

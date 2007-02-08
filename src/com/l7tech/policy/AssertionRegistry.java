@@ -123,6 +123,16 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, In
             }
         });
 
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_NODE_NAME, new MetadataFinder() {
+            public Object get(final AssertionMetadata meta, String key) {
+                return DefaultAssertionMetadata.cache(meta, key, new Functions.Unary< String, Assertion >() {
+                    public String call(Assertion assertion) {
+                        return (String)meta.get(AssertionMetadata.SHORT_NAME);
+                    }
+                });
+            }
+        });
+
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 Class assClass = meta.getAssertionClass();

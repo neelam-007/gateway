@@ -7,30 +7,28 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
-import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
-import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.util.Arrays;
@@ -134,9 +132,9 @@ public class AllAssertions {
         new HttpDigest(),
         new HttpNegotiate(),
         new WssBasic(),
-        new AllAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})),    // Empty composites are not valid
-        new ExactlyOneAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})), // Empty composites are not valid
-        new OneOrMoreAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})), // Empty composites are not valid
+        new AllAssertion(Arrays.asList(new FalseAssertion())),    // Empty composites are not valid
+        new ExactlyOneAssertion(Arrays.asList(new FalseAssertion())), // Empty composites are not valid
+        new OneOrMoreAssertion(Arrays.asList(new FalseAssertion())), // Empty composites are not valid
         new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),
