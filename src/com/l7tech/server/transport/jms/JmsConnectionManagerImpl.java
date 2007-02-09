@@ -32,11 +32,9 @@ public class JmsConnectionManagerImpl
     public Collection<JmsProvider> findAllProviders() throws FindException {
         // TODO make this real, eh?!!
         if (_allProviders == null) {
-            JmsProvider openjms = new JmsProvider("OpenJMS", "org.exolab.jms.jndi.InitialContextFactory", "QueueConnectionFactory");
             JmsProvider jbossmq = new JmsProvider("JBossMQ", "org.jnp.interfaces.NamingContextFactory", "QueueConnectionFactory");
             JmsProvider mqLdap = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory");
             List<JmsProvider> list = new ArrayList<JmsProvider>();
-            list.add(openjms);
             list.add(jbossmq);
             list.add(mqLdap);
             _allProviders = list;
