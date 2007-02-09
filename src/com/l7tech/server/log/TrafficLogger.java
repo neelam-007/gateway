@@ -79,6 +79,8 @@ public class TrafficLogger implements ApplicationContextAware {
      */
     public static final String SERVCFG_ADDRES = "trafficLoggerRecordRes";
 
+    private static final String LOGGERNAME = "com.l7tech.traffic";
+
     private boolean enabled = false;
     private String detail = "${request.time}, ${request.soap.namespace}, ${request.soap.operationname}, ${response.http.status}";
     private String pattern = "/ssg/logs/traffic_%g_%u.log";
@@ -193,6 +195,25 @@ public class TrafficLogger implements ApplicationContextAware {
     private void updateSettings() {
         boolean somethingChanged = false;
         boolean loggerChanged = false;
+        // detect out of band changes from the JDKLoggerConfigurator
+        if (specialLogger != null) {
+            boolean somethignhappened = true;
+            if (lastAssignedHandler != null) {
+                Handler[] handlers = Logger.getLogger(LOGGERNAME).getHandlers();
+                for (Handler h : handlers) {
+                    if (h == lastAssignedHandler) {
+                        somethignhappened = false;
+                        break;
+                    }
+                }
+            }
+            if (somethignhappened) {
+                somethingChanged = true;
+                loggerChanged = true;
+                logger.info("picking up on external logger changes. forcing reset");
+            }
+        }
+        // look for changes in the properties
         boolean tmpenabled = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ENABLE));
         if (tmpenabled != enabled) {
             somethingChanged = true;
@@ -231,7 +252,7 @@ public class TrafficLogger implements ApplicationContextAware {
             try {
                 if (loggerChanged || specialLogger == null) {
                     //Logger tmpSpecialLogger = Logger.getAnonymousLogger();
-                    Logger tmpSpecialLogger = Logger.getLogger("com.l7tech.traffic");
+                    Logger tmpSpecialLogger = Logger.getLogger(LOGGERNAME);
                     FileHandler fileHandler;
                     try {
                         fileHandler = new FileHandler(tmpPattern, tmpLimit, tmpCount, true);
