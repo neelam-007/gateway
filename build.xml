@@ -828,7 +828,7 @@
             depends="package.readversion, package.gateway.all, package.manager, package.bridge, package.installclients, package.installgateway.work"/>
 
 
-    <target name="package.gateway.all" depends="package.gateway, package.api, obfuscate.gateway, package.bcluna-jce, package.configwiz.all, package.ssgflasher, package.modules"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz, package.gateway, package.api, obfuscate.gateway, package.bcluna-jce, package.modules"/>
 
     <!--
       Build the windows installers without any dependencies.
