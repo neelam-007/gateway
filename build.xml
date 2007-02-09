@@ -3208,7 +3208,7 @@
     -->
     <target name="obfuscate.work"
             if="obfuscate"
-            depends="package.bridge, package.manager, package.gateway, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
+            depends="package.bridge, package.manager, package.gateway, obfuscate.bridge, obfuscate.manager, obfuscate.gateway, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz">
         <echo level="info">Expecting obfuscation version ${build.version}</echo>
 
         <untar src="installer/Bridge-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
