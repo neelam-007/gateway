@@ -3031,6 +3031,44 @@
         </uptodate>
     </target>
 
+    <!-- flasher obfuscation -->
+    <target name="obfuscate.flasher" if="obfuscate" unless="ssg.only">
+        <copy tofile="build/etc/flasher.zkm" file="etc/obfuscation/flasher.zkm"/>
+        <echo>Obfuscating SSGMigration.jar</echo>
+        <Zelix scriptFileName="build/etc/flasher.zkm"
+               logFileName="build/obfuscation/flasherobfuscation.log"
+               trimLogFileName="build/obfuscation/flasherobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+        <echo>Done obfuscating SSGMigration.jar</echo>
+        <copy tofile="build/migration/SSGMigration.jar" file="build/obfuscation/SSGMigration.jar" overwrite="true"/>
+    </target>
+
+    <!-- flasher obfuscation -->
+    <target name="obfuscate.cfgwiz" if="obfuscate" unless="ssg.only">
+        <copy tofile="build/etc/cfgwiz.zkm" file="etc/obfuscation/cfgwiz.zkm"/>
+        <echo>Obfuscating ConfigWizard.jar</echo>
+        <Zelix scriptFileName="build/etc/cfgwiz.zkm"
+               logFileName="build/obfuscation/cfgwizobfuscation.log"
+               trimLogFileName="build/obfuscation/cfgwizobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+        <echo>Done obfuscating ConfigWizard.jar</echo>
+        <copy tofile="build/configwizard/ConfigWizard.jar" file="build/obfuscation/ConfigWizard.jar" overwrite="true"/>
+    </target>
+
+    <!-- flasher obfuscation -->
+    <target name="obfuscate.syscfgwiz" if="obfuscate" unless="ssg.only">
+        <copy tofile="build/etc/syscfgwiz.zkm" file="etc/obfuscation/syscfgwiz.zkm"/>
+        <echo>Obfuscating SystemConfigWizard.jar</echo>
+        <Zelix scriptFileName="build/etc/syscfgwiz.zkm"
+               logFileName="build/obfuscation/syscfgwizobfuscation.log"
+               trimLogFileName="build/obfuscation/syscfgwizobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+        <echo>Done obfuscating SystemConfigWizard.jar</echo>
+        <copy tofile="build/sysconfigwizard/SystemConfigWizard.jar" file="build/obfuscation/SystemConfigWizard.jar" overwrite="true"/>
+    </target>
     <!--
       SecureSpan Bridge obfuscation target
     -->
