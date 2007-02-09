@@ -188,8 +188,6 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "No SQL protections have been specified", null));
             }
         }
-        // todo check you thing
-        //result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "Dont dot this stupid!.", null));
     }
 
     private void processHtmlFormDataAssertion(HtmlFormDataAssertion htmlFormDataAssertion) {
@@ -503,9 +501,7 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
               "The assertion might not work as configured." +
               " There is no protected service JMS queue defined.", null));
-        } else {
-            // TODO: for now we just assume that any non-null oid is a valid JmsEndpoint
-        }
+        } 
     }
 
     private void processHttpRouting(HttpRoutingAssertion a) {
@@ -522,6 +518,11 @@ class PathValidator {
                   "The assertion might not work as configured." +
                   " The protected service URL is malformed.", null));
             }
+        }
+
+        if (a.isAttachSamlSenderVouches() && !seenAccessControl) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                    "Routing with SAML Sender-Vouches but credentials are not authenticated.", null));
         }
     }
 
