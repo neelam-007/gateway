@@ -165,14 +165,20 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             if (status == AssertionStatus.NONE) {
-
                 if (response.getKnob(MimeKnob.class) == null) {
                     // Routing successful, but no actual response received, probably due to a one-way JMS send.
-                    hresponse.setStatus(200);
+                    // this could also be because of an empty payload response
+                    if (routeStat >= 200 && routeStat < 400) {
+                        logger.fine("returning empty payload with status " + routeStat);
+                        hresponse.setStatus(routeStat);
+                    } else {
+                        logger.fine("servlet transport returning a placeholder empty response to " +
+                                    "a successful one-way message");
+                        hresponse.setStatus(200);
+                    }
                     hresponse.setContentType(null);
                     hresponse.setContentLength(0);
                     hresponse.getOutputStream().close();
-                    logger.fine("servlet transport returning a placeholder empty response to a successful one-way message");
                     return;
                 }
 

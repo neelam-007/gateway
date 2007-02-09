@@ -552,7 +552,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             InputStream responseStream = routedResponse.getInputStream();
             String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
             ContentTypeHeader outerContentType = ctype !=null ? ContentTypeHeader.parseValue(ctype) : null;
-
             // Handle missing content type error
             if (status == HttpConstants.STATUS_OK && outerContentType==null) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, new String[]{Integer.toString(status)});
