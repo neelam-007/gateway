@@ -1,27 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.WsdlDefinitionPanel">
-  <grid id="57589" binding="mainPanel" row-count="1" column-count="1" hgap="-1" vgap="-1">
+  <grid id="57589" binding="mainPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="17" y="20" width="857" height="506"/>
-      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="16325" binding="namePanel" row-count="12" column-count="4" hgap="-1" vgap="-1">
+      <grid id="16325" binding="namePanel" layout-manager="GridLayoutManager" row-count="12" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="0" y="0" width="857" height="506"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="84bf7" class="javax.swing.JTextField" binding="nameField">
             <constraints>
-              <xy x="127" y="65" width="710" height="21"/>
-              <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+              <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
@@ -29,8 +26,7 @@
           </component>
           <component id="fbe8d" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="68" width="97" height="14"/>
-              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Name:"/>
@@ -38,38 +34,32 @@
           </component>
           <component id="648b6" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="114" width="97" height="14"/>
-              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
+              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Target Namespace:"/>
             </properties>
           </component>
-          <component id="68188" class="javax.swing.JTextField" binding="targetNameSpaceField">
+          <component id="62baf" class="javax.swing.JComboBox" binding="targetNameSpaceField">
             <constraints>
-              <xy x="127" y="111" width="710" height="21"/>
-              <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+              <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties>
-              <text value=""/>
-            </properties>
+            <properties/>
           </component>
           <component id="b00b2" class="javax.swing.JLabel" binding="panelHeader">
             <constraints>
-              <xy x="20" y="23" width="45" height="14"/>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Definition"/>
             </properties>
           </component>
-          <xy id="236f1" hgap="-1" vgap="-1">
+          <xy id="236f1" layout-manager="XYLayout" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="127" y="20" width="710" height="20"/>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -77,8 +67,7 @@
           </xy>
           <component id="b0961" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="160" width="97" height="14"/>
-              <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Default Namespace:"/>
@@ -86,8 +75,7 @@
           </component>
           <component id="8c687" class="javax.swing.JTextField" binding="defaultNameSpaceField">
             <constraints>
-              <xy x="127" y="157" width="710" height="21"/>
-              <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+              <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
@@ -95,8 +83,7 @@
           </component>
           <vspacer id="2912f">
             <constraints>
-              <xy x="476" y="50" width="11" height="10"/>
-              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
                 <maximum-size width="-1" height="10"/>
@@ -105,8 +92,7 @@
           </vspacer>
           <vspacer id="c5f04">
             <constraints>
-              <xy x="476" y="96" width="11" height="10"/>
-              <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
                 <maximum-size width="-1" height="10"/>
@@ -115,8 +101,7 @@
           </vspacer>
           <vspacer id="afe10">
             <constraints>
-              <xy x="476" y="142" width="11" height="10"/>
-              <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
                 <maximum-size width="-1" height="10"/>
@@ -125,8 +110,7 @@
           </vspacer>
           <vspacer id="9e63a">
             <constraints>
-              <xy x="476" y="188" width="11" height="10"/>
-              <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
                 <maximum-size width="-1" height="10"/>
@@ -135,8 +119,7 @@
           </vspacer>
           <scrollpane id="87443" binding="namespaceDetailsScrollPane">
             <constraints>
-              <xy x="20" y="228" width="817" height="258"/>
-              <grid row="10" column="1" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+              <grid row="10" column="1" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -153,8 +136,7 @@
           </scrollpane>
           <component id="90a3c" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="206" width="94" height="14"/>
-              <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Namespace Details:"/>

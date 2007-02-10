@@ -4,8 +4,10 @@ package com.l7tech.console.tree.wsdl;
 import com.l7tech.common.xml.Wsdl;
 
 import javax.wsdl.*;
-import javax.wsdl.Service;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Class DefinitionsTreeNode.
@@ -37,48 +39,52 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
     protected void loadChildren() {
         int index = 0;
         children = null;
-        FolderTreeNode ms = new FolderTreeNode(new FolderLister() {
-            /**
-             * @return a string representation of the object.
-             */
-            public String toString() {
-                return "Messages";
-            }
-
-            public List list() {
-                List list = new ArrayList();
-                Collection messages = wsdl.getMessages();
-                for (Iterator i = messages.iterator(); i.hasNext();) {
-                    list.add(new MessageTreeNode((Message)i.next()));
-                }
-                return list;
-            }
-        }, wsdlOptions);
-
-        insert(ms, index++);
-
-        FolderTreeNode pt = new FolderTreeNode(new FolderLister() {
-            /**
-             * @return a string representation of the object.
-             */
-            public String toString() {
-                return "Port Types";
-            }
-
-            public List list() {
-                List list = new ArrayList();
-
-                Collection portTypes = wsdl.getPortTypes();
-
-                for (Iterator i = portTypes.iterator(); i.hasNext();) {
-                    list.add(new PortTypeTreeNode((PortType)i.next(), wsdlOptions));
+        if (wsdlOptions.isShowMessages()) {
+            FolderTreeNode ms = new FolderTreeNode(new FolderLister() {
+                /**
+                 * @return a string representation of the object.
+                 */
+                public String toString() {
+                    return "Messages";
                 }
 
-                return list;
-            }
-        }, wsdlOptions);
+                public List list() {
+                    List list = new ArrayList();
+                    Collection messages = wsdl.getMessages();
+                    for (Iterator i = messages.iterator(); i.hasNext();) {
+                        list.add(new MessageTreeNode((Message)i.next()));
+                    }
+                    return list;
+                }
+            }, wsdlOptions);
 
-        insert(pt, index++);
+            insert(ms, index++);
+        }
+
+        if (wsdlOptions.isShowPortTypes()) {
+            FolderTreeNode pt = new FolderTreeNode(new FolderLister() {
+                /**
+                 * @return a string representation of the object.
+                 */
+                public String toString() {
+                    return "Port Types";
+                }
+
+                public List list() {
+                    List list = new ArrayList();
+
+                    Collection portTypes = wsdl.getPortTypes();
+
+                    for (Iterator i = portTypes.iterator(); i.hasNext();) {
+                        list.add(new PortTypeTreeNode((PortType)i.next(), wsdlOptions));
+                    }
+
+                    return list;
+                }
+            }, wsdlOptions);
+
+            insert(pt, index++);
+        }
 
         FolderTreeNode bn = new FolderTreeNode(new FolderLister() {
             /**

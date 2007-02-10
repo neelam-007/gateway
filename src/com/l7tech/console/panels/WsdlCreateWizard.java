@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
@@ -13,6 +14,7 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.wsdl.Definition;
 import javax.wsdl.WSDLException;
+import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLWriter;
 import javax.xml.namespace.QName;
@@ -84,9 +86,12 @@ public class WsdlCreateWizard extends Wizard {
                     // 
                     try {
                         WSDLFactory fac = WsdlUtils.getWSDLFactory();
+                        ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
+
                         StringWriter writer = new StringWriter();
                         Definition definition = (Definition) wizardInput;
+                        definition.setExtensionRegistry(reg);
                         wsdlWriter.writeWSDL(definition, writer);
 
                         Frame mw = TopComponents.getInstance().getTopParent();
@@ -175,5 +180,4 @@ public class WsdlCreateWizard extends Wizard {
         }
         return prefix + localName.getLocalPart();
     }
-
 }

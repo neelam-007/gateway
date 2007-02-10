@@ -1368,7 +1368,7 @@ public class Wsdl {
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
 
-    private static void disableSchemaExtensions(WSDLFactory factory, WSDLReader reader) {
+    public static void disableSchemaExtensions(WSDLFactory factory, WSDLReader reader) {
         if (reader.getExtensionRegistry() != null) {
             reader.setExtensionRegistry(disableSchemaExtensions(reader.getExtensionRegistry()));
         }
@@ -1377,7 +1377,7 @@ public class Wsdl {
         }
     }
 
-    private static ExtensionRegistry disableSchemaExtensions(ExtensionRegistry extensionRegistry) {
+    public static ExtensionRegistry disableSchemaExtensions(ExtensionRegistry extensionRegistry) {
         return extensionRegistry == null ? null : new NoSchemaExtensionRegistry(extensionRegistry);
     }
 

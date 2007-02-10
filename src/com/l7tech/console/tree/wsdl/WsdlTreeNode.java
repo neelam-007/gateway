@@ -69,24 +69,33 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
         return this.toString();
     }
 
-    /**
+        /**
      * the <code>Options</code> class customizes the WSDL rendering
      */
     public static class Options {
+
+        public boolean isShowMessages() {
+            return showMessages;
+        }
+
+        public void setShowMessages(boolean enabled) {
+            showMessages = enabled;
+        }
+
         public boolean isShowMessageParts() {
             return showMessageParts;
         }
 
-        public void setShowMessageParts() {
-            this.showMessageParts = true;
+        public void setShowMessageParts(boolean enabled) {
+            this.showMessageParts = enabled;
         }
 
         public boolean isShowInputMessages() {
             return showInputMessages;
         }
 
-        public void setShowInputMessages() {
-            this.showInputMessages = true;
+        public void setShowInputMessages(boolean enabled) {
+            this.showInputMessages = enabled;
         }
 
         public boolean isShowOutputMessages() {
@@ -97,9 +106,19 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
             this.showOutputMessages = true;
         }
 
+        public boolean isShowPortTypes() {
+            return showPortTypes;
+        }
+
+        public void setShowPortTypes(boolean showPortTypes) {
+            this.showPortTypes = showPortTypes;
+        }
+
+        private boolean showMessages = true;
         private boolean showInputMessages = false;
         private boolean showOutputMessages = false;
         private boolean showMessageParts = false;
+        private boolean showPortTypes = true;
     }
 
 

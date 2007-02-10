@@ -11,6 +11,7 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Vector;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -21,12 +22,13 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JPanel namePanel;
     private JTextField nameField;
-    private JTextField targetNameSpaceField;
+    private JComboBox targetNameSpaceField;
     private JTextField defaultNameSpaceField;
     private JTable namespaceDetails;
     private JScrollPane namespaceDetailsScrollPane;
     private DefaultTableModel nameSpaceDetailsModel;
     private JLabel panelHeader;
+    Vector<String> namespacesModel = new Vector<String>();
 
     public WsdlDefinitionPanel(WizardStepPanel next) {
         super(next);
@@ -37,6 +39,8 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
     }
 
     private void initialize() {
+
+        targetNameSpaceField.setModel(new DefaultComboBoxModel(namespacesModel));
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         nameSpaceDetailsModel =
           new DefaultTableModel(new String[]{"Prefix", "Namespace"},
@@ -67,10 +71,14 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
               private void updateNameSpaceSuffix(Document doc) {
                   try {
                       String name = doc.getText(0, doc.getLength());
-                      String s = targetNameSpaceField.getText();
-                      int pos = s.lastIndexOf('/');
-                      s = s.substring(0, pos + 1);
-                      targetNameSpaceField.setText(s + name + ".wsdl");
+                      Object o = targetNameSpaceField.getSelectedItem();
+                      if (o != null) {
+                          String s = (String) o;
+                          int pos = s.lastIndexOf('/');
+                          s = s.substring(0, pos + 1);
+                          int selectedIndex = targetNameSpaceField.getSelectedIndex();
+                          namespacesModel.add(selectedIndex, s + name + ".wsdl");
+                      }
                   } catch (BadLocationException ex) {
                       // swallow?
                   }
@@ -98,7 +106,11 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         Definition definition = (Definition) settings;
 
         nameField.setText(definition.getQName().getLocalPart());
-        targetNameSpaceField.setText(definition.getTargetNamespace());
+
+        if (!namespacesModel.contains(definition.getTargetNamespace()))
+            targetNameSpaceField.addItem(definition.getTargetNamespace());
+
+        targetNameSpaceField.setSelectedItem(definition.getTargetNamespace());
 
         // setup namespaces
         nameSpaceDetailsModel.getDataVector().clear();
@@ -133,7 +145,14 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
             throw new IllegalArgumentException("expected " + Definition.class);
         }
         Definition def = (Definition)settings;
-        def.setTargetNamespace(targetNameSpaceField.getText());
+        String ns = "";
+        if (targetNameSpaceField.getSelectedItem() == null) {
+            ns = (String) targetNameSpaceField.getItemAt(0);
+        } else {
+            ns = (String) targetNameSpaceField.getSelectedItem();
+        }
+
+        def.setTargetNamespace(ns);
         def.setQName(new QName(nameField.getText()));
         def.getNamespaces().clear();
         for (Iterator iterator =

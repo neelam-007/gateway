@@ -94,8 +94,8 @@ public class CreateServiceWsdlAction extends SecureAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    WsdlDefinitionPanel defPanel =
-                      new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null)))));
+                    WizardStepPanel defPanel =
+                      new WSDLCompositionPanel(new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null))))));
                     WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
                     Frame f = TopComponents.getInstance().getTopParent();
                     Wizard w = new WsdlCreateWizard(f, p);
