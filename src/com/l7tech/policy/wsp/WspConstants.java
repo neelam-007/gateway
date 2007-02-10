@@ -199,8 +199,8 @@ public class WspConstants {
         },
         new IntegrityMapping(new RequestWssIntegrity(), "Integrity"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
         new IntegrityMapping(new RequestWssIntegrity(), "RequestWssIntegrity"), // thaw pre32 form
-        new ConfidentialityMapping(new RequestWssConfidentiality(), "Confidentiality"), // freeze RequestWssConfidentiality as wsse:Confidentiality or pre32 form; thaw wsse:Confidentiality
-        new ConfidentialityMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"), // thaw pre32 form
+        new ConfidentialityMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"), // 3.7+ and pre32 form.
+        new ConfidentialityMapping(new RequestWssConfidentiality(), "Confidentiality"), // thaw wsse:Confidentiality (3.2 - 3.6.5)
 
         // Encrypted username token will use our proprietary vocabulary since it has special semantics
         new AssertionMapping(new EncryptedUsernameTokenAssertion(), "EncryptedUsernameToken"),

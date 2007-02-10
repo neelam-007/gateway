@@ -318,6 +318,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                               dreq.getRecipientCertificate(),
                                               new Element[0],
                                               addedEncKeyXmlEncKey,
+                                              dreq.getKeyEncryptionAlgorithm(),
                                               null);
                 String encKeyId = getOrCreateWsuId(c, addedEncKey, null);
 
@@ -526,6 +527,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                 dreq.getRecipientCertificate(),
                                 (Element[])(cryptList.toArray(new Element[0])),
                                 encKey,
+                                dreq.getKeyEncryptionAlgorithm(),                        
                                 xencDesiredNextSibling);
             } else
                 throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
@@ -982,6 +984,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                     X509Certificate recipientCertificate,
                                     Element[] elementsToEncrypt,
                                     XencUtil.XmlEncKey encKey,
+                                    String algorithm,
                                     Element desiredNextSibling)
       throws GeneralSecurityException, DecoratorException {
 
@@ -1003,7 +1006,6 @@ public class WssDecoratorImpl implements WssDecorator {
         String xenc = encryptedKey.getPrefix();
 
         Element encryptionMethod = XmlUtil.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
-        encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO);
 
         byte[] recipSki = CertUtils.getSKIBytesFromCert(recipientCertificate);
 
@@ -1016,9 +1018,27 @@ public class WssDecoratorImpl implements WssDecorator {
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
         final SecretKey secretKey = encKey.getSecretKey();
         c.lastEncryptedKeySecretKey = secretKey;
-        final byte[] encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(),
-                                                                          recipientCertificate.getPublicKey(),
-                                                                          c.rand);
+        final byte[] encryptedKeyBytes;
+        if (SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(algorithm)) {
+            byte[] params = new byte[16];
+            c.rand.nextBytes(params);
+
+            encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
+            encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(),
+                                              recipientCertificate.getPublicKey(),
+                                              params);
+
+            Element oaepParamsEle = XmlUtil.createAndAppendElementNS(encryptionMethod, "OAEPparams", xencNs, xenc);
+            oaepParamsEle.appendChild(XmlUtil.createTextNode(oaepParamsEle, HexUtils.encodeBase64(params)));
+            
+            Element digestMethodEle = XmlUtil.createAndAppendElementNS(encryptionMethod, "DigestMethod", SoapUtil.DIGSIG_URI, "ds");
+            digestMethodEle.setAttribute("Algorithm", SoapUtil.DIGSIG_URI+"sha1");
+        } else {
+            encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO);
+            encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(),
+                                              recipientCertificate.getPublicKey(),
+                                              c.rand);
+        }
         c.lastEncryptedKeyBytes = encryptedKeyBytes;
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
         cipherValue.appendChild(XmlUtil.createTextNode(soapMsg, base64));

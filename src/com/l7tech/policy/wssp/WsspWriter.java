@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
@@ -31,7 +30,6 @@ import org.w3c.dom.NodeList;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.DOMResultXMLStreamWriter;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -162,11 +160,8 @@ public class WsspWriter {
         Policy wssp = new Policy();
 
         // Construct the Policy
-        if(isSymmetricBinding(l7Assertions)) {
-            //buildSymmetricBinding();
-        }
-        else if(isAsymmetricBinding(l7Assertions)) {
-            buildAsymmetricBinding(wssp, algorithmSuite, l7Assertions);
+        if(isAsymmetricBinding(l7Assertions)) {
+            buildAsymmetricBinding(wssp, algorithmSuite);
         }
         else { // Transport Binding
             buildTransportBinding(wssp, algorithmSuite, l7Assertions);
@@ -232,18 +227,18 @@ public class WsspWriter {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(WsspWriter.class.getName());
-
     // algorithm suites
     private static final int ALGORITHM_SUITE_BASIC128_RSA15 = 1;
     private static final int ALGORITHM_SUITE_BASIC192_RSA15 = 2;
     private static final int ALGORITHM_SUITE_BASIC256_RSA15 = 3;
     private static final int ALGORITHM_SUITE_TRIPLEDES_RSA15 = 4;
+    private static final int ALGORITHM_SUITE_BASIC128_RSAOAEP = 5;
+    private static final int ALGORITHM_SUITE_BASIC192_RSAOAEP = 6;
+    private static final int ALGORITHM_SUITE_BASIC256_RSAOAEP = 7;
+    private static final int ALGORITHM_SUITE_TRIPLEDES_RSAOAEP = 8;
 
     // namespaces / prefix
-    private static final String NAMESPACE_POLICY = "http://schemas.xmlsoap.org/ws/2004/09/policy";
     private static final String NAMESPACE_SECURITY_POLICY = "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy";
-    private static final String NAMESPACE_SOAP_11 = "http://schemas.xmlsoap.org/wsdl/soap/";
 
     private static final String PREFIX_SECURITY_POLICY = "sp";
 
@@ -271,6 +266,10 @@ public class WsspWriter {
     private static final String SPELE_MUSTSUPPORT_REF_KEY_ID = "MustSupportRefKeyIdentifier";
     private static final String SPELE_MUSTSUPPORT_REF_ISSUER_SERIAL = "MustSupportRefIssuerSerial";
     private static final String SPELE_ALGORITHM_SUITE = "AlgorithmSuite";
+    private static final String SPELE_ALGORITHMSUITE_BASIC128RSAOAEP = "Basic128";
+    private static final String SPELE_ALGORITHMSUITE_BASIC192RSAOAEP = "Basic192";
+    private static final String SPELE_ALGORITHMSUITE_BASIC256RSAOAEP = "Basic256";
+    private static final String SPELE_ALGORITHMSUITE_TRIPLEDESRSAOAEP = "TripleDes";
     private static final String SPELE_ALGORITHMSUITE_BASIC128RSA15 = "Basic128Rsa15";
     private static final String SPELE_ALGORITHMSUITE_BASIC192RSA15 = "Basic192Rsa15";
     private static final String SPELE_ALGORITHMSUITE_BASIC256RSA15 = "Basic256Rsa15";
@@ -297,16 +296,16 @@ public class WsspWriter {
     private static final Pattern HEADER_PATTERN = Pattern.compile("/\\{http://schemas.xmlsoap.org/soap/envelope/\\}Envelope/\\{http://schemas.xmlsoap.org/soap/envelope/\\}Header/\\{([^\\s}]{1,1024})}([^\\s}:/\\(\\){}\\[\\]]{1,1024})");
 
     // WSS assertions
-    private static final Collection WSS_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(new Object[]{
+    private static final Collection WSS_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(
         RequestWssX509Cert.class,
         RequestWssIntegrity.class,
         RequestWssConfidentiality.class,
         ResponseWssIntegrity.class,
-        ResponseWssConfidentiality.class,
-    }));
+        ResponseWssConfidentiality.class
+    ));
 
     // All supported assertions
-    private static final Collection SUPPORTED_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(new Object[]{
+    private static final Collection SUPPORTED_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(
         SslAssertion.class,
         WssBasic.class,
         RequestWssTimestamp.class,
@@ -315,8 +314,8 @@ public class WsspWriter {
         RequestWssConfidentiality.class,
         ResponseWssTimestamp.class,
         ResponseWssIntegrity.class,
-        ResponseWssConfidentiality.class,
-    }));
+        ResponseWssConfidentiality.class
+    ));
 
     /**
      * Ensure that the given assertions can be converted to WS-SP.
@@ -353,12 +352,6 @@ public class WsspWriter {
             throw new PolicyAssertionException(null, "Cannot use WSS and TLS with client cert.");
     }
 
-    private boolean isSymmetricBinding(Collection assertions) {
-        // NOT currently supported
-        // Would check for Kerberos / Secure conversation, etc
-        return false;
-    }
-
     private boolean isAsymmetricBinding(Collection assertions) {
         boolean isAsymmetric = false;
 
@@ -383,35 +376,39 @@ public class WsspWriter {
         for (Iterator iterator = assertions.iterator(); iterator.hasNext();) {
             Assertion assertion = (Assertion) iterator.next();
             String algEncStr = null;
+            String keyEncAlgStr = null;
             if (assertion instanceof RequestWssConfidentiality) {
                 RequestWssConfidentiality rwc = (RequestWssConfidentiality) assertion;
                 algEncStr = rwc.getXEncAlgorithm();
+                keyEncAlgStr = rwc.getKeyEncryptionAlgorithm();
             }
             else if (assertion instanceof ResponseWssConfidentiality) {
                 ResponseWssConfidentiality rwc = (ResponseWssConfidentiality) assertion;
                 algEncStr = rwc.getXEncAlgorithm();
+                keyEncAlgStr = rwc.getKeyEncryptionAlgorithm();
             }
 
             if (algEncStr != null) {
                 int algorithm = ALGORITHM_SUITE_BASIC128_RSA15;
+                boolean rsa15 = keyEncAlgStr == null || SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO.equals(keyEncAlgStr);
                 if (XencUtil.AES_128_CBC.equals(algEncStr)) {
-                    algorithm = ALGORITHM_SUITE_BASIC128_RSA15;
+                    algorithm = rsa15 ? ALGORITHM_SUITE_BASIC128_RSA15 : ALGORITHM_SUITE_BASIC128_RSAOAEP;
                 }
                 else if (XencUtil.AES_192_CBC.equals(algEncStr)) {
-                    algorithm = ALGORITHM_SUITE_BASIC192_RSA15;
+                    algorithm = rsa15 ? ALGORITHM_SUITE_BASIC192_RSA15 : ALGORITHM_SUITE_BASIC192_RSAOAEP;
                 }
                 else if (XencUtil.AES_256_CBC.equals(algEncStr)) {
-                    algorithm = ALGORITHM_SUITE_BASIC256_RSA15;
+                    algorithm = rsa15 ? ALGORITHM_SUITE_BASIC256_RSA15 : ALGORITHM_SUITE_BASIC256_RSAOAEP;
                 }
                 else if (XencUtil.TRIPLE_DES_CBC.equals(algEncStr)) {
-                    algorithm = ALGORITHM_SUITE_TRIPLEDES_RSA15;
+                    algorithm = rsa15 ? ALGORITHM_SUITE_TRIPLEDES_RSA15 : ALGORITHM_SUITE_TRIPLEDES_RSAOAEP;
                 }
                 else {
                     //TODO throw rather than default for unknown algorithms
                 }
                 if (suite != null && suite.intValue()!=algorithm) {
                     // conflicting algorithms specifed, not currently supported
-                    throw new PolicyAssertionException(null, "Conflicting encryption algorithms specified.");
+                    throw new PolicyAssertionException(null, "Conflicting algorithms specified.");
                 }
                 else {
                     suite = Integer.valueOf(algorithm);
@@ -461,6 +458,18 @@ public class WsspWriter {
                 break;
             case ALGORITHM_SUITE_TRIPLEDES_RSA15:
                 algSuiteTypeEleName = SPELE_ALGORITHMSUITE_TRIPLEDESRSA15;
+                break;
+            case ALGORITHM_SUITE_BASIC128_RSAOAEP:
+                algSuiteTypeEleName = SPELE_ALGORITHMSUITE_BASIC128RSAOAEP;
+                break;
+            case ALGORITHM_SUITE_BASIC192_RSAOAEP:
+                algSuiteTypeEleName = SPELE_ALGORITHMSUITE_BASIC192RSAOAEP;
+                break;
+            case ALGORITHM_SUITE_BASIC256_RSAOAEP:
+                algSuiteTypeEleName = SPELE_ALGORITHMSUITE_BASIC256RSAOAEP;
+                break;
+            case ALGORITHM_SUITE_TRIPLEDES_RSAOAEP:
+                algSuiteTypeEleName = SPELE_ALGORITHMSUITE_TRIPLEDESRSAOAEP;
                 break;
         }
 
@@ -551,7 +560,7 @@ public class WsspWriter {
     /**
      * Build an asymmetric binding assertion and siblings, attach to the given assertion
      */
-    private void buildAsymmetricBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite, Collection l7Assertions) {
+    private void buildAsymmetricBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite) {
         QName name = new QName(NAMESPACE_SECURITY_POLICY, SPELE_BINDING_ASYMMETRIC, PREFIX_SECURITY_POLICY);
         PrimitiveAssertion binding = new PrimitiveAssertion(name);
 
@@ -820,7 +829,7 @@ public class WsspWriter {
 
     /**
      * Alternative policy -> DOM method
-     */
+     * /
     private static Element toElement2(Document target, StAXPolicyWriter pw, Policy policy) throws PolicyAssertionException {
         try {
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
@@ -830,6 +839,6 @@ public class WsspWriter {
         catch(org.xml.sax.SAXException se) {
             throw new PolicyAssertionException(null, "Could not create DOM from WS-SecurityPolicy", se);
         }
-    }
+    } */
 
 }

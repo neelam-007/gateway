@@ -260,6 +260,12 @@ public class WssRoundTripTest extends TestCase {
                                                false);
     }
 
+    public void testOaepEncryptedKey() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptedKeyAlgorithm",
+                                               wssDecoratorTest.getOaepKeyEncryptionTestDocument()));
+    }
+
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         runRoundTripTest(ntd, true);
     }
@@ -479,6 +485,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSignUsernameToken(td.signUsernameToken);
         reqs.setSuppressBst(td.suppressBst);
         reqs.setUseDerivedKeys(td.useDerivedKeys);
+        reqs.setKeyEncryptionAlgorithm(td.keyEncryptionAlgoritm);
         if (td.secureConversationKey != null) {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }

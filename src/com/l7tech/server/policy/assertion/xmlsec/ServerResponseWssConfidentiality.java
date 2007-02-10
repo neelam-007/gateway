@@ -97,6 +97,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                                                             null,
                                                             null,
                                                             null,
+                                                            null,
                                                             responseWssConfidentiality.getRecipientContext()));
             return AssertionStatus.NONE;
         } else {
@@ -117,6 +118,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
             SecurityContextToken secConvContext = null;
             EncryptedKey encryptedKey = null;
             XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
+            String keyEncryptionAlgorithm = null;
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken token = tokens[i];
                 if (token instanceof X509SecurityToken) {
@@ -127,6 +129,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                             return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                         }
                         clientCert = x509token.getCertificate();
+                        keyEncryptionAlgorithm = wssResult.getLastKeyEncryptionAlgorithm();
                     }
                 } else if (token instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)token;
@@ -165,7 +168,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
 
-            context.addDeferredAssertion(this, deferredDecoration(clientCert, kerberosServiceTicket, secConvContext, encryptedKey, null));
+            context.addDeferredAssertion(this, deferredDecoration(clientCert, kerberosServiceTicket, secConvContext, encryptedKey, keyEncryptionAlgorithm, null));
             return AssertionStatus.NONE;
         }
     }
@@ -180,6 +183,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
      *                   this should be plugged in, no idea why it is no longer there
      * @param encryptedKey encrypted key already known to recipient, to use with #EncryptedKeySHA1 reference,
      *                     or null.  This will only be used if no other encryption source is available.
+     * @param keyEncryptionAlgorithm The key encryption algorithm to use in the response (if X.509 cert)
      * @param recipient the intended recipient for the Security header to create
      * @return a ServerAssertion that will set up the proper decoration when invoked.
      */
@@ -187,6 +191,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                                                final KerberosServiceTicket kerberosServiceTicket,
                                                final SecurityContextToken secConvTok,
                                                final EncryptedKey encryptedKey,
+                                               final String keyEncryptionAlgorithm,
                                                final XmlSecurityRecipientContext recipient) {
         return new AbstractServerAssertion<ResponseWssConfidentiality>(data) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -228,6 +233,9 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                     wssReq.setEncryptionAlgorithm(responseWssConfidentiality.getXEncAlgorithm());
                     if (clientCert != null) {
                         wssReq.setRecipientCertificate(clientCert);
+                        wssReq.setKeyEncryptionAlgorithm(responseWssConfidentiality.getKeyEncryptionAlgorithm());
+                        if (wssReq.getKeyEncryptionAlgorithm()==null)
+                            wssReq.setKeyEncryptionAlgorithm(keyEncryptionAlgorithm);
                         // LYONSM: need to rethink configuring a signature and assuming a signature source here
                         //wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
                         //wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());

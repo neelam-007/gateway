@@ -664,7 +664,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // verify that the algo is supported
-        XencUtil.checkEncryptionMethod(encryptedKeyElement);
+        cntx.lastKeyEncryptionAlgorithm = XencUtil.checkEncryptionMethod(encryptedKeyElement);
 
         // We got the key. Get the list of elements to decrypt.
         Element refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
@@ -1596,6 +1596,10 @@ public class WssProcessorImpl implements WssProcessor {
                 return cntx.lastSignatureConfirmation;
             }
 
+            public String getLastKeyEncryptionAlgorithm() {
+                return cntx.lastKeyEncryptionAlgorithm;
+            }
+
             public boolean isWsse11Seen() {
                 return cntx.isWsse11Seen;
             }
@@ -1671,6 +1675,7 @@ public class WssProcessorImpl implements WssProcessor {
         X509Certificate senderCertificate = null;
         String lastSignatureValue = null;
         String lastSignatureConfirmation = null;
+        String lastKeyEncryptionAlgorithm = null;
         boolean isWsse11Seen = false;
         boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
         SecurityTokenResolver securityTokenResolver = null;

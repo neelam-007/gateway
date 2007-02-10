@@ -340,6 +340,7 @@ public class Saml2ValidationTest extends TestCase {
             public EncryptedElement[] getElementsThatWereEncrypted() { return new EncryptedElement[0];}
             public SignedElement[] getElementsThatWereSigned() { return new SignedElement[0]; }
             public String getLastSignatureConfirmation() { return null; }
+            public String getLastKeyEncryptionAlgorithm() { return null; }
             public String getLastSignatureValue() { return null; }
             public SecurityActor getProcessedActor() { return null; }
             public String getSecurityNS() { return SoapUtil.SECURITY_NAMESPACE; }

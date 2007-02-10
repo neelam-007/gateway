@@ -254,6 +254,29 @@ public class DecorationRequirements {
     }
 
     /**
+     * Set the key encryption algorithm to use.
+     *
+     * <ul>
+     * <li>http://www.w3.org/2001/04/xmlenc#rsa-1_5</li>
+     * <li>http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p</li>
+     * </ul>
+     *
+     * @param keyEncryptionAlgorithm The algorithm to use, null for default
+     */
+    public void setKeyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
+        this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
+    }
+
+    /**
+     * Get the key encryption algorithm.
+     *
+     * @return The algorithm to use, null if not set
+     */
+    public String getKeyEncryptionAlgorithm() {
+        return keyEncryptionAlgorithm;
+    }
+
+    /**
      * Set the wsse11:SignatureConfirmation value to use for this reply, if any.  This must be the still-base64-encoded
      * content of the dsig:SignatureValue whose value is being confirmed.  A SignatureConfirmation value will
      * only be included in the decorated message if the rest of the decoration requirements are sufficient to
@@ -506,7 +529,7 @@ public class DecorationRequirements {
     private boolean signTimestamp;
     private Set elementsToEncrypt = new LinkedHashSet();
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
-    //private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#tripledes-cbc";
+    private String keyEncryptionAlgorithm = null;
     private Set elementsToSign = new LinkedHashSet();
     private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;

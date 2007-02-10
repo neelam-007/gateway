@@ -173,9 +173,10 @@ public class XencUtil {
     /**
      * Verify that the specified EncryptedType has a supported EncryptionMethod (currently RSA1_5 or rsa-oaep-mgf1p)
      * @param encryptedType the EncryptedKey or EncryptedData to check
+     * @return The encryption algorithm
      * @throws com.l7tech.common.xml.InvalidDocumentFormatException if the specified algorithm is not supported
      */
-    public static void checkEncryptionMethod(Element encryptedType) throws InvalidDocumentFormatException {
+    public static String checkEncryptionMethod(Element encryptedType) throws InvalidDocumentFormatException {
         Element encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedType,
                                                                            SoapUtil.XMLENC_NS,
                                                                            "EncryptionMethod");
@@ -199,10 +200,10 @@ public class XencUtil {
         }
 
         if (encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO)) {
-            return;
+            return encMethodValue;
         } else if(encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2)) {
             if (digestAlgo==null || (SoapUtil.DIGSIG_URI+"sha1").equals(digestAlgo)) {
-                return;
+                return encMethodValue;
             }
         }
 

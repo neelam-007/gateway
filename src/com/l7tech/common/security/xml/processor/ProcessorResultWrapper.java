@@ -61,6 +61,11 @@ public class ProcessorResultWrapper implements ProcessorResult {
         return delegate.getLastSignatureConfirmation();
     }
 
+    public String getLastKeyEncryptionAlgorithm()
+    {
+        return delegate.getLastKeyEncryptionAlgorithm();
+    }
+
     public boolean isWsse11Seen() {
         return delegate.isWsse11Seen();
     }

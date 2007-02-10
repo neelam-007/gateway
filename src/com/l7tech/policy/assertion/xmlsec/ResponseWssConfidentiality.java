@@ -40,6 +40,14 @@ public class ResponseWssConfidentiality extends XmlSecurityAssertionBase {
         this.xencAlgorithm = xencAlgorithm;
     }
 
-    private String xencAlgorithm = XencUtil.AES_128_CBC;
+    public String getKeyEncryptionAlgorithm() {
+        return xencKeyAlgorithm;
+    }
 
+    public void setKeyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
+        this.xencKeyAlgorithm = keyEncryptionAlgorithm;
+    }
+
+    private String xencAlgorithm = XencUtil.AES_128_CBC;
+    private String xencKeyAlgorithm = null;
 }

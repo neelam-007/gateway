@@ -125,6 +125,7 @@ public class WssDecoratorTest extends TestCase {
         public String signatureConfirmation = null;
         public String actor = null;
         public boolean encryptUsernameToken = false;
+        public String keyEncryptionAlgoritm;
         public UsernameToken usernameToken = null;
         public boolean useDerivedKeys = false;
         public boolean signUsernameToken = false;
@@ -873,5 +874,20 @@ public class WssDecoratorTest extends TestCase {
         testDocument.encryptionAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName(); 
 
         return testDocument;
+    }
+
+    public TestDocument getOaepKeyEncryptionTestDocument() throws Exception {
+        final Context c = new Context();
+        TestDocument td = new TestDocument(
+                c,
+                null,
+                null,
+                TestDocuments.getDotNetServerCertificate(),
+                TestDocuments.getDotNetServerPrivateKey(),
+                true,
+                null,
+                new Element[]{c.body});
+        td.keyEncryptionAlgoritm = SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2;
+        return td;
     }
 }
