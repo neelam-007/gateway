@@ -105,7 +105,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
 
             Class genericAssertionClass = genericAssertion.getClass();
             String productClassname = PolicyFactoryUtil.getProductClassname(genericAssertionClass, "com.l7tech.server.policy.assertion", "Server");
-            Class specificAssertionClass = Class.forName(productClassname);
+            Class specificAssertionClass = genericAssertion.getClass().getClassLoader().loadClass(productClassname);
 
             if (!ServerAssertion.class.isAssignableFrom(specificAssertionClass))
                 throw new ServerPolicyException(genericAssertion, productClassname + " is not a ServerAssertion");

@@ -149,7 +149,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
         File[] jars = dir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return name.toLowerCase().endsWith(".jar");
+                return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jar.disable");
             }
         });
 
@@ -157,6 +157,17 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         Set<String> seenNames = new HashSet<String>();
         for (File file : jars) {
             String filename = file.getName();
+
+            if (filename.toLowerCase().endsWith(".jar.disable")) {
+                // Admin wants to disable this module
+                String name = filename.substring(0, filename.length() - 8);
+                if (loadedModules.containsKey(name)) {
+                    logger.info("Unregistering module " + name + " because the flag file " + filename + "exists");
+                    unregisterModule(name);
+                }
+                continue;
+            }
+
             long lastModified = file.lastModified();
             try {
                 seenNames.add(filename);

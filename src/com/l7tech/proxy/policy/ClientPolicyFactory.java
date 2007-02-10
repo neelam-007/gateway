@@ -45,7 +45,7 @@ public class ClientPolicyFactory {
         try {
             Class genericClass = genericAssertion.getClass();
             String clientClassname = PolicyFactoryUtil.getProductClassname(genericClass, "com.l7tech.proxy.policy.assertion", "Client");
-            Class clientClass = Class.forName(clientClassname);
+            Class clientClass = genericAssertion.getClass().getClassLoader().loadClass(clientClassname);
             Constructor ctor = clientClass.getConstructor(new Class[]{genericClass});
             return (ClientAssertion) ctor.newInstance(new Object[]{genericAssertion});
         } catch (InstantiationException ie) {
