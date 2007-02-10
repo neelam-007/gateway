@@ -13,6 +13,10 @@ import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Collections;
+
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -163,6 +167,11 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
 
     public MetricsSummaryBin summarizeLatest(final String nodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public Collection<ModuleInfo> getAssertionModuleInfo() throws RemoteException {
+        return Collections.emptyList();
     }
 
     public String getHardwareCapability(String capability) {

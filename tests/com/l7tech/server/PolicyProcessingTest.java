@@ -126,7 +126,10 @@ public class PolicyProcessingTest extends TestCase {
                  // Ordinarily, the application context would take care of configuring the registry,
                  // but it has to be done before buildServices() is called, and buildServices() has
                  // to be done before the application context is created (at least for this test).
-                 WspConstants.setTypeMappingFinder(new AssertionRegistry());
+                 final AssertionRegistry tmf = new AssertionRegistry();
+                 tmf.setApplicationContext(null);
+                 tmf.afterPropertiesSet();
+                 WspConstants.setTypeMappingFinder(tmf);
 
                  buildServices();
 

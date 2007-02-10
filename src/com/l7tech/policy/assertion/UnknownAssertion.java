@@ -5,6 +5,8 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.util.Functions;
+
 /**
  * The <code>UnknownAssertion</code> is an assertion that indicates
  * that there is an unknown assertion in the policy tree. This assertion
@@ -70,6 +72,19 @@ public class UnknownAssertion extends Assertion {
 
     public Throwable cause() {
         return cause;
+    }
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = super.defaultMeta();
+
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/unknown.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary< String, UnknownAssertion >() {
+            public String call(UnknownAssertion unknownAssertion) {
+                return unknownAssertion.getDetailMessage();
+            }
+        });
+
+        return meta;
     }
 
     public String toString() {

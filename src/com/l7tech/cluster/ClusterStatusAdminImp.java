@@ -16,12 +16,19 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsSummaryBin;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
 
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
+
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -42,7 +49,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                                  ClusterPropertyManager clusterPropertyManager,
                                  LicenseManager licenseManager,
                                  ServiceMetricsManager metricsManager,
-                                 ServerConfig serverConfig)
+                                 ServerConfig serverConfig,
+                                 AssertionRegistry assertionRegistry)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -50,6 +58,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.licenseManager = (GatewayLicenseManager)licenseManager;
         this.serviceMetricsManager = metricsManager;
         this.serverConfig = serverConfig;
+        this.assertionRegistry = (ServerAssertionRegistry)assertionRegistry;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -227,6 +236,21 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return serviceMetricsManager.summarizeLatest(nodeId, serviceOid, resolution, duration);
     }
 
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public Collection<ModuleInfo> getAssertionModuleInfo() throws RemoteException {
+        checkLicense();
+
+        Collection<ModuleInfo> ret = new ArrayList<ModuleInfo>();
+        Set<AssertionModule> modules = assertionRegistry.getLoadedModules();
+        for (AssertionModule module : modules) {
+            Collection<String> assertions = new ArrayList<String>();
+            for (Assertion assertion : module.getAssertionPrototypes())
+                assertions.add(assertion.getClass().getName());
+            ret.add(new ModuleInfo(module.getName(), module.getSha1(), assertions));
+        }
+        return ret;
+    }
+
     public String getHardwareCapability(String capability) {
         if (!ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) return null;
         return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;
@@ -238,6 +262,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final GatewayLicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
     private final ServerConfig serverConfig;
+    private final ServerAssertionRegistry assertionRegistry;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

@@ -194,7 +194,6 @@ public class AllAssertions {
         new MappingAssertion(),
         new SetVariableAssertion(),
         new CookieCredentialSourceAssertion(),
-        new RateLimitAssertion(),
         new HtmlFormDataAssertion(),
     };
 }

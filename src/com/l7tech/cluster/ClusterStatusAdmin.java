@@ -13,6 +13,7 @@ import com.l7tech.service.MetricsSummaryBin;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Map;
@@ -253,6 +254,37 @@ public interface ClusterStatusAdmin {
                                       final int resolution,
                                       final int duration)
             throws RemoteException, FindException;
+
+    /**
+     * Describes a loaded module.
+     */
+    public static final class ModuleInfo implements Serializable {
+        private static final long serialVersionUID = 1937230947284240743L;
+
+        /** The filename of the module, ie "RateLimitAssertion-3.7.0.jar". */
+        public final String moduleFilename;
+
+        /** The hex encoded SHA-1 hash of the module file, ie "75f53368f8ef850bfb89ba2adcb4eacd0534b173". */
+        public final String moduleSha1;
+
+        /** The assertion classnames provided by this module, ie { "com.yoyodyne.integration.layer7.SqlSelectAssertion" }. */
+        public final Collection<String> assertionClasses;
+
+        public ModuleInfo(String moduleFilename, String moduleSha1, Collection<String> assertionClasses) {
+            this.moduleFilename = moduleFilename;
+            this.moduleSha1 = moduleSha1;
+            this.assertionClasses = assertionClasses;
+        }
+    }
+
+    /**
+     * Get information about the modular assertions currently loaded on this cluster node.
+     *
+     * @return A Collection of ModuleInfo, one for each loaded module.  May be empty but never null.
+     * @throws RemoteException on remote communication error
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    Collection<ModuleInfo> getAssertionModuleInfo() throws RemoteException;
 
     /**
      * Check hardware capabilities of the node that receives this admin request.

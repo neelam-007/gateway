@@ -15,10 +15,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.server.policy.ServerPolicy;
-import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.ServerPolicyHandle;
+import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.service.resolution.*;
@@ -93,13 +90,13 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof LicenseEvent) {
+        if (applicationEvent instanceof LicenseEvent || applicationEvent instanceof AssertionModuleRegistrationEvent) {
             Background.scheduleOneShot(new TimerTask() {
                 public void run() {
                     try {
                         resetUnlicensed();
                     } finally {
-                        getApplicationContext().publishEvent(new ServiceReloadEvent(this));                        
+                        getApplicationContext().publishEvent(new ServiceReloadEvent(this));
                     }
                 }
             }, 0);
@@ -296,6 +293,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             }
             // cache the server policy for this service
             try {
+                service.forcePolicyRecompile();
                 serverRootAssertion = policyFactory.compilePolicy(service.rootAssertion(), true);
                 servicesThatAreUnlicensed.remove(service.getOid());
             } catch (final LicenseException e) {

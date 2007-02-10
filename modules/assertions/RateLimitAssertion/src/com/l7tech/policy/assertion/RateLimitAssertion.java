@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 /**
  * Adds rate limiting to a policy.
- * See http://sarek.l7tech.com/mediawiki/index.php?title=POLM_1410_Rate_Limiting 
+ * See http://sarek.l7tech.com/mediawiki/index.php?title=POLM_1410_Rate_Limiting
  */
 public class RateLimitAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(RateLimitAssertion.class.getName());

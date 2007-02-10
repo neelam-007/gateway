@@ -53,6 +53,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
     public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
     public static final String PARAM_ATTACHMENT_DISK_THRESHOLD = "attachmentDiskThreshold";
+    public static final String PARAM_MODULAR_ASSERTIONS_DIRECTORY = "modularAssertionsDirectory";
 
     public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
@@ -552,37 +553,66 @@ public class ServerConfig implements ClusterPropertyListener {
     }
 
     public File getAttachmentDirectory() {
-        String attachmentsPath = getPropertyCached(PARAM_ATTACHMENT_DIRECTORY);
+        return getLocalDirectoryProperty(PARAM_ATTACHMENT_DIRECTORY, "/ssg/var/attachments", true);
+    }
 
-        if (attachmentsPath == null || attachmentsPath.length() <= 0) {
-            final String def = "/ssg/var/attachments";
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + " is not defined. Please ensure the SecureSpan " +
+    /**
+     * Get a configured local directory, ensuring that it exists, is a directory, is readable, and optionally
+     * is writable.
+     *
+     * @param propName    the name of the serverconfig property that is expected to define a directory
+     * @param def         the path to use as an emergency default value if the property is not set
+     * @param mustBeWritable  if true, the directory will be checked to ensure that it is writable
+     * @return a File that points at what (at the time this method returns) is an existing readable directory.
+     *         If mustBeWritable, then it will be writable as well.
+     */
+    public File getLocalDirectoryProperty(String propName, String def, boolean mustBeWritable) {
+        String path = getPropertyCached(propName);
+
+        if (path == null || path.length() < 1) {
+            String errorMsg = "The property " + propName + " is not defined.  Please ensure that the SecureSpan " +
                     "Gateway is properly configured.  (Will use default of " + def + ")";
             logger.severe(errorMsg);
             return new File(def);
         }
 
-        File attachmentsDir = new File(attachmentsPath);
-        if (!attachmentsDir.exists())
-            attachmentsDir.mkdirs();
+        File dir = new File(path);
+        if (!dir.exists())
+            dir.mkdirs();
 
-        if (!attachmentsDir.exists()) {
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + attachmentsPath +
-                    ", is required for caching large attachments but was not found. Please ensure the " +
+        if (!dir.exists()) {
+            String errorMsg = "The property " + propName + ", defined as the directory " + path +
+                    ", is required but could not be found or created.  Please ensure the " +
                     "SecureSpan Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
 
-        if (!attachmentsDir.canWrite()) {
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + attachmentsPath +
-                    ", is required for caching large attachments but was not writable by the Gateway process.  " +
-                    "Please ensure the SecureSpan Gateway is properly installed.";
+        if (!dir.isDirectory()) {
+            String errorMsg = "The property " + propName + " defined directory " + path +
+                    " which is present but is not a directory.  Please ensure the " +
+                    "SecureSpan Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
 
-        return attachmentsDir;
+        if (!dir.canRead()) {
+            String errorMsg = "The property " + propName + " defined directory " + path +
+                    " which is present but is not readable.  Please ensure the " +
+                    "SecureSpan Gateway is properly installed.";
+            logger.severe(errorMsg);
+            throw new RuntimeException(errorMsg);
+        }
+
+        if (mustBeWritable && !dir.canWrite()) {
+            String errorMsg = "The property " + propName + " defined directory " + path +
+                    " which is present but is not writable.  Please ensure the " +
+                    "SecureSpan Gateway is properly installed.";
+            logger.severe(errorMsg);
+            throw new RuntimeException(errorMsg);
+        }
+
+        return dir;
     }
 
     public int getIntProperty(String propName, int emergencyDefault) {

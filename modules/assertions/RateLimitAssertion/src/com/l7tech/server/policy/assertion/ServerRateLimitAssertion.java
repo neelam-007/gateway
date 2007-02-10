@@ -336,7 +336,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, new String[] { counterName });
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
-            }            
+            }
 
         } finally {
             // Leave lineup and wake next in line if we were first

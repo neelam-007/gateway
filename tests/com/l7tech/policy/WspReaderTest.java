@@ -42,6 +42,7 @@ public class WspReaderTest extends TestCase {
     private final WspReader wspReader;
     {
         final AssertionRegistry tmf = new AssertionRegistry();
+        tmf.setApplicationContext(null);
         WspConstants.setTypeMappingFinder(tmf);
         wspReader = new WspReader(tmf);
     }

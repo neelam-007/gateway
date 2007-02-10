@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.TimeoutExecutor;
 import com.l7tech.common.xml.TestDocuments;
@@ -8,12 +7,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RateLimitAssertion;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ public class ServerRateLimitAssertionTest extends TestCase {
 
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
     private static ApplicationContext applicationContext;
-    private static ServerPolicyFactory serverPolicyFactory;
     private static ServerConfigStub serverConfig;
 
     public ServerRateLimitAssertionTest(String name) {
@@ -46,8 +44,9 @@ public class ServerRateLimitAssertionTest extends TestCase {
         return new TestSetup(suite) {
 
             protected void setUp() throws Exception {
-                applicationContext = ApplicationContexts.getTestApplicationContext();
-                serverPolicyFactory = (ServerPolicyFactory) applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
+                applicationContext = new ClassPathXmlApplicationContext(new String[]{
+                        "com/l7tech/server/policy/assertion/serverRateLimitAssertionTestApplicationContext.xml"
+                });
                 serverConfig = (ServerConfigStub) applicationContext.getBean("serverConfig", ServerConfigStub.class);
                 serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(99999));
             }
@@ -65,7 +64,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
     }
 
     private ServerAssertion makePolicy(RateLimitAssertion rla) throws Exception {
-        return serverPolicyFactory.compilePolicy(rla, false);
+        return new ServerRateLimitAssertion(rla, applicationContext);
     }
 
     public void testConcurrencyLimit() throws Exception {

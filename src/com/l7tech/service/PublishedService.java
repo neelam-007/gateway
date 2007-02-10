@@ -56,12 +56,16 @@ public class PublishedService extends NamedEntityImp {
         if (policyXml == null || policyXml.length() == 0) {
             logger.warning("Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy.");
             return FalseAssertion.getInstance();
-        } else {
-            if (_rootAssertion == null)
-                _rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
         }
 
+        if (_rootAssertion == null)
+            _rootAssertion = WspReader.getDefault().parsePermissively(policyXml);
+
         return _rootAssertion;
+    }
+
+    public synchronized void forcePolicyRecompile() {
+        _rootAssertion = null;
     }
 
     /**

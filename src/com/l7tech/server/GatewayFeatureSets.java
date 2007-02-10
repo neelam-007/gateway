@@ -283,7 +283,7 @@ public class GatewayFeatureSets {
             "Adds throughput qutoa",
             fs(availabilityAccel),
             ass(ThroughputQuota.class),
-            ass(RateLimitAssertion.class));
+            misc("assertion:RateLimit", "the RateLimitAssertion (modular)", ""));
 
         // Logging/auditing and alerts
         GatewayFeatureSet auditAccel =

@@ -177,7 +177,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceid);
-            Assertion assertion = wspReader.parseStrictly(policyXml);
+            Assertion assertion = wspReader.parsePermissively(policyXml);
             return policyValidator.validate(assertion, service, licenseManager);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);

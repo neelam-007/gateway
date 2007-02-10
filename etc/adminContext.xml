@@ -306,24 +306,13 @@
 
     <!-- trusted cert admin servant -->
     <bean id="clusterStatusAdmin_UNSECURED" class="com.l7tech.cluster.ClusterStatusAdminImp">
-        <constructor-arg>
-            <ref bean="clusterInfoManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceUsageManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="clusterPropertyManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="licenseManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serviceMetricsManager"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="serverConfig"/>
-        </constructor-arg>        
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="serviceMetricsManager"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="assertionRegistry"/>
     </bean>
 
     <!-- RBAC admin impl -->

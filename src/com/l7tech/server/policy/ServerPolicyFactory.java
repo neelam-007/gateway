@@ -13,6 +13,7 @@ import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.beans.BeansException;
@@ -21,6 +22,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
@@ -51,8 +53,19 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      */
     public ServerAssertion compilePolicy(Assertion genericAssertion, boolean licenseEnforcement) throws ServerPolicyException, LicenseException {
         try {
+            if (licenseEnforcement) {
+                // Scan for UnknownAssertion, and treat as license failure
+                Iterator it = genericAssertion.preorderIterator();
+                while (it.hasNext()) {
+                    final Object assertion = it.next();
+                    if (assertion instanceof UnknownAssertion)
+                        throw new LicenseException(((UnknownAssertion)assertion).getDetailMessage());
+                }
+            }
+
             ServerPolicyFactory.licenseEnforcement.set(licenseEnforcement);
-            return doMakeServerAssertion(genericAssertion);
+            final ServerAssertion serverAssertion = doMakeServerAssertion(genericAssertion);
+            return serverAssertion;
         } finally {
             ServerPolicyFactory.licenseEnforcement.set(null);
         }

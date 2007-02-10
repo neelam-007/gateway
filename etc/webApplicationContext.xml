@@ -209,7 +209,7 @@
         </constructor-arg>
     </bean>
     <!-- server side service manager -->
-    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache" depends-on="assertionRegistry">
         <constructor-arg>
             <ref bean="policyFactory"/>
         </constructor-arg>

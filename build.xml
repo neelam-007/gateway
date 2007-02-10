@@ -600,7 +600,7 @@
 
     <target name="test.intensive"
             description="Run intensive JUnit tests."
-            depends="clean.test, test.work, test.intensive.work, test.report">
+            depends="clean.test, test.work, test.intensive.work, test.modules.work, test.report">
         <checkfail/>
     </target>
 
@@ -654,7 +654,6 @@
             <test name="com.l7tech.common.util.ISO8601DateTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.assertion.OversizedTextAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.RegexAssertionTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.policy.assertion.ServerRateLimitAssertionTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
@@ -662,7 +661,13 @@
         </junit>
     </target>
 
-    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, testpackage.work, test.report, testpackage.report">
+    <target name="test.modules.work" depends="dev">
+        <subant target="test" inheritAll="false" verbose="true">
+            <fileset dir="." includes="modules/assertions/build.xml"/>
+        </subant>
+    </target>
+
+    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, test.modules.work, testpackage.work, test.report, testpackage.report">
         <checkfail/>
     </target>
 
