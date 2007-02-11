@@ -92,7 +92,7 @@ class PathValidator {
         if (assertionLicense != null) {
             if (!assertionLicense.isAssertionEnabled(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "This assertion is not available on this Gateway cluster", null));
+                      "This assertion is not available on this Gateway cluster and may cause all requests to this service to fail.", null));
             }
         }
 
@@ -605,7 +605,7 @@ class PathValidator {
 
     private void processUnknown(UnknownAssertion a) {
         result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "This assertion is unrecognized and may cause all requests to fail.", null));
+              "This assertion is unrecognized and may cause all requests to this service fail.", null));
     }
 
     private boolean isSpecificUser(Assertion a) {
