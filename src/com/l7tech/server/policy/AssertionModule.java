@@ -16,13 +16,16 @@ public class AssertionModule {
     private final File jarfile;
     private final long jarfileModifiedTime;
     private final String jarfileSha1;
+    private final AssertionModuleClassLoader classLoader;
     private final Set<? extends Assertion> assertionPrototypes;
 
-    AssertionModule(File jarfile, long modifiedTime, String jarfileSha1, Set<? extends Assertion> assertionPrototypes) {
+    AssertionModule(File jarfile, long modifiedTime, String jarfileSha1, AssertionModuleClassLoader classLoader, Set<? extends Assertion> assertionPrototypes) {
         if (assertionPrototypes == null || assertionPrototypes.isEmpty()) throw new IllegalArgumentException("assertionPrototypes must contain at least one prototype instance");
+        if (classLoader == null) throw new IllegalArgumentException("classLoader required");
         this.jarfile = jarfile;
         this.jarfileModifiedTime = modifiedTime;
         this.jarfileSha1 = jarfileSha1;
+        this.classLoader = classLoader;
         this.assertionPrototypes = Collections.unmodifiableSet(assertionPrototypes);
     }
 
@@ -65,5 +68,19 @@ public class AssertionModule {
             if (prototype.getClass().getName().equals(assertionClassname))
                 return true;
         return false;
+    }
+
+    /**
+     * @return the ClassLoader providing classes for this jarfile
+     */
+    ClassLoader getModuleClassLoader() {
+        return classLoader;
+    }
+
+    /**
+     * Notify interested classes that this module is being unloaded.
+     */
+    void onModuleUnloaded() {
+        classLoader.onModuleUnloaded();
     }
 }

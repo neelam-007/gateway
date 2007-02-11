@@ -91,15 +91,18 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof LicenseEvent || applicationEvent instanceof AssertionModuleRegistrationEvent) {
-            Background.scheduleOneShot(new TimerTask() {
-                public void run() {
-                    try {
-                        resetUnlicensed();
-                    } finally {
-                        getApplicationContext().publishEvent(new ServiceReloadEvent(this));
-                    }
-                }
-            }, 0);
+            try {
+                resetUnlicensed();
+            } finally {
+                getApplicationContext().publishEvent(new ServiceReloadEvent(this));
+            }
+        } else if (applicationEvent instanceof AssertionModuleUnregistrationEvent) {
+            try {
+                logger.info("Recompiling all published services due to module unload");
+                resetAll();
+            } finally {
+                getApplicationContext().publishEvent(new ServiceReloadEvent(this));
+            }
         }
     }
 
@@ -111,7 +114,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             int numUnlicensed = unlicensed.size();
             if (numUnlicensed < 1) return;
             if (logger.isLoggable(Level.INFO))
-                logger.info("License has changed -- resetting " + numUnlicensed + " affected services");
+                logger.info("License changed/module loaded -- resetting " + numUnlicensed + " affected services");
             for (Long oid : unlicensed) {
                 PublishedService service = services.get(oid);
                 if (service == null) continue; // no longer relevant
@@ -120,7 +123,24 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
                 try {
                     cacheNoLock(service);
                 } catch (ServerPolicyException e) {
-                    logger.log(Level.WARNING, "Unable to reenable service after license change: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    logger.log(Level.WARNING, "Unable to reenable service after license changed/module loaded: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        } finally {
+            rwlock.writeLock().unlock();
+        }
+    }
+
+    private void resetAll() {
+        rwlock.writeLock().lock();
+        try {
+            final Collection<PublishedService> allservs = new ArrayList<PublishedService>(services.values());
+            for (PublishedService service : allservs) {
+                removeNoLock(service);
+                try {
+                    cacheNoLock(service);
+                } catch (ServerPolicyException e) {
+                    logger.log(Level.WARNING, "Unable to reenable service after module change: " + service.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 }
             }
         } finally {
@@ -344,6 +364,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         for (ServiceResolver resolver : resolvers) {
             resolver.serviceDeleted(service);
         }
+        service.forcePolicyRecompile();
         logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
     }
 

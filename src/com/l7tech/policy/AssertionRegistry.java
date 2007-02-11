@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationEvent;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -106,12 +107,29 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
      * @return true if an assertion was unregistered (and an event fired); false if no action was taken.
      */
     protected synchronized boolean unregisterAssertion(Assertion prototype) {
-        byExternalName.values().remove(prototype);
-        if (prototypes.values().remove(prototype)) {
-            publishEvent(new AssertionUnregistrationEvent(this, prototype));
-            return true;
+        Class assclass = prototype.getClass();
+        String assname = assclass.getName();
+
+        final Iterator<Assertion> eit = byExternalName.values().iterator();
+        while (eit.hasNext()) {
+            Assertion ass = eit.next();
+            if (ass.getClass().getName().equals(assname))
+                eit.remove();
         }
-        return false;
+
+        boolean found = false;
+        final Iterator<Assertion> pit = prototypes.values().iterator();
+        while (pit.hasNext()) {
+            Assertion ass = pit.next();
+            if (ass.getClass().getName().equals(assname)) {
+                found = true;
+                pit.remove();
+            }
+        }
+
+        Assertion.clearCachedMetadata(assname);
+
+        return found;
     }
 
     protected Set<String> getAssertionClassnames() {

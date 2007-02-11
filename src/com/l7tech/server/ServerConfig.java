@@ -54,6 +54,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
     public static final String PARAM_ATTACHMENT_DISK_THRESHOLD = "attachmentDiskThreshold";
     public static final String PARAM_MODULAR_ASSERTIONS_DIRECTORY = "modularAssertionsDirectory";
+    public static final String PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS = "modularAssertionsRescanMillis";
+    public static final String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
 
     public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";

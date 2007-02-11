@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -45,6 +46,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
+    private static final AtomicBoolean unloaded = new AtomicBoolean(false);
     private static final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Counter>();
     private static final AtomicLong lastClusterCheck = new AtomicLong();
     private static final AtomicInteger clusterSize = new AtomicInteger();
@@ -55,11 +57,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
     private static boolean useNanos = true;
     private static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.server.ratelimit.forceNanos");
-    private static final ThreadLocal<ThreadToken> threadTokens = new ThreadLocal<ThreadToken>() {
-        protected ThreadToken initialValue() {
-            return new ThreadToken();
-        }
-    };
 
     static {
         Background.scheduleRepeated(new TimerTask() {
@@ -84,6 +81,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     public ServerRateLimitAssertion(RateLimitAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
+        if (unloaded.get())
+            throw new PolicyAssertionException(assertion, "Module containing this assertion is being unloaded");
         this.rla = assertion;
         this.auditor = new Auditor(this, context, logger);
         this.variablesUsed = rla.getVariablesUsed();
@@ -256,6 +255,9 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (unloaded.get())
+            throw new PolicyAssertionException(assertion, "Module containing this assertion is being unloaded");
+
         final String counterName = getConterName(context);
         final Counter counter = findCounter(counterName);
 
@@ -298,7 +300,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
 
     private AssertionStatus checkWithSleep(long pps, Counter counter, String counterName, long maxPoints) throws IOException {
-        final ThreadToken token = threadTokens.get();
+        final ThreadToken token = new ThreadToken();
         final long maxnap = maxNapTime.get();
         long startTime = System.currentTimeMillis();
 
@@ -463,5 +465,17 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 }
             }
         }
+    }
+
+    /**
+     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
+     * that would otherwise keep our instances from getting collected.
+     */
+    public static void onModuleUnloaded() {
+        if (unloaded.get())
+            logger.severe("ServerRateLimitAssertion: onModuleUnloaded called more than once");
+        else
+            logger.info("ServerRateLimitAssertion is preparing itself to be unloaded");
+        unloaded.set(true);
     }
 }

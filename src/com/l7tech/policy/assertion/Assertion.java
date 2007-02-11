@@ -470,6 +470,16 @@ public abstract class Assertion implements Cloneable, Serializable {
             throw needsMeta(classname, e);
         }
     }
+
+    /**
+     * Clear any cached metadata regarding the specified asertion class, presumably because it
+     * is being deregistered.
+     *
+     * @param assertionClassname the name of an assertion class whose metadata to flush from the cache
+     */
+    public static void clearCachedMetadata(String assertionClassname) {
+        metadataCache.remove(assertionClassname);
+    }
     
     private RuntimeException needsMeta(String classname, Exception cause) {
         return new RuntimeException("Assertion class " + classname +

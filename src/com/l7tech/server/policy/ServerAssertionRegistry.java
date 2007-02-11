@@ -1,9 +1,9 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.Background;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -15,8 +15,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -36,7 +34,9 @@ import java.util.regex.Pattern;
  */
 public class ServerAssertionRegistry extends AssertionRegistry {
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
-    private static final long MODULE_RESCAN_DELAY = Long.getLong("com.l7tech.server.assertionModuleDirRescanMillis", 4523L);
+    private static final Pattern PATTERN_WHITESPACE = Pattern.compile("\\s+");
+    private static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
+    private static final String DISABLED_SUFFIX = ".disabled".toLowerCase();
 
     // Install the default getters that are specific to the Gateway
     private static final AtomicBoolean gatewayMetadataDefaultsInstalled = new AtomicBoolean(false);
@@ -51,18 +51,30 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         }
     }
 
+    //
+    //  Instance fields
+    //
+
     private final ServerConfig serverConfig;
     private final Map<String, AssertionModule> loadedModules = new HashMap<String, AssertionModule>();
     private final Map<String, Long> failModTimes = new HashMap<String, Long>();    // should not be loaded (until mod time changes) because last time we tried it, it failed
-    private final Map<String, Long> removedModTimes = new HashMap<String, Long>(); // should not be loaded (until mod time changes) because they were manually unregistered
     private Map<String, String[]> newClusterProps; // do not initialize -- clobbers info collected during super c'tor
     private File lastScannedDir = null;
     private long lastScannedDirModTime = 0;
 
+
+    /**
+     * Construct a new ServerAssertionRegistry that will get its information from the specified serverConfig
+     * instance.
+     *
+     * @param serverConfig a ServerConfig instance that provides information about the module directory
+     *                     to search
+     */
     public ServerAssertionRegistry(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
         installGatewayMetadataDefaults();
     }
+
 
     public synchronized Assertion registerAssertion(Class<? extends Assertion> assertionClass) {
         Assertion prototype = super.registerAssertion(assertionClass);
@@ -87,7 +99,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         return prototype;
     }
 
-    private static final Pattern findMidDots = Pattern.compile("\\.([a-zA-Z0-9_])");
 
     /**
      * Converts a cluster property name like "foo.bar.blatzBloof.bargleFoomp" into a ServerConfig property
@@ -97,7 +108,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
      * @return the corresponding serverConfig property name.  Never null.
      */
     private static String makeServerConfigPropertyName(String clusterPropertyName) {
-        Matcher matcher = findMidDots.matcher(clusterPropertyName);
+        Matcher matcher = PATTERN_MID_DOTS.matcher(clusterPropertyName);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
             matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
@@ -105,6 +116,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         matcher.appendTail(sb);
         return sb.toString();
     }
+
 
     /** Scan modular assertions for new cluster properties. */
     private synchronized void checkForNewClusterProperties() {
@@ -135,6 +147,10 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     private synchronized boolean scanModularAssertions() {
         boolean changesMade = false;
 
+        String extsList = serverConfig.getProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS);
+        if ("-".equals(extsList)) // scanning disabled
+            return false;
+
         File dir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_DIRECTORY, "/ssg/modules/assertions", false).getAbsoluteFile();
         long dirLastModified = dir.lastModified();
         if (dir.equals(lastScannedDir) && dirLastModified == lastScannedDirModTime && failModTimes.isEmpty()) {
@@ -147,46 +163,57 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         lastScannedDir = dir;
         lastScannedDirModTime = dirLastModified;
 
-        File[] jars = dir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.toLowerCase().endsWith(".jar") || name.toLowerCase().endsWith(".jar.disable");
+        final Collection<File> jars;
+        try {
+            jars = new ArrayList<File>(getMatchingFiles(dir, extsList, DISABLED_SUFFIX));
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Unable to scan assertion modules directory: " + ExceptionUtils.getMessage(e), e);
+            return false;
+        }
+
+        // Check for disabled modules
+        final Set<String> disabled = new HashSet<String>();
+        final Iterator<File> it = jars.iterator();
+        while (it.hasNext()) {
+            File file = it.next();
+            final String name = file.getName();
+            if (name.toLowerCase().endsWith(DISABLED_SUFFIX)) {
+                // Admin wants to disable this module
+                it.remove();
+                String modname = name.substring(0, name.length() - DISABLED_SUFFIX.length());
+                disabled.add(modname);
+                if (loadedModules.containsKey(modname)) {
+                    logger.info("Unregistering module " + modname + " because the flag file " + name + "exists");
+                    unregisterModule(modname);
+                }
             }
-        });
+        }
 
         // Check for new or changed modules
         Set<String> seenNames = new HashSet<String>();
         for (File file : jars) {
             String filename = file.getName();
 
-            if (filename.toLowerCase().endsWith(".jar.disable")) {
-                // Admin wants to disable this module
-                String name = filename.substring(0, filename.length() - 8);
-                if (loadedModules.containsKey(name)) {
-                    logger.info("Unregistering module " + name + " because the flag file " + filename + "exists");
-                    unregisterModule(name);
-                }
+            // Ignore disabled flags
+            if (disabled.contains(filename)) {
+                if (logger.isLoggable(Level.FINE)) logger.fine("Pretending module " + filename + " is missing, because it is flagged as disabled");
                 continue;
             }
 
             long lastModified = file.lastModified();
             try {
                 seenNames.add(filename);
-
                 AssertionModule previousVersion = loadedModules.get(filename);
                 if (previousVersion != null) {
                     if (previousVersion.getJarfileModifiedTime() == lastModified)
                         continue;
 
                     // A loaded module has changed since the last time we looked at it -- unload it and reload it
-                    logger.info("Reloading changed assertion module: " + filename);
+                    logger.info("Checking assertion module with updated timestamp: " + filename);
 
                 } else if (new Long(lastModified).equals(failModTimes.get(filename))) {
                     if (logger.isLoggable(Level.FINE))
                     logger.fine("Ignoring module file " + filename + " since its modification time hasn't changed since the last time it failed to load successfully");
-                    continue;
-                } else if (new Long(lastModified).equals(removedModTimes.get(filename))) {
-                    if (logger.isLoggable(Level.FINE))
-                        logger.fine("Ignoring module file " + filename + " since its modification time hasn't changed since it was manually unregistered");
                     continue;
                 }
 
@@ -196,7 +223,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             } catch (ModuleException e) {
                 logger.log(Level.SEVERE, "Unable to load modular assertion jarfile (ignoring it until it changes) " + filename + ": " + ExceptionUtils.getMessage(e), e);
                 failModTimes.put(filename, lastModified);
-                removedModTimes.remove(filename);
             }
         }
 
@@ -221,6 +247,53 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         return changesMade;
     }
 
+
+    /**
+     * Get an array of files in the specified directory that match the specified list of file extensions.
+     * All comparisons are case-insensitive.
+     *
+     * @param dir       the directory to examine.  Must not be null
+     * @param extsList  a space-separated list of file extensions that are of interest, including the initial dot.
+     *                  if null, a default list will be used that includes ".jar .ass .assn.assertion".
+     * @param optionalSuffix if non-null, files will be considered a match if they would otherwise match without this
+     *                       suffix.  For example, with extsList of ".foo .bar" and optionalSuffix of ".awesome",
+     *                       this would match the filenames "bletch.foo" and "blortch.bar.awesome" but not
+     *                       the filename "bloof.awesome".
+     * @return a collection of matching files.  May be empty but never null.
+     * @throws java.io.IOException if dir isn't a directory or can't be read
+     */
+    private static Collection<File> getMatchingFiles(File dir, String extsList, String optionalSuffix) throws IOException {
+        if (extsList == null || extsList.length() < 1)
+            extsList = ".jar .ass .assn .assertion";
+        final String[] exts = PATTERN_WHITESPACE.split(extsList.toLowerCase());
+        final String[] extsDisabled;
+        if (optionalSuffix == null) {
+            extsDisabled = exts;
+        } else {
+            extsDisabled = new String[exts.length];
+            for (int i = 0; i < exts.length; ++i)
+                extsDisabled[i] = exts[i] + optionalSuffix;
+        }
+
+        File[] jars = dir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                String lcname = name.toLowerCase();
+
+                for (int i = 0; i < exts.length; ++i)
+                    if (lcname.endsWith(exts[i]) || lcname.endsWith(extsDisabled[i]))
+                        return true;
+
+                return false;
+            }
+        });
+
+        if (jars == null)
+            throw new IOException("The directory " + dir.getAbsolutePath() + " cannot be read (or isn't a directory)");
+
+        return Arrays.asList(jars);
+    }
+
+
     /**
      * Attempt to register one or more assertions from the specified modular asseriton jarfile, which must
      * contain metadata declaring at least one modular assertion.
@@ -239,9 +312,15 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
         JarFile jar = null;
         try {
+            // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting sha1 <-> loading jar.. doctor's answer for now
             long modifiedTime = file.lastModified();
             String sha1 = getFileSha1(file);
-            // TODO is there any way to fix the race condition here (if file is replaced in between these two lines)?
+
+            if (previousVersion != null && previousVersion.getSha1().equals(sha1)) {
+                logger.log(Level.INFO, "Won't reload " + filename + " since its SHA-1 hasn't changed");
+                return;
+            }
+
             jar = new JarFile(file, false);
 
             Manifest manifest = jar.getManifest();
@@ -255,7 +334,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             jar.close();
             jar = null;
 
-            ClassLoader assloader = new URLClassLoader(new URL[] { file.toURL() }, getClass().getClassLoader());
+            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURL(), getClass().getClassLoader());
             Set<Assertion> protos = new HashSet<Assertion>();
             for (String assertionName : assertionNames) {
                 String assertionClassname = attr.getValue(assertionName + "-Class");
@@ -281,15 +360,16 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 protos.add(proto);
             }
 
-            AssertionModule module = new AssertionModule(file, modifiedTime, sha1, protos);
+            AssertionModule module = new AssertionModule(file, modifiedTime, sha1, assloader, protos);
             loadedModules.put(filename, module);
-            failModTimes.remove(filename);
-            removedModTimes.remove(filename);
-            if (previousVersion != null) publishEvent(new AssertionModuleUnregistrationEvent(this, previousVersion));
+            failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
             for (Assertion proto : protos) {
-                logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from newly-registered module " + filename + " (module SHA-1 " + sha1 + ")");
+                String adjective = previousVersion == null ? "newly-registered" : "just-upgraded";
+                logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ")");
                 registerAssertion(proto.getClass());
             }
+            if (previousVersion != null)
+                onModuleUnloaded(previousVersion);
             publishEvent(new AssertionModuleRegistrationEvent(this, module));
 
         } catch (IOException e) {
@@ -334,10 +414,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
         final String name = module.getName();
         loadedModules.remove(name);
-        failModTimes.remove(name);
-        removedModTimes.put(name, module.getJarfileModifiedTime());
-
-        publishEvent(new AssertionModuleUnregistrationEvent(this, module));
+        failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
 
         // Unregister all assertions from this module
         Set<? extends Assertion> protos = module.getAssertionPrototypes();
@@ -346,7 +423,15 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             unregisterAssertion(proto);
         }
 
+        onModuleUnloaded(module);
+
         return true;
+    }
+
+    private void onModuleUnloaded(AssertionModule module) {
+        Background.cancelAllTasksFromClassLoader(module.getModuleClassLoader());
+        publishEvent(new AssertionModuleUnregistrationEvent(this, module));
+        module.onModuleUnloaded();
     }
 
     /**
@@ -384,12 +469,13 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         super.afterPropertiesSet();
         scanModularAssertions();
         checkForNewClusterProperties();
+        long rescanMillis = serverConfig.getLongProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS, 4523);
         Background.scheduleRepeated(new TimerTask() {
             public void run() {
                 scanModularAssertions();
                 checkForNewClusterProperties();
             }
-        }, MODULE_RESCAN_DELAY, MODULE_RESCAN_DELAY);
+        }, rescanMillis, rescanMillis);
     }
 
     private static void installGatewayMetadataDefaults() {
