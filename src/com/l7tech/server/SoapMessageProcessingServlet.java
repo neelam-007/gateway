@@ -104,6 +104,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
             throws ServletException, IOException
     {
+        if ("/".equals(hrequest.getRequestURI())) {
+            hresponse.sendRedirect("/index.html");
+            return;
+        }
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
