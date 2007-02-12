@@ -141,6 +141,9 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
 
+        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, new Functions.Unary<String, RateLimitAssertion>() {

@@ -90,6 +90,29 @@ public interface AssertionMetadata {
     String POLICY_NODE_FACTORY = "policyNodeFactory";
 
     /**
+     * String classname.  Name of {@link com.l7tech.console.tree.policy.advice.Advice} subclass to use when
+     * this assertion is added to a policy, the special string "auto" to enable the default advice (which
+     * shows the property dialog, if one is configured), or the special string "none" to use no Advice for this
+     * assertion.
+     * <p/>
+     * Ignored if a valid POLICY_ADVICE_INSTANCE is provided.
+     * <p/>
+     * The default value is com.l7tech.console.tree.policy.advice.${BASE_NAME}Advice
+     */
+    String POLICY_ADVICE_CLASSNAME = "policyAdviceClassname";
+
+    /**
+     * {@link com.l7tech.console.tree.policy.advice.Advice} instance.  The actual Advice instance to invoke
+     * when this assertion is added to a policy.  If this is null, no Advice will be invoked.
+     * <P/>
+     * The SSM's default MetadataFinder for this property will query POLICY_ADVICE_CLASSNAME.
+     * If it is "auto", it will instantiate {@link com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice}.
+     * If it is the name of an Advice subclass that can be instantiated, it will use that.
+     * Otherwise, it will use null for this property.
+     */
+    String POLICY_ADVICE_INSTANCE = "policyAdviceInstance";
+
+    /**
      * String classname.  Name of ActionListener subclass to invoke when the Properties.. action is invoked.
      * <p/>
      * This is ingored if a valid PROPERTIES_ACTION_FACTORY is provided.

@@ -57,7 +57,7 @@ public abstract class AssertionDescription {
             description = MessageFormat.format(getMessageBundle().getString(key), parameters());
         }
         catch(MissingResourceException mre) {
-            logger.warning("Could not access resource with key '"+key+"' from bundle '"+DESCRIPTIONS_BUNDLE+"'.");
+            description = null;
         }
         if (description == null || description.length() < 1) description = (String)assertion.meta().get(AssertionMetadata.SHORT_NAME);
         if (description == null) description = "DESCRIPTION NOT SET";

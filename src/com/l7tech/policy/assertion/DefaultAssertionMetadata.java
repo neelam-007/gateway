@@ -112,6 +112,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(POLICY_NODE_FACTORY, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
+        put(POLICY_ADVICE_CLASSNAME, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, "com.l7tech.console.tree.policy.advice." + meta.get(BASE_NAME) + "Advice");
+            }
+        });
+
+        put(POLICY_ADVICE_INSTANCE, null); // installed by ConsoleAssertionRegistry because it relies on console classes
+
         put(PROPERTIES_ACTION_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, "com.l7tech.console.action." + meta.get(BASE_NAME) + "PropertiesAction");

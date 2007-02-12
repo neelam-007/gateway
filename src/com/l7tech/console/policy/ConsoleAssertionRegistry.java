@@ -10,6 +10,8 @@ import com.l7tech.console.tree.AbstractAssertionPaletteNode;
 import com.l7tech.console.tree.DefaultAssertionPaletteNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
+import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
+import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
@@ -55,6 +57,8 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PALETTE_NODE_FACTORY, new PaletteNodeFactoryMetadataFinder());
 
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
+
+        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_ADVICE_INSTANCE, new PolicyAdviceInstanceMetadataFinder());
 
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
 
@@ -204,6 +208,41 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 }
             };
             return DefaultAssertionMetadata.cache(meta, key, factory);
+        }
+    }
+
+    private static class PolicyAdviceInstanceMetadataFinder implements MetadataFinder {
+        public Object get(AssertionMetadata meta, String key) {
+            String assname = meta.getAssertionClass().getName();
+            String classname = (String)meta.get(AssertionMetadata.POLICY_ADVICE_CLASSNAME);
+
+            if (classname == null || "none".equalsIgnoreCase(classname.trim()))
+                return DefaultAssertionMetadata.cache(meta, key, null);
+
+            if ("default".equalsIgnoreCase(classname.trim()) || "auto".equalsIgnoreCase(classname.trim()))
+                return DefaultAssertionMetadata.cache(meta, key, new DefaultAssertionAdvice());
+
+            try {
+                Class adviceClass  = meta.getAssertionClass().getClassLoader().loadClass(classname);
+
+                if (Advice.class.isAssignableFrom(adviceClass))
+                    return DefaultAssertionMetadata.cache(meta, key, adviceClass.newInstance());
+
+                logger.warning("Policy Advice class for assertion " + assname + " does not implement Advice interface");
+                // Fallthrough and return null
+
+            } catch (ClassNotFoundException e) {
+                // Probably was just a generated-by-default classname that doesn't actually exist
+                logger.log(Level.FINEST, "Unable to load advice class", e);
+                // Fallthrough and return null
+            } catch (IllegalAccessException e) {
+                logger.log(Level.WARNING, "Unable to instantiate advice class for assertion " + assname, e);
+                // Fallthrough and return null
+            } catch (InstantiationException e) {
+                logger.log(Level.WARNING, "Unable to instantiate advice class for assertion " + assname, e);
+                // Fallthrough and return null
+            }
+            return DefaultAssertionMetadata.cache(meta, key, null);
         }
     }
 
