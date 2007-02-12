@@ -129,6 +129,7 @@ public class AuditAlertChecker {
                         }
                     }
             });
+            timer.setInitialDelay(1000);
         }
         return timer;
     }

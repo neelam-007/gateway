@@ -108,7 +108,7 @@ public class AuditAlertsNotificationPanel extends JPanel implements AuditWatcher
         updatePermissions();
         if (hasPermissions() && checker != null) {
             checker.setAuditAdmin(Registry.getDefault().getAuditAdmin());
-            checker.checkForNewAlerts();
+            checker.start();
         }
     }
 
