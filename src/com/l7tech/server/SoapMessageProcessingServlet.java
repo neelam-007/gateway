@@ -30,6 +30,7 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -68,6 +69,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private ClusterPropertyManager clusterPropertyManager;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
+    private ServiceCache serviceCache;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -81,6 +83,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
+        serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
     }
 
     /**
@@ -105,8 +108,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             throws ServletException, IOException
     {
         if ("/".equals(hrequest.getRequestURI())) {
-            hresponse.sendRedirect("/index.html");
-            return;
+            try {
+                if (!serviceCache.hasCatchAllService()) {
+                    hresponse.sendRedirect("/index.html");
+                    return;
+                }
+            } catch (Throwable e) { // should not happen unless there is a bug
+                logger.log(Level.SEVERE, "Unexpected problem checking for catch all service resolution", e);
+            }
         }
         // Initialize processing context
         final Message response = new Message();

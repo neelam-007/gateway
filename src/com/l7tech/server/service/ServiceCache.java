@@ -57,6 +57,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     private ServerPolicyFactory policyFactory;
     private Auditor auditor;
+    private boolean hasCatchAllService = false;
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
     /**
@@ -260,6 +261,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         rwlock.writeLock().lock();
         try {
             cacheNoLock(service);
+            updateCatchAll();
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -348,6 +350,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         rwlock.writeLock().lock();
         try {
             removeNoLock(service);
+            updateCatchAll();
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -380,6 +383,16 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
             rwlock.readLock().unlock();
         }
         return out;
+    }
+
+    public boolean hasCatchAllService() throws InterruptedException {
+        PublishedService out = null;
+        rwlock.readLock().lock();
+        try {
+            return hasCatchAllService;
+        } finally {
+            rwlock.readLock().unlock();
+        }
     }
 
     /**
@@ -537,6 +550,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
                         PublishedService serviceToDelete = services.get(key);
                         removeNoLock(serviceToDelete);
                     }
+                    updateCatchAll();
                 } finally {
                     ciWriteLock.unlock();
                 }
@@ -545,6 +559,16 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         } finally {
             if (ciReadLock != null) ciReadLock.unlock();
             getApplicationContext().publishEvent(new ServiceReloadEvent(this));
+        }
+    }
+
+    private void updateCatchAll() {
+        hasCatchAllService = false;
+        for (PublishedService p : services.values()) {
+            if ("/*".equals(p.getRoutingUri())) {
+                hasCatchAllService = true;
+                break;
+            }
         }
     }
 

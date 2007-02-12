@@ -241,7 +241,7 @@ public class HttpUriResolver extends ServiceResolver {
         }
         if (originalUrl == null) {
             String uri = httpReqKnob.getRequestUri();
-            if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX) || uri.equals("/")) uri = "";
+            if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
             logger.finest("returning uri " + uri);
             return uri;
         } else {
