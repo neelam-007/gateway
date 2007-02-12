@@ -30,7 +30,7 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Asser
     private JComboBox counterCb;
 
     private boolean confirmed = false;
-    private String uuid[] = { RateLimitAssertion.PresetInfo.makeUuid() };
+    private String uuid[] = {RateLimitAssertion.PresetInfo.makeUuid()};
     private String expr = "";
 
 
@@ -73,7 +73,7 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Asser
         Utilities.enableGrayOnDisabled(concurrencyLimitField);
         Utilities.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
-        Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+        Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
         pack();
         if (rla != null) setData(rla);
     }
@@ -90,7 +90,8 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Asser
     private void updateConcurrencyEnableState() {
         boolean e = concurrencyLimitOnRb.isSelected();
         concurrencyLimitField.setEnabled(e);
-        if (e && getViewConcurrency() < 1) concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
+        if (e && getViewConcurrency() < 1)
+            concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
         if (e) {
             concurrencyLimitField.selectAll();
             concurrencyLimitField.requestFocusInWindow();
@@ -187,8 +188,11 @@ public class RateLimitAssertionPropertiesDialog extends JDialog implements Asser
         return this;
     }
 
-    /** @return true if the dialog was dismissed by the user pressing the Ok button. */
+    /**
+     * @return true if the dialog was dismissed by the user pressing the Ok button.
+     */
     public boolean isConfirmed() {
         return confirmed;
     }
+
 }

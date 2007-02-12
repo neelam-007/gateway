@@ -10,6 +10,43 @@
     <property name="UneasyRooster.dir" location="../../.."/>
     <property name="build.classes" location="build/classes"/>
 
+    <!--
+      Idea form compiler
+    -->
+    <path id="uidesigner.classpath">
+        <fileset dir="${UneasyRooster.dir}/lib/tools">
+            <include name="jdom.jar"/>
+            <include name="asm.jar"/>
+            <include name="asm-commons.jar"/>
+            <include name="javac2-l7p1.jar"/>
+        </fileset>
+    </path>
+    <taskdef name="javac2t"
+             classname="com.intellij.ant.Javac2"
+             classpathref="uidesigner.classpath"/>
+    <macrodef name="javac2">
+        <attribute name="srcdir"/>
+        <attribute name="destdir"/>
+        <attribute name="debug" default="on"/>
+        <attribute name="target" default="1.4"/>
+        <attribute name="source" default="1.4"/>
+        <attribute name="optimize" default="on"/>
+        <attribute name="classpathref" default="compile.classpath"/>
+        <attribute name="include" default="**/*.form"/>
+        <sequential>
+            <javac2t
+                    srcdir="@{srcdir}"
+                    destdir="@{destdir}"
+                    debug="@{debug}"
+                    target="@{target}"
+                    optimize="@{optimize}"
+                    source="@{source}"
+                    classpathref="@{classpathref}">
+                <include name="@{include}"/>
+            </javac2t>
+        </sequential>
+    </macrodef>
+
     <path id="compile.classpath">
         <fileset dir="${UneasyRooster.dir}/lib">
             <include name="0500-wsdl4j.jar"/>
@@ -30,6 +67,7 @@
             <include name="spring-support.jar"/>
             <include name="commons-logging-1.0.4.jar"/>
             <include name="mailapi-1.4.jar"/>
+            <include name="forms_rt-l7p1.jar"/>            
         </fileset>
         <pathelement location="${UneasyRooster.dir}/build/classes"/>
     </path>
@@ -54,10 +92,19 @@
         <available property="classes.available" file="${UneasyRooster.dir}/build/classes"/>
         <fail unless="classes.available">UneasyRooster does not seem to have been built yet (missing ${UneasyRooster.dir}/build/classes).</fail>
         <mkdir dir="${build.classes}"/>
+        <copy todir="${build.classes}">
+            <fileset dir="src">
+                <include name="**/resources/*"/>
+                <include name="**/resources/**/*"/>
+            </fileset>
+        </copy>
         <javac srcdir="src"
                destdir="${build.classes}"
                classpathref="compile.classpath">
         </javac>
+
+        <!-- IntelliJ forms -->
+        <javac2 srcdir="src" destdir="${build.classes}"/> 
     </target>
 
     <target name="-compile-tests" depends="-compile">

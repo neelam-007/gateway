@@ -6,6 +6,8 @@
 package com.l7tech.common.util;
 
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.Logger;
 
 /**
@@ -69,11 +71,17 @@ public class SyspropUtil {
      * @param name   name of property to set.  May not be null.
      * @param value  value to set.
      */
-    public static void setProperty(String name, String value) {
-        try {
-            System.setProperty(name, value);
-        } catch (AccessControlException e) {
-            logger.fine("Unable to set system property " + name);
-        }
+    public static void setProperty(final String name, final String value) {
+        //noinspection unchecked
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                try {
+                    System.setProperty(name, value);
+                } catch (AccessControlException e) {
+                    logger.warning("Unable to set system property " + name);
+                }
+                return null;
+            }
+        });
     }
 }

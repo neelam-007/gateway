@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.PermissionRefreshListener;
@@ -88,8 +89,8 @@ public class TopComponents {
         getMainWindow().showNoPrivilegesErrorMessage();
     }
 
-    public AssertionRegistry getAssertionRegistry() {
-        return (AssertionRegistry)getApplicationContext().getBean("assertionRegistry", AssertionRegistry.class);
+    public ConsoleAssertionRegistry getAssertionRegistry() {
+        return (ConsoleAssertionRegistry)getApplicationContext().getBean("assertionRegistry", AssertionRegistry.class);
     }
 
     /** Interface implemented by lazy component finders. */

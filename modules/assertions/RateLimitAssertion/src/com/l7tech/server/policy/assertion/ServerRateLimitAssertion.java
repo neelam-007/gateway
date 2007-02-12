@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -46,7 +45,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
-    private static final AtomicBoolean unloaded = new AtomicBoolean(false);
     private static final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Counter>();
     private static final AtomicLong lastClusterCheck = new AtomicLong();
     private static final AtomicInteger clusterSize = new AtomicInteger();
@@ -81,8 +79,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     public ServerRateLimitAssertion(RateLimitAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-        if (unloaded.get())
-            throw new PolicyAssertionException(assertion, "Module containing this assertion is being unloaded");
         this.rla = assertion;
         this.auditor = new Auditor(this, context, logger);
         this.variablesUsed = rla.getVariablesUsed();
@@ -255,9 +251,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (unloaded.get())
-            throw new PolicyAssertionException(assertion, "Module containing this assertion is being unloaded");
-
         final String counterName = getConterName(context);
         final Counter counter = findCounter(counterName);
 
@@ -472,10 +465,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
      * that would otherwise keep our instances from getting collected.
      */
     public static void onModuleUnloaded() {
-        if (unloaded.get())
-            logger.severe("ServerRateLimitAssertion: onModuleUnloaded called more than once");
-        else
-            logger.info("ServerRateLimitAssertion is preparing itself to be unloaded");
-        unloaded.set(true);
+        // This assertion doesn't have anything to do in response to this, but it implements this anyway
+        // since it will be used as an example by future modular assertion authors
+        logger.info("ServerRateLimitAssertion is preparing itself to be unloaded");
     }
 }

@@ -315,6 +315,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Return the ChangePasswordMenuItem property value.
      *
+     * @param accel
      * @return JMenuItem
      */
     private JMenuItem getChangePasswordMenuItem(final boolean accel) {
@@ -2417,6 +2418,13 @@ public class MainWindow extends JFrame implements SheetHolder {
               } finally {
                   // Cache it
                   reg.getLicenseManager().setLicense(lic);
+              }
+
+              // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
+              try {
+                  TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+              } catch (RemoteException e) {
+                  log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e), e);
               }
 
               String nodeName = "";

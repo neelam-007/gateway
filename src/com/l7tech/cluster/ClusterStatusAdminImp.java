@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.Assertion;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -249,6 +250,18 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
             ret.add(new ModuleInfo(module.getName(), module.getSha1(), assertions));
         }
         return ret;
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public byte[] getAssertionModuleResource(String moduleFilename, String resourcePath) throws ModuleNotFoundException, RemoteException {
+        AssertionModule module = assertionRegistry.getModule(moduleFilename);
+        if (module == null)
+            throw new ModuleNotFoundException();
+        try {
+            return module.getResourceBytes(resourcePath);
+        } catch (IOException e) {
+            throw new RemoteException("Unable to read resource " + resourcePath + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e) , e);
+        }
     }
 
     public String getHardwareCapability(String capability) {

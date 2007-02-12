@@ -465,6 +465,16 @@ public class ServerAssertionRegistry extends AssertionRegistry {
         return new HashSet<AssertionModule>(loadedModules.values());
     }
 
+    /**
+     * Get info about the specified module, if it is loaded.
+     *
+     * @param moduleFilename  the module name to check.  Required.
+     * @return the AssertionModule instance describing this module if it is loaded, or null if no such module is loaded.
+     */
+    public synchronized AssertionModule getModule(String moduleFilename) {
+        return loadedModules.get(moduleFilename);
+    }
+
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         scanModularAssertions();

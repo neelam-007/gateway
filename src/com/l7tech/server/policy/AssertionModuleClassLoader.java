@@ -1,6 +1,8 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
 
 import java.net.URLClassLoader;
 import java.net.URL;
@@ -12,6 +14,10 @@ import java.util.logging.Level;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import sun.misc.Resource;
 
 /**
  * A URLClassloader that keeps track of loaded classes so they can be notified when it is time to unload them.
@@ -32,6 +38,27 @@ class AssertionModuleClassLoader extends URLClassLoader {
         final Class<?> found = super.findClass(name);
         classes.add(found);
         return found;
+    }
+
+    /**
+     * Get the bytes for the specified resource from this assertion module, without looking in any parent
+     * class loaders.
+     *
+     * @param path  the path, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
+     * @return the requested resource bytes, or null if the resource was not found.
+     * @throws IOException if there is an error reading the resource
+     */
+    byte[] getResourceBytes(final String path) throws IOException {
+        URL url = findResource(path);
+        if (url == null)
+            return null;
+        InputStream is = null;
+        try {
+            is = url.openStream();
+            return HexUtils.slurpStream(is);
+        } finally {
+            ResourceUtils.closeQuietly(is);
+        }
     }
 
     /**

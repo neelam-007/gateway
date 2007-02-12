@@ -1,14 +1,16 @@
 package com.l7tech.console.policy;
 
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.action.DefaultAssertionPropertiesAction;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.console.tree.AbstractAssertionPaletteNode;
 import com.l7tech.console.tree.DefaultAssertionPaletteNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -17,10 +19,21 @@ import com.l7tech.policy.assertion.MetadataFinder;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 
 /**
  * The AssertionRegistry for the SecureSpan Manager.  Extends the basic registry by adding functionality
@@ -28,6 +41,9 @@ import java.util.logging.Logger;
  */
 public class ConsoleAssertionRegistry extends AssertionRegistry {
     protected static final Logger logger = Logger.getLogger(ConsoleAssertionRegistry.class.getName());
+
+    /** Prototype instances of assertions loaded from the server. */
+    private Set<Assertion> modulePrototypes = new HashSet<Assertion>();
 
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
@@ -43,6 +59,103 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
 
         DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
+    }
+
+    public void updateModularAssertions() throws RemoteException {
+        for (Assertion prototype : modulePrototypes)
+            unregisterAssertion(prototype);
+
+        ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
+        Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
+        for (ClusterStatusAdmin.ModuleInfo module : modules)
+            registerAssertionsFromModule(cluster, module);
+    }
+
+    private void registerAssertionsFromModule(final ClusterStatusAdmin cluster, final ClusterStatusAdmin.ModuleInfo module) {
+        final Collection<String> assertionClassnames = module.assertionClasses;
+
+        final String moduleFilename = module.moduleFilename;
+
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            public Object run() {
+                ClassLoader assloader = makeModuleClassLoader(cluster, moduleFilename);
+                for (String assertionClassname : assertionClassnames) {
+                    try {
+                        Class assclass = assloader.loadClass(assertionClassname);
+                        if (!Assertion.class.isAssignableFrom(assclass))
+                            throw new ClassCastException(assclass.getName());
+                        Assertion prototype = (Assertion)assclass.newInstance();
+
+                        logger.info("Registering remote assertion " + prototype.getClass().getName());
+                        modulePrototypes.add(prototype);
+                        registerAssertion(prototype.getClass());
+
+                    } catch (ClassNotFoundException e) {
+                        logger.log(Level.WARNING, "Unable to load remote class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
+                    } catch (ClassCastException e) {
+                        logger.log(Level.WARNING, "Remote Assertion class does not extend Assertion: " + assertionClassname + " (from module " + moduleFilename + ")");
+                    } catch (IllegalAccessException e) {
+                        logger.log(Level.WARNING, "Unable to instantiate remote Assertion class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
+                    } catch (InstantiationException e) {
+                        logger.log(Level.WARNING, "Unable to instantiate remote Assertion class " + assertionClassname + " from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+                return null;
+            }
+        });
+    }
+
+    // Make a ClassLoader that will load classes from the specified module, using the specified cluster status admin as
+    // the source of remote class bytes
+    private ClassLoader makeModuleClassLoader(final ClusterStatusAdmin cluster, final String moduleFilename) {
+        return new ClassLoader(getClass().getClassLoader()) {
+
+            protected Class<?> findClass(final String name) throws ClassNotFoundException {
+                String resourcepath = name.replace('.', '/').concat(".class");
+                try {
+                    final byte[] bytes = cluster.getAssertionModuleResource(moduleFilename, resourcepath);
+                    if (bytes == null)
+                        throw new ClassNotFoundException("Class not found in module " + moduleFilename + ": " + name);
+
+                    return AccessController.doPrivileged(new PrivilegedAction<Class>() {
+                        public Class run() {
+                            return defineClass(name, bytes, 0, bytes.length);
+                        }
+                    });
+
+                } catch (ClusterStatusAdmin.ModuleNotFoundException e) {
+                    throw new ClassNotFoundException("Unable to load class from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
+                } catch (RemoteException e) {
+                    throw new ClassNotFoundException("Unable to load class from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            public InputStream getResourceAsStream(String name) {
+                try {
+                    byte[] got = cluster.getAssertionModuleResource(moduleFilename, name);
+                    if (got == null)
+                        return null;
+
+                    return new ByteArrayInputStream(got);
+                } catch (ClusterStatusAdmin.ModuleNotFoundException e) {
+                    logger.log(Level.WARNING, "Unable to find resource from module: " + ExceptionUtils.getMessage(e), e);
+                    return null;
+                } catch (RemoteException e) {
+                    logger.log(Level.WARNING, "Unable to find resource from module: " + ExceptionUtils.getMessage(e), e);
+                    return null;
+                }
+            }
+
+            protected URL findResource(String name) {
+                logger.log(Level.WARNING, "*** findResource called on module class loader: resource=" + name);
+                return super.findResource(name);
+            }
+
+            protected Enumeration<URL> findResources(String name) throws IOException {
+                logger.log(Level.WARNING, "*** findResources called on module class loader: resource=" + name);
+                return super.findResources(name);
+            }
+        };
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

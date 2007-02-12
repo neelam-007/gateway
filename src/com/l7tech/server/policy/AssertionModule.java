@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.util.Set;
 import java.util.Collections;
 
+import sun.misc.Resource;
+
 /**
  * Represents a module jarfile that contains at least one assertion, loaded from /ssg/modules/assertions.
  */
@@ -50,6 +52,23 @@ public class AssertionModule {
      */
     public InputStream getJarfile() throws IOException {
         return new FileInputStream(jarfile);
+    }
+
+    /**
+     * Get the bytes for the specified resource from this assertion module, without looking in any parent
+     * classloaders.
+     * <p/>
+     * Keep in mind you can convert a class name into a resource path easily:
+     * <pre>
+     * String resourcepath = classname.replace('.', '/').concat(".class");
+     * </pre>
+     *
+     * @param resourcepath  the path to look for, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
+     * @return the bytes of the specified resource, or null if no matching resource was found.
+     * @throws IOException if there was an error reading the resource
+     */
+    public byte[] getResourceBytes(String resourcepath) throws IOException {
+        return classLoader.getResourceBytes(resourcepath);
     }
 
     /** @return the modification time of the file when this module was read. */

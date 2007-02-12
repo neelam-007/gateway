@@ -1319,6 +1319,8 @@
 
                 <include name="com/l7tech/cluster/ClusterNodeInfo.class"/>
                 <include name="com/l7tech/cluster/ClusterStatusAdmin.class"/>
+                <include name="com/l7tech/cluster/ClusterStatusAdmin*Exception.class"/>
+                <include name="com/l7tech/cluster/ClusterStatusAdmin*ModuleInfo.class"/>
                 <include name="com/l7tech/cluster/ServiceUsage.class"/>
                 <include name="com/l7tech/cluster/GatewayStatus.class"/>
                 <include name="com/l7tech/cluster/LogRequest.class"/>
