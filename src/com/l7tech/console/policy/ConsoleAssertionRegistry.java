@@ -20,20 +20,20 @@ import com.l7tech.policy.assertion.MetadataFinder;
 import javax.swing.*;
 import java.awt.*;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
 
 /**
  * The AssertionRegistry for the SecureSpan Manager.  Extends the basic registry by adding functionality
@@ -65,10 +65,19 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         for (Assertion prototype : modulePrototypes)
             unregisterAssertion(prototype);
 
-        ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
-        Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
-        for (ClusterStatusAdmin.ModuleInfo module : modules)
-            registerAssertionsFromModule(cluster, module);
+        try {
+            ClusterStatusAdmin cluster = Registry.getDefault().getClusterStatusAdmin();
+            Collection<ClusterStatusAdmin.ModuleInfo> modules = cluster.getAssertionModuleInfo();
+            for (ClusterStatusAdmin.ModuleInfo module : modules)
+                registerAssertionsFromModule(cluster, module);
+        } catch (RuntimeException e) {
+            if (ExceptionUtils.causedBy(e, NoSuchMethodException.class)) {
+                logger.fine("Gateway does not support modular assertions");
+                return;
+            }
+
+            throw new RemoteException("Unexpected error getting modular assertion info: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private void registerAssertionsFromModule(final ClusterStatusAdmin cluster, final ClusterStatusAdmin.ModuleInfo module) {
