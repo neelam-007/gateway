@@ -328,12 +328,13 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             Manifest manifest = jar.getManifest();
             Attributes attr = manifest.getMainAttributes();
             String assertionNamesStr = attr.getValue("ModularAssertion-List");
-            String[] assertionNames = assertionNamesStr == null ? new String[0] : assertionNamesStr.split("\\s+");
-            if (assertionNames.length < 1) {
+            String[] assertionClassnames = assertionNamesStr == null ? new String[0] : assertionNamesStr.split("\\s+");
+            if (assertionClassnames.length < 1) {
                 logger.log(Level.WARNING, "Modular assertionNames jarfile contains no modular assertions (ignoring it) " + file.getAbsolutePath());
                 return;
             }
 
+            // Save set of exported packages so we can quickly trace future classlaoder queries to the correct module
             Set<String> packages = new HashSet<String>();
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
@@ -359,10 +360,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
 
             AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURL(), getClass().getClassLoader());
             Set<Assertion> protos = new HashSet<Assertion>();
-            for (String assertionName : assertionNames) {
-                String assertionClassname = attr.getValue(assertionName + "-Class");
-                if (assertionClassname == null)
-                    throw new ClassNotFoundException("Couldn't find attribute: " + assertionName + "-Class");
+            for (String assertionClassname : assertionClassnames) {
                 if (classExists(getClass().getClassLoader(), assertionClassname))
                     throw new InstantiationException("Declared class already exists in parent classloader: " + assertionClassname);
                 Class assclass = assloader.loadClass(assertionClassname);

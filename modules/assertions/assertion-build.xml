@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <!--
+    This is the common module build file. It is included into each
+    modules build.xml.
+
+    Do not invoke it directly.
+  -->
+
+    <!--
+      Idea form compiler
+    -->
+    <path id="uidesigner.classpath">
+        <fileset dir="${UneasyRooster.dir}/lib/tools">
+            <include name="jdom.jar"/>
+            <include name="asm.jar"/>
+            <include name="asm-commons.jar"/>
+            <include name="javac2-l7p1.jar"/>
+        </fileset>
+    </path>
+    <taskdef name="javac2t"
+             classname="com.intellij.ant.Javac2"
+             classpathref="uidesigner.classpath"/>
+    <macrodef name="javac2">
+        <attribute name="srcdir"/>
+        <attribute name="destdir"/>
+        <attribute name="debug" default="on"/>
+        <attribute name="target" default="1.4"/>
+        <attribute name="source" default="1.4"/>
+        <attribute name="optimize" default="on"/>
+        <attribute name="classpathref" default="compile.classpath"/>
+        <attribute name="include" default="**/*.form"/>
+        <sequential>
+            <javac2t
+                    srcdir="@{srcdir}"
+                    destdir="@{destdir}"
+                    debug="@{debug}"
+                    target="@{target}"
+                    optimize="@{optimize}"
+                    source="@{source}"
+                    classpathref="@{classpathref}">
+                <include name="@{include}"/>
+            </javac2t>
+        </sequential>
+    </macrodef>
+
+
+    <path id="compile.classpath">
+        <fileset dir="${UneasyRooster.dir}/lib">
+            <include name="0500-wsdl4j.jar"/>
+            <include name="spring-beans.jar"/>
+            <include name="spring-context.jar"/>
+            <include name="spring-beans.jar"/>
+            <include name="spring-core.jar"/>
+            <include name="junit.jar"/>
+            <include name="spring-webmvc.jar"/>
+            <include name="spring-orm.jar"/>
+            <include name="spring-dao.jar"/>
+            <include name="spring-web.jar"/>
+            <include name="spring-remoting.jar"/>
+            <include name="spring-hibernate.jar"/>
+            <include name="spring-mock.jar"/>
+            <include name="spring-jdbc.jar"/>
+            <include name="spring-aop.jar"/>
+            <include name="spring-support.jar"/>
+            <include name="commons-logging-1.0.4.jar"/>
+            <include name="mailapi-1.4.jar"/>
+            <include name="forms_rt-l7p1.jar"/>
+        </fileset>
+        <pathelement location="${UneasyRooster.dir}/build/classes"/>
+    </path>
+
+
+    <!-- Initializes the ssg.home property. -->
+    <target name="-common.init.ssg.home.init">
+        <available property="is.windows" file="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
+        <available property="is.linux" file="/ssg"/>
+    </target>
+    <target name="-common.init.ssg.home.linux" depends="-common.init.ssg.home.init" unless="is.windows">
+        <property name="ssg.home" value="/ssg"/>
+    </target>
+    <target name="-common.init.ssg.home" depends="-common.init.ssg.home.linux">
+        <!-- Set to win home if linux home not already set-->
+        <property name="ssg.home" value="C:\Program Files\Layer 7 Technologies\SecureSpan Gateway"/>
+        <available property="is.home.available" file="${ssg.home}"/>
+        <fail unless="is.home.available">SSG home directory is invalid "${ssg.home}".</fail>
+    </target>
+
+    <!-- Compile java src -->
+    <target name="-compile">
+        <available property="classes.available" file="${UneasyRooster.dir}/build/classes"/>
+        <fail unless="classes.available">UneasyRooster does not seem to have been built yet (missing ${UneasyRooster.dir}/build/classes).</fail>
+        <mkdir dir="${build.classes}"/>
+        <copy todir="${build.classes}">
+            <fileset dir="src">
+                <include name="**/resources/*"/>
+                <include name="**/resources/**/*"/>
+            </fileset>
+        </copy>
+        <javac srcdir="src"
+               destdir="${build.classes}"
+               classpathref="compile.classpath">
+        </javac>
+
+        <!-- IntelliJ forms -->
+        <javac2 srcdir="src" destdir="${build.classes}"/>
+    </target>
+
+    <target name="-compile-tests" depends="-compile">
+        <mkdir dir="${build.classes}-test"/>
+        <copy todir="${build.classes}-test">
+            <fileset dir="tests">
+                <include name="**/*.xml"/>
+            </fileset>
+        </copy>
+        <javac srcdir="tests"
+               destdir="${build.classes}-test">
+            <classpath>
+                <path refid="compile.classpath"/>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${UneasyRooster.dir}/build/test-classes"/>
+            </classpath>
+        </javac>
+    </target>
+
+
+    <!-- Create JAR file -->
+    <target name="-jar" depends="-compile">
+        <!-- Compose the version number; if not already assigned. -->
+        <property file="${UneasyRooster.dir}/build.version"/>
+        <fail unless="build.version.major">Missing build version property "build.version.major"</fail>
+        <fail unless="build.version.minor">Missing build version property "build.version.minor"</fail>
+        <!-- Declare props to keep idea happy -->
+        <property name="build.version.major" value=""/>
+        <property name="build.version.minor" value=""/>
+        <property name="build.version.subminor" value=""/>
+        <condition property="build.version"
+                   value="${build.version.major}.${build.version.minor}"
+                   else="${build.version.major}.${build.version.minor}.${build.version.subminor}">
+            <!-- Append dot subminor only if not empty. -->
+            <equals arg1="${build.version.subminor}" arg2=""/>
+        </condition>
+        <tstamp/>
+        <jar destfile="build/${moduleName}-${build.version}.jar" basedir="build/classes" duplicate="fail">
+            <manifest>
+                <attribute name="Specification-Title" value="ModularAssertion"/>
+                <attribute name="Specification-Version" value="3.7.0"/>
+                <attribute name="Specification-Vendor" value="Layer 7 Technologies"/>
+                <attribute name="Specification-Vendor-Id" value="com.l7tech"/>
+                <attribute name="Implementation-Title" value="${moduleName}"/>
+                <attribute name="Implementation-Version" value="${build.version} ${TODAY}"/>
+                <attribute name="Implementation-Vendor" value="Layer 7 Technologoes"/>
+                <attribute name="Implementation-Vendor-Id" value="com.l7tech"/>
+                <attribute name="ModularAssertion-List" value="${assertionList}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!-- Create distribution package -->
+    <target name="package" depends="-jar"
+            description="Creates the distributable JAR file for this assertion.">
+    </target>
+
+    <target name="OFFICIAL-package-version-check" unless="build.version">
+        <!-- Prompt for version number if not already supplied by a calling build file. -->
+        <input message="Enter a version number:" addproperty="build.version"/>
+    </target>
+
+    <target name="OFFICIAL-package"
+            description="Creates the distributable ZIP file after prompting for a version number."
+            depends="OFFICIAL-package-version-check,package">
+    </target>
+
+    <target name="deploy" depends="-jar,-common.init.ssg.home"
+            description="Deploys to SSG at ${ssg.home}. (For developer use)">
+        <echo>Deploying to ${ssg.home}.</echo>
+        <copy overwrite="true" todir="${ssg.home}/modules/assertions" verbose="true">
+            <fileset dir="build">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="undeploy" depends="-common.init.ssg.home"
+            description="Undeploys from SSG at ${ssg.home}. Deletes all deployed files. (For developer use)">
+        <delete verbose="true">
+            <fileset dir="${ssg.home}/modules/assertions">
+                <include name="${moduleName}-*.jar"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="clean"
+            description="Deletes all generated files.">
+        <delete dir="build"/>
+    </target>
+
+</project>
