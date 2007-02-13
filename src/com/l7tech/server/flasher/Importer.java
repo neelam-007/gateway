@@ -3,6 +3,7 @@ package com.l7tech.server.flasher;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.partition.PartitionManager;
@@ -121,6 +122,12 @@ public class Importer {
                 throw new IOException("the version of this image is incompatible with this target system (" + imgversion +
                                       " instead of " + BuildInfo.getProductVersion() + ")");
             }
+
+            // retrieve source partition name
+            fis =  new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
+            read = fis.read(buf);
+            String srcpartitionname = new String(buf, 0, read);
+
 
             logger.info("Proceeding with image");
             System.out.println("SecureSpan image file recognized.");
@@ -323,6 +330,18 @@ public class Importer {
                     } else {
                         // overwrite os level system files
                         OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                    }
+                }
+
+                if (!partitionName.equals(srcpartitionname)) {
+                    // the source partition is different from the target partition
+                    logger.warning("the source and target partition names are different. some overwritten " +
+                                   "config files must be hacked");
+                    PartitionInformation partitionInfo = partitionManager.getPartition(partitionName);
+                    try {
+                        PartitionActions.prepareNewpartition(partitionInfo);
+                    } catch (SAXException e) {
+                        logger.log(Level.WARNING, "cannot prepare target partition", e);
                     }
                 }
             } else if (arguments.get(OS_OVERWRITE.name) != null) {

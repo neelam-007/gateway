@@ -47,11 +47,12 @@ public class Exporter {
                                                                                true, false);
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
     public static final String VERSIONFILENAME = "version";
+    public static final String SRCPARTNMFILENAME = "sourcepartitionname";
 
     private boolean includeAudit = false;
     private String tmpDirectory;
 
-    // do the import
+    // do the export
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
         // check that we can write output at located asked for
         String outputpathval = arguments.get(IMAGE_PATH.name);
@@ -135,6 +136,11 @@ public class Exporter {
             // record version of this image
             FileOutputStream fos = new FileOutputStream(tmpDirectory + File.separator + VERSIONFILENAME);
             fos.write(BuildInfo.getProductVersion().getBytes());
+            fos.close();
+
+            // record source partition
+            fos = new FileOutputStream(tmpDirectory + File.separator + SRCPARTNMFILENAME);
+            fos.write(partitionName.getBytes());
             fos.close();
 
             // produce template mapping if necessary
