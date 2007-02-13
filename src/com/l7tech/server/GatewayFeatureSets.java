@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 
 /**
  * Master list of Feature Sets for the SSG, hard-baked into the code so it will be obfuscated.
+ * @noinspection JavaDoc
  */
 public class GatewayFeatureSets {
     private static final Logger logger = Logger.getLogger(GatewayFeatureSets.class.getName());
@@ -48,6 +49,9 @@ public class GatewayFeatureSets {
 
     /** Only the root-level Product Profile feature sets. */
     private static final Map<String, GatewayFeatureSet> profileSets = new LinkedHashMap<String, GatewayFeatureSet>();
+
+    /** Feature sets that won't work unless SERVICE_MODULELOADER is also available. */
+    private static final Set<String> optionalModules = new HashSet<String>();
 
     /** The ultimate Product Profile that enables every possible feature. */
     public static final GatewayFeatureSet PROFILE_ALL;
@@ -68,6 +72,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_SNMPQUERY = "service:SnmpQuery";
     public static final String SERVICE_BRIDGE = "service:Bridge";
     public static final String SERVICE_TRUSTSTORE = "service:TrustStore"; // Ability to configure Trusted Certs
+    public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
 
     static {
         // Declare all baked-in feature sets
@@ -137,9 +142,15 @@ public class GatewayFeatureSets {
         fsr("set:trustStore", "Ability to configure Trusted Certificates",
             srv(SERVICE_TRUSTSTORE, "Ability to configure Trusted Certificates"));
 
+        GatewayFeatureSet moduleLoader = srv(SERVICE_MODULELOADER, "Enables the assertion module loader",
+                "Note: This feature set IS REQUIRED in order to use optional modular assertions, as well as post-release modular assertions.");
+
         GatewayFeatureSet modularAssertions =
-        fsr("set:modularAssertions", "Ability to use modular assertions",
-            "This includes any Assertion that was not listed in AllAssertions or GatewayFeatureSets when this version of the SecureSpan code was built");
+        fsr("set:modularAssertions", "Ability to use post-release modular assertions",
+            "This is any Assertion that was not listed in AllAssertions or GatewayFeatureSets when this version of the SecureSpan code was built.  " +
+              "Note: This feature set is NOT required in order to use optional modular assertions that WERE listed in GatewayFeatureSets when this " +
+              "version of the SecureSpan code was built.  Enabling this implies also enabling the assertion module loader.",
+            moduleLoader);
 
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
@@ -283,7 +294,7 @@ public class GatewayFeatureSets {
             "Adds throughput qutoa",
             fs(availabilityAccel),
             ass(ThroughputQuota.class),
-            misc("assertion:RateLimit", "the RateLimitAssertion (modular)", ""));
+            mass("assertion:RateLimit"));
 
         // Logging/auditing and alerts
         GatewayFeatureSet auditAccel =
@@ -340,12 +351,14 @@ public class GatewayFeatureSets {
             ass(WsFederationPassiveTokenExchange.class),
             ass(WsFederationPassiveTokenRequest.class),
             ass(RequestWssKerberos.class),
-            ass(CookieCredentialSourceAssertion.class));
+            ass(CookieCredentialSourceAssertion.class),
+            moduleLoader);
 
         GatewayFeatureSet customDs =
         fsr("set:Custom:Datascreen", "SecureSpan Datascreen custom assertions",
             "Symantec only",
-            ass(CustomAssertionHolder.class));
+            ass(CustomAssertionHolder.class),
+            moduleLoader);
 
         // Formerly a profile set, now present only for backward compatibility
         fsr("set:Profile:IPS", "SecureSpan XML IPS",
@@ -486,8 +499,8 @@ public class GatewayFeatureSets {
                     return ret;
                 }
 
-                for (Iterator i = inputSet.iterator(); i.hasNext();) {
-                    String topName = (String)i.next();
+                //noinspection unchecked
+                for (String topName : (Iterable<String>)inputSet) {
                     GatewayFeatureSet fs = sets.get(topName);
                     if (fs == null) {
                         logger.fine("Ignoring unrecognized feature set name: " + topName);
@@ -499,6 +512,17 @@ public class GatewayFeatureSets {
                 return ret;
             }
         };
+    }
+
+    /**
+     * Check if the specified assertion, identified by its feature set name, is marked as an optional module
+     * that requires the module loading capability in order to work.
+     *
+     * @param fsName  the feature set name, ie "assertion:RateLimit".  Required.
+     * @return true if this feature set is marked as requiring the module loader.
+     */
+    public static boolean isOptionalModularAssertion(String fsName) {
+        return optionalModules.contains(fsName);
     }
 
     /** Find already-registered GatewayFeatureSet by GatewayFeatureSet.  (Basically just asserts that a featureset is registered already.) */
@@ -558,6 +582,21 @@ public class GatewayFeatureSets {
         return getOrMakeFeatureSet(name, desc);
     }
 
+    /** Create (and register, if new) a feature set for the specified optional modular assertion, and return it. */
+    private static GatewayFeatureSet mass(String fsName) {
+        String prefix = "assertion:";
+        if (!fsName.startsWith(prefix))
+            throw new IllegalArgumentException("Optional modular assertion feature set name doesn't start with \"assertion:\" :" + fsName);
+        String rest = fsName.substring(prefix.length());
+        if (rest.length() < 1)
+            throw new IllegalArgumentException("Optional modular assertion feature set local name is empty:" + fsName);
+        if (rest.endsWith("Assertion"))
+            throw new IllegalArgumentException("Optional modular assertion feature set name should not end with \"Assertion\"");
+        String desc = "Optional modular policy assertion: " + rest;
+        optionalModules.add(fsName);
+        return getOrMakeFeatureSet(fsName, desc);
+    }
+
     private static GatewayFeatureSet getOrMakeFeatureSet(String name, String desc) {
         GatewayFeatureSet got = sets.get(name);
         if (got != null) {
@@ -593,7 +632,7 @@ public class GatewayFeatureSets {
 
 
     /**
-     * Create (and register, if new) a new GatewayFeatureSet for the specified HttpServlet and return it,
+     * Create (and register, if new) a new GatewayFeatureSet for the specified HttpServlet or Gateway server component and return it,
      * but using the specified name instead of the default.
      */
     private static GatewayFeatureSet srv(String name, String desc) {
@@ -602,4 +641,9 @@ public class GatewayFeatureSets {
         return getOrMakeFeatureSet(name, desc);
     }
 
+    private static GatewayFeatureSet srv(String name, String desc, String note) {
+        if (!name.startsWith("service:"))
+            throw new IllegalArgumentException("Preferred feature name for service must start with \"service:\": " + name);
+        return misc(name, desc, note);
+    }
 }

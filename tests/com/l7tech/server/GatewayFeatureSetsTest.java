@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.BridgeServlet;
 import com.l7tech.server.identity.cert.CSRHandler;
 import com.l7tech.server.policy.PolicyServlet;
+import com.l7tech.common.License;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -20,8 +21,10 @@ import java.util.logging.Logger;
 
 /**
  * @author mike
+ * @noinspection JavaDoc
  */
 public class GatewayFeatureSetsTest extends TestCase {
+    /** @noinspection UnusedDeclaration*/
     private static Logger log = Logger.getLogger(GatewayFeatureSetsTest.class.getName());
 
     public GatewayFeatureSetsTest(String name) {
@@ -93,6 +96,26 @@ public class GatewayFeatureSetsTest extends TestCase {
         }
     }
 
+    public void testAllOptionalAssertionsHaveAccessToModuleLoading() throws Exception {
+        Map<String, GatewayFeatureSet> profiles = GatewayFeatureSets.getProductProfiles();
+
+        License.FeatureSetExpander expander = GatewayFeatureSets.getFeatureSetExpander();
+        for (String profileName : profiles.keySet()) {
+            //noinspection unchecked
+            Set<String> expanded = expander.getAllEnabledFeatures(new HashSet<String>(Arrays.asList(profileName)));
+
+            boolean allowsModuleLoading = expanded.contains(GatewayFeatureSets.SERVICE_MODULELOADER);
+
+            for (String name : expanded) {
+                if (GatewayFeatureSets.isOptionalModularAssertion(name))
+                    assertTrue("Product profile " + profileName + " that enables optional modular assertion " + name + " must also enable " + GatewayFeatureSets.SERVICE_MODULELOADER, allowsModuleLoading);
+            }
+
+            if (expanded.contains("set:modularAssertions"))
+                assertTrue(allowsModuleLoading);
+        }
+    }
+
     public void testEverythingMapped() throws Exception {
         Map<String, GatewayFeatureSet> allSets = GatewayFeatureSets.getAllFeatureSets();
 
@@ -122,7 +145,8 @@ public class GatewayFeatureSetsTest extends TestCase {
             "service:SnmpQuery",        GatewayFeatureSets.getFeatureSetNameForServlet(SnmpQueryServlet.class),
             "service:WsdlProxy",        GatewayFeatureSets.getFeatureSetNameForServlet(WsdlProxyServlet.class),
             "service:Bridge",           GatewayFeatureSets.getFeatureSetNameForServlet(BridgeServlet.class),
-            "service:TrustStore",       // Not named after a servlet      
+            "service:TrustStore",       // Not named after a servlet
+            "service:ModuleLoader",     // Not named after a servlet
     };
 
     /** Makes sure that all registered services are included in ALL_SERVICES.  Dual of testAllServicesMapped. */
@@ -151,6 +175,7 @@ public class GatewayFeatureSetsTest extends TestCase {
 
         for (Assertion assertion : allAssertions) {
             String name = GatewayFeatureSets.getFeatureSetNameForAssertion(assertion.getClass());
+            assertNotNull(name);
         }
     }
 

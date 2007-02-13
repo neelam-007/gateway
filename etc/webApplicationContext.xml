@@ -848,6 +848,7 @@
 
     <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="licenseManager"/>
     </bean>
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">

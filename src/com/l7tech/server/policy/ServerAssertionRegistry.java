@@ -4,12 +4,14 @@ import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.GatewayFeatureSets;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,6 +58,7 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     //
 
     private final ServerConfig serverConfig;
+    private final LicenseManager licenseManager;
     private final Map<String, AssertionModule> loadedModules = new HashMap<String, AssertionModule>();
     private final Map<String, Long> failModTimes = new HashMap<String, Long>();    // should not be loaded (until mod time changes) because last time we tried it, it failed
     private Map<String, String[]> newClusterProps; // do not initialize -- clobbers info collected during super c'tor
@@ -69,9 +72,11 @@ public class ServerAssertionRegistry extends AssertionRegistry {
      *
      * @param serverConfig a ServerConfig instance that provides information about the module directory
      *                     to search
+     * @param licenseManager the licenseManager, for checking to see if scanning the modules directory is enabled
      */
-    public ServerAssertionRegistry(ServerConfig serverConfig) {
+    public ServerAssertionRegistry(ServerConfig serverConfig, LicenseManager licenseManager) {
         this.serverConfig = serverConfig;
+        this.licenseManager = licenseManager;
         installGatewayMetadataDefaults();
     }
 
@@ -145,6 +150,9 @@ public class ServerAssertionRegistry extends AssertionRegistry {
     }
 
     private synchronized boolean scanModularAssertions() {
+        if (!licenseManager.isFeatureEnabled(GatewayFeatureSets.SERVICE_MODULELOADER))
+            return false;
+
         boolean changesMade = false;
 
         String extsList = serverConfig.getProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS);
