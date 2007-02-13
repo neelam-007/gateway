@@ -123,6 +123,11 @@ class BasicTypeMapping implements TypeMapping {
         }
     }
 
+    public TypeMappingFinder getSubtypeFinder() {
+        // Basic types do not have subtypes
+        return null;
+    }
+
     private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
             throws InvalidPolicyStreamException
     {

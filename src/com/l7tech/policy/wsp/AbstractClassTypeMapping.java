@@ -18,7 +18,7 @@ public class AbstractClassTypeMapping extends BasicTypeMapping {
         Object target = object.target;
         if (target == null) return super.freeze(wspWriter, object, container);
         Class concreteClass = target.getClass();
-        TypeMapping concreteMapping = TypeMappingUtils.findTypeMappingByClass(concreteClass);
+        TypeMapping concreteMapping = TypeMappingUtils.findTypeMappingByClass(concreteClass, wspWriter);
         if (concreteMapping == null) throw new IllegalArgumentException("No TypeMapping found for " + concreteClass.getName());
         return concreteMapping.freeze(wspWriter, new TypedReference(concreteClass, object.target, object.name), container);
     }

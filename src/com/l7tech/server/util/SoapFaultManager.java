@@ -223,7 +223,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
                 Element assertionResultEl = tmp.createElementNS(FAULT_NS, "l7:assertionResult");
                 assertionResultEl.setAttribute("status", result.getStatus().getMessage());
-                String assertionattr = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass()).getExternalName();
+                String assertionattr = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass(), null).getExternalName();
                 assertionResultEl.setAttribute("assertion", assertionattr);
                 List<AuditDetail> details = result.getDetails();
                 if (details != null) {

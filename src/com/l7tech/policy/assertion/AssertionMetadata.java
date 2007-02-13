@@ -212,6 +212,24 @@ public interface AssertionMetadata {
      * If null, this assertion will NOT be convertable to/from L7 policy XML.
      */
     String WSP_EXTERNAL_NAME = "wspExternalName";
+
+    /**
+     * TypeMappingFinder instance.  TypeMappingFinder to add to the visitor to use for unrecognized types
+     * or external names while freezing or thawing instances of this assertion.
+     * <p/>
+     * If null, now new types will be recognized while freezing or thawing instances of this assertion.
+     */
+    String WSP_SUBTYPE_FINDER = "wspSubtypeFinder";
+
+    /**
+     * Map< String, TypeMapping >, external name to type mapping.
+     * Compatibility mappings to add to the global pool of mappings to try
+     * when an element being thawed just can't be recognized.  Usually used to set up compatibility mappings
+     * to translate older versions of this serialized assertion into the modern version.
+     * <p/>
+     * If null, no new global mappings will be installed.
+     */
+    String WSP_COMPATIBILITY_MAPPINGS = "wspCompatibilityMappings";
     
     /** Boolean. True if this assertion should be passed through to the Bridge. */
     String USED_BY_CLIENT = "usedByClient";

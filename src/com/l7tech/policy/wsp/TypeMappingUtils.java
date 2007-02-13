@@ -48,9 +48,11 @@ public class TypeMappingUtils {
      * Find a TypeMapping capable of serializing the specified class.
      *
      * @param clazz The class to look up
+     * @param writer  WspWriter context we are operating in, for locating context-specific type mappings,
+     *                or null to find only global or Assertion-specific type mappings.
      * @return The TypeMapping for this class, or null if not found.
      */
-    public static TypeMapping findTypeMappingByClass(Class clazz) {
+    public static TypeMapping findTypeMappingByClass(Class clazz, WspWriter writer) {
         final TypeMapping[] tms = WspConstants.typeMappings;
         for (TypeMapping typeMapping : tms) {
             if (typeMapping.getMappedClass().equals(clazz))
@@ -67,6 +69,13 @@ public class TypeMappingUtils {
             } catch (IllegalAccessException e) {
                 logger.log(Level.WARNING, "Unable to create instance of assertion: " + clazz.getName() + ": " + ExceptionUtils.getMessage(e), e);
             }
+        }
+
+        // Check for globals
+        if (writer != null) {
+            TypeMappingFinder tmf = writer.getTypeMappingFinder();
+            if (tmf != null)
+                return tmf.getTypeMapping(clazz);
         }
 
         return null;
@@ -100,7 +109,7 @@ public class TypeMappingUtils {
      * @param node the node to check
      * @return a List of Element objects
      */
-    static List getChildElements(Node node) {
+    static List<Element> getChildElements(Node node) {
         return getChildElements(node, null);
     }
 
@@ -122,13 +131,13 @@ public class TypeMappingUtils {
      * @param name the required name
      * @return a List of Element objects
      */
-    static List getChildElements(Node node, String name) {
+    static List<Element> getChildElements(Node node, String name) {
         NodeList kidNodes = node.getChildNodes();
-        List<Node> kidElements = new ArrayList<Node>();
+        List<Element> kidElements = new ArrayList<Element>();
         for (int i = 0; i < kidNodes.getLength(); ++i) {
             Node n = kidNodes.item(i);
             if (n.getNodeType() == Node.ELEMENT_NODE && (name == null || name.equals(n.getLocalName())))
-                kidElements.add(n);
+                kidElements.add((Element)n);
         }
         return kidElements;
     }

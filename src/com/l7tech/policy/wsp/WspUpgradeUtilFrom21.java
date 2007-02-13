@@ -22,9 +22,9 @@ import java.util.*;
 /**
  * Utilities for reading a SecureSpan 2.1 policy, which might refer to assertions whose classes no longer exist.
  */
-class WspUpgradeUtilFrom21 {
+public class WspUpgradeUtilFrom21 {
 
-    static final TypeMapping xmlRequestSecurityCompatibilityMapping = new XmlSecurityTypeMapping("XmlRequestSecurity");
+    public static final TypeMapping xmlRequestSecurityCompatibilityMapping = new XmlSecurityTypeMapping("XmlRequestSecurity");
     static final TypeMapping xmlResponseSecurityCompatibilityMapping = new XmlSecurityTypeMapping("XmlResponseSecurity");
 
     static class XmlSecurityTypeMapping implements TypeMapping {
@@ -50,6 +50,10 @@ class WspUpgradeUtilFrom21 {
         public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
             Element translated = WspUpgradeUtilFrom21.translateOldXmlSecurityElement(source, visitor);
             return TypeMappingUtils.thawElement(translated, visitor);
+        }
+
+        public TypeMappingFinder getSubtypeFinder() {
+            return null;
         }
     }
 

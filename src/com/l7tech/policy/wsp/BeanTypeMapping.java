@@ -166,7 +166,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
             Class returnType = getter.getReturnType();
             if (!setter.getParameterTypes()[0].equals(returnType))
                 throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
-            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(returnType);
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(returnType, wspWriter);
             if (tm == null)
                 throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
             final Object[] noArgs = new Object[0];

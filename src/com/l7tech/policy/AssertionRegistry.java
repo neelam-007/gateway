@@ -166,9 +166,33 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
      */
     public TypeMapping getTypeMapping(String externalName) {
         Assertion ass = findByExternalName(externalName);
-        if (ass == null)
-            return null;
-        return (TypeMapping)ass.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+        if (ass != null)
+            return (TypeMapping)ass.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+
+        // Check for globally-visible compatibility mappings
+        for (Assertion assertion : getAssertions()) {
+            //noinspection unchecked
+            Map<String, TypeMapping> compatMappings = (Map<String, TypeMapping>)assertion.meta().get(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS);
+            if (compatMappings != null)
+                return compatMappings.get(externalName);
+        }
+
+        return null;
+    }
+
+    public TypeMapping getTypeMapping(Class unrecognizedType) {
+        if (Assertion.class.isAssignableFrom(unrecognizedType)) {
+            try {
+                Assertion instance = (Assertion)unrecognizedType.newInstance();
+                return (TypeMapping)instance.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e); // broken bean
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e); // broken bean
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -14,7 +14,7 @@ import java.lang.reflect.InvocationTargetException;
  * Type mapping for enum-style classes.  Will automatically generate mappings for any enum-style class that
  * has a static method getEnumTranslator that returns an instance of {@link EnumTranslator}.
  */
-class WspEnumTypeMapping extends BasicTypeMapping {
+public class WspEnumTypeMapping extends BasicTypeMapping {
     private final EnumTranslator enumTranslator;
 
     /**

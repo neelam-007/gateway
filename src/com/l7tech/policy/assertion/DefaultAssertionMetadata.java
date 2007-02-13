@@ -202,6 +202,18 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(WSP_SUBTYPE_FINDER, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return null;
+            }
+        });
+
+        put(WSP_COMPATIBILITY_MAPPINGS, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return null;
+            }
+        });
+
         // Default finder for usedByClient.  AssertionRegistry upgrades this to a smarter one that knows
         // how to check AllAssertions.BRIDGE_EVERYTHING.
         put(USED_BY_CLIENT, new MetadataFinder() {

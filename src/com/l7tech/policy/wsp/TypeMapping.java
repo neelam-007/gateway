@@ -54,4 +54,12 @@ public interface TypeMapping {
      * @return
      */
     TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException;
+
+    /**
+     * Get the TypeMappingFinder to use for types unrecognized by the parent TypeMappingFinder, in effect while
+     * this particular TypeMapping is being frozen or thawed.
+     *
+     * @return a TypeMappingFinder to add a fallback to the current visitor, or null if this TypeMapping has nothing to add.
+     */
+    TypeMappingFinder getSubtypeFinder();
 }

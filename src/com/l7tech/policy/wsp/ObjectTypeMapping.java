@@ -24,7 +24,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
         if (object.target != null) {
             Class c = object.target.getClass();
             if (c != Object.class) {
-                TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(c);
+                TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(c, wspWriter);
                 if (tm != null)
                     return tm.freeze(wspWriter, new TypedReference(c, object.target, object.name), container);
 

@@ -6,6 +6,10 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.util.EnumTranslator;
+import com.l7tech.policy.wsp.WspEnumTypeMapping;
+import com.l7tech.policy.wsp.TypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -173,6 +177,17 @@ public class SslAssertion extends ConfidentialityAssertion {
 
     public String toString() {
         return super.toString() + " clientCert=" + isRequireClientAuthentication() + " option=" + getOption();
+    }
+
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+                new WspEnumTypeMapping(Option.class, "optionValue")
+        )));
+
+        return meta;
     }
 
     protected Set _cipherSuites = Collections.EMPTY_SET;

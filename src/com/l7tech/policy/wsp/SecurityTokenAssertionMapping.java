@@ -25,14 +25,19 @@ import org.w3c.dom.Element;
  * <p/>
  * When parsing, delegates any wsse:SecurityToken elements to the general SecurityToken parser, {@link SecurityTokenTypeMapping}.
  */
-class SecurityTokenAssertionMapping extends AssertionMapping {
+class SecurityTokenAssertionMapping extends BeanTypeMapping {
 
     protected final SecurityTokenType tokenType;
     private static final SecurityTokenTypeMapping securityTokenTypeMapping = new SecurityTokenTypeMapping(); // delegate: general wsse:SecurityToken parser
 
-    /** Create a mapping for serializing assertions to wsse:SecurityToken elements, and parsing pre32 assertion elements. */
+    /**
+     * Create a mapping for serializing assertions to wsse:SecurityToken elements, and parsing pre32 assertion elements.
+     * @param prototype          a prototype instance of the assertion this mapping will freeze/thaw.  Required.
+     * @param oldExternalName    the old external name of this assertion, in pre32 format (non-SecurityToken)
+     * @param tokenType          tokenType attribute to expect/use in the wsse:SecurityToken element.
+     */
     public SecurityTokenAssertionMapping(Assertion prototype, String oldExternalName, SecurityTokenType tokenType) {
-        super(prototype, oldExternalName);
+        super(prototype.getClass(), oldExternalName);
         this.tokenType = tokenType;
     }
 

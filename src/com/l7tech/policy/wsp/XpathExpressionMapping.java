@@ -114,4 +114,8 @@ class XpathExpressionMapping implements TypeMapping {
         final XpathExpression xpathExpression = new XpathExpression(xpathExpr, nsMap);
         return new TypedReference(XpathExpression.class, xpathExpression);
     }
+
+    public TypeMappingFinder getSubtypeFinder() {
+        return null;
+    }
 }

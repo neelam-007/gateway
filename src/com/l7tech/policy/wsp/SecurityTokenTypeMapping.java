@@ -67,4 +67,8 @@ class SecurityTokenTypeMapping implements TypeMapping {
 
         throw new InvalidPolicyStreamException("wsse:SecurityToken has unsupported TokenType: " + uri);
     }
+
+    public TypeMappingFinder getSubtypeFinder() {
+        return null;
+    }
 }

@@ -8,6 +8,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Given a policy tree, emit an XML version of it.
@@ -15,13 +17,17 @@ import java.io.OutputStream;
 public class WspWriter {
     private Document document = null;
     private boolean pre32Compat = false;
+    private List<TypeMappingFinder> typeMappingFinders = new ArrayList<TypeMappingFinder>();
+    private TypeMappingFinder metaTmf = new TypeMappingFinderWrapper(typeMappingFinders);
 
-    private static ThreadLocal currentWspWriter = new ThreadLocal();
+    private static ThreadLocal<WspWriter> currentWspWriter = new ThreadLocal<WspWriter>();
+
+
     static void setCurrent(WspWriter wspWriter) {
         currentWspWriter.set(wspWriter);
     }
     static WspWriter getCurrent() {
-        WspWriter cur = (WspWriter)currentWspWriter.get();
+        WspWriter cur = currentWspWriter.get();
         if (cur == null)
             throw new IllegalStateException("No WspWriter currently defined for this thread");
         return cur;
@@ -58,14 +64,14 @@ public class WspWriter {
      * it produce UnknownAssertion elements wrapping fragments of unrecognized XML.
      *
      * @param assertion the assertion to convert into an element.
-     * @return
-     * @throws InvalidPolicyTreeException
+     * @return the Element.  Never null.
+     * @throws InvalidPolicyTreeException if an element cannot be created for this assertion
      */
     Element toElement(Assertion assertion) throws InvalidPolicyTreeException {
         if (assertion == null)
             return null;
         Document dom = createSkeleton();
-        TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(assertion.getClass());
+        TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(assertion.getClass(), this);
         if (tm == null)
             throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
         TypedReference ref = new TypedReference(assertion.getClass(), assertion);
@@ -105,7 +111,7 @@ public class WspWriter {
             document = createSkeleton();
             if (assertion != null) {
                 setCurrent(this);
-                TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(assertion.getClass());
+                TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(assertion.getClass(), this);
                 if (tm == null)
                     throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
                 TypedReference ref = new TypedReference(assertion.getClass(), assertion);
@@ -164,5 +170,19 @@ public class WspWriter {
 
     public void setPre32Compat(boolean pre32Compat) {
         this.pre32Compat = pre32Compat;
+    }
+
+    public void addTypeMappingFinder(TypeMappingFinder typeMappingFinder) {
+        if (typeMappingFinder == null)
+            throw new NullPointerException("typeMappingFinder can't be null");
+        typeMappingFinders.add(typeMappingFinder);
+    }
+
+    public void removeTypeMappingFinder(TypeMappingFinder typeMappingFinder) {
+        typeMappingFinders.remove(typeMappingFinder);
+    }
+
+    public TypeMappingFinder getTypeMappingFinder() {
+        return metaTmf;
     }
 }

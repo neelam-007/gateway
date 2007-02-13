@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import org.w3c.dom.Element;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -23,14 +22,14 @@ import java.util.List;
  * TypeMapping that knows how to serliaze a CompositeAssertion and its children into a policy XML document.
  */
 class CompositeAssertionMapping implements TypeMapping {
-    private Class clazz;
+    private final CompositeAssertion prototype;
+    private Class<? extends CompositeAssertion> clazz;
     private String externalName;
-    private CompositeAssertion source;
 
     CompositeAssertionMapping(CompositeAssertion a, String externalName) {
         this.clazz = a.getClass();
         this.externalName = externalName;
-        makeAssertion(externalName); // consistency check
+        prototype = makeAssertion(externalName); // consistency check
     }
 
     protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) throws InvalidPolicyTreeException {
@@ -38,13 +37,13 @@ class CompositeAssertionMapping implements TypeMapping {
         // NO super.populateElement(element, object);
         CompositeAssertion cass = (CompositeAssertion)object.target;
 
-        List kids = cass.getChildren();
-        for (Iterator i = kids.iterator(); i.hasNext();) {
-            Assertion kid = (Assertion)i.next();
+        //noinspection unchecked
+        List<Assertion> kids = cass.getChildren();
+        for (Assertion kid : kids) {
             if (kid == null)
                 throw new InvalidPolicyTreeException("Unable to serialize a null assertion");
-            Class kidClass = kid.getClass();
-            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(kidClass);
+            Class<? extends Object> kidClass = kid.getClass();
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(kidClass, wspWriter);
             if (tm == null)
                 tm = (TypeMapping)kid.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
             if (tm == null)
@@ -55,11 +54,10 @@ class CompositeAssertionMapping implements TypeMapping {
 
     protected void populateObject(CompositeAssertion cass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         // gather children
-        List convertedKids = new LinkedList();
-        List kids = TypeMappingUtils.getChildElements(source);
-        for (Iterator i = kids.iterator(); i.hasNext();) {
-            Element kidNode = (Element)i.next();
-            TypedReference tr = WspConstants.typeMappingObject.thaw(kidNode, visitor);
+        List<Object> convertedKids = new LinkedList<Object>();
+        List<Element> kids = TypeMappingUtils.getChildElements(source);
+        for (Element kid : kids) {
+            TypedReference tr = WspConstants.typeMappingObject.thaw(kid, visitor);
             if (tr.target == null)
                 throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null child");
             convertedKids.add(tr.target);
@@ -87,6 +85,10 @@ class CompositeAssertionMapping implements TypeMapping {
         CompositeAssertion cass = makeAssertion(externalName);
         populateObject(cass, source, visitor);
         return new TypedReference(clazz, cass);
+    }
+
+    public TypeMappingFinder getSubtypeFinder() {
+        return (TypeMappingFinder)prototype.meta().get(AssertionMetadata.WSP_SUBTYPE_FINDER);
     }
 
     private CompositeAssertion makeAssertion(String externalName) throws IllegalArgumentException {

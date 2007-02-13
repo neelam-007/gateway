@@ -149,7 +149,6 @@ public class WspConstants {
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
 
         // Typesafe enumerations
-        new WspEnumTypeMapping(SslAssertion.Option.class, "optionValue"),
         new WspEnumTypeMapping(WsTrustRequestType.class, "requestType"),
         new WspEnumTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod"),
         new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
@@ -336,7 +335,6 @@ public class WspConstants {
     final static TypeMapping[] readOnlyTypeMappings = new TypeMapping[] {
 
         // Backward compatibility with old policy documents
-        WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,
         WspUpgradeUtilFrom21.xmlResponseSecurityCompatibilityMapping,
         WspUpgradeUtilFrom30.httpClientCertCompatibilityMapping,
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
