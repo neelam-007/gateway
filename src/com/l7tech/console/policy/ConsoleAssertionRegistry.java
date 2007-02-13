@@ -21,17 +21,12 @@ import com.l7tech.policy.assertion.MetadataFinder;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -91,7 +86,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
-                ClassLoader assloader = makeModuleClassLoader(cluster, moduleFilename);
+                ClassLoader assloader = new ConsoleRemoteAssertionModuleClassLoader(getClass().getClassLoader(), cluster, moduleFilename);
                 for (String assertionClassname : assertionClassnames) {
                     try {
                         Class assclass = assloader.loadClass(assertionClassname);
@@ -116,59 +111,6 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 return null;
             }
         });
-    }
-
-    // Make a ClassLoader that will load classes from the specified module, using the specified cluster status admin as
-    // the source of remote class bytes
-    private ClassLoader makeModuleClassLoader(final ClusterStatusAdmin cluster, final String moduleFilename) {
-        return new ClassLoader(getClass().getClassLoader()) {
-
-            protected Class<?> findClass(final String name) throws ClassNotFoundException {
-                String resourcepath = name.replace('.', '/').concat(".class");
-                try {
-                    final byte[] bytes = cluster.getAssertionModuleResource(moduleFilename, resourcepath);
-                    if (bytes == null)
-                        throw new ClassNotFoundException("Class not found in module " + moduleFilename + ": " + name);
-
-                    return AccessController.doPrivileged(new PrivilegedAction<Class>() {
-                        public Class run() {
-                            return defineClass(name, bytes, 0, bytes.length);
-                        }
-                    });
-
-                } catch (ClusterStatusAdmin.ModuleNotFoundException e) {
-                    throw new ClassNotFoundException("Unable to load class from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
-                } catch (RemoteException e) {
-                    throw new ClassNotFoundException("Unable to load class from module " + moduleFilename + ": " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-
-            public InputStream getResourceAsStream(String name) {
-                try {
-                    byte[] got = cluster.getAssertionModuleResource(moduleFilename, name);
-                    if (got == null)
-                        return null;
-
-                    return new ByteArrayInputStream(got);
-                } catch (ClusterStatusAdmin.ModuleNotFoundException e) {
-                    logger.log(Level.WARNING, "Unable to find resource from module: " + ExceptionUtils.getMessage(e), e);
-                    return null;
-                } catch (RemoteException e) {
-                    logger.log(Level.WARNING, "Unable to find resource from module: " + ExceptionUtils.getMessage(e), e);
-                    return null;
-                }
-            }
-
-            protected URL findResource(String name) {
-                logger.log(Level.WARNING, "*** findResource called on module class loader: resource=" + name);
-                return super.findResource(name);
-            }
-
-            protected Enumeration<URL> findResources(String name) throws IOException {
-                logger.log(Level.WARNING, "*** findResources called on module class loader: resource=" + name);
-                return super.findResources(name);
-            }
-        };
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
@@ -550,4 +492,5 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         }
         return null;
     }
+
 }

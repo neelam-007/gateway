@@ -178,6 +178,8 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             logger.log(Level.SEVERE, "Unable to scan assertion modules directory: " + ExceptionUtils.getMessage(e), e);
             return false;
         }
+        final Set<String> jarnames = new HashSet<String>();
+        for (File jar : jars) jarnames.add(jar.getName());
 
         // Check for disabled modules
         final Set<String> disabled = new HashSet<String>();
@@ -189,28 +191,40 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 // Admin wants to disable this module
                 it.remove();
                 String modname = name.substring(0, name.length() - DISABLED_SUFFIX.length());
+                if (logger.isLoggable(Level.FINE)) logger.fine("Pretending module file " + modname + " isn't there, because it is flagged as disabled");
+                jarnames.remove(modname);
                 disabled.add(modname);
-                if (loadedModules.containsKey(modname)) {
-                    logger.info("Unregistering module " + modname + " because the flag file " + name + "exists");
-                    unregisterModule(modname);
-                }
+            }
+        }
+
+        // Check for removed modules
+        for (AssertionModule module : loadedModules.values()) {
+            String name = module.getName();
+            if (!jarnames.contains(name)) {
+                logger.info("Unregistering assertion module that has been removed or disabled: " + name);
+                changesMade = true;
+                unregisterModule(name);
+            }
+        }
+
+        // check for removed failed modules
+        for (String failedName : failModTimes.keySet()) {
+            if (!jarnames.contains(failedName)) {
+                logger.info("Forgetting about failed module that has been removed or disabled: " + failedName);
+                failModTimes.remove(failedName);
             }
         }
 
         // Check for new or changed modules
-        Set<String> seenNames = new HashSet<String>();
         for (File file : jars) {
             String filename = file.getName();
 
             // Ignore disabled flags
-            if (disabled.contains(filename)) {
-                if (logger.isLoggable(Level.FINE)) logger.fine("Pretending module " + filename + " is missing, because it is flagged as disabled");
+            if (disabled.contains(filename))
                 continue;
-            }
 
             long lastModified = file.lastModified();
             try {
-                seenNames.add(filename);
                 AssertionModule previousVersion = loadedModules.get(filename);
                 if (previousVersion != null) {
                     if (previousVersion.getJarfileModifiedTime() == lastModified)
@@ -231,24 +245,6 @@ public class ServerAssertionRegistry extends AssertionRegistry {
             } catch (ModuleException e) {
                 logger.log(Level.SEVERE, "Unable to load modular assertion jarfile (ignoring it until it changes) " + filename + ": " + ExceptionUtils.getMessage(e), e);
                 failModTimes.put(filename, lastModified);
-            }
-        }
-
-        // Check for removed modules
-        for (AssertionModule module : loadedModules.values()) {
-            String name = module.getName();
-            if (!seenNames.contains(name)) {
-                logger.info("Unregistering assertion module that has been removed: " + name);
-                changesMade = true;
-                unregisterModule(name);
-            }
-        }
-
-        // check for removed failed modules
-        for (String failedName : failModTimes.keySet()) {
-            if (!seenNames.contains(failedName)) {
-                logger.info("Forgetting about failed module that has been removed: " + failedName);
-                failModTimes.remove(failedName);
             }
         }
 
