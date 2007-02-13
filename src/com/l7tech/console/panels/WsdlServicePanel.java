@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlComposer;
+
 import javax.swing.*;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -9,8 +12,6 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Map;
-
-import com.l7tech.common.xml.Wsdl;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -53,8 +54,8 @@ public class WsdlServicePanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        if (settings instanceof Definition) {
-            definition = (Definition)settings;
+        if (settings instanceof WsdlComposer) {
+            definition = ((WsdlComposer)settings).getOutputWsdl();
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
@@ -87,8 +88,8 @@ public class WsdlServicePanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        if (settings instanceof Definition) {
-            definition = (Definition)settings;
+        if (settings instanceof WsdlComposer) {
+            definition = ((WsdlComposer)settings).getOutputWsdl();
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }

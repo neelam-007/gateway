@@ -32,6 +32,10 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
             throw new IllegalArgumentException();
         }
         this.definition = definition;
+        populate();
+    }
+
+    public void populate() {
         for (Object messageObject : definition.getMessages().values()) {
             Message message = (Message) messageObject;
             this.messageList.add(new MessageInfo(message, message.getOrderedParts(null)));
@@ -74,7 +78,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
             Message message = definition.createMessage();
             message.setQName(messageInfo.message.getQName());
             message.setUndefined(messageInfo.message.isUndefined());
-            for (Part part : messageInfo.parts) {
+            for (Part part : messageInfo.messageParts) {
                 message.addPart(part);
             }
             messages.add(message);
@@ -95,7 +99,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
         if (index >=0 && index < messageList.size()) {
             MessageInfo info = messageList.get(index);
-            parts = info.parts;
+            parts = info.messageParts;
         }
 
         return parts;
@@ -274,15 +278,15 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
 
     private static final class MessageInfo {
         private final Message message;
-        private final List<Part> parts;
+        private final List<Part> messageParts;
 
         MessageInfo(Message message, List parts) {
             this.message = message;
-            this.parts = new ArrayList<Part>();
+            this.messageParts = new ArrayList<Part>();
 
             for (Object partObj : parts) {
                 Part part = (Part) partObj;
-                parts.add(part);
+                messageParts.add(part);
             }
         }
     }

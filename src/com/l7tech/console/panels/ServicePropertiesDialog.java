@@ -5,13 +5,14 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
+import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.FilterDocument;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
@@ -23,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -67,6 +69,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JRadioButton enableRadio;
     private JRadioButton diableRadio;
+    private JButton editWSDLButton;
     private String ssgURL;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc) {
@@ -236,6 +239,12 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
+        editWSDLButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                editWsdl();
+            }
+        });
+
         Utilities.setEscAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
@@ -382,6 +391,18 @@ public class ServicePropertiesDialog extends JDialog {
         String tmp = urlvalue.replace(STD_PORT, STD_PORT_DISPLAYED);
         tmp = tmp.replace("http://", "http(s)://");
         routingURL.setText("<html><p><a href=\"" + urlvalue + "\">" + tmp + "</a></p></html>");
+    }
+
+    private void editWsdl() {
+        CreateServiceWsdlAction action = new CreateServiceWsdlAction();
+        try {
+            Document dom = XmlUtil.parse(new StringReader(subject.getWsdlXml()), false);
+            action.setWsdl(Wsdl.newInstance("", dom).getDefinition());
+            action.actionPerformed(null);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "cannot display new wsdl ", e);
+        }
+
     }
 
     private void resetWSDL() {

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.WsdlBindingOperationsTableModel;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlComposer;
 
 import javax.swing.*;
 import javax.wsdl.*;
@@ -92,8 +93,8 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        if (settings instanceof Definition) {
-            definition = (Definition)settings;
+        if (settings instanceof WsdlComposer) {
+            definition = ((WsdlComposer)settings).getOutputWsdl();
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }

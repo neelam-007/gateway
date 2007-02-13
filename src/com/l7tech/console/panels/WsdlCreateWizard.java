@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
@@ -43,14 +44,24 @@ public class WsdlCreateWizard extends Wizard {
 
     //
     private JButton buttonPreview;
+    private WsdlComposer wsdlComposer;
+
+    public WsdlCreateWizard(Frame parent, WizardStepPanel panel, Definition defToUse) throws WSDLException {
+        super(parent, panel);
+        initialise(defToUse);
+    }
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) throws WSDLException {
         super(parent, panel);
+        initialise(null);
+    }
+
+    private void initialise(Definition def) throws WSDLException {
         setResizable(true);
-        setTitle("Create WSDL Wizard");
+        setTitle(def == null?"Create WSDL Wizard":"Edit WSDL Wizard");
 
         // initialize the WSDL definition
-        initModel();
+        initModel(def);
         collect();
 
         getButtonHelp().addActionListener(new ActionListener() {
@@ -90,7 +101,7 @@ public class WsdlCreateWizard extends Wizard {
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
 
                         StringWriter writer = new StringWriter();
-                        Definition definition = (Definition) wizardInput;
+                        Definition definition = wsdlComposer.getOutputWsdl();
                         definition.setExtensionRegistry(reg);
                         wsdlWriter.writeWSDL(definition, writer);
 
@@ -123,17 +134,20 @@ public class WsdlCreateWizard extends Wizard {
         super.finish(evt);
     }
 
-    private void initModel() throws WSDLException {
-        Definition definition = WsdlUtils.getWSDLFactory().newDefinition();
+    private void initModel(Definition defToUse) throws WSDLException {
+        if (defToUse == null) {
+            defToUse = WsdlUtils.getWSDLFactory().newDefinition();
 
-        definition.setQName(new QName("NewService"));
-        definition.setTargetNamespace("http://tempuri.org/");
-        definition.addNamespace("tns", definition.getTargetNamespace());                      
-        definition.addNamespace("xsd", XSD_NAME_SPACE);
-        definition.addNamespace("soap", SOAP_NAME_SPACE);
-        definition.addNamespace(null, DEFAULT_NAME_SPACE);
+            defToUse.setQName(new QName("NewService"));
+            defToUse.setTargetNamespace("http://tempuri.org/");
+            defToUse.addNamespace("tns", defToUse.getTargetNamespace());
+            defToUse.addNamespace("xsd", XSD_NAME_SPACE);
+            defToUse.addNamespace("soap", SOAP_NAME_SPACE);
+            defToUse.addNamespace(null, DEFAULT_NAME_SPACE);
+        }
 
-        wizardInput = definition;
+        wsdlComposer = new WsdlComposer(defToUse);
+        wizardInput = wsdlComposer;
     }
 
     private class RawWsdlDialog extends JDialog {

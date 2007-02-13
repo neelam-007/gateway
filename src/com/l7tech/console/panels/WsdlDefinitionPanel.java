@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.xml.WsdlComposer;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -100,16 +102,23 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
-        if (!(settings instanceof Definition)) {
-            throw new IllegalArgumentException("expected " + Definition.class);
+        if (!(settings instanceof WsdlComposer)) {
+            throw new IllegalArgumentException("expected " + WsdlComposer.class);
         }
-        Definition definition = (Definition) settings;
+        WsdlComposer wsdlComposer = (WsdlComposer) settings;
+        Definition definition = wsdlComposer.getOutputWsdl();
 
         nameField.setText(definition.getQName().getLocalPart());
 
         if (!namespacesModel.contains(definition.getTargetNamespace()))
             targetNameSpaceField.addItem(definition.getTargetNamespace());
 
+        java.util.List<String> otherNamespaces = wsdlComposer.getTargetNamespaces();
+        for (String otherNamespace : otherNamespaces) {
+            if (!namespacesModel.contains(otherNamespace)) {
+                targetNameSpaceField.addItem(otherNamespace);
+            }
+        }
         targetNameSpaceField.setSelectedItem(definition.getTargetNamespace());
 
         // setup namespaces
@@ -141,10 +150,11 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        if (!(settings instanceof Definition)) {
-            throw new IllegalArgumentException("expected " + Definition.class);
+        if (!(settings instanceof WsdlComposer)) {
+            throw new IllegalArgumentException("expected " + WsdlComposer.class);
         }
-        Definition def = (Definition)settings;
+        WsdlComposer wsdlComposer = (WsdlComposer) settings;
+        Definition def = wsdlComposer.getOutputWsdl();
         String ns = "";
         if (targetNameSpaceField.getSelectedItem() == null) {
             ns = (String) targetNameSpaceField.getItemAt(0);

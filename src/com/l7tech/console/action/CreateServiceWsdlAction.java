@@ -6,6 +6,7 @@ import com.l7tech.common.security.rbac.AttemptedCreate;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
@@ -36,6 +37,7 @@ import javax.wsdl.Port;
 import javax.wsdl.Service;
 import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLWriter;
 import java.io.ByteArrayOutputStream;
@@ -56,6 +58,7 @@ import java.awt.*;
  */
 public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
+    private Definition defToUse;
 
     public CreateServiceWsdlAction() {
         super(new AttemptedCreate(SERVICE), LIC_AUTH_ASSERTIONS);
@@ -98,8 +101,11 @@ public class CreateServiceWsdlAction extends SecureAction {
                       new WSDLCompositionPanel(new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null))))));
                     WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
                     Frame f = TopComponents.getInstance().getTopParent();
-                    Wizard w = new WsdlCreateWizard(f, p);
-
+                    Wizard w = null;
+                    if (defToUse != null)
+                        w = new WsdlCreateWizard(f, p, defToUse);
+                    else
+                        w = new WsdlCreateWizard(f, p);
                     w.addWizardListener(wizardListener);
                     Utilities.setEscKeyStrokeDisposes(w);
                     w.pack();
@@ -124,11 +130,13 @@ public class CreateServiceWsdlAction extends SecureAction {
             PublishedService service = new PublishedService();
             try {
                 Wizard w = (Wizard)we.getSource();
-                Definition def = (Definition)w.getWizardInput();
+                Definition def = ((WsdlComposer)w.getWizardInput()).getOutputWsdl();
 
                 service.setDisabled(true);
                 WSDLFactory fac = WsdlUtils.getWSDLFactory();
+                ExtensionRegistry reg =  Wsdl.disableSchemaExtensions(fac.newPopulatedExtensionRegistry());
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
+                def.setExtensionRegistry(reg);
                 StringWriter sw = new StringWriter();
                 wsdlWriter.writeWSDL(def, sw);
                 Wsdl ws = new Wsdl(def);
@@ -171,7 +179,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                       "Service already exists",
                       JOptionPane.ERROR_MESSAGE, null);
                 } else {
-                    log.log(Level.WARNING, "erro saving service", e);
+                    log.log(Level.WARNING, "error saving service", e);
                     DialogDisplayer.showMessageDialog(w,
                       "Unable to save the service '" + service.getName() + "'\n",
                       "Error",
@@ -232,5 +240,9 @@ public class CreateServiceWsdlAction extends SecureAction {
             }
         }
         throw new IllegalArgumentException("missing SOAP address port definition");
+    }
+
+    public void setWsdl(Definition defToUse) {
+        this.defToUse = defToUse;
     }
 }

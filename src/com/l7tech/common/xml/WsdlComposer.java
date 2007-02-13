@@ -14,9 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: megery
@@ -24,13 +22,15 @@ import java.util.Set;
  * Time: 10:28:18 AM
  */
 public class WsdlComposer {
-//    List<BindingOperation> changesToApply;
+    private Map<WsdlHolder, List<String>> operationsAdded;
     private Definition outputWsdl;
     WSDLFactory wsdlFactory;
     private ExtensionRegistry extensionRegistry;
+    private List<String> targetNamespaces;
 
     public WsdlComposer(Definition def) {
-//        changesToApply = new ArrayList<BindingOperation>();
+        operationsAdded = new HashMap<WsdlHolder, List<String>>();
+        targetNamespaces = new ArrayList<String>();
         outputWsdl = def;
         try {
             wsdlFactory = WSDLFactory.newInstance();
@@ -40,23 +40,60 @@ public class WsdlComposer {
         }
     }
 
-    public Definition getOutputWsdl() {
-        buildOutput();
-        return outputWsdl;
-    }
-
-    private void buildOutput() {
-//        System.out.println("The following changes will be applied");
-//        for (BindingOperation bindingOperation : changesToApply) {
-//            System.out.println(bindingOperation.getName());
-//        }
+    public void removeBindingOperation(BindingOperation bo, WsdlHolder sourceWsdlHolder) {
+        if (bo == null) return;
+        System.out.println("removing operations and types from output wsdl for " + sourceWsdlHolder);
     }
 
     public void addBindingOperation(BindingOperation oldBop, WsdlHolder sourceWsdl) throws WSDLException, IOException, SAXException {
         if (oldBop == null) return;
 
-        Definition sourceDef = sourceWsdl.wsdl.getDefinition();
+        List<String> opsAdded = operationsAdded.get(sourceWsdl);
+        if (opsAdded != null) {
+            if (opsAdded.contains(oldBop.getName())) {
+                return;
+            }
+        }
 
+        Definition sourceDef = sourceWsdl.wsdl.getDefinition();
+        BindingOperation newBop = outputWsdl.createBindingOperation();
+        copyBindingOperation(oldBop, newBop);
+        addOperationsForBindingOperation(newBop);
+        addOperationToBindings(newBop);
+        updateTargetNamespaces(sourceDef);
+
+        if (opsAdded == null || opsAdded.size() == 0) {
+            opsAdded = new ArrayList<String>();
+            operationsAdded.put(sourceWsdl, opsAdded);
+            addTypes(sourceDef, sourceWsdl);
+        }
+        opsAdded.add(oldBop.getName());
+    }
+
+    private void updateTargetNamespaces(Definition def) {
+        String targetNamespace = def.getTargetNamespace();
+        if (!targetNamespaces.contains(targetNamespace))
+            targetNamespaces.add(targetNamespace);
+    }
+
+
+    public List<String> getTargetNamespaces() {
+        return targetNamespaces;
+    }
+
+
+    public Definition getOutputWsdl() {
+        return outputWsdl;
+    }
+
+    private void addOperationToBindings(BindingOperation newBop) {
+        for (Object o : outputWsdl.getBindings().values()) {
+            Binding binding = (Binding) o;
+            binding.addBindingOperation(newBop);
+        }
+    }
+
+    private void addTypes(Definition sourceDef, WsdlHolder sourceWsdl) throws WSDLException, IOException, SAXException {
         Types inputTypes = sourceDef.getTypes();
         Types outputTypes = outputWsdl.getTypes();
         if (outputTypes == null) {
@@ -80,22 +117,11 @@ public class WsdlComposer {
         }
 
         outputWsdl.setTypes(outputTypes);
-
-        BindingOperation newBop = outputWsdl.createBindingOperation();
-        copyBindingOperation(oldBop, newBop);
-
-        addOperationsForBindingOperation(newBop);
-
-        Map bindings = outputWsdl.getBindings();
-        for (Object key : bindings.keySet()) {
-            ((Binding)bindings.get(key)).addBindingOperation(newBop);
-        }
     }
 
     private void addOperationsForBindingOperation(BindingOperation newBop) {
-        Map portTypes = outputWsdl.getPortTypes();
-        for (Object portTypeKey: portTypes.keySet()) {
-            PortType pt = (PortType) portTypes.get(portTypeKey);
+        for (Object o: outputWsdl.getPortTypes().values()) {
+            PortType pt = (PortType) o;
             Operation op = newBop.getOperation();
             addMessagesForOperation(op);
             pt.addOperation(op);
@@ -105,7 +131,7 @@ public class WsdlComposer {
     private void addMessagesForOperation(Operation op) {
         Input input = op.getInput();
         Output output = op.getOutput();
-        Map faults = op.getFaults();
+
 
         Message m = input.getMessage();
         m.getParts();
@@ -115,8 +141,8 @@ public class WsdlComposer {
         if (output != null)
             outputWsdl.addMessage(output.getMessage());
 
-        for (Object faultKey : faults.keySet()) {
-            Fault f = (Fault) faults.get(faultKey);
+        for (Object o : op.getFaults().values()) {
+            Fault f = (Fault) o;
             outputWsdl.addMessage(f.getMessage());
         }
     }
@@ -128,11 +154,8 @@ public class WsdlComposer {
         newBop.setDocumentationElement(oldBop.getDocumentationElement());
         newBop.setOperation(oldBop.getOperation());
 
-        Map bindingFaults = oldBop.getBindingFaults();
-        Set keys = bindingFaults.keySet();
-        for (Object key: keys) {
-            Object value = bindingFaults.get(key);
-            BindingFault bf = (BindingFault) value;
+        for (Object o: oldBop.getBindingFaults().values()) {
+            BindingFault bf = (BindingFault) o;
             newBop.addBindingFault(bf);
         }
 

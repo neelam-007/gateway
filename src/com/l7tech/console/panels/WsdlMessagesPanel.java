@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 
 import com.l7tech.common.xml.XmlSchemaConstants;
+import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.table.WsdlMessagePartsTableModel;
 import com.l7tech.console.table.WsdlMessagesTableModel;
 
@@ -155,13 +156,14 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        if (!(settings instanceof Definition)) {
-            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
+        if (!(settings instanceof WsdlComposer)) {
+            throw new IllegalArgumentException("Unexpected type. " + settings.getClass() + ". Expected " + WsdlComposer.class);
         }
-        if (settings != definition) {
-            definition = (Definition)settings;
+//        if (settings != definition) {
+            WsdlComposer composer = (WsdlComposer) settings;
+            definition = composer.getOutputWsdl();
             updateMessageTable();
-        }
+//        }
     }
 
     /**
@@ -188,10 +190,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        if (settings instanceof Definition) {
-            definition = (Definition)settings;
+        if (settings instanceof WsdlComposer) {
+            definition = ((WsdlComposer)settings).getOutputWsdl();
         } else {
-            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
+            throw new IllegalArgumentException("Unexpected type. " + settings.getClass() + ". Expected " + WsdlComposer.class);
         }
         ensureValid(messagesTableModel.getMessages(), definition);
     }
