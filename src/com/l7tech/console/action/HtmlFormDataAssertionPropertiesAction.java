@@ -31,11 +31,11 @@ public class HtmlFormDataAssertionPropertiesAction extends NodeAction {
     }
 
     public String getName() {
-        return "HTML Form Data Assertion Properties";
+        return "HTML Form Data Properties";
     }
 
     public String getDescription() {
-        return "View/Edit HTML Form Data Assertion Properties";
+        return "View/Edit HTML Form Data Properties";
     }
 
     protected String iconResource() {

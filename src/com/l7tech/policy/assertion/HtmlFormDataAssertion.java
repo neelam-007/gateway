@@ -92,8 +92,8 @@ public class HtmlFormDataAssertion extends Assertion implements MimeMultipartAss
     /** All specified Form fields; as a set of {@link FieldSpec} objects. */
     private FieldSpec[] _fieldSpecs = new FieldSpec[0];
 
-    /** Whether only the specified fields are allowed. */
-    private boolean _onlyAllowThese;
+    /** Whether to disallow fields not specified here. */
+    private boolean _disallowOtherFields;
 
     public boolean isAllowGet() {
         return _allowGet;
@@ -111,17 +111,17 @@ public class HtmlFormDataAssertion extends Assertion implements MimeMultipartAss
         _allowPost = allowPost;
     }
 
-    /** @return true if only the specified fields are allowed */
-    public boolean isOnlyAllowThese() {
-        return _onlyAllowThese;
+    /** @return true if disallow fields not specified here */
+    public boolean isDisallowOtherFields() {
+        return _disallowOtherFields;
     }
 
     /**
-     * Sets whether only the specified fields are allowed
-     * @param b     true if only the specified fields are allowed
+     * Sets whether to disallow fields not specified here
+     * @param b     true if disallow fields not specified here
      */
-    public void setOnlyAllowThese(final boolean b) {
-        _onlyAllowThese = b;
+    public void setDisallowOtherFields(final boolean b) {
+        _disallowOtherFields = b;
     }
 
     /** @return an array of {@link FieldSpec}s backed by the assertion; never null */

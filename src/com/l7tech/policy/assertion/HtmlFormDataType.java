@@ -29,11 +29,11 @@ public class HtmlFormDataType implements Serializable {
         The keys are of type String. The values are of type {@link HtmlFormDataType}. */
     private static final Map _byName = new HashMap();
 
-    public static final HtmlFormDataType STRING = new HtmlFormDataType("string (any)");
+    public static final HtmlFormDataType ANY = new HtmlFormDataType("<any>");
     public static final HtmlFormDataType NUMBER = new HtmlFormDataType("number");
     public static final HtmlFormDataType FILE = new HtmlFormDataType("file");
 
-    private static final HtmlFormDataType[] _values = new HtmlFormDataType[]{STRING, NUMBER, FILE};
+    private static final HtmlFormDataType[] _values = new HtmlFormDataType[]{ANY, NUMBER, FILE};
 
     public static HtmlFormDataType[] values() {
         return (HtmlFormDataType[])_values.clone();

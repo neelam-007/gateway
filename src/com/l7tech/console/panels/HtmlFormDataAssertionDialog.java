@@ -180,8 +180,14 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                 }
             } else if (column == FIELD_DATA_TYPE_COLUMN.index) {
                 final HtmlFormDataType dataType = (HtmlFormDataType) getValueAt(row, column);
-                if (!_allowPostCheckbox.isSelected() && dataType == HtmlFormDataType.FILE) {
-                    return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when POST is not selected.";
+                if (dataType == HtmlFormDataType.FILE) {
+                    if (!_allowPostCheckbox.isSelected()) {
+                        return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when POST is not selected.";
+                    }
+                    final HtmlFormDataLocation location = (HtmlFormDataLocation) getValueAt(row, FIELD_LOCATION_COLUMN.index);
+                    if (location == HtmlFormDataLocation.URL) {
+                        return "Data type must not be \"" + HtmlFormDataType.FILE + "\" when location is \"" + HtmlFormDataLocation.URL + "\".";
+                    }
                 }
             } else if (column == FIELD_MIN_OCCURS_COLUMN.index) {
                 final Integer minValue = (Integer) getValueAt(row, column);
@@ -223,8 +229,15 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
                 }
             } else if (column == FIELD_LOCATION_COLUMN.index) {
                 final HtmlFormDataLocation location = (HtmlFormDataLocation) getValueAt(row, column);
-                if (!_allowPostCheckbox.isSelected() && location == HtmlFormDataLocation.BODY) {
-                    return "Location must not be \"" + HtmlFormDataLocation.BODY + "\" when POST is not selected.";
+                if (location == HtmlFormDataLocation.URL) {
+                    final HtmlFormDataType dataType = (HtmlFormDataType) getValueAt(row, FIELD_DATA_TYPE_COLUMN.index);
+                    if (dataType == HtmlFormDataType.FILE) {
+                        return "Location must not be \"" + HtmlFormDataLocation.URL + "\" when data type is \"" + HtmlFormDataType.FILE + "\".";
+                    }
+                } else if (location == HtmlFormDataLocation.BODY) {
+                    if (!_allowPostCheckbox.isSelected()) {
+                        return "Location must not be \"" + HtmlFormDataLocation.BODY + "\" when POST is not selected.";
+                    }
                 }
             }
             return null;
@@ -321,8 +334,8 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
     private JPanel _contentPane;
     private JCheckBox _allowGetCheckbox;
     private JCheckBox _allowPostCheckbox;
-    private JCheckBox _onlyAllowTheseCheckBox;
-    private JButton _newButton;
+    private JCheckBox _disallowOtherFieldsCheckBox;
+    private JButton _addButton;
     private JButton _removeButton;
     private JButton _okButton;
     private JButton _cancelButton;
@@ -342,12 +355,12 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
     private boolean _modified;
 
     public HtmlFormDataAssertionDialog(Frame owner, final HtmlFormDataAssertion assertion) throws HeadlessException {
-        super(owner, "HTML Form Data Assertion", true);
+        super(owner, "HTML Form Data", true);
         _assertion = assertion;
 
         _allowGetCheckbox.setSelected(assertion.isAllowGet());
         _allowPostCheckbox.setSelected(assertion.isAllowPost());
-        _onlyAllowTheseCheckBox.setSelected(assertion.isOnlyAllowThese());
+        _disallowOtherFieldsCheckBox.setSelected(assertion.isDisallowOtherFields());
         _warningLabel.setIcon(null);
         _warningLabel.setText(null);
 
@@ -418,9 +431,9 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             }
         });
 
-        _newButton.addActionListener(new ActionListener() {
+        _addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                _fieldTableModel.addRow(new Object[]{"New Field", HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE});
+                _fieldTableModel.addRow(new Object[]{"New Field", HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE});
                 final int row = _fieldTable.getRowCount() - 1;
                 if (_fieldTable.editCellAt(row, FIELD_NAME_COLUMN.index)) {
                     _fieldTable.changeSelection(row, FIELD_NAME_COLUMN.index, false, false);     // so that the view scrolls automatically to make this row visible
@@ -501,7 +514,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
             _fieldTable.getCellEditor().stopCellEditing();
         _assertion.setAllowGet(_allowGetCheckbox.isSelected());
         _assertion.setAllowPost(_allowPostCheckbox.isSelected());
-        _assertion.setOnlyAllowThese(_onlyAllowTheseCheckBox.isSelected());
+        _assertion.setDisallowOtherFields(_disallowOtherFieldsCheckBox.isSelected());
 
         // Replaces FieldSpec's in assertion by FieldSpec's in table.
         final int numFields = _fieldTable.getRowCount();

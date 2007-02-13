@@ -146,8 +146,8 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 // Enforces data type:
                 for (FieldValue fieldValue : field.fieldValues) {
                     final HtmlFormDataType allowedDataType = fieldSpec.getDataType();
-                    if (allowedDataType == HtmlFormDataType.STRING) {
-                        // No testing needed for String type.
+                    if (allowedDataType == HtmlFormDataType.ANY) {
+                        // No testing needed.
                     } else if (allowedDataType == HtmlFormDataType.NUMBER) {
                         try {
                             Double.valueOf(fieldValue.value);
@@ -185,8 +185,8 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 if (allowedLocation == HtmlFormDataLocation.ANYWHERE) {
                     // No need to check anything.
                 } else {
-                    if (field.inUri && allowedLocation != HtmlFormDataLocation.URI) {
-                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, new String[]{field.name, HtmlFormDataLocation.URI.toString()});
+                    if (field.inUri && allowedLocation != HtmlFormDataLocation.URL) {
+                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, new String[]{field.name, HtmlFormDataLocation.URL.toString()});
                         return AssertionStatus.FAILED;
                     }
                     if (field.inBody && allowedLocation != HtmlFormDataLocation.BODY) {
@@ -199,7 +199,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 }
 
             } else {
-                if (_assertion.isOnlyAllowThese()) {
+                if (_assertion.isDisallowOtherFields()) {
                     _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED, new String[]{field.name});
                     return AssertionStatus.FAILED;
                 } else {

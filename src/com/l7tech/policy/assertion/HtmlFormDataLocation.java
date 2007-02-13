@@ -30,10 +30,10 @@ public class HtmlFormDataLocation implements Serializable {
     private static final Map _byName = new HashMap();
 
     public static final HtmlFormDataLocation ANYWHERE = new HtmlFormDataLocation("anywhere");
-    public static final HtmlFormDataLocation URI = new HtmlFormDataLocation("request URI");
+    public static final HtmlFormDataLocation URL = new HtmlFormDataLocation("request URL");
     public static final HtmlFormDataLocation BODY = new HtmlFormDataLocation("request body");
 
-    private static final HtmlFormDataLocation[] _values = new HtmlFormDataLocation[]{ANYWHERE, URI, BODY};
+    private static final HtmlFormDataLocation[] _values = new HtmlFormDataLocation[]{ANYWHERE, URL, BODY};
 
     public static HtmlFormDataLocation[] values() {
         return (HtmlFormDataLocation[])_values.clone();
