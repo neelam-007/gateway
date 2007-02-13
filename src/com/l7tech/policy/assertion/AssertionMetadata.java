@@ -9,6 +9,24 @@ public interface AssertionMetadata {
     /** String.  Base name of this assertion, ie "OneOrMore". */
     String BASE_NAME = "baseName";
 
+    /**
+     * String.  Base package name of this assertion, ie "com.l7tech".
+     * Defaults to assertion package name with any trailing "assertion" package removed.
+     */
+    String BASE_PACKAGE = "basePackage";
+
+    /**
+     * String.  Class name of server assertion instance.
+     * Defaults to assertion classname with baseName replaced by "Server${baseName}" and basePackage replaced by "${basePackage}.server".
+     */
+    String SERVER_ASSERTION_CLASSNAME = "serverAssertionClassname";
+
+    /**
+     * String.  Class name of client assertion instance.
+     * Defaults to assertion classname with baseName replaced by "Client${baseName}" and basePackage replaced by "${basePackage}.proxy".
+     */
+    String CLIENT_ASSERTION_CLASSNAME = "clientAssertionClassname";
+
     /** String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction. */
     String PROPERTIES_ACTION_NAME = "propertiesActionName";
 

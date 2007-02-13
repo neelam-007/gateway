@@ -6,7 +6,6 @@
 
 package com.l7tech.proxy.policy;
 
-import com.l7tech.policy.PolicyFactoryUtil;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -44,10 +43,12 @@ public class ClientPolicyFactory {
 
         try {
             Class genericClass = genericAssertion.getClass();
-            String clientClassname = PolicyFactoryUtil.getProductClassname(genericClass, "com.l7tech.proxy.policy.assertion", "Client");
+            String clientClassname = (String)genericAssertion.meta().get(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME);
+            if (clientClassname == null)
+                return makeUnknownAssertion(genericAssertion);
             Class clientClass = genericAssertion.getClass().getClassLoader().loadClass(clientClassname);
-            Constructor ctor = clientClass.getConstructor(new Class[]{genericClass});
-            return (ClientAssertion) ctor.newInstance(new Object[]{genericAssertion});
+            Constructor ctor = clientClass.getConstructor(genericClass);
+            return (ClientAssertion) ctor.newInstance(genericAssertion);
         } catch (InstantiationException ie) {
             throw new RuntimeException(ie);
         } catch (IllegalAccessException iae) {
@@ -57,9 +58,7 @@ public class ClientPolicyFactory {
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
-            ClientUnknownAssertion uass = makeUnknownAssertion(genericAssertion);
-            if (uass == null) throw new RuntimeException(e);
-            return uass;
+            return makeUnknownAssertion(genericAssertion);
         }
     }
 

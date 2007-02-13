@@ -8,6 +8,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.common.util.ClassUtils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -520,7 +521,17 @@ public abstract class Assertion implements Cloneable, Serializable {
         if ("set:modularAssertions".equals(claimed))
             return claimed;
 
-        return getFeatureSetName(getClass().getName());
+        return getDefaultFeatureSetName();
+    }
+
+    final String getDefaultFeatureSetName() {
+        String fullName = getClass().getName();
+        String basePackage = (String)meta().get(AssertionMetadata.BASE_PACKAGE);
+        String rest = ClassUtils.stripPrefix(fullName, basePackage + "."); // "com.yoyodyne.assertion.a.b.FooAssertion" => "assertion.a.b.FooAssertion"
+        rest = ClassUtils.stripPrefix(rest, "policy.");
+        rest = ClassUtils.stripPrefix(rest, "assertion.");                 // "assertion.a.b.FooAssertion" => "a.b.FooAssertion"
+        rest = ClassUtils.stripSuffix(rest, "Assertion");
+        return "assertion:" + rest;
     }
 
     /**
@@ -528,18 +539,22 @@ public abstract class Assertion implements Cloneable, Serializable {
      * For example, for "com.l7tech.policy.assertion.composite.OneOrMoreAssertion", will return
      * the string "assertion:composite.OneOrMore".
      *
-     * @param assertionClassname assertion class name.  Must start with "com.l7tech.policy.assertion.".
+     * @param assertionClass assertion class.  Required.
      * @return the leaf feature set name for this assertion.  Never null.
      */
-    public static String getFeatureSetName(String assertionClassname) {
-        String pass = "com.l7tech.policy.assertion.";
-        if (!assertionClassname.startsWith(pass))
-            throw new IllegalArgumentException("Assertion concrete classname must start with " + pass);
-        String rest = assertionClassname.substring(pass.length());
-        if (rest.endsWith("Assertion"))
-            rest = rest.substring(0, rest.length() - "Assertion".length());
-        return "assertion:" + rest;
+    public static String getFeatureSetName(Class assertionClass) {
+        final Assertion assertion;
+        try {
+            assertion = (Assertion)assertionClass.newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e); // assertion must have default c'tor
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e); // assertion must have default c'tor
+        }
+
+        return assertion.getFeatureSetName();
     }
+
 
     /**
      * Get the local part of the specified assertion class name with all packages and any trailing "Assertion"

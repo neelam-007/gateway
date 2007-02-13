@@ -1,9 +1,10 @@
-package com.l7tech.console.panels;
+package com.l7tech.external.console.panels;
 
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.policy.assertion.RateLimitAssertion;
+import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.external.policy.assertion.RateLimitAssertion;
 
 import javax.swing.*;
 import java.awt.*;

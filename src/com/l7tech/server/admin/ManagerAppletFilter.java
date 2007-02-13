@@ -30,8 +30,10 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.util.SoapFaultManager;
@@ -49,6 +51,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.regex.Pattern;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +71,7 @@ public class ManagerAppletFilter implements Filter {
     private FilterConfig filterConfig;
     private WebApplicationContext applicationContext;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
+    private ServerAssertionRegistry assertionRegistry;
     private AdminSessionManager adminSessionManager;
     private AdminLogin adminLogin;
     private AuditContext auditContext;
@@ -95,6 +100,7 @@ public class ManagerAppletFilter implements Filter {
         }
         customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionsAdmin", CustomAssertionsRegistrar.class);
         ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory", ServerPolicyFactory.class);
+        assertionRegistry = (ServerAssertionRegistry)getBean("assertionRegistry", ServerAssertionRegistry.class);
         adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
         adminLogin = (AdminLogin)getBean("adminLogin", AdminLogin.class);
         auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
@@ -172,13 +178,14 @@ public class ManagerAppletFilter implements Filter {
             passed = true;
 
             // Note that the user is authenticated before this is run
-            if (handleCustomAssertionClassRequest(hreq, hresp, auditor)) {
+            if (handleJarRequest(hreq, hresp))
                 return;
-            }
 
-            if (handleJarRequest(hreq, hresp)) {
+            if (handleAssertionModuleClassRequest(hreq, hresp, auditor))
                 return;
-            }
+
+            if (handleCustomAssertionClassRequest(hreq, hresp, auditor))
+                return;
 
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_FILTER_PASSED);
             final IOException[] ioeHolder = new IOException[1];
@@ -259,7 +266,6 @@ public class ManagerAppletFilter implements Filter {
             }
         }
 
-        String resultMessage = null;
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE && context.getCredentials() != null) {
@@ -274,7 +280,6 @@ public class ManagerAppletFilter implements Filter {
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, new String[] { getName(user) });
                 return AuthResult.OK;
             }
-            resultMessage = result.getMessage();
         } catch (LoginException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, new String[] {ExceptionUtils.getMessage(e)}, e);
             // Fall through and either challenge or send error message
@@ -339,7 +344,7 @@ public class ManagerAppletFilter implements Filter {
         String filePath = hreq.getRequestURI();
         String contextPath = hreq.getContextPath();
         if (isRequestForCustomAssertionClass(contextPath, filePath)) {
-            String className = getCustomAssertionClassName(contextPath, filePath);
+            String className = pathToClassname(contextPath, filePath);
             if (className != null) {
                 byte[] data = customAssertionsRegistrar.getAssertionClass(className);
                 if (data != null) {
@@ -371,7 +376,7 @@ public class ManagerAppletFilter implements Filter {
      * @param filePath The file path (request URI)
      * @return The class name or null if interpretation failed
      */
-    private String getCustomAssertionClassName(final String contextPath, final String filePath) {
+    private String pathToClassname(final String contextPath, final String filePath) {
         String name = null;
 
         int prefixLength = contextPath==null ? 0 : contextPath.length();
@@ -397,6 +402,8 @@ public class ManagerAppletFilter implements Filter {
      * @param hreq The HttpServletRequest
      * @param hresp The HttpServletResponse
      * @return true if the request has been handled (so no further action should be taken)
+     * @throws java.io.IOException  if there's a problem reading the jar or sending the info
+     * @throws javax.servlet.ServletException  if there is some other error
      */
     private boolean handleJarRequest(final HttpServletRequest hreq,
                                      final HttpServletResponse hresp) throws IOException, ServletException {
@@ -427,5 +434,50 @@ public class ManagerAppletFilter implements Filter {
         }
 
         return handled;
-    }    
+    }
+
+    private static final Pattern STRIPCLASS = Pattern.compile("\\.[^.]+$");
+
+    private boolean handleAssertionModuleClassRequest(final HttpServletRequest hreq,
+                                                      final HttpServletResponse hresp,
+                                                      final Auditor auditor)
+            throws IOException, ServletException
+    {
+
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+
+        if (filePath == null || !filePath.startsWith(contextPath))
+            return false;
+
+        boolean handled = false;
+
+        String className = pathToClassname(contextPath, filePath);
+        if (className == null)
+            return false;
+
+        String packageName = STRIPCLASS.matcher(className).replaceAll("");
+        Set<AssertionModule> possibleModules = findAssertionModulesThatOfferPackage(packageName);
+        String resourcePath = className.replace('.', '/').concat(".class");
+
+        for (AssertionModule module : possibleModules) {
+            byte[] data = module.getResourceBytes(resourcePath);
+            if (data != null) {
+                handled = true;
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_MODULE_CLASS_DL, new String[] {className, module.getName()});
+                sendClass(hresp, data);
+            }
+        }
+
+        return handled;
+    }
+
+    private Set<AssertionModule> findAssertionModulesThatOfferPackage(String packageName) {
+        Set<AssertionModule> ret = new HashSet<AssertionModule>();
+        Set<AssertionModule> mods = assertionRegistry.getLoadedModules();
+        for (AssertionModule mod : mods)
+            if (mod.offersPackage(packageName))
+                ret.add(mod);
+        return ret;
+    }
 }

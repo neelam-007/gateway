@@ -2,8 +2,10 @@ package com.l7tech.proxy.policy;
 
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientUnknownAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -46,6 +48,9 @@ public class ClientPolicyFactoryTest extends TestCase {
         Assertion[] everything = AllAssertions.BRIDGE_EVERYTHING;
         for (int i = 0; i < everything.length; i++) {
             foo = pfac.makeClientPolicy(everything[i]);
+            if (!(everything[i] instanceof UnknownAssertion)) {
+                assertFalse(foo instanceof ClientUnknownAssertion);
+            }
         }
     }
 

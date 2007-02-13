@@ -67,7 +67,7 @@ public class ConsoleLicenseManager implements AssertionLicense, LicenseManager {
         if (license == null || v == null) return;
 
         if (("HEAD".equals(v) || "3.6".equals(v)) &&
-                license.isFeatureEnabled(Assertion.getFeatureSetName(SpecificUser.class.getName())))
+                license.isFeatureEnabled(Assertion.getFeatureSetName(SpecificUser.class)))
         {
             // 3.6 Gateway does not require the "service:TrustStore" feature set to be present
             // before allowing access to Trusted Cert management, so allow it as long as SpecificUser is available

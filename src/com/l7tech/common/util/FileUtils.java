@@ -149,8 +149,7 @@ public class FileUtils {
 
     /**
      * Safely open a file that was saved with saveFileSafely().  Handles recovery in case the most recent
-     * save to the file was interrupted.  Caller is responsible for ensuring that only one thread attempts
-     * to save or load the same file at any given time.
+     * save to the file was interrupted.
      *
      * @param path
      * @return

@@ -152,7 +152,7 @@
                 <attribute name="Implementation-Vendor" value="Layer 7 Technologoes"/>
                 <attribute name="Implementation-Vendor-Id" value="com.l7tech"/>
                 <attribute name="ModularAssertion-List" value="${assertionName}"/>
-                <attribute name="${assertionName}-Class" value="com.l7tech.policy.assertion.${assertionName}"/>
+                <attribute name="${assertionName}-Class" value="com.l7tech.external.policy.assertion.${assertionName}"/>
             </manifest>
         </jar>
     </target>
@@ -167,7 +167,7 @@
             </classpath>
             <formatter type="plain" unless="build.junit.xmlformat"/>
             <formatter type="xml" if="build.junit.xmlformat"/>
-            <test name="com.l7tech.server.policy.assertion.ServerRateLimitAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.external.server.policy.assertion.ServerRateLimitAssertionTest" haltonfailure="no"/>
         </junit>
     </target>
 

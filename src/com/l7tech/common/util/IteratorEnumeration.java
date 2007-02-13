@@ -12,10 +12,10 @@ import java.util.Iterator;
 /**
  * An Enumeration that enumerates an Iterator
  */
-public class IteratorEnumeration implements Enumeration, Iterator {
-    private final Iterator iterator;
+public class IteratorEnumeration<E> implements Enumeration<E>, Iterator<E> {
+    private final Iterator<E> iterator;
 
-    public IteratorEnumeration(Iterator iterator) {
+    public IteratorEnumeration(Iterator<E> iterator) {
         if (iterator == null) throw new NullPointerException();
         this.iterator = iterator;
     }
@@ -24,7 +24,7 @@ public class IteratorEnumeration implements Enumeration, Iterator {
         return iterator.hasNext();
     }
 
-    public Object nextElement() {
+    public E nextElement() {
         return iterator.next();
     }
 
@@ -36,7 +36,7 @@ public class IteratorEnumeration implements Enumeration, Iterator {
         return iterator.hasNext();
     }
 
-    public Object next() {
+    public E next() {
         return iterator.next();
     }
 }

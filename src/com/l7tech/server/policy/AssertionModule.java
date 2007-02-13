@@ -3,13 +3,11 @@ package com.l7tech.server.policy;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.FileInputStream;
-import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
-
-import sun.misc.Resource;
+import java.util.Set;
 
 /**
  * Represents a module jarfile that contains at least one assertion, loaded from /ssg/modules/assertions.
@@ -20,15 +18,18 @@ public class AssertionModule {
     private final String jarfileSha1;
     private final AssertionModuleClassLoader classLoader;
     private final Set<? extends Assertion> assertionPrototypes;
+    private final Set<String> packages;
 
-    AssertionModule(File jarfile, long modifiedTime, String jarfileSha1, AssertionModuleClassLoader classLoader, Set<? extends Assertion> assertionPrototypes) {
+    AssertionModule(File jarfile, long modifiedTime, String jarfileSha1, AssertionModuleClassLoader classLoader, Set<? extends Assertion> assertionPrototypes, Set<String> packages) {
         if (assertionPrototypes == null || assertionPrototypes.isEmpty()) throw new IllegalArgumentException("assertionPrototypes must contain at least one prototype instance");
         if (classLoader == null) throw new IllegalArgumentException("classLoader required");
+        if (packages == null || packages.isEmpty()) throw new IllegalArgumentException("packages must be specified and contain at least one package name");
         this.jarfile = jarfile;
         this.jarfileModifiedTime = modifiedTime;
         this.jarfileSha1 = jarfileSha1;
         this.classLoader = classLoader;
         this.assertionPrototypes = Collections.unmodifiableSet(assertionPrototypes);
+        this.packages = Collections.unmodifiableSet(packages);
     }
 
     /** @return the name of this assertion module, ie "RateLimitAssertion-3.7.0.jar". */
@@ -69,6 +70,17 @@ public class AssertionModule {
      */
     public byte[] getResourceBytes(String resourcepath) throws IOException {
         return classLoader.getResourceBytes(resourcepath);
+    }
+
+    /**
+     * Check if this module includes any classes in the specified package.
+     *
+     * @param packageName the package to check
+     * @return true if at least one class or resource in this exact package (not any subpackages) is present
+     *              in this module.
+     */
+    public boolean offersPackage(String packageName) {
+        return packages.contains(packageName);
     }
 
     /** @return the modification time of the file when this module was read. */

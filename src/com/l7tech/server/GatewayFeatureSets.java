@@ -561,7 +561,7 @@ public class GatewayFeatureSets {
 
     /** @return the feature name to use for the specified Assertion class. */
     static String getFeatureSetNameForAssertion(Class<? extends Assertion> assertionClass) {
-        return Assertion.getFeatureSetName(assertionClass.getName());
+        return Assertion.getFeatureSetName(assertionClass);
     }
 
     /** @return the feature name to use for the specified HttpServlet class. */

@@ -71,6 +71,8 @@ public class AllAssertions {
      * all assertions that the gateway must handle
      */
     public static Assertion[] GATEWAY_EVERYTHING = new Assertion[]{
+        new TrueAssertion(),
+        new FalseAssertion(),
         new HttpBasic(),
         new HttpDigest(),
         new HttpNegotiate(),
@@ -78,12 +80,10 @@ public class AllAssertions {
         new AllAssertion(),
         new ExactlyOneAssertion(),
         new OneOrMoreAssertion(),
-        new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),
         new BridgeRoutingAssertion(),
         new JmsRoutingAssertion(),
-        new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
         new RequestWssIntegrity(),

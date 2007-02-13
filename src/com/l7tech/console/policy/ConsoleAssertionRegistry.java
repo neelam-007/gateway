@@ -10,13 +10,14 @@ import com.l7tech.console.tree.AbstractAssertionPaletteNode;
 import com.l7tech.console.tree.DefaultAssertionPaletteNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
-import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
 import com.l7tech.console.tree.policy.advice.Advice;
+import com.l7tech.console.tree.policy.advice.DefaultAssertionAdvice;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import static com.l7tech.policy.assertion.DefaultAssertionMetadata.*;
 import com.l7tech.policy.assertion.MetadataFinder;
 
 import javax.swing.*;
@@ -49,15 +50,15 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         // Add metadata default getters that are specific to the SSM environment
         //
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PALETTE_NODE_FACTORY, new PaletteNodeFactoryMetadataFinder());
+        putDefaultGetter(PALETTE_NODE_FACTORY, new PaletteNodeFactoryMetadataFinder());
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
+        putDefaultGetter(POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.POLICY_ADVICE_INSTANCE, new PolicyAdviceInstanceMetadataFinder());
+        putDefaultGetter(POLICY_ADVICE_INSTANCE, new PolicyAdviceInstanceMetadataFinder());
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
+        putDefaultGetter(PROPERTIES_ACTION_FACTORY, new PropertiesActionMetadataFinder());
 
-        DefaultAssertionMetadata.putDefaultGetter(AssertionMetadata.PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
+        putDefaultGetter(PROPERTIES_EDITOR_FACTORY, new PropertiesEditorFactoryMetadataFinder());
     }
 
     public void updateModularAssertions() throws RemoteException {
@@ -86,7 +87,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
-                ClassLoader assloader = new ConsoleRemoteAssertionModuleClassLoader(getClass().getClassLoader(), cluster, moduleFilename);
+                ClassLoader assloader = TopComponents.getInstance().isApplet()
+                                        ? getClass().getClassLoader()
+                                        : new ConsoleRemoteAssertionModuleClassLoader(getClass().getClassLoader(), cluster, moduleFilename);
                 for (String assertionClassname : assertionClassnames) {
                     try {
                         Class assclass = assloader.loadClass(assertionClassname);
@@ -115,13 +118,13 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
         public Object get(AssertionMetadata meta, String key) {
-            String classname = (String)meta.get(AssertionMetadata.PALETTE_NODE_CLASSNAME);
+            String classname = (String)meta.get(PALETTE_NODE_CLASSNAME);
             //noinspection unchecked
             final Class<AT> assclass = meta.getAssertionClass();
             Functions.Unary<AbstractAssertionPaletteNode, AT> factory =
                     findPaletteNodeFactory(assclass.getClassLoader(), classname, assclass);
             if (factory != null)
-                return DefaultAssertionMetadata.cache(meta, key, factory);
+                return cache(meta, key, factory);
 
             // Try to use the default
             factory = new Functions.Unary<AbstractAssertionPaletteNode, AT>() {
@@ -129,19 +132,19 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                     return new DefaultAssertionPaletteNode<AT>(assertion);
                 }
             };
-            return DefaultAssertionMetadata.cache(meta, key, factory);
+            return cache(meta, key, factory);
         }
     }
 
     private static class PolicyNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {
         public Object get(AssertionMetadata meta, String key) {
-            String classname = (String)meta.get(AssertionMetadata.POLICY_NODE_CLASSNAME);
+            String classname = (String)meta.get(POLICY_NODE_CLASSNAME);
             //noinspection unchecked
             final Class<AT> assclass = meta.getAssertionClass();
             Functions.Unary<AssertionTreeNode, AT> factory =
                     findPolicyNodeFactory(assclass.getClassLoader(), classname, assclass);
             if (factory != null)
-                return DefaultAssertionMetadata.cache(meta, key, factory);
+                return cache(meta, key, factory);
 
             // Try to use the default
             factory = new Functions.Unary< AssertionTreeNode, AT >() {
@@ -149,26 +152,26 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                     return new DefaultAssertionPolicyNode<AT>(assertion);
                 }
             };
-            return DefaultAssertionMetadata.cache(meta, key, factory);
+            return cache(meta, key, factory);
         }
     }
 
     private static class PolicyAdviceInstanceMetadataFinder implements MetadataFinder {
         public Object get(AssertionMetadata meta, String key) {
             String assname = meta.getAssertionClass().getName();
-            String classname = (String)meta.get(AssertionMetadata.POLICY_ADVICE_CLASSNAME);
+            String classname = (String)meta.get(POLICY_ADVICE_CLASSNAME);
 
             if (classname == null || "none".equalsIgnoreCase(classname.trim()))
-                return DefaultAssertionMetadata.cache(meta, key, null);
+                return cache(meta, key, null);
 
             if ("default".equalsIgnoreCase(classname.trim()) || "auto".equalsIgnoreCase(classname.trim()))
-                return DefaultAssertionMetadata.cache(meta, key, new DefaultAssertionAdvice());
+                return cache(meta, key, new DefaultAssertionAdvice());
 
             try {
                 Class adviceClass  = meta.getAssertionClass().getClassLoader().loadClass(classname);
 
                 if (Advice.class.isAssignableFrom(adviceClass))
-                    return DefaultAssertionMetadata.cache(meta, key, adviceClass.newInstance());
+                    return cache(meta, key, adviceClass.newInstance());
 
                 logger.warning("Policy Advice class for assertion " + assname + " does not implement Advice interface");
                 // Fallthrough and return null
@@ -184,27 +187,27 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                 logger.log(Level.WARNING, "Unable to instantiate advice class for assertion " + assname, e);
                 // Fallthrough and return null
             }
-            return DefaultAssertionMetadata.cache(meta, key, null);
+            return cache(meta, key, null);
         }
     }
 
     private static class PropertiesActionMetadataFinder<AT extends Assertion> implements MetadataFinder {
         public Object get(AssertionMetadata meta, String key) {
-            String classname = (String)meta.get(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME);
+            String classname = (String)meta.get(PROPERTIES_ACTION_CLASSNAME);
             //noinspection unchecked
             final Class<AT> assclass = meta.getAssertionClass();
             String assname = assclass.getName();
             Functions.Unary<Action, AssertionTreeNode> factory = findPropertiesActionFactory(assclass.getClassLoader(), classname, assname);
             if (factory != null)
-                return DefaultAssertionMetadata.cache(meta, key, factory);
+                return cache(meta, key, factory);
             // Try using the default action
             //noinspection unchecked
             final Functions.Binary<AssertionPropertiesEditor< AT >, Frame, AT > apeFactory =
                     (Functions.Binary<AssertionPropertiesEditor< AT >, Frame, AT>)
-                            meta.get(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
+                            meta.get(PROPERTIES_EDITOR_FACTORY);
             if (apeFactory == null) {
                 // No APE for this assertion = no "Properties..." action
-                return DefaultAssertionMetadata.cache(meta, key, null);
+                return cache(meta, key, null);
             }
 
             factory = new Functions.Unary<Action, AssertionTreeNode>() {
@@ -213,7 +216,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                     return new DefaultAssertionPropertiesAction<AT, AssertionTreeNode<AT>>(assertionTreeNode, apeFactory);
                 }
             };
-            return DefaultAssertionMetadata.cache(meta, key, factory);
+            return cache(meta, key, factory);
         }
     }
 
@@ -221,26 +224,26 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         public Object get(AssertionMetadata meta, String key) {
             //noinspection unchecked
             final Class<AT> assclass = meta.getAssertionClass();
-            String apeClassname = (String)meta.get(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME);
+            String apeClassname = (String)meta.get(PROPERTIES_EDITOR_CLASSNAME);
             Functions.Binary<AssertionPropertiesEditor<AT>, Frame, AT> factory =
                     ConsoleAssertionRegistry.findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
             if (factory != null)
-                return DefaultAssertionMetadata.cache(meta, key, factory);
+                return cache(meta, key, factory);
 
             // Since we have no fallback otherwise, try two likely possibilities before giving up
-            apeClassname = "com.l7tech.console.panels." + meta.get(AssertionMetadata.BASE_NAME) + "PropertiesDialog";
+            apeClassname = basepack(meta) + ".console.panels." + meta.get(BASE_NAME) + "PropertiesDialog";
             factory = findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
             if (factory != null)
-                return DefaultAssertionMetadata.cache(meta, key, factory);
+                return cache(meta, key, factory);
 
-            apeClassname = "com.l7tech.console.panels." + meta.get(AssertionMetadata.BASE_NAME) + "AssertionPropertiesDialog";
+            apeClassname = basepack(meta) + ".console.panels." + meta.get(BASE_NAME) + "AssertionPropertiesDialog";
             factory = findPropertiesEditorFactory(assclass.getClassLoader(), apeClassname, assclass);
             if (factory != null)
-                return DefaultAssertionMetadata.cache(meta, key, factory);
+                return cache(meta, key, factory);
 
             // No default available -- just return null, disabling "Properties..." for this assertion.
             // TODO maybe someday we can build a simple bean editor GUI for the assertion
-            return DefaultAssertionMetadata.cache(meta, key, null);
+            return cache(meta, key, null);
         }
     }
 

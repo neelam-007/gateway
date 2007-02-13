@@ -9,11 +9,7 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.AssertionLicense;
-import com.l7tech.policy.PolicyFactoryUtil;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CommentAssertion;
-import com.l7tech.policy.assertion.OversizedTextAssertion;
-import com.l7tech.policy.assertion.UnknownAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.beans.BeansException;
@@ -64,8 +60,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             }
 
             ServerPolicyFactory.licenseEnforcement.set(licenseEnforcement);
-            final ServerAssertion serverAssertion = doMakeServerAssertion(genericAssertion);
-            return serverAssertion;
+            return doMakeServerAssertion(genericAssertion);
         } finally {
             ServerPolicyFactory.licenseEnforcement.set(null);
         }
@@ -85,7 +80,9 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         return doMakeServerAssertion(genericAsertion);
     }
 
-    /** Compile the specified assertion tree, with license enforcement. */
+    /* 
+     * Compile the specified assertion tree, with license enforcement.
+     */
     private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException, LicenseException {
         try {
             Boolean le = licenseEnforcement.get();
@@ -104,7 +101,9 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             if (genericAssertion instanceof CommentAssertion) return null;
 
             Class genericAssertionClass = genericAssertion.getClass();
-            String productClassname = PolicyFactoryUtil.getProductClassname(genericAssertionClass, "com.l7tech.server.policy.assertion", "Server");
+            String productClassname = (String)genericAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);
+            if (productClassname == null)
+                throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': assertion declares no server implementation");
             Class specificAssertionClass = genericAssertion.getClass().getClassLoader().loadClass(productClassname);
 
             if (!ServerAssertion.class.isAssignableFrom(specificAssertionClass))

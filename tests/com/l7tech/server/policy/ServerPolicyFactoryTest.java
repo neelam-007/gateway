@@ -12,6 +12,7 @@ import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerEchoRoutingAssertion;
+import com.l7tech.server.policy.assertion.ServerUnknownAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -60,6 +61,9 @@ public class ServerPolicyFactoryTest extends TestCase {
         Assertion[] everything = AllAssertions.GATEWAY_EVERYTHING;
         for (int i = 0; i < everything.length; i++) {
             foo = pfac.compilePolicy(everything[i], false);
+            if (!(everything[i] instanceof UnknownAssertion)) {
+                assertFalse(foo instanceof ServerUnknownAssertion);
+            }
         }
     }
 

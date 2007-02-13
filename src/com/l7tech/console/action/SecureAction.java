@@ -60,7 +60,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     protected SecureAction(AttemptedOperation attemptedOperation, Class requiredAssertionLicense) {
         this(attemptedOperation);
         if (requiredAssertionLicense != null)
-            featureSetNames.add(Assertion.getFeatureSetName(requiredAssertionLicense.getName()));
+            featureSetNames.add(Assertion.getFeatureSetName(requiredAssertionLicense));
         initLicenseListener();
     }
 
@@ -74,7 +74,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
         this.attemptedOperation = attemptedOperation;
         if (allowedAssertionLicenses != null)
             for (Class clazz : allowedAssertionLicenses)
-                featureSetNames.add(Assertion.getFeatureSetName(clazz.getName()));
+                featureSetNames.add(Assertion.getFeatureSetName(clazz));
         initLicenseListener();
     }
 

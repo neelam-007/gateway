@@ -1,19 +1,21 @@
-package com.l7tech.server.policy.assertion;
+package com.l7tech.external.server.policy.assertion;
 
-import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.cluster.ClusterNodeInfo;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.external.policy.assertion.RateLimitAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RateLimitAssertion;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.objectmodel.FindException;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -29,7 +31,7 @@ import java.util.logging.Logger;
 
 /**
  * Server side implementation of the RateLimitAssertion.
- * @see com.l7tech.policy.assertion.RateLimitAssertion
+ * @see com.l7tech.external.policy.assertion.RateLimitAssertion
  */
 public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
@@ -41,7 +43,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final long MAX_IDLE_TIME = 3 * 1000L; // Point pool maxes out after 3 seconds idle
     private static final long POINTS_PER_REQUEST = 0x8000L; // cost in points to send a single request
     private static final Level SUBINFO_LEVEL =
-                Boolean.getBoolean("com.l7tech.server.ratelimit.logAtInfo") ? Level.INFO : Level.FINE;
+                Boolean.getBoolean("com.l7tech.external.server.ratelimit.logAtInfo") ? Level.INFO : Level.FINE;
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
@@ -54,7 +56,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong maxNapTime = new AtomicLong(DEFAULT_MAX_NAP_TIME);
     private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
     private static boolean useNanos = true;
-    private static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.server.ratelimit.forceNanos");
+    private static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
 
     static {
         Background.scheduleRepeated(new TimerTask() {

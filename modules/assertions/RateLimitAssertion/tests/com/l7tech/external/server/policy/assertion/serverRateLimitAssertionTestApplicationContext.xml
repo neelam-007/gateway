@@ -39,5 +39,5 @@
 
     <bean id="clusterPropertyManager" class="com.l7tech.cluster.MockClusterPropertyManager"/>
 
-    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerStub"/>    
+    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerStub"/>
 </beans>

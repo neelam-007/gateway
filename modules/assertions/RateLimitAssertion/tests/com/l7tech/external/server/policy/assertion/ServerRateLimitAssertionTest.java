@@ -1,12 +1,13 @@
-package com.l7tech.server.policy.assertion;
+package com.l7tech.external.server.policy.assertion;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.util.TimeoutExecutor;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.RateLimitAssertion;
+import com.l7tech.common.util.TimeoutExecutor;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.external.policy.assertion.RateLimitAssertion;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -28,7 +29,7 @@ import java.util.logging.Logger;
  */
 public class ServerRateLimitAssertionTest extends TestCase {
     static {
-        System.setProperty("com.l7tech.server.ratelimit.logAtInfo", "true");
+        System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
     }
 
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
@@ -45,7 +46,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
 
             protected void setUp() throws Exception {
                 applicationContext = new ClassPathXmlApplicationContext(new String[]{
-                        "com/l7tech/server/policy/assertion/serverRateLimitAssertionTestApplicationContext.xml"
+                        "com/l7tech/external/server/policy/assertion/serverRateLimitAssertionTestApplicationContext.xml"
                 });
                 serverConfig = (ServerConfigStub) applicationContext.getBean("serverConfig", ServerConfigStub.class);
                 serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(99999));

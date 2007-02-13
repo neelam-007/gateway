@@ -1,9 +1,6 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.util.Background;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
@@ -25,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.jar.JarEntry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -335,6 +333,27 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 logger.log(Level.WARNING, "Modular assertionNames jarfile contains no modular assertions (ignoring it) " + file.getAbsolutePath());
                 return;
             }
+
+            Set<String> packages = new HashSet<String>();
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (entry.isDirectory()) {
+                    String name = entry.getName();
+                    if (name == null || !name.contains("/"))
+                        continue;
+                    String[] components = name.split("/");
+                    if (components.length < 2)
+                        continue;
+                    if (components[0].endsWith("-INF"))
+                        continue;
+
+                    String packageName = name.replaceAll("/", ".");
+                    if (packageName.endsWith(".")) packageName = packageName.substring(0, packageName.length() - 1);
+                    packages.add(packageName);
+                }
+            }
+
             jar.close();
             jar = null;
 
@@ -364,7 +383,8 @@ public class ServerAssertionRegistry extends AssertionRegistry {
                 protos.add(proto);
             }
 
-            AssertionModule module = new AssertionModule(file, modifiedTime, sha1, assloader, protos);
+
+            AssertionModule module = new AssertionModule(file, modifiedTime, sha1, assloader, protos, packages);
             loadedModules.put(filename, module);
             failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
             for (Assertion proto : protos) {
