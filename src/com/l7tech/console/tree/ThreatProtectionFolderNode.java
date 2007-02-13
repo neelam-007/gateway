@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.policy.CodeInjectionProtectionAssertionPaletteNode;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.LicenseException;
 
@@ -30,6 +31,7 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
         int index = 0;
         children = null;
         insert( new SqlAttackAssertionPaletteNode(), index++ );
+        insert( new CodeInjectionProtectionAssertionPaletteNode(), index++);
         insert( new RequestSizeLimitPaletteNode(), index++ );
         insert( new OversizedTextAssertionPaletteNode(), index++ );
         insert( new RequestWssReplayProtectionNode(), index++ );

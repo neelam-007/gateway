@@ -121,6 +121,7 @@ public class AllAssertions {
         new XpathCredentialSource(),
         new AuthenticationAssertion(),
         new HtmlFormDataAssertion(),
+        new CodeInjectionProtectionAssertion(),
     };
 
 
@@ -195,5 +196,6 @@ public class AllAssertions {
         new SetVariableAssertion(),
         new CookieCredentialSourceAssertion(),
         new HtmlFormDataAssertion(),
+        new CodeInjectionProtectionAssertion(),
     };
 }

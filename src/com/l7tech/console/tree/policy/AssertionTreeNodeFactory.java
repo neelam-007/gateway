@@ -115,6 +115,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(Operation.class, OperationTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
         assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
+        assertionMap.put(CodeInjectionProtectionAssertion.class, CodeInjectionProtectionAssertionPolicyNode.class);
     }
 
     /**

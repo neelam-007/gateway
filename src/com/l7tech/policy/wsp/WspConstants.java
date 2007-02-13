@@ -12,36 +12,31 @@ import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MappingAssertion;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.policy.MessageUrlResourceInfo;
-import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.AssertionResourceInfo;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -162,6 +157,7 @@ public class WspConstants {
         new WspEnumTypeMapping(AssertionResourceType.class, "resourceType"),
         new WspEnumTypeMapping(HtmlFormDataType.class, "fieldDataType"),
         new WspEnumTypeMapping(HtmlFormDataLocation.class, "fieldLocation"),
+        new WspEnumTypeMapping(CodeInjectionProtectionType.class, "protectionType"),
 
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
@@ -302,6 +298,7 @@ public class WspConstants {
         new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
         new AssertionMapping(new CookieCredentialSourceAssertion(), "CookieCredentialSource"),
         new AssertionMapping(new HtmlFormDataAssertion(), "HtmlFormDataAssertion"),
+        new AssertionMapping(new CodeInjectionProtectionAssertion(), "CodeInjectionProtectionAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),
