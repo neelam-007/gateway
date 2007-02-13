@@ -44,6 +44,10 @@ public class HttpForwardingRuleEnforcer {
     public static void handleRequestHeaders(GenericHttpRequestParams routedRequestParams, PolicyEnforcementContext context,
                                             String targetDomain, HttpPassthroughRuleSet rules, Auditor auditor,
                                             Map vars, String[] varNames) {
+        // we should only forward def user-agent if the rules are not going to insert own
+        if (rules.ruleForName(HttpConstants.HEADER_USER_AGENT) != HttpPassthroughRuleSet.BLOCK) {
+            flushExisting(HttpConstants.HEADER_USER_AGENT, routedRequestParams);
+        }
         if (rules.isForwardAll()) {
             // forward everything
             HttpRequestKnob knob;
@@ -113,6 +117,17 @@ public class HttpForwardingRuleEnforcer {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private static void flushExisting(String hname, GenericHttpRequestParams routedRequestParams) {
+        List existingheaders = routedRequestParams.getExtraHeaders();
+        for (Iterator iterator = existingheaders.iterator(); iterator.hasNext();) {
+            GenericHttpHeader gh = (GenericHttpHeader) iterator.next();
+            if (hname.compareToIgnoreCase(gh.getName()) == 0) {
+                logger.finest("removing " + hname + " user agent value " + gh.getFullValue());
+                iterator.remove();
             }
         }
     }
