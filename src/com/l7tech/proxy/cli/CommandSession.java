@@ -87,7 +87,7 @@ class CommandSession {
             try {
                 if (grid)
                     out.println("---------|---------|---------|---------|---------|---------|---------|       ||");
-                out.print("SSB> ");
+                out.print("SSXVC> ");
                 out.flush();
                 String line = bin.readLine();
                 if (line == null)
