@@ -1,5 +1,5 @@
 #!/bin/sh
-# Bridge Startup script for *nix systems
+# XML VPN Client Startup script for *nix systems
 
 
 if [ -z "$JAVA_OPTS" ]; then
@@ -19,11 +19,11 @@ cd `dirname $0`
 extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
 
 if [ "$1" = "-bd" ]; then
-	run="-classpath Bridge.jar com.l7tech.proxy.Main"
+	run="-classpath Client.jar com.l7tech.proxy.Main"
 elif [ "$1" = "-config" ]; then
-    run="-classpath Bridge.jar com.l7tech.proxy.cli.Main"
+    run="-classpath Client.jar com.l7tech.proxy.cli.Main"
 else
-	run="-jar Bridge.jar"
+	run="-jar Client.jar"
 fi
 
 

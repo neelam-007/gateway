@@ -1,16 +1,16 @@
 //
-// Zelix Klassmaster script for obfuscating Bridge.jar
+// Zelix Klassmaster script for obfuscating Client.jar
 //
 // author: flascelles@layer7tech.com
 // Layer 7 Technologies 2005
 //
-// this is setup to be invoked indirectly through the ant task "obfuscate.bridge"
+// this is setup to be invoked indirectly through the ant task "obfuscate.client"
 // the line below is replaced by the actual jar list by ANT
 @JARFILE_FILE_LINES@
 
 // this is the jar file to process
 // this could also be a directory containing .class files
-open        "./build/Bridge.jar";
+open        "./build/Client.jar";
 
 // we dont want to let zelix determine which classes/methods are unused
 // therefore we are excluding everything from trimming otherwise some
@@ -44,7 +44,7 @@ exclude     public *.^* and
 existingSerializedClasses *.* implements java.io.Serializable;
 
 obfuscate   changeLogFileIn=""
-            changeLogFileOut="build/obfuscation/bridgechange.log"
+            changeLogFileOut="build/obfuscation/clientchange.log"
             keepInnerClassInfo=ifNameNotObfuscated
             obfuscateFlow=normal
             encryptStringLiterals=normal

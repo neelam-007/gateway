@@ -220,9 +220,9 @@
     </patternset>
 
     <!--
-      Bridge library patterset
+      XML VPN Client library patterset
     -->
-    <patternset id="bridge.libs">
+    <patternset id="client.libs">
         <include name="**/BrowserLauncher2-10rc4.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/jaxrpc.jar"/>
@@ -725,15 +725,15 @@
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*"/>
-                <include name="Bridge-*"/>
+                <include name="Client-*"/>
             </fileset>
         </delete>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*/*"/>
-                <include name="Bridge-*/*"/>
+                <include name="Client-*/*"/>
                 <include name="Manager-*"/>
-                <include name="Bridge-*"/>
+                <include name="Client-*"/>
             </fileset>
         </delete>
         <delete dir="${javadoc.home}"/>
@@ -825,13 +825,13 @@
 
     <!--
       Package target.
-      Package the application (gateway, manager, bridge) into their
+      Package the application (gateway, manager, client) into their
       Respective archives (war, jar).
       This target is invoked by other targets such as deploy and dist.
     -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="package.readversion, package.gateway.all, package.manager, package.bridge, package.installclients, package.installgateway.work"/>
+            depends="package.readversion, package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
 
 
     <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz, package.gateway, package.api, obfuscate.gateway, package.bcluna-jce, package.modules"/>
@@ -845,8 +845,8 @@
             build the ssg before running this target.
     -->
     <target name="make_installers"
-            description="Create the SSG WAR file and SSB/SSM Win32 installers (was make_installers.pl -b)."
-            depends="makensis-unsafe, package.installbridge.work, package.installmanager.work, package.installgateway.work">
+            description="Create the SSG WAR file and SSXVC/SSM Win32 installers (was make_installers.pl -b)."
+            depends="makensis-unsafe, package.installclient.work, package.installmanager.work, package.installgateway.work">
     </target>
 
     <!--
@@ -886,7 +886,7 @@
     <!--
       Compile and package the SSB
     -->
-    <target name="bridge" description="Build and package the SSB" depends="package.installbridge"/>
+    <target name="client" description="Build and package the SSXVC" depends="package.installclient"/>
 
     <!--
       Compile and package the SSM
@@ -1089,7 +1089,7 @@
             </lib>
 
             <classes dir="${build.classes}">
-                <!-- Tool, Manager, Bridge, Config Wizard and Test classes -->
+                <!-- Tool, Manager, Client, Config Wizard and Test classes -->
                 <exclude name="com/l7tech/internal/**/*"/>
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
@@ -1205,15 +1205,15 @@
     <!--
       Package the SSB (JAR)
     -->
-    <target name="package.bridge" unless="ssg.only" depends="package.bridge.jar, obfuscate.bridge"/>
-    <target name="package.bridge.jar" unless="ssg.only" depends="compile">
+    <target name="package.client" unless="ssg.only" depends="package.client.jar, obfuscate.client"/>
+    <target name="package.client.jar" unless="ssg.only" depends="compile">
         <!-- the client proxy jar -->
-        <generate-manifest propertyPrefix="bridge" filename="Bridge.mf">
+        <generate-manifest propertyPrefix="client" filename="Client.mf">
             <section>
                 <attribute name="Main-Class" value="com.l7tech.proxy.gui.Main"/>
             </section>
         </generate-manifest>
-        <jar jarfile="${build.dir}/Bridge.jar" manifest="${build.etc}/Bridge.mf">
+        <jar jarfile="${build.dir}/Client.jar" manifest="${build.etc}/Client.mf">
             <fileset dir="${build.classes}">
                 <exclude name="**/*.form"/>
                 <exclude name="com/l7tech/internal/**/*"/>
@@ -1443,7 +1443,7 @@
     <!--
       Build the windows installers
     -->
-    <target name="package.installclients" unless="ssg.only" depends="package.installbridge, package.installmanager">
+    <target name="package.installclients" unless="ssg.only" depends="package.installclient, package.installmanager">
     </target>
 
     <!--
@@ -1486,57 +1486,57 @@
     <!--
       Build the SSB windows installer
     -->
-    <target name="package.installbridge" depends="package.bridge, package.installbridge.work"/>
-    <target name="package.installbridge.work" depends="package.installbridge.work.main, package.installbridge.work.nsis"/>
-    <target name="package.installbridge.work.main" depends="package.readversion.unsafe">
-        <!-- Copy Bridge JAR and its lib JARs -->
-        <delete dir="${build.installer}/Bridge-${build.version}" failonerror="false"/>
-        <delete file="${build.installer}/Bridge-${build.version}.tar.gz" failonerror="false"/>
-        <mkdir dir="${build.installer}/Bridge-${build.version}/lib"/>
-        <copy todir="${build.installer}/Bridge-${build.version}/lib" preservelastmodified="true" granularity="2000">
+    <target name="package.installclient" depends="package.client, package.installclient.work"/>
+    <target name="package.installclient.work" depends="package.installclient.work.main, package.installclient.work.nsis"/>
+    <target name="package.installclient.work.main" depends="package.readversion.unsafe">
+        <!-- Copy Client JAR and its lib JARs -->
+        <delete dir="${build.installer}/Client-${build.version}" failonerror="false"/>
+        <delete file="${build.installer}/Client-${build.version}.tar.gz" failonerror="false"/>
+        <mkdir dir="${build.installer}/Client-${build.version}/lib"/>
+        <copy todir="${build.installer}/Client-${build.version}/lib" preservelastmodified="true" granularity="2000">
             <fileset dir="${build.lib}">
-                <patternset refid="bridge.libs"/>
+                <patternset refid="client.libs"/>
             </fileset>
         </copy>
-        <copy file="${build.dir}/Bridge.jar"
-              tofile="${build.installer}/Bridge-${build.version}/Bridge.jar"
+        <copy file="${build.dir}/Client.jar"
+              tofile="${build.installer}/Client-${build.version}/Client.jar"
               preservelastmodified="true"
               granularity="2000"/>
 
         <!-- Start script -->
-        <copy file="${src.root}/etc/Bridge.sh"
-              tofile="${build.installer}/Bridge-${build.version}/Bridge.sh"
+        <copy file="${src.root}/etc/Client.sh"
+              tofile="${build.installer}/Client-${build.version}/Client.sh"
               preservelastmodified="true"
               granularity="2000"/>
-        <chmod file="${build.installer}/Bridge-${build.version}/Bridge.sh" perm="755"/>
+        <chmod file="${build.installer}/Client-${build.version}/Client.sh" perm="755"/>
 
         <!-- Config files -->
         <copy file="${src.root}/src/com/l7tech/proxy/resources/logging.properties"
-              todir="${build.installer}/Bridge-${build.version}"
+              todir="${build.installer}/Client-${build.version}"
               preservelastmodified="true"
               granularity="2000"/>
 
         <!-- Help files -->
         <unzip src="${src.root}/webhelp/ssb/help.zip"
-               dest="${build.installer}/Bridge-${build.version}"/>
+               dest="${build.installer}/Client-${build.version}"/>
 
         <!-- Create distro TAR -->
-        <tar destfile="${build.installer}/Bridge-${build.version}.tar.gz"
+        <tar destfile="${build.installer}/Client-${build.version}.tar.gz"
              compression="gzip">
             <tarfileset dir="${build.installer}" mode="555" username="build" group="build">
-                <include name="Bridge-${build.version}/Bridge.sh"/>
+                <include name="Client-${build.version}/Client.sh"/>
             </tarfileset>
             <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
-                <include name="Bridge-${build.version}/**/*"/>
-                <exclude name="Bridge-${build.version}/Bridge.sh"/>
+                <include name="Client-${build.version}/**/*"/>
+                <exclude name="Client-${build.version}/Client.sh"/>
             </tarfileset>
         </tar>
     </target>
-    <target name="package.installbridge.work.nsis" if="makensis.enabled">
+    <target name="package.installclient.work.nsis" if="makensis.enabled">
         <!-- Update NSI file -->
-        <generate-nsi nsiFile="Bridge.nsi"
+        <generate-nsi nsiFile="Client.nsi"
                       nsiPath="proxy/win32/"
-                      propertyPrefix="bridge"/>
+                      propertyPrefix="client"/>
 
         <!-- Run makensis -->
         <exec executable="${build.install.compiler}"
@@ -1545,7 +1545,7 @@
             <arg value="/NOCD"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
             <arg value="/XSetCompressor bzip2"/>
-            <arg value="../../../build/etc/Bridge.nsi"/>
+            <arg value="../../../build/etc/Client.nsi"/>
         </exec>
 
     </target>
@@ -2063,14 +2063,14 @@
     </target>
 
     <target name="testpackage.report"
-            depends="testpackage.report.bridge,
+            depends="testpackage.report.client,
                      testpackage.report.manager,
                      testpackage.report.configwizard,
                      testpackage.report.sysconfigwizard,
                      testpackage.report.flasher"/>
 
-    <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
-        <echo level="warning">Bridge package test failed.</echo>
+    <target name="testpackage.report.client" if="testpackage.client.fail">
+        <echo level="warning">Client package test failed.</echo>
         <property name="fail" value="true"/>
     </target>
 
@@ -2118,26 +2118,26 @@
         </sequential>
     </macrodef>
 
-    <target name="testpackage.work" depends="testpackage.bridge, testpackage.manager, testpackage.config, testpackage.api"/>
+    <target name="testpackage.work" depends="testpackage.client, testpackage.manager, testpackage.config, testpackage.api"/>
 
     <target name="testpackage.init">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" verbose="no"/>
     </target>
 
-    <target name="testpackage.bridge" depends="testpackage.init, package.bridge.jar">
-        <!-- Testpackage for SecureSpan Bridge -->
-        <fileset id="bridge.testpackage.fileset" dir="${build.lib}">
-            <patternset refid="bridge.libs"/>
+    <target name="testpackage.client" depends="testpackage.init, package.client.jar">
+        <!-- Testpackage for SecureSpan XML VPN Client -->
+        <fileset id="client.testpackage.fileset" dir="${build.lib}">
+            <patternset refid="client.libs"/>
         </fileset>
-        <checkdeps jarfile="build/Bridge.jar"
-                   libfilesetref="bridge.testpackage.fileset"
-                   resultproperty="testpackage.bridge.result"/>
+        <checkdeps jarfile="build/Client.jar"
+                   libfilesetref="client.testpackage.fileset"
+                   resultproperty="testpackage.client.result"/>
         <!-- This just stops idea complaining -->
-        <property name="testpackage.bridge.result" value=""/>
-        <condition property="testpackage.bridge.fail">
+        <property name="testpackage.client.result" value=""/>
+        <condition property="testpackage.client.fail">
             <not>
-                <equals arg1="0" arg2="${testpackage.bridge.result}"/>
+                <equals arg1="0" arg2="${testpackage.client.result}"/>
             </not>
         </condition>
     </target>
@@ -3080,17 +3080,17 @@
         <copy tofile="build/sysconfigwizard/SystemConfigWizard.jar" file="build/obfuscation/SystemConfigWizard.jar" overwrite="true"/>
     </target>
     <!--
-      SecureSpan Bridge obfuscation target
+      SecureSpan XML VPN Client obfuscation target
     -->
-    <target name="obfuscate.bridge" depends="obfuscate.init" if="obfuscate" unless="ssg.only">
-        <echo>Obfuscating Bridge.jar</echo>
-        <Zelix scriptFileName="build/etc/bridge.zkm"
-               logFileName="build/obfuscation/bridgeobfuscation.log"
-               trimLogFileName="build/obfuscation/bridgeobfuscation.log"
+    <target name="obfuscate.client" depends="obfuscate.init" if="obfuscate" unless="ssg.only">
+        <echo>Obfuscating Client.jar</echo>
+        <Zelix scriptFileName="build/etc/client.zkm"
+               logFileName="build/obfuscation/clientobfuscation.log"
+               trimLogFileName="build/obfuscation/clientobfuscation.log"
                isParseOnly="false"
                isVerbose="true"/>
-        <echo>Done obfuscating Bridge.jar</echo>
-        <copy tofile="build/Bridge.jar" file="build/obfuscation/Bridge.jar" overwrite="true"/>
+        <echo>Done obfuscating Client.jar</echo>
+        <copy tofile="build/Client.jar" file="build/obfuscation/Client.jar" overwrite="true"/>
     </target>
 
     <!--
@@ -3168,7 +3168,7 @@
         </patternset>
 
         <echo>Setting classpaths in zkm scripts</echo>
-        <build-zkm filename="bridge.zkm" propertyPrefix="bridge"/>
+        <build-zkm filename="client.zkm" propertyPrefix="client"/>
         <build-zkm filename="ssg.zkm" propertyPrefix="gateway" libDir="build/ROOT_exploded/WEB-INF/lib"
                    pathExtra="    &quot;build/lib/servlet-api.jar&quot;${line.separator}    &quot;build/lib/catalina.jar&quot;${line.separator}    &quot;build/layer7-api.jar&quot;${line.separator}    &quot;lib/gateway/tarari/tarari_raxj.jar&quot;${line.separator}"/>
     </target>
@@ -3204,34 +3204,34 @@
       Meant to be used as part of official build this will create an obfuscated version
       of the following files:
 
-      . build/Bridge.jar
+      . build/Client.jar
       . build/Manager.jar
       . build/ROOT.war
-      . installer/Bridge-VERSION.tar.gz
+      . installer/Client-VERSION.tar.gz
       . installer/Manager-VERSION.tar.gz
 
       When followed by ssg-install-full, the resulting build/ssg-bBUILDNUMBER.tar.gz will
       also be obfuscated.
 
       When followed by a call to ./make_installers.pl -b, the resulting windows installers
-      for bridge, manager and ssg will also be obfuscated
+      for client, manager and ssg will also be obfuscated
     -->
     <target name="obfuscate.work"
             if="obfuscate"
-            depends="package.bridge, package.manager, package.gateway, obfuscate.bridge, obfuscate.manager, obfuscate.gateway, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz">
+            depends="package.client, package.manager, package.gateway, obfuscate.client, obfuscate.manager, obfuscate.gateway, obfuscate.flasher, obfuscate.cfgwiz, obfuscate.syscfgwiz">
         <echo level="info">Expecting obfuscation version ${build.version}</echo>
 
-        <untar src="installer/Bridge-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
+        <untar src="installer/Client-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
         <untar src="installer/Manager-${build.version}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
-        <copy file="build/obfuscation/Bridge.jar" tofile="build/obfuscation/Bridge-${build.version}/Bridge.jar" overwrite="true"/>
+        <copy file="build/obfuscation/Client.jar" tofile="build/obfuscation/Client-${build.version}/Client.jar" overwrite="true"/>
         <copy file="build/obfuscation/Manager.jar" tofile="build/obfuscation/Manager-${build.version}/Manager.jar" overwrite="true"/>
 
-        <tar destfile="build/obfuscation/Bridge-${build.version}_obfuscated.tar.gz" compression="gzip">
-            <tarfileset dir="build/obfuscation/Bridge-${build.version}" prefix="Bridge-${build.version}">
+        <tar destfile="build/obfuscation/Client-${build.version}_obfuscated.tar.gz" compression="gzip">
+            <tarfileset dir="build/obfuscation/Client-${build.version}" prefix="Client-${build.version}">
                 <include name="**"/>
                 <exclude name="*.sh"/>
             </tarfileset>
-            <tarfileset dir="build/obfuscation/Bridge-${build.version}" prefix="Bridge-${build.version}" mode="755">
+            <tarfileset dir="build/obfuscation/Client-${build.version}" prefix="Client-${build.version}" mode="755">
                 <include name="*.sh"/>
             </tarfileset>
         </tar>
@@ -3246,11 +3246,11 @@
             </tarfileset>
         </tar>
 
-        <delete dir="build/obfuscation/Bridge-${build.version}"/>
+        <delete dir="build/obfuscation/Client-${build.version}"/>
         <delete dir="build/obfuscation/Manager-${build.version}"/>
 
-        <copy file="build/obfuscation/Bridge-${build.version}_obfuscated.tar.gz"
-              tofile="installer/Bridge-${build.version}.tar.gz"
+        <copy file="build/obfuscation/Client-${build.version}_obfuscated.tar.gz"
+              tofile="installer/Client-${build.version}.tar.gz"
               overwrite="true"/>
 
         <copy file="build/obfuscation/Manager-${build.version}_obfuscated.tar.gz"
