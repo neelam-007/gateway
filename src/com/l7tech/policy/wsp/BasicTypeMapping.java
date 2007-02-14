@@ -9,6 +9,8 @@ import org.w3c.dom.Element;
 
 import java.lang.reflect.Constructor;
 
+import com.l7tech.common.util.ExceptionUtils;
+
 /**
  * TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.
  */
@@ -51,11 +53,17 @@ class BasicTypeMapping implements TypeMapping {
         return elm;
     }
 
+    static class NotNamedFormatException extends IllegalArgumentException {
+        public NotNamedFormatException(String s) {
+            super(s);
+        }
+    }
+
     /**
      * Return the new element, without appending it to the container yet.
      */
     protected Element freezeAnonymous(WspWriter wspWriter, TypedReference object, Element container) {
-        throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
+        throw new NotNamedFormatException("BasicTypeMapping supports only Named format");
     }
 
     /**
@@ -119,7 +127,12 @@ class BasicTypeMapping implements TypeMapping {
         try {
             return doThaw(source, visitor, false);
         } catch (InvalidPolicyStreamException e) {
-            return doThaw(visitor.invalidElement(source, e), visitor, true);
+            try {
+                return doThaw(visitor.invalidElement(source, e), visitor, true);
+            } catch (NotNamedFormatException e1) {
+                // Can't replace with UnknownAssertion, as it's an attribute in the middle of some other assertion
+                throw new InvalidPolicyStreamException(ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 
@@ -200,7 +213,7 @@ class BasicTypeMapping implements TypeMapping {
     }
 
     protected TypedReference thawAnonymous(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-        throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
+        throw new NotNamedFormatException("BasicTypeMapping supports only Named format (Element: " + source.getLocalName() + ")");
     }
 
     /**

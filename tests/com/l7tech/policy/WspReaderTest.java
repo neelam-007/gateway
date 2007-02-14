@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.xml.XpathExpression;
@@ -11,19 +12,19 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wsp.*;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Test policy deserializer.
@@ -516,6 +517,72 @@ public class WspReaderTest extends TestCase {
         XslTransformation newXslt = (XslTransformation) wspReader.parseStrictly(policy);
         assertTrue(newXslt.getResourceInfo().getType().equals(xslt.getResourceInfo().getType()));
     }
+
+    public void testBug3456() throws Exception {
+        // TODO reverse this test (so it must NOT throw the exception) if it is decided that "string (any)" should be valid after all  
+        try {
+            WspReader.getDefault().parseStrictly(BUG_3456_POLICY);
+            fail("Expected exception not thrown for invalid attribute Unknown HtmlFormDataType name: 'string (any)'");
+        } catch (InvalidPolicyStreamException e) {
+            log.log(Level.INFO, "Caught expected exception: " + ExceptionUtils.getMessage(e), e);
+            // Ok
+        }
+
+        Assertion got = WspReader.getDefault().parsePermissively(BUG_3456_POLICY);
+        log.info("Got: " + got);
+    }
+
+    private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+    "    <wsp:All wsp:Usage=\"Required\">\n" +
+    "        <L7p:HtmlFormDataAssertion>\n" +
+    "            <L7p:AllowPost booleanValue=\"true\"/>\n" +
+    "            <L7p:AllowGet booleanValue=\"true\"/>\n" +
+    "            <L7p:FieldSpecs htmlFormFieldSpecArray=\"included\">\n" +
+    "                <L7p:item htmlFormFieldSpec=\"included\">\n" +
+    "                    <L7p:MaxOccurs intValue=\"1\"/>\n" +
+    "\n" +
+    "                    <L7p:DataType fieldDataType=\"string (any)\"/>\n" +
+    "                    <L7p:Name stringValue=\"param1\"/>\n" +
+    "                </L7p:item>\n" +
+    "                <L7p:item htmlFormFieldSpec=\"included\">\n" +
+    "                    <L7p:MaxOccurs intValue=\"4\"/>\n" +
+    "                    <L7p:DataType fieldDataType=\"string (any)\"/>\n" +
+    "                    <L7p:MinOccurs intValue=\"2\"/>\n" +
+    "                    <L7p:Name stringValue=\"param2\"/>\n" +
+    "                </L7p:item>\n" +
+    "\n" +
+    "            </L7p:FieldSpecs>\n" +
+    "        </L7p:HtmlFormDataAssertion>\n" +
+    "        <L7p:HttpRoutingAssertion>\n" +
+    "            <L7p:ProtectedServiceUrl stringValue=\"http://hugh:8081/RoutingExtensionsTest\"/>\n" +
+    "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+    "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+    "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+    "                        <L7p:Name stringValue=\"Cookie\"/>\n" +
+    "                    </L7p:item>\n" +
+    "\n" +
+    "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+    "                        <L7p:Name stringValue=\"SOAPAction\"/>\n" +
+    "                    </L7p:item>\n" +
+    "                </L7p:Rules>\n" +
+    "            </L7p:RequestHeaderRules>\n" +
+    "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+    "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+    "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+    "            </L7p:RequestParamRules>\n" +
+    "\n" +
+    "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+    "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
+    "                    <L7p:item httpPassthroughRule=\"included\">\n" +
+    "                        <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
+    "                    </L7p:item>\n" +
+    "                </L7p:Rules>\n" +
+    "            </L7p:ResponseHeaderRules>\n" +
+    "        </L7p:HttpRoutingAssertion>\n" +
+    "    </wsp:All>\n" +
+    "\n" +
+    "</wsp:Policy>";
 
     public static void main(String[] args) {
         System.out.println("Heya");
